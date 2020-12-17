@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArchitectureRouting", "ArchitectureRouting\ArchitectureRouting.csproj", "{1C41D44C-E0E9-4F30-99C4-4F659322735F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "make_addin", "make_addin\make_addin.csproj", "{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3dCommon", "Arent3dCommon\Arent3dCommon.csproj", "{7A1D2AEA-D306-464A-9DD5-457881AB96E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitAddinUtil", "RevitAddinUtil\RevitAddinUtil.csproj", "{743955DC-0CA9-48FA-B010-3A961F95E459}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1C41D44C-E0E9-4F30-99C4-4F659322735F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C41D44C-E0E9-4F30-99C4-4F659322735F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C41D44C-E0E9-4F30-99C4-4F659322735F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C41D44C-E0E9-4F30-99C4-4F659322735F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A1D2AEA-D306-464A-9DD5-457881AB96E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A1D2AEA-D306-464A-9DD5-457881AB96E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A1D2AEA-D306-464A-9DD5-457881AB96E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A1D2AEA-D306-464A-9DD5-457881AB96E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{743955DC-0CA9-48FA-B010-3A961F95E459}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{743955DC-0CA9-48FA-B010-3A961F95E459}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{743955DC-0CA9-48FA-B010-3A961F95E459}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{743955DC-0CA9-48FA-B010-3A961F95E459}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {233FBF8A-B66E-480B-9A6B-190C442527AA}
+	EndGlobalSection
+EndGlobal
