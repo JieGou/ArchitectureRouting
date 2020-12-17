@@ -1,45 +1,59 @@
-**Edit a file, create a new file, and clone from Bitbucket in under 2 minutes**
+## Git branch usages
 
-When you're done, you can delete the content in this README and update the file with details for others getting started with your repository.
+`master` and `develop` branches are read only.  
+On developing new features or fixing bugs, checkout newest `develop` branch as `<yourname>/<featurename>` and develop on it.  
+After developing it, push into `origin/<yourname>/<featurename>` and create a pull request. Person in charge will merge it.
 
-*We recommend that you open this README in another tab as you perform the tasks below. You can [watch our video](https://youtu.be/0ocf7u76WSo) for a full demo of all the steps in this tutorial. Open the video in a new tab to avoid leaving Bitbucket.*
+## How to build a development environment
 
----
+### Development Environments
 
-## Edit a file
+1. Install Revit (2020).
+2. Install Visual Studio (2019).
+3. Clone `develop` branch into your machine.
 
-You’ll start by editing this README file to learn how to edit a file in Bitbucket.
+### Language and framework versions
 
-1. Click **Source** on the left side.
-2. Click the README.md link from the list of files.
-3. Click the **Edit** button.
-4. Delete the following text: *Delete this line to make a change to the README from Bitbucket.*
-5. After making your change, click **Commit** and then **Commit** again in the dialog. The commit page will open and you’ll see the change you just made.
-6. Go back to the **Source** page.
+- *C# 9.0*  
+	Enabling *nullable reference types* is recommended.
+- *.NET Framework 4.7*  
+	Autodesk's sample project was v4.7
 
----
+### Projects in solution
 
-## Create a file
+- *ArchitectureRouting.csproj*  
+	Entry point of addin. Revit command classes and application classes are to be implemented in this project.  
+	`*.addin` file is automatically built by `make_addin` command when `Arent3d.Revit.RevitAddinAttribute` is specified.  
+- *Arent3dCommon.csproj*  
+	Common utility classes and extension methods.
+- *make_addin.csproj*  
+	Generates `*.addin` files from assemblies with `Arent3d.Revit.RevitAddinVendorAttribute` attribute.  
+	`make_addin` command surveys assemblies, collect classes with `Arent3d.Revit.RevitAddinAttribute`, and build `*.addin` file.
+- *RevitAddinUtil.csproj*  
+	Defines `Arent3d.Revit.RevitAddinAttribute` and `Arent3d.Revit.RevitAddinAttribute`.
 
-Next, you’ll add a new file to this repository.
+## Others
 
-1. Click the **New file** button at the top of the **Source** page.
-2. Give the file a filename of **contributors.txt**.
-3. Enter your name in the empty file space.
-4. Click **Commit** and then **Commit** again in the dialog.
-5. Go back to the **Source** page.
+### Changing addin directory
 
-Before you move on, go ahead and explore the repository. You've already seen the **Source** page, but check out the **Commits**, **Branches**, and **Settings** pages.
+`ArchitectureRouting.csproj` copies `*.addin` into machine's `%ProgramData%\Autodesk\Revit\Addins\2020` directory. But this destination is customized by environment variables.
 
----
+When oher Revit versions is on your computer, define `REVIT_VERSION` environment variable (for example `SET REVIT_VERSION=2019`).  
 
-## Clone a repository
+Also, `REVIT_ADDIN_PATH` environment variable is available. If `REVIT_ADDIN_PATH` is defined, `REVIT_ADDIN_PATH` totally overrides destination.
 
-Use these steps to clone from SourceTree, our client for using the repository command-line free. Cloning allows you to work on your files locally. If you don't yet have SourceTree, [download and install first](https://www.sourcetreeapp.com/). If you prefer to clone from the command line, see [Clone a repository](https://confluence.atlassian.com/x/4whODQ).
+Here are commands that are executed after building `*ArchitectureRouting.csproj*`:
 
-1. You’ll see the clone button under the **Source** heading. Click that button.
-2. Now click **Check out in SourceTree**. You may need to create a SourceTree account or log in.
-3. When you see the **Clone New** dialog in SourceTree, update the destination path and name if you’d like to and then click **Clone**.
-4. Open the directory you just created to see your repository’s files.
+```
+"$(SolutionDir)make_addin\$(OutDir)\make_addin" "$(TargetPath)"
 
-Now that you're more familiar with your Bitbucket repository, go ahead and add a new file locally. You can [push your change back to Bitbucket with SourceTree](https://confluence.atlassian.com/x/iqyBMg), or you can [add, commit,](https://confluence.atlassian.com/x/8QhODQ) and [push from the command line](https://confluence.atlassian.com/x/NQ0zDQ).
+if defined REVIT_ADDIN_PATH (
+  copy "$(TargetDir)*.addin" "%REVIT_ADDIN_PATH%\"
+) else (
+  if not defined REVIT_VERSION (
+    copy "$(TargetDir)*.addin" "%ProgramData%\Autodesk\Revit\Addins\2020\"
+  ) else (
+    copy "$(TargetDir)*.addin" "%ProgramData%\Autodesk\Revit\Addins\%REVIT_VERSION%\"
+  )
+)
+```
