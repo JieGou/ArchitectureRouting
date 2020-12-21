@@ -5,8 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
-#nullable enable
-
 namespace Arent3d
 {
   public static class XmlExtension

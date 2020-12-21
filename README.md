@@ -8,17 +8,17 @@ After developing it, push into `origin/<yourname>/<featurename>` and create a pu
 
 ### Development Environments
 
-1. Install Revit (2021 is recommended).
-1. Install Visual Studio (2019).
+1. Install Revit 2021 (`C:\Program Files\Autodesk\Revit 2021` directory is recommended).
+1. Install Visual Studio 2019.
 1. Clone `develop` branch into your machine.
-1. Open `ArchitectureRouting.sln` and set `ArchitectureRouting` project's debugger startup path as Revit.exe location (typically `C:\Program Files\Autodesk\Revit 2021\Revit.exe`).
+1. Open `ArchitectureRouting.sln` and set `ArchitectureRouting` project's debugger startup path as Revit.exe location (`C:\Program Files\Autodesk\Revit 2021\Revit.exe`).
 
 ### Language and framework versions
 
 - **C# 9.0**  
-	Enabling **nullable reference types** is recommended.
-- **.NET Framework 4.7**  
-	Autodesk's sample project was v4.7
+	**Nullable reference types** is enabled.
+- **.NET Framework 4.8**  
+	Compatible to **Revit 2021**.
 
 ### Projects in solution
 

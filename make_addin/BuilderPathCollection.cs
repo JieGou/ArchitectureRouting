@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mono.Cecil;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,13 +7,11 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-#nullable enable
-
 namespace Arent3d.Architecture
 {
   class BuilderPathCollection
   {
-    private readonly List<BuilderPath> _buildPaths= new();
+    private readonly List<BuilderPath> _buildPaths = new();
 
     private bool _waitingOutput = false;
 
@@ -52,19 +51,23 @@ namespace Arent3d.Architecture
       }
     }
 
-    public IEnumerable<IGrouping<FileInfo, Assembly>> GetAll()
+    public IEnumerable<IGrouping<FileInfo, (string AssemblyPath, AssemblyDefinition Assembly)>> GetAll()
     {
-      return _buildPaths.Select( AssemblyAndOutputPath ).GroupBy( tuple => tuple.OutputPath, tuple => tuple.Assembly );
+      return _buildPaths.Select( AssemblyAndOutputPath ).GroupBy( tuple => tuple.OutputPath, tuple => (tuple.AssemblyPath, tuple.Assembly) );
     }
 
-    private static (FileInfo OutputPath, Assembly Assembly) AssemblyAndOutputPath( BuilderPath builderPath )
+    private static (FileInfo OutputPath, string AssemblyPath, AssemblyDefinition Assembly) AssemblyAndOutputPath( BuilderPath builderPath )
     {
-      var assembly = Assembly.LoadFrom( builderPath.InputPath );
+      var assembly = AssemblyDefinition.ReadAssembly( builderPath.InputPath );
+      if ( null == assembly ) {
+        throw new InvalidAssemblyException( builderPath.InputPath );
+      }
+
       if ( assembly.GetCustomAttribute<Revit.RevitAddinVendorAttribute>() is null ) {
         throw new InvalidAssemblyException( builderPath.InputPath );
       }
 
-      return (OutputPath: new FileInfo( builderPath.OutputPath ), Assembly: assembly);
+      return (OutputPath: new FileInfo( builderPath.OutputPath ), AssemblyPath: builderPath.InputPath, Assembly: assembly);
     }
 
     private BuilderPath? GetLastBuildPath()

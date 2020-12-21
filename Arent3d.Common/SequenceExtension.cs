@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+#nullable disable
+
 namespace Arent3d
 {
   public static class SequenceExtension
@@ -31,7 +33,7 @@ namespace Arent3d
 
     public static T MinItemOrDefault<T>( this IEnumerable<T> enu, Func<T, double> evaluator )
     {
-      T minItem = default;
+      T minItem = default!;
       var maxEvaluation = double.PositiveInfinity;
       foreach ( var item in enu ) {
         var eval = evaluator( item );
@@ -61,7 +63,7 @@ namespace Arent3d
     public static T UniqueOrDefault<T>( this IEnumerable<T> enu, T defaultValue )
     {
       bool isUnique = false;
-      T uniqueValue = defaultValue;
+      T uniqueValue = defaultValue!;
 
       foreach ( var e in enu ) {
         if ( isUnique ) return defaultValue;

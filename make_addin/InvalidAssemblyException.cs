@@ -5,8 +5,6 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-#nullable enable
-
 namespace Arent3d.Architecture
 {
   class InvalidAssemblyException : Exception

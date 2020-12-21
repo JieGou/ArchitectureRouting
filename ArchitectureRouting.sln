@@ -3,36 +3,36 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArchitectureRouting", "ArchitectureRouting\ArchitectureRouting.csproj", "{1C41D44C-E0E9-4F30-99C4-4F659322735F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Common", "Arent3d.Common\Arent3d.Common.csproj", "{B70CF786-6F87-4562-84B2-D957DBFADFC1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "make_addin", "make_addin\make_addin.csproj", "{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.RevitAddinUtil", "Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj", "{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3dCommon", "Arent3dCommon\Arent3dCommon.csproj", "{7A1D2AEA-D306-464A-9DD5-457881AB96E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "make_addin", "make_addin\make_addin.csproj", "{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RevitAddinUtil", "RevitAddinUtil\RevitAddinUtil.csproj", "{743955DC-0CA9-48FA-B010-3A961F95E459}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Architecture.Routing", "Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj", "{7C2209B4-5B23-4603-A1DA-30188A398230}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{1C41D44C-E0E9-4F30-99C4-4F659322735F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1C41D44C-E0E9-4F30-99C4-4F659322735F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1C41D44C-E0E9-4F30-99C4-4F659322735F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1C41D44C-E0E9-4F30-99C4-4F659322735F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{92CF3F5A-B833-4776-BBEA-DD15BA0B7ABF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7A1D2AEA-D306-464A-9DD5-457881AB96E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7A1D2AEA-D306-464A-9DD5-457881AB96E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A1D2AEA-D306-464A-9DD5-457881AB96E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A1D2AEA-D306-464A-9DD5-457881AB96E2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{743955DC-0CA9-48FA-B010-3A961F95E459}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{743955DC-0CA9-48FA-B010-3A961F95E459}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{743955DC-0CA9-48FA-B010-3A961F95E459}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{743955DC-0CA9-48FA-B010-3A961F95E459}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B70CF786-6F87-4562-84B2-D957DBFADFC1}.Debug|x64.ActiveCfg = Debug|x64
+		{B70CF786-6F87-4562-84B2-D957DBFADFC1}.Debug|x64.Build.0 = Debug|x64
+		{B70CF786-6F87-4562-84B2-D957DBFADFC1}.Release|x64.ActiveCfg = Release|x64
+		{B70CF786-6F87-4562-84B2-D957DBFADFC1}.Release|x64.Build.0 = Release|x64
+		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Debug|x64.ActiveCfg = Debug|x64
+		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Debug|x64.Build.0 = Debug|x64
+		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Release|x64.ActiveCfg = Release|x64
+		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Release|x64.Build.0 = Release|x64
+		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Debug|x64.ActiveCfg = Debug|x64
+		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Debug|x64.Build.0 = Debug|x64
+		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Release|x64.ActiveCfg = Release|x64
+		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Release|x64.Build.0 = Release|x64
+		{7C2209B4-5B23-4603-A1DA-30188A398230}.Debug|x64.ActiveCfg = Debug|x64
+		{7C2209B4-5B23-4603-A1DA-30188A398230}.Debug|x64.Build.0 = Debug|x64
+		{7C2209B4-5B23-4603-A1DA-30188A398230}.Release|x64.ActiveCfg = Release|x64
+		{7C2209B4-5B23-4603-A1DA-30188A398230}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

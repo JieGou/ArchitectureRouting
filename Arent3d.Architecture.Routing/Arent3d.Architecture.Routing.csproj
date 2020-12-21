@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
@@ -8,13 +8,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Platforms>x64</Platforms>
     <Authors>Arent Inc.</Authors>
-    <RootNamespace>Arent3d.Architecture</RootNamespace>
-    <OutputType>Exe</OutputType>
+    <RootNamespace>Arent3d.Architecture.Routing</RootNamespace>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Arent3d.Common\Arent3d.Common.csproj" />
@@ -24,10 +19,16 @@
   <ItemGroup>
     <Reference Include="RevitAPI">
       <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="RevitAPIUI">
       <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="&quot;$(SolutionDir)make_addin\$(OutDir)make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;if defined REVIT_ADDIN_PATH (&#xD;&#xA;  copy &quot;$(TargetDir)*.addin&quot; &quot;%25REVIT_ADDIN_PATH%25\&quot;&#xD;&#xA;) else (&#xD;&#xA;  if not defined REVIT_VERSION (&#xD;&#xA;    copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\2021\&quot;&#xD;&#xA;  ) else (&#xD;&#xA;    copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\%25REVIT_VERSION%25\&quot;&#xD;&#xA;  )&#xD;&#xA;)" />
+  </Target>
 
 </Project>
