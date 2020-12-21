@@ -8,41 +8,42 @@ After developing it, push into `origin/<yourname>/<featurename>` and create a pu
 
 ### Development Environments
 
-1. Install Revit (2020).
-2. Install Visual Studio (2019).
-3. Clone `develop` branch into your machine.
+1. Install Revit (2021 is recommended).
+1. Install Visual Studio (2019).
+1. Clone `develop` branch into your machine.
+1. Open `ArchitectureRouting.sln` and set `ArchitectureRouting` project's debugger startup path as Revit.exe location (typically `C:\Program Files\Autodesk\Revit 2021\Revit.exe`).
 
 ### Language and framework versions
 
-- *C# 9.0*  
-	Enabling *nullable reference types* is recommended.
-- *.NET Framework 4.7*  
+- **C# 9.0**  
+	Enabling **nullable reference types** is recommended.
+- **.NET Framework 4.7**  
 	Autodesk's sample project was v4.7
 
 ### Projects in solution
 
-- *ArchitectureRouting.csproj*  
+- **ArchitectureRouting.csproj**  
 	Entry point of addin. Revit command classes and application classes are to be implemented in this project.  
 	`*.addin` file is automatically built by `make_addin` command when `Arent3d.Revit.RevitAddinAttribute` is specified.  
-- *Arent3dCommon.csproj*  
+- **Arent3dCommon.csproj**  
 	Common utility classes and extension methods.
-- *make_addin.csproj*  
+- **make_addin.csproj**  
 	Generates `*.addin` files from assemblies with `Arent3d.Revit.RevitAddinVendorAttribute` attribute.  
 	`make_addin` command surveys assemblies, collect classes with `Arent3d.Revit.RevitAddinAttribute`, and build `*.addin` file.
-- *RevitAddinUtil.csproj*  
+- **RevitAddinUtil.csproj**  
 	Defines `Arent3d.Revit.RevitAddinAttribute` and `Arent3d.Revit.RevitAddinAttribute`.
 
 ## Others
 
 ### Changing addin directory
 
-`ArchitectureRouting.csproj` copies `*.addin` into machine's `%ProgramData%\Autodesk\Revit\Addins\2020` directory. But this destination is customized by environment variables.
+`ArchitectureRouting.csproj` copies `*.addin` into machine's `%ProgramData%\Autodesk\Revit\Addins\2021` directory. But this destination is customized by environment variables.
 
 When oher Revit versions is on your computer, define `REVIT_VERSION` environment variable (for example `SET REVIT_VERSION=2019`).  
 
 Also, `REVIT_ADDIN_PATH` environment variable is available. If `REVIT_ADDIN_PATH` is defined, `REVIT_ADDIN_PATH` totally overrides destination.
 
-Here are commands that are executed after building `*ArchitectureRouting.csproj*`:
+Here are commands that are executed after building `ArchitectureRouting.csproj`:
 
 ```
 "$(SolutionDir)make_addin\$(OutDir)\make_addin" "$(TargetPath)"

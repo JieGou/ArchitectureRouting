@@ -64,7 +64,7 @@ if defined REVIT_ADDIN_PATH (
   copy "$(TargetDir)*.addin" "%25REVIT_ADDIN_PATH%25\"
 ) else (
   if not defined REVIT_VERSION (
-    copy "$(TargetDir)*.addin" "%25ProgramData%25\Autodesk\Revit\Addins\2020\"
+    copy "$(TargetDir)*.addin" "%25ProgramData%25\Autodesk\Revit\Addins\2021\"
   ) else (
     copy "$(TargetDir)*.addin" "%25ProgramData%25\Autodesk\Revit\Addins\%25REVIT_VERSION%25\"
   )
