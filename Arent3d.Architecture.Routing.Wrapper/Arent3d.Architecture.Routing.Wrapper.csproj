@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <LangVersion>9</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Platforms>x64</Platforms>
+    <Authors>Arent Inc.</Authors>
+    <RootNamespace>Arent3d.Architecture.Routing.Wrapper</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arent3d.Common\Arent3d.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Architecture.Routing.Core">
+      <HintPath>..\Libraries\Architecture.Routing.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="MathLib">
+      <HintPath>..\Libraries\MathLib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
