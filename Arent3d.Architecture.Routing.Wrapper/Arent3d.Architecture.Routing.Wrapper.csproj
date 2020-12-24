@@ -12,15 +12,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arent3d.Common\Arent3d.Common.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="Architecture.Routing.Core">
       <HintPath>..\Libraries\Architecture.Routing.Core.dll</HintPath>
     </Reference>
-    <Reference Include="MathLib">
-      <HintPath>..\Libraries\MathLib.dll</HintPath>
+    <Reference Include="Arent3d.Collision">
+      <HintPath>..\Libraries\Arent3d.Collision.dll</HintPath>
+    </Reference>
+    <Reference Include="Arent3d.Geometry">
+      <HintPath>..\Libraries\Arent3d.Geometry.dll</HintPath>
+    </Reference>
+    <Reference Include="Arent3d.Math">
+      <HintPath>..\Libraries\Arent3d.Math.dll</HintPath>
+    </Reference>
+    <Reference Include="Arent3d.Utility">
+      <HintPath>..\Libraries\Arent3d.Utility.dll</HintPath>
     </Reference>
   </ItemGroup>
 

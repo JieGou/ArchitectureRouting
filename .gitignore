@@ -13,3 +13,5 @@ bin/
 obj/
 *.user
 launchSettings.json
+
+Libraries/

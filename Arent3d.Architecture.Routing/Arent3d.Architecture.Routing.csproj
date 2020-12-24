@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arent3d.Architecture.Routing.Wrapper\Arent3d.Architecture.Routing.Wrapper.csproj" />
-    <ProjectReference Include="..\Arent3d.Common\Arent3d.Common.csproj" />
     <ProjectReference Include="..\Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj" />
   </ItemGroup>
 
