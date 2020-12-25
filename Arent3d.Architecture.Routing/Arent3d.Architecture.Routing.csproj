@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
@@ -8,27 +8,31 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Platforms>x64</Platforms>
     <Authors>Arent Inc.</Authors>
-    <RootNamespace>Arent3d.Architecture.Routing</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arent3d.Architecture.Routing.Wrapper\Arent3d.Architecture.Routing.Wrapper.csproj" />
-    <ProjectReference Include="..\Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj" />
+    <Reference Include="Architecture.Routing.Core">
+      <HintPath>..\Libraries\Architecture.Routing.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Arent3d.Collision">
+      <HintPath>..\Libraries\Arent3d.Collision.dll</HintPath>
+    </Reference>
+    <Reference Include="Arent3d.Geometry">
+      <HintPath>..\Libraries\Arent3d.Geometry.dll</HintPath>
+    </Reference>
+    <Reference Include="Arent3d.Math">
+      <HintPath>..\Libraries\Arent3d.Math.dll</HintPath>
+    </Reference>
+    <Reference Include="Arent3d.Utility">
+      <HintPath>..\Libraries\Arent3d.Utility.dll</HintPath>
+    </Reference>
+    <Reference Include="RevitAPI, Version=21.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="RevitAPIUI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIUI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
+    <ProjectReference Include="..\Arent3d.Architecture.Common\Arent3d.Architecture.Common.csproj" />
   </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="&quot;$(SolutionDir)make_addin\$(OutDir)make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;if defined REVIT_ADDIN_PATH (&#xD;&#xA;  copy &quot;$(TargetDir)*.addin&quot; &quot;%25REVIT_ADDIN_PATH%25\&quot;&#xD;&#xA;) else (&#xD;&#xA;  if not defined REVIT_VERSION (&#xD;&#xA;    copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\2021\&quot;&#xD;&#xA;  ) else (&#xD;&#xA;    copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\%25REVIT_VERSION%25\&quot;&#xD;&#xA;  )&#xD;&#xA;)" />
-  </Target>
 
 </Project>

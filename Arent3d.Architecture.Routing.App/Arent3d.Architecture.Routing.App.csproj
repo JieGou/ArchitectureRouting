@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <LangVersion>9</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Platforms>x64</Platforms>
+    <Authors>Arent Inc.</Authors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arent3d.Architecture.Common\Arent3d.Architecture.Common.csproj" />
+    <ProjectReference Include="..\Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj" />
+    <ProjectReference Include="..\Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="RevitAPI">
+      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="&quot;$(SolutionDir)make_addin\$(OutDir)make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;if defined REVIT_ADDIN_PATH (&#xD;&#xA;  copy &quot;$(TargetDir)*.addin&quot; &quot;%25REVIT_ADDIN_PATH%25\&quot;&#xD;&#xA;) else (&#xD;&#xA;  if not defined REVIT_VERSION (&#xD;&#xA;    copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\2021\&quot;&#xD;&#xA;  ) else (&#xD;&#xA;    copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\%25REVIT_VERSION%25\&quot;&#xD;&#xA;  )&#xD;&#xA;)" />
+  </Target>
+
+</Project>

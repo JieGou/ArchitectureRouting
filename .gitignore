@@ -1,3 +1,6 @@
+# Project settings
+Libraries/
+
 # JetBrains IDE
 .idea/
 
@@ -13,5 +16,3 @@ bin/
 obj/
 *.user
 launchSettings.json
-
-Libraries/

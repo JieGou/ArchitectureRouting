@@ -22,11 +22,11 @@ After developing it, push into `origin/<yourname>/<featurename>` and create a pu
 
 ### Projects in solution
 
-- **ArchitectureRouting.csproj**  
+- **Arent3d.Architecture.Routing.App.csproj**  
 	Entry point of addin. Revit command classes and application classes are to be implemented in this project.  
 	`*.addin` file is automatically built by `make_addin` command when `Arent3d.Revit.RevitAddinAttribute` is specified.  
-- **Arent3dCommon.csproj**  
-	Common utility classes and extension methods.
+- **Arent3d.Architecture.Routing.csproj**  
+	Logics of addin. It is a bridge between `Autodesk.Revit.DB` and `Arent3d.Architecture.Routing.Core`.
 - **make_addin.csproj**  
 	Generates `*.addin` files from assemblies with `Arent3d.Revit.RevitAddinVendorAttribute` attribute.  
 	`make_addin` command surveys assemblies, collect classes with `Arent3d.Revit.RevitAddinAttribute`, and build `*.addin` file.
