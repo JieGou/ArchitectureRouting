@@ -31,8 +31,4 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Arent3d.Architecture.Common\Arent3d.Architecture.Common.csproj" />
-  </ItemGroup>
-
 </Project>

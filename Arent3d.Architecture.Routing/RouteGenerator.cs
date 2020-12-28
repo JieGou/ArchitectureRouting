@@ -1,73 +1,47 @@
-using System ;
 using System.Collections.Generic ;
-using System.Threading.Tasks ;
+using System.IO ;
 using Arent3d.Architecture.Routing.Core ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
 {
   /// <summary>
-  /// Route generation class.
+  /// Route generator class. This calculates route paths from routing targets and transforms revit elements.
   /// </summary>
-  public abstract class RouteGenerator<TTargetRoutingTarget> where TTargetRoutingTarget : class, IAutoRoutingTarget
+  public class RouteGenerator : RouteGeneratorBase<AutoRoutingTarget>
   {
-    /// <summary>
-    /// When overridden in a derived class, gets routing targets to generate routes.
-    /// </summary>
-    protected abstract IEnumerable<TTargetRoutingTarget> RoutingTargets { get ; }
+    private readonly Document _document ;
 
-    /// <summary>
-    /// When overridden in a derived class, gets an collision check tree.
-    /// </summary>
-    protected abstract ICollisionCheck CollisionCheckTree { get ; }
-
-    /// <summary>
-    /// When overridden in a derived class, this method is called before all route generations. It is good to preprocess for an execution.
-    /// </summary>
-    protected abstract void OnGenerationStarted() ;
-
-    /// <summary>
-    /// When overridden in a derived class, this method is called after each routing result is processed.
-    /// </summary>
-    /// <param name="routingTarget">Processed routing target, given by <see cref="RoutingTargets"/> property.</param>
-    /// <param name="result">Routing result.</param>
-    protected abstract void OnRoutingTargetProcessed( TTargetRoutingTarget routingTarget, IAutoRoutingResult result ) ;
-
-    /// <summary>
-    /// When overridden in a derived class, this method is called after all route generations. It is good to postprocess for an execution.
-    /// </summary>
-    protected abstract void OnGenerationFinished() ;
-
-    /// <summary>
-    /// Execute generation routes.
-    /// </summary>
-    /// <returns><see cref="Task"/> for async execution.</returns>
-    public async Task Execute()
+    public RouteGenerator( IEnumerable<AutoRoutingTarget> targets, Document document )
     {
-      OnGenerationStarted() ;
+      _document = document ;
+      RoutingTargets = targets.EnumerateAll() ;
+      CollisionCheckTree = new DocumentCollisionCheckTree( document ) ;
 
-      foreach ( var (src, result) in ApiForAutoRouting.Execute( NoneStructureGraph.Instance, RoutingTargets, CollisionCheckTree ) ) {
-        // Thread switching for UI.
-        await Task.Yield() ;
-
-        if ( null == result || ! ( src is TTargetRoutingTarget srcTarget ) ) continue ;
-
-        OnRoutingTargetProcessed( srcTarget, result ) ;
-      }
-
-      OnGenerationFinished() ;
+      Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;
     }
 
-    private class NoneStructureGraph : IStructureGraph
+    protected override IEnumerable<AutoRoutingTarget> RoutingTargets { get ; }
+
+    protected override ICollisionCheck CollisionCheckTree { get ; }
+
+    protected override void OnGenerationStarted()
     {
-      public static NoneStructureGraph Instance { get ; } = new() ;
+      // TODO
+    }
 
-      private NoneStructureGraph()
-      {
-      }
+    protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, IAutoRoutingResult result )
+    {
+      // TODO
+      var dir = new DirectoryInfo( Path.Combine( Path.GetDirectoryName( _document.PathName )!, Path.GetFileNameWithoutExtension( _document.PathName ) + "_dump" ) ) ;
+      if ( ! dir.Exists ) dir.Create() ;
 
-      public IEnumerable<IStructureInfo> Nodes => Array.Empty<IStructureInfo>() ;
+      result.DebugExport( Path.Combine( dir.FullName, routingTarget.Route.RouteId + ".log" ) ) ;
+    }
 
-      public IEnumerable<(IStructureInfo, IStructureInfo)> Edges => Array.Empty<( IStructureInfo, IStructureInfo )>() ;
+    protected override void OnGenerationFinished()
+    {
+      // TODO
     }
   }
 }
