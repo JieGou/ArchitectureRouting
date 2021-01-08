@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
         }
       }
       catch ( Exception e ) {
-        Trace.WriteLine( e.ToString() ) ;
+        TaskDialog.Show( "error", e.ToString() ) ;
         transaction.RollBack() ;
         return Result.Failed ;
       }
@@ -63,8 +63,8 @@ namespace Arent3d.Architecture.Routing.App.Commands
     private static async IAsyncEnumerable<RouteRecord> ReadRouteRecordsForDebug()
     {
       await Task.Delay( 0 ) ; // allow AsyncEnumerable
-      yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 1 ), new ConnectorIds( 17299722, 2 ) ) ;
       yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299722, 4 ) ) ;
+      //yield return new RouteRecord( "TestRoute2", new ConnectorIds( 17299721, 1 ), new ConnectorIds( 17299722, 2 ) ) ;
     }
 
     /// <summary>

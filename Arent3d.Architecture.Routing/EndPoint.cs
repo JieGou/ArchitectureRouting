@@ -25,7 +25,14 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Returns the first pipe direction.
     /// </summary>
-    public Vector3d Direction => Connector.CoordinateSystem.BasisZ.To3d() ;
+    public Vector3d Direction
+    {
+      get
+      {
+        var dir = Connector.CoordinateSystem.BasisZ.To3d() ;
+        return IsStart ? dir : -dir ;
+      }
+    }
 
     /// <summary>
     /// Returns a routing condition object determined from the related <see cref="Connector"/>.
@@ -77,15 +84,9 @@ namespace Arent3d.Architecture.Routing
 
       public RouteCondition( Connector connector )
       {
-        Diameter = ( connector.Shape switch
-        {
-          ConnectorProfileType.Oval => connector.Radius * 2,
-          ConnectorProfileType.Rectangular => Math.Max( connector.Width, connector.Height ),
-          ConnectorProfileType.Round => connector.Radius * 2,
-          _ => throw new ArgumentOutOfRangeException(),
-        } ).DiameterValueToPipeDiameter() ;
+        Diameter = connector.GetDiameter() ;
 
-        EffectiveWidth = Diameter.Outside * 2 ;
+        EffectiveWidth = Diameter.Outside ;
 
         InsulationType = Route.DefaultInsulationType ;
         Temperature = 30 ; // provisional
@@ -98,17 +99,17 @@ namespace Arent3d.Architecture.Routing
 
         public double GetLongElbowSize( IPipeDiameter diameter )
         {
-          return diameter.Outside * 1.0 ; // provisional
+          return diameter.Outside * 1.5 ; // provisional
         }
 
         public double Get45ElbowSize( IPipeDiameter diameter )
         {
-          return diameter.Outside * 1.0 ; // provisional
+          return diameter.Outside * 1.5 ; // provisional
         }
 
         public double GetBranchOffset( IPipeDiameter header, IPipeDiameter branch )
         {
-          return Math.Max( header.Outside, branch.Outside ) * 1.0 ; // provisional
+          return Math.Max( header.Outside, branch.Outside ) * 1.5 ; // provisional
         }
 
         public double GetWeldMinDistance( IPipeDiameter diameter )

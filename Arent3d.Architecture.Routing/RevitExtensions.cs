@@ -1,3 +1,4 @@
+using System.Collections.Generic ;
 using System.Linq ;
 using Autodesk.Revit.DB ;
 
@@ -15,9 +16,30 @@ namespace Arent3d.Architecture.Routing
 
     public static Connector? FindConnector( this Document document, int elementId, int connectorId )
     {
-      if ( ! ( document.GetElementById<FamilyInstance>( elementId )?.MEPModel?.ConnectorManager is { } connectorManager ) ) return null ;
+      var connectorManager = document.GetElement( new ElementId( elementId ) ).GetConnectorManager() ;
+      return connectorManager?.Connectors.OfType<Connector>().FirstOrDefault( c => c.Id == connectorId ) ;
+    }
 
-      return connectorManager.Connectors.OfType<Connector>().FirstOrDefault( c => c.Id == connectorId ) ;
+    public static ConnectorManager? GetConnectorManager( this Element elm )
+    {
+      return elm switch
+      {
+        FamilyInstance fi => fi.MEPModel?.ConnectorManager,
+        MEPSystem sys => sys.ConnectorManager,
+        MEPCurve crv => crv.ConnectorManager,
+        _ => null,
+      } ;
+    }
+
+    public static ConnectorSet ToConnectorSet( this IEnumerable<Connector> connectors )
+    {
+      var connectorSet = new ConnectorSet() ;
+
+      foreach ( var connector in connectors ) {
+        connectorSet.Insert( connector ) ;
+      }
+
+      return connectorSet ;
     }
   }
 }

@@ -25,6 +25,11 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     private readonly IReadOnlyCollection<EndPoint> _toEndPoints ;
 
+    /// <summary>
+    /// Returns all routing end points.
+    /// </summary>
+    public IEnumerable<EndPoint> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
+
     public AutoRoutingTarget( Document document, Route route )
     {
       Route = route ;
@@ -36,7 +41,7 @@ namespace Arent3d.Architecture.Routing
 
     private static IReadOnlyCollection<EndPoint> ConvertToEndPoints( Document document, IEnumerable<ConnectorIds> connectorIds, bool isStart )
     {
-      var connectors = connectorIds.Select( id => document.FindConnector( id.ElementId, id.ConnectorId ) ).OfType<Connector>() ;
+      var connectors = connectorIds.Select( id => document.FindConnector( id.ElementId, id.ConnectorId ) ).NonNull() ;
       return connectors.Select( connector =>
       {
         var endPoint = ConnectorMapper.Instance.Get( connector ) ;

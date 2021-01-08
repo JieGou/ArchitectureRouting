@@ -1,7 +1,10 @@
+using System ;
 using System.Collections.Generic ;
 using System.IO ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.Core ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Mechanical ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -32,11 +35,26 @@ namespace Arent3d.Architecture.Routing
 
     protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, IAutoRoutingResult result )
     {
-      // TODO
-      var dir = new DirectoryInfo( Path.Combine( Path.GetDirectoryName( _document.PathName )!, Path.GetFileNameWithoutExtension( _document.PathName ) + "_dump" ) ) ;
-      if ( ! dir.Exists ) dir.Create() ;
+      result.DebugExport( GetDebugFileName( _document, routingTarget ) ) ;
+      var ductCreator = new MechanicalSystemCreator( _document, routingTarget ) ;
 
-      result.DebugExport( Path.Combine( dir.FullName, routingTarget.Route.RouteId + ".log" ) ) ;
+      foreach ( var routeVertex in result.RouteVertices ) {
+        if ( routeVertex is not TerminalPoint ) continue ;
+
+        ductCreator.RegisterEndPointConnector( routeVertex ) ;
+      }
+
+      foreach ( var routeEdge in result.RouteEdges ) {
+        ductCreator.CreateDuct( routeEdge ) ;
+      }
+
+      ductCreator.ConnectAllVertices() ;
+    }
+
+    private static string GetDebugFileName( Document document, AutoRoutingTarget routingTarget )
+    {
+      var dir = Path.Combine( Path.GetDirectoryName( document.PathName )!, Path.GetFileNameWithoutExtension( document.PathName ) ) ;
+      return Path.Combine( Directory.CreateDirectory( dir ).FullName, routingTarget.LineId + ".log" ) ;
     }
 
     protected override void OnGenerationFinished()
