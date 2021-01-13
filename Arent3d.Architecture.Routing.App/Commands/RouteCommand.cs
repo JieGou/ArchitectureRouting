@@ -1,10 +1,11 @@
 using System ;
 using System.Collections.Generic ;
-using System.Diagnostics ;
+using System.ComponentModel ;
 using System.Globalization ;
 using System.IO ;
 using System.Linq ;
 using System.Threading.Tasks ;
+using Arent3d.Revit ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -13,7 +14,9 @@ using CsvHelper ;
 namespace Arent3d.Architecture.Routing.App.Commands
 {
   [Transaction( TransactionMode.Manual )]
-  public class TestCommand : IExternalCommand
+  [DisplayName( "Auto Routing" )]
+  [Image( "resources/MEP.ico" )]
+  public class RouteCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -22,7 +25,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
 
       var routeRecords = ReadRouteRecords() ;
       if ( null == routeRecords ) return Result.Cancelled ;
-      
+
       using var transaction = new Transaction( document, "Route Assist" ) ;
       try {
         transaction.Start() ;
@@ -34,7 +37,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
           if ( executor.HasBadConnectors ) {
             AlertBadConnectors( executor.GetBadConnectors() ) ;
           }
-          
+
           return Result.Succeeded ;
         }
         else {
@@ -57,7 +60,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
     private static string GetConnectorInfo( Connector connector )
     {
       var count = connector.ConnectorManager.Connectors.Size ;
-      return $"[{count switch { 2 => "Elbow", 3 => "Tee", 4 => "Cross", _ => throw new ArgumentException() }}] { connector.Origin }" ;
+      return $"[{count switch { 2 => "Elbow", 3 => "Tee", 4 => "Cross", _ => throw new ArgumentException() }}] {connector.Origin}" ;
     }
 
     /// <summary>
@@ -81,6 +84,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
     {
       await Task.Delay( 0 ) ; // allow AsyncEnumerable
       yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299722, 4 ) ) ;
+      yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299684, 4 ) ) ;
       //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 2 ), new ConnectorIds( 17299722, 1 ) ) ;
     }
 

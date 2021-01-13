@@ -11,15 +11,20 @@ namespace Arent3d.Architecture.Routing
   public abstract class RouteGeneratorBase<TAutoRoutingTarget> where TAutoRoutingTarget : class, IAutoRoutingTarget
   {
     /// <summary>
-    /// When overridden in a derived class, gets routing targets to generate routes.
+    /// When overridden in a derived class, returns routing targets to generate routes.
     /// </summary>
     protected abstract IEnumerable<TAutoRoutingTarget> RoutingTargets { get ; }
 
     /// <summary>
-    /// When overridden in a derived class, gets an collision check tree.
+    /// When overridden in a derived class, returns an collision check tree.
     /// </summary>
     protected abstract ICollisionCheck CollisionCheckTree { get ; }
 
+    /// <summary>
+    /// When overridden in a derived class, returns a structure graph.
+    /// </summary>
+    protected abstract IStructureGraph StructureGraph { get ; }
+    
     /// <summary>
     /// When overridden in a derived class, this method is called before all route generations. It is good to preprocess for an execution.
     /// </summary>
@@ -44,26 +49,13 @@ namespace Arent3d.Architecture.Routing
     {
       OnGenerationStarted() ;
 
-      foreach ( var (src, result) in ApiForAutoRouting.Execute( NoneStructureGraph.Instance, RoutingTargets, CollisionCheckTree ) ) {
+      foreach ( var (src, result) in ApiForAutoRouting.Execute( StructureGraph, RoutingTargets, CollisionCheckTree ) ) {
         if ( null == result || ! ( src is TAutoRoutingTarget srcTarget ) ) continue ;
 
         OnRoutingTargetProcessed( srcTarget, result ) ;
       }
 
       OnGenerationFinished() ;
-    }
-
-    private class NoneStructureGraph : IStructureGraph
-    {
-      public static NoneStructureGraph Instance { get ; } = new() ;
-
-      private NoneStructureGraph()
-      {
-      }
-
-      public IEnumerable<IStructureInfo> Nodes => Array.Empty<IStructureInfo>() ;
-
-      public IEnumerable<(IStructureInfo, IStructureInfo)> Edges => Array.Empty<( IStructureInfo, IStructureInfo )>() ;
     }
   }
 }

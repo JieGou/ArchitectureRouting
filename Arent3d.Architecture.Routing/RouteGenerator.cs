@@ -21,6 +21,7 @@ namespace Arent3d.Architecture.Routing
       _document = document ;
       RoutingTargets = targets.EnumerateAll() ;
       CollisionCheckTree = new DocumentCollisionCheckTree( document ) ;
+      StructureGraph = DocumentMapper.Instance.Get( document ).RackCollection ;
 
       Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;
     }
@@ -30,6 +31,8 @@ namespace Arent3d.Architecture.Routing
     protected override IEnumerable<AutoRoutingTarget> RoutingTargets { get ; }
 
     protected override ICollisionCheck CollisionCheckTree { get ; }
+    
+    protected override IStructureGraph StructureGraph { get ; }
 
     protected override void OnGenerationStarted()
     {

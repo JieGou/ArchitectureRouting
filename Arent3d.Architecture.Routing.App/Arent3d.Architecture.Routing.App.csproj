@@ -16,6 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Arent3d.Math, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\Libraries\Arent3d.Math.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="RevitAPI">
       <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
       <Private>false</Private>
@@ -24,10 +29,21 @@
       <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIUI.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="WindowsBase" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="19.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Attributes" />
+    <Folder Include="resources" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="resources\MEP.ico" />
+    <EmbeddedResource Include="resources\MEP.ico" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

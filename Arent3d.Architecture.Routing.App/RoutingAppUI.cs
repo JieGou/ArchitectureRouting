@@ -1,4 +1,10 @@
 using System ;
+using System.ComponentModel ;
+using System.IO ;
+using System.Reflection ;
+using System.Windows.Media ;
+using System.Windows.Media.Imaging ;
+using Arent3d.Architecture.Routing.App.Commands ;
 using Arent3d.Revit ;
 using Autodesk.Revit.UI ;
 
@@ -13,25 +19,49 @@ namespace Arent3d.Architecture.Routing.App
 
     private const string SamplePanelName = "arent3d.architecture.test" ;
 
-    private const string ButtonName = "arent3d.architecture.test.button" ;
-    private const string ButtonText = "Test" ;
-
     public static void SetupRibbon( UIControlledApplication app )
     {
       app.CreateRibbonTab( RibbonTabName ) ;
       var ribbonPanel = app.CreateRibbonPanel( RibbonTabName, SamplePanelName ) ;
       ribbonPanel.Title = "Test" ;
 
-      var item = ribbonPanel.AddItem( CreateButton( ButtonName, ButtonText, typeof( Commands.TestCommand ) ) ) ;
+      var rackCommandItem = ribbonPanel.AddItem( CreateButton<RackCommand>() ) ;
+
+      var routeCommandItem = ribbonPanel.AddItem( CreateButton<RouteCommand>() ) ;
+      
 
       // TODO
     }
 
-    private static PushButtonData CreateButton( string name, string text, Type commandClass )
+    private static PushButtonData CreateButton<TButtonCommand>() where TButtonCommand : IExternalCommand
     {
-      if ( ! commandClass.IsExternalCommand() ) throw new ArgumentException( $"{commandClass.FullName} is not a command type." ) ;
+      var commandClass = typeof( TButtonCommand ) ;
 
-      return new PushButtonData( name, text, commandClass.Assembly.Location, commandClass.FullName ) ;
+      var name = commandClass.FullName!.ToSnakeCase() ;
+      var text = commandClass.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? commandClass.Name.SeparateByWords() ;
+
+      var buttonData = new PushButtonData( name, text, commandClass.Assembly.Location, commandClass.FullName ) ;
+      
+      foreach ( var attr in commandClass.GetCustomAttributes<ImageAttribute>() ) {
+        switch ( attr.ImageType ) {
+          case ImageType.Normal : buttonData.Image = ToImageSource( attr ) ; break ;
+          case ImageType.Large : buttonData.LargeImage = ToImageSource( attr ) ; break ;
+          case ImageType.Tooltip : buttonData.ToolTipImage = ToImageSource( attr ) ; break ;
+          default : break ;
+        }
+      }
+
+      return buttonData ;
+    }
+
+    private static ImageSource? ToImageSource( ImageAttribute attr )
+    {
+      try {
+        return new BitmapImage( new Uri( attr.ResourceName, UriKind.Relative ) ) ;
+      }
+      catch ( FileNotFoundException ) {
+        return null ;
+      }
     }
   }
 }

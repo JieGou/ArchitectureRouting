@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing
       _fromEndPoints = ConvertToEndPoints( document, route.FromElementIds, true ) ;
       _toEndPoints = ConvertToEndPoints( document, route.ToElementIds, false ) ;
 
-      Condition = new AutoRoutingCondition( Route ) ;
+      Condition = new AutoRoutingCondition( document, Route ) ;
     }
 
     private static IReadOnlyCollection<EndPoint> ConvertToEndPoints( Document document, IEnumerable<ConnectorIds> connectorIds, bool isStart )
@@ -83,12 +83,13 @@ namespace Arent3d.Architecture.Routing
     {
       private readonly Route _route ;
 
-      public AutoRoutingCondition( Route route )
+      public AutoRoutingCondition( Document document, Route route )
       {
         _route = route ;
+        IsRoutingOnPipeRacks = DocumentMapper.Instance.Get( document ).IsRoutingOnPipeRacks( route ) ;
       }
 
-      public bool IsRoutingOnPipeRacks => false ;
+      public bool IsRoutingOnPipeRacks { get ; }
       public LineType Type => _route.ServiceType ;
       public string FluidPhase => _route.FluidPhase ;
       public int Priority => _route.Priority ;
