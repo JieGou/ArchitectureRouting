@@ -14,6 +14,7 @@ namespace Arent3d.Architecture.Routing
   public class RouteGenerator : RouteGeneratorBase<AutoRoutingTarget>
   {
     private readonly Document _document ;
+    private readonly List<Connector> _badConnectors = new() ;
 
     public RouteGenerator( IEnumerable<AutoRoutingTarget> targets, Document document )
     {
@@ -23,6 +24,8 @@ namespace Arent3d.Architecture.Routing
 
       Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;
     }
+
+    public IReadOnlyCollection<Connector> GetBadConnectors() => _badConnectors ;
 
     protected override IEnumerable<AutoRoutingTarget> RoutingTargets { get ; }
 
@@ -49,6 +52,13 @@ namespace Arent3d.Architecture.Routing
       }
 
       ductCreator.ConnectAllVertices() ;
+
+      RegisterBadConnectors( ductCreator.GetBadConnectors() ) ;
+    }
+
+    private void RegisterBadConnectors( IEnumerable<Connector> badConnectors )
+    {
+      _badConnectors.AddRange( badConnectors ) ;
     }
 
     private static string GetDebugFileName( Document document, AutoRoutingTarget routingTarget )

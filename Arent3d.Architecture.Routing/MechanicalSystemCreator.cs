@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.Core ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using MathLib ;
+using Line = MathLib.Line ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -20,6 +21,8 @@ namespace Arent3d.Architecture.Routing
 
     private readonly MEPSystemType _systemType ;
     //private readonly MechanicalSystem _system ;
+
+    private readonly List<Connector> _badConnectors = new() ;
 
     public MechanicalSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget )
     {
@@ -55,6 +58,8 @@ namespace Arent3d.Architecture.Routing
 
       return document.Create.NewMechanicalSystem( firstConnector, otherConnectors, firstConnector.DuctSystemType ) ;
     }
+
+    public IReadOnlyCollection<Connector> GetBadConnectors() => _badConnectors ;
 
     /// <summary>
     /// Registers related end route vertex and connector for an end point.
@@ -157,7 +162,13 @@ namespace Arent3d.Architecture.Routing
       }
       else {
         // Orthogonal
-        _document.Create.NewElbowFitting( connector1, connector2 ) ;
+        if ( CanCreateElbow( connector1, connector2 ) ) {
+          var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
+          EraseZeroLengthDuct( family ) ;
+        }
+        else {
+          AddBadConnector( connector1 ) ;
+        }
       }
     }
 
@@ -173,7 +184,13 @@ namespace Arent3d.Architecture.Routing
       connector1.ConnectTo( connector3 ) ;
       connector2.ConnectTo( connector3 ) ;
 
-      _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
+      if ( CanCreateTee( connector1, connector2, connector3 ) ) {
+        var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
+        EraseZeroLengthDuct( family ) ;
+      }
+      else {
+        AddBadConnector( connector1 ) ;
+      }
     }
 
     /// <summary>
@@ -192,7 +209,80 @@ namespace Arent3d.Architecture.Routing
       connector2.ConnectTo( connector4 ) ;
       connector3.ConnectTo( connector4 ) ;
 
-      _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
+      if ( CanCreateCross( connector1, connector2, connector3, connector4 ) ) {
+        var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
+        EraseZeroLengthDuct( family ) ;
+      }
+      else {
+        AddBadConnector( connector1 ) ;
+      }
+    }
+
+    private bool CanCreateElbow( Connector connector1, Connector connector2 )
+    {
+      // TODO
+
+      return true ;
+    }
+
+    private bool CanCreateTee( Connector connector1, Connector connector2, Connector connector3 )
+    {
+      // TODO
+
+      return true ;
+    }
+
+    private bool CanCreateCross( Connector connector1, Connector connector2, Connector connector3, Connector connector4 )
+    {
+      // TODO
+
+      return true ;
+    }
+
+    private void EraseZeroLengthDuct( FamilyInstance family )
+    {
+      foreach ( Connector connector in family.MEPModel.ConnectorManager.Connectors ) {
+        EraseZeroLengthDuct( connector ) ;
+      }
+    }
+
+    private void EraseZeroLengthDuct( Connector connector )
+    {
+      var ductConn1 = GetConnectingDuctConnector( connector ) ;
+      if ( ductConn1?.Owner is not Duct duct ) return ;
+
+      var ductConn2 = GetAnotherDuctConnector( ductConn1 ) ;
+      if ( null == ductConn2 ) return ;
+
+      if ( false == ductConn1.Origin.IsAlmostEqualTo( ductConn2.Origin ) ) return ;
+
+      // TODO: erase duct
+    }
+
+    private static (Vector3d From, Vector3d To) GetLine( Connector connector )
+    {
+      var another = GetAnotherDuctConnector( connector ) ?? throw new InvalidOperationException() ;
+      return ( From: connector.Origin.To3d(), To: another.Origin.To3d() ) ;
+    }
+
+    private static Connector? GetAnotherDuctConnector( Connector connector )
+    {
+      return connector.ConnectorManager.Connectors.OfType<Connector>().Where( c => ! IsSameConnector( c, connector ) ).UniqueOrDefault() ;
+    }
+
+    private static Connector? GetConnectingDuctConnector( Connector connector )
+    {
+      return connector.AllRefs.OfType<Connector>().Where( c => ! IsSameConnector( c, connector ) && c.Owner is Duct ).UniqueOrDefault() ;
+    }
+
+    private static bool IsSameConnector( Connector connector1, Connector connector2 )
+    {
+      return ( connector1.Owner.Id == connector2.Owner.Id ) && ( connector1.Id == connector2.Id ) ;
+    }
+
+    private void AddBadConnector( Connector connector )
+    {
+      _badConnectors.Add( connector ) ;
     }
   }
 }

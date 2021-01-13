@@ -109,7 +109,17 @@ namespace Arent3d.Architecture.Routing
 
         public double GetBranchOffset( IPipeDiameter header, IPipeDiameter branch )
         {
-          return Math.Max( header.Outside, branch.Outside ) * 1.5 ; // provisional
+          if ( header.Outside < branch.Outside ) {
+            return header.Outside * 1.0 + GetReducerLength( header, branch) ;
+          }
+          else {
+            return header.Outside * 0.5 + branch.Outside * 0.5 ; // provisional
+          }
+        }
+
+        private double GetReducerLength( IPipeDiameter header, IPipeDiameter branch )
+        {
+          return 0.0 ;  // TODO
         }
 
         public double GetWeldMinDistance( IPipeDiameter diameter )

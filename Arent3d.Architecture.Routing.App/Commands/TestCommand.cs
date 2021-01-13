@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Diagnostics ;
 using System.Globalization ;
 using System.IO ;
+using System.Linq ;
 using System.Threading.Tasks ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -29,6 +30,11 @@ namespace Arent3d.Architecture.Routing.App.Commands
         var result = executor.Run( routeRecords ).Result ;
         if ( result ) {
           transaction.Commit() ;
+
+          if ( executor.HasBadConnectors ) {
+            AlertBadConnectors( executor.GetBadConnectors() ) ;
+          }
+          
           return Result.Succeeded ;
         }
         else {
@@ -41,6 +47,17 @@ namespace Arent3d.Architecture.Routing.App.Commands
         transaction.RollBack() ;
         return Result.Failed ;
       }
+    }
+
+    private void AlertBadConnectors( IReadOnlyCollection<Connector> badConnectors )
+    {
+      TaskDialog.Show( "Connection error", "Some elbows, tees and/or connectors could not be inserted.\n\n・" + string.Join( "\n・", badConnectors.Select( GetConnectorInfo ) ) ) ;
+    }
+
+    private static string GetConnectorInfo( Connector connector )
+    {
+      var count = connector.ConnectorManager.Connectors.Size ;
+      return $"[{count switch { 2 => "Elbow", 3 => "Tee", 4 => "Cross", _ => throw new ArgumentException() }}] { connector.Origin }" ;
     }
 
     /// <summary>
@@ -64,7 +81,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
     {
       await Task.Delay( 0 ) ; // allow AsyncEnumerable
       yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299722, 4 ) ) ;
-      //yield return new RouteRecord( "TestRoute2", new ConnectorIds( 17299721, 1 ), new ConnectorIds( 17299722, 2 ) ) ;
+      //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 2 ), new ConnectorIds( 17299722, 1 ) ) ;
     }
 
     /// <summary>
