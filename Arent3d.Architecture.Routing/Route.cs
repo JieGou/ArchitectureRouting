@@ -1,6 +1,6 @@
 using System.Collections.Generic ;
-using Arent3d.Architecture.Routing.Core ;
-using Arent3d.Architecture.Routing.Core.Conditions ;
+using Arent3d.Routing ;
+using Arent3d.Routing.Conditions ;
 
 namespace Arent3d.Architecture.Routing
 {

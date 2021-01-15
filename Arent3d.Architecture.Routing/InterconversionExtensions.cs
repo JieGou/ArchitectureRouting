@@ -1,5 +1,5 @@
 using System ;
-using Arent3d.Architecture.Routing.Core ;
+using Arent3d.Routing ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 
@@ -11,6 +11,7 @@ namespace Arent3d.Architecture.Routing
   public static class InterconversionExtensions
   {
     public static Vector3d To3d( this XYZ xyz ) => new( xyz.X, xyz.Y, xyz.Z ) ;
+    public static Box3d To3d( this BoundingBoxXYZ xyz ) => new( xyz.Min.To3d(), xyz.Max.To3d() ) ;
 
     public static XYZ ToXYZ( this Vector3d vec ) => new( vec.x, vec.y, vec.z ) ;
 

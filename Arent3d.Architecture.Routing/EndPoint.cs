@@ -1,5 +1,5 @@
 using System ;
-using Arent3d.Architecture.Routing.Core ;
+using Arent3d.Routing ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 
@@ -79,14 +79,13 @@ namespace Arent3d.Architecture.Routing
       public IPipeDiameter Diameter { get ; }
       public string InsulationType { get ; }
       public double Temperature { get ; }
-      public double EffectiveWidth { get ; }
+      public double DiameterPipeAndInsulation => Diameter.Outside ;
+      public double DiameterFlangeAndInsulation => Diameter.Outside ; // provisional
       public IPipeSpec Spec { get ; }
 
       public RouteCondition( Connector connector )
       {
         Diameter = connector.GetDiameter() ;
-
-        EffectiveWidth = Diameter.Outside ;
 
         InsulationType = Route.DefaultInsulationType ;
         Temperature = 30 ; // provisional
@@ -107,10 +106,20 @@ namespace Arent3d.Architecture.Routing
           return diameter.Outside * 1.5 ; // provisional
         }
 
-        public double GetBranchOffset( IPipeDiameter header, IPipeDiameter branch )
+        public double GetTeeBranchLength( IPipeDiameter header, IPipeDiameter branch )
         {
           if ( header.Outside < branch.Outside ) {
             return header.Outside * 1.0 + GetReducerLength( header, branch) ;
+          }
+          else {
+            return header.Outside * 0.5 + branch.Outside * 0.5 ; // provisional
+          }
+        }
+
+        public double GetTeeHeaderLength( IPipeDiameter header, IPipeDiameter branch )
+        {
+          if ( header.Outside < branch.Outside ) {
+            return header.Outside * 1.0 ; // provisional
           }
           else {
             return header.Outside * 0.5 + branch.Outside * 0.5 ; // provisional

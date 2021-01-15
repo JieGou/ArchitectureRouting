@@ -1,9 +1,12 @@
 using System ;
+using System.Collections.Generic ;
 using System.ComponentModel ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using MathLib ;
 
 namespace Arent3d.Architecture.Routing.App.Commands
 {
@@ -20,17 +23,26 @@ namespace Arent3d.Architecture.Routing.App.Commands
       // TODO
       racks.Clear() ;
       {
-        var box = document.GetElementById<FamilyInstance>( 18204914 )! ;
-        var boundingBox = box.get_BoundingBox( commandData.View ) ;
+        var connector = document.FindConnector( 17299721, 3 )! ;
+        var z = connector.Origin.Z - connector.Radius ;
 
-        var min = boundingBox.Min.To3d() ;
-        var max = boundingBox.Max.To3d() ;
+        foreach ( var familyInstance in GetRackInstances( document ).NonNull() ) {
+          var (min, max) = familyInstance.get_BoundingBox( commandData.View ).To3d() ;
+          min.z = max.z = z ;
 
-        var rack = new Rack.Rack { Center = ( min + max ) * 0.5, Size = ( max - min ), IsMainRack = true, BeamInterval = 6 } ;
-        racks.AddRack( rack ) ;
+          racks.AddRack( new Rack.Rack { Box = new Box3d( min, max ), IsMainRack = true, BeamInterval = 5 } ) ;
+        }
       }
+
+      racks.CreateLinkages() ;
       
       return Result.Succeeded ;
+    }
+
+    private static IEnumerable<FamilyInstance?> GetRackInstances( Document document )
+    {
+      yield return document.GetElementById<FamilyInstance>( 18204914 ) ;
+      yield return document.GetElementById<FamilyInstance>( 18205151 ) ;
     }
   }
 }

@@ -1,8 +1,9 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.Core ;
-using Arent3d.Architecture.Routing.Core.Conditions ;
+using Arent3d.Routing ;
+using Arent3d.Routing.Conditions ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 

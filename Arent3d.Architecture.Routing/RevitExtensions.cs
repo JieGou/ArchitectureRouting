@@ -9,15 +9,29 @@ namespace Arent3d.Architecture.Routing
   /// </summary>
   public static class RevitExtensions
   {
-    public static TElement? GetElementById<TElement>( this Document document, int elementId ) where TElement : class
+    public static IEnumerable<TElement> GetAllElements<TElement>( this Document document ) where TElement : Element
+    {
+      var filter = new ElementClassFilter( typeof( TElement ) ) ;
+      return new FilteredElementCollector( document ).WherePasses( filter ).OfType<TElement>() ;
+    }
+    
+    public static TElement? GetElementById<TElement>( this Document document, int elementId ) where TElement : Element
     {
       return document.GetElement( new ElementId( elementId ) ) as TElement ;
     }
 
     public static Connector? FindConnector( this Document document, int elementId, int connectorId )
     {
-      var connectorManager = document.GetElement( new ElementId( elementId ) ).GetConnectorManager() ;
-      return connectorManager?.Connectors.OfType<Connector>().FirstOrDefault( c => c.Id == connectorId ) ;
+      return document.GetElement( new ElementId( elementId ) ).GetConnectorManager()?.GetConnectorById( connectorId ) ;
+    }
+
+    public static Connector? GetConnectorById( this ConnectorManager connectorManager, int connectorId )
+    {
+      return connectorManager.Connectors.GetConnectorById( connectorId ) ;
+    }
+    public static Connector? GetConnectorById( this ConnectorSet connectorSet, int connectorId )
+    {
+      return connectorSet.OfType<Connector>().FirstOrDefault( c => c.Id == connectorId ) ;
     }
 
     public static ConnectorManager? GetConnectorManager( this Element elm )

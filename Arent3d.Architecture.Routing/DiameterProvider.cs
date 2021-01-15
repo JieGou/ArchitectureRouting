@@ -1,4 +1,4 @@
-using Arent3d.Architecture.Routing.Core ;
+using Arent3d.Routing ;
 
 namespace Arent3d.Architecture.Routing
 {

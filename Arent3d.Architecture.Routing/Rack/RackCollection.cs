@@ -1,6 +1,9 @@
+using System ;
 using System.Collections ;
 using System.Collections.Generic ;
-using Arent3d.Architecture.Routing.Core ;
+using System.Linq ;
+using Arent3d.Routing ;
+using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.Rack
 {
@@ -49,5 +52,63 @@ namespace Arent3d.Architecture.Routing.Rack
     public IEnumerable<IStructureInfo> Nodes => _racks ;
 
     public IEnumerable<(IStructureInfo, IStructureInfo)> Edges => _links ;
+    
+    public void CreateLinkages()
+    {
+      _links.Clear() ;
+
+      _links.UnionWith( FindLinkages( _racks ) ) ;
+    }
+
+    private static IList<(IStructureInfo, IStructureInfo)> FindLinkages( IReadOnlyCollection<Rack> racks )
+    {
+      if ( racks.Count == 0 || racks.Count == 1 ) return Array.Empty<(IStructureInfo, IStructureInfo)>() ;
+
+      var mainPairs = new Dictionary<Rack, IList<Rack>>() ;
+      var auxPairs = new Dictionary<Rack, IList<Rack>>() ;
+
+      void Register( Rack r1, Rack r2 )
+      {
+        Add( mainPairs, r1, r2 ) ;
+        Add( auxPairs, r2, r1 ) ;
+      }
+
+      bool HasLink( Rack r ) => mainPairs.ContainsKey( r ) || auxPairs.ContainsKey( r ) ;
+
+      var array = racks.ToArray() ;
+      for ( int i = 0 ; i < array.Length ; ++i ) {
+        var rack1 = array[ i ] ;
+        var looserPartners = new List<Rack>() ;
+
+        for ( int j = i + 1 ; j < array.Length ; ++j ) {
+          var rack2 = array[ j ] ;
+
+          if ( rack1.IsExactIntersect( rack2 ) ) {
+            Register( rack1, rack2 ) ;
+          }
+          else if ( rack1.IsLooseIntersect( rack2 ) ) {
+            looserPartners.Add( rack2 ) ;
+          }
+        }
+
+        if ( HasLink( rack1 ) && 0 == looserPartners.Count ) continue ;
+
+        foreach ( var rack2 in looserPartners ) {
+          Register( rack1, rack2 ) ;
+        }
+      }
+
+      return mainPairs.SelectMany( item => item.Value.Select( r => ( (IStructureInfo) item.Key, (IStructureInfo) r ) ) ).ToList() ;
+    }
+
+    private static void Add( IDictionary<Rack, IList<Rack>> pairs, Rack rack1, Rack rack2 )
+    {
+      if ( pairs.TryGetValue( rack1, out var list ) ) {
+        list.Add( rack2 ) ;
+      }
+      else {
+        pairs.Add( rack1, new List<Rack> { rack2 } ) ;
+      }
+    }
   }
 }

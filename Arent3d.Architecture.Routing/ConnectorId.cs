@@ -2,8 +2,8 @@ namespace Arent3d.Architecture.Routing
 {
   public readonly struct ConnectorIds
   {
-    public int ElementId { get ; init ; }
-    public int ConnectorId { get ; init ; }
+    public int ElementId { get ; }
+    public int ConnectorId { get ; }
 
     public ConnectorIds( int elementId, int connectorId )
     {

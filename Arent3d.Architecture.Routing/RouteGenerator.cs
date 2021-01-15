@@ -2,7 +2,8 @@ using System ;
 using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.Core ;
+using Arent3d.Routing ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 
@@ -42,7 +43,7 @@ namespace Arent3d.Architecture.Routing
     protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, IAutoRoutingResult result )
     {
       result.DebugExport( GetDebugFileName( _document, routingTarget ) ) ;
-      var ductCreator = new MechanicalSystemCreator( _document, routingTarget ) ;
+      var ductCreator = new MEPSystemCreator( _document, routingTarget ) ;
 
       foreach ( var routeVertex in result.RouteVertices ) {
         if ( routeVertex is not TerminalPoint ) continue ;
@@ -51,7 +52,7 @@ namespace Arent3d.Architecture.Routing
       }
 
       foreach ( var routeEdge in result.RouteEdges ) {
-        ductCreator.CreateDuct( routeEdge ) ;
+        ductCreator.CreateEdgeElement( routeEdge ) ;
       }
 
       ductCreator.ConnectAllVertices() ;

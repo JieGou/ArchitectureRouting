@@ -85,7 +85,11 @@ namespace Arent3d.Architecture.Routing.App.Commands
       await Task.Delay( 0 ) ; // allow AsyncEnumerable
       yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299722, 4 ) ) ;
       yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299684, 4 ) ) ;
-      //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 2 ), new ConnectorIds( 17299722, 1 ) ) ;
+      yield return new RouteRecord( "TestRoute2", new ConnectorIds( 17299721, 2 ), new ConnectorIds( 17299722, 1 ) ) ;
+
+      yield return new RouteRecord( "TestRoute3", new ConnectorIds( 17299723, 3 ), new ConnectorIds( 17299685, 4 ) ) ;
+
+      //yield return new RouteRecord( "TestRoute4", new ConnectorIds( 17299408, 15 ), new ConnectorIds( 17299604, 15 ) ) ;
     }
 
     /// <summary>

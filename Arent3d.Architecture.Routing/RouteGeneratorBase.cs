@@ -1,7 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Threading.Tasks ;
-using Arent3d.Architecture.Routing.Core ;
+using Arent3d.Routing ;
 
 namespace Arent3d.Architecture.Routing
 {

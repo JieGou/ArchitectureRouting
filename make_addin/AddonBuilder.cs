@@ -10,6 +10,7 @@ using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Arent3d.Utility ;
 
 namespace Arent3d.Architecture
 {
@@ -77,6 +78,7 @@ namespace Arent3d.Architecture
         if ( true == _processedGuids.TryGetValue( attr.Guid, out var last ) ) {
           throw new Exception( $"Same GUID is duplicated between `{last.FullName}' and `{type.FullName}'." );
         }
+        _processedGuids.Add( attr.Guid, type ) ;
 
         using ( xml.WriteElement( "AddIn" ) ) {
           xml.WriteAttributeString( "Type", addinType.ToString() );
