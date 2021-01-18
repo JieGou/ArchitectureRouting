@@ -24,6 +24,10 @@ namespace Arent3d.Architecture.Routing
     {
       return document.GetElement( new ElementId( elementId ) ).GetConnectorManager()?.GetConnectorById( connectorId ) ;
     }
+    public static Connector? FindConnector( this Document document, ConnectorIds ids )
+    {
+      return document.FindConnector( ids.ElementId, ids.ConnectorId ) ;
+    }
 
     public static Connector? GetConnectorById( this ConnectorManager connectorManager, int connectorId )
     {
@@ -32,6 +36,11 @@ namespace Arent3d.Architecture.Routing
     public static Connector? GetConnectorById( this ConnectorSet connectorSet, int connectorId )
     {
       return connectorSet.OfType<Connector>().FirstOrDefault( c => c.Id == connectorId ) ;
+    }
+
+    public static ConnectorIds GetId( this Connector connector )
+    {
+      return new ConnectorIds( connector ) ;
     }
 
     public static ConnectorManager? GetConnectorManager( this Element elm )
@@ -54,6 +63,12 @@ namespace Arent3d.Architecture.Routing
       }
 
       return connectorSet ;
+    }
+
+    public static IEnumerable<Connector> GetConnectedConnectors( this Connector connector )
+    {
+      var id = connector.GetId() ;
+      return connector.AllRefs.OfType<Connector>().Where( c => c.GetId() != id ) ;
     }
   }
 }

@@ -1,11 +1,12 @@
 using System.Collections.Generic ;
-using Arent3d.Routing ;
+using Arent3d.Architecture.Routing.CollisionTree ;
+using Arent3d.CollisionLib ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 
 namespace Arent3d.Architecture.Routing
 {
-  internal class DocumentCollisionCheckTree : ICollisionCheck
+  internal class DocumentCollisionCheckTree : CollisionTree.CollisionTree
   {
     private readonly Document _document ;
 
@@ -14,22 +15,14 @@ namespace Arent3d.Architecture.Routing
       _document = document ;
     }
 
-    public IEnumerable<Box3d> GetCollidedBoxes( Box3d box )
+    protected override IReadOnlyCollection<TreeElement> CollectTreeElements()
     {
-      // TODO:
-      yield break ;
-    }
+      var treeElements = new List<TreeElement>() ;
 
-    public IEnumerable<(Box3d, IRouteCondition, bool)> GetCollidedBoxesAndConditions( Box3d box, bool bIgnoreStructure = false )
-    {
-      // TODO:
-      yield break ;
-    }
+      // TODO
+      treeElements.Add( new TreeElement( new BoxGeometryBody( new Box3d( new Vector3d( 9, 50, 30 ), new Vector3d( 10, 65, 50 ) ) ) ) ) ;
 
-    public IEnumerable<(Box3d, IRouteCondition, bool)> GetCollidedBoxesInDetailToRack( Box3d box )
-    {
-      // TODO:
-      yield break ;
+      return treeElements ;
     }
   }
 }
