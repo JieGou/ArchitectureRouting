@@ -9,21 +9,35 @@ using MathLib ;
 
 namespace Arent3d.Architecture.Routing.CollisionTree
 {
-  public abstract class CollisionTree : ICollisionCheck
+  public class CollisionTree : ICollisionCheck
   {
     private readonly ITree _treeBody ;
 
-    protected CollisionTree()
+    public CollisionTree( ICollisionCheckTargetCollector collector )
     {
-      _treeBody = CreateTree() ;
+      _treeBody = CreateTree( collector ) ;
     }
 
-    private ITree CreateTree()
+    private static ITree CreateTree( ICollisionCheckTargetCollector collector )
     {
-      return CreateTreeByFactory( CollectTreeElements() ) ;
+      return CreateTreeByFactory( CollectTreeElements( collector ) ) ;
     }
 
-    protected abstract IReadOnlyCollection<TreeElement> CollectTreeElements() ;
+    private static IReadOnlyCollection<TreeElement> CollectTreeElements( ICollisionCheckTargetCollector collector )
+    {
+      var treeElements = new List<TreeElement>() ;
+
+      foreach ( var familyInstance in collector.GetCollisionCheckTargets() ) {
+        var geom = familyInstance.get_Geometry( new Options { DetailLevel = ViewDetailLevel.Coarse, ComputeReferences = false, IncludeNonVisibleObjects = false } ) ;
+        if ( null == geom ) continue ;
+
+        if ( false == collector.IsTargetGeometryElement( geom ) ) continue ;
+
+        treeElements.Add( new TreeElement( new BoxGeometryBody( geom.GetBoundingBox().To3d() ) ) ) ;
+      }
+
+      return treeElements ;
+    }
 
     private static ITree CreateTreeByFactory( IReadOnlyCollection<TreeElement> treeElements )
     {

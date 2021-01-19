@@ -6,6 +6,7 @@ using System.IO ;
 using System.Linq ;
 using System.Threading ;
 using System.Threading.Tasks ;
+using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Revit ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -27,6 +28,8 @@ namespace Arent3d.Architecture.Routing.App.Commands
       var routeRecords = ReadRouteRecords() ;
       if ( null == routeRecords ) return Result.Cancelled ;
 
+      var collector = new TestCollisionTargetCollector( document ) ;
+
       using var transaction = new Transaction( document, "Route Assist" ) ;
       try {
         transaction.Start() ;
@@ -34,7 +37,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
         var tokenSource = new CancellationTokenSource() ;
         using var progress = Forms.ProgressBar.Show( tokenSource ) ;
 
-        var task = Task.Run( () => executor.Run( routeRecords, progress ), tokenSource.Token ) ;
+        var task = Task.Run( () => executor.Run( routeRecords, collector, progress ), tokenSource.Token ) ;
         task.ConfigureAwait( false ) ;
         WpfDispatcher.WaitDoEvents( task ) ;
 
@@ -102,6 +105,39 @@ namespace Arent3d.Architecture.Routing.App.Commands
 
       yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
       yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
+    }
+
+    /// <summary>
+    /// Collects collision check targets for debug.
+    /// </summary>
+    private class TestCollisionTargetCollector : ICollisionCheckTargetCollector
+    {
+      private readonly Document _document ;
+
+      public TestCollisionTargetCollector( Document document )
+      {
+        _document = document ;
+      }
+
+      public IEnumerable<FamilyInstance> GetCollisionCheckTargets()
+      {
+        foreach ( var instance in _document.GetAllElements<FamilyInstance>() ) {
+          if ( instance.Id.IntegerValue == 18204914 || instance.Id.IntegerValue == 18205151 ) continue ;
+
+          yield return instance ;
+        }
+      }
+
+      public bool IsTargetGeometryElement( GeometryElement gElm )
+      {
+        var (min, max) = gElm.GetBoundingBox().To3d() ;
+
+        if ( min.z < 30 || 60 < max.z ) return false ;
+        if ( min.x < -20 || 100 < max.x ) return false ;
+        if ( min.y < -20 || 100 < max.y ) return false ;
+
+        return true ;
+      }
     }
 
     /// <summary>

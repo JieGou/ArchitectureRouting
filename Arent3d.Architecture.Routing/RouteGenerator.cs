@@ -1,11 +1,9 @@
 using System ;
 using System.Collections.Generic ;
 using System.IO ;
-using System.Linq ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Mechanical ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -17,11 +15,11 @@ namespace Arent3d.Architecture.Routing
     private readonly Document _document ;
     private readonly List<Connector> _badConnectors = new() ;
 
-    public RouteGenerator( IReadOnlyCollection<AutoRoutingTarget> targets, Document document )
+    public RouteGenerator( IEnumerable<AutoRoutingTarget> targets, Document document, CollisionTree.ICollisionCheckTargetCollector collector )
     {
       _document = document ;
       RoutingTargets = targets.EnumerateAll() ;
-      CollisionCheckTree = new DocumentCollisionCheckTree( document ) ;
+      CollisionCheckTree = new CollisionTree.CollisionTree( collector ) ;
       StructureGraph = DocumentMapper.Instance.Get( document ).RackCollection ;
 
       Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;

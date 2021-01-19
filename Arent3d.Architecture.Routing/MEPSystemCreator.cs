@@ -4,6 +4,7 @@ using System.Linq ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
 using MathLib ;
@@ -111,8 +112,10 @@ namespace Arent3d.Architecture.Routing
 
       var element = baseConnector.Domain switch
       {
-        Domain.DomainHvac => CreateDuct( startPos, endPos ),
-        Domain.DomainPiping => CreatePipe( startPos, endPos ),
+        Domain.DomainHvac => CreateDuct( startPos, endPos, GetMEPCurveType<DuctType>( baseConnector ) ),
+        Domain.DomainPiping => CreatePipe( startPos, endPos, GetMEPCurveType<PipeType>( baseConnector ) ),
+        Domain.DomainCableTrayConduit => CreateCableTray( startPos, endPos, GetMEPCurveType<CableTrayType>( baseConnector ) ),
+        Domain.DomainElectrical => throw new InvalidOperationException(), // TODO
         _ => throw new InvalidOperationException(),
       } ;
 
@@ -129,15 +132,23 @@ namespace Arent3d.Architecture.Routing
       return element ;
     }
 
-    private Element CreateDuct( XYZ startPos, XYZ endPos )
+    private TMEPCurveType GetMEPCurveType<TMEPCurveType>( Connector baseConnector ) where TMEPCurveType : MEPCurveType
     {
-      var ductTypeId = _document.GetDefaultElementTypeId( ElementTypeGroup.DuctType ) ;
-      return Duct.Create( _document, _systemType.Id, ductTypeId, _level.Id, startPos, endPos ) ;
+      var shape = baseConnector.Shape ;
+      return _document.GetAllElements<TMEPCurveType>().FirstOrDefault( type => type.Shape == shape ) ?? throw new InvalidOperationException( $"{typeof( TMEPCurveType ).Name} for shape {shape} is not found." ) ;
     }
-    private Element CreatePipe( XYZ startPos, XYZ endPos )
+
+    private Element CreateDuct( XYZ startPos, XYZ endPos, DuctType ductType )
     {
-      var pipeTypeId = _document.GetDefaultElementTypeId( ElementTypeGroup.PipeType ) ;
-      return Pipe.Create( _document, _systemType.Id, pipeTypeId, _level.Id, startPos, endPos ) ;
+      return Duct.Create( _document, _systemType.Id, ductType.Id, _level.Id, startPos, endPos ) ;
+    }
+    private Element CreatePipe( XYZ startPos, XYZ endPos, PipeType pipeType )
+    {
+      return Pipe.Create( _document, _systemType.Id, pipeType.Id, _level.Id, startPos, endPos ) ;
+    }
+    private Element CreateCableTray( XYZ startPos, XYZ endPos, CableTrayType cableTrayType )
+    {
+      return CableTray.Create( _document, cableTrayType.Id, startPos, endPos, _level.Id ) ;
     }
 
     private static Connector GetConnector( ConnectorManager connectorManager, XYZ position )

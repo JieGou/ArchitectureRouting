@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
 using System.Threading.Tasks ;
+using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -14,7 +15,7 @@ namespace Arent3d.Architecture.Routing.App
     Failure,
     Cancel,
   }
-  
+
   /// <summary>
   /// Routing execution object.
   /// </summary>
@@ -47,9 +48,10 @@ namespace Arent3d.Architecture.Routing.App
     /// Execute routing for the passed routing records.
     /// </summary>
     /// <param name="fromToList">Routing from-to records.</param>
+    /// <param name="collector">Collision check target collector.</param>
     /// <param name="progressData">Progress data which is notified the status.</param>
     /// <returns>Result of execution.</returns>
-    public async Task<RoutingExecutionResult> Run( IAsyncEnumerable<RouteRecord> fromToList, IProgressData? progressData = null )
+    public async Task<RoutingExecutionResult> Run( IAsyncEnumerable<RouteRecord> fromToList, ICollisionCheckTargetCollector collector, IProgressData? progressData = null )
     {
       try {
         IReadOnlyCollection<Route> routes ;
@@ -59,7 +61,7 @@ namespace Arent3d.Architecture.Routing.App
 
         var targets = routes.Select( route => new AutoRoutingTarget( _document, route ) ) ;
 
-        var generator = new RouteGenerator( targets, _document ) ;
+        var generator = new RouteGenerator( targets, _document, collector ) ;
         using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
           generator.Execute( generatorProgressData ) ;
         }
