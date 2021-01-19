@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing
     private readonly Document _document ;
     private readonly List<Connector> _badConnectors = new() ;
 
-    public RouteGenerator( IEnumerable<AutoRoutingTarget> targets, Document document )
+    public RouteGenerator( IReadOnlyCollection<AutoRoutingTarget> targets, Document document )
     {
       _document = document ;
       RoutingTargets = targets.EnumerateAll() ;
@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing
 
     public IReadOnlyCollection<Connector> GetBadConnectors() => _badConnectors ;
 
-    protected override IEnumerable<AutoRoutingTarget> RoutingTargets { get ; }
+    protected override IReadOnlyCollection<AutoRoutingTarget> RoutingTargets { get ; }
 
     protected override ICollisionCheck CollisionCheckTree { get ; }
     

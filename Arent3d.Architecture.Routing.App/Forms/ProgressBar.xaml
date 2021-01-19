@@ -1,0 +1,23 @@
+<Window x:Class="Arent3d.Architecture.Routing.App.Forms.ProgressBar"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
+        mc:Ignorable="d"
+        Title="ProgressBar" Height="120" Width="320"  Unloaded="Window_OnUnloaded">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <ProgressBar Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="8" Minimum="0" Maximum="1" Value="{Binding ProgressValue, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" />
+        <Button Grid.Row="1" Grid.Column="1" Height="32" Width="80" Margin="8" Click="CancelButton_OnClick">
+            Cancel
+        </Button>
+    </Grid>
+</Window>

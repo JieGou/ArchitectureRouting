@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <LangVersion>9</LangVersion>
+    <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Platforms>x64</Platforms>
@@ -32,21 +33,14 @@
       <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIUI.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="AdWindows">
+      <HintPath>C:\Program Files\Autodesk\Revit 2021\AdWindows.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="19.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Attributes" />
-    <Folder Include="resources" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="resources\MEP.ico" />
-    <EmbeddedResource Include="resources\MEP.ico" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

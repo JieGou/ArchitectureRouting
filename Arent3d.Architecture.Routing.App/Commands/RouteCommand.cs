@@ -4,6 +4,7 @@ using System.ComponentModel ;
 using System.Globalization ;
 using System.IO ;
 using System.Linq ;
+using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Revit ;
 using Autodesk.Revit.Attributes ;
@@ -30,8 +31,18 @@ namespace Arent3d.Architecture.Routing.App.Commands
       try {
         transaction.Start() ;
 
-        var result = executor.Run( routeRecords ).Result ;
-        if ( result ) {
+        var tokenSource = new CancellationTokenSource() ;
+        using var progress = Forms.ProgressBar.Show( tokenSource ) ;
+
+        var task = Task.Run( () => executor.Run( routeRecords, progress ), tokenSource.Token ) ;
+        task.ConfigureAwait( false ) ;
+        WpfDispatcher.WaitDoEvents( task ) ;
+
+        if ( task.IsCanceled || RoutingExecutionResult.Cancel == task.Result ) {
+          transaction.RollBack() ;
+          return Result.Cancelled ;
+        }
+        else if ( RoutingExecutionResult.Success == task.Result ) {
           transaction.Commit() ;
 
           if ( executor.HasBadConnectors ) {
@@ -89,7 +100,8 @@ namespace Arent3d.Architecture.Routing.App.Commands
 
       yield return new RouteRecord( "TestRoute3", new ConnectorIds( 17299723, 3 ), new ConnectorIds( 17299685, 4 ) ) ;
 
-      //yield return new RouteRecord( "TestRoute4", new ConnectorIds( 17299408, 15 ), new ConnectorIds( 17299604, 15 ) ) ;
+      yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
+      yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
     }
 
     /// <summary>

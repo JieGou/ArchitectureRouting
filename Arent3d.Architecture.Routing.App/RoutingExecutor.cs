@@ -1,11 +1,20 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Threading ;
 using System.Threading.Tasks ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.App
 {
+  public enum RoutingExecutionResult
+  {
+    Success,
+    Failure,
+    Cancel,
+  }
+  
   /// <summary>
   /// Routing execution object.
   /// </summary>
@@ -38,18 +47,30 @@ namespace Arent3d.Architecture.Routing.App
     /// Execute routing for the passed routing records.
     /// </summary>
     /// <param name="fromToList">Routing from-to records.</param>
+    /// <param name="progressData">Progress data which is notified the status.</param>
     /// <returns>Result of execution.</returns>
-    public async Task<bool> Run( IAsyncEnumerable<RouteRecord> fromToList )
+    public async Task<RoutingExecutionResult> Run( IAsyncEnumerable<RouteRecord> fromToList, IProgressData? progressData = null )
     {
-      var routes = await ConvertToRoutes( fromToList ) ;
-      var targets = routes.Select( route => new AutoRoutingTarget( _document, route ) ) ;
+      try {
+        IReadOnlyCollection<Route> routes ;
+        using ( progressData?.Reserve( 0.05 ) ) {
+          routes = await ConvertToRoutes( fromToList ) ;
+        }
 
-      var generator = new RouteGenerator( targets, _document ) ;
-      generator.Execute() ;
+        var targets = routes.Select( route => new AutoRoutingTarget( _document, route ) ) ;
 
-      RegisterBadConnectors( generator.GetBadConnectors() ) ;
+        var generator = new RouteGenerator( targets, _document ) ;
+        using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
+          generator.Execute( generatorProgressData ) ;
+        }
 
-      return true ;
+        RegisterBadConnectors( generator.GetBadConnectors() ) ;
+
+        return RoutingExecutionResult.Success ;
+      }
+      catch ( OperationCanceledException ) {
+        return RoutingExecutionResult.Cancel ;
+      }
     }
 
     /// <summary>

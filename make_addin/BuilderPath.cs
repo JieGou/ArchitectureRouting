@@ -24,9 +24,7 @@ namespace Arent3d.Architecture
     {
       if ( IsClosed ) return;
 
-      if ( null == _outputPath ) {
-        _outputPath = Path.Combine( Path.GetDirectoryName( InputPath ), Path.GetFileNameWithoutExtension( InputPath ) + ".addin" );
-      }
+      _outputPath ??= Path.Combine( Path.GetDirectoryName( InputPath )!, Path.GetFileNameWithoutExtension( InputPath ) + ".addin" ) ;
     }
 
     public string OutputPath

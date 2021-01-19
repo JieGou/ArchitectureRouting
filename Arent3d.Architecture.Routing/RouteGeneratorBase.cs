@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// When overridden in a derived class, returns routing targets to generate routes.
     /// </summary>
-    protected abstract IEnumerable<TAutoRoutingTarget> RoutingTargets { get ; }
+    protected abstract IReadOnlyCollection<TAutoRoutingTarget> RoutingTargets { get ; }
 
     /// <summary>
     /// When overridden in a derived class, returns an collision check tree.
@@ -45,17 +45,26 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Execute generation routes.
     /// </summary>
-    public void Execute()
+    /// <param name="progressData">Progress data which is notified the status.</param>
+    public void Execute( IProgressData? progressData )
     {
-      OnGenerationStarted() ;
-
-      foreach ( var (src, result) in ApiForAutoRouting.Execute( StructureGraph, RoutingTargets, CollisionCheckTree ) ) {
-        if ( null == result || ! ( src is TAutoRoutingTarget srcTarget ) ) continue ;
-
-        OnRoutingTargetProcessed( srcTarget, result ) ;
+      using ( progressData?.Reserve( 0.05 ) ) {
+        WpfDispatcher.Dispatch( OnGenerationStarted ) ;
       }
 
-      OnGenerationFinished() ;
+      using ( var mainProgress = progressData?.Reserve( 0.9 ) ) {
+        mainProgress.ForEach( RoutingTargets.Count, ApiForAutoRouting.Execute( StructureGraph, RoutingTargets, CollisionCheckTree ), item =>
+        {
+          var (src, result) = item ;
+          if ( null == result || ! ( src is TAutoRoutingTarget srcTarget ) ) return ;
+
+          WpfDispatcher.Dispatch( () => OnRoutingTargetProcessed( srcTarget, result ) ) ;
+        } ) ;
+      }
+
+      using ( progressData?.Reserve( 1 - progressData.Position ) ) {
+        WpfDispatcher.Dispatch( OnGenerationFinished ) ;
+      }
     }
   }
 }

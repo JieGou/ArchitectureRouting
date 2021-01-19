@@ -29,6 +29,7 @@
     <Reference Include="RevitAPI, Version=21.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
     </Reference>
+    <Reference Include="WindowsBase" />
   </ItemGroup>
 
 </Project>

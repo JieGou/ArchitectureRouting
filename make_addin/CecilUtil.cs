@@ -22,7 +22,7 @@ namespace Arent3d.Architecture
       }
 
       var type = typeof( T );
-      var result = (T)Activator.CreateInstance( type, args );
+      var result = (T)Activator.CreateInstance( type, args )!;
 
       foreach ( var field in attr.Fields ) {
         if ( type.GetField( field.Name, BindingFlags.Public ) is not { } fieldInfo ) continue;

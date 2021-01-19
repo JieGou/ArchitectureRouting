@@ -28,7 +28,7 @@ namespace Arent3d.Architecture
 
     protected InvalidAssemblyException( SerializationInfo info, StreamingContext context ) : base( info, context )
     {
-      AssemblyPath = info.GetString( nameof( AssemblyPath ) );
+      AssemblyPath = info.GetString( nameof( AssemblyPath ) )!;
     }
 
     public override void GetObjectData( SerializationInfo info, StreamingContext context )
