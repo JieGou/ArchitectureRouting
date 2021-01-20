@@ -1,6 +1,10 @@
+using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
+using Autodesk.Revit.DB.Mechanical ;
+using Autodesk.Revit.DB.Plumbing ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -69,6 +73,46 @@ namespace Arent3d.Architecture.Routing
     {
       var id = connector.GetId() ;
       return connector.AllRefs.OfType<Connector>().Where( c => c.GetId() != id ) ;
+    }
+
+    public static IEnumerable<Connector> OfEnd( this IEnumerable<Connector> connectors )
+    {
+      return connectors.Where( c => c.ConnectorType == ConnectorType.End ) ;
+    }
+
+    public static IEnumerable<Connector> GetOtherConnectorsInOwner( this Connector connector )
+    {
+      var id = connector.GetId() ;
+      var manager = connector.ConnectorManager ;
+      if ( null == manager ) return Array.Empty<Connector>() ;
+
+      return manager.Connectors.OfType<Connector>().Where( c => c.GetId() != id ) ;
+    }
+
+    public static bool IsAutoRoutingElement( this Element element )
+    {
+      return element switch
+      {
+        Duct or Pipe or CableTray => true,
+        _ => IsFittingElement( element ),
+      } ;
+    }
+
+    private static bool IsFittingElement( Element element )
+    {
+      var category = element.Category ;
+      return ( category.CategoryType == CategoryType.Model && IsFittingCategory( (BuiltInCategory) category.Id.IntegerValue ) ) ;
+    }
+
+    private static bool IsFittingCategory( BuiltInCategory category )
+    {
+      return category switch
+      {
+        BuiltInCategory.OST_DuctFitting => true,
+        BuiltInCategory.OST_PipeFitting => true,
+        BuiltInCategory.OST_CableTrayFitting => true,
+        _ => false,
+      } ;
     }
   }
 }

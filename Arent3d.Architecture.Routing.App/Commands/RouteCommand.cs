@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "Auto Routing" )]
-  [Image( "resources/MEP.ico" )]
+  [Image( "MEP.ico" )]
   public class RouteCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -97,14 +97,14 @@ namespace Arent3d.Architecture.Routing.App.Commands
     private static async IAsyncEnumerable<RouteRecord> ReadRouteRecordsForDebug()
     {
       await Task.Delay( 0 ) ; // allow AsyncEnumerable
-      yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299722, 4 ) ) ;
-      yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299684, 4 ) ) ;
-      yield return new RouteRecord( "TestRoute2", new ConnectorIds( 17299721, 2 ), new ConnectorIds( 17299722, 1 ) ) ;
+      //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299722, 4 ) ) ;
+      //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299684, 4 ) ) ;
+      //yield return new RouteRecord( "TestRoute2", new ConnectorIds( 17299721, 2 ), new ConnectorIds( 17299722, 1 ) ) ;
 
       yield return new RouteRecord( "TestRoute3", new ConnectorIds( 17299723, 3 ), new ConnectorIds( 17299685, 4 ) ) ;
 
-      yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
-      yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
+      //yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
+      //yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
     }
 
     /// <summary>
