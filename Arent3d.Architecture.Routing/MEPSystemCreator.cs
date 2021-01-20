@@ -119,6 +119,8 @@ namespace Arent3d.Architecture.Routing
         _ => throw new InvalidOperationException(),
       } ;
 
+      MarkAsAutoRoutedElement( element ) ;
+
       var manager = element.GetConnectorManager() ?? throw new InvalidOperationException() ;
 
       var startConnector = GetConnector( manager, startPos ) ;
@@ -211,6 +213,7 @@ namespace Arent3d.Architecture.Routing
         // Orthogonal
         if ( CanCreateElbow( connector1, connector2 ) ) {
           var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
+          MarkAsAutoRoutedElement( family ) ;
           EraseZeroLengthDuct( family ) ;
         }
         else {
@@ -233,6 +236,7 @@ namespace Arent3d.Architecture.Routing
 
       if ( CanCreateTee( connector1, connector2, connector3 ) ) {
         var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
+        MarkAsAutoRoutedElement( family ) ;
         EraseZeroLengthDuct( family ) ;
       }
       else {
@@ -258,6 +262,7 @@ namespace Arent3d.Architecture.Routing
 
       if ( CanCreateCross( connector1, connector2, connector3, connector4 ) ) {
         var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
+        MarkAsAutoRoutedElement( family ) ;
         EraseZeroLengthDuct( family ) ;
       }
       else {
@@ -314,22 +319,82 @@ namespace Arent3d.Architecture.Routing
 
     private static Connector? GetAnotherDuctConnector( Connector connector )
     {
-      return connector.ConnectorManager.Connectors.OfType<Connector>().Where( c => ! IsSameConnector( c, connector ) ).UniqueOrDefault() ;
+      return connector.GetOtherConnectorsInOwner().UniqueOrDefault() ;
     }
 
     private static Connector? GetConnectingDuctConnector( Connector connector )
     {
-      return connector.AllRefs.OfType<Connector>().Where( c => ! IsSameConnector( c, connector ) && c.Owner is Duct ).UniqueOrDefault() ;
-    }
-
-    private static bool IsSameConnector( Connector connector1, Connector connector2 )
-    {
-      return ( connector1.Owner.Id == connector2.Owner.Id ) && ( connector1.Id == connector2.Id ) ;
+      return connector.GetConnectedConnectors().Where( c => c.Owner is Duct || c.Owner is Pipe || c.Owner is CableTray ).UniqueOrDefault() ;
     }
 
     private void AddBadConnector( Connector connector )
     {
       _badConnectors.Add( connector ) ;
     }
+
+
+
+    private void MarkAsAutoRoutedElement( Element element )
+    {
+      // TODO
+    }
+
+
+
+    #region Eraseing previous data
+
+    /// <summary>
+    /// Erase all previous ducts and pipes in between routing targets.
+    /// </summary>
+    /// <param name="targets">Routing targets.</param>
+    public static void ErasePreviousRoutes( IReadOnlyCollection<AutoRoutingTarget> targets )
+    {
+      var connectors = targets.SelectMany( x => x.EndPoints ).Select( ep => ep.Connector );
+      var document = connectors.FirstOrDefault()?.Owner.Document ;
+      var endConnectorChecker = new EndConnectorChecker( connectors ) ;
+
+      var stack = new Stack<Connector>( connectors.Where( c => c.IsConnected ) ) ;
+      var eraseTargets = new HashSet<ElementId>() ;
+      while ( 0 != stack.Count ) {
+        var connector = stack.Pop() ;
+        var otherConnectors = connector.GetConnectedConnectors().OfEnd().EnumerateAll() ;
+
+        foreach ( var nextConnector in otherConnectors.OfEnd().Where( c => ! endConnectorChecker.IsEnd( c ) ).EnumerateAll() ) {
+          var owner = nextConnector.Owner ;
+          if ( ! owner.IsAutoRoutingElement() ) continue ;
+
+          if ( ! eraseTargets.Add( owner.Id ) ) continue ;
+
+          // add into the lookup stack.
+          nextConnector.GetOtherConnectorsInOwner().OfEnd().Where( c => c.IsConnected ).ForEach( stack.Push ) ;
+        }
+      }
+
+      if ( 0 != eraseTargets.Count ) {
+        document!.Delete( eraseTargets ) ;
+      }
+    }
+
+    private class EndConnectorChecker
+    {
+      private readonly HashSet<ConnectorIds> _endConnectorIds ;
+      
+      public EndConnectorChecker( IEnumerable<Connector> connectors )
+      {
+        _endConnectorIds = connectors.Select( RevitExtensions.GetId ).ToHashSet() ;
+      }
+
+      public bool IsEnd( Connector connector )
+      {
+        if ( _endConnectorIds.Contains( connector.GetId() ) ) return true ;
+
+        if ( null == connector.Owner ) return true ;
+        if ( false == connector.Owner.IsAutoRoutingElement() ) return true ;
+
+        return false ;
+      }
+    }    
+
+    #endregion
   }
 }

@@ -1,7 +1,5 @@
 using System ;
 using System.Collections.Generic ;
-using System.Linq ;
-using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Utility ;
@@ -54,14 +52,17 @@ namespace Arent3d.Architecture.Routing.App
     public async Task<RoutingExecutionResult> Run( IAsyncEnumerable<RouteRecord> fromToList, ICollisionCheckTargetCollector collector, IProgressData? progressData = null )
     {
       try {
-        IReadOnlyCollection<Route> routes ;
-        using ( progressData?.Reserve( 0.05 ) ) {
-          routes = await ConvertToRoutes( fromToList ) ;
+        IReadOnlyCollection<AutoRoutingTarget> targets ;
+        using ( progressData?.Reserve( 0.02 ) ) {
+          var routes = await ConvertToRoutes( fromToList ) ;
+          targets = routes.Select( route => new AutoRoutingTarget( _document, route ) ) ;
+        }
+        
+        RouteGenerator generator;
+        using ( progressData?.Reserve( 0.03 ) ) {
+          generator = new RouteGenerator( targets, _document, collector ) ;
         }
 
-        var targets = routes.Select( route => new AutoRoutingTarget( _document, route ) ) ;
-
-        var generator = new RouteGenerator( targets, _document, collector ) ;
         using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
           generator.Execute( generatorProgressData ) ;
         }

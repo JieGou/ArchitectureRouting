@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.IO ;
+using System.Linq ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -18,7 +19,10 @@ namespace Arent3d.Architecture.Routing
     public RouteGenerator( IEnumerable<AutoRoutingTarget> targets, Document document, CollisionTree.ICollisionCheckTargetCollector collector )
     {
       _document = document ;
+
       RoutingTargets = targets.EnumerateAll() ;
+      ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
+
       CollisionCheckTree = new CollisionTree.CollisionTree( collector ) ;
       StructureGraph = DocumentMapper.Instance.Get( document ).RackCollection ;
 
@@ -32,6 +36,14 @@ namespace Arent3d.Architecture.Routing
     protected override ICollisionCheck CollisionCheckTree { get ; }
     
     protected override IStructureGraph StructureGraph { get ; }
+
+    /// <summary>
+    /// Erase all previous ducts and pipes in between routing targets.
+    /// </summary>
+    protected void ErasePreviousRoutes()
+    {
+      WpfDispatcher.Dispatch( () => MEPSystemCreator.ErasePreviousRoutes( RoutingTargets ) ) ;
+    }
 
     protected override void OnGenerationStarted()
     {
