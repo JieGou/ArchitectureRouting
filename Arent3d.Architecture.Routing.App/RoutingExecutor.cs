@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using System.Linq ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Utility ;
@@ -55,7 +56,7 @@ namespace Arent3d.Architecture.Routing.App
         IReadOnlyCollection<AutoRoutingTarget> targets ;
         using ( progressData?.Reserve( 0.02 ) ) {
           var routes = await ConvertToRoutes( fromToList ) ;
-          targets = routes.Select( route => new AutoRoutingTarget( _document, route ) ) ;
+          targets = routes.SelectMany( route => route.SubRoutes.Select( subRoute => new AutoRoutingTarget( _document, subRoute ) ) ).EnumerateAll() ;
         }
         
         RouteGenerator generator;
@@ -81,24 +82,19 @@ namespace Arent3d.Architecture.Routing.App
     /// </summary>
     /// <param name="fromToList">Routing from-to records.</param>
     /// <returns>Routing objects</returns>
-    private static async Task<IReadOnlyCollection<Route>> ConvertToRoutes( IAsyncEnumerable<RouteRecord> fromToList )
+    private async Task<IReadOnlyCollection<Route>> ConvertToRoutes( IAsyncEnumerable<RouteRecord> fromToList )
     {
       var dic = new Dictionary<string, Route>() ;
       var result = new List<Route>() ; // Ordered by the original from-to record order.
 
       await foreach ( var record in fromToList ) {
         if ( false == dic.TryGetValue( record.RouteId, out var route ) ) {
-          route = new Route( record.RouteId ) ;
+          route = new Route( _document, record.RouteId ) ;
           dic.Add( record.RouteId, route ) ;
           result.Add( route ) ;
         }
 
-        route.FromElementIds.Add( record.FromId ) ;
-        route.ToElementIds.Add( record.ToId ) ;
-      }
-
-      foreach ( var route in result ) {
-        route.RemoveDuplicatedElementIds() ;
+        route.RegisterConnectors( record.FromId, record.ToId, record.PassPoints ) ;
       }
 
       return result ;

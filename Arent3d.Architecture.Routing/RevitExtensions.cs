@@ -28,9 +28,18 @@ namespace Arent3d.Architecture.Routing
     {
       return document.GetElement( new ElementId( elementId ) ).GetConnectorManager()?.GetConnectorById( connectorId ) ;
     }
-    public static Connector? FindConnector( this Document document, ConnectorIds ids )
+    public static Connector? FindConnector( this Document document, ConnectorIndicator ids )
     {
       return document.FindConnector( ids.ElementId, ids.ConnectorId ) ;
+    }
+    
+    public static FamilyInstance? FindPassPointElement( this Document document, int elementId )
+    {
+      var instance = document.GetElementById<FamilyInstance>( elementId ) ;
+      if ( null == instance ) return null ;
+
+      // TODO: check if family instance is a pass point family instance
+      return instance ;
     }
 
     public static Connector? GetConnectorById( this ConnectorManager connectorManager, int connectorId )
@@ -42,9 +51,9 @@ namespace Arent3d.Architecture.Routing
       return connectorSet.OfType<Connector>().FirstOrDefault( c => c.Id == connectorId ) ;
     }
 
-    public static ConnectorIds GetId( this Connector connector )
+    public static ConnectorIndicator GetIndicator( this Connector connector )
     {
-      return new ConnectorIds( connector ) ;
+      return new ConnectorIndicator( connector ) ;
     }
 
     public static ConnectorManager? GetConnectorManager( this Element elm )
@@ -71,8 +80,8 @@ namespace Arent3d.Architecture.Routing
 
     public static IEnumerable<Connector> GetConnectedConnectors( this Connector connector )
     {
-      var id = connector.GetId() ;
-      return connector.AllRefs.OfType<Connector>().Where( c => c.GetId() != id ) ;
+      var id = connector.GetIndicator() ;
+      return connector.AllRefs.OfType<Connector>().Where( c => c.GetIndicator() != id ) ;
     }
 
     public static IEnumerable<Connector> OfEnd( this IEnumerable<Connector> connectors )
@@ -82,11 +91,11 @@ namespace Arent3d.Architecture.Routing
 
     public static IEnumerable<Connector> GetOtherConnectorsInOwner( this Connector connector )
     {
-      var id = connector.GetId() ;
+      var id = connector.GetIndicator() ;
       var manager = connector.ConnectorManager ;
       if ( null == manager ) return Array.Empty<Connector>() ;
 
-      return manager.Connectors.OfType<Connector>().Where( c => c.GetId() != id ) ;
+      return manager.Connectors.OfType<Connector>().Where( c => c.GetIndicator() != id ) ;
     }
 
     public static bool IsAutoRoutingElement( this Element element )

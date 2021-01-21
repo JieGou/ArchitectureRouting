@@ -12,9 +12,9 @@ namespace Arent3d.Architecture.Routing
   public class AutoRoutingTarget : IAutoRoutingTarget
   {
     /// <summary>
-    /// A <see cref="Route"/> which an <see cref="AutoRoutingTarget"/> belongs to.
+    /// A <see cref="SubRoute"/> which an <see cref="AutoRoutingTarget"/> belongs to.
     /// </summary>
-    public Route Route { get ; }
+    public SubRoute SubRoute { get ; }
 
     /// <summary>
     /// Routing end points which fluid flows from.
@@ -31,24 +31,13 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     public IEnumerable<EndPoint> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
 
-    public AutoRoutingTarget( Document document, Route route )
+    public AutoRoutingTarget( Document document, SubRoute subRoute )
     {
-      Route = route ;
-      _fromEndPoints = ConvertToEndPoints( document, route.FromElementIds, true ) ;
-      _toEndPoints = ConvertToEndPoints( document, route.ToElementIds, false ) ;
+      SubRoute = subRoute ;
+      _fromEndPoints = subRoute.GetFromEndPoints( document ).EnumerateAll() ;
+      _toEndPoints = subRoute.GetToEndPoints( document ).EnumerateAll() ;
 
-      Condition = new AutoRoutingCondition( document, Route ) ;
-    }
-
-    private static IReadOnlyCollection<EndPoint> ConvertToEndPoints( Document document, IEnumerable<ConnectorIds> connectorIds, bool isStart )
-    {
-      var connectors = connectorIds.Select( id => document.FindConnector( id.ElementId, id.ConnectorId ) ).NonNull() ;
-      return connectors.Select( connector =>
-      {
-        var endPoint = ConnectorMapper.Instance.Get( connector ) ;
-        endPoint.IsStart = isStart ;
-        return endPoint ;
-      } ).EnumerateAll() ;
+      Condition = new AutoRoutingCondition( document, SubRoute ) ;
     }
 
     public IAutoRoutingSpatialConstraints? CreateConstraints()
@@ -60,7 +49,7 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    public string LineId => Route.RouteId ;
+    public string LineId => SubRoute.Route.RouteId ;
 
     public IAutoRoutingCondition Condition { get ; }
 
@@ -82,21 +71,21 @@ namespace Arent3d.Architecture.Routing
 
     private class AutoRoutingCondition : IAutoRoutingCondition
     {
-      private readonly Route _route ;
+      private readonly SubRoute _subRoute ;
 
-      public AutoRoutingCondition( Document document, Route route )
+      public AutoRoutingCondition( Document document, SubRoute subRoute )
       {
-        _route = route ;
-        IsRoutingOnPipeRacks = DocumentMapper.Instance.Get( document ).IsRoutingOnPipeRacks( route ) ;
+        _subRoute = subRoute ;
+        IsRoutingOnPipeRacks = DocumentMapper.Get( document ).IsRoutingOnPipeRacks( subRoute ) ;
       }
 
       public bool IsRoutingOnPipeRacks { get ; }
-      public LineType Type => _route.ServiceType ;
-      public string FluidPhase => _route.FluidPhase ;
-      public int Priority => _route.Priority ;
+      public LineType Type => _subRoute.Route.ServiceType ;
+      public string FluidPhase => _subRoute.Route.FluidPhase ;
+      public int Priority => _subRoute.Priority ;
       public string GroupName => string.Empty ;
-      public LoopType LoopType => _route.LoopType ;
-      public ProcessConstraint ProcessConstraint => _route.ProcessConstraint ;
+      public LoopType LoopType => _subRoute.Route.LoopType ;
+      public ProcessConstraint ProcessConstraint => _subRoute.Route.ProcessConstraint ;
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints

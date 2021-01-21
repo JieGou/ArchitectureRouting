@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-      var racks = DocumentMapper.Instance.Get( document ).RackCollection ;
+      var racks = DocumentMapper.Get( document ).RackCollection ;
 
       // TODO
       racks.Clear() ;

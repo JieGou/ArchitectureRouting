@@ -6,43 +6,39 @@ using MathLib ;
 namespace Arent3d.Architecture.Routing
 {
   /// <summary>
-  /// An end on auto routing. It may be related to a <see cref="Connector"/> which is not connected.
+  /// An end on auto routing.
   /// </summary>
-  public class EndPoint : IAutoRoutingEndPoint, IMappedObject<Connector>
+  public abstract class EndPoint : IAutoRoutingEndPoint
   {
     /// <summary>
-    /// Returns the related <see cref="Connector"/> to be routed.
+    /// Owner route of the end point.
     /// </summary>
-    public Connector Connector { get ; }
-
-    Connector IMappedObject<Connector>.BaseObject => Connector ;
+    public Route OwnerRoute { get ; }
+    
+    /// <summary>
+    /// Returns the representative connector whose parameters are used for MEP system creation.
+    /// </summary>
+    public Connector ReferenceConnector { get ; }
 
     /// <summary>
     /// Returns the starting position to be routed.
     /// </summary>
-    public Vector3d Position => Connector.Origin.To3d() ;
+    public abstract Vector3d Position { get ; }
 
     /// <summary>
     /// Returns the first pipe direction.
     /// </summary>
-    public Vector3d Direction
-    {
-      get
-      {
-        var dir = Connector.CoordinateSystem.BasisZ.To3d() ;
-        return IsStart ? dir : -dir ;
-      }
-    }
+    public abstract Vector3d Direction { get ; }
 
     /// <summary>
-    /// Returns a routing condition object determined from the related <see cref="Connector"/>.
+    /// Returns a routing condition object determined from the related <see cref="ReferenceConnector"/>.
     /// </summary>
     public IRouteCondition PipeCondition { get ; }
 
     /// <summary>
     /// Returns whether this end point is a from-type end-point.
     /// </summary>
-    public bool IsStart { get ; set ; }
+    public bool IsStart { get ; }
 
     /// <summary>
     /// Always returns 1.
@@ -60,18 +56,22 @@ namespace Arent3d.Architecture.Routing
     public IStructureInfo? LinkedRack => null ;
 
     /// <summary>
-    /// Called from <see cref="ObjectMapper{TMapper,TRevitObject,TRoutingObject}"/>
+    /// Constructor.
     /// </summary>
+    /// <param name="ownerRoute">Owner route.</param>
     /// <param name="connector">A Revit connector object.</param>
-    private EndPoint( Connector connector )
+    /// <param name="isStart">True if this end point represents a start end point.</param>
+    protected EndPoint( Route ownerRoute, Connector connector, bool isStart )
     {
-      Connector = connector ;
-      PipeCondition = new RouteCondition( connector ) ;
+      OwnerRoute = ownerRoute ;
+      ReferenceConnector = connector ;
+      IsStart = isStart ;
+      PipeCondition = new RouteCondition( this ) ;
     }
 
-    public void SetPosition( Vector3d position )
+    public virtual void SetPosition( Vector3d position )
     {
-      // TODO: set changed position.
+      // do nothing because this end point is not floating.
     }
 
     private class RouteCondition : IRouteCondition
@@ -83,18 +83,18 @@ namespace Arent3d.Architecture.Routing
       public double DiameterFlangeAndInsulation => Diameter.Outside ; // provisional
       public IPipeSpec Spec { get ; }
 
-      public RouteCondition( Connector connector )
+      public RouteCondition( EndPoint endPoint )
       {
-        Diameter = connector.GetDiameter() ;
+        Diameter = endPoint.ReferenceConnector.GetDiameter() ;
 
         InsulationType = Route.DefaultInsulationType ;
-        Temperature = 30 ; // provisional
-        Spec = new PipeSpec( connector ) ;
+        Temperature = endPoint.OwnerRoute.Temperature ;
+        Spec = new PipeSpec( endPoint ) ;
       }
 
       private class PipeSpec : IPipeSpec
       {
-        private readonly Connector _connector ;
+        private readonly EndPoint _endPoint ;
 
         public double GetLongElbowSize( IPipeDiameter diameter )
         {
@@ -136,11 +136,11 @@ namespace Arent3d.Architecture.Routing
           return 0 ;
         }
 
-        public string Name => _connector.MEPSystem.Name ; // provisional
+        public string Name => _endPoint.ReferenceConnector.MEPSystem.Name ; // provisional
 
-        public PipeSpec( Connector connector )
+        public PipeSpec( EndPoint endPoint )
         {
-          _connector = connector ;
+          _endPoint = endPoint ;
         }
       }
     }

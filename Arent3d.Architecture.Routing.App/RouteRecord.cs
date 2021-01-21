@@ -6,14 +6,17 @@ namespace Arent3d.Architecture.Routing.App
   public readonly struct RouteRecord
   {
     public string RouteId { get ; }
-    public ConnectorIds FromId { get ; }
-    public ConnectorIds ToId { get ; }
+    public ConnectorIndicator FromId { get ; }
+    public ConnectorIndicator ToId { get ; }
 
-    public RouteRecord( string routeId, ConnectorIds fromId, ConnectorIds toId )
+    public int[] PassPoints { get ; }
+
+    public RouteRecord( string routeId, ConnectorIndicator fromId, ConnectorIndicator toId, params int[] passPoints )
     {
       RouteId = routeId ;
       FromId = fromId ;
       ToId = toId ;
+      PassPoints = passPoints ;
     }
   }
 }

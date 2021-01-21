@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.App
       if ( false == TryGetIntField( csv, ToElementIdColumn, out var toElementId ) ) return null ;
       if ( false == TryGetIntField( csv, ToConnectorIdColumn, out var toConnectorId ) ) return null ;
 
-      return new RouteRecord( routeId, new ConnectorIds( fromElementId, fromConnectorId ), new ConnectorIds( toElementId, toConnectorId ) ) ;
+      return new RouteRecord( routeId, new ConnectorIndicator( fromElementId, fromConnectorId ), new ConnectorIndicator( toElementId, toConnectorId ) ) ;
     }
 
     private static bool TryGetIntField( CsvReader csv, string fieldName, out int value )

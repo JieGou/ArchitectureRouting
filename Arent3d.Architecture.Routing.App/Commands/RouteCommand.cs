@@ -39,7 +39,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
 
         var task = Task.Run( () => executor.Run( routeRecords, collector, progress ), tokenSource.Token ) ;
         task.ConfigureAwait( false ) ;
-        WpfDispatcher.WaitDoEvents( task ) ;
+        ThreadDispatcher.WaitWithDoEvents( task ) ;
 
         if ( task.IsCanceled || RoutingExecutionResult.Cancel == task.Result ) {
           transaction.RollBack() ;
@@ -101,7 +101,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
       //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299684, 4 ) ) ;
       //yield return new RouteRecord( "TestRoute2", new ConnectorIds( 17299721, 2 ), new ConnectorIds( 17299722, 1 ) ) ;
 
-      yield return new RouteRecord( "TestRoute3", new ConnectorIds( 17299723, 3 ), new ConnectorIds( 17299685, 4 ) ) ;
+      yield return new RouteRecord( "TestRoute3", new ConnectorIndicator( 17299723, 3 ), new ConnectorIndicator( 17299685, 4 ), 17299574 ) ;
 
       //yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
       //yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
@@ -122,7 +122,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
       public IEnumerable<FamilyInstance> GetCollisionCheckTargets()
       {
         foreach ( var instance in _document.GetAllElements<FamilyInstance>() ) {
-          if ( instance.Id.IntegerValue == 18204914 || instance.Id.IntegerValue == 18205151 ) continue ;
+          if ( instance.Id.IntegerValue == 18204914 || instance.Id.IntegerValue == 18205151 || instance.Id.IntegerValue == 17299574 ) continue ;
 
           yield return instance ;
         }

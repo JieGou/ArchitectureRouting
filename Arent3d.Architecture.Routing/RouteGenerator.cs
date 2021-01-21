@@ -15,6 +15,7 @@ namespace Arent3d.Architecture.Routing
   {
     private readonly Document _document ;
     private readonly List<Connector> _badConnectors = new() ;
+    private readonly PassPointConnectorMapper _globalPassPointConnectorMapper = new() ;
 
     public RouteGenerator( IEnumerable<AutoRoutingTarget> targets, Document document, CollisionTree.ICollisionCheckTargetCollector collector )
     {
@@ -24,7 +25,7 @@ namespace Arent3d.Architecture.Routing
       ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
 
       CollisionCheckTree = new CollisionTree.CollisionTree( collector ) ;
-      StructureGraph = DocumentMapper.Instance.Get( document ).RackCollection ;
+      StructureGraph = DocumentMapper.Get( document ).RackCollection ;
 
       Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;
     }
@@ -42,7 +43,7 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     protected void ErasePreviousRoutes()
     {
-      WpfDispatcher.Dispatch( () => MEPSystemCreator.ErasePreviousRoutes( RoutingTargets ) ) ;
+      ThreadDispatcher.Dispatch( () => MEPSystemCreator.ErasePreviousRoutes( RoutingTargets ) ) ;
     }
 
     protected override void OnGenerationStarted()
@@ -67,6 +68,8 @@ namespace Arent3d.Architecture.Routing
 
       ductCreator.ConnectAllVertices() ;
 
+      _globalPassPointConnectorMapper.Merge( ductCreator.PassPointConnectorMapper ) ;
+
       RegisterBadConnectors( ductCreator.GetBadConnectors() ) ;
     }
 
@@ -83,7 +86,12 @@ namespace Arent3d.Architecture.Routing
 
     protected override void OnGenerationFinished()
     {
-      // TODO
+      foreach ( var (conn1, conn2) in _globalPassPointConnectorMapper ) {
+        // pass point must have from-side and to-side connector
+        if ( null == conn1 || null == conn2 ) throw new InvalidOperationException() ;
+
+        conn1.ConnectTo( conn2 ) ;
+      }
     }
   }
 }

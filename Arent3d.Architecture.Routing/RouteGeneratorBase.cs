@@ -49,7 +49,7 @@ namespace Arent3d.Architecture.Routing
     public void Execute( IProgressData? progressData )
     {
       using ( progressData?.Reserve( 0.05 ) ) {
-        WpfDispatcher.Dispatch( OnGenerationStarted ) ;
+        ThreadDispatcher.Dispatch( OnGenerationStarted ) ;
       }
 
       using ( var mainProgress = progressData?.Reserve( 0.9 ) ) {
@@ -58,12 +58,12 @@ namespace Arent3d.Architecture.Routing
           var (src, result) = item ;
           if ( null == result || ! ( src is TAutoRoutingTarget srcTarget ) ) return ;
 
-          WpfDispatcher.Dispatch( () => OnRoutingTargetProcessed( srcTarget, result ) ) ;
+          ThreadDispatcher.Dispatch( () => OnRoutingTargetProcessed( srcTarget, result ) ) ;
         } ) ;
       }
 
       using ( progressData?.Reserve( 1 - progressData.Position ) ) {
-        WpfDispatcher.Dispatch( OnGenerationFinished ) ;
+        ThreadDispatcher.Dispatch( OnGenerationFinished ) ;
       }
     }
   }

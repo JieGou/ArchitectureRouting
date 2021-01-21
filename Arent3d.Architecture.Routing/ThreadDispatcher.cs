@@ -5,7 +5,7 @@ using System.Windows.Threading ;
 
 namespace Arent3d.Architecture.Routing
 {
-  public abstract class WpfDispatcher
+  public abstract class ThreadDispatcher
   {
     public static Dispatcher? UiDispatcher { get ; set ; }
     
@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing
       Dispatcher.PushFrame( frame ) ;
     }
 
-    public static void WaitDoEvents( Task task )
+    public static void WaitWithDoEvents( Task task )
     {
       while ( false == task.IsCompleted ) {
         Thread.Sleep( 1 ) ;
@@ -33,6 +33,7 @@ namespace Arent3d.Architecture.Routing
     public static void Dispatch( Action action )
     {
       var dispatcher = UiDispatcher ?? Dispatcher.CurrentDispatcher ;
+
       if ( dispatcher.CheckAccess() ) {
         action.Invoke() ;
       }

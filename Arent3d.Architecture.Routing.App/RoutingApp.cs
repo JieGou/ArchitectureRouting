@@ -12,14 +12,18 @@ namespace Arent3d.Architecture.Routing.App
   {
     public Result OnStartup( UIControlledApplication application )
     {
-      WpfDispatcher.UiDispatcher = Autodesk.Windows.ComponentManager.Ribbon.Dispatcher ;
+      ThreadDispatcher.UiDispatcher = Autodesk.Windows.ComponentManager.Ribbon.Dispatcher ;
+
       RoutingAppUI.SetupRibbon( application ) ;
+      DocumentListener.RegisterEvents( application ) ;
 
       return Result.Succeeded ;
     }
 
     public Result OnShutdown( UIControlledApplication application )
     {
+      DocumentListener.UnregisterEvents( application ) ;
+
       return Result.Succeeded ;
     }
   }

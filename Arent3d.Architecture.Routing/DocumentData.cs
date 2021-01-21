@@ -3,16 +3,14 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
 {
-  public class DocumentData : IMappedObject<Document>
+  public class DocumentData
   {
     /// <summary>
     /// Returns the owner <see cref="Document"/>.
     /// </summary>
     public Document Document { get ; }
-    
-    Document IMappedObject<Document>.BaseObject => Document ;
 
-    private DocumentData( Document document )
+    public DocumentData( Document document )
     {
       Document = document ;
     }
@@ -25,9 +23,9 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Returns whether a route will be auto-routed on pipe racks.
     /// </summary>
-    /// <param name="route"></param>
+    /// <param name="subRoute"></param>
     /// <returns></returns>
-    public bool IsRoutingOnPipeRacks( Route route )
+    public bool IsRoutingOnPipeRacks( SubRoute subRoute )
     {
       return ( 0 < RackCollection.RackCount ) ;
     }
