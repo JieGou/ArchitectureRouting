@@ -16,8 +16,8 @@ using CsvHelper ;
 namespace Arent3d.Architecture.Routing.App.Commands
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Auto Routing" )]
-  [Image( "MEP.ico" )]
+  [DisplayName( "Routing Assist" )]
+  [Image( "resources/MEP.ico" )]
   public class RouteCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -30,7 +30,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
 
       var collector = new TestCollisionTargetCollector( document ) ;
 
-      using var transaction = new Transaction( document, "Route Assist" ) ;
+      using var transaction = new Transaction( document, "Routing Assist" ) ;
       try {
         transaction.Start() ;
 

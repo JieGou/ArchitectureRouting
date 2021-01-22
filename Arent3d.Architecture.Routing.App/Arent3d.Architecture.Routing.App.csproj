@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj" />
+    <ProjectReference Include="..\Arent3d.Revit.UI\Arent3d.Revit.UI.csproj" />
     <ProjectReference Include="..\Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj" />
   </ItemGroup>
 
@@ -35,6 +36,7 @@
     </Reference>
     <Reference Include="AdWindows">
       <HintPath>C:\Program Files\Autodesk\Revit 2021\AdWindows.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
@@ -46,6 +48,11 @@
   <ItemGroup>
     <None Remove="resources\MEP.ico" />
     <Resource Include="resources\MEP.ico" />
+    <None Remove="resources\Initialize-16.bmp" />
+    <Resource Include="resources\Initialize-16.bmp" />
+    <None Remove="resources\Initialize-32.bmp" />
+    <Resource Include="resources\Initialize-32.bmp" />
+    <None Remove="resources\Arent-Generic Models-Box.rfa" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

@@ -1,11 +1,6 @@
 using System ;
-using System.ComponentModel ;
-using System.IO ;
-using System.Reflection ;
-using System.Windows.Media ;
-using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.App.Commands ;
-using Arent3d.Revit ;
+using Arent3d.Revit.UI ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -15,53 +10,26 @@ namespace Arent3d.Architecture.Routing.App
   /// </summary>
   public class RoutingAppUI
   {
-    private const string RibbonTabName = "Route Assist" ;
+    private const string RibbonTabName = "Routing Assist" ;
 
-    private const string SamplePanelName = "arent3d.architecture.test" ;
+    private static readonly (string Key, string Title) InitPanel = ( Key: "arent3d.architecture.routing.init", Title: "Initialization" ) ;
+    private static readonly (string Key, string Title) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", Title: "Routing" ) ;
 
     public static void SetupRibbon( UIControlledApplication app )
     {
-      app.CreateRibbonTab( RibbonTabName ) ;
-      var ribbonPanel = app.CreateRibbonPanel( RibbonTabName, SamplePanelName ) ;
-      ribbonPanel.Title = "Test" ;
-
-      var rackCommandItem = ribbonPanel.AddItem( CreateButton<RackCommand>() ) ;
-
-      var routeCommandItem = ribbonPanel.AddItem( CreateButton<RouteCommand>() ) ;
-      
+      var tab = app.CreateRibbonTabEx( RibbonTabName ) ;
+      {
+        var initPanel = tab.CreateRibbonPanel( InitPanel.Key, InitPanel.Title ) ;
+        initPanel.AddButton<InitializeCommand>() ;
+        initPanel.AddButton<ShowRoutingViewsCommand>() ;
+      }
+      {
+        var routingPanel = tab.CreateRibbonPanel( RoutingPanel.Key, RoutingPanel.Title ) ;
+        routingPanel.AddButton<RackCommand>() ;
+        routingPanel.AddButton<RouteCommand>() ;
+      }
 
       // TODO
-    }
-
-    private static PushButtonData CreateButton<TButtonCommand>() where TButtonCommand : IExternalCommand
-    {
-      var commandClass = typeof( TButtonCommand ) ;
-
-      var name = commandClass.FullName!.ToSnakeCase() ;
-      var text = commandClass.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? commandClass.Name.SeparateByWords() ;
-
-      var buttonData = new PushButtonData( name, text, commandClass.Assembly.Location, commandClass.FullName ) ;
-      
-      foreach ( var attr in commandClass.GetCustomAttributes<ImageAttribute>() ) {
-        switch ( attr.ImageType ) {
-          case ImageType.Normal : buttonData.Image = ToImageSource( attr ) ; break ;
-          case ImageType.Large : buttonData.LargeImage = ToImageSource( attr ) ; break ;
-          case ImageType.Tooltip : buttonData.ToolTipImage = ToImageSource( attr ) ; break ;
-          default : break ;
-        }
-      }
-
-      return buttonData ;
-    }
-
-    private static ImageSource? ToImageSource( ImageAttribute attr )
-    {
-      try {
-        return new BitmapImage( new Uri( attr.ResourceName, UriKind.Relative ) ) ;
-      }
-      catch ( FileNotFoundException ) {
-        return null ;
-      }
     }
   }
 }

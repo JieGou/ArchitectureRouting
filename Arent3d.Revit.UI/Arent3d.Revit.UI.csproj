@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+    <PropertyGroup>
+        <TargetFramework>net48</TargetFramework>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <LangVersion>9</LangVersion>
+        <UseWPF>true</UseWPF>
+        <Nullable>enable</Nullable>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <Platforms>x64</Platforms>
+        <Authors>Arent Inc.</Authors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="RevitAPI">
+            <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="RevitAPIUI">
+            <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIUI.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="AdWindows">
+            <HintPath>C:\Program Files\Autodesk\Revit 2021\AdWindows.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj" />
+    </ItemGroup>
+
+</Project>
