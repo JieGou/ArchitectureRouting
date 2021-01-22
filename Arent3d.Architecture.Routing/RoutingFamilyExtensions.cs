@@ -35,7 +35,7 @@ namespace Arent3d.Architecture.Routing
       tx.Start( "Load families" ) ;
 
       foreach ( var familyName in badFamilies ) {
-        if ( false == LoadFamily( document, familyName ) ) {
+        if ( false == LoadFamilySymbol( document, familyName ) ) {
           tx.RollBack() ;
           return ;
         }
@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="document">Revit document.</param>
     /// <param name="familyType">A routing family type.</param>
     /// <returns>Family. May be null if <see cref="MakeCertainAllFamilies"/> have not been called.</returns>
-    private static Family? GetFamily( this Document document, RoutingFamilyType familyType )
+    private static FamilySymbol? GetFamilySymbol( this Document document, RoutingFamilyType familyType )
     {
       if ( AllFamilyNames.TryGetValue( familyType, out var familyName ) ) {
         return FindFamilyElementByName( document, familyName ) ;
@@ -59,12 +59,12 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    private static Family? FindFamilyElementByName( Document document, string familyName )
+    private static FamilySymbol? FindFamilyElementByName( Document document, string familyName )
     {
-      return document.GetAllElementsInCategory<Family>( BuiltInCategory.OST_GenericModel ).FirstOrDefault( e => e.Name == familyName ) ;
+      return document.GetAllElementsInCategory<FamilySymbol>( BuiltInCategory.OST_GenericModel ).FirstOrDefault( e => e.FamilyName == familyName ) ;
     }
 
-    private static bool LoadFamily( Document document, string familyName )
+    private static bool LoadFamilySymbol( Document document, string familyName )
     {
       var directoryPath = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )! ;
       var familyPath = Path.Combine( directoryPath, "Families", familyName + ".rfa" ) ;

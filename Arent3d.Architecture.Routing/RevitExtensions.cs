@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing
     }
     public static IEnumerable<TElement> GetAllElementsInCategory<TElement>( this Document document, BuiltInCategory category ) where TElement : Element
     {
-      return new FilteredElementCollector( document ).OfCategory( category ).OfType<TElement>() ;
+      return new FilteredElementCollector( document ).OfCategory( category ).OfClass( typeof( TElement ) ).OfType<TElement>() ;
     }
     public static IEnumerable<Level> GetAllLevels( this Document document )
     {
