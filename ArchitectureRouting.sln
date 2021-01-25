@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arent3d.Architecture.Routin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Revit.UI", "Arent3d.Revit.UI\Arent3d.Revit.UI.csproj", "{5AF7CB50-C9A0-4876-B66A-B4B03CB9CB0F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Revit", "Arent3d.Revit\Arent3d.Revit.csproj", "{6E328C3D-BAB1-4350-9957-9FB0AABD180B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -35,10 +37,14 @@ Global
 		{9F640371-E034-4C24-A6FE-C8B710E55ED1}.Debug|x64.Build.0 = Debug|x64
 		{9F640371-E034-4C24-A6FE-C8B710E55ED1}.Release|x64.ActiveCfg = Release|x64
 		{9F640371-E034-4C24-A6FE-C8B710E55ED1}.Release|x64.Build.0 = Release|x64
-		{5AF7CB50-C9A0-4876-B66A-B4B03CB9CB0F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{5AF7CB50-C9A0-4876-B66A-B4B03CB9CB0F}.Debug|x64.Build.0 = Debug|Any CPU
-		{5AF7CB50-C9A0-4876-B66A-B4B03CB9CB0F}.Release|x64.ActiveCfg = Release|Any CPU
-		{5AF7CB50-C9A0-4876-B66A-B4B03CB9CB0F}.Release|x64.Build.0 = Release|Any CPU
+		{6E328C3D-BAB1-4350-9957-9FB0AABD180B}.Debug|x64.ActiveCfg = Debug|x64
+		{6E328C3D-BAB1-4350-9957-9FB0AABD180B}.Debug|x64.Build.0 = Debug|x64
+		{6E328C3D-BAB1-4350-9957-9FB0AABD180B}.Release|x64.ActiveCfg = Release|x64
+		{6E328C3D-BAB1-4350-9957-9FB0AABD180B}.Release|x64.Build.0 = Release|x64
+		{5AF7CB50-C9A0-4876-B66A-B4B03CB9CB0F}.Debug|x64.ActiveCfg = Debug|x64
+		{5AF7CB50-C9A0-4876-B66A-B4B03CB9CB0F}.Debug|x64.Build.0 = Debug|x64
+		{5AF7CB50-C9A0-4876-B66A-B4B03CB9CB0F}.Release|x64.ActiveCfg = Release|x64
+		{5AF7CB50-C9A0-4876-B66A-B4B03CB9CB0F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

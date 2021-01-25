@@ -38,4 +38,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Arent3d.Revit\Arent3d.Revit.csproj" />
+  </ItemGroup>
+
 </Project>

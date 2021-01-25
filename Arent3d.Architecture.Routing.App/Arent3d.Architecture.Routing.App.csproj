@@ -34,10 +34,6 @@
       <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPIUI.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="AdWindows">
-      <HintPath>C:\Program Files\Autodesk\Revit 2021\AdWindows.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
 

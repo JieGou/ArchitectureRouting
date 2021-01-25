@@ -406,7 +406,7 @@ namespace Arent3d.Architecture.Routing
       
       public EndConnectorChecker( IEnumerable<Connector> connectors )
       {
-        _endConnectorIds = connectors.Select( RevitExtensions.GetIndicator ).ToHashSet() ;
+        _endConnectorIds = connectors.Select( RoutingElementExtensions.GetIndicator ).ToHashSet() ;
       }
 
       public bool IsEnd( Connector connector )

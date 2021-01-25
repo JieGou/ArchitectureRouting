@@ -1,4 +1,6 @@
 using System.ComponentModel ;
+using Arent3d.Revit ;
+using Arent3d.Revit.UI ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -12,7 +14,7 @@ namespace Arent3d.Architecture.Routing.App
   {
     public Result OnStartup( UIControlledApplication application )
     {
-      ThreadDispatcher.UiDispatcher = Autodesk.Windows.ComponentManager.Ribbon.Dispatcher ;
+      ThreadDispatcher.UiDispatcher = UiThread.RevitUiDispatcher ;
 
       RoutingAppUI.SetupRibbon( application ) ;
       DocumentListener.RegisterEvents( application ) ;
