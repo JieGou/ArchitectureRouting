@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
   /// </summary>
   public partial class GetLevel : Window
   {
-    private ObservableCollection<LevelInfo> LevelList { get ; }
+    public ObservableCollection<LevelInfo> LevelList { get ; }
 
     public GetLevel( Document doc )
     {
@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       return LevelList.Where( level => level.IsSelected ).Select( level => ( Id: level.LevelId, Name: level.LevelName ) ).EnumerateAll() ;
     }
 
-    private class LevelInfo : INotifyPropertyChanged
+    public class LevelInfo : INotifyPropertyChanged
     {
       public string LevelName { get ; init ; } = string.Empty ;
       public ElementId LevelId { get ; init ; } = ElementId.InvalidElementId ;

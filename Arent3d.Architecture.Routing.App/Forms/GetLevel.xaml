@@ -6,7 +6,7 @@
         mc:Ignorable="d" Height="450" Width="320" Title="Select Levels" WindowStyle="ToolWindow"
         d:DesignHeight="450" d:DesignWidth="800">
     <DockPanel Margin="10">
-        <ListBox ItemsSource="{Binding LevelList}" DockPanel.Dock="Top" Height="300">
+        <ListBox ItemsSource="{Binding LevelList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" DockPanel.Dock="Top" Height="300">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding LevelName}" />
