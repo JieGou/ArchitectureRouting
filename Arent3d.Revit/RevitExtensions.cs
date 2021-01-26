@@ -17,6 +17,18 @@ namespace Arent3d.Architecture.Routing
     {
       return new FilteredElementCollector( document ).OfClass( typeof( TElement ) ).OfType<TElement>() ;
     }
+    public static IEnumerable<FamilyInstance> GetAllFamilyInstances( this Document document, FamilySymbol familySymbol )
+    {
+      return new FilteredElementCollector( document ).WherePasses( new FamilyInstanceFilter( document, familySymbol.Id ) ).OfType<FamilyInstance>() ;
+    }
+    public static FamilySymbol? GetFamilySymbol( this Document document, BuiltInCategory category, string familyName )
+    {
+      return new FilteredElementCollector( document ).OfClass( typeof( FamilySymbol ) ).OfCategory( category ).OfType<FamilySymbol>().FirstOrDefault( e => e.FamilyName == familyName ) ;
+    }
+    public static FamilySymbol? GetFamilySymbol( this Document document, string familyName )
+    {
+      return new FilteredElementCollector( document ).OfClass( typeof( FamilySymbol ) ).OfType<FamilySymbol>().FirstOrDefault( e => e.FamilyName == familyName ) ;
+    }
     public static IEnumerable<TElement> GetAllElementsInCategory<TElement>( this Document document, BuiltInCategory category ) where TElement : Element
     {
       return new FilteredElementCollector( document ).OfCategory( category ).OfClass( typeof( TElement ) ).OfType<TElement>() ;

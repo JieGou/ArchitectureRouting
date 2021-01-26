@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="document">Revit document.</param>
     /// <param name="familyType">A routing family type.</param>
     /// <returns>Family. May be null if <see cref="MakeCertainAllFamilies"/> have not been called.</returns>
-    private static FamilySymbol? GetFamilySymbol( this Document document, RoutingFamilyType familyType )
+    public static FamilySymbol? GetFamilySymbol( this Document document, RoutingFamilyType familyType )
     {
       if ( AllFamilyNames.TryGetValue( familyType, out var familyName ) ) {
         return FindFamilyElementByName( document, familyName ) ;
@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing
 
     private static FamilySymbol? FindFamilyElementByName( Document document, string familyName )
     {
-      return document.GetAllElementsInCategory<FamilySymbol>( BuiltInCategory.OST_GenericModel ).FirstOrDefault( e => e.FamilyName == familyName ) ;
+      return document.GetFamilySymbol( BuiltInCategory.OST_GenericModel, familyName ) ;
     }
 
     private static bool LoadFamilySymbol( Document document, string familyName )

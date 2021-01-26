@@ -9,10 +9,12 @@ using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using CsvHelper ;
+using MathLib ;
 
 namespace Arent3d.Architecture.Routing.App.Commands
 {
@@ -24,6 +26,9 @@ namespace Arent3d.Architecture.Routing.App.Commands
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
+
+      CollectRacks( document, commandData.View ) ;
+
       var executor = new RoutingExecutor( document ) ;
 
       var routeRecords = ReadRouteRecords() ;
@@ -65,6 +70,34 @@ namespace Arent3d.Architecture.Routing.App.Commands
         transaction.RollBack() ;
         return Result.Failed ;
       }
+    }
+
+    private static void CollectRacks( Document document, View view )
+    {
+      var racks = DocumentMapper.Get( document ).RackCollection ;
+
+      racks.Clear() ;
+      {
+        var connector = document.FindConnector( 17299721, 3 )! ;
+        var z = connector.Origin.Z - connector.Radius ;
+
+        foreach ( var familyInstance in GetRackInstances( document ).NonNull() ) {
+          var (min, max) = familyInstance.get_BoundingBox( view ).To3d() ;
+          min.z = max.z = z ;
+
+          racks.AddRack( new Rack.Rack { Box = new Box3d( min, max ), IsMainRack = true, BeamInterval = 5 } ) ;
+        }
+      }
+
+      racks.CreateLinkages() ;
+    }
+
+    private static IEnumerable<FamilyInstance> GetRackInstances( Document document )
+    {
+      var familySymbol = document.GetFamilySymbol( RoutingFamilyType.RackGuide ) ;
+      if ( null == familySymbol ) return Array.Empty<FamilyInstance>() ;
+
+      return document.GetAllFamilyInstances( familySymbol ) ;
     }
 
     private void AlertBadConnectors( IReadOnlyCollection<Connector> badConnectors )
