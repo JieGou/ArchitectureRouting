@@ -38,9 +38,13 @@ namespace Arent3d.Architecture.Routing
       return new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Levels ).WhereElementIsNotElementType().OfType<Level>() ;
     }
 
+    public static TElement? GetElementById<TElement>( this Document document, ElementId elementId ) where TElement : Element
+    {
+      return document.GetElement( elementId ) as TElement ;
+    }
     public static TElement? GetElementById<TElement>( this Document document, int elementId ) where TElement : Element
     {
-      return document.GetElement( new ElementId( elementId ) ) as TElement ;
+      return document.GetElementById<TElement>( new ElementId( elementId ) ) ;
     }
   }
 }

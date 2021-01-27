@@ -141,7 +141,7 @@ namespace Arent3d.Architecture.Routing
         _ => throw new InvalidOperationException(),
       } ;
 
-      MarkAsAutoRoutedElement( element ) ;
+      MarkAsAutoRoutedElement( element, ( routeEdge.LineInfo as EndPoint )?.OwnerRoute.RouteId ) ;
 
       var manager = element.GetConnectorManager() ?? throw new InvalidOperationException() ;
 
@@ -238,7 +238,7 @@ namespace Arent3d.Architecture.Routing
         // Orthogonal
         if ( CanCreateElbow( connector1, connector2 ) ) {
           var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
-          MarkAsAutoRoutedElement( family ) ;
+          MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2 ) ) ;
           EraseZeroLengthDuct( family ) ;
         }
         else {
@@ -261,7 +261,7 @@ namespace Arent3d.Architecture.Routing
 
       if ( CanCreateTee( connector1, connector2, connector3 ) ) {
         var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
-        MarkAsAutoRoutedElement( family ) ;
+        MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2, connector3 ) ) ;
         EraseZeroLengthDuct( family ) ;
       }
       else {
@@ -287,7 +287,7 @@ namespace Arent3d.Architecture.Routing
 
       if ( CanCreateCross( connector1, connector2, connector3, connector4 ) ) {
         var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
-        MarkAsAutoRoutedElement( family ) ;
+        MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2, connector3, connector4 ) ) ;
         EraseZeroLengthDuct( family ) ;
       }
       else {
@@ -359,9 +359,21 @@ namespace Arent3d.Architecture.Routing
 
 
 
-    private void MarkAsAutoRoutedElement( Element element )
+    private static void MarkAsAutoRoutedElement( Element element, string? routeId )
     {
-      // TODO
+      element.SetProperty( RoutingParameter.RouteName, routeId ?? string.Empty ) ;
+    }
+
+    private static string? GetRouteId( params Connector[] connectors )
+    {
+      return connectors.Select( GetRouteId ).NonNull().FirstOrDefault() ;
+    }
+
+    private static string? GetRouteId( Connector connector )
+    {
+      if ( false == connector.Owner.HasParameter( RoutingParameter.RouteName ) ) return null ;
+
+      return connector.Owner.GetPropertyString( RoutingParameter.RouteName ) ;
     }
 
 

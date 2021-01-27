@@ -33,13 +33,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Families\Routing Rack Guide.rfa">
+    <None Update="SharedParameterFile\Arent Shared Parameter.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\SharedParameterFile\Arent Shared Parameter.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Families\Routing Rack Guide.rfa">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Arent3d.Revit\Arent3d.Revit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets" />
   </ItemGroup>
 
 </Project>

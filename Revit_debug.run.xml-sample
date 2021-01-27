@@ -9,7 +9,6 @@
     <option name="RUNTIME_ARGUMENTS" value="" />
     <method v="2">
       <option name="Build Solution" enabled="true" />
-      <option name="ToolBeforeRunTask" enabled="true" actionId="Tool_External Tools_copy_addin" />
     </method>
   </configuration>
 </component>

@@ -1,6 +1,4 @@
-using System ;
 using System.ComponentModel ;
-using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -19,7 +17,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
 
-      doc.MakeCertainAllFamilies() ;
+      doc.SetupRoutingFamiliesAndParameters() ;
 
       return Result.Succeeded ;
     }
