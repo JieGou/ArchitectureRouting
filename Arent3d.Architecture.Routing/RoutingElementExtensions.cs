@@ -110,5 +110,50 @@ namespace Arent3d.Architecture.Routing
         _ => false,
       } ;
     }
+
+    public static string GetSystemTypeName( this Connector conn )
+    {
+      return conn.Domain switch
+      {
+        Domain.DomainPiping => conn.PipeSystemType.ToString(),
+        Domain.DomainHvac => conn.DuctSystemType.ToString(),
+        Domain.DomainElectrical => conn.ElectricalSystemType.ToString(),
+        Domain.DomainCableTrayConduit => conn.ElectricalSystemType.ToString(),
+        _ => string.Empty,
+      } ;
+    }
+
+    public static bool IsCompatibleTo( this Connector conn1, Connector conn2 )
+    {
+      return ( conn1.ConnectorType == conn2.ConnectorType ) && ( conn1.Domain == conn2.Domain ) && conn1.HasSameShape( conn2 ) ;
+    }
+
+    public static bool HasSameShape( this IConnector conn1, IConnector conn2 )
+    {
+      if ( conn1.Shape != conn2.Shape ) return false ;
+
+      return conn1.Shape switch
+      {
+        ConnectorProfileType.Oval => HasSameOvalShape( conn1, conn2 ),
+        ConnectorProfileType.Round => HasSameRoundShape( conn1, conn2 ),
+        ConnectorProfileType.Rectangular => HasSameRectangularShape( conn1, conn2 ),
+        _ => false,
+      } ;
+    }
+
+    private static bool HasSameOvalShape( IConnector conn1, IConnector conn2 )
+    {
+      // TODO
+      return false ;
+    }
+
+    private static bool HasSameRoundShape( IConnector conn1, IConnector conn2 )
+    {
+      return MathComparisonUtils.IsAlmostEqual( conn1.Radius, conn2.Radius ) ;
+    }
+    private static bool HasSameRectangularShape( IConnector conn1, IConnector conn2 )
+    {
+      return MathComparisonUtils.IsAlmostEqual( conn1.Width, conn2.Width ) && MathComparisonUtils.IsAlmostEqual( conn1.Height, conn2.Height ) ;
+    }
   }
 }

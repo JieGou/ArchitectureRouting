@@ -26,8 +26,9 @@
     <Reference Include="Arent3d.Utility">
       <HintPath>..\Libraries\Arent3d.Utility.dll</HintPath>
     </Reference>
-    <Reference Include="RevitAPI, Version=21.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <Reference Include="RevitAPI">
       <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>

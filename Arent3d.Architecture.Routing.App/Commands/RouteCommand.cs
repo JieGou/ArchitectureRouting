@@ -15,6 +15,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using CsvHelper ;
 using MathLib ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.App.Commands
 {
@@ -31,8 +32,14 @@ namespace Arent3d.Architecture.Routing.App.Commands
 
       var executor = new RoutingExecutor( document ) ;
 
-      var routeRecords = ReadRouteRecords() ;
-      if ( null == routeRecords ) return Result.Cancelled ;
+      IAsyncEnumerable<RouteRecord>? routeRecords ;
+      try {
+        routeRecords = ReadRouteRecords( commandData.Application.ActiveUIDocument ) ;
+        if ( null == routeRecords ) return Result.Cancelled ;
+      }
+      catch ( OperationCanceledException ) {
+        return Result.Cancelled ;
+      }
 
       var collector = new TestCollisionTargetCollector( document ) ;
 
@@ -64,6 +71,10 @@ namespace Arent3d.Architecture.Routing.App.Commands
           transaction.RollBack() ;
           return Result.Failed ;
         }
+      }
+      catch ( OperationCanceledException ) {
+        transaction.RollBack() ;
+        return Result.Cancelled ;
       }
       catch ( Exception e ) {
         TaskDialog.Show( "error", e.ToString() ) ;
@@ -115,10 +126,10 @@ namespace Arent3d.Architecture.Routing.App.Commands
     /// Collects from-to records to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    private static IAsyncEnumerable<RouteRecord>? ReadRouteRecords()
+    private static IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument )
     {
 #if true
-      return ReadRouteRecordsForDebug() ;
+      return ReadRouteRecordsByPick( uiDocument ).EnumerateAll().ToAsyncEnumerable() ;
 #else
       return ReadRouteRecordsFromFile() ;
 #endif
@@ -128,14 +139,24 @@ namespace Arent3d.Architecture.Routing.App.Commands
     /// Returns hard-coded sample from-to records.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    private static async IAsyncEnumerable<RouteRecord> ReadRouteRecordsForDebug()
+    private static IEnumerable<RouteRecord> ReadRouteRecordsByPick( UIDocument uiDocument )
     {
-      await Task.Delay( 0 ) ; // allow AsyncEnumerable
       //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299722, 4 ) ) ;
       //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299684, 4 ) ) ;
       //yield return new RouteRecord( "TestRoute2", new ConnectorIds( 17299721, 2 ), new ConnectorIds( 17299722, 1 ) ) ;
+      var routeRecords = new List<RouteRecord>() ;
+      UiThread.RevitUiDispatcher.Invoke( () =>
+      {
+        var fromConnector = ConnectorPicker.GetConnector( uiDocument ) ;
+        var toConnector = ConnectorPicker.GetConnector( uiDocument, fromConnector ) ;
+        routeRecords.Add( new RouteRecord( "Picked", fromConnector.GetIndicator(), toConnector.GetIndicator(), 17299574 ) ) ;
+      } ) ;
 
-      yield return new RouteRecord( "TestRoute3", new ConnectorIndicator( 17299723, 3 ), new ConnectorIndicator( 17299685, 4 ), 17299574 ) ;
+      foreach ( var record in routeRecords ) {
+        yield return record ;
+      }
+
+      //yield return new RouteRecord( "TestRoute3", new ConnectorIndicator( 17299723, 3 ), new ConnectorIndicator( 17299685, 4 ), 17299574 ) ;
 
       //yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
       //yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
