@@ -1,5 +1,6 @@
 using System ;
 using Arent3d.Routing ;
+using Arent3d.Routing.Conditions ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 
@@ -82,6 +83,7 @@ namespace Arent3d.Architecture.Routing
       public double DiameterPipeAndInsulation => Diameter.Outside ;
       public double DiameterFlangeAndInsulation => Diameter.Outside ; // provisional
       public IPipeSpec Spec { get ; }
+      public ProcessConstraint ProcessConstraint => ProcessConstraint.None ;
 
       public RouteCondition( EndPoint endPoint )
       {

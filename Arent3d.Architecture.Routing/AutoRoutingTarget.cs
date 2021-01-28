@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing
 
     public string LineId => SubRoute.Route.RouteId ;
 
-    public IAutoRoutingCondition Condition { get ; }
+    public ICommonRoutingCondition Condition { get ; }
 
     public int RouteCount => _fromEndPoints.Count + _toEndPoints.Count - 1 ;
 
@@ -69,7 +69,7 @@ namespace Arent3d.Architecture.Routing
 
     #region Inner classes
 
-    private class AutoRoutingCondition : IAutoRoutingCondition
+    private class AutoRoutingCondition : ICommonRoutingCondition
     {
       private readonly SubRoute _subRoute ;
 
@@ -85,7 +85,6 @@ namespace Arent3d.Architecture.Routing
       public int Priority => _subRoute.Priority ;
       public string GroupName => string.Empty ;
       public LoopType LoopType => _subRoute.Route.LoopType ;
-      public ProcessConstraint ProcessConstraint => _subRoute.Route.ProcessConstraint ;
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints

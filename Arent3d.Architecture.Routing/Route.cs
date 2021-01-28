@@ -32,7 +32,6 @@ namespace Arent3d.Architecture.Routing
     public LineType ServiceType => LineType.Utility ;
     public LoopType LoopType => LoopType.Non ;
     public double Temperature => 30 ; // provisional
-    public ProcessConstraint ProcessConstraint => ProcessConstraint.None ;
 
     private readonly List<SubRoute> _subRoutes = new() ;
     public IReadOnlyCollection<SubRoute> SubRoutes => _subRoutes ;
