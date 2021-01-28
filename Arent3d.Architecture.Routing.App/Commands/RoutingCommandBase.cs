@@ -1,28 +1,21 @@
 using System ;
 using System.Collections.Generic ;
-using System.ComponentModel ;
 using System.Globalization ;
 using System.IO ;
-using System.Linq ;
 using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
-using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using CsvHelper ;
 using MathLib ;
-using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.App.Commands
 {
-  [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Routing Assist" )]
-  [Image( "resources/MEP.ico" )]
-  public class RouteCommand : IExternalCommand
+  public abstract class RoutingCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -83,7 +76,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
       }
     }
 
-    private static void CollectRacks( Document document, View view )
+    private void CollectRacks( Document document, View view )
     {
       var racks = DocumentMapper.Get( document ).RackCollection ;
 
@@ -103,7 +96,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
       racks.CreateLinkages() ;
     }
 
-    private static IEnumerable<FamilyInstance> GetRackInstances( Document document )
+    private IEnumerable<FamilyInstance> GetRackInstances( Document document )
     {
       var familySymbol = document.GetFamilySymbol( RoutingFamilyType.RackGuide ) ;
       if ( null == familySymbol ) return Array.Empty<FamilyInstance>() ;
@@ -126,14 +119,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
     /// Collects from-to records to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    private static IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument )
-    {
-#if true
-      return ReadRouteRecordsByPick( uiDocument ).EnumerateAll().ToAsyncEnumerable() ;
-#else
-      return ReadRouteRecordsFromFile() ;
-#endif
-    }
+    protected abstract IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument ) ;
 
     /// <summary>
     /// Returns hard-coded sample from-to records.

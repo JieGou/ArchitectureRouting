@@ -1,3 +1,5 @@
+using Arent3d.Utility ;
+using System.Linq ;
 using CsvHelper ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -12,6 +14,7 @@ namespace Arent3d.Architecture.Routing.App
     private const string FromConnectorIdColumn = "From Connector ID" ;
     private const string ToElementIdColumn = "To Family Instance ID" ;
     private const string ToConnectorIdColumn = "To Connector ID" ;
+    private const string PassPointIdsColumn = "Pass Point IDs" ;
 
     /// <summary>
     /// Parses a new route information from a CSV file record.
@@ -28,7 +31,11 @@ namespace Arent3d.Architecture.Routing.App
       if ( false == TryGetIntField( csv, ToElementIdColumn, out var toElementId ) ) return null ;
       if ( false == TryGetIntField( csv, ToConnectorIdColumn, out var toConnectorId ) ) return null ;
 
-      return new RouteRecord( routeId, new ConnectorIndicator( fromElementId, fromConnectorId ), new ConnectorIndicator( toElementId, toConnectorId ) ) ;
+      if ( false == csv.TryGetField( PassPointIdsColumn, out string passPointIds ) ) return null ;
+
+      var passPoints = passPointIds.Split( ',' ).Select( str => int.TryParse( str, out var num ) ? num : (int?) null ).NonNull().ToArray() ;
+
+      return new RouteRecord( routeId, new ConnectorIndicator( fromElementId, fromConnectorId ), new ConnectorIndicator( toElementId, toConnectorId ), passPoints ) ;
     }
 
     private static bool TryGetIntField( CsvReader csv, string fieldName, out int value )

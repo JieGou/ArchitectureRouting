@@ -25,7 +25,8 @@ namespace Arent3d.Architecture.Routing.App
       }
       {
         var routingPanel = tab.CreateRibbonPanel( RoutingPanel.Key, RoutingPanel.Title ) ;
-        routingPanel.AddButton<RouteCommand>() ;
+        routingPanel.AddButton<PickRoutingCommand>() ;
+        routingPanel.AddButton<FileRoutingCommand>() ;
       }
 
       // TODO
