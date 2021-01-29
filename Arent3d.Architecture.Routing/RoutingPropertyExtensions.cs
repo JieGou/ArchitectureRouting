@@ -8,13 +8,18 @@ namespace Arent3d.Architecture.Routing
 {
   public enum RoutingParameter
   {
-    [NameOnRevit( "Route Name" )]
+    [ParameterGuid( "42a113b5-364a-4918-a423-6590c47b828f" ), NameOnRevit( "Route Name" )]
     RouteName,
+    [ParameterGuid( "B113FB98-A9EB-4F8E-A6A2-C4632922EB1B" ), NameOnRevit( "Route From-side Connector Ids" )]
+    FromSideConnectorIds,
+    [ParameterGuid( "6B594A61-EBEC-4BC9-BBFB-E5ABDA7372CB" ), NameOnRevit( "Route To-side Connector Ids" )]
+    ToSideConnectorIds,
   }
 
   public static class RoutingPropertyExtensions
   {
     private static readonly IReadOnlyDictionary<RoutingParameter, string> AllParameterNames = NameOnRevitAttribute.ToDictionary<RoutingParameter>() ;
+    private static readonly IReadOnlyDictionary<RoutingParameter, Guid> AllParameterGuids = ParameterGuidAttribute.ToDictionary<RoutingParameter>() ;
 
     #region Setup
 
@@ -45,7 +50,7 @@ namespace Arent3d.Architecture.Routing
 
     private static IEnumerable<Definition> GetDefinitions( DefinitionBindingMap bindings )
     {
-      var it = bindings.ForwardIterator() ;
+      using var it = bindings.ForwardIterator() ;
       while ( it.MoveNext() ) {
         yield return it.Key ;
       }
@@ -75,7 +80,7 @@ namespace Arent3d.Architecture.Routing
 
     public static void SetProperty( this Element elm, RoutingParameter routingParam, double value )
     {
-      var parameter = elm.GetParameter( routingParam ) ;
+      var parameter = elm.GetParameter( routingParam ) ?? throw new InvalidOperationException() ;
 
       if ( StorageType.Double == parameter.StorageType ) {
         parameter.Set( value ) ;
@@ -87,7 +92,7 @@ namespace Arent3d.Architecture.Routing
 
     public static void SetProperty( this Element elm, RoutingParameter routingParam, int value )
     {
-      var parameter = elm.GetParameter( routingParam ) ;
+      var parameter = elm.GetParameter( routingParam ) ?? throw new InvalidOperationException() ;
 
       if ( StorageType.Double == parameter.StorageType ) {
         parameter.Set( (double) value ) ;
@@ -102,7 +107,7 @@ namespace Arent3d.Architecture.Routing
 
     public static void SetProperty( this Element elm, RoutingParameter routingParam, string value )
     {
-      var parameter = elm.GetParameter( routingParam ) ;
+      var parameter = elm.GetParameter( routingParam ) ?? throw new InvalidOperationException() ;
 
       if ( StorageType.String == parameter.StorageType ) {
         parameter.Set( value ) ;
@@ -114,7 +119,7 @@ namespace Arent3d.Architecture.Routing
 
     public static void SetProperty( this Element elm, RoutingParameter routingParam, ElementId value )
     {
-      var parameter = elm.GetParameter( routingParam ) ;
+      var parameter = elm.GetParameter( routingParam ) ?? throw new InvalidOperationException() ;
 
       if ( StorageType.ElementId == parameter.StorageType ) {
         parameter.Set( value ) ;
@@ -130,7 +135,7 @@ namespace Arent3d.Architecture.Routing
 
     public static int GetPropertyInt( this Element elm, RoutingParameter routingParam )
     {
-      var parameter = elm.GetParameter( routingParam ) ;
+      var parameter = elm.GetParameter( routingParam ) ?? throw new InvalidOperationException() ;
 
       return parameter.StorageType switch
       {
@@ -140,7 +145,7 @@ namespace Arent3d.Architecture.Routing
     }
     public static double GetPropertyDouble( this Element elm, RoutingParameter routingParam )
     {
-      var parameter = elm.GetParameter( routingParam ) ;
+      var parameter = elm.GetParameter( routingParam ) ?? throw new InvalidOperationException() ;
 
       return parameter.StorageType switch
       {
@@ -151,7 +156,7 @@ namespace Arent3d.Architecture.Routing
     }
     public static string GetPropertyString( this Element elm, RoutingParameter routingParam )
     {
-      var parameter = elm.GetParameter( routingParam ) ;
+      var parameter = elm.GetParameter( routingParam ) ?? throw new InvalidOperationException() ;
 
       return parameter.StorageType switch
       {
@@ -161,7 +166,7 @@ namespace Arent3d.Architecture.Routing
     }
     public static ElementId GetPropertyElementId( this Element elm, RoutingParameter routingParam )
     {
-      var parameter = elm.GetParameter( routingParam ) ;
+      var parameter = elm.GetParameter( routingParam ) ?? throw new InvalidOperationException() ;
 
       return parameter.StorageType switch
       {
@@ -174,16 +179,104 @@ namespace Arent3d.Architecture.Routing
       return elm.Document.GetElement( elm.GetPropertyElementId( routingParam ) ) ;
     }
 
-    public static bool HasParameter( this Element elm, RoutingParameter routingParam )
+    public static bool TryGetProperty( this Element elm, RoutingParameter routingParam, out int value )
     {
-      if ( false == AllParameterNames.TryGetValue( routingParam, out var name ) ) return false ;
-      return ( null != elm.LookupParameter( name ) ) ;
+      value = default ;
+
+      var parameter = elm.GetParameter( routingParam ) ;
+      if ( null == parameter ) return false ;
+
+      switch ( parameter.StorageType ) {
+        case StorageType.Integer :
+          value = parameter.AsInteger() ;
+          return true ;
+
+        default :
+          return false ;
+      }
+    }
+    public static bool TryGetProperty( this Element elm, RoutingParameter routingParam, out double value )
+    {
+      value = default ;
+
+      var parameter = elm.GetParameter( routingParam ) ;
+      if ( null == parameter ) return false ;
+
+      switch ( parameter.StorageType ) {
+        case StorageType.Integer :
+          value = parameter.AsInteger() ;
+          return true ;
+
+        case StorageType.Double :
+          value = parameter.AsDouble() ;
+          return true ;
+
+        default :
+          return false ;
+      }
+    }
+    public static bool TryGetProperty( this Element elm, RoutingParameter routingParam, out string? value )
+    {
+      value = default ;
+
+      var parameter = elm.GetParameter( routingParam ) ;
+      if ( null == parameter ) return false ;
+
+      switch ( parameter.StorageType ) {
+        case StorageType.String :
+          value = parameter.AsString() ;
+          return true ;
+
+        default :
+          return false ;
+      }
+    }
+    public static bool TryGetProperty( this Element elm, RoutingParameter routingParam, out ElementId value )
+    {
+      value = ElementId.InvalidElementId ;
+      var parameter = elm.GetParameter( routingParam ) ;
+      if ( null == parameter ) return false ;
+
+      switch ( parameter.StorageType ) {
+        case StorageType.ElementId :
+          value = parameter.AsElementId() ;
+          return true ;
+
+        default :
+          return false ;
+      }
+    }
+    public static bool TryGetProperty( this Element elm, RoutingParameter routingParam, out Element? value )
+    {
+      value = default ;
+      if ( false == elm.TryGetProperty( routingParam, out ElementId elmId ) ) return false ;
+
+      value = elm.Document.GetElement( elmId ) ;
+      return true ;
     }
 
-    private static Parameter GetParameter( this Element elm, RoutingParameter routingParam )
+    public static bool HasParameter( this Element elm, RoutingParameter routingParam )
     {
-      if ( false == AllParameterNames.TryGetValue( routingParam, out var name ) ) throw new InvalidOperationException() ;
-      return elm.LookupParameter( name ) ?? throw new InvalidOperationException() ;
+      if ( false == AllParameterGuids.TryGetValue( routingParam, out var guid ) ) return false ;
+      return ( null != elm.get_Parameter( guid ) ) ;
+    }
+
+    public static bool HasParameter( this Element elm, RoutingParameter routingParam, StorageType type )
+    {
+      if ( false == AllParameterGuids.TryGetValue( routingParam, out var guid ) ) throw new InvalidOperationException() ;
+      return ( elm.get_Parameter( guid )?.StorageType == type ) ;
+    }
+
+    private static Parameter? GetParameter( this Element elm, RoutingParameter routingParam )
+    {
+      if ( false == AllParameterGuids.TryGetValue( routingParam, out var guid ) ) return null ;
+      return elm.get_Parameter( guid ) ;
+    }
+
+    public static string? GetParameterName( this Document document, RoutingParameter routingParam )
+    {
+      if ( false == AllParameterNames.TryGetValue( routingParam, out var name ) ) return null ;
+      return name ;
     }
   }
 }

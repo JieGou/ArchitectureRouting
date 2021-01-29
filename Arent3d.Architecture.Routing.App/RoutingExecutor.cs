@@ -5,6 +5,7 @@ using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.App
 {
@@ -47,34 +48,87 @@ namespace Arent3d.Architecture.Routing.App
     /// Execute routing for the passed routing records.
     /// </summary>
     /// <param name="fromToList">Routing from-to records.</param>
-    /// <param name="collector">Collision check target collector.</param>
     /// <param name="progressData">Progress data which is notified the status.</param>
     /// <returns>Result of execution.</returns>
-    public async Task<RoutingExecutionResult> Run( IAsyncEnumerable<RouteRecord> fromToList, ICollisionCheckTargetCollector collector, IProgressData? progressData = null )
+    public async Task<RoutingExecutionResult> Run( IAsyncEnumerable<RouteRecord> fromToList, IProgressData? progressData = null )
     {
       try {
-        IReadOnlyCollection<AutoRoutingTarget> targets ;
-        using ( progressData?.Reserve( 0.02 ) ) {
-          var routes = await ConvertToRoutes( fromToList ) ;
-          targets = routes.SelectMany( route => route.SubRoutes.Select( subRoute => new AutoRoutingTarget( _document, subRoute ) ) ).EnumerateAll() ;
-        }
-        
-        RouteGenerator generator;
-        using ( progressData?.Reserve( 0.03 ) ) {
-          generator = new RouteGenerator( targets, _document, collector ) ;
+        IReadOnlyCollection<Route> routes ;
+        using ( progressData?.Reserve( 0.01 ) ) {
+          routes = await ConvertToRoutes( fromToList ) ;
         }
 
-        using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
-          generator.Execute( generatorProgressData ) ;
+        var domainRoutes = GroupByDomain( routes ) ;
+        foreach ( var (domain, routesOfDomain) in domainRoutes ) {
+          using var p = progressData?.Reserve( 0.99 * routesOfDomain.Count / routes.Count ) ;
+          ExecuteRouting( domain, routesOfDomain, p ) ;
         }
-
-        RegisterBadConnectors( generator.GetBadConnectors() ) ;
 
         return RoutingExecutionResult.Success ;
       }
       catch ( OperationCanceledException ) {
         return RoutingExecutionResult.Cancel ;
       }
+    }
+
+    private static IEnumerable<(Domain, IReadOnlyCollection<Route>)> GroupByDomain( IReadOnlyCollection<Route> routes )
+    {
+      var dic = new Dictionary<Domain, List<Route>>() ;
+
+      foreach ( var route in routes ) {
+        var domain = route.Domain ;
+        if ( false == IsRoutingDomain( domain ) ) continue ;
+
+        if ( false == dic.TryGetValue( domain, out var list ) ) {
+          list = new List<Route>() ;
+          dic.Add( domain, list ) ;
+        }
+
+        list.Add( route ) ;
+      }
+
+      return dic.Select( pair => ( pair.Key, (IReadOnlyCollection<Route>) pair.Value ) ) ;
+    }
+
+    private static bool IsRoutingDomain( Domain domain )
+    {
+      return domain switch
+      {
+        Domain.DomainHvac => true,
+        Domain.DomainPiping => true,
+        _ => false,
+      } ;
+    }
+
+    private void ExecuteRouting( Domain domain, IReadOnlyCollection<Route> routesInType, IProgressData? progressData )
+    {
+      var targets = routesInType.SelectMany( route => route.SubRoutes.Select( subRoute => new AutoRoutingTarget( _document, subRoute ) ) ).EnumerateAll() ;
+
+      ICollisionCheckTargetCollector collector ;
+      using ( progressData?.Reserve( 0.05 ) ) {
+        collector = CreateCollisionCheckTargetCollector( domain, routesInType ) ;
+      }
+
+      RouteGenerator generator ;
+      using ( progressData?.Reserve( 0.02 ) ) {
+        generator = new RouteGenerator( targets, _document, collector ) ;
+      }
+
+      using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
+        generator.Execute( generatorProgressData ) ;
+      }
+
+      RegisterBadConnectors( generator.GetBadConnectors() ) ;
+    }
+
+    private ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )
+    {
+      return domain switch
+      {
+        Domain.DomainHvac => new HVacCollisionCheckTargetCollector( _document, routesInType ),
+        Domain.DomainPiping => new PipingCollisionCheckTargetCollector( _document, routesInType ),
+        _ => throw new InvalidOperationException(),
+      } ;
     }
 
     /// <summary>

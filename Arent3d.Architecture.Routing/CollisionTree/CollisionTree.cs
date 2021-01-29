@@ -27,8 +27,8 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     {
       var treeElements = new List<TreeElement>() ;
 
-      foreach ( var familyInstance in collector.GetCollisionCheckTargets() ) {
-        var geom = familyInstance.get_Geometry( new Options { DetailLevel = ViewDetailLevel.Coarse, ComputeReferences = false, IncludeNonVisibleObjects = false } ) ;
+      foreach ( var element in collector.GetCollisionCheckTargets() ) {
+        var geom = element.get_Geometry( new Options { DetailLevel = ViewDetailLevel.Coarse, ComputeReferences = false, IncludeNonVisibleObjects = false } ) ;
         if ( null == geom ) continue ;
 
         if ( false == collector.IsTargetGeometryElement( geom ) ) continue ;

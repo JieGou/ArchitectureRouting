@@ -150,6 +150,8 @@ namespace Arent3d.Architecture.Routing
       startConnector.SetDiameter( routeEdge.Start.PipeDiameter ) ;
       endConnector.SetDiameter( routeEdge.End.PipeDiameter ) ;
 
+      element.SetRoutingFromToConnectorIds( new[] { startConnector.Id }, new[] { endConnector.Id } ) ;
+
       RegisterPassPoint( routeEdge.Start, startConnector ) ;
       RegisterPassPoint( routeEdge.End, endConnector ) ;
 
@@ -165,15 +167,15 @@ namespace Arent3d.Architecture.Routing
       return _document.GetAllElements<TMEPCurveType>().FirstOrDefault( type => type.Shape == shape ) ?? throw new InvalidOperationException( $"{typeof( TMEPCurveType ).Name} for shape {shape} is not found." ) ;
     }
 
-    private Element CreateDuct( XYZ startPos, XYZ endPos, DuctType ductType )
+    private MEPCurve CreateDuct( XYZ startPos, XYZ endPos, DuctType ductType )
     {
       return Duct.Create( _document, _systemType.Id, ductType.Id, _level.Id, startPos, endPos ) ;
     }
-    private Element CreatePipe( XYZ startPos, XYZ endPos, PipeType pipeType )
+    private MEPCurve CreatePipe( XYZ startPos, XYZ endPos, PipeType pipeType )
     {
       return Pipe.Create( _document, _systemType.Id, pipeType.Id, _level.Id, startPos, endPos ) ;
     }
-    private Element CreateCableTray( XYZ startPos, XYZ endPos, CableTrayType cableTrayType )
+    private MEPCurve CreateCableTray( XYZ startPos, XYZ endPos, CableTrayType cableTrayType )
     {
       return CableTray.Create( _document, cableTrayType.Id, startPos, endPos, _level.Id ) ;
     }
@@ -236,12 +238,17 @@ namespace Arent3d.Architecture.Routing
       }
       else {
         // Orthogonal
-        if ( CanCreateElbow( connector1, connector2 ) ) {
+        using var transaction = new SubTransaction( connector1.Owner.Document ) ;
+        try {
+          transaction.Start() ;
           var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
           MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2 ) ) ;
+          SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2 ) ;
           EraseZeroLengthDuct( family ) ;
+          transaction.Commit() ;
         }
-        else {
+        catch {
+          transaction.RollBack() ;
           AddBadConnector( connector1 ) ;
         }
       }
@@ -259,12 +266,17 @@ namespace Arent3d.Architecture.Routing
       connector1.ConnectTo( connector3 ) ;
       connector2.ConnectTo( connector3 ) ;
 
-      if ( CanCreateTee( connector1, connector2, connector3 ) ) {
+      using var transaction = new SubTransaction( connector1.Owner.Document ) ;
+      try {
+        transaction.Start() ;
         var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
         MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2, connector3 ) ) ;
+        SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3 ) ;
         EraseZeroLengthDuct( family ) ;
+        transaction.Commit() ;
       }
-      else {
+      catch {
+        transaction.RollBack() ;
         AddBadConnector( connector1 ) ;
       }
     }
@@ -285,35 +297,19 @@ namespace Arent3d.Architecture.Routing
       connector2.ConnectTo( connector4 ) ;
       connector3.ConnectTo( connector4 ) ;
 
-      if ( CanCreateCross( connector1, connector2, connector3, connector4 ) ) {
+      using var transaction = new SubTransaction( connector1.Owner.Document ) ;
+      try {
+        transaction.Start() ;
         var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
         MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2, connector3, connector4 ) ) ;
+        SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3, connector4 ) ;
         EraseZeroLengthDuct( family ) ;
+        transaction.Commit() ;
       }
-      else {
+      catch {
+        transaction.RollBack() ;
         AddBadConnector( connector1 ) ;
       }
-    }
-
-    private bool CanCreateElbow( Connector connector1, Connector connector2 )
-    {
-      // TODO
-
-      return true ;
-    }
-
-    private bool CanCreateTee( Connector connector1, Connector connector2, Connector connector3 )
-    {
-      // TODO
-
-      return true ;
-    }
-
-    private bool CanCreateCross( Connector connector1, Connector connector2, Connector connector3, Connector connector4 )
-    {
-      // TODO
-
-      return true ;
     }
 
     private void EraseZeroLengthDuct( FamilyInstance family )
@@ -371,9 +367,35 @@ namespace Arent3d.Architecture.Routing
 
     private static string? GetRouteId( Connector connector )
     {
-      if ( false == connector.Owner.HasParameter( RoutingParameter.RouteName ) ) return null ;
+      return connector.Owner.GetRouteName() ;
+    }
 
-      return connector.Owner.GetPropertyString( RoutingParameter.RouteName ) ;
+    private static void SetRoutingFromToConnectorIdsForFitting( Element element, params Connector[] connectors )
+    {
+      var manager = element.GetConnectorManager() ;
+      if ( null == manager ) throw new InvalidOperationException() ;
+
+      var connectorSet = connectors.Select( c => c.GetIndicator() ).ToHashSet() ;
+      var fromList = new List<int>() ;
+      var toList = new List<int>() ;
+      manager.Connectors.OfType<Connector>().ForEach( conn =>
+      {
+        if ( false == conn.IsAnyEnd() ) return ;
+
+        foreach ( var partner in conn.GetConnectedConnectors().Where( c => connectorSet.Contains( c.GetIndicator() ) ) ) {
+          if ( null == partner ) return ;
+          if ( partner.IsRoutingConnector( true ) ) {
+            toList.Add( conn.Id ) ;
+            return ;
+          }
+          if ( partner.IsRoutingConnector( false ) ) {
+            fromList.Add( conn.Id ) ;
+            return ;
+          }
+        }
+      } ) ;
+
+      element.SetRoutingFromToConnectorIds( fromList, toList ) ;
     }
 
 
@@ -386,11 +408,25 @@ namespace Arent3d.Architecture.Routing
     /// <param name="targets">Routing targets.</param>
     public static void ErasePreviousRoutes( IReadOnlyCollection<AutoRoutingTarget> targets )
     {
-      var connectors = targets.SelectMany( x => x.EndPoints ).Select( ep => ep.ReferenceConnector );
-      var document = connectors.FirstOrDefault()?.Owner.Document ;
-      var endConnectorChecker = new EndConnectorChecker( connectors ) ;
-
+      var connectors = targets.SelectMany( x => x.EndPoints ).Select( ep => ep.ReferenceConnector ).EnumerateAll() ;
       var erasingRouteNames = targets.Select( t => t.SubRoute.Route.RouteId ).ToHashSet() ;
+      var routeElements = CollectRouteElementIds( erasingRouteNames, connectors ) ;
+
+      if ( 0 != routeElements.Count ) {
+        var document = connectors.FirstOrDefault()?.Owner.Document ;
+        document!.Delete( routeElements ) ;
+      }
+    }
+
+    /// <summary>
+    /// Collect elements in the target routes joined to connectors.
+    /// </summary>
+    /// <param name="targetRouteNames">Target routes.</param>
+    /// <param name="connectors">Connectors.</param>
+    /// <returns></returns>
+    public static ICollection<ElementId> CollectRouteElementIds( HashSet<string> targetRouteNames, IReadOnlyCollection<Connector> connectors )
+    {
+      var endConnectorChecker = new EndConnectorChecker( connectors ) ;
 
       var stack = new Stack<Connector>( connectors.Where( c => c.IsConnected ) ) ;
       var eraseTargets = new HashSet<ElementId>() ;
@@ -400,8 +436,8 @@ namespace Arent3d.Architecture.Routing
 
         foreach ( var nextConnector in otherConnectors.OfEnd().Where( c => ! endConnectorChecker.IsEnd( c ) ).EnumerateAll() ) {
           var owner = nextConnector.Owner ;
-          if ( ! owner.IsAutoRoutingElement() ) continue ;
-          if ( ! erasingRouteNames.Contains( owner.GetPropertyString( RoutingParameter.RouteName ) ) ) continue ;
+
+          if ( owner.GetRouteName() is { } routeName && ! targetRouteNames.Contains( routeName ) ) continue ;
 
           if ( ! eraseTargets.Add( owner.Id ) ) continue ;
 
@@ -410,9 +446,7 @@ namespace Arent3d.Architecture.Routing
         }
       }
 
-      if ( 0 != eraseTargets.Count ) {
-        document!.Delete( eraseTargets ) ;
-      }
+      return eraseTargets ;
     }
 
     private class EndConnectorChecker
@@ -429,7 +463,7 @@ namespace Arent3d.Architecture.Routing
         if ( _endConnectorIds.Contains( connector.GetIndicator() ) ) return true ;
 
         if ( null == connector.Owner ) return true ;
-        if ( false == connector.Owner.IsAutoRoutingElement() ) return true ;
+        if ( false == connector.Owner.IsAutoRoutingGeneratedElement() ) return true ;
 
         return false ;
       }

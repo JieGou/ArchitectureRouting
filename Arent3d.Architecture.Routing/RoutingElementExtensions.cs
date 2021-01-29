@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Mechanical ;
@@ -10,7 +11,47 @@ namespace Arent3d.Architecture.Routing
 {
   public static class RoutingElementExtensions
   {
-    #region Connectors and routings
+    #region Initializations
+
+    /// <summary>
+    /// Confirms whether families and parameters used for routing application are loaded.
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns>True if all families and parameters are loaded.</returns>
+    public static bool RoutingSettingsAreInitialized( this Document document )
+    {
+      return document.AllRoutingFamiliesAreLoaded() && document.AllParametersAreRegistered() ;
+    }
+
+    /// <summary>
+    /// Setup all families and parameters used for routing application.
+    /// </summary>
+    /// <param name="document"></param>
+    public static void SetupRoutingFamiliesAndParameters( this Document document )
+    {
+      if ( document.RoutingSettingsAreInitialized() ) return ;
+
+      using var tx = new Transaction( document ) ;
+      tx.Start( "Setup routing" ) ;
+      try {
+        document.MakeCertainAllRoutingFamilies() ;
+        document.MakeCertainAllRoutingParameters() ;
+
+        if ( false == document.RoutingSettingsAreInitialized() ) {
+          throw new InvalidOperationException( "Failed to set up routing families and parameters." ) ;
+        }
+
+        tx.Commit() ;
+      }
+      catch ( Exception ) {
+        tx.RollBack() ;
+        throw ;
+      }
+    }
+
+    #endregion
+
+    #region Connectors (General)
 
     public static ConnectorIndicator GetIndicator( this Connector connector )
     {
@@ -24,25 +65,7 @@ namespace Arent3d.Architecture.Routing
 
     public static Connector? FindConnector( this Document document, int elementId, int connectorId )
     {
-      return document.GetElement( new ElementId( elementId ) ).GetConnectorManager()?.GetConnectorById( connectorId ) ;
-    }
-
-    public static FamilyInstance? FindPassPointElement( this Document document, int elementId )
-    {
-      var instance = document.GetElementById<FamilyInstance>( elementId ) ;
-      if ( null == instance ) return null ;
-
-      // TODO: check if family instance is a pass point family instance
-      return instance ;
-    }
-
-    public static Connector? GetConnectorById( this ConnectorManager connectorManager, int connectorId )
-    {
-      return connectorManager.Connectors.GetConnectorById( connectorId ) ;
-    }
-    public static Connector? GetConnectorById( this ConnectorSet connectorSet, int connectorId )
-    {
-      return connectorSet.OfType<Connector>().FirstOrDefault( c => c.Id == connectorId ) ;
+      return document.GetElement( new ElementId( elementId ) ).GetConnectorManager()?.Lookup( connectorId ) ;
     }
 
     public static ConnectorManager? GetConnectorManager( this Element elm )
@@ -75,7 +98,12 @@ namespace Arent3d.Architecture.Routing
 
     public static IEnumerable<Connector> OfEnd( this IEnumerable<Connector> connectors )
     {
-      return connectors.Where( c => c.ConnectorType == ConnectorType.End ) ;
+      return connectors.Where( c => c.IsAnyEnd() ) ;
+    }
+
+    public static bool IsAnyEnd( this Connector conn )
+    {
+      return 0 != ( (int) conn.ConnectorType & (int) ConnectorType.AnyEnd ) ;
     }
 
     public static IEnumerable<Connector> GetOtherConnectorsInOwner( this Connector connector )
@@ -85,42 +113,6 @@ namespace Arent3d.Architecture.Routing
       if ( null == manager ) return Array.Empty<Connector>() ;
 
       return manager.Connectors.OfType<Connector>().Where( c => c.GetIndicator() != id ) ;
-    }
-
-    public static bool IsAutoRoutingElement( this Element element )
-    {
-      return element.IsAutoRoutingElementType() && element.HasRoutingTarget() ;
-    }
-
-    public static bool IsAutoRoutingElementType( this Element element )
-    {
-      return element switch
-      {
-        Duct or Pipe or CableTray => true,
-        _ => IsFittingElement( element ),
-      } ;
-    }
-
-    public static bool HasRoutingTarget( this Element element )
-    {
-      return ( false == string.IsNullOrEmpty( element.GetPropertyString( RoutingParameter.RouteName ) ) ) ;
-    }
-
-    private static bool IsFittingElement( Element element )
-    {
-      var category = element.Category ;
-      return ( category.CategoryType == CategoryType.Model && IsFittingCategory( (BuiltInCategory) category.Id.IntegerValue ) ) ;
-    }
-
-    private static bool IsFittingCategory( BuiltInCategory category )
-    {
-      return category switch
-      {
-        BuiltInCategory.OST_DuctFitting => true,
-        BuiltInCategory.OST_PipeFitting => true,
-        BuiltInCategory.OST_CableTrayFitting => true,
-        _ => false,
-      } ;
     }
 
     public static string GetSystemTypeName( this Connector conn )
@@ -135,6 +127,10 @@ namespace Arent3d.Architecture.Routing
       } ;
     }
 
+    #endregion
+
+    #region Connectors (Routing)
+
     public static bool IsCompatibleTo( this Connector conn1, Connector conn2 )
     {
       return ( conn1.ConnectorType == conn2.ConnectorType ) && ( conn1.Domain == conn2.Domain ) && conn1.HasSameShape( conn2 ) ;
@@ -144,13 +140,16 @@ namespace Arent3d.Architecture.Routing
     {
       if ( conn1.Shape != conn2.Shape ) return false ;
 
-      return conn1.Shape switch
-      {
-        ConnectorProfileType.Oval => HasSameOvalShape( conn1, conn2 ),
-        ConnectorProfileType.Round => HasSameRoundShape( conn1, conn2 ),
-        ConnectorProfileType.Rectangular => HasSameRectangularShape( conn1, conn2 ),
-        _ => false,
-      } ;
+      return true ;
+
+      // // Concrete shape parameter can be different
+      // return conn1.Shape switch
+      // {
+      //   ConnectorProfileType.Oval => HasSameOvalShape( conn1, conn2 ),
+      //   ConnectorProfileType.Round => HasSameRoundShape( conn1, conn2 ),
+      //   ConnectorProfileType.Rectangular => HasSameRectangularShape( conn1, conn2 ),
+      //   _ => false,
+      // } ;
     }
 
     private static bool HasSameOvalShape( IConnector conn1, IConnector conn2 )
@@ -167,45 +166,160 @@ namespace Arent3d.Architecture.Routing
     {
       return MathComparisonUtils.IsAlmostEqual( conn1.Width, conn2.Width ) && MathComparisonUtils.IsAlmostEqual( conn1.Height, conn2.Height ) ;
     }
+
+    #endregion
+
+    #region Pass Points
+
+    public static FamilyInstance? FindPassPointElement( this Document document, int elementId )
+    {
+      var instance = document.GetElementById<FamilyInstance>( elementId ) ;
+      if ( null == instance ) return null ;
+
+      // TODO: check if family instance is a pass point family instance
+      return instance ;
+    }
     
     #endregion
 
-    #region Families and Properties
+    #region Routing (General)
 
-    /// <summary>
-    /// Confirms whether families and parameters used for routing application are loaded.
-    /// </summary>
-    /// <param name="document"></param>
-    /// <returns>True if all families and parameters are loaded.</returns>
-    public static bool RoutingSettingsAreInitialized( this Document document )
+    public static bool IsAutoRoutingGeneratedElement( this Element element )
     {
-      return document.AllRoutingFamiliesAreLoaded() || document.AllParametersAreRegistered() ;
+      return element.IsAutoRoutingGeneratedElementType() && element.HasParameter( RoutingParameter.RouteName ) ;
     }
 
-    /// <summary>
-    /// Setup all families and parameters used for routing application.
-    /// </summary>
-    /// <param name="document"></param>
-    public static void SetupRoutingFamiliesAndParameters( this Document document )
+    public static bool IsAutoRoutingGeneratedElementType( this Element element )
     {
-      if ( document.RoutingSettingsAreInitialized() ) return ;
+      return element switch
+      {
+        Duct or Pipe or CableTray => true,
+        _ => IsFittingElement( element ),
+      } ;
+    }
 
-      using var tx = new Transaction( document ) ;
-      tx.Start( "Setup routing" ) ;
-      try {
-        document.MakeCertainAllRoutingFamilies() ;
-        document.MakeCertainAllRoutingParameters() ;
+    public static bool IsFittingElement( this Element element )
+    {
+      var category = element.Category ;
+      return ( category.CategoryType == CategoryType.Model && IsFittingCategory( (BuiltInCategory) category.Id.IntegerValue ) ) ;
+    }
 
-        if ( false == document.RoutingSettingsAreInitialized() ) {
-          throw new InvalidOperationException( "Failed to set up routing families and parameters." ) ;
-        }
+    private static bool IsFittingCategory( BuiltInCategory category )
+    {
+      return category switch
+      {
+        BuiltInCategory.OST_DuctFitting => true,
+        BuiltInCategory.OST_PipeFitting => true,
+        BuiltInCategory.OST_CableTrayFitting => true,
+        _ => false,
+      } ;
+    }
 
-        tx.Commit() ;
+    #endregion
+
+    #region Routing (Route Names)
+
+    private static readonly BuiltInCategory[] RoutingBuiltInCategories =
+    {
+      BuiltInCategory.OST_DuctFitting,
+      BuiltInCategory.OST_DuctCurves,
+      BuiltInCategory.OST_FlexDuctCurves,
+
+      BuiltInCategory.OST_PipeFitting,
+      BuiltInCategory.OST_PipeCurves,
+      BuiltInCategory.OST_FlexPipeCurves,
+    } ;
+
+    public static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, string routeName ) where TElement : Element
+    {
+      var parameterName = document.GetParameterName( RoutingParameter.RouteName ) ;
+      if ( null == parameterName ) return Array.Empty<TElement>() ;
+
+      var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
+
+      return RoutingBuiltInCategories.SelectMany( category => document.GetAllElementsOfRouteName<TElement>( category, filter ).Where( e => e.GetRouteName() == routeName ) ) ;
+    }
+
+    private static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, BuiltInCategory builtInCategory, ElementFilter filter ) where TElement : Element
+    {
+      if ( typeof( TElement ) == typeof( Element ) ) {
+        return new FilteredElementCollector( document ).OfCategory( builtInCategory ).WhereElementIsNotElementType().WherePasses( filter ).OfType<TElement>() ;
       }
-      catch ( Exception ) {
-        tx.RollBack() ;
-        throw ;
+      else {
+        return new FilteredElementCollector( document ).OfCategory( builtInCategory ).OfClass( typeof( TElement ) ).WhereElementIsNotElementType().WherePasses( filter ).OfType<TElement>() ;
       }
+    }
+
+    public static string? GetRouteName( this Element element )
+    {
+      if ( ! element.IsAutoRoutingGeneratedElement() ) return null ;
+      if ( false == element.TryGetProperty( RoutingParameter.RouteName, out string? value ) ) return null ;
+      return value ;
+    }
+
+    public static IEnumerable<Connector> CollectRoutingEndPointConnectors( this Document document, string routeName, bool fromConnector )
+    {
+      return document.GetAllElementsOfRouteName<Element>( routeName ).SelectMany( e => GetRoutingEndConnectors( e, fromConnector ) ) ;
+    }
+    public static (IReadOnlyCollection<Connector> From, IReadOnlyCollection<Connector>To) GetConnectors( this Document document, string routeName )
+    {
+      var fromList = document.CollectRoutingEndPointConnectors( routeName, true ).EnumerateAll() ;
+      var toList =document.CollectRoutingEndPointConnectors( routeName, false ).EnumerateAll() ;
+      return ( From: fromList, To: toList ) ;
+    }
+
+    private static IEnumerable<Connector> GetRoutingEndConnectors( Element element, bool fromConnector )
+    {
+      return element.GetRoutingConnectors( fromConnector ).SelectMany( conn => conn.GetConnectedConnectors().Where( IsRoutingEndConnector ) ) ;
+    }
+    private static bool IsRoutingEndConnector( Connector connector )
+    {
+      if ( ! connector.IsAnyEnd() ) return false ;
+      if ( connector.Owner.IsAutoRoutingGeneratedElement() ) return false ;
+
+      return true ;
+    }
+
+    #endregion
+
+    #region Routing (From-To)
+
+    public static void SetRoutingFromToConnectorIds( this Element element, IReadOnlyCollection<int> fromIds, IReadOnlyCollection<int> toIds )
+    {
+      element.SetProperty( RoutingParameter.FromSideConnectorIds, string.Join( "|", fromIds ) ) ;
+      element.SetProperty( RoutingParameter.ToSideConnectorIds, string.Join( "|", toIds ) ) ;
+    }
+
+    public static IReadOnlyCollection<Connector> GetRoutingConnectors( this Element element, bool isFrom )
+    {
+      var manager = element.GetConnectorManager() ;
+      if ( null == manager ) return Array.Empty<Connector>() ;
+
+      var routingParam = ( isFrom ? RoutingParameter.FromSideConnectorIds : RoutingParameter.ToSideConnectorIds ) ;
+      if ( false == element.TryGetProperty( routingParam, out string? value ) ) return Array.Empty<Connector>() ;
+      if ( null == value ) return Array.Empty<Connector>() ;
+
+      var list = new List<Connector>() ;
+      foreach ( var s in value.Split( '|' ) ) {
+        if ( false == int.TryParse( s, out var id ) ) continue ;
+
+        var conn = manager.Lookup( id ) ;
+        if ( null == conn ) continue ;
+
+        list.Add( conn ) ;
+      }
+
+      return list ;
+    }
+
+    public static bool IsRoutingConnector( this Connector connector, bool isFrom )
+    {
+      var routingParam = ( isFrom ? RoutingParameter.FromSideConnectorIds : RoutingParameter.ToSideConnectorIds ) ;
+      if ( false == connector.Owner.TryGetProperty( routingParam, out string? value ) ) return false ;
+      if ( null == value ) return false ;
+
+      var targetId = connector.Id ;
+      return value.Split( '|' ).Any( s => int.TryParse( s, out var id ) && id == targetId ) ;
     }
 
     #endregion

@@ -27,6 +27,8 @@ namespace Arent3d.Architecture.Routing
     /// <returns></returns>
     public bool IsRoutingOnPipeRacks( SubRoute subRoute )
     {
+      if ( Domain.DomainHvac == subRoute.Route.Domain ) return false ;  // HVac is direct-routing only.
+
       return ( 0 < RackCollection.RackCount ) ;
     }
   }

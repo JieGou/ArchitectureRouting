@@ -36,6 +36,10 @@ namespace Arent3d.Architecture.Routing
     private readonly List<SubRoute> _subRoutes = new() ;
     public IReadOnlyCollection<SubRoute> SubRoutes => _subRoutes ;
 
+    private Domain? _domain = null ;
+
+    public Domain Domain => _domain ??= GetReferenceConnector().Domain ;
+
     public Route( Document document, string routeId )
     {
       Document = document ;

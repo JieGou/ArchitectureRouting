@@ -4,7 +4,6 @@ using System.IO ;
 using System.Linq ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
-using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
@@ -21,6 +20,7 @@ namespace Arent3d.Architecture.Routing
   public static class RoutingFamilyExtensions
   {
     private static readonly IReadOnlyDictionary<RoutingFamilyType, string> AllFamilyNames = NameOnRevitAttribute.ToDictionary<RoutingFamilyType>() ;
+    private static readonly IReadOnlyDictionary<string, RoutingFamilyType> ReverseFamilyNames = NameOnRevitAttribute.ToReverseDictionary<RoutingFamilyType>() ;
 
     public static bool AllRoutingFamiliesAreLoaded( this Document document )
     {
@@ -60,6 +60,42 @@ namespace Arent3d.Architecture.Routing
       if ( ! File.Exists( familyPath ) ) return false ;
 
       return document.LoadFamily( familyPath, out _ ) ;
+    }
+
+    public static bool IsRoutingFamilyInstance( this FamilyInstance familyInstance )
+    {
+      var familyName = familyInstance.Symbol.FamilyName ;
+      return ( null != familyName ) && ReverseFamilyNames.ContainsKey( familyName ) ;
+    }
+
+    public static bool IsRoutingFamilyInstanceOf( this FamilyInstance familyInstance, RoutingFamilyType familyType )
+    {
+      var familyName = familyInstance.Symbol.FamilyName ;
+      return ( null != familyName ) && IsFamilyType( familyName, familyType ) ;
+    }
+    public static bool IsRoutingFamilyInstanceOf( this FamilyInstance familyInstance, params RoutingFamilyType[] familyTypes )
+    {
+      var familyName = familyInstance.Symbol.FamilyName ;
+      return ( null != familyName ) && IsAnyFamilyType( familyName, familyTypes ) ;
+    }
+    public static bool IsRoutingFamilyInstanceExcept( this FamilyInstance familyInstance, RoutingFamilyType familyType )
+    {
+      var familyName = familyInstance.Symbol.FamilyName ;
+      return ( null != familyName ) && ( false == IsFamilyType( familyName, familyType ) ) ;
+    }
+    public static bool IsRoutingFamilyInstanceExcept( this FamilyInstance familyInstance, params RoutingFamilyType[] familyTypes )
+    {
+      var familyName = familyInstance.Symbol.FamilyName ;
+      return ( null != familyName ) && ( false == IsAnyFamilyType( familyName, familyTypes ) ) ;
+    }
+
+    private static bool IsFamilyType( string familyName, RoutingFamilyType familyType )
+    {
+      return ReverseFamilyNames.TryGetValue( familyName, out var ft ) && ( ft == familyType ) ;
+    }
+    private static bool IsAnyFamilyType( string familyName, RoutingFamilyType[] familyTypes )
+    {
+      return ReverseFamilyNames.TryGetValue( familyName, out var ft ) && familyTypes.Contains( ft ) ;
     }
   }
 }

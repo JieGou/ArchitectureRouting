@@ -1,15 +1,11 @@
 using System ;
 using System.Collections.Generic ;
-using System.Globalization ;
-using System.IO ;
 using System.Threading ;
 using System.Threading.Tasks ;
-using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using CsvHelper ;
 using MathLib ;
 
 namespace Arent3d.Architecture.Routing.App.Commands
@@ -29,11 +25,9 @@ namespace Arent3d.Architecture.Routing.App.Commands
         routeRecords = ReadRouteRecords( commandData.Application.ActiveUIDocument ) ;
         if ( null == routeRecords ) return Result.Cancelled ;
       }
-      catch ( OperationCanceledException ) {
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
       }
-
-      var collector = new TestCollisionTargetCollector( document ) ;
 
       using var transaction = new Transaction( document, "Routing Assist" ) ;
       try {
@@ -42,7 +36,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
         var tokenSource = new CancellationTokenSource() ;
         using var progress = Forms.ProgressBar.Show( tokenSource ) ;
 
-        var task = Task.Run( () => executor.Run( routeRecords, collector, progress ), tokenSource.Token ) ;
+        var task = Task.Run( () => executor.Run( routeRecords, progress ), tokenSource.Token ) ;
         task.ConfigureAwait( false ) ;
         ThreadDispatcher.WaitWithDoEvents( task ) ;
 
@@ -64,7 +58,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
           return Result.Failed ;
         }
       }
-      catch ( OperationCanceledException ) {
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         transaction.RollBack() ;
         return Result.Cancelled ;
       }
@@ -119,74 +113,5 @@ namespace Arent3d.Architecture.Routing.App.Commands
     /// </summary>
     /// <returns>Routing from-to records.</returns>
     protected abstract IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument ) ;
-
-    /// <summary>
-    /// Collects collision check targets for debug.
-    /// </summary>
-    private class TestCollisionTargetCollector : ICollisionCheckTargetCollector
-    {
-      private readonly Document _document ;
-
-      public TestCollisionTargetCollector( Document document )
-      {
-        _document = document ;
-      }
-
-      public IEnumerable<FamilyInstance> GetCollisionCheckTargets()
-      {
-        foreach ( var instance in _document.GetAllElements<FamilyInstance>() ) {
-          if ( instance.Id.IntegerValue == 18204914 || instance.Id.IntegerValue == 18205151 || instance.Id.IntegerValue == 17299574 ) continue ;
-
-          yield return instance ;
-        }
-      }
-
-      public bool IsTargetGeometryElement( GeometryElement gElm )
-      {
-        var (min, max) = gElm.GetBoundingBox().To3d() ;
-
-        if ( min.z < 30 || 60 < max.z ) return false ;
-        if ( min.x < -20 || 100 < max.x ) return false ;
-        if ( min.y < -20 || 100 < max.y ) return false ;
-
-        return true ;
-      }
-    }
-
-    /// <summary>
-    /// Reads from-to records from a CSV file which user selected.
-    /// </summary>
-    /// <returns>Routing from-to records.</returns>
-    private static IAsyncEnumerable<RouteRecord>? ReadRouteRecordsFromFile()
-    {
-      var csvFileName = OpenFromToCsv() ;
-      if ( null == csvFileName ) return null ;
-
-      using var reader = new StreamReader( csvFileName, true ) ;
-      using var csv = new CsvReader( reader, CultureInfo.CurrentCulture ) ;
-      if ( false == csv.Read() ) return null ;
-      csv.ReadHeader() ;
-
-      return ReadRouteRecordsFromFile( csv ) ;
-    }
-
-    private static async IAsyncEnumerable<RouteRecord> ReadRouteRecordsFromFile( CsvReader csv )
-    {
-      while ( await csv.ReadAsync() ) {
-        var routeFields = RouteParser.ParseFields( csv ) ;
-        if ( null == routeFields ) continue ;
-
-        yield return routeFields.Value ;
-      }
-    }
-
-    private static string? OpenFromToCsv()
-    {
-      using var dlg = new FileOpenDialog( "Routing from-to list (*.csv)|*.csv" ) { Title = "Open from-to list file" } ;
-
-      if ( ItemSelectionDialogResult.Confirmed != dlg.Show() ) return null ;
-
-      return ModelPathUtils.ConvertModelPathToUserVisiblePath( dlg.GetSelectedModelPath() ) ;
-    }
   }
 }

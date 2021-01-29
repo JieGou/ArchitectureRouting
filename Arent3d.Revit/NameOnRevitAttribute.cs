@@ -28,5 +28,20 @@ namespace Arent3d.Revit
 
       return dic ;
     }
+
+    public static IReadOnlyDictionary<string, TEnum> ToReverseDictionary<TEnum>() where TEnum : Enum
+    {
+      var dic = new Dictionary<string, TEnum>() ;
+
+      foreach ( var fieldInfo in typeof( TEnum ).GetFields() ) {
+        var attr = fieldInfo.GetCustomAttribute<NameOnRevitAttribute>() ;
+        if ( null == attr ) continue ;
+        if ( string.IsNullOrWhiteSpace( attr.Name ) ) continue ;
+
+        dic.Add( attr.Name, (TEnum) fieldInfo.GetValue( null ) ) ;
+      }
+
+      return dic ;
+    }
   }
 }

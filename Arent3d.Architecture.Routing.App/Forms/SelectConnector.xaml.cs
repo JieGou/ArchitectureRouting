@@ -120,10 +120,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       private bool HasCompatibleType( Connector connector )
       {
-        if ( ConnectorType.End != connector.ConnectorType ) return false ;
+        if ( false == connector.IsAnyEnd() ) return false ;
         if ( connector.Domain != ConnectorElement.Domain ) return false ;
 
-        if ( connector.GetSystemTypeName() != ConnectorElement.SystemClassification.ToString() ) return false ;
+        if ( ConnectorElement.SystemClassification != MEPSystemClassification.Global ) {
+          if ( connector.GetSystemTypeName() != ConnectorElement.SystemClassification.ToString() ) return false ;
+        }
 
         return true ;
       }

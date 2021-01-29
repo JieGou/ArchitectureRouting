@@ -1,4 +1,5 @@
 ﻿using System ;
+using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
@@ -11,33 +12,55 @@ namespace Arent3d.Architecture.Routing.App
 {
   public static class ConnectorPicker
   {
-    public static Connector GetConnector( UIDocument uiDocument, string message, Connector? firstConnector = null )
+    public static (Connector Connector, string? RouteName) GetConnector( UIDocument uiDocument, string message, Connector? firstConnector = null, string? firstRouteId = null )
     {
       var document = uiDocument.Document ;
 
-      var filter = ( null == firstConnector ) ? FamilyInstanceWithConnectorFilter.Instance : new FamilyInstanceCompatibleToTargetConnectorFilter( firstConnector ) ;
+      var filter = ( null == firstConnector ) ? FamilyInstanceWithConnectorFilter.Instance : new FamilyInstanceCompatibleToTargetConnectorFilter( firstConnector, firstRouteId ) ;
 
       while ( true ) {
         var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, filter, message ) ;
 
-        var familyInstance = document.GetElementById<FamilyInstance>( pickedObject.ElementId ) ;
-        if ( null == familyInstance ) continue ;
+        var element = document.GetElement( pickedObject.ElementId ) ;
+        if ( null == element ) continue ;
 
-        uiDocument.SetSelection( familyInstance ) ;
-
-        var sv = new SelectConnector( familyInstance, firstConnector ) ;
-        sv.ShowDialog() ;
-
-        uiDocument.ClearSelection() ;
-        uiDocument.GetActiveUIView()?.ZoomToFit() ;
-
-        if ( true != sv.DialogResult ) continue ;
-
-        var connector = sv.GetSelectedConnector() ;
+        var connector = FindConnector( uiDocument, element, message, firstConnector ) ;
         if ( null == connector ) continue ;
 
-        return connector ;
+        return ( Connector: connector, RouteName: element.GetRouteName() ) ;
       }
+    }
+
+    private static Connector? FindConnector( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
+    {
+      if ( element.IsAutoRoutingGeneratedElement() ) {
+        return GetEndOfRouting( element, ( null == firstConnector ) ) ;
+      }
+      else {
+        return SelectFromDialog( uiDocument, (FamilyInstance) element, message, firstConnector ) ;
+      }
+    }
+
+    private static Connector? GetEndOfRouting( Element element, bool fromConnector )
+    {
+      var routeName = element.GetRouteName() ?? throw new InvalidOperationException() ;
+
+      return element.Document.CollectRoutingEndPointConnectors( routeName, fromConnector ).FirstOrDefault() ;
+    }
+
+    private static Connector? SelectFromDialog( UIDocument uiDocument, FamilyInstance familyInstance, string message, Connector? firstConnector )
+    {
+      uiDocument.SetSelection( familyInstance ) ;
+
+      var sv = new SelectConnector( familyInstance, firstConnector ) { Title = message } ;
+      sv.ShowDialog() ;
+
+      uiDocument.ClearSelection() ;
+      uiDocument.GetActiveUIView()?.ZoomToFit() ;
+
+      if ( true != sv.DialogResult ) return null ;
+
+      return sv.GetSelectedConnector() ;
     }
 
     private class FamilyInstanceWithConnectorFilter : ISelectionFilter
@@ -46,15 +69,24 @@ namespace Arent3d.Architecture.Routing.App
 
       public bool AllowElement( Element elem )
       {
-        if ( ! ( elem is FamilyInstance familyInstance ) ) return false ;
-        if ( ! ( familyInstance.MEPModel?.ConnectorManager?.Connectors is { } connectorSet ) ) return false ;
+        if ( ! ( elem.GetConnectorManager()?.Connectors is { } connectorSet ) ) return false ;
 
-        return connectorSet.OfType<Connector>().Any( IsTargetConnector ) ;
+        return connectorSet.OfType<Connector>().Any( IsTargetConnector ) && IsRoutableElement( elem ) ;
+      }
+
+      protected virtual bool IsRoutableElement( Element elem )
+      {
+        return elem switch
+        {
+          MEPCurve => elem.IsAutoRoutingGeneratedElement(),
+          FamilyInstance => ! elem.IsFittingElement() || elem.IsAutoRoutingGeneratedElement(),
+          _ => false,
+        } ;
       }
 
       protected virtual bool IsTargetConnector( Connector connector )
       {
-        return connector.ConnectorType == ConnectorType.End && connector.Domain switch
+        return connector.IsAnyEnd() && connector.Domain switch
         {
           Domain.DomainPiping => true,
           Domain.DomainHvac => true,
@@ -67,19 +99,32 @@ namespace Arent3d.Architecture.Routing.App
         return false ;
       }
     }
-    
+
     private class FamilyInstanceCompatibleToTargetConnectorFilter : FamilyInstanceWithConnectorFilter
     {
       private readonly Connector _connector ;
+      private readonly string? _routeId ;
 
-      public FamilyInstanceCompatibleToTargetConnectorFilter( Connector connector )
+      public FamilyInstanceCompatibleToTargetConnectorFilter( Connector connector, string? routeId )
       {
         _connector = connector ;
+        _routeId = routeId ;
       }
 
       protected override bool IsTargetConnector( Connector connector )
       {
         return base.IsTargetConnector( connector ) && _connector.IsCompatibleTo( connector ) ;
+      }
+
+      protected override bool IsRoutableElement( Element elem )
+      {
+        if ( false == base.IsRoutableElement( elem ) ) return false ;
+
+        if ( null != _routeId ) {
+          if ( elem.GetRouteName() == _routeId ) return false ;
+        }
+
+        return true ;
       }
     }
   }

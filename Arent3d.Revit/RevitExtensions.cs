@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing
     }
     public static IEnumerable<FamilyInstance> GetAllFamilyInstances( this Document document, FamilySymbol familySymbol )
     {
-      return new FilteredElementCollector( document ).WherePasses( new FamilyInstanceFilter( document, familySymbol.Id ) ).OfType<FamilyInstance>() ;
+      return new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).WherePasses( new FamilyInstanceFilter( document, familySymbol.Id ) ).OfType<FamilyInstance>() ;
     }
     public static FamilySymbol? GetFamilySymbol( this Document document, BuiltInCategory category, string familyName )
     {
