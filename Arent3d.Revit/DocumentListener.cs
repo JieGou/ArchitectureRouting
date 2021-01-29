@@ -1,27 +1,31 @@
+using System ;
 using System.Collections.Generic ;
 using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
-using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.App
+namespace Arent3d.Revit
 {
+  public class DocumentEventArgs : EventArgs
+  {
+    public Document Document ;
+    internal DocumentEventArgs( Document document )
+    {
+      Document = document ;
+    }
+  }
+  
   public static class DocumentListener
   {
     private static readonly Dictionary<int, Document> _closingDocuments = new() ;
-    
-    public static void RegisterEvents( UIControlledApplication application )
-    {
-      RegisterEvents( application.ControlledApplication ) ;
-    }
 
-    public static void UnregisterEvents( UIControlledApplication application )
-    {
-      UnregisterEvents( application.ControlledApplication ) ;
-    }
+    public static event EventHandler<DocumentEventArgs>? DocumentListeningStarted ;
+    public static event EventHandler<DocumentEventArgs>? DocumentListeningFinished ;
+    public static event EventHandler<DocumentChangedEventArgs>? ListeningDocumentChanged ;
 
     public static void RegisterEvents( ControlledApplication application )
     {
+      application.DocumentChanged += Document_Changed ;
       application.DocumentOpened += Document_Opened ;
       application.DocumentCreated += Document_Created ;
       application.DocumentClosing += Document_Closing ;
@@ -30,21 +34,28 @@ namespace Arent3d.Architecture.Routing.App
 
     public static void UnregisterEvents( ControlledApplication application )
     {
+      application.DocumentChanged -= Document_Changed ;
       application.DocumentOpened -= Document_Opened ;
       application.DocumentCreated -= Document_Created ;
       application.DocumentClosing -= Document_Closing ;
       application.DocumentClosed -= Document_Closed ;
     }
 
+    private static void Document_Changed( object sender, DocumentChangedEventArgs e )
+    {
+      ListeningDocumentChanged?.Invoke( e.GetDocument(), e ) ;
+    }
+
     private static void Document_Created( object sender, DocumentCreatedEventArgs e )
     {
-      DocumentMapper.Register( e.Document ) ;
+      DocumentListeningStarted?.Invoke( e.Document, new DocumentEventArgs( e.Document ) ) ;
     }
 
     private static void Document_Opened( object sender, DocumentOpenedEventArgs e )
     {
-      DocumentMapper.Register( e.Document ) ;
+      DocumentListeningStarted?.Invoke( e.Document, new DocumentEventArgs( e.Document ) ) ;
     }
+
     private static void Document_Closing( object sender, DocumentClosingEventArgs e )
     {
       SetDocumentMayBeClosed( e.DocumentId, e.Document ) ;
@@ -59,7 +70,7 @@ namespace Arent3d.Architecture.Routing.App
     {
       if ( _closingDocuments.TryGetValue( e.DocumentId, out var document ) ) {
         _closingDocuments.Remove( e.DocumentId ) ;
-        DocumentMapper.Unregister( document ) ;
+        DocumentListeningFinished?.Invoke( document, new DocumentEventArgs( document ) ) ;
       }
     }
   }

@@ -10,6 +10,8 @@ namespace Arent3d.Architecture.Routing
 {
   public static class RoutingElementExtensions
   {
+    #region Connectors and routings
+
     public static ConnectorIndicator GetIndicator( this Connector connector )
     {
       return new ConnectorIndicator( connector ) ;
@@ -87,11 +89,21 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsAutoRoutingElement( this Element element )
     {
+      return element.IsAutoRoutingElementType() && element.HasRoutingTarget() ;
+    }
+
+    public static bool IsAutoRoutingElementType( this Element element )
+    {
       return element switch
       {
         Duct or Pipe or CableTray => true,
         _ => IsFittingElement( element ),
       } ;
+    }
+
+    public static bool HasRoutingTarget( this Element element )
+    {
+      return ( false == string.IsNullOrEmpty( element.GetPropertyString( RoutingParameter.RouteName ) ) ) ;
     }
 
     private static bool IsFittingElement( Element element )
@@ -155,5 +167,47 @@ namespace Arent3d.Architecture.Routing
     {
       return MathComparisonUtils.IsAlmostEqual( conn1.Width, conn2.Width ) && MathComparisonUtils.IsAlmostEqual( conn1.Height, conn2.Height ) ;
     }
+    
+    #endregion
+
+    #region Families and Properties
+
+    /// <summary>
+    /// Confirms whether families and parameters used for routing application are loaded.
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns>True if all families and parameters are loaded.</returns>
+    public static bool RoutingSettingsAreInitialized( this Document document )
+    {
+      return document.AllRoutingFamiliesAreLoaded() || document.AllParametersAreRegistered() ;
+    }
+
+    /// <summary>
+    /// Setup all families and parameters used for routing application.
+    /// </summary>
+    /// <param name="document"></param>
+    public static void SetupRoutingFamiliesAndParameters( this Document document )
+    {
+      if ( document.RoutingSettingsAreInitialized() ) return ;
+
+      using var tx = new Transaction( document ) ;
+      tx.Start( "Setup routing" ) ;
+      try {
+        document.MakeCertainAllRoutingFamilies() ;
+        document.MakeCertainAllRoutingParameters() ;
+
+        if ( false == document.RoutingSettingsAreInitialized() ) {
+          throw new InvalidOperationException( "Failed to set up routing families and parameters." ) ;
+        }
+
+        tx.Commit() ;
+      }
+      catch ( Exception ) {
+        tx.RollBack() ;
+        throw ;
+      }
+    }
+
+    #endregion
   }
 }

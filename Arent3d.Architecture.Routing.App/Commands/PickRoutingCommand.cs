@@ -31,8 +31,8 @@ namespace Arent3d.Architecture.Routing.App.Commands
       var routeRecords = new List<RouteRecord>() ;
       UiThread.RevitUiDispatcher.Invoke( () =>
       {
-        var fromConnector = ConnectorPicker.GetConnector( uiDocument ) ;
-        var toConnector = ConnectorPicker.GetConnector( uiDocument, fromConnector ) ;
+        var fromConnector = ConnectorPicker.GetConnector( uiDocument, "Select the first connector" ) ;
+        var toConnector = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromConnector ) ;
         routeRecords.Add( new RouteRecord( "Picked", fromConnector.GetIndicator(), toConnector.GetIndicator(), 17299574 ) ) ;
       } ) ;
 

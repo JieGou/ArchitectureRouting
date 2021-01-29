@@ -1,32 +1,24 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Text ;
-using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using Autodesk.Revit.DB.Plumbing ;
-using Autodesk.Revit.DB.Mechanical ;
-using System.Collections.ObjectModel ;
 using Arent3d.Revit.UI ;
-using Arent3d.Utility ;
-using static Arent3d.Architecture.Routing.App.Forms.SelectConnector ;
-using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.App
 {
   public static class ConnectorPicker
   {
-    public static Connector GetConnector( UIDocument uiDocument, Connector? firstConnector = null )
+    public static Connector GetConnector( UIDocument uiDocument, string message, Connector? firstConnector = null )
     {
       var document = uiDocument.Document ;
 
       var filter = ( null == firstConnector ) ? FamilyInstanceWithConnectorFilter.Instance : new FamilyInstanceCompatibleToTargetConnectorFilter( firstConnector ) ;
 
       while ( true ) {
-        var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, filter, "Select a mechanical equipment" ) ;
+        var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, filter, message ) ;
 
         var familyInstance = document.GetElementById<FamilyInstance>( pickedObject.ElementId ) ;
         if ( null == familyInstance ) continue ;

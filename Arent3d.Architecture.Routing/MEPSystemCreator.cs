@@ -390,6 +390,8 @@ namespace Arent3d.Architecture.Routing
       var document = connectors.FirstOrDefault()?.Owner.Document ;
       var endConnectorChecker = new EndConnectorChecker( connectors ) ;
 
+      var erasingRouteNames = targets.Select( t => t.SubRoute.Route.RouteId ).ToHashSet() ;
+
       var stack = new Stack<Connector>( connectors.Where( c => c.IsConnected ) ) ;
       var eraseTargets = new HashSet<ElementId>() ;
       while ( 0 != stack.Count ) {
@@ -399,6 +401,7 @@ namespace Arent3d.Architecture.Routing
         foreach ( var nextConnector in otherConnectors.OfEnd().Where( c => ! endConnectorChecker.IsEnd( c ) ).EnumerateAll() ) {
           var owner = nextConnector.Owner ;
           if ( ! owner.IsAutoRoutingElement() ) continue ;
+          if ( ! erasingRouteNames.Contains( owner.GetPropertyString( RoutingParameter.RouteName ) ) ) continue ;
 
           if ( ! eraseTargets.Add( owner.Id ) ) continue ;
 

@@ -6,7 +6,6 @@ using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Revit ;
-using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -120,33 +119,6 @@ namespace Arent3d.Architecture.Routing.App.Commands
     /// </summary>
     /// <returns>Routing from-to records.</returns>
     protected abstract IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument ) ;
-
-    /// <summary>
-    /// Returns hard-coded sample from-to records.
-    /// </summary>
-    /// <returns>Routing from-to records.</returns>
-    private static IEnumerable<RouteRecord> ReadRouteRecordsByPick( UIDocument uiDocument )
-    {
-      //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299722, 4 ) ) ;
-      //yield return new RouteRecord( "TestRoute1", new ConnectorIds( 17299721, 3 ), new ConnectorIds( 17299684, 4 ) ) ;
-      //yield return new RouteRecord( "TestRoute2", new ConnectorIds( 17299721, 2 ), new ConnectorIds( 17299722, 1 ) ) ;
-      var routeRecords = new List<RouteRecord>() ;
-      UiThread.RevitUiDispatcher.Invoke( () =>
-      {
-        var fromConnector = ConnectorPicker.GetConnector( uiDocument ) ;
-        var toConnector = ConnectorPicker.GetConnector( uiDocument, fromConnector ) ;
-        routeRecords.Add( new RouteRecord( "Picked", fromConnector.GetIndicator(), toConnector.GetIndicator(), 17299574 ) ) ;
-      } ) ;
-
-      foreach ( var record in routeRecords ) {
-        yield return record ;
-      }
-
-      //yield return new RouteRecord( "TestRoute3", new ConnectorIndicator( 17299723, 3 ), new ConnectorIndicator( 17299685, 4 ), 17299574 ) ;
-
-      //yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
-      //yield return new RouteRecord( "Rectangular", new ConnectorIds( 18208920, 8 ), new ConnectorIds( 18208786, 8 ) ) ;
-    }
 
     /// <summary>
     /// Collects collision check targets for debug.

@@ -1,6 +1,5 @@
 using System ;
-using Arent3d.Architecture.Routing.App.Commands ;
-using Arent3d.Revit.UI ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -8,28 +7,39 @@ namespace Arent3d.Architecture.Routing.App
   /// <summary>
   /// Registers UI components of auto routing application.
   /// </summary>
-  public class RoutingAppUI
+  public partial class RoutingAppUI : IDisposable
   {
-    private const string RibbonTabName = "Routing Assist" ;
-
-    private static readonly (string Key, string Title) InitPanel = ( Key: "arent3d.architecture.routing.init", Title: "Initialization" ) ;
-    private static readonly (string Key, string Title) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", Title: "Routing" ) ;
-
-    public static void SetupRibbon( UIControlledApplication app )
+    public static RoutingAppUI Create( UIControlledApplication application )
     {
-      var tab = app.CreateRibbonTabEx( RibbonTabName ) ;
-      {
-        var initPanel = tab.CreateRibbonPanel( InitPanel.Key, InitPanel.Title ) ;
-        initPanel.AddButton<InitializeCommand>() ;
-        initPanel.AddButton<ShowRoutingViewsCommand>() ;
-      }
-      {
-        var routingPanel = tab.CreateRibbonPanel( RoutingPanel.Key, RoutingPanel.Title ) ;
-        routingPanel.AddButton<PickRoutingCommand>() ;
-        routingPanel.AddButton<FileRoutingCommand>() ;
-      }
+      return new RoutingAppUI( application ) ;
+    }
+    
+    public enum UpdateType
+    {
+      Start,
+      Finish,
+      Change,
+    }
 
-      // TODO
+    public partial void UpdateRibbon( Document document, UpdateType updateType ) ;
+
+
+
+    ~RoutingAppUI()
+    {
+      ReleaseUnmanagedResources() ;
+    }
+
+    public void Dispose()
+    {
+      GC.SuppressFinalize( this ) ;
+
+      ReleaseUnmanagedResources() ;
+    }
+
+    private void ReleaseUnmanagedResources()
+    {
+      // Nothing to do.
     }
   }
 }
