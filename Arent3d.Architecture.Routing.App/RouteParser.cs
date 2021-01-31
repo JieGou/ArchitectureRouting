@@ -1,3 +1,5 @@
+using System ;
+using System.Collections.Generic ;
 using Arent3d.Utility ;
 using System.Linq ;
 using CsvHelper ;
@@ -44,6 +46,21 @@ namespace Arent3d.Architecture.Routing.App
 
       if ( false == csv.TryGetField( fieldName, out string toIdStr ) ) return false ;
       return int.TryParse( toIdStr, out value ) ;
+    }
+
+    public static IEnumerable<string> GetHeaders()
+    {
+      return new[] { RouteIdColumn, FromElementIdColumn, FromConnectorIdColumn, ToElementIdColumn, ToConnectorIdColumn, PassPointIdsColumn } ;
+    }
+
+    public static IEnumerable<object> GetRow( RouteRecord record )
+    {
+      yield return record.RouteId ;
+      yield return record.FromId.ElementId ;
+      yield return record.FromId.ConnectorId ;
+      yield return record.ToId.ElementId ;
+      yield return record.ToId.ConnectorId ;
+      yield return string.Join( ",", record.PassPoints ) ;
     }
   }
 }

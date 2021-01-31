@@ -18,6 +18,8 @@ namespace Arent3d.Architecture.Routing.App
 
     private readonly RibbonButton _pickRoutingCommandButton ;
     private readonly RibbonButton _fileRoutingCommandButton ;
+    private readonly RibbonButton _allReRouteCommandButton ;
+    private readonly RibbonButton _exportRoutingCommandButton ;
 
 
     private RoutingAppUI( UIControlledApplication application )
@@ -32,6 +34,10 @@ namespace Arent3d.Architecture.Routing.App
         var routingPanel = tab.CreateRibbonPanel( RoutingPanel.Key, RoutingPanel.Title ) ;
         _pickRoutingCommandButton = routingPanel.AddButton<PickRoutingCommand>() ;
         _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
+        routingPanel.AddSeparator() ;
+        _allReRouteCommandButton = routingPanel.AddButton<AllReRouteCommand>() ;
+        routingPanel.AddSeparator() ;
+        _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
       }
 
       InitializeRibbon() ;
@@ -43,6 +49,8 @@ namespace Arent3d.Architecture.Routing.App
 
       _pickRoutingCommandButton.Enabled = false ;
       _fileRoutingCommandButton.Enabled = false ;
+      _allReRouteCommandButton.Enabled = false ;
+      _exportRoutingCommandButton.Enabled = false ;
     }
 
     public partial void UpdateRibbon( Document document, UpdateType updateType )
@@ -57,6 +65,8 @@ namespace Arent3d.Architecture.Routing.App
       _showRoutingViewsCommandButton.Enabled = setupIsDone ;
       _pickRoutingCommandButton.Enabled = setupIsDone ;
       _fileRoutingCommandButton.Enabled = setupIsDone ;
+      _allReRouteCommandButton.Enabled = setupIsDone ;
+      _exportRoutingCommandButton.Enabled = setupIsDone ;
     }
   }
 }
