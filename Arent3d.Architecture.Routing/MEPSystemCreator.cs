@@ -386,11 +386,19 @@ namespace Arent3d.Architecture.Routing
     public static void ErasePreviousRoutes( IReadOnlyCollection<AutoRoutingTarget> targets )
     {
       var connectors = targets.SelectMany( x => x.EndPoints ).Select( ep => ep.ReferenceConnector ).EnumerateAll() ;
+      if ( 0 == connectors.Count ) return ;
+
+      var document = connectors.First().Owner.Document ;
       var erasingRouteNames = targets.Select( t => t.SubRoute.Route.RouteId ).ToHashSet() ;
-      var routeElements = CollectRouteElementIds( erasingRouteNames, connectors ) ;
+
+      ErasePreviousRoutes( document, connectors, erasingRouteNames ) ;
+    }
+
+    public static void ErasePreviousRoutes( Document document, IReadOnlyCollection<Connector> endConnectors, HashSet<string> erasingRouteNames )
+    {
+      var routeElements = CollectRouteElementIds( erasingRouteNames, endConnectors ) ;
 
       if ( 0 != routeElements.Count ) {
-        var document = connectors.FirstOrDefault()?.Owner.Document ;
         document!.Delete( routeElements ) ;
       }
     }
