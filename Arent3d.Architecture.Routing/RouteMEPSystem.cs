@@ -3,7 +3,9 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
+using Autodesk.Revit.DB.Structure.StructuralSections ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -11,6 +13,7 @@ namespace Arent3d.Architecture.Routing
   {
     public MEPSystemType MEPSystemType { get ; }
     public MEPSystem? MEPSystem { get ; }
+    public MEPCurveType CurveType { get ; }
 
     public RouteMEPSystem( Document document, Route route )
     {
@@ -20,9 +23,12 @@ namespace Arent3d.Architecture.Routing
 
       //MEPSystem = CreateMEPSystem( document, connector, allConnectors ) ;
       MEPSystem = null ;
+
+      CurveType = GetMEPCurveType( document, connector ) ;
     }
 
     #region Get MEPSystemType
+
     private static (Connector, MEPSystemType) GetSystemType( Document document, IEnumerable<Connector> connectors )
     {
       return connectors.Select( connector => ( connector, GetSystemType( document, connector ) ) ).First( tuple => null != tuple.Item2 )! ;
@@ -109,9 +115,55 @@ namespace Arent3d.Architecture.Routing
 
     private static void SetMEPSystemParameters( MEPSystem system, Connector connector )
     {
-      var parameter = system.get_Parameter( BuiltInParameter.RBS_PIPE_DIAMETER_PARAM ) ;
-      var str = parameter.AsValueString() ;
-      str.ToString() ;
+      // TODO
+    }
+
+    #endregion
+
+    #region Get MEPCurveType
+    
+    private static MEPCurveType GetMEPCurveType( Document document, Connector connector )
+    {
+      var (concreteType, isCompatibleType) = GetIsCompatibleFunc( connector ) ;
+
+      var curveTypes = new FilteredElementCollector( document ).OfClass( concreteType ).OfType<MEPCurveType>().Where( isCompatibleType ).ToList() ;
+      
+      return curveTypes.FirstOrDefault() ?? throw new InvalidOperationException( $"{nameof( MEPCurveType )} for connector {connector.Owner.Name}:{connector.Id} is not found." ) ;
+    }
+
+    private static (Type, Func<MEPCurveType, bool>) GetIsCompatibleFunc( Connector connector )
+    {
+      return connector.Domain switch
+      {
+        Domain.DomainHvac => ( typeof( DuctType ), type => IsCompatibleDuctType( type, connector ) ),
+        Domain.DomainPiping => ( typeof( PipeType ), type => IsCompatiblePipeType( type, connector ) ),
+        _ => ( typeof( MEPCurveType ), type => HasCompatibleShape( type, connector ) ),
+      } ;
+    }
+
+    private static bool IsCompatibleDuctType( MEPCurveType type, Connector connector )
+    {
+      if ( false == HasCompatibleShape( type, connector ) ) return false ;
+      if ( type is not DuctType dt ) return false ;
+
+      return true ;
+    }
+
+    private static bool IsCompatiblePipeType( MEPCurveType type, Connector connector )
+    {
+      if ( false == HasCompatibleShape( type, connector ) ) return false ;
+      if ( type is not PipeType pt ) return false ;
+
+      return true ;
+    }
+
+    private static bool HasCompatibleShape( MEPCurveType type, Connector connector )
+    {
+      if ( type.Shape != connector.Shape ) return false ;
+
+      // TODO: other parameters
+
+      return true ;
     }
 
     #endregion

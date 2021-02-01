@@ -28,6 +28,7 @@ namespace Arent3d.Architecture.Routing
 
     private readonly MEPSystemType _systemType ;
     private readonly MEPSystem? _system ;
+    private readonly MEPCurveType _curveType ;
 
     private readonly List<Connector> _badConnectors = new() ;
 
@@ -37,6 +38,7 @@ namespace Arent3d.Architecture.Routing
       _level = CreateLevel( document ) ;
       _systemType = routeMepSystem.MEPSystemType ;
       _system = routeMepSystem.MEPSystem ;
+      _curveType = routeMepSystem.CurveType ;
     }
 
     private static Level CreateLevel( Document document )
@@ -98,9 +100,9 @@ namespace Arent3d.Architecture.Routing
 
       var element = baseConnector.Domain switch
       {
-        Domain.DomainHvac => CreateDuct( startPos, endPos, GetMEPCurveType<DuctType>( baseConnector ) ),
-        Domain.DomainPiping => CreatePipe( startPos, endPos, GetMEPCurveType<PipeType>( baseConnector ) ),
-        Domain.DomainCableTrayConduit => CreateCableTray( startPos, endPos, GetMEPCurveType<CableTrayType>( baseConnector ) ),
+        Domain.DomainHvac => CreateDuct( startPos, endPos, ( _curveType as DuctType )! ),
+        Domain.DomainPiping => CreatePipe( startPos, endPos, ( _curveType as PipeType )! ),
+        Domain.DomainCableTrayConduit => CreateCableTray( startPos, endPos, ( _curveType as CableTrayType )! ),
         Domain.DomainElectrical => throw new InvalidOperationException(), // TODO
         _ => throw new InvalidOperationException(),
       } ;
@@ -123,12 +125,6 @@ namespace Arent3d.Architecture.Routing
       _connectorMapper.Add( routeEdge.End, endConnector ) ;
 
       return element ;
-    }
-
-    private TMEPCurveType GetMEPCurveType<TMEPCurveType>( Connector baseConnector ) where TMEPCurveType : MEPCurveType
-    {
-      var shape = baseConnector.Shape ;
-      return _document.GetAllElements<TMEPCurveType>().FirstOrDefault( type => type.Shape == shape ) ?? throw new InvalidOperationException( $"{typeof( TMEPCurveType ).Name} for shape {shape} is not found." ) ;
     }
 
     private MEPCurve CreateDuct( XYZ startPos, XYZ endPos, DuctType ductType )
