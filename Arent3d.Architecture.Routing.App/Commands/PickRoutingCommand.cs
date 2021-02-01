@@ -5,6 +5,7 @@ using System.Linq ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Commands
@@ -39,19 +40,11 @@ namespace Arent3d.Architecture.Routing.App.Commands
 
         if ( null != fromRouteName ) {
           var (fromList, toList) = uiDocument.Document.GetConnectors( fromRouteName ) ;
-          var first = fromList.First().GetIndicator() ;
-          foreach ( var to in toList ) {
-            routeRecords.Add( new RouteRecord( fromRouteName, first, to.GetIndicator() ) ) ;
-          }
-          routeRecords.Add( new RouteRecord( fromRouteName, first, toConnector.GetIndicator() ) ) ;
+          routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( fromRouteName, ToIndicatorList( fromList ), ToIndicatorList( toList, fromConnector ) ) ) ;
         }
         else if ( null != toRouteName ) {
           var (fromList, toList) = uiDocument.Document.GetConnectors( toRouteName ) ;
-          var last = toList.First().GetIndicator() ;
-          foreach ( var from in fromList ) {
-            routeRecords.Add( new RouteRecord( toRouteName, from.GetIndicator(), last ) ) ;
-          }
-          routeRecords.Add( new RouteRecord( toRouteName, fromConnector.GetIndicator(), last ) ) ;
+          routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( toRouteName, ToIndicatorList( fromList, fromConnector ), ToIndicatorList( toList ) ) ) ;
         }
         else {
           routeRecords.Add( new RouteRecord( $"Picked_{++_index}", fromConnector.GetIndicator(), toConnector.GetIndicator() ) ) ;
@@ -61,6 +54,20 @@ namespace Arent3d.Architecture.Routing.App.Commands
       foreach ( var record in routeRecords ) {
         yield return record ;
       }
+    }
+
+    private static IList<ConnectorIndicator> ToIndicatorList( IReadOnlyCollection<Connector> collection )
+    {
+      var list = new List<ConnectorIndicator>( collection.Count + 1 ) ;
+      list.AddRange( ( (IEnumerable<Connector>) collection ).Select( RoutingElementExtensions.GetIndicator ) ) ;
+      return list ;
+    }
+
+    private static IList<ConnectorIndicator> ToIndicatorList( IReadOnlyCollection<Connector> collection, Connector itemToAppend )
+    {
+      var list = ToIndicatorList( collection ) ;
+      list.Add( itemToAppend.GetIndicator() ) ;
+      return list ;
     }
   }
 }
