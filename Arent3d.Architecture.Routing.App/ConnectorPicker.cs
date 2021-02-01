@@ -43,7 +43,8 @@ namespace Arent3d.Architecture.Routing.App
 
     private static Connector? GetEndOfRouting( Element element, bool fromConnector )
     {
-      var routeName = element.GetRouteName() ?? throw new InvalidOperationException() ;
+      var routeName = element.GetRouteName() ;
+      if ( null == routeName ) return null ;
 
       return element.Document.CollectRoutingEndPointConnectors( routeName, fromConnector ).FirstOrDefault() ;
     }

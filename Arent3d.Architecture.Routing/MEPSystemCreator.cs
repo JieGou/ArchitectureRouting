@@ -27,57 +27,21 @@ namespace Arent3d.Architecture.Routing
     private readonly Level _level ;
 
     private readonly MEPSystemType _systemType ;
+    private readonly MEPSystem? _system ;
 
     private readonly List<Connector> _badConnectors = new() ;
 
-    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget )
+    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, RouteMEPSystem routeMepSystem )
     {
       _document = document ;
       _level = CreateLevel( document ) ;
-      _systemType = GetSystemType( document, autoRoutingTarget ) ;
+      _systemType = routeMepSystem.MEPSystemType ;
+      _system = routeMepSystem.MEPSystem ;
     }
 
     private static Level CreateLevel( Document document )
     {
       return Level.Create( document, 0.0 ) ;
-    }
-
-    private static MEPSystemType GetSystemType( Document document, AutoRoutingTarget autoRoutingTarget )
-    {
-      var systemClassification = GetSystemClassification( autoRoutingTarget.EndPoints.First().ReferenceConnector ) ;
-      foreach ( var type in document.GetAllElements<MEPSystemType>() ) {
-        if ( type.SystemClassification == systemClassification ) {
-          return type ;
-        }
-      }
-
-      throw new Exception() ;
-    }
-
-    private static MEPSystemClassification GetSystemClassification( Connector connector )
-    {
-      return connector.Domain switch
-      {
-        Domain.DomainPiping => GetSystemClassification( connector.PipeSystemType ),
-        Domain.DomainHvac => GetSystemClassification( connector.DuctSystemType ),
-        Domain.DomainElectrical => GetSystemClassification( connector.ElectricalSystemType ),
-        Domain.DomainCableTrayConduit => GetSystemClassification( connector.ElectricalSystemType ),
-        _ => null,
-      } ?? throw new KeyNotFoundException() ;
-    }
-
-    private static MEPSystemClassification? GetSystemClassification<T>( T systemType ) where T : Enum
-    {
-      try {
-        if ( Enum.TryParse( systemType.ToString(), out MEPSystemClassification result ) ) {
-          return result ;
-        }
-
-        return null ;
-      }
-      catch {
-        return null ;
-      }
     }
 
     public IReadOnlyCollection<Connector> GetBadConnectors() => _badConnectors ;
@@ -141,7 +105,7 @@ namespace Arent3d.Architecture.Routing
         _ => throw new InvalidOperationException(),
       } ;
 
-      MarkAsAutoRoutedElement( element, ( routeEdge.LineInfo as EndPoint )?.OwnerRoute.RouteId ) ;
+      MarkAsAutoRoutedElement( element, ( routeEdge.LineInfo as EndPoint )?.OwnerRoute.RouteId ?? string.Empty ) ;
 
       var manager = element.GetConnectorManager() ?? throw new InvalidOperationException() ;
 
@@ -169,11 +133,19 @@ namespace Arent3d.Architecture.Routing
 
     private MEPCurve CreateDuct( XYZ startPos, XYZ endPos, DuctType ductType )
     {
-      return Duct.Create( _document, _systemType.Id, ductType.Id, _level.Id, startPos, endPos ) ;
+      var duct = Duct.Create( _document, _systemType.Id, ductType.Id, _level.Id, startPos, endPos ) ;
+      if ( null != _system ) {
+        duct.SetSystemType( _system.Id ) ;
+      }
+      return duct ;
     }
     private MEPCurve CreatePipe( XYZ startPos, XYZ endPos, PipeType pipeType )
     {
-      return Pipe.Create( _document, _systemType.Id, pipeType.Id, _level.Id, startPos, endPos ) ;
+      var pipe = Pipe.Create( _document, _systemType.Id, pipeType.Id, _level.Id, startPos, endPos ) ;
+      if ( null != _system ) {
+        pipe.SetSystemType( _system.Id ) ;
+      }
+      return pipe ;
     }
     private MEPCurve CreateCableTray( XYZ startPos, XYZ endPos, CableTrayType cableTrayType )
     {
@@ -242,9 +214,10 @@ namespace Arent3d.Architecture.Routing
         try {
           transaction.Start() ;
           var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
+          if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
           MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2 ) ) ;
           SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2 ) ;
-          EraseZeroLengthDuct( family ) ;
+          EraseZeroLengthMEPCurves( family ) ;
           transaction.Commit() ;
         }
         catch {
@@ -270,9 +243,10 @@ namespace Arent3d.Architecture.Routing
       try {
         transaction.Start() ;
         var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
+        if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
         MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2, connector3 ) ) ;
         SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3 ) ;
-        EraseZeroLengthDuct( family ) ;
+        EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
       }
       catch {
@@ -301,9 +275,10 @@ namespace Arent3d.Architecture.Routing
       try {
         transaction.Start() ;
         var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
+        if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
         MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2, connector3, connector4 ) ) ;
         SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3, connector4 ) ;
-        EraseZeroLengthDuct( family ) ;
+        EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
       }
       catch {
@@ -312,19 +287,25 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private void EraseZeroLengthDuct( FamilyInstance family )
+    private static bool HasReverseConnectorDirection( FamilyInstance familyInstance )
+    {
+      // TODO
+      return false ;
+    }
+
+    private static void EraseZeroLengthMEPCurves( FamilyInstance family )
     {
       foreach ( Connector connector in family.MEPModel.ConnectorManager.Connectors ) {
-        EraseZeroLengthDuct( connector ) ;
+        EraseZeroLengthMEPCurves( connector ) ;
       }
     }
 
-    private void EraseZeroLengthDuct( Connector connector )
+    private static void EraseZeroLengthMEPCurves( Connector connector )
     {
-      var ductConn1 = GetConnectingDuctConnector( connector ) ;
-      if ( ductConn1?.Owner is not Duct duct ) return ;
+      var ductConn1 = GetConnectingMEPCurveConnector( connector ) ;
+      if ( ductConn1?.Owner is not MEPCurve ) return ;
 
-      var ductConn2 = GetAnotherDuctConnector( ductConn1 ) ;
+      var ductConn2 = GetAnotherMEPCurveConnector( ductConn1 ) ;
       if ( null == ductConn2 ) return ;
 
       if ( false == ductConn1.Origin.IsAlmostEqualTo( ductConn2.Origin ) ) return ;
@@ -334,18 +315,18 @@ namespace Arent3d.Architecture.Routing
 
     private static (Vector3d From, Vector3d To) GetLine( Connector connector )
     {
-      var another = GetAnotherDuctConnector( connector ) ?? throw new InvalidOperationException() ;
+      var another = GetAnotherMEPCurveConnector( connector ) ?? throw new InvalidOperationException() ;
       return ( From: connector.Origin.To3d(), To: another.Origin.To3d() ) ;
     }
 
-    private static Connector? GetAnotherDuctConnector( Connector connector )
+    private static Connector? GetAnotherMEPCurveConnector( Connector connector )
     {
       return connector.GetOtherConnectorsInOwner().UniqueOrDefault() ;
     }
 
-    private static Connector? GetConnectingDuctConnector( Connector connector )
+    private static Connector? GetConnectingMEPCurveConnector( Connector connector )
     {
-      return connector.GetConnectedConnectors().Where( c => c.Owner is Duct || c.Owner is Pipe || c.Owner is CableTray ).UniqueOrDefault() ;
+      return connector.GetConnectedConnectors().Where( c => c.Owner is MEPCurve ).UniqueOrDefault() ;
     }
 
     private void AddBadConnector( Connector connector )
@@ -382,7 +363,7 @@ namespace Arent3d.Architecture.Routing
       {
         if ( false == conn.IsAnyEnd() ) return ;
 
-        foreach ( var partner in conn.GetConnectedConnectors().Where( c => connectorSet.Contains( c.GetIndicator() ) ) ) {
+        foreach ( var partner in conn.GetLogicallyConnectedConnectors().Where( c => connectorSet.Contains( c.GetIndicator() ) ) ) {
           if ( null == partner ) return ;
           if ( partner.IsRoutingConnector( true ) ) {
             toList.Add( conn.Id ) ;
@@ -432,14 +413,14 @@ namespace Arent3d.Architecture.Routing
       var eraseTargets = new HashSet<ElementId>() ;
       while ( 0 != stack.Count ) {
         var connector = stack.Pop() ;
-        var otherConnectors = connector.GetConnectedConnectors().OfEnd().EnumerateAll() ;
+        var otherConnectors = connector.GetLogicallyConnectedConnectors().OfEnd().EnumerateAll() ;
 
         foreach ( var nextConnector in otherConnectors.OfEnd().Where( c => ! endConnectorChecker.IsEnd( c ) ).EnumerateAll() ) {
           var owner = nextConnector.Owner ;
 
           if ( owner.GetRouteName() is { } routeName && ! targetRouteNames.Contains( routeName ) ) continue ;
 
-          if ( ! eraseTargets.Add( owner.Id ) ) continue ;
+          if ( false == AddEraseTargets( eraseTargets, owner ) ) continue ;
 
           // add into the lookup stack.
           nextConnector.GetOtherConnectorsInOwner().OfEnd().Where( c => c.IsConnected ).ForEach( stack.Push ) ;
@@ -447,6 +428,20 @@ namespace Arent3d.Architecture.Routing
       }
 
       return eraseTargets ;
+    }
+
+    private static bool AddEraseTargets( HashSet<ElementId> eraseTargets, Element owner )
+    {
+      if ( ! eraseTargets.Add( owner.Id ) ) return false ;
+
+      foreach ( var c in owner.GetConnectorManager()!.Connectors.OfType<Connector>().SelectMany( RoutingElementExtensions.GetConnectedConnectors ) ) {
+        if ( false == c.IsAnyEnd() ) continue ;
+        if ( false == c.Owner.IsFittingElement() ) continue ;
+
+        AddEraseTargets( eraseTargets, c.Owner ) ;
+      }
+
+      return true ;
     }
 
     private class EndConnectorChecker

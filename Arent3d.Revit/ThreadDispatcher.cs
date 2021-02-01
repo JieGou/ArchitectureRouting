@@ -41,5 +41,17 @@ namespace Arent3d.Revit
         dispatcher.Invoke( action ) ;
       }
     }
+
+    public static T Dispatch<T>( Func<T> action )
+    {
+      var dispatcher = UiDispatcher ?? Dispatcher.CurrentDispatcher ;
+
+      if ( dispatcher.CheckAccess() ) {
+        return action.Invoke() ;
+      }
+      else {
+        return dispatcher.Invoke( action ) ;
+      }
+    }
   }
 }

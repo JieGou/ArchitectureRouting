@@ -15,6 +15,7 @@ namespace Arent3d.Architecture.Routing
   public class RouteGenerator : RouteGeneratorBase<AutoRoutingTarget>
   {
     private readonly Document _document ;
+    private readonly IReadOnlyDictionary<Route, RouteMEPSystem> _routeMEPSystems ;
     private readonly List<Connector> _badConnectors = new() ;
     private readonly PassPointConnectorMapper _globalPassPointConnectorMapper = new() ;
 
@@ -23,12 +24,18 @@ namespace Arent3d.Architecture.Routing
       _document = document ;
 
       RoutingTargets = targets.EnumerateAll() ;
+      _routeMEPSystems = CreateRouteMEPSystems( document, RoutingTargets ) ;
       ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
 
       CollisionCheckTree = new CollisionTree.CollisionTree( collector ) ;
       StructureGraph = DocumentMapper.Get( document ).RackCollection ;
 
       Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;
+    }
+
+    private static IReadOnlyDictionary<Route, RouteMEPSystem> CreateRouteMEPSystems( Document document, IReadOnlyCollection<AutoRoutingTarget> routingTargets )
+    {
+      return ThreadDispatcher.Dispatch( () => routingTargets.Select( target => target.SubRoute.Route ).Distinct().ToDictionary( route => route, route => new RouteMEPSystem( document, route ) ) ) ;
     }
 
     public IReadOnlyCollection<Connector> GetBadConnectors() => _badConnectors ;
@@ -55,7 +62,7 @@ namespace Arent3d.Architecture.Routing
     protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, IAutoRoutingResult result )
     {
       result.DebugExport( GetDebugFileName( _document, routingTarget ) ) ;
-      var ductCreator = new MEPSystemCreator( _document, routingTarget ) ;
+      var ductCreator = new MEPSystemCreator( _document, routingTarget, _routeMEPSystems[ routingTarget.SubRoute.Route ] ) ;
 
       foreach ( var routeVertex in result.RouteVertices ) {
         if ( routeVertex is not TerminalPoint ) continue ;

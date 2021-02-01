@@ -145,5 +145,16 @@ namespace Arent3d.Architecture.Routing
     {
       return _subRoutes.Select( subRoute => subRoute.GetReferenceConnectorInSubRoute() ).NonNull().First() ;
     }
+
+    /// <summary>
+    /// Returns all connectors.
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    public IEnumerable<Connector> GetAllConnectors( Document document )
+    {
+      var indicators = SubRoutes.SelectMany( subRoute => subRoute.FromEndPointIndicators.Concat( subRoute.ToEndPointIndicators ) ).OfType<ConnectorIndicator>() ;
+      return indicators.Select( ind => ind.GetConnector( document ) ).NonNull() ;
+    }
   }
 }

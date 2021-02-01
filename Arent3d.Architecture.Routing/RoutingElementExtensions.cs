@@ -90,10 +90,32 @@ namespace Arent3d.Architecture.Routing
       return connectorSet ;
     }
 
+    /// <summary>
+    /// Directly connected connectors. For many cases, use <see cref="GetLogicallyConnectedConnectors"/>.
+    /// </summary>
+    /// <param name="connector"></param>
+    /// <returns></returns>
     public static IEnumerable<Connector> GetConnectedConnectors( this Connector connector )
     {
       var id = connector.GetIndicator() ;
       return connector.AllRefs.OfType<Connector>().Where( c => c.GetIndicator() != id ) ;
+    }
+
+    /// <summary>
+    /// Connectors beyond the fittings.
+    /// </summary>
+    /// <param name="connector"></param>
+    /// <returns></returns>
+    public static IEnumerable<Connector> GetLogicallyConnectedConnectors( this Connector connector )
+    {
+      foreach ( var conn in connector.GetConnectedConnectors() ) {
+        if ( conn.Owner.IsFittingElement() ) {
+          foreach ( var c in conn.GetOtherConnectorsInOwner().SelectMany( GetLogicallyConnectedConnectors ) ) yield return c ;
+        }
+        else {
+          yield return conn ;
+        }
+      }
     }
 
     public static IEnumerable<Connector> OfEnd( this IEnumerable<Connector> connectors )
@@ -211,6 +233,7 @@ namespace Arent3d.Architecture.Routing
         BuiltInCategory.OST_DuctFitting => true,
         BuiltInCategory.OST_PipeFitting => true,
         BuiltInCategory.OST_CableTrayFitting => true,
+        BuiltInCategory.OST_ConduitFitting => true,
         _ => false,
       } ;
     }
@@ -269,18 +292,18 @@ namespace Arent3d.Architecture.Routing
 
     public static IEnumerable<Connector> CollectRoutingEndPointConnectors( this Document document, string routeName, bool fromConnector )
     {
-      return document.GetAllElementsOfRouteName<Element>( routeName ).SelectMany( e => GetRoutingEndConnectors( e, fromConnector ) ) ;
+      return document.GetAllElementsOfRouteName<MEPCurve>( routeName ).SelectMany( e => GetRoutingEndConnectors( e, fromConnector ) ) ;
     }
     public static (IReadOnlyCollection<Connector> From, IReadOnlyCollection<Connector>To) GetConnectors( this Document document, string routeName )
     {
       var fromList = document.CollectRoutingEndPointConnectors( routeName, true ).EnumerateAll() ;
-      var toList =document.CollectRoutingEndPointConnectors( routeName, false ).EnumerateAll() ;
+      var toList = document.CollectRoutingEndPointConnectors( routeName, false ).EnumerateAll() ;
       return ( From: fromList, To: toList ) ;
     }
 
     public static IEnumerable<Connector> GetRoutingEndConnectors( this Element element, bool fromConnector )
     {
-      return element.GetRoutingConnectors( fromConnector ).SelectMany( conn => conn.GetConnectedConnectors().Where( IsRoutingEndConnector ) ) ;
+      return element.GetRoutingConnectors( fromConnector ).SelectMany( conn => conn.GetLogicallyConnectedConnectors().Where( IsRoutingEndConnector ) ) ;
     }
     private static bool IsRoutingEndConnector( Connector connector )
     {
