@@ -47,6 +47,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private void InitializeRibbon()
     {
+      _initializeCommandButton.Enabled = true ;
       _showRoutingViewsCommandButton.Enabled = false ;
 
       _pickRoutingCommandButton.Enabled = false ;
@@ -56,9 +57,9 @@ namespace Arent3d.Architecture.Routing.App
       _exportRoutingCommandButton.Enabled = false ;
     }
 
-    public partial void UpdateRibbon( Document document, UpdateType updateType )
+    public partial void UpdateUI( Document document, AppUIUpdateType updateType )
     {
-      if ( updateType == UpdateType.Finish ) {
+      if ( updateType == AppUIUpdateType.Finish ) {
         InitializeRibbon() ;
         return ;
       }

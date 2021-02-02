@@ -105,10 +105,21 @@ namespace Arent3d.Architecture
 
     private static RevitAddInType GetAddInType( TypeDefinition type )
     {
-      foreach ( var ifType in type.Interfaces ) {
-        switch ( ifType.InterfaceType.FullName ) {
-        case "Autodesk.Revit.UI.IExternalCommand": return RevitAddInType.Command;
-        case "Autodesk.Revit.UI.IExternalApplication": return RevitAddInType.Application;
+      while ( true ) {
+        foreach ( var ifType in type.Interfaces ) {
+          switch ( ifType.InterfaceType.FullName ) {
+            case "Autodesk.Revit.UI.IExternalCommand" : return RevitAddInType.Command ;
+            case "Autodesk.Revit.UI.IExternalApplication" : return RevitAddInType.Application ;
+          }
+        }
+
+        if ( type.BaseType.FullName == "Arent3d.Revit.UI.ExternalApplicationBase" ) return RevitAddInType.Application ;
+
+        try {
+          type = type.BaseType.Resolve() ;
+        }
+        catch {
+          break ;
         }
       }
 
