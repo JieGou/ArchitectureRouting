@@ -1,6 +1,5 @@
 using System.IO ;
 using System.Reflection ;
-using Arent3d.Revit ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -9,7 +8,7 @@ namespace Arent3d.Architecture.Routing
     private const string FamilyFolderName = "Families" ;
     private const string SettingFolderName = "SharedParameterFile" ;
 
-    private const string SettingFileName = "Arent Shared Parameter.txt" ;
+    private const string SettingFileName = "Arent3d.Architecture.Routing.SharedParameter.txt" ;
 
     private static readonly string AssetPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "Assets" ) ;
 

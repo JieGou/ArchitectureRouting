@@ -37,7 +37,7 @@
     <None Update="SharedParameterFile\Arent Shared Parameter.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\SharedParameterFile\Arent Shared Parameter.txt">
+    <None Update="Assets\SharedParameterFile\Arent3d.Architecture.Routing.SharedParameter.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\Families\Routing Rack Guide.rfa">

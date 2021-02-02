@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -20,7 +21,7 @@ namespace Arent3d.Architecture.Routing
     /// <returns>True if all families and parameters are loaded.</returns>
     public static bool RoutingSettingsAreInitialized( this Document document )
     {
-      return document.AllRoutingFamiliesAreLoaded() && document.AllParametersAreRegistered() ;
+      return document.AllRoutingFamiliesAreLoaded() && document.AllRoutingParametersAreRegistered() ;
     }
 
     /// <summary>

@@ -2,7 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Reflection ;
 
-namespace Arent3d.Architecture.Routing
+namespace Arent3d.Revit
 {
   [AttributeUsage( AttributeTargets.Field )]
   public class ParameterGuidAttribute : Attribute
