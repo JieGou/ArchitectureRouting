@@ -1,5 +1,4 @@
 using Arent3d.Routing ;
-using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -13,6 +12,6 @@ namespace Arent3d.Architecture.Routing
 
     public double Get( IRouteCondition route1, IRouteCondition route2 ) => 0.01 ;
 
-    public double GetClearanceToObstacle( IRouteCondition route ) => 2.0.Inches() ;
+    public double GetClearanceToObstacle( IRouteCondition route ) => 0.05 ; // about 2 in
   }
 }
