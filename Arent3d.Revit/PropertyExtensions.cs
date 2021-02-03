@@ -33,7 +33,9 @@ namespace Arent3d.Revit
 
       var arentCategorySet = app.Create.NewCategorySet() ;
       foreach ( var cat in builtInCategorySet ) {
-        arentCategorySet.Insert( document.Settings.Categories.get_Item( cat ) ) ;
+        if ( document.Settings.Categories.get_Item( cat ) is not { } category ) continue ;
+
+        arentCategorySet.Insert( category ) ;
       }
 
       var instanceBinding = app.Create.NewInstanceBinding( arentCategorySet ) ;
