@@ -224,7 +224,7 @@ namespace Arent3d.Architecture.Routing
     public static bool IsFittingElement( this Element element )
     {
       var category = element.Category ;
-      return ( category.CategoryType == CategoryType.Model && IsFittingCategory( (BuiltInCategory) category.Id.IntegerValue ) ) ;
+      return ( category.CategoryType == CategoryType.Model && IsFittingCategory( category.GetBuiltInCategory() ) ) ;
     }
 
     private static bool IsFittingCategory( BuiltInCategory category )

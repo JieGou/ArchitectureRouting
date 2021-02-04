@@ -13,6 +13,15 @@ namespace Arent3d.Revit
   /// </summary>
   public static class RevitExtensions
   {
+    public static BuiltInCategory GetBuiltInCategory( this Element elm )
+    {
+      return elm.Category.GetBuiltInCategory() ;
+    }
+    public static BuiltInCategory GetBuiltInCategory( this Category category )
+    {
+      return (BuiltInCategory) category.Id.IntegerValue ;
+    }
+    
     public static IEnumerable<TElement> GetAllElements<TElement>( this Document document ) where TElement : Element
     {
       return new FilteredElementCollector( document ).OfClass( typeof( TElement ) ).OfType<TElement>() ;
