@@ -12,6 +12,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Reference Include="Arent3d.Math, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+          <HintPath>..\Libraries\Arent3d.Math.dll</HintPath>
+        </Reference>
         <Reference Include="Arent3d.Utility, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
           <HintPath>..\Libraries\Arent3d.Utility.dll</HintPath>
         </Reference>

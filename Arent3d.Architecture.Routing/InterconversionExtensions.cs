@@ -8,6 +8,9 @@ namespace Arent3d.Architecture.Routing
   /// <summary>
   /// Defines converters between Revit data structures and auto routing data structures.
   /// </summary>
+  /// <remarks>
+  /// TODO: Revit Unit (feet) to Arent Unit (m) conversion.
+  /// </remarks>
   public static class InterconversionExtensions
   {
     public static Vector3d To3d( this XYZ xyz ) => new( xyz.X, xyz.Y, xyz.Z ) ;

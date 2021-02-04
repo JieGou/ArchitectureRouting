@@ -8,7 +8,7 @@ namespace Arent3d.Revit
 {
   public class DocumentEventArgs : EventArgs
   {
-    public Document Document ;
+    public Document Document { get ; }
     internal DocumentEventArgs( Document document )
     {
       Document = document ;

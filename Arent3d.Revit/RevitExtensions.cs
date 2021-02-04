@@ -6,7 +6,7 @@ using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
 
-namespace Arent3d.Architecture.Routing
+namespace Arent3d.Revit
 {
   /// <summary>
   /// Defines extension methods for Revit data.
