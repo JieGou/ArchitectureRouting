@@ -6,6 +6,8 @@ namespace Arent3d.Architecture.Routing
 {
   public readonly struct ConnectorIndicator : IEquatable<ConnectorIndicator>, IEndPointIndicator
   {
+    public static readonly ConnectorIndicator InvalidConnectorIndicator = new ConnectorIndicator( 0, 0 ) ;
+    
     public int ElementId { get ; }
     public int ConnectorId { get ; }
 

@@ -358,36 +358,37 @@ namespace Arent3d.Architecture.Routing
 
     public static IEnumerable<Route> CollectRoutes( this Document document )
     {
-      var dic = new Dictionary<string, (List<ConnectorIndicator>, List<ConnectorIndicator>)>() ;
-      foreach ( var e in document.GetAllElementsOfRoute<Element>() ) {
-        var routeName = e.GetRouteName() ;
-        if ( null == routeName ) continue ;
-
-        if ( false == dic.TryGetValue( routeName, out var list ) ) {
-          list = ( new List<ConnectorIndicator>(), new List<ConnectorIndicator>() ) ;
-          dic.Add( routeName, list ) ;
-        }
-
-        list.Item1.AddRange( e.GetRoutingEndConnectors( true ).Select( c => c.GetIndicator() ) ) ;
-        list.Item2.AddRange( e.GetRoutingEndConnectors( false ).Select( c => c.GetIndicator() ) ) ;
-      }
-
-      foreach ( var (routeName, (fromList, toList)) in dic ) {
-        if ( 0 == fromList.Count || 0 == toList.Count ) continue ;
-
-        var route = new Route( document, routeName ) ;
-
-        var from1 = fromList[ 0 ] ;
-        var to1 = toList[ 0 ] ;
-        foreach ( var to in toList ) {
-          route.RegisterConnectors( from1, to ) ;  // TODO: Pass points
-        }
-        foreach ( var from in fromList.Skip( 1 ) ) {
-          route.RegisterConnectors( from, to1 ) ;  // TODO: Pass points
-        }
-
-        yield return route ;
-      }
+      return document.GetAllStorables<Route>() ;
+      // var dic = new Dictionary<string, (List<ConnectorIndicator>, List<ConnectorIndicator>)>() ;
+      // foreach ( var e in document.GetAllElementsOfRoute<Element>() ) {
+      //   var routeName = e.GetRouteName() ;
+      //   if ( null == routeName ) continue ;
+      //
+      //   if ( false == dic.TryGetValue( routeName, out var list ) ) {
+      //     list = ( new List<ConnectorIndicator>(), new List<ConnectorIndicator>() ) ;
+      //     dic.Add( routeName, list ) ;
+      //   }
+      //
+      //   list.Item1.AddRange( e.GetRoutingEndConnectors( true ).Select( c => c.GetIndicator() ) ) ;
+      //   list.Item2.AddRange( e.GetRoutingEndConnectors( false ).Select( c => c.GetIndicator() ) ) ;
+      // }
+      //
+      // foreach ( var (routeName, (fromList, toList)) in dic ) {
+      //   if ( 0 == fromList.Count || 0 == toList.Count ) continue ;
+      //
+      //   var route = new Route( document, routeName ) ;
+      //
+      //   var from1 = fromList[ 0 ] ;
+      //   var to1 = toList[ 0 ] ;
+      //   foreach ( var to in toList ) {
+      //     route.RegisterConnectors( from1, to ) ;  // TODO: Pass points
+      //   }
+      //   foreach ( var from in fromList.Skip( 1 ) ) {
+      //     route.RegisterConnectors( from, to1 ) ;  // TODO: Pass points
+      //   }
+      //
+      //   yield return route ;
+      //}
     }
 
     #endregion

@@ -32,6 +32,7 @@ namespace Arent3d.Architecture.Routing
       //BuiltInCategory.OST_PipeSegments, // cannot use parameters for OST_PipeSegments category!
       BuiltInCategory.OST_PipeCurves,
       BuiltInCategory.OST_PlumbingFixtures,
+      BuiltInCategory.OST_Sprinklers,
     } ;
 
     public static bool AllRoutingParametersAreRegistered( this Document document )

@@ -1,27 +1,30 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Runtime.InteropServices ;
+using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing
 {
   /// <summary>
   /// Route definition class.
   /// </summary>
-  public class Route
+  [Guid( "83A448F4-E120-44E0-A220-F2D3F11B6A05" )]
+  [StorableVisibility( AppInfo.VendorId, AppInfo.ApplicationGuid )]
+  public sealed class Route : StorableBase
   {
     public const string DefaultFluidPhase = "None" ;
     public const string DefaultInsulationType = "None" ;
 
-    public Document Document { get ; }
-    
     /// <summary>
     /// Unique identifier of a route.
     /// </summary>
-    public string RouteId { get ; }
+    public string RouteId { get ; private set ; }
 
     /// <summary>
     /// Reverse dictionary to search which sub route an end point belongs to.
@@ -33,17 +36,45 @@ namespace Arent3d.Architecture.Routing
     public LoopType LoopType => LoopType.Non ;
     public double Temperature => 30 ; // provisional
 
+    private readonly List<RouteInfo> _routeInfos = new() ;
     private readonly List<SubRoute> _subRoutes = new() ;
     public IReadOnlyCollection<SubRoute> SubRoutes => _subRoutes ;
+
+    public IReadOnlyCollection<RouteInfo> RouteInfos => _routeInfos ;
+
+    public ConnectorIndicator? FirstFromConnector()
+    {
+      return _subRoutes.SelectMany( subRoute => subRoute.FromEndPointIndicators.OfType<ConnectorIndicator>() ).FirstOrDefault() ;
+    }
+    public ConnectorIndicator? FirstToConnector()
+    {
+      return _subRoutes.SelectMany( subRoute => subRoute.ToEndPointIndicators.OfType<ConnectorIndicator>() ).FirstOrDefault() ;
+    }
 
     private Domain? _domain = null ;
 
     public Domain Domain => _domain ??= GetReferenceConnector().Domain ;
 
-    public Route( Document document, string routeId )
+    /// <summary>
+    /// for loading from storage.
+    /// </summary>
+    /// <param name="owner">Owner element.</param>
+    private Route( Element owner ) : base( owner, false )
     {
-      Document = document ;
+      RouteId = string.Empty ;
+    }
+
+    public Route( Document document, string routeId ) : base( document, false )
+    {
       RouteId = routeId ;
+    }
+
+    public void Clear()
+    {
+      _subRouteMap.Clear() ;
+      _routeInfos.Clear() ;
+      _subRoutes.Clear() ;
+      _domain = null ;
     }
 
     /// <summary>
@@ -76,6 +107,7 @@ namespace Arent3d.Architecture.Routing
         for ( int i = 1 ; i < n ; ++i ) {
           segments.Add( ( new PassPointEndIndicator( passPointIds[ i - 1 ], PassPointEndSide.Forward ), new PassPointEndIndicator( passPointIds[ i ], PassPointEndSide.Reverse ) ) ) ;
         }
+
         segments.Add( ( new PassPointEndIndicator( passPointIds[ n - 1 ], PassPointEndSide.Forward ), toId ) ) ;
       }
 
@@ -84,6 +116,7 @@ namespace Arent3d.Architecture.Routing
           // contradiction!
           return false ;
         }
+
         if ( _subRouteMap.TryGetValue( to, out var pair2 ) && false == pair2.Item2 ) {
           // contradiction!
           return false ;
@@ -102,9 +135,11 @@ namespace Arent3d.Architecture.Routing
               foreach ( var ind in subRoute2.FromEndPointIndicators ) {
                 _subRouteMap[ ind ] = ( subRoute1, false ) ;
               }
+
               foreach ( var ind in subRoute2.ToEndPointIndicators ) {
                 _subRouteMap[ ind ] = ( subRoute1, true ) ;
               }
+
               subRoute1.Merge( subRoute2 ) ;
             }
             else {
@@ -133,6 +168,7 @@ namespace Arent3d.Architecture.Routing
         }
       }
 
+      _routeInfos.Add( new RouteInfo( fromId, toId, passPointIds ) ) ;
       return true ;
     }
 
@@ -156,5 +192,30 @@ namespace Arent3d.Architecture.Routing
       var indicators = SubRoutes.SelectMany( subRoute => subRoute.FromEndPointIndicators.Concat( subRoute.ToEndPointIndicators ) ).OfType<ConnectorIndicator>() ;
       return indicators.Select( ind => ind.GetConnector( document ) ).NonNull() ;
     }
+
+    #region Store
+
+    private const string RouteIdField = "RouteId" ;
+    private const string RouteInfosField = "RouteInfos" ;
+
+    protected override void SetupAllFields( FieldGenerator generator )
+    {
+      generator.SetSingle<string>( RouteIdField ) ;
+      generator.SetArray<RouteInfo>( RouteInfosField ) ;
+    }
+
+    protected override void LoadAllFields( FieldReader reader )
+    {
+      RouteId = reader.GetSingle<string>( RouteIdField ) ;
+      reader.GetArray<RouteInfo>( RouteInfosField ).ForEach( info => RegisterConnectors( info.FromId, info.ToId, info.PassPoints ) ) ;
+    }
+
+    protected override void SaveAllFields( FieldWriter writer )
+    {
+      writer.SetSingle( RouteIdField, RouteId ) ;
+      writer.SetArray( RouteInfosField, _routeInfos ) ;
+    }
+
+    #endregion
   }
 }

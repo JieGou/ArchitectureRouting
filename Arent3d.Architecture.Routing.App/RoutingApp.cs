@@ -8,8 +8,8 @@ namespace Arent3d.Architecture.Routing.App
   /// <summary>
   /// Entry point of auto routing application. This class calls UI initializers.
   /// </summary>
-  [Revit.RevitAddin( "{077B2D5D-D1EE-4511-9349-350745120633}" )]
-  [DisplayName( "Routing" )]
+  [Revit.RevitAddin( AppInfo.ApplicationGuid )]
+  [DisplayName( AppInfo.ApplicationName )]
   public class RoutingApp : ExternalApplicationBase
   {
     protected override IAppUIBase? CreateAppUI( UIControlledApplication application )

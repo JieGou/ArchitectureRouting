@@ -11,25 +11,28 @@ namespace Arent3d.Architecture.Routing
   public enum RoutingFamilyType
   {
     [NameOnRevit( "Routing Rack Guide" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     RackGuide,
 
-    [NameOnRevit( "" )]
+    [NameOnRevit( "Routing Pass Point" )]
+    [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
     PassPoint,
   }
 
   public static class RoutingFamilyExtensions
   {
     private static readonly IReadOnlyDictionary<RoutingFamilyType, string> AllFamilyNames = NameOnRevitAttribute.ToDictionary<RoutingFamilyType>() ;
+    private static readonly IReadOnlyDictionary<RoutingFamilyType, BuiltInCategory> AllBuiltInCategories = FamilyCategoryAttribute.ToDictionary<RoutingFamilyType>() ;
     private static readonly IReadOnlyDictionary<string, RoutingFamilyType> ReverseFamilyNames = NameOnRevitAttribute.ToReverseDictionary<RoutingFamilyType>() ;
 
     public static bool AllRoutingFamiliesAreLoaded( this Document document )
     {
-      return AllFamilyNames.Values.All( familyName => null != FindFamilyElementByName( document, familyName ) ) ;
+      return AllFamilyNames.All( pair => null != FindFamilyElementByName( document, pair.Key, pair.Value ) ) ;
     }
 
     public static void MakeCertainAllRoutingFamilies( this Document document )
     {
-      foreach ( var familyName in AllFamilyNames.Values.Where( familyName => null == FindFamilyElementByName( document, familyName ) ).EnumerateAll() ) {
+      foreach ( var (_, familyName) in AllFamilyNames.Where( pair => null == FindFamilyElementByName( document, pair.Key, pair.Value ) ).EnumerateAll() ) {
         LoadFamilySymbol( document, familyName ) ;
       }
     }
@@ -43,15 +46,16 @@ namespace Arent3d.Architecture.Routing
     public static FamilySymbol? GetFamilySymbol( this Document document, RoutingFamilyType familyType )
     {
       if ( AllFamilyNames.TryGetValue( familyType, out var familyName ) ) {
-        return FindFamilyElementByName( document, familyName ) ;
+        return FindFamilyElementByName( document, familyType, familyName ) ;
       }
 
       return null ;
     }
 
-    private static FamilySymbol? FindFamilyElementByName( Document document, string familyName )
+    private static FamilySymbol? FindFamilyElementByName( Document document, RoutingFamilyType familyType, string familyName )
     {
-      return document.GetFamilySymbol( BuiltInCategory.OST_GenericModel, familyName ) ;
+      if ( false == AllBuiltInCategories.TryGetValue( familyType, out var builtInCategory ) ) return null ;
+      return document.GetFamilySymbol( builtInCategory, familyName ) ;
     }
 
     private static bool LoadFamilySymbol( Document document, string familyName )

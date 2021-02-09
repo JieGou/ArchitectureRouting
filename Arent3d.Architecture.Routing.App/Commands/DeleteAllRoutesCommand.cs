@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
       tx.Start( "Setup routing" ) ;
       try {
         MEPSystemCreator.ErasePreviousRoutes( document, endConnectors, erasingRouteNames ) ;
+        allRoutes.ForEach( route => route.Delete() ) ;
         tx.Commit() ;
       }
       catch {

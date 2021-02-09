@@ -2,6 +2,7 @@ using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.UI ;
 
@@ -14,7 +15,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
   {
     protected override IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument )
     {
-      return uiDocument.Document.CollectRoutes().SelectMany( RouteRecordUtils.ToRouteRecords ).ToAsyncEnumerable() ;
+      return uiDocument.Document.CollectRoutes().SelectMany( RouteRecordUtils.ToRouteRecords ).EnumerateAll().ToAsyncEnumerable() ;
     }
   }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
+using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
@@ -102,6 +103,8 @@ namespace Arent3d.Architecture.Routing.App
 
     private void ExecuteRouting( Domain domain, IReadOnlyCollection<Route> routesInType, IProgressData? progressData )
     {
+      ThreadDispatcher.Dispatch( () => routesInType.ForEach( r => r.Save() ) ) ;
+
       var targets = routesInType.SelectMany( route => route.SubRoutes.Select( subRoute => new AutoRoutingTarget( _document, subRoute ) ) ).EnumerateAll() ;
 
       ICollisionCheckTargetCollector collector ;
@@ -138,12 +141,20 @@ namespace Arent3d.Architecture.Routing.App
     /// <returns>Routing objects</returns>
     private async Task<IReadOnlyCollection<Route>> ConvertToRoutes( IAsyncEnumerable<RouteRecord> fromToList )
     {
+      var oldRoutes = ThreadDispatcher.Dispatch( () => _document.GetAllStorables<Route>().ToDictionary( route => route.RouteId ) ) ;
+      
       var dic = new Dictionary<string, Route>() ;
       var result = new List<Route>() ; // Ordered by the original from-to record order.
 
       await foreach ( var record in fromToList ) {
         if ( false == dic.TryGetValue( record.RouteId, out var route ) ) {
-          route = new Route( _document, record.RouteId ) ;
+          if ( oldRoutes.TryGetValue( record.RouteId, out route ) ) {
+            route.Clear() ;
+          }
+          else {
+            route = new Route( _document, record.RouteId ) ;
+          }
+
           dic.Add( record.RouteId, route ) ;
           result.Add( route ) ;
         }
