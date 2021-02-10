@@ -4,6 +4,8 @@ using System.Linq ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Mechanical ;
+using Autodesk.Revit.DB.Plumbing ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using MathLib ;
@@ -98,7 +100,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private static (XYZ Position, XYZ Direction) ToPositionAndDirection( Transform transform )
     {
-      return ( transform.Origin, transform.BasisZ ) ;
+      return ( transform.Origin, transform.BasisX ) ;
     }
 
 
@@ -115,6 +117,8 @@ namespace Arent3d.Architecture.Routing.App
 
       public bool AllowElement( Element elem )
       {
+        if ( elem is not MEPCurve ) return false ;  // provisional
+
         var routeName = elem.GetRouteName() ;
         if ( null == routeName || false == _allRoutes.ContainsKey( routeName ) ) return false ;
 
