@@ -6,6 +6,7 @@ using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using MathLib ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -29,9 +30,32 @@ namespace Arent3d.Architecture.Routing.App
     /// Generates a routing execution object.
     /// </summary>
     /// <param name="document"></param>
-    public RoutingExecutor( Document document )
+    /// <param name="view"></param>
+    public RoutingExecutor( Document document, View view )
     {
       _document = document ;
+
+      CollectRacks( document, view ) ;
+    }
+
+    private static void CollectRacks( Document document, View view )
+    {
+      var racks = DocumentMapper.Get( document ).RackCollection ;
+
+      racks.Clear() ;
+      {
+        // TODO: Z
+        var connector = document.FindConnector( 17299721, 3 )! ;
+        var z = connector.Origin.Z - connector.Radius ;
+
+        foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
+          var (min, max) = familyInstance.get_BoundingBox( view ).To3d() ;
+
+          racks.AddRack( new Rack.Rack { Box = new Box3d( min, max ), IsMainRack = true, BeamInterval = 5 } ) ;
+        }
+      }
+
+      racks.CreateLinkages() ;
     }
 
     /// <summary>

@@ -38,7 +38,14 @@ namespace Arent3d.Architecture.Routing
 
     private readonly List<RouteInfo> _routeInfos = new() ;
     private readonly List<SubRoute> _subRoutes = new() ;
+
     public IReadOnlyCollection<SubRoute> SubRoutes => _subRoutes ;
+
+    public SubRoute? GetSubRoute( int index )
+    {
+      if ( index < 0 || _subRoutes.Count <= index ) return null ;
+      return _subRoutes[ index ] ;
+    }
 
     public IReadOnlyCollection<RouteInfo> RouteInfos => _routeInfos ;
 
@@ -159,7 +166,7 @@ namespace Arent3d.Architecture.Routing
         }
         else {
           // new sub route.
-          var subRoute = new SubRoute( this ) ;
+          var subRoute = new SubRoute( this, _subRoutes.Count ) ;
           subRoute.AddFrom( from ) ;
           subRoute.AddTo( to ) ;
           _subRoutes.Add( subRoute ) ;

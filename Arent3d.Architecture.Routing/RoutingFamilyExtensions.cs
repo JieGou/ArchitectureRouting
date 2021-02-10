@@ -52,6 +52,14 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
+    public static IEnumerable<FamilyInstance> GetAllFamilyInstances( this Document document, RoutingFamilyType familyType )
+    {
+      var familySymbol = document.GetFamilySymbol( familyType ) ;
+      if ( null == familySymbol ) return Array.Empty<FamilyInstance>() ;
+
+      return document.GetAllFamilyInstances( familySymbol ) ;
+    }
+
     private static FamilySymbol? FindFamilyElementByName( Document document, RoutingFamilyType familyType, string familyName )
     {
       if ( false == AllBuiltInCategories.TryGetValue( familyType, out var builtInCategory ) ) return null ;

@@ -18,6 +18,7 @@ namespace Arent3d.Architecture.Routing
   public class MEPSystemCreator
   {
     private readonly Document _document ;
+    private readonly AutoRoutingTarget _autoRoutingTarget ;
     private readonly RouteVertexToConnectorMapper _connectorMapper = new() ;
     
     /// <summary>
@@ -36,6 +37,7 @@ namespace Arent3d.Architecture.Routing
     public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, RouteMEPSystem routeMepSystem )
     {
       _document = document ;
+      _autoRoutingTarget = autoRoutingTarget ;
       _level = CreateLevel( document ) ;
       _systemType = routeMepSystem.MEPSystemType ;
       _system = routeMepSystem.MEPSystem ;
@@ -108,7 +110,7 @@ namespace Arent3d.Architecture.Routing
         _ => throw new InvalidOperationException(),
       } ;
 
-      MarkAsAutoRoutedElement( element, ( routeEdge.LineInfo as EndPoint )?.OwnerRoute.RouteId ?? string.Empty ) ;
+      MarkAsAutoRoutedElement( element, _autoRoutingTarget.SubRoute ) ;
 
       var manager = element.GetConnectorManager() ?? throw new InvalidOperationException() ;
 
@@ -117,7 +119,7 @@ namespace Arent3d.Architecture.Routing
       startConnector.SetDiameter( routeEdge.Start.PipeDiameter ) ;
       endConnector.SetDiameter( routeEdge.End.PipeDiameter ) ;
 
-      element.SetRoutingFromToConnectorIds( new[] { startConnector.Id }, new[] { endConnector.Id } ) ;
+      element.SetRoutedElementFromToConnectorIds( new[] { startConnector.Id }, new[] { endConnector.Id } ) ;
 
       RegisterPassPoint( routeEdge.Start, startConnector ) ;
       RegisterPassPoint( routeEdge.End, endConnector ) ;
@@ -212,7 +214,7 @@ namespace Arent3d.Architecture.Routing
           transaction.Start() ;
           var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
           if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-          MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2 ) ) ;
+          MarkAsAutoRoutedElement( family, connector1, connector2 ) ;
           SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2 ) ;
           EraseZeroLengthMEPCurves( family ) ;
           transaction.Commit() ;
@@ -241,7 +243,7 @@ namespace Arent3d.Architecture.Routing
         transaction.Start() ;
         var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
         if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-        MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2, connector3 ) ) ;
+        MarkAsAutoRoutedElement( family, connector1, connector2, connector3 ) ;
         SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3 ) ;
         EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
@@ -273,7 +275,7 @@ namespace Arent3d.Architecture.Routing
         transaction.Start() ;
         var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
         if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-        MarkAsAutoRoutedElement( family, GetRouteId( connector1, connector2, connector3, connector4 ) ) ;
+        MarkAsAutoRoutedElement( family, connector1, connector2, connector3, connector4 ) ;
         SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3, connector4 ) ;
         EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
@@ -333,19 +335,30 @@ namespace Arent3d.Architecture.Routing
 
 
 
-    private static void MarkAsAutoRoutedElement( Element element, string? routeId )
+    private void MarkAsAutoRoutedElement( Element element, SubRoute subRoute )
     {
-      element.SetProperty( RoutingParameter.RouteName, routeId ?? string.Empty ) ;
+      MarkAsAutoRoutedElement( element, subRoute.Route.RouteId, subRoute.SubRouteIndex );
+    }
+    private void MarkAsAutoRoutedElement( Element element, params Connector[] connectors )
+    {
+      var (routeName, subRouteIndex) = connectors.Select( GetRouteNameAndSubRouteIndex ).FirstOrDefault( tuple => null == tuple.RouteName ) ;
+      MarkAsAutoRoutedElement( element, routeName ?? string.Empty, subRouteIndex ) ;
+    }
+    private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex )
+    {
+      element.SetProperty( RoutingParameter.RouteName, routeId ) ;
+      element.SetProperty( RoutingParameter.SubRouteIndex, subRouteIndex ) ;
     }
 
-    private static string? GetRouteId( params Connector[] connectors )
+    private static (string? RouteName, int SubRouteIndex) GetRouteNameAndSubRouteIndex( Connector connector )
     {
-      return connectors.Select( GetRouteId ).NonNull().FirstOrDefault() ;
-    }
+      var routeName = connector.Owner.GetRouteName() ;
+      if ( null == routeName ) return ( null, 0 ) ;
 
-    private static string? GetRouteId( Connector connector )
-    {
-      return connector.Owner.GetRouteName() ;
+      var subRouteIndex = connector.Owner.GetSubRouteIndex() ;
+      if ( null == subRouteIndex ) return ( null, 0 ) ;
+
+      return ( RouteName: routeName, SubRouteIndex: subRouteIndex.Value ) ;
     }
 
     private static void SetRoutingFromToConnectorIdsForFitting( Element element, params Connector[] connectors )
@@ -373,7 +386,7 @@ namespace Arent3d.Architecture.Routing
         }
       } ) ;
 
-      element.SetRoutingFromToConnectorIds( fromList, toList ) ;
+      element.SetRoutedElementFromToConnectorIds( fromList, toList ) ;
     }
 
 

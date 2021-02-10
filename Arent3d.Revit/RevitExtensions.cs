@@ -15,7 +15,9 @@ namespace Arent3d.Revit
   {
     public static BuiltInCategory GetBuiltInCategory( this Element elm )
     {
-      return elm.Category.GetBuiltInCategory() ;
+      var category = elm.Category ;
+      if ( null == category ) return BuiltInCategory.INVALID ;
+      return category.GetBuiltInCategory() ;
     }
     public static BuiltInCategory GetBuiltInCategory( this Category category )
     {

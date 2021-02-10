@@ -36,16 +36,18 @@ namespace Arent3d.Architecture.Routing.App.Commands
       {
         var routes = uiDocument.Document.GetAllStorables<Route>().ToDictionary( route => route.RouteId ) ;
 
-        var (fromConnector, fromRouteName) = ConnectorPicker.GetConnector( uiDocument, "Select the first connector" ) ;
-        var (toConnector, toRouteName) = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromConnector, fromRouteName ) ;
+        var (fromConnector, fromElement) = ConnectorPicker.GetConnector( uiDocument, "Select the first connector" ) ;
+        var (toConnector, toElement) = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromConnector, fromElement.GetRouteName() ) ;
 
-        if ( null != fromRouteName && routes.TryGetValue( fromRouteName, out var fromRoute ) && fromRoute.FirstFromConnector() is { } fromIndicator ) {
-          routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( fromRoute ) ) ;
-          routeRecords.Add( new RouteRecord( fromRoute.RouteId, fromIndicator, toConnector.GetIndicator() ) ) ;
+        if ( GetSubRoute( routes, fromElement ) is {} subRoute1 ) {
+          var splitter = new RouteSplitter( subRoute1, fromElement, toConnector, false ) ;
+          routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute1.Route ) ) ;
+          routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute1.Route ) ) ;
         }
-        else if ( null != toRouteName && routes.TryGetValue( toRouteName, out var toRoute ) && toRoute.FirstToConnector() is { } toIndicator ) {
-          routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( toRoute ) ) ;
-          routeRecords.Add( new RouteRecord( toRoute.RouteId, fromConnector.GetIndicator(), toIndicator ) ) ;
+        else if ( GetSubRoute( routes, toElement ) is {} subRoute2 ) {
+          var splitter = new RouteSplitter( subRoute2, toElement, fromConnector, true ) ;
+          routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute2.Route ) ) ;
+          routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute2.Route ) ) ;
         }
         else {
           for ( var i = routes.Count + 1 ; ; ++i ) {
@@ -63,18 +65,55 @@ namespace Arent3d.Architecture.Routing.App.Commands
       }
     }
 
-    private static IList<ConnectorIndicator> ToIndicatorList( IReadOnlyCollection<Connector> collection )
+    private static SubRoute? GetSubRoute( IReadOnlyDictionary<string, Route> routes, Element fromElement )
     {
-      var list = new List<ConnectorIndicator>( collection.Count + 1 ) ;
-      list.AddRange( ( (IEnumerable<Connector>) collection ).Select( RoutingElementExtensions.GetIndicator ) ) ;
-      return list ;
+      var routeName = fromElement.GetRouteName() ;
+      if ( null == routeName ) return null ;
+
+      var subRouteIndex = fromElement.GetSubRouteIndex() ;
+      if ( null == subRouteIndex ) return null ;
+
+      if ( false == routes.TryGetValue( routeName, out var route ) ) return null ;
+      return route.GetSubRoute( subRouteIndex.Value ) ;
     }
 
-    private static IList<ConnectorIndicator> ToIndicatorList( IReadOnlyCollection<Connector> collection, Connector itemToAppend )
+    private class RouteSplitter
     {
-      var list = ToIndicatorList( collection ) ;
-      list.Add( itemToAppend.GetIndicator() ) ;
-      return list ;
+      private readonly RouteInfoDetector _detector ;
+      private readonly ConnectorIndicator _newConnectorIndicator ;
+      private readonly bool _newConnectorIsFromConnector ;
+
+      public RouteSplitter( SubRoute subRoute, Element splitElement, Connector newConnector, bool newConnectorIsFromConnector )
+      {
+        _detector = new RouteInfoDetector( subRoute, splitElement ) ;
+        _newConnectorIndicator = newConnector.GetIndicator() ;
+        _newConnectorIsFromConnector = newConnectorIsFromConnector ;
+      }
+
+      public IEnumerable<RouteRecord> CreateInsertedRouteRecords( Route route )
+      {
+        foreach ( var info in route.RouteInfos ) {
+          var index = _detector.GetPassedThroughPassPointIndex( info ) ;
+          if ( index < 0 ) continue ;
+
+          if ( _newConnectorIsFromConnector ) {
+            yield return CreateInsertedRouteRecordFrom( route.RouteId, info, index, _newConnectorIndicator ) ;
+          }
+          else {
+            yield return CreateInsertedRouteRecordTo( route.RouteId, info, index, _newConnectorIndicator ) ;
+          }
+        }
+      }
+
+      private static RouteRecord CreateInsertedRouteRecordFrom( string routeName, RouteInfo info, int index, ConnectorIndicator newConnectorIndicator )
+      {
+        return new RouteRecord( routeName, newConnectorIndicator, info.ToId, info.PassPoints.SubArray( index ) ) ;
+      }
+
+      private static RouteRecord CreateInsertedRouteRecordTo( string routeName, RouteInfo info, int index, ConnectorIndicator newConnectorIndicator )
+      {
+        return new RouteRecord( routeName, info.FromId, newConnectorIndicator, info.PassPoints.SubArray( 0, index ) ) ;
+      }
     }
   }
 }

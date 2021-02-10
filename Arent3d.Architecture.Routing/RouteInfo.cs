@@ -25,7 +25,6 @@ namespace Arent3d.Architecture.Routing
   internal class RouteInfoConverter : StorableConverterBase<RouteInfo, string>
   {
     private static readonly char[] FieldSplitter = { ',' } ;
-    private static readonly char[] ConnectPointSplitter = { '/' } ;
     
     protected override RouteInfo NativeToCustom( Element storedElement, string nativeTypeValue )
     {
@@ -61,19 +60,12 @@ namespace Arent3d.Architecture.Routing
 
     private static ConnectorIndicator Parse( string str )
     {
-      if ( false == str.StartsWith( "c:" ) ) return ConnectorIndicator.InvalidConnectorIndicator ;
-
-      var array = str.Substring( 2 ).Split( ConnectPointSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
-      if ( array.Length < 2 ) return ConnectorIndicator.InvalidConnectorIndicator ;
-
-      if ( false == int.TryParse( array[ 0 ], out var elmId ) || false == int.TryParse( array[ 1 ], out var connId ) ) return ConnectorIndicator.InvalidConnectorIndicator ;
-
-      return new ConnectorIndicator( elmId, connId ) ;
+      return ConnectorIndicator.Parse( str ) ;
     }
 
     private static string Stringify( ConnectorIndicator indicator )
     {
-      return $"c:{indicator.ElementId}/{indicator.ConnectorId}" ;
+      return indicator.ToString() ;
     }
   }
 }

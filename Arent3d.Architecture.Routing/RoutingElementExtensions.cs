@@ -199,10 +199,31 @@ namespace Arent3d.Architecture.Routing
       var instance = document.GetElementById<FamilyInstance>( elementId ) ;
       if ( null == instance ) return null ;
 
-      // TODO: check if family instance is a pass point family instance
+      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.PassPoint )?.Id ) {
+        // Family instance is not a pass point.
+        return null ;
+      }
+
       return instance ;
     }
-    
+
+    public static void SetPassPointConnectors( this Element element, IReadOnlyCollection<Connector> fromConnectors, IReadOnlyCollection<Connector> toConnectors )
+    {
+      element.SetProperty( RoutingParameter.PassPointNextToFromSideConnectorIds, string.Join( "|", fromConnectors.Select( c => c.GetIndicator().ToString() ) ) ) ;
+      element.SetProperty( RoutingParameter.PassPointNextToToSideConnectorIds, string.Join( "|", toConnectors.Select( c => c.GetIndicator().ToString() ) ) ) ;
+    }
+
+    private static readonly char[] PassPointConnectorSeparator = { '|' } ;
+
+    public static IReadOnlyCollection<ConnectorIndicator> GetPassPointConnectors( this Element element, bool isFrom )
+    {
+      var parameter = isFrom ? RoutingParameter.PassPointNextToFromSideConnectorIds : RoutingParameter.PassPointNextToToSideConnectorIds ;
+      if ( false == element.TryGetProperty( parameter, out string? str ) ) return Array.Empty<ConnectorIndicator>() ;
+      if ( string.IsNullOrEmpty( str ) ) return Array.Empty<ConnectorIndicator>() ;
+
+      return str!.Split( PassPointConnectorSeparator, StringSplitOptions.RemoveEmptyEntries ).Select( ConnectorIndicator.Parse ) ;
+    }
+
     #endregion
 
     #region Routing (General)
@@ -224,6 +245,7 @@ namespace Arent3d.Architecture.Routing
     public static bool IsFittingElement( this Element element )
     {
       var category = element.Category ;
+      if ( null == category ) return false ;
       return ( category.CategoryType == CategoryType.Model && IsFittingCategory( category.GetBuiltInCategory() ) ) ;
     }
 
@@ -291,6 +313,13 @@ namespace Arent3d.Architecture.Routing
       return value ;
     }
 
+    public static int? GetSubRouteIndex( this Element element )
+    {
+      if ( ! element.IsAutoRoutingGeneratedElement() ) return null ;
+      if ( false == element.TryGetProperty( RoutingParameter.SubRouteIndex, out int value ) ) return null ;
+      return value ;
+    }
+
     public static IEnumerable<Connector> CollectRoutingEndPointConnectors( this Document document, string routeName, bool fromConnector )
     {
       return document.GetAllElementsOfRouteName<MEPCurve>( routeName ).SelectMany( e => GetRoutingEndConnectors( e, fromConnector ) ) ;
@@ -318,10 +347,10 @@ namespace Arent3d.Architecture.Routing
 
     #region Routing (From-To)
 
-    public static void SetRoutingFromToConnectorIds( this Element element, IReadOnlyCollection<int> fromIds, IReadOnlyCollection<int> toIds )
+    public static void SetRoutedElementFromToConnectorIds( this Element element, IReadOnlyCollection<int> fromIds, IReadOnlyCollection<int> toIds )
     {
-      element.SetProperty( RoutingParameter.FromSideConnectorIds, string.Join( "|", fromIds ) ) ;
-      element.SetProperty( RoutingParameter.ToSideConnectorIds, string.Join( "|", toIds ) ) ;
+      element.SetProperty( RoutingParameter.RoutedElementFromSideConnectorIds, string.Join( "|", fromIds ) ) ;
+      element.SetProperty( RoutingParameter.RoutedElementToSideConnectorIds, string.Join( "|", toIds ) ) ;
     }
 
     public static IReadOnlyCollection<Connector> GetRoutingConnectors( this Element element, bool isFrom )
@@ -329,7 +358,7 @@ namespace Arent3d.Architecture.Routing
       var manager = element.GetConnectorManager() ;
       if ( null == manager ) return Array.Empty<Connector>() ;
 
-      var routingParam = ( isFrom ? RoutingParameter.FromSideConnectorIds : RoutingParameter.ToSideConnectorIds ) ;
+      var routingParam = ( isFrom ? RoutingParameter.RoutedElementFromSideConnectorIds : RoutingParameter.RoutedElementToSideConnectorIds ) ;
       if ( false == element.TryGetProperty( routingParam, out string? value ) ) return Array.Empty<Connector>() ;
       if ( null == value ) return Array.Empty<Connector>() ;
 
@@ -348,7 +377,7 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsRoutingConnector( this Connector connector, bool isFrom )
     {
-      var routingParam = ( isFrom ? RoutingParameter.FromSideConnectorIds : RoutingParameter.ToSideConnectorIds ) ;
+      var routingParam = ( isFrom ? RoutingParameter.RoutedElementFromSideConnectorIds : RoutingParameter.RoutedElementToSideConnectorIds ) ;
       if ( false == connector.Owner.TryGetProperty( routingParam, out string? value ) ) return false ;
       if ( null == value ) return false ;
 
@@ -359,37 +388,31 @@ namespace Arent3d.Architecture.Routing
     public static IEnumerable<Route> CollectRoutes( this Document document )
     {
       return document.GetAllStorables<Route>() ;
-      // var dic = new Dictionary<string, (List<ConnectorIndicator>, List<ConnectorIndicator>)>() ;
-      // foreach ( var e in document.GetAllElementsOfRoute<Element>() ) {
-      //   var routeName = e.GetRouteName() ;
-      //   if ( null == routeName ) continue ;
-      //
-      //   if ( false == dic.TryGetValue( routeName, out var list ) ) {
-      //     list = ( new List<ConnectorIndicator>(), new List<ConnectorIndicator>() ) ;
-      //     dic.Add( routeName, list ) ;
-      //   }
-      //
-      //   list.Item1.AddRange( e.GetRoutingEndConnectors( true ).Select( c => c.GetIndicator() ) ) ;
-      //   list.Item2.AddRange( e.GetRoutingEndConnectors( false ).Select( c => c.GetIndicator() ) ) ;
-      // }
-      //
-      // foreach ( var (routeName, (fromList, toList)) in dic ) {
-      //   if ( 0 == fromList.Count || 0 == toList.Count ) continue ;
-      //
-      //   var route = new Route( document, routeName ) ;
-      //
-      //   var from1 = fromList[ 0 ] ;
-      //   var to1 = toList[ 0 ] ;
-      //   foreach ( var to in toList ) {
-      //     route.RegisterConnectors( from1, to ) ;  // TODO: Pass points
-      //   }
-      //   foreach ( var from in fromList.Skip( 1 ) ) {
-      //     route.RegisterConnectors( from, to1 ) ;  // TODO: Pass points
-      //   }
-      //
-      //   yield return route ;
-      //}
     }
+
+    #endregion
+
+    #region Center Lines
+
+    public static IEnumerable<Element> GetCenterLine( this Element element )
+    {
+      var document = element.Document ;
+      return element.GetDependentElements( CenterLineFilter ).Select( document.GetElement ).Where( e => e.IsValidObject ) ;
+    }
+
+    private static readonly BuiltInCategory[] CenterLineCategories =
+    {
+      BuiltInCategory.OST_CenterLines,
+      BuiltInCategory.OST_DuctCurvesCenterLine,
+      BuiltInCategory.OST_DuctFittingCenterLine,
+      BuiltInCategory.OST_FlexDuctCurvesCenterLine,
+      BuiltInCategory.OST_PipeCurvesCenterLine,
+      BuiltInCategory.OST_PipeFittingCenterLine,
+      BuiltInCategory.OST_FlexPipeCurvesCenterLine,
+    } ;
+    private static readonly ElementFilter CenterLineFilter = new LogicalOrFilter( Array.ConvertAll( CenterLineCategories, CreateElementFilter ) ) ;
+
+    private static ElementFilter CreateElementFilter( BuiltInCategory category ) => new ElementCategoryFilter( category ) ;
 
     #endregion
   }

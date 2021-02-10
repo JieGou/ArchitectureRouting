@@ -11,6 +11,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private static readonly (string Key, string Title) InitPanel = ( Key: "arent3d.architecture.routing.init", Title: "Initialization" ) ;
     private static readonly (string Key, string Title) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", Title: "Routing" ) ;
+    private static readonly (string Key, string Title) PassPointPanel = ( Key: "arent3d.architecture.routing.passpoint", Title: "Pass Point" ) ;
 
 
     private readonly RibbonButton _initializeCommandButton ;
@@ -18,9 +19,12 @@ namespace Arent3d.Architecture.Routing.App
 
     private readonly RibbonButton _pickRoutingCommandButton ;
     private readonly RibbonButton _fileRoutingCommandButton ;
+
     private readonly RibbonButton _allReRouteCommandButton ;
     private readonly RibbonButton _deleteAllRoutesCommandButton ;
     private readonly RibbonButton _exportRoutingCommandButton ;
+
+    private readonly RibbonButton _insertPassPointCommandButton ;
 
 
     private RoutingAppUI( UIControlledApplication application )
@@ -41,6 +45,11 @@ namespace Arent3d.Architecture.Routing.App
         routingPanel.AddSeparator() ;
         _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
       }
+      {
+        var passPointPanel = tab.CreateRibbonPanel( PassPointPanel.Key, PassPointPanel.Title ) ;
+        _insertPassPointCommandButton = passPointPanel.AddButton<InsertPassPointCommand>() ;
+        passPointPanel.AddSeparator() ;
+      }
 
       InitializeRibbon() ;
     }
@@ -55,6 +64,8 @@ namespace Arent3d.Architecture.Routing.App
       _allReRouteCommandButton.Enabled = false ;
       _deleteAllRoutesCommandButton.Enabled = false ;
       _exportRoutingCommandButton.Enabled = false ;
+
+      _insertPassPointCommandButton.Enabled = false ;
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
@@ -65,13 +76,17 @@ namespace Arent3d.Architecture.Routing.App
       }
 
       var setupIsDone = document.RoutingSettingsAreInitialized() ;
+
       _initializeCommandButton.Enabled = ! setupIsDone ;
       _showRoutingViewsCommandButton.Enabled = setupIsDone ;
+
       _pickRoutingCommandButton.Enabled = setupIsDone ;
       _fileRoutingCommandButton.Enabled = setupIsDone ;
       _allReRouteCommandButton.Enabled = setupIsDone ;
       _deleteAllRoutesCommandButton.Enabled = setupIsDone ;
       _exportRoutingCommandButton.Enabled = setupIsDone ;
+
+      _insertPassPointCommandButton.Enabled = setupIsDone ;
     }
   }
 }

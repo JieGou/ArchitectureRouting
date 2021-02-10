@@ -37,13 +37,16 @@
     <None Update="SharedParameterFile\Arent Shared Parameter.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\SharedParameterFile\Arent3d.Architecture.Routing.SharedParameter.txt">
+    <None Update="Assets\SharedParameterFile\RoutingSharedParameters.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\Families\Routing Rack Guide.rfa">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\Families\Routing Pass Point.rfa">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\SharedParameterFile\PassPointSharedParameters.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

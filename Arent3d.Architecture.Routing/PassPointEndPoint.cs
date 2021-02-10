@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Returns the first pipe direction.
     /// </summary>
-    public override Vector3d Direction => Element.GetTotalTransform().BasisZ.To3d() ;  // provisional
+    public override Vector3d Direction => Element.GetTotalTransform().BasisX.To3d() ;
 
     public PassPointEndPoint( Route ownerRoute, FamilyInstance familyInstance, PassPointEndSide sideType, Connector referenceConnector )
       : base( ownerRoute, referenceConnector, ( sideType == PassPointEndSide.Forward ) )

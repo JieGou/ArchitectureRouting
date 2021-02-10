@@ -8,7 +8,8 @@ namespace Arent3d.Architecture.Routing
     private const string FamilyFolderName = "Families" ;
     private const string SettingFolderName = "SharedParameterFile" ;
 
-    private const string SettingFileName = "Arent3d.Architecture.Routing.SharedParameter.txt" ;
+    private const string RoutingSharedParameterFileName = "RoutingSharedParameters.txt" ;
+    private const string PassPointSharedParameterFileName = "PassPointSharedParameters.txt" ;
 
     private static readonly string AssetPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "Assets" ) ;
 
@@ -17,9 +18,14 @@ namespace Arent3d.Architecture.Routing
       return GetPath( FamilyFolderName, familyName + ".rfa" ) ;
     }
 
-    public static string GetSharedParameterPath()
+    public static string GetRoutingSharedParameterPath()
     {
-      return GetPath( SettingFolderName, SettingFileName ) ;
+      return GetPath( SettingFolderName, RoutingSharedParameterFileName ) ;
+    }
+
+    public static string GetPassPointSharedParameterPath()
+    {
+      return GetPath( SettingFolderName, PassPointSharedParameterFileName ) ;
     }
 
     private static string GetPath( string folderName, string fileName )

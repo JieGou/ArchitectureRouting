@@ -65,5 +65,23 @@ namespace Arent3d.Architecture.Routing
     {
       return ! left.Equals( right ) ;
     }
+
+    public override string ToString()
+    {
+      return $"c:{ElementId}/{ConnectorId}" ;
+    }
+
+    private static readonly char[] ConnectPointSplitter = { '/' } ;
+    public static ConnectorIndicator Parse( string str )
+    {
+      if ( false == str.StartsWith( "c:" ) ) return InvalidConnectorIndicator ;
+
+      var array = str.Substring( 2 ).Split( ConnectPointSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
+      if ( array.Length < 2 ) return InvalidConnectorIndicator ;
+
+      if ( false == int.TryParse( array[ 0 ], out var elmId ) || false == int.TryParse( array[ 1 ], out var connId ) ) return InvalidConnectorIndicator ;
+
+      return new ConnectorIndicator( elmId, connId ) ;
+    }
   }
 }

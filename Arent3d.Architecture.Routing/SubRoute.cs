@@ -8,6 +8,8 @@ namespace Arent3d.Architecture.Routing
   public class SubRoute
   {
     public Route Route { get ; }
+    
+    public int SubRouteIndex { get ; }
 
     public int Priority => 1 ;  // provisional
 
@@ -26,9 +28,10 @@ namespace Arent3d.Architecture.Routing
       return ToEndPointIndicators.Select( ind => ind.GetEndPoint( document, this, false ) ).NonNull() ;
     }
 
-    internal SubRoute( Route route )
+    internal SubRoute( Route route, int index )
     {
       Route = route ;
+      SubRouteIndex = index ;
     }
 
     internal void AddFrom( IEndPointIndicator from )

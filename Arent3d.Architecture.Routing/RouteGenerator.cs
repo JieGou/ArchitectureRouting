@@ -94,9 +94,12 @@ namespace Arent3d.Architecture.Routing
 
     protected override void OnGenerationFinished()
     {
-      foreach ( var (conn1, conn2) in _globalPassPointConnectorMapper ) {
+      foreach ( var (passPointId, (conn1, conn2)) in _globalPassPointConnectorMapper ) {
         // pass point must have from-side and to-side connector
         if ( null == conn1 || null == conn2 ) throw new InvalidOperationException() ;
+
+        var element = _document.GetElement( new ElementId( passPointId ) ) ;
+        element.SetPassPointConnectors( new[] { conn1 }, new[] { conn2 } ) ;
 
         conn1.ConnectTo( conn2 ) ;
       }

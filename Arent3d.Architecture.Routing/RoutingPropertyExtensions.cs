@@ -5,12 +5,21 @@ namespace Arent3d.Architecture.Routing
 {
   public enum RoutingParameter
   {
+    // RoutingSharedParameters
     [ParameterGuid( "42a113b5-364a-4918-a423-6590c47b828f" ), NameOnRevit( "Route Name" )]
     RouteName,
-    [ParameterGuid( "B113FB98-A9EB-4F8E-A6A2-C4632922EB1B" ), NameOnRevit( "Route From-side Connector Ids" )]
-    FromSideConnectorIds,
-    [ParameterGuid( "6B594A61-EBEC-4BC9-BBFB-E5ABDA7372CB" ), NameOnRevit( "Route To-side Connector Ids" )]
-    ToSideConnectorIds,
+    [ParameterGuid( "4620ee8d-7c76-4798-bfdc-87491ff8b355" ), NameOnRevit( "SubRoute Index" )]
+    SubRouteIndex,
+    [ParameterGuid( "b113fb98-a9eb-4f8e-a6a2-c4632922eb1b" ), NameOnRevit( "Route From-side Connector Ids" )]
+    RoutedElementFromSideConnectorIds,
+    [ParameterGuid( "6b594a61-ebec-4bc9-bbfb-e5abda7372cb" ), NameOnRevit( "Route To-side Connector Ids" )]
+    RoutedElementToSideConnectorIds,
+
+    // PassPointSharedParameters
+    [ParameterGuid( "b975f161-499f-4cc6-8e11-0d7ddf25b1f4" ), NameOnRevit( "PassPoint From-side Element Id" )]
+    PassPointNextToFromSideConnectorIds,
+    [ParameterGuid( "7af4819d-3aec-4235-9f81-e6d3d0ca9ca2" ), NameOnRevit( "PassPoint To-side Element Id" )]
+    PassPointNextToToSideConnectorIds,
   }
 
   public static class RoutingPropertyExtensions
@@ -34,6 +43,10 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_PlumbingFixtures,
       BuiltInCategory.OST_Sprinklers,
     } ;
+    private static readonly BuiltInCategory[] PassPointBuiltInCategorySet =
+    {
+      BuiltInCategory.OST_MechanicalEquipment,
+    } ;
 
     public static bool AllRoutingParametersAreRegistered( this Document document )
     {
@@ -42,7 +55,8 @@ namespace Arent3d.Architecture.Routing
 
     public static void MakeCertainAllRoutingParameters( this Document document )
     {
-      document.LoadAllAllParametersFromFile( RoutingBuiltInCategorySet, AssetManager.GetSharedParameterPath() ) ;
+      document.LoadAllAllParametersFromFile( RoutingBuiltInCategorySet, AssetManager.GetRoutingSharedParameterPath() ) ;
+      document.LoadAllAllParametersFromFile( PassPointBuiltInCategorySet, AssetManager.GetPassPointSharedParameterPath() ) ;
     }
   }
 }

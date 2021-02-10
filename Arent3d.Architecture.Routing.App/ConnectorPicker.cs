@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.App
 {
   public static class ConnectorPicker
   {
-    public static (Connector Connector, string? RouteName) GetConnector( UIDocument uiDocument, string message, Connector? firstConnector = null, string? firstRouteId = null )
+    public static (Connector Connector, Element PickedElement) GetConnector( UIDocument uiDocument, string message, Connector? firstConnector = null, string? firstRouteId = null )
     {
       var document = uiDocument.Document ;
 
@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.App
         var connector = FindConnector( uiDocument, element, message, firstConnector ) ;
         if ( null == connector ) continue ;
 
-        return ( Connector: connector, RouteName: element.GetRouteName() ) ;
+        return ( Connector: connector, PickedElement: element ) ;
       }
     }
 

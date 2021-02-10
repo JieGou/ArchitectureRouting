@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing
   /// <summary>
   /// Manages relations between pass points and connectors.
   /// </summary>
-  public class PassPointConnectorMapper : IEnumerable<(Connector, Connector)>
+  public class PassPointConnectorMapper : IEnumerable<KeyValuePair<int, (Connector, Connector)>>
   {
     private readonly Dictionary<int, (Connector?, Connector?)> _passPointConnectors = new() ;
 
@@ -52,9 +52,9 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    public IEnumerator<(Connector, Connector)> GetEnumerator()
+    public IEnumerator<KeyValuePair<int, (Connector, Connector)>> GetEnumerator()
     {
-      return _passPointConnectors.Values.GetEnumerator() ;
+      return _passPointConnectors.GetEnumerator() ;
     }
 
     IEnumerator IEnumerable.GetEnumerator()
