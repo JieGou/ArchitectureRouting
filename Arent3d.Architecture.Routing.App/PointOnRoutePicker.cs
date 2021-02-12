@@ -1,11 +1,8 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Mechanical ;
-using Autodesk.Revit.DB.Plumbing ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using MathLib ;
@@ -52,7 +49,7 @@ namespace Arent3d.Architecture.Routing.App
     {
       var document = uiDocument.Document ;
 
-      var dic = document.GetAllStorables<Route>().ToDictionary( route => route.RouteId ) ;
+      var dic = CommandTermCaches.RouteCache.Get( document ) ;
       var filter = new RouteFilter( dic, ( null == firstRouteId ) ? null : elm => ( firstRouteId == elm.GetRouteName() ) ) ;
 
       while ( true ) {

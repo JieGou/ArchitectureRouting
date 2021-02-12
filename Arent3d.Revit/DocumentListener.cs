@@ -43,7 +43,9 @@ namespace Arent3d.Revit
 
     private static void Document_Changed( object sender, DocumentChangedEventArgs e )
     {
-      ListeningDocumentChanged?.Invoke( e.GetDocument(), e ) ;
+      var document = e.GetDocument() ;
+      CommandTermCache.ReleaseCaches( document ) ;
+      ListeningDocumentChanged?.Invoke( document, e ) ;
     }
 
     private static void Document_Created( object sender, DocumentCreatedEventArgs e )
@@ -70,6 +72,7 @@ namespace Arent3d.Revit
     {
       if ( _closingDocuments.TryGetValue( e.DocumentId, out var document ) ) {
         _closingDocuments.Remove( e.DocumentId ) ;
+        CommandTermCache.ReleaseCaches( document ) ;
         DocumentListeningFinished?.Invoke( document, new DocumentEventArgs( document ) ) ;
       }
     }

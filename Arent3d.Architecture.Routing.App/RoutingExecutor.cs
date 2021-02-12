@@ -165,7 +165,7 @@ namespace Arent3d.Architecture.Routing.App
     /// <returns>Routing objects</returns>
     private async Task<IReadOnlyCollection<Route>> ConvertToRoutes( IAsyncEnumerable<RouteRecord> fromToList )
     {
-      var oldRoutes = ThreadDispatcher.Dispatch( () => _document.GetAllStorables<Route>().ToDictionary( route => route.RouteId ) ) ;
+      var oldRoutes = ThreadDispatcher.Dispatch( () => CommandTermCaches.RouteCache.Get( _document ) ) ;
       
       var dic = new Dictionary<string, Route>() ;
       var result = new List<Route>() ; // Ordered by the original from-to record order.

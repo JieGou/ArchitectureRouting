@@ -27,12 +27,12 @@ namespace Arent3d.Architecture.Routing
 
     public static bool AllRoutingFamiliesAreLoaded( this Document document )
     {
-      return AllFamilyNames.All( pair => null != FindFamilyElementByName( document, pair.Key, pair.Value ) ) ;
+      return AllFamilyNames.All( pair => null != FindFamilySymbolByName( document, pair.Key, pair.Value ) ) ;
     }
 
     public static void MakeCertainAllRoutingFamilies( this Document document )
     {
-      foreach ( var (_, familyName) in AllFamilyNames.Where( pair => null == FindFamilyElementByName( document, pair.Key, pair.Value ) ).EnumerateAll() ) {
+      foreach ( var (_, familyName) in AllFamilyNames.Where( pair => null == FindFamilySymbolByName( document, pair.Key, pair.Value ) ).EnumerateAll() ) {
         LoadFamilySymbol( document, familyName ) ;
       }
     }
@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing
     public static FamilySymbol? GetFamilySymbol( this Document document, RoutingFamilyType familyType )
     {
       if ( AllFamilyNames.TryGetValue( familyType, out var familyName ) ) {
-        return FindFamilyElementByName( document, familyType, familyName ) ;
+        return FindFamilySymbolByName( document, familyType, familyName ) ;
       }
 
       return null ;
@@ -60,7 +60,7 @@ namespace Arent3d.Architecture.Routing
       return document.GetAllFamilyInstances( familySymbol ) ;
     }
 
-    private static FamilySymbol? FindFamilyElementByName( Document document, RoutingFamilyType familyType, string familyName )
+    private static FamilySymbol? FindFamilySymbolByName( Document document, RoutingFamilyType familyType, string familyName )
     {
       if ( false == AllBuiltInCategories.TryGetValue( familyType, out var builtInCategory ) ) return null ;
       return document.GetAllElements<FamilySymbol>().OfCategory( builtInCategory ).FirstOrDefault( e => e.FamilyName == familyName ) ;

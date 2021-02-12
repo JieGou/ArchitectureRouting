@@ -1,8 +1,6 @@
 using System ;
 using System.Collections.Generic ;
 using System.ComponentModel ;
-using System.Linq ;
-using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
@@ -34,7 +32,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
       var routeRecords = new List<RouteRecord>() ;
       UiThread.RevitUiDispatcher.Invoke( () =>
       {
-        var routes = uiDocument.Document.GetAllStorables<Route>().ToDictionary( route => route.RouteId ) ;
+        var routes = CommandTermCaches.RouteCache.Get( uiDocument.Document ) ;
 
         var (fromConnector, fromElement) = ConnectorPicker.GetConnector( uiDocument, "Select the first connector" ) ;
         var (toConnector, toElement) = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromConnector, fromElement.GetRouteName() ) ;
