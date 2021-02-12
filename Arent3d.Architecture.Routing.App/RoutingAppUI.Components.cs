@@ -20,6 +20,7 @@ namespace Arent3d.Architecture.Routing.App
     private readonly RibbonButton _pickRoutingCommandButton ;
     private readonly RibbonButton _fileRoutingCommandButton ;
 
+    private readonly RibbonButton _pickAndReRouteCommandButton ;
     private readonly RibbonButton _allReRouteCommandButton ;
     private readonly RibbonButton _deleteAllRoutesCommandButton ;
     private readonly RibbonButton _exportRoutingCommandButton ;
@@ -40,6 +41,7 @@ namespace Arent3d.Architecture.Routing.App
         _pickRoutingCommandButton = routingPanel.AddButton<PickRoutingCommand>() ;
         _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
         routingPanel.AddSeparator() ;
+        _pickAndReRouteCommandButton = routingPanel.AddButton<PickAndReRouteCommand>() ;
         _allReRouteCommandButton = routingPanel.AddButton<AllReRouteCommand>() ;
         _deleteAllRoutesCommandButton = routingPanel.AddButton<DeleteAllRoutesCommand>() ;
         routingPanel.AddSeparator() ;
@@ -61,6 +63,7 @@ namespace Arent3d.Architecture.Routing.App
 
       _pickRoutingCommandButton.Enabled = false ;
       _fileRoutingCommandButton.Enabled = false ;
+      _pickAndReRouteCommandButton.Enabled = false ;
       _allReRouteCommandButton.Enabled = false ;
       _deleteAllRoutesCommandButton.Enabled = false ;
       _exportRoutingCommandButton.Enabled = false ;
@@ -82,6 +85,7 @@ namespace Arent3d.Architecture.Routing.App
 
       _pickRoutingCommandButton.Enabled = setupIsDone ;
       _fileRoutingCommandButton.Enabled = setupIsDone ;
+      _pickAndReRouteCommandButton.Enabled = setupIsDone ;
       _allReRouteCommandButton.Enabled = setupIsDone ;
       _deleteAllRoutesCommandButton.Enabled = setupIsDone ;
       _exportRoutingCommandButton.Enabled = setupIsDone ;

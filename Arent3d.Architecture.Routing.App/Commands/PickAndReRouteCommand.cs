@@ -1,6 +1,5 @@
 using System.Collections.Generic ;
 using System.ComponentModel ;
-using System.Linq ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
@@ -9,13 +8,15 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Re-Route All" )]
+  [DisplayName( "Re-Route Selected" )]
   [Image( "resources/MEP.ico" )]
-  public class AllReRouteCommand : RoutingCommandBase
+  public class PickAndReRouteCommand : RoutingCommandBase
   {
     protected override IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument )
     {
-      return uiDocument.Document.CollectRoutes().SelectMany( RouteRecordUtils.ToRouteRecords ).EnumerateAll().ToAsyncEnumerable() ;
+      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, "Pick a point on a route." ) ;
+
+      return RouteRecordUtils.ToRouteRecords( pickInfo.Route ).EnumerateAll().ToAsyncEnumerable() ;
     }
   }
 }
