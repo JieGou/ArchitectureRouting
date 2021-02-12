@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       InitializeComponent() ;
 
-      LevelList = new ObservableCollection<LevelInfo>( doc.GetAllLevels().Select( ToLevelInfo ).OrderBy( l => l.Elevation ) ) ;
+      LevelList = new ObservableCollection<LevelInfo>( doc.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).Select( ToLevelInfo ).OrderBy( l => l.Elevation ) ) ;
     }
 
     private static LevelInfo ToLevelInfo( Level level )

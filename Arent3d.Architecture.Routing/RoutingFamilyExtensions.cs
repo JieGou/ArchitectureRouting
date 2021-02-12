@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing
     private static FamilySymbol? FindFamilyElementByName( Document document, RoutingFamilyType familyType, string familyName )
     {
       if ( false == AllBuiltInCategories.TryGetValue( familyType, out var builtInCategory ) ) return null ;
-      return document.GetFamilySymbol( builtInCategory, familyName ) ;
+      return document.GetAllElements<FamilySymbol>().OfCategory( builtInCategory ).FirstOrDefault( e => e.FamilyName == familyName ) ;
     }
 
     private static bool LoadFamilySymbol( Document document, string familyName )

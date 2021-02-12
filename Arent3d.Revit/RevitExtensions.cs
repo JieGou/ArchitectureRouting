@@ -24,29 +24,19 @@ namespace Arent3d.Revit
       return (BuiltInCategory) category.Id.IntegerValue ;
     }
     
-    public static IEnumerable<TElement> GetAllElements<TElement>( this Document document ) where TElement : Element
+    public static IElementEnumerable<TElement> GetAllElements<TElement>( this Document document ) where TElement : Element
     {
-      return new FilteredElementCollector( document ).OfClass( typeof( TElement ) ).OfType<TElement>() ;
+      return new FilteredElementCollectorBuilder<TElement>( document ) ;
     }
-    public static IEnumerable<FamilyInstance> GetAllFamilyInstances( this Document document, FamilySymbol familySymbol )
+    public static IElementEnumerable<TElement> GetAllElements<TElement>( this Document document, Type type ) where TElement : Element
     {
-      return new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).WherePasses( new FamilyInstanceFilter( document, familySymbol.Id ) ).OfType<FamilyInstance>() ;
+      if ( false == typeof( TElement ).IsAssignableFrom( type ) ) throw new ArgumentException() ;
+
+      return new FilteredElementCollectorBuilder<TElement>( document, type ) ;
     }
-    public static FamilySymbol? GetFamilySymbol( this Document document, BuiltInCategory category, string familyName )
+    public static IElementEnumerable<FamilyInstance> GetAllFamilyInstances( this Document document, FamilySymbol familySymbol )
     {
-      return new FilteredElementCollector( document ).OfClass( typeof( FamilySymbol ) ).OfCategory( category ).OfType<FamilySymbol>().FirstOrDefault( e => e.FamilyName == familyName ) ;
-    }
-    public static FamilySymbol? GetFamilySymbol( this Document document, string familyName )
-    {
-      return new FilteredElementCollector( document ).OfClass( typeof( FamilySymbol ) ).OfType<FamilySymbol>().FirstOrDefault( e => e.FamilyName == familyName ) ;
-    }
-    public static IEnumerable<TElement> GetAllElementsInCategory<TElement>( this Document document, BuiltInCategory category ) where TElement : Element
-    {
-      return new FilteredElementCollector( document ).OfCategory( category ).OfClass( typeof( TElement ) ).OfType<TElement>() ;
-    }
-    public static IEnumerable<Level> GetAllLevels( this Document document )
-    {
-      return new FilteredElementCollector( document ).OfCategory( BuiltInCategory.OST_Levels ).WhereElementIsNotElementType().OfType<Level>() ;
+      return new FilteredElementCollectorBuilder<FamilyInstance>( document ).Where( new FamilyInstanceFilter( document, familySymbol.Id ) ) ;
     }
 
     public static TElement? GetElementById<TElement>( this Document document, ElementId elementId ) where TElement : Element

@@ -14,7 +14,7 @@ namespace Arent3d.Revit
     {
       if ( Schema.Lookup( typeof( TStorableBase ).GUID ) is not { } schema ) yield break ;
 
-      foreach ( var element in new FilteredElementCollector( document ).WherePasses( new ExtensibleStorageFilter( typeof( TStorableBase ).GUID ) ) ) {
+      foreach ( var element in document.GetAllElements<Element>().Where( new ExtensibleStorageFilter( typeof( TStorableBase ).GUID ) ) ) {
         var entity = element.GetEntity( schema ) ;
         if ( null == entity || false == entity.IsValidObject || false == entity.IsValid() ) continue ;
 

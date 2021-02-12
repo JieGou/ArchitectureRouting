@@ -127,7 +127,7 @@ namespace Arent3d.Architecture.Routing
     {
       var (concreteType, isCompatibleType) = GetIsCompatibleFunc( connector ) ;
 
-      var curveTypes = new FilteredElementCollector( document ).OfClass( concreteType ).OfType<MEPCurveType>().Where( isCompatibleType ).ToList() ;
+      var curveTypes = document.GetAllElements<MEPCurveType>( concreteType ).Where( isCompatibleType ).ToList() ;
       
       return curveTypes.FirstOrDefault() ?? throw new InvalidOperationException( $"{nameof( MEPCurveType )} for connector {connector.Owner.Name}:{connector.Id} is not found." ) ;
     }

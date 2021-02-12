@@ -1,5 +1,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.CollisionTree
@@ -15,7 +16,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 
     public IEnumerable<Element> GetCollisionCheckTargets()
     {
-      return new FilteredElementCollector( _document ).WhereElementIsNotElementType().Where( IsCollisionCheckElement ) ;
+      return _document.GetAllElements<Element>().OfNotElementType().Where( IsCollisionCheckElement ) ;
     }
 
     protected abstract bool IsCollisionCheckElement( Element elm ) ;

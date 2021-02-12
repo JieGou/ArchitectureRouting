@@ -283,7 +283,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      return RoutingBuiltInCategories.SelectMany( category => document.GetAllElementsOfRouteName<TElement>( category, filter ) ) ;
+      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ) ;
     }
 
     public static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, string routeName ) where TElement : Element
@@ -293,17 +293,12 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      return RoutingBuiltInCategories.SelectMany( category => document.GetAllElementsOfRouteName<TElement>( category, filter ).Where( e => e.GetRouteName() == routeName ) ) ;
+      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRouteName() == routeName ) ;
     }
 
-    private static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, BuiltInCategory builtInCategory, ElementFilter filter ) where TElement : Element
+    private static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, BuiltInCategory[] builtInCategories, ElementFilter filter ) where TElement : Element
     {
-      if ( typeof( TElement ) == typeof( Element ) ) {
-        return new FilteredElementCollector( document ).OfCategory( builtInCategory ).WhereElementIsNotElementType().WherePasses( filter ).OfType<TElement>() ;
-      }
-      else {
-        return new FilteredElementCollector( document ).OfCategory( builtInCategory ).OfClass( typeof( TElement ) ).WhereElementIsNotElementType().WherePasses( filter ).OfType<TElement>() ;
-      }
+      return document.GetAllElements<Element>().OfCategory( builtInCategories ).OfNotElementType().Where( filter ).OfType<TElement>() ;
     }
 
     public static string? GetRouteName( this Element element )
