@@ -199,7 +199,17 @@ namespace Arent3d.Architecture.Routing
     /// <param name="connector2"></param>
     private void ConnectTwoConnectors( Connector connector1, Connector connector2 )
     {
-      connector1.ConnectTo( connector2 ) ;
+      using var connectorTransaction = new SubTransaction( _document ) ;
+      try {
+        connectorTransaction.Start() ;
+        connector1.ConnectTo( connector2 ) ;
+        connectorTransaction.Commit() ;
+      }
+      catch {
+        connectorTransaction.RollBack() ;
+        AddBadConnector( connector1 ) ;
+        return ;
+      }
 
       var dir1 = connector1.CoordinateSystem.BasisZ.To3d() ;
       var dir2 = connector2.CoordinateSystem.BasisZ.To3d() ;
@@ -209,7 +219,7 @@ namespace Arent3d.Architecture.Routing
       }
       else {
         // Orthogonal
-        using var transaction = new SubTransaction( connector1.Owner.Document ) ;
+        using var transaction = new SubTransaction( _document ) ;
         try {
           transaction.Start() ;
           var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
@@ -234,11 +244,21 @@ namespace Arent3d.Architecture.Routing
     /// <param name="connector3"></param>
     private void ConnectThreeConnectors( Connector connector1, Connector connector2, Connector connector3 )
     {
-      connector1.ConnectTo( connector2 ) ;
-      connector1.ConnectTo( connector3 ) ;
-      connector2.ConnectTo( connector3 ) ;
+      using var connectorTransaction = new SubTransaction( _document ) ;
+      try {
+        connectorTransaction.Start() ;
+        connector1.ConnectTo( connector2 ) ;
+        connector1.ConnectTo( connector3 ) ;
+        connector2.ConnectTo( connector3 ) ;
+        connectorTransaction.Commit() ;
+      }
+      catch {
+        connectorTransaction.RollBack() ;
+        AddBadConnector( connector1 ) ;
+        return ;
+      }
 
-      using var transaction = new SubTransaction( connector1.Owner.Document ) ;
+      using var transaction = new SubTransaction( _document ) ;
       try {
         transaction.Start() ;
         var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
@@ -263,14 +283,24 @@ namespace Arent3d.Architecture.Routing
     /// <param name="connector4"></param>
     private void ConnectFourConnectors( Connector connector1, Connector connector2, Connector connector3, Connector connector4 )
     {
-      connector1.ConnectTo( connector2 ) ;
-      connector1.ConnectTo( connector3 ) ;
-      connector1.ConnectTo( connector4 ) ;
-      connector2.ConnectTo( connector3 ) ;
-      connector2.ConnectTo( connector4 ) ;
-      connector3.ConnectTo( connector4 ) ;
+      using var connectorTransaction = new SubTransaction( _document ) ;
+      try {
+        connectorTransaction.Start() ;
+        connector1.ConnectTo( connector2 ) ;
+        connector1.ConnectTo( connector3 ) ;
+        connector1.ConnectTo( connector4 ) ;
+        connector2.ConnectTo( connector3 ) ;
+        connector2.ConnectTo( connector4 ) ;
+        connector3.ConnectTo( connector4 ) ;
+        connectorTransaction.Commit() ;
+      }
+      catch {
+        connectorTransaction.RollBack() ;
+        AddBadConnector( connector1 ) ;
+        return ;
+      }
 
-      using var transaction = new SubTransaction( connector1.Owner.Document ) ;
+      using var transaction = new SubTransaction( _document ) ;
       try {
         transaction.Start() ;
         var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
