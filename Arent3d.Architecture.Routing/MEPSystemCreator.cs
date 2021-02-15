@@ -38,15 +38,16 @@ namespace Arent3d.Architecture.Routing
     {
       _document = document ;
       _autoRoutingTarget = autoRoutingTarget ;
-      _level = CreateLevel( document ) ;
+      _level = GetLevel( document, autoRoutingTarget ) ;
       _systemType = routeMepSystem.MEPSystemType ;
       _system = routeMepSystem.MEPSystem ;
       _curveType = routeMepSystem.CurveType ;
     }
 
-    private static Level CreateLevel( Document document )
+    private static Level GetLevel( Document document, AutoRoutingTarget autoRoutingTarget )
     {
-      return Level.Create( document, 0.0 ) ;
+      var level = autoRoutingTarget.EndPoints.Select( e => document.GetElementById<Level>( e.ReferenceConnector.Owner.LevelId ) ).FirstOrDefault( l => l != null && l.IsValidObject ) ;
+      return level ?? Level.Create( document, 0.0 ) ;
     }
 
     public IReadOnlyCollection<Connector> GetBadConnectors() => _badConnectors ;
