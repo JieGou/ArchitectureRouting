@@ -77,6 +77,8 @@ namespace Arent3d.Architecture.Routing
       {
         _subRoute = subRoute ;
         IsRoutingOnPipeRacks = DocumentMapper.Get( document ).IsRoutingOnPipeRacks( subRoute ) ;
+        AllowHorizontalBranches = DocumentMapper.Get( document ).AllowHorizontalBranches( subRoute ) ;
+        FixedBopHeight = GetHeight( subRoute.GetReferenceConnector() ) ;
       }
 
       public bool IsRoutingOnPipeRacks { get ; }
@@ -85,6 +87,14 @@ namespace Arent3d.Architecture.Routing
       public int Priority => _subRoute.Priority ;
       public string GroupName => string.Empty ;
       public LoopType LoopType => _subRoute.Route.LoopType ;
+
+      public bool AllowHorizontalBranches { get ; }
+      public double? FixedBopHeight { get ; }
+
+      private static double GetHeight( Connector connector )
+      {
+        return connector.Origin.Z ;
+      }
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints

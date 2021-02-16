@@ -43,16 +43,10 @@ namespace Arent3d.Architecture.Routing.App
       var racks = DocumentMapper.Get( document ).RackCollection ;
 
       racks.Clear() ;
-      {
-        // TODO: Z
-        var connector = document.FindConnector( 17299721, 3 )! ;
-        var z = connector.Origin.Z - connector.Radius ;
+      foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
+        var (min, max) = familyInstance.get_BoundingBox( view ).To3d() ;
 
-        foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
-          var (min, max) = familyInstance.get_BoundingBox( view ).To3d() ;
-
-          racks.AddRack( new Rack.Rack { Box = new Box3d( min, max ), IsMainRack = true, BeamInterval = 5 } ) ;
-        }
+        racks.AddRack( new Rack.Rack { Box = new Box3d( min, max ), IsMainRack = true, BeamInterval = 5 } ) ;
       }
 
       racks.CreateLinkages() ;

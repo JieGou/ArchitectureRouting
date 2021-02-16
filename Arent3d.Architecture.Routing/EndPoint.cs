@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Always returns 1.
     /// </summary>
-    public int Priority => 1 ;
+    public int Depth => 1 ;
 
     /// <summary>
     /// Returns this end point's floating type. Now it always returns <see cref="RoutingPointType.OtherNozzle"/> (i.e. non-floated).
@@ -84,6 +84,7 @@ namespace Arent3d.Architecture.Routing
       public double DiameterFlangeAndInsulation => Diameter.Outside ; // provisional
       public IPipeSpec Spec { get ; }
       public ProcessConstraint ProcessConstraint => ProcessConstraint.None ;
+      public string FluidPhase { get ; }
 
       public RouteCondition( EndPoint endPoint )
       {
@@ -92,6 +93,7 @@ namespace Arent3d.Architecture.Routing
         InsulationType = Route.DefaultInsulationType ;
         Temperature = endPoint.OwnerRoute.Temperature ;
         Spec = new PipeSpec( endPoint ) ;
+        FluidPhase = endPoint.OwnerRoute.FluidPhase ;
       }
 
       private class PipeSpec : IPipeSpec

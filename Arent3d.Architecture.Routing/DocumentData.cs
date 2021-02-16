@@ -31,5 +31,17 @@ namespace Arent3d.Architecture.Routing
 
       return ( 0 < RackCollection.RackCount ) ;
     }
+
+    /// <summary>
+    /// Returns whether a route can be branched horizontally.
+    /// </summary>
+    /// <param name="subRoute"></param>
+    /// <returns></returns>
+    public bool AllowHorizontalBranches( SubRoute subRoute )
+    {
+      if ( Domain.DomainHvac == subRoute.Route.Domain ) return true ;
+
+      return false ;
+    }
   }
 }
