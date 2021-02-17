@@ -45,6 +45,24 @@ namespace Arent3d.Architecture.Routing.App
       }
     }
 
+    public static IEnumerable<Route> PickedRoutesFromSelections( UIDocument uiDocument )
+    {
+      var document = uiDocument.Document ;
+      var dic = CommandTermCaches.RouteCache.Get( document ) ;
+
+      var routes = new HashSet<Route>() ;
+
+      foreach ( var elmId in uiDocument.Selection.GetElementIds() ) {
+        var elm = document.GetElement( elmId ) ;
+        if ( elm?.GetRouteName() is not { } routeName ) continue ;
+        if ( false == dic.TryGetValue( routeName, out var route ) ) continue ;
+
+        if ( routes.Add( route ) ) {
+          yield return route ;
+        }
+      }
+    }
+
     public static PickInfo PickRoute( UIDocument uiDocument, bool mepCurveOnly, string message, string? firstRouteId = null )
     {
       var document = uiDocument.Document ;

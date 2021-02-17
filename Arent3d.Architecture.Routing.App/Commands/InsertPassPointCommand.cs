@@ -26,7 +26,13 @@ namespace Arent3d.Architecture.Routing.App.Commands
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
 
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Pick a point on a route." ) ;
+      PointOnRoutePicker.PickInfo pickInfo ;
+      try {
+        pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Pick a point on a route." ) ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        return Result.Cancelled ;
+      }
 
       var executor = new RoutingExecutor( document, commandData.View ) ;
 
@@ -60,6 +66,10 @@ namespace Arent3d.Architecture.Routing.App.Commands
           transaction.RollBack() ;
           return Result.Failed ;
         }
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        transaction.RollBack() ;
+        return Result.Cancelled ;
       }
       catch ( Exception ) {
         transaction.RollBack() ;
