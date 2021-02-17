@@ -165,10 +165,11 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Connect all connectors related to each route vertex.
     /// </summary>
-    public void ConnectAllVertices()
+    /// <param name="autoRoutingTarget">Related auto routing target.</param>
+    public void ConnectAllVertices( AutoRoutingTarget autoRoutingTarget )
     {
       foreach ( var connectors in _connectorMapper ) {
-        ConnectConnectors( connectors ) ;
+        ConnectConnectors( connectors, autoRoutingTarget.SubRoute ) ;
       }
     }
 
@@ -176,18 +177,19 @@ namespace Arent3d.Architecture.Routing
     /// Connect all connectors.
     /// </summary>
     /// <param name="connectors">Connectors to be connected</param>
-    private void ConnectConnectors( IReadOnlyList<Connector> connectors )
+    /// <param name="subRoute">Related sub route.</param>
+    private void ConnectConnectors( IReadOnlyList<Connector> connectors, SubRoute subRoute )
     {
       switch ( connectors.Count ) {
         case 1 : return ;
         case 2 :
-          ConnectTwoConnectors( connectors[ 0 ], connectors[ 1 ] ) ;
+          ConnectTwoConnectors( connectors[ 0 ], connectors[ 1 ], subRoute ) ;
           break ;
         case 3 :
-          ConnectThreeConnectors( connectors[ 0 ], connectors[ 1 ], connectors[ 2 ] ) ;
+          ConnectThreeConnectors( connectors[ 0 ], connectors[ 1 ], connectors[ 2 ], subRoute ) ;
           break ;
         case 4 :
-          ConnectFourConnectors( connectors[ 0 ], connectors[ 1 ], connectors[ 2 ], connectors[ 3 ] ) ;
+          ConnectFourConnectors( connectors[ 0 ], connectors[ 1 ], connectors[ 2 ], connectors[ 3 ], subRoute ) ;
           break ;
         default : throw new InvalidOperationException() ;
       }
@@ -198,7 +200,8 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     /// <param name="connector1"></param>
     /// <param name="connector2"></param>
-    private void ConnectTwoConnectors( Connector connector1, Connector connector2 )
+    /// <param name="subRoute">Related sub route.</param>
+    private void ConnectTwoConnectors( Connector connector1, Connector connector2, SubRoute subRoute )
     {
       using var connectorTransaction = new SubTransaction( _document ) ;
       try {
@@ -225,7 +228,7 @@ namespace Arent3d.Architecture.Routing
           transaction.Start() ;
           var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
           if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-          MarkAsAutoRoutedElement( family, connector1, connector2 ) ;
+          MarkAsAutoRoutedElement( family, subRoute ) ;
           SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2 ) ;
           EraseZeroLengthMEPCurves( family ) ;
           transaction.Commit() ;
@@ -243,7 +246,8 @@ namespace Arent3d.Architecture.Routing
     /// <param name="connector1"></param>
     /// <param name="connector2"></param>
     /// <param name="connector3"></param>
-    private void ConnectThreeConnectors( Connector connector1, Connector connector2, Connector connector3 )
+    /// <param name="subRoute">Related sub route.</param>
+    private void ConnectThreeConnectors( Connector connector1, Connector connector2, Connector connector3, SubRoute subRoute )
     {
       using var connectorTransaction = new SubTransaction( _document ) ;
       try {
@@ -264,7 +268,7 @@ namespace Arent3d.Architecture.Routing
         transaction.Start() ;
         var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
         if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-        MarkAsAutoRoutedElement( family, connector1, connector2, connector3 ) ;
+        MarkAsAutoRoutedElement( family, subRoute ) ;
         SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3 ) ;
         EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
@@ -282,7 +286,8 @@ namespace Arent3d.Architecture.Routing
     /// <param name="connector2"></param>
     /// <param name="connector3"></param>
     /// <param name="connector4"></param>
-    private void ConnectFourConnectors( Connector connector1, Connector connector2, Connector connector3, Connector connector4 )
+    /// <param name="subRoute">Related sub route.</param>
+    private void ConnectFourConnectors( Connector connector1, Connector connector2, Connector connector3, Connector connector4, SubRoute subRoute )
     {
       using var connectorTransaction = new SubTransaction( _document ) ;
       try {
@@ -306,7 +311,7 @@ namespace Arent3d.Architecture.Routing
         transaction.Start() ;
         var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
         if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-        MarkAsAutoRoutedElement( family, connector1, connector2, connector3, connector4 ) ;
+        MarkAsAutoRoutedElement( family, subRoute ) ;
         SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3, connector4 ) ;
         EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
@@ -369,11 +374,6 @@ namespace Arent3d.Architecture.Routing
     private void MarkAsAutoRoutedElement( Element element, SubRoute subRoute )
     {
       MarkAsAutoRoutedElement( element, subRoute.Route.RouteId, subRoute.SubRouteIndex );
-    }
-    private void MarkAsAutoRoutedElement( Element element, params Connector[] connectors )
-    {
-      var (routeName, subRouteIndex) = connectors.Select( GetRouteNameAndSubRouteIndex ).FirstOrDefault( tuple => null == tuple.RouteName ) ;
-      MarkAsAutoRoutedElement( element, routeName ?? string.Empty, subRouteIndex ) ;
     }
     private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex )
     {

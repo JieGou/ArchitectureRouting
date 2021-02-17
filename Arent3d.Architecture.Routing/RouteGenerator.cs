@@ -74,7 +74,7 @@ namespace Arent3d.Architecture.Routing
         ductCreator.CreateEdgeElement( routeEdge ) ;
       }
 
-      ductCreator.ConnectAllVertices() ;
+      ductCreator.ConnectAllVertices( routingTarget ) ;
 
       _globalPassPointConnectorMapper.Merge( ductCreator.PassPointConnectorMapper ) ;
 

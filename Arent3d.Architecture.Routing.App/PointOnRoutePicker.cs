@@ -119,7 +119,8 @@ namespace Arent3d.Architecture.Routing.App
         if ( _mepCurveOnly && elem is not MEPCurve ) return false ;
 
         var routeName = elem.GetRouteName() ;
-        if ( null == routeName || false == _allRoutes.ContainsKey( routeName ) ) return false ;
+        if ( null == routeName ) return false ;
+        if ( false == _allRoutes.ContainsKey( routeName ) ) return false ;
 
         return ( null == _predicate ) || _predicate( elem ) ;
       }
