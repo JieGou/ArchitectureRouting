@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Revit ;
+using Arent3d.Revit.UI.Forms ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -32,7 +33,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
         transaction.Start() ;
 
         var tokenSource = new CancellationTokenSource() ;
-        using var progress = Forms.ProgressBar.Show( tokenSource ) ;
+        using var progress = ProgressBar.Show( tokenSource ) ;
 
         var task = Task.Run( () => executor.Run( routeRecords, progress ), tokenSource.Token ) ;
         task.ConfigureAwait( false ) ;

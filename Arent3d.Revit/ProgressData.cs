@@ -2,7 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Runtime.CompilerServices ;
 
-namespace Arent3d.Architecture.Routing
+namespace Arent3d.Revit
 {
   public class ProgressEventArgs : EventArgs
   {
@@ -126,8 +126,9 @@ namespace Arent3d.Architecture.Routing
     /// <remarks>
     /// It is not equivalent to
     /// <code>
+    /// var n = col.Count() ;
     /// foreach ( var item in col ) {
-    ///   using ( progressData?.Reserve( 1.0 / col.Count ) ) {
+    ///   using ( progressData?.Reserve( 1.0 / n ) ) {
     ///     func( item ) ;
     ///   }
     /// }
@@ -152,6 +153,29 @@ namespace Arent3d.Architecture.Routing
           func( enumerator.Current ) ;
         }
       }
+    }
+
+    /// <summary>
+    /// Enumerate and progress a collection action.
+    /// </summary>
+    /// <remarks>
+    /// It is not equivalent to
+    /// <code>
+    /// foreach ( var item in col ) {
+    ///   using ( progressData?.Reserve( 1.0 / col.Count ) ) {
+    ///     func( item ) ;
+    ///   }
+    /// }
+    /// </code>
+    /// because this method includes collection enumeration into the using block.
+    /// </remarks>
+    /// <param name="progressData">Progress data.</param>
+    /// <param name="col">A collection.</param>
+    /// <param name="func">An operation which is applied for each elements in <see cref="col"/>.</param>
+    /// <typeparam name="T">Item type of the collection.</typeparam>
+    public static void ForEach<T>( this IProgressData? progressData, IReadOnlyCollection<T> col, Action<T> func )
+    {
+      progressData.ForEach( col.Count, col, func ) ;
     }
   }
 }

@@ -5,6 +5,7 @@ using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Revit.UI.Forms ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -36,7 +37,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
         var newRecords = CreateNewRouteRecords( pickInfo.SubRoute, pickInfo.Element, elm.Id.IntegerValue ) ;
 
         var tokenSource = new CancellationTokenSource() ;
-        using var progress = Forms.ProgressBar.Show( tokenSource ) ;
+        using var progress = ProgressBar.Show( tokenSource ) ;
 
         var task = Task.Run( () => executor.Run( newRecords.ToAsyncEnumerable(), progress ), tokenSource.Token ) ;
         task.ConfigureAwait( false ) ;
