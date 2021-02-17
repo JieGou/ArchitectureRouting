@@ -1,6 +1,9 @@
 using System ;
 using System.Collections.Generic ;
 using System.ComponentModel ;
+using System.Linq ;
+using Arent3d.Architecture.Routing.CommandTermCaches ;
+using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
@@ -32,34 +35,84 @@ namespace Arent3d.Architecture.Routing.App.Commands
       var routeRecords = new List<RouteRecord>() ;
       UiThread.RevitUiDispatcher.Invoke( () =>
       {
-        var routes = CommandTermCaches.RouteCache.Get( uiDocument.Document ) ;
+        var routes = RouteCache.Get( uiDocument.Document ) ;
 
         var (fromConnector, fromElement) = ConnectorPicker.GetConnector( uiDocument, "Select the first connector" ) ;
-        var (toConnector, toElement) = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromConnector, fromElement.GetRouteName() ) ;
+        var tempColor = SetTempColor( uiDocument, routes, fromElement ) ;
+        try {
+          var (toConnector, toElement) = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromConnector, fromElement.GetRouteName() ) ;
 
-        if ( GetSubRoute( routes, fromElement ) is {} subRoute1 ) {
-          var splitter = new RouteSplitter( subRoute1, fromElement, toConnector, false ) ;
-          routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute1.Route ) ) ;
-          routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute1.Route ) ) ;
-        }
-        else if ( GetSubRoute( routes, toElement ) is {} subRoute2 ) {
-          var splitter = new RouteSplitter( subRoute2, toElement, fromConnector, true ) ;
-          routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute2.Route ) ) ;
-          routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute2.Route ) ) ;
-        }
-        else {
-          for ( var i = routes.Count + 1 ; ; ++i ) {
-            var name = "Picked_" + i ;
-            if ( routes.ContainsKey( name ) ) continue ;
-
-            routeRecords.Add( new RouteRecord( name, fromConnector.GetIndicator(), toConnector.GetIndicator() ) ) ;
-            break ;
+          if ( GetSubRoute( routes, fromElement ) is { } subRoute1 ) {
+            var splitter = new RouteSplitter( subRoute1, fromElement, toConnector, false ) ;
+            routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute1.Route ) ) ;
+            routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute1.Route ) ) ;
           }
+          else if ( GetSubRoute( routes, toElement ) is { } subRoute2 ) {
+            var splitter = new RouteSplitter( subRoute2, toElement, fromConnector, true ) ;
+            routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute2.Route ) ) ;
+            routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute2.Route ) ) ;
+          }
+          else {
+            for ( var i = routes.Count + 1 ; ; ++i ) {
+              var name = "Picked_" + i ;
+              if ( routes.ContainsKey( name ) ) continue ;
+
+              routeRecords.Add( new RouteRecord( name, fromConnector.GetIndicator(), toConnector.GetIndicator() ) ) ;
+              break ;
+            }
+          }
+        }
+        finally {
+          DisposeTempColor( uiDocument.Document, tempColor ) ;
         }
       } ) ;
 
       foreach ( var record in routeRecords ) {
         yield return record ;
+      }
+    }
+    private static IDisposable SetTempColor( UIDocument uiDocument, RouteCache routes, Element element )
+    {
+      using var transaction = new Transaction( uiDocument.Document ) ;
+      try {
+        transaction.Start( "Change Picked Element Color" ) ;
+        
+        var tempColor = new TempColor( uiDocument.ActiveView, new Color( 0, 0, 255 ) ) ;
+        tempColor.AddRange( GetRelatedElements( routes, element ) ) ;
+
+        transaction.Commit() ;
+        return tempColor ;
+      }
+      catch {
+        transaction.RollBack() ;
+        throw ;
+      }
+    }
+
+
+    private static void DisposeTempColor( Document document, IDisposable tempColor )
+    {
+      using var transaction = new Transaction( document ) ;
+      try {
+        transaction.Start( "Revert Picked Element Color" ) ;
+
+        tempColor.Dispose() ;
+
+        transaction.Commit() ;
+      }
+      catch {
+        transaction.RollBack() ;
+        throw ;
+      }
+    }
+
+    private static IEnumerable<ElementId> GetRelatedElements( RouteCache routes, Element element )
+    {
+      if ( GetSubRoute( routes, element ) is { } subRoute ) {
+        return element.Document.GetAllElementsOfSubRoute<Element>( subRoute.Route.RouteId, subRoute.SubRouteIndex ).Select( e => e.Id ) ;
+      }
+      else {
+        return new[] { element.Id } ;
       }
     }
 

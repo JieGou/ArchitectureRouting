@@ -296,6 +296,23 @@ namespace Arent3d.Architecture.Routing
       return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRouteName() == routeName ) ;
     }
 
+    public static IEnumerable<TElement> GetAllElementsOfSubRoute<TElement>( this Document document, string routeName, int subRouteIndex ) where TElement : Element
+    {
+      var routeNameParameterName = document.GetParameterName( RoutingParameter.RouteName ) ;
+      if ( null == routeNameParameterName ) return Array.Empty<TElement>() ;
+
+      var subRouteIndexParameterName = document.GetParameterName( RoutingParameter.SubRouteIndex ) ;
+      if ( null == subRouteIndexParameterName ) return Array.Empty<TElement>() ;
+
+      var filter = new ElementParameterFilter( new[]
+      {
+        ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( routeNameParameterName ),
+        ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( subRouteIndexParameterName ),
+      } ) ;
+
+      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRouteName() == routeName ).Where( e => e.GetSubRouteIndex() == subRouteIndex ) ;
+    }
+
     private static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, BuiltInCategory[] builtInCategories, ElementFilter filter ) where TElement : Element
     {
       return document.GetAllElements<Element>().OfCategory( builtInCategories ).OfNotElementType().Where( filter ).OfType<TElement>() ;

@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
   {
     protected override IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument )
     {
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, "Pick a point on a route." ) ;
+      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route." ) ;
 
       return RouteRecordUtils.ToRouteRecords( pickInfo.Route ).EnumerateAll().ToAsyncEnumerable() ;
     }

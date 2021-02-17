@@ -45,12 +45,12 @@ namespace Arent3d.Architecture.Routing.App
       }
     }
 
-    public static PickInfo PickRoute( UIDocument uiDocument, string message, string? firstRouteId = null )
+    public static PickInfo PickRoute( UIDocument uiDocument, bool mepCurveOnly, string message, string? firstRouteId = null )
     {
       var document = uiDocument.Document ;
 
       var dic = CommandTermCaches.RouteCache.Get( document ) ;
-      var filter = new RouteFilter( dic, ( null == firstRouteId ) ? null : elm => ( firstRouteId == elm.GetRouteName() ) ) ;
+      var filter = new RouteFilter( dic, mepCurveOnly, ( null == firstRouteId ) ? null : elm => ( firstRouteId == elm.GetRouteName() ) ) ;
 
       while ( true ) {
         var pickedObject = uiDocument.Selection.PickObject( ObjectType.PointOnElement, filter, message ) ;
@@ -104,17 +104,19 @@ namespace Arent3d.Architecture.Routing.App
     private class RouteFilter : ISelectionFilter
     {
       private readonly IReadOnlyDictionary<string, Route> _allRoutes ;
+      private readonly bool _mepCurveOnly ;
       private readonly Predicate<Element>? _predicate ;
 
-      public RouteFilter( IReadOnlyDictionary<string, Route> allRoutes, Predicate<Element>? predicate )
+      public RouteFilter( IReadOnlyDictionary<string, Route> allRoutes, bool mepCurveOnly, Predicate<Element>? predicate )
       {
         _allRoutes = allRoutes ;
+        _mepCurveOnly = mepCurveOnly ;
         _predicate = predicate ;
       }
 
       public bool AllowElement( Element elem )
       {
-        if ( elem is not MEPCurve ) return false ;  // provisional
+        if ( _mepCurveOnly && elem is not MEPCurve ) return false ;
 
         var routeName = elem.GetRouteName() ;
         if ( null == routeName || false == _allRoutes.ContainsKey( routeName ) ) return false ;

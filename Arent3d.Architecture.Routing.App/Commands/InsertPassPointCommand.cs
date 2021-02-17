@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
 
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, "Pick a point on a route." ) ;
+      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Pick a point on a route." ) ;
 
       var executor = new RoutingExecutor( document, commandData.View ) ;
 
