@@ -77,9 +77,16 @@ namespace Arent3d.Architecture.Routing.App
         return elem switch
         {
           MEPCurve => elem.IsAutoRoutingGeneratedElement(),
-          FamilyInstance => ! elem.IsFittingElement() || elem.IsAutoRoutingGeneratedElement(),
+          FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement(),
           _ => false,
         } ;
+      }
+
+      private static bool IsEquipment( FamilyInstance fi )
+      {
+        if ( fi.IsFittingElement() ) return false ;
+        if ( fi.IsPassPoint() ) return false ;
+        return true ;
       }
 
       protected virtual bool IsTargetConnector( Connector connector )

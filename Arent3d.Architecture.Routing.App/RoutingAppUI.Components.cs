@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private readonly RibbonButton _pickAndReRouteCommandButton ;
     private readonly RibbonButton _allReRouteCommandButton ;
-    private readonly RibbonButton _deleteAllRoutesCommandButton ;
+    private readonly RibbonButton _eraseAllRoutesCommandButton ;
     private readonly RibbonButton _exportRoutingCommandButton ;
 
     private readonly RibbonButton _insertPassPointCommandButton ;
@@ -43,7 +43,7 @@ namespace Arent3d.Architecture.Routing.App
         routingPanel.AddSeparator() ;
         _pickAndReRouteCommandButton = routingPanel.AddButton<PickAndReRouteCommand>() ;
         _allReRouteCommandButton = routingPanel.AddButton<AllReRouteCommand>() ;
-        _deleteAllRoutesCommandButton = routingPanel.AddButton<DeleteAllRoutesCommand>() ;
+        _eraseAllRoutesCommandButton = routingPanel.AddButton<EraseAllRoutesCommand>() ;
         routingPanel.AddSeparator() ;
         _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
       }
@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.App
       _fileRoutingCommandButton.Enabled = false ;
       _pickAndReRouteCommandButton.Enabled = false ;
       _allReRouteCommandButton.Enabled = false ;
-      _deleteAllRoutesCommandButton.Enabled = false ;
+      _eraseAllRoutesCommandButton.Enabled = false ;
       _exportRoutingCommandButton.Enabled = false ;
 
       _insertPassPointCommandButton.Enabled = false ;
@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing.App
       _fileRoutingCommandButton.Enabled = setupIsDone ;
       _pickAndReRouteCommandButton.Enabled = setupIsDone ;
       _allReRouteCommandButton.Enabled = setupIsDone ;
-      _deleteAllRoutesCommandButton.Enabled = setupIsDone ;
+      _eraseAllRoutesCommandButton.Enabled = setupIsDone ;
       _exportRoutingCommandButton.Enabled = setupIsDone ;
 
       _insertPassPointCommandButton.Enabled = setupIsDone ;

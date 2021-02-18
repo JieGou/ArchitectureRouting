@@ -33,5 +33,28 @@ namespace Arent3d.Architecture.Routing.CommandTermCaches
     public IEnumerable<string> Keys => _dic.Keys ;
 
     public IEnumerable<Route> Values => _dic.Values ;
+
+    /// <summary>
+    /// Removes all routes from both cache and document data storages.
+    /// </summary>
+    /// <param name="routeNames">Names of the routes which is to be dropped.</param>
+    /// <returns>Count of deleted routes.</returns>
+    public int Drop( IEnumerable<string> routeNames )
+    {
+      return routeNames.Count( Drop ) ;
+    }
+
+    /// <summary>
+    /// Removes a route from both cache and document data storages.
+    /// </summary>
+    /// <param name="routeName">Name of the route which is to be dropped.</param>
+    /// <returns>True, if the specified route is dropped.</returns>
+    public bool Drop( string routeName )
+    {
+      if ( false == _dic.TryGetValue( routeName, out var route ) ) return false ;
+
+      route.Delete() ;
+      return true ;
+    }
   }
 }

@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
           transaction.Commit() ;
 
           if ( executor.HasBadConnectors ) {
-            CommandUtils.AlertBadConnectors( executor.GetBadConnectors() ) ;
+            CommandUtils.AlertBadConnectors( executor.GetBadConnectorSet() ) ;
           }
 
           return Result.Succeeded ;

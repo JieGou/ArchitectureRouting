@@ -57,7 +57,7 @@ namespace Arent3d.Architecture.Routing.App.Commands
           transaction.Commit() ;
 
           if ( executor.HasBadConnectors ) {
-            CommandUtils.AlertBadConnectors( executor.GetBadConnectors() ) ;
+            CommandUtils.AlertBadConnectors( executor.GetBadConnectorSet() ) ;
           }
 
           return Result.Succeeded ;
@@ -95,6 +95,8 @@ namespace Arent3d.Architecture.Routing.App.Commands
       ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
       ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
 
+      instance.SetProperty( RoutingParameter.RouteName, pickInfo.Route.RouteId ) ;
+      
       return instance ;
     }
 

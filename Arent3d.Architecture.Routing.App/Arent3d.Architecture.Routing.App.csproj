@@ -51,6 +51,12 @@
     <None Remove="resources\Arent-Generic Models-Box.rfa" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="RoutingAppUI.Components.cs">
+      <DependentUpon>RoutingAppUI.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="&quot;$(SolutionDir)make_addin\$(OutDir)make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;if defined REVIT_ADDIN_PATH (&#xD;&#xA;  copy &quot;$(TargetDir)*.addin&quot; &quot;%25REVIT_ADDIN_PATH%25\&quot;&#xD;&#xA;) else (&#xD;&#xA;  if not defined REVIT_VERSION (&#xD;&#xA;    copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\2021\&quot;&#xD;&#xA;  ) else (&#xD;&#xA;    copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\%25REVIT_VERSION%25\&quot;&#xD;&#xA;  )&#xD;&#xA;)" />
   </Target>

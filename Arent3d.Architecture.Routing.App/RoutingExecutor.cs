@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.App
   public class RoutingExecutor
   {
     private readonly Document _document ;
-    private readonly List<Connector> _badConnectors = new() ;
+    private readonly List<Connector[]> _badConnectors = new() ;
 
     /// <summary>
     /// Generates a routing execution object.
@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.App
     /// Returns connectors between ducts which elbows, tees or crosses could not be inserted. 
     /// </summary>
     /// <returns></returns>
-    public IReadOnlyCollection<Connector> GetBadConnectors() => _badConnectors ;
+    public IReadOnlyCollection<Connector[]> GetBadConnectorSet() => _badConnectors ;
 
     /// <summary>
     /// Execute routing for the passed routing records.
@@ -139,7 +139,7 @@ namespace Arent3d.Architecture.Routing.App
         generator.Execute( generatorProgressData ) ;
       }
 
-      RegisterBadConnectors( generator.GetBadConnectors() ) ;
+      RegisterBadConnectors( generator.GetBadConnectorSet() ) ;
     }
 
     private ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )
@@ -183,9 +183,9 @@ namespace Arent3d.Architecture.Routing.App
       return result ;
     }
 
-    private void RegisterBadConnectors( IEnumerable<Connector> badConnectors )
+    private void RegisterBadConnectors( IEnumerable<Connector[]> badConnectorSet )
     {
-      _badConnectors.AddRange( badConnectors ) ;
+      _badConnectors.AddRange( badConnectorSet ) ;
     }
   }
 }

@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.CommandTermCaches ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
@@ -16,7 +17,7 @@ namespace Arent3d.Architecture.Routing
   {
     private readonly Document _document ;
     private readonly IReadOnlyDictionary<Route, RouteMEPSystem> _routeMEPSystems ;
-    private readonly List<Connector> _badConnectors = new() ;
+    private readonly List<Connector[]> _badConnectors = new() ;
     private readonly PassPointConnectorMapper _globalPassPointConnectorMapper = new() ;
 
     public RouteGenerator( IEnumerable<AutoRoutingTarget> targets, Document document, CollisionTree.ICollisionCheckTargetCollector collector )
@@ -38,7 +39,7 @@ namespace Arent3d.Architecture.Routing
       return ThreadDispatcher.Dispatch( () => routingTargets.Select( target => target.SubRoute.Route ).Distinct().ToDictionary( route => route, route => new RouteMEPSystem( document, route ) ) ) ;
     }
 
-    public IReadOnlyCollection<Connector> GetBadConnectors() => _badConnectors ;
+    public IReadOnlyCollection<Connector[]> GetBadConnectorSet() => _badConnectors ;
 
     protected override IReadOnlyCollection<AutoRoutingTarget> RoutingTargets { get ; }
 
@@ -49,9 +50,27 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Erase all previous ducts and pipes in between routing targets.
     /// </summary>
-    protected void ErasePreviousRoutes()
+    private void ErasePreviousRoutes()
     {
-      ThreadDispatcher.Dispatch( () => MEPSystemCreator.ErasePreviousRoutes( RoutingTargets ) ) ;
+      ThreadDispatcher.Dispatch( () => EraseRoutes( _document, RoutingTargets.Select( t => t.SubRoute.Route.RouteId ), false ) ) ;
+    }
+
+    public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints )
+    {
+      var hashSet = ( routeNames as ISet<string> ) ?? routeNames.ToHashSet() ;
+
+      var list = document.GetAllElementsOfRoute<Element>().Where( e => e.GetRouteName() is { } routeName && hashSet.Contains( routeName ) ) ;
+      if ( false == eraseRouteStoragesAndPassPoints ) {
+        // do not erase pass points
+        list = list.Where( p => false == p.IsPassPoint() ) ;
+      }
+
+      document.Delete( list.Select( elm => elm.Id ).ToArray() ) ;
+
+      if ( eraseRouteStoragesAndPassPoints ) {
+        // erase routes, too.
+        RouteCache.Get( document ).Drop( hashSet ) ;
+      }
     }
 
     protected override void OnGenerationStarted()
@@ -78,12 +97,12 @@ namespace Arent3d.Architecture.Routing
 
       _globalPassPointConnectorMapper.Merge( ductCreator.PassPointConnectorMapper ) ;
 
-      RegisterBadConnectors( ductCreator.GetBadConnectors() ) ;
+      RegisterBadConnectors( ductCreator.GetBadConnectorSet() ) ;
     }
 
-    private void RegisterBadConnectors( IEnumerable<Connector> badConnectors )
+    private void RegisterBadConnectors( IEnumerable<Connector[]> badConnectorSet )
     {
-      _badConnectors.AddRange( badConnectors ) ;
+      _badConnectors.AddRange( badConnectorSet ) ;
     }
 
     private static string GetDebugFileName( Document document, AutoRoutingTarget routingTarget )

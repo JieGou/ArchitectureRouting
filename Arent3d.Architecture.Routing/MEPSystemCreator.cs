@@ -32,7 +32,7 @@ namespace Arent3d.Architecture.Routing
     private readonly MEPSystem? _system ;
     private readonly MEPCurveType _curveType ;
 
-    private readonly List<Connector> _badConnectors = new() ;
+    private readonly List<Connector[]> _badConnectors = new() ;
 
     public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, RouteMEPSystem routeMepSystem )
     {
@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing
       return level ?? Level.Create( document, 0.0 ) ;
     }
 
-    public IReadOnlyCollection<Connector> GetBadConnectors() => _badConnectors ;
+    public IReadOnlyCollection<Connector[]> GetBadConnectorSet() => _badConnectors ;
 
     /// <summary>
     /// Registers related end route vertex and connector for an end point.
@@ -211,7 +211,7 @@ namespace Arent3d.Architecture.Routing
       }
       catch {
         connectorTransaction.RollBack() ;
-        AddBadConnector( connector1 ) ;
+        AddBadConnectorSet( connector1, connector2 ) ;
         return ;
       }
 
@@ -235,7 +235,7 @@ namespace Arent3d.Architecture.Routing
         }
         catch {
           transaction.RollBack() ;
-          AddBadConnector( connector1 ) ;
+          AddBadConnectorSet( connector1, connector2 ) ;
         }
       }
     }
@@ -259,7 +259,7 @@ namespace Arent3d.Architecture.Routing
       }
       catch {
         connectorTransaction.RollBack() ;
-        AddBadConnector( connector1 ) ;
+        AddBadConnectorSet( connector1, connector2, connector3 ) ;
         return ;
       }
 
@@ -275,7 +275,7 @@ namespace Arent3d.Architecture.Routing
       }
       catch {
         transaction.RollBack() ;
-        AddBadConnector( connector1 ) ;
+        AddBadConnectorSet( connector1, connector2, connector3 ) ;
       }
     }
 
@@ -302,7 +302,7 @@ namespace Arent3d.Architecture.Routing
       }
       catch {
         connectorTransaction.RollBack() ;
-        AddBadConnector( connector1 ) ;
+        AddBadConnectorSet( connector1, connector2, connector3, connector4 ) ;
         return ;
       }
 
@@ -318,7 +318,7 @@ namespace Arent3d.Architecture.Routing
       }
       catch {
         transaction.RollBack() ;
-        AddBadConnector( connector1 ) ;
+        AddBadConnectorSet( connector1, connector2, connector3, connector4 ) ;
       }
     }
 
@@ -364,9 +364,9 @@ namespace Arent3d.Architecture.Routing
       return connector.GetConnectedConnectors().Where( c => c.Owner is MEPCurve ).UniqueOrDefault() ;
     }
 
-    private void AddBadConnector( Connector connector )
+    private void AddBadConnectorSet( params Connector[] connectors )
     {
-      _badConnectors.Add( connector ) ;
+      _badConnectors.Add( connectors ) ;
     }
 
 
@@ -379,17 +379,6 @@ namespace Arent3d.Architecture.Routing
     {
       element.SetProperty( RoutingParameter.RouteName, routeId ) ;
       element.SetProperty( RoutingParameter.SubRouteIndex, subRouteIndex ) ;
-    }
-
-    private static (string? RouteName, int SubRouteIndex) GetRouteNameAndSubRouteIndex( Connector connector )
-    {
-      var routeName = connector.Owner.GetRouteName() ;
-      if ( null == routeName ) return ( null, 0 ) ;
-
-      var subRouteIndex = connector.Owner.GetSubRouteIndex() ;
-      if ( null == subRouteIndex ) return ( null, 0 ) ;
-
-      return ( RouteName: routeName, SubRouteIndex: subRouteIndex.Value ) ;
     }
 
     private static void SetRoutingFromToConnectorIdsForFitting( Element element, params Connector[] connectors )
@@ -419,100 +408,5 @@ namespace Arent3d.Architecture.Routing
 
       element.SetRoutedElementFromToConnectorIds( fromList, toList ) ;
     }
-
-
-
-    #region Eraseing previous data
-
-    /// <summary>
-    /// Erase all previous ducts and pipes in between routing targets.
-    /// </summary>
-    /// <param name="targets">Routing targets.</param>
-    public static void ErasePreviousRoutes( IReadOnlyCollection<AutoRoutingTarget> targets )
-    {
-      var connectors = targets.SelectMany( x => x.EndPoints ).Select( ep => ep.ReferenceConnector ).EnumerateAll() ;
-      if ( 0 == connectors.Count ) return ;
-
-      var document = connectors.First().Owner.Document ;
-      var erasingRouteNames = targets.Select( t => t.SubRoute.Route.RouteId ).ToHashSet() ;
-
-      ErasePreviousRoutes( document, connectors, erasingRouteNames ) ;
-    }
-
-    public static void ErasePreviousRoutes( Document document, IReadOnlyCollection<Connector> endConnectors, HashSet<string> erasingRouteNames )
-    {
-      var routeElements = CollectRouteElementIds( erasingRouteNames, endConnectors ) ;
-
-      if ( 0 != routeElements.Count ) {
-        document!.Delete( routeElements ) ;
-      }
-    }
-
-    /// <summary>
-    /// Collect elements in the target routes joined to connectors.
-    /// </summary>
-    /// <param name="targetRouteNames">Target routes.</param>
-    /// <param name="connectors">Connectors.</param>
-    /// <returns></returns>
-    public static ICollection<ElementId> CollectRouteElementIds( HashSet<string> targetRouteNames, IReadOnlyCollection<Connector> connectors )
-    {
-      var endConnectorChecker = new EndConnectorChecker( connectors ) ;
-
-      var stack = new Stack<Connector>( connectors.Where( c => c.IsConnected ) ) ;
-      var eraseTargets = new HashSet<ElementId>() ;
-      while ( 0 != stack.Count ) {
-        var connector = stack.Pop() ;
-        var otherConnectors = connector.GetLogicallyConnectedConnectors().OfEnd().EnumerateAll() ;
-
-        foreach ( var nextConnector in otherConnectors.OfEnd().Where( c => ! endConnectorChecker.IsEnd( c ) ).EnumerateAll() ) {
-          var owner = nextConnector.Owner ;
-
-          if ( owner.GetRouteName() is { } routeName && ! targetRouteNames.Contains( routeName ) ) continue ;
-
-          if ( false == AddEraseTargets( eraseTargets, owner ) ) continue ;
-
-          // add into the lookup stack.
-          nextConnector.GetOtherConnectorsInOwner().OfEnd().Where( c => c.IsConnected ).ForEach( stack.Push ) ;
-        }
-      }
-
-      return eraseTargets ;
-    }
-
-    private static bool AddEraseTargets( HashSet<ElementId> eraseTargets, Element owner )
-    {
-      if ( ! eraseTargets.Add( owner.Id ) ) return false ;
-
-      foreach ( var c in owner.GetConnectorManager()!.Connectors.OfType<Connector>().SelectMany( RoutingElementExtensions.GetConnectedConnectors ) ) {
-        if ( false == c.IsAnyEnd() ) continue ;
-        if ( false == c.Owner.IsFittingElement() ) continue ;
-
-        AddEraseTargets( eraseTargets, c.Owner ) ;
-      }
-
-      return true ;
-    }
-
-    private class EndConnectorChecker
-    {
-      private readonly HashSet<ConnectorIndicator> _endConnectorIds ;
-      
-      public EndConnectorChecker( IEnumerable<Connector> connectors )
-      {
-        _endConnectorIds = connectors.Select( RoutingElementExtensions.GetIndicator ).ToHashSet() ;
-      }
-
-      public bool IsEnd( Connector connector )
-      {
-        if ( _endConnectorIds.Contains( connector.GetIndicator() ) ) return true ;
-
-        if ( null == connector.Owner ) return true ;
-        if ( false == connector.Owner.IsAutoRoutingGeneratedElement() ) return true ;
-
-        return false ;
-      }
-    }    
-
-    #endregion
   }
 }

@@ -224,6 +224,16 @@ namespace Arent3d.Architecture.Routing
       return str!.Split( PassPointConnectorSeparator, StringSplitOptions.RemoveEmptyEntries ).Select( ConnectorIndicator.Parse ) ;
     }
 
+    public static bool IsPassPoint( this Element element )
+    {
+      return element is FamilyInstance fi && fi.IsPassPoint() ;
+    }
+
+    public static bool IsPassPoint( this FamilyInstance element )
+    {
+      return element.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ;
+    }
+
     #endregion
 
     #region Routing (General)
@@ -274,6 +284,8 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_PipeFitting,
       BuiltInCategory.OST_PipeCurves,
       BuiltInCategory.OST_FlexPipeCurves,
+
+      BuiltInCategory.OST_MechanicalEquipment,  // pass point
     } ;
 
     public static IEnumerable<TElement> GetAllElementsOfRoute<TElement>( this Document document ) where TElement : Element
@@ -320,14 +332,12 @@ namespace Arent3d.Architecture.Routing
 
     public static string? GetRouteName( this Element element )
     {
-      if ( ! element.IsAutoRoutingGeneratedElement() ) return null ;
       if ( false == element.TryGetProperty( RoutingParameter.RouteName, out string? value ) ) return null ;
       return value ;
     }
 
     public static int? GetSubRouteIndex( this Element element )
     {
-      if ( ! element.IsAutoRoutingGeneratedElement() ) return null ;
       if ( false == element.TryGetProperty( RoutingParameter.SubRouteIndex, out int value ) ) return null ;
       return value ;
     }
