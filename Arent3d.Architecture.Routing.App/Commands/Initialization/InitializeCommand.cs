@@ -5,7 +5,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
-namespace Arent3d.Architecture.Routing.App.Commands
+namespace Arent3d.Architecture.Routing.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "Initialize" )]

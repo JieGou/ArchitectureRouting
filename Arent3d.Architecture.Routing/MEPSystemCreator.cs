@@ -383,13 +383,11 @@ namespace Arent3d.Architecture.Routing
 
     private static void SetRoutingFromToConnectorIdsForFitting( Element element, params Connector[] connectors )
     {
-      var manager = element.GetConnectorManager() ;
-      if ( null == manager ) throw new InvalidOperationException() ;
+      var connectorSet = element.GetConnectors().Select( c => c.GetIndicator() ).ToHashSet() ;
 
-      var connectorSet = connectors.Select( c => c.GetIndicator() ).ToHashSet() ;
       var fromList = new List<int>() ;
       var toList = new List<int>() ;
-      manager.Connectors.OfType<Connector>().ForEach( conn =>
+      element.GetConnectors().ForEach( conn =>
       {
         if ( false == conn.IsAnyEnd() ) return ;
 

@@ -13,7 +13,7 @@ using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
-namespace Arent3d.Architecture.Routing.App.Commands
+namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "Insert Pass Point" )]

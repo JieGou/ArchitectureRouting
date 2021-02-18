@@ -6,7 +6,7 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.App.Commands
+namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "Erase All Routes" )]

@@ -80,6 +80,13 @@ namespace Arent3d.Architecture.Routing
       } ;
     }
 
+    public static IEnumerable<Connector> GetConnectors( this Element elm )
+    {
+      if ( ! ( elm.GetConnectorManager()?.Connectors is { } connectorSet ) ) return Array.Empty<Connector>() ;
+
+      return connectorSet.OfType<Connector>() ;
+    }
+
     public static ConnectorSet ToConnectorSet( this IEnumerable<Connector> connectors )
     {
       var connectorSet = new ConnectorSet() ;

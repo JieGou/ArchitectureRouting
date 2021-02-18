@@ -4,12 +4,10 @@ using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI.Forms ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using MathLib ;
 
-namespace Arent3d.Architecture.Routing.App.Commands
+namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   public abstract class RoutingCommandBase : IExternalCommand
   {

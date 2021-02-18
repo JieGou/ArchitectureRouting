@@ -67,9 +67,7 @@ namespace Arent3d.Architecture.Routing.App
 
       public bool AllowElement( Element elem )
       {
-        if ( ! ( elem.GetConnectorManager()?.Connectors is { } connectorSet ) ) return false ;
-
-        return connectorSet.OfType<Connector>().Any( IsTargetConnector ) && IsRoutableElement( elem ) ;
+        return elem.GetConnectors().Any( IsTargetConnector ) && IsRoutableElement( elem ) ;
       }
 
       protected virtual bool IsRoutableElement( Element elem )

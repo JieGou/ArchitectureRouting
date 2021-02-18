@@ -1,4 +1,3 @@
-using System ;
 using System.ComponentModel ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Revit.UI ;
@@ -7,7 +6,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
-namespace Arent3d.Architecture.Routing.App.Commands
+namespace Arent3d.Architecture.Routing.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "Show Views" )]

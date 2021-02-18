@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj" />
+    <ProjectReference Include="..\Arent3d.Csv\Arent3d.Csv.csproj" />
     <ProjectReference Include="..\Arent3d.Revit.UI\Arent3d.Revit.UI.csproj" />
     <ProjectReference Include="..\Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj" />
   </ItemGroup>
@@ -38,10 +39,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="19.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="resources\MEP.ico" />
     <Resource Include="resources\MEP.ico" />
     <None Remove="resources\Initialize-16.bmp" />
@@ -55,6 +52,10 @@
     <Compile Update="RoutingAppUI.Components.cs">
       <DependentUpon>RoutingAppUI.cs</DependentUpon>
     </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.0" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

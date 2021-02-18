@@ -1,27 +1,56 @@
+using System ;
+using Arent3d.Csv.Converters ;
+using CsvHelper.Configuration.Attributes ;
+
 namespace Arent3d.Architecture.Routing.App
 {
   /// <summary>
   /// Routing record from from-to CSV files.
   /// </summary>
-  public readonly struct RouteRecord
+  public class RouteRecord
   {
-    public string RouteId { get ; }
+    [Index( 0 ), Name( "Route ID" )]
+    public string RouteId { get ; set ; }
 
-    public ConnectorIndicator FromId { get ; }
-    public ConnectorIndicator ToId { get ; }
+    [Index( 1 ), Name( "From Element ID", "From Family Instance ID" )]
+    public int FromElementId { get ; set ; }
 
-    public int[] PassPoints { get ; }
+    [Index( 2 ), Name( "From Connector ID" )]
+    public int FromConnectorId { get ; set ; }
+
+    [Ignore]
+    public ConnectorIndicator FromId => new ConnectorIndicator( FromElementId, FromConnectorId ) ;
+
+    [Index( 3 ), Name( "To Element ID", "To Family Instance ID" )]
+    public int ToElementId { get ; set ; }
+
+    [Index( 4 ), Name( "To Connector ID" )]
+    public int ToConnectorId { get ; set ; }
+
+    [Ignore]
+    public ConnectorIndicator ToId => new ConnectorIndicator( ToElementId, ToConnectorId ) ;
+
+    [Index( 5 ), Name( "Pass Point IDs" ), TypeConverter( typeof( IntArrayConverter ) )]
+    public int[] PassPoints { get ; set ; }
 
     public RouteRecord( string routeId, ConnectorIndicator fromId, ConnectorIndicator toId, params int[] passPoints )
     {
       RouteId = routeId ;
-      FromId = fromId ;
-      ToId = toId ;
+      FromElementId = fromId.ElementId ;
+      FromConnectorId = fromId.ConnectorId ;
+      ToElementId = toId.ElementId ;
+      ToConnectorId = toId.ConnectorId ;
       PassPoints = passPoints ;
     }
 
     public RouteRecord( string routeId, RouteInfo routeInfo ) : this( routeId, routeInfo.FromId, routeInfo.ToId, routeInfo.PassPoints )
     {
+    }
+
+    public RouteRecord()
+    {
+      RouteId = string.Empty ;
+      PassPoints = Array.Empty<int>() ;
     }
   }
 }
