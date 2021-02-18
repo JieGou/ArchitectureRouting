@@ -16,8 +16,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="Arent3d.Utility, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <Reference Include="Arent3d.Utility">
         <HintPath>..\Libraries\Arent3d.Utility.dll</HintPath>
+      </Reference>
+      <Reference Include="RevitAPI">
+        <HintPath>..\..\..\..\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
       </Reference>
     </ItemGroup>
 

@@ -8,7 +8,7 @@ using Arent3d.Utility ;
 using CsvHelper ;
 using CsvHelper.Configuration ;
 
-namespace Arent3d.Csv
+namespace Arent3d.Revit.Csv
 {
   public static class CsvExtensions
   {
@@ -22,6 +22,7 @@ namespace Arent3d.Csv
       if ( false == await csv.ReadAsync() ) yield break ;
       if ( false == csv.ReadHeader() ) yield break ;
 
+      // Cannot use return directly, because `csv` will be closed in that case.
       await foreach ( var item in csv.GetRecordsAsync<TRecord>() ) {
         yield return item ;
       }
@@ -32,10 +33,13 @@ namespace Arent3d.Csv
       using var csv = new CsvReader( reader, CultureInfo.CurrentCulture ) ;
       csv.Configuration.BadDataFound = _ => { } ;
 
-      if ( false == csv.Read() ) return Array.Empty<TRecord>() ;
-      if ( false == csv.ReadHeader() ) return Array.Empty<TRecord>() ;
+      if ( false == csv.Read() ) yield break ;
+      if ( false == csv.ReadHeader() ) yield break ;
 
-      return csv.GetRecords<TRecord>() ;
+      // Cannot use return directly, because `csv` will be closed in that case.
+      foreach ( var item in csv.GetRecords<TRecord>() ) {
+        yield return item ;
+      }
     }
 
     #endregion

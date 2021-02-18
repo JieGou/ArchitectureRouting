@@ -1,14 +1,14 @@
+using System ;
 using System.Collections.Generic ;
 using System.ComponentModel ;
-using System.Globalization ;
 using System.IO ;
+using Arent3d.Revit ;
+using Arent3d.Revit.Csv ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using CsvHelper ;
-using MathLib ;
-using RackInfo = Arent3d.Architecture.Routing.Rack.Rack ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Rack
 {
@@ -21,43 +21,44 @@ namespace Arent3d.Architecture.Routing.App.Commands.Rack
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
 
-      using var dlg = new FileSaveDialog( "Routing rack list (*.csv)|*.csv" ) { Title = "Export rack list file" } ;
+      using var dlg = new FileSaveDialog( "Routing from-to list (*.csv)|*.csv" ) { Title = "Export from-to list file" } ;
 
       if ( ItemSelectionDialogResult.Confirmed != dlg.Show() ) return Result.Succeeded ;
 
-      WriteRackList( doc, ModelPathUtils.ConvertModelPathToUserVisiblePath( dlg.GetSelectedModelPath() ) ) ;
+      WriteFromTo( doc, ModelPathUtils.ConvertModelPathToUserVisiblePath( dlg.GetSelectedModelPath() ) ) ;
 
       return Result.Succeeded ;
     }
 
-    private static void WriteRackList( Document document, string csvFileName )
+    private static void WriteFromTo( Document document, string csvFileName )
     {
-      // var rackList = GetRackList( document ) ;
-      //
-      // using var reader = new StreamWriter( csvFileName, false ) ;
-      // using var csv = new CsvWriter( reader, CultureInfo.CurrentCulture ) ;
-      // csv.Configuration.HasHeaderRecord = true ;
-      //
-      // foreach ( var header in RackParser.GetHeaders() ) {
-      //   csv.WriteField( header ) ;
-      // }
-      // csv.NextRecord() ;
-      //
-      // foreach ( var record in rackList ) {
-      //   foreach ( var value in RackParser.GetRow( record ) ) {
-      //     csv.WriteField( value ) ;
-      //   }
-      //   csv.NextRecord() ;
-      // }
+      var fromToList = GetRackList( document ) ;
+
+      using var writer = new StreamWriter( csvFileName, false ) ;
+      writer.WriteCsvFile( fromToList ) ;
     }
 
-    // private static IEnumerable<RackInfo> GetRackList( Document document )
-    // {
-    //   foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
-    //     var (min, max) = familyInstance.get_BoundingBox( view ).To3d() ;
-    //
-    //     yield return new RackInfo { Box = new Box3d( min, max ), IsMainRack = true, BeamInterval = 5 } ;
-    //   }
-    // }
+    private static IEnumerable<RackRecord> GetRackList( Document document )
+    {
+      foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
+        var transform = familyInstance.GetTotalTransform() ;
+        yield return new RackRecord
+        {
+          Origin = transform.Origin,
+          RotationDegree = Math.Atan2( transform.BasisX.Y, transform.BasisX.X ).Rad2Deg(),
+          Size_X = LengthParameterData.From( familyInstance, "Arent-Width" ),
+          Size_Y = LengthParameterData.From( familyInstance, "Arent-Height" ),
+          Size_Z = LengthParameterData.From( familyInstance, "Arent-Length" ),
+          Offset = LengthParameterData.From( familyInstance, "Arent-Offset" ),
+          Elevation = LengthParameterData.From( familyInstance, BuiltInParameter.INSTANCE_ELEVATION_PARAM ),
+          Level = GetLevelName( document, familyInstance ),
+        } ;
+      }
+    }
+
+    private static string GetLevelName( Document document, FamilyInstance familyInstance )
+    {
+      return document.GetElementById<Level>( familyInstance.LevelId )?.Name ?? string.Empty ;
+    }
   }
 }

@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Revit.UI", "Arent3d
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Revit", "Arent3d.Revit\Arent3d.Revit.csproj", "{6E328C3D-BAB1-4350-9957-9FB0AABD180B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Csv", "Arent3d.Csv\Arent3d.Csv.csproj", "{F8409477-D6AD-415F-820C-84107C6B6049}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Revit.Csv", "Arent3d.Revit.Csv\Arent3d.Revit.Csv.csproj", "{F8409477-D6AD-415F-820C-84107C6B6049}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

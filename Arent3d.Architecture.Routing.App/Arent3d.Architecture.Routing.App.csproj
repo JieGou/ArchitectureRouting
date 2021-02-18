@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj" />
-    <ProjectReference Include="..\Arent3d.Csv\Arent3d.Csv.csproj" />
+    <ProjectReference Include="..\Arent3d.Revit.Csv\Arent3d.Revit.Csv.csproj" />
     <ProjectReference Include="..\Arent3d.Revit.UI\Arent3d.Revit.UI.csproj" />
     <ProjectReference Include="..\Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj" />
   </ItemGroup>
