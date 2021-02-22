@@ -79,13 +79,13 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private static EndPoint GetEndPoint( IAutoRoutingEndPoint endPoint )
+    public static EndPoint? GetEndPoint( IAutoRoutingEndPoint endPoint )
     {
       return endPoint switch
       {
         EndPoint ep => ep,
         IPseudoEndPoint pep => GetEndPoint( pep.Source ),
-        _ => throw new ArgumentException()
+        _ => null,
       } ;
     }
 
@@ -93,8 +93,9 @@ namespace Arent3d.Architecture.Routing
     /// Creates a duct from a route edge.
     /// </summary>
     /// <param name="routeEdge">A route edge.</param>
+    /// <param name="passingEndPointInfo">Nearest from & to end points.</param>
     /// <returns>Newly created duct.</returns>
-    public Element CreateEdgeElement( IRouteEdge routeEdge )
+    public Element CreateEdgeElement( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo )
     {
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZ() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZ() ;
@@ -111,7 +112,7 @@ namespace Arent3d.Architecture.Routing
         _ => throw new InvalidOperationException(),
       } ;
 
-      MarkAsAutoRoutedElement( element, _autoRoutingTarget.SubRoute ) ;
+      MarkAsAutoRoutedElement( element, _autoRoutingTarget.SubRoute, passingEndPointInfo ) ;
 
       var manager = element.GetConnectorManager() ?? throw new InvalidOperationException() ;
 
@@ -228,8 +229,8 @@ namespace Arent3d.Architecture.Routing
           transaction.Start() ;
           var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
           if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-          MarkAsAutoRoutedElement( family, subRoute ) ;
-          SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2 ) ;
+          MarkAsAutoRoutedElement( family, subRoute, connector1, connector2 ) ;
+          SetRoutingFromToConnectorIdsForFitting( family ) ;
           EraseZeroLengthMEPCurves( family ) ;
           transaction.Commit() ;
         }
@@ -268,8 +269,8 @@ namespace Arent3d.Architecture.Routing
         transaction.Start() ;
         var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
         if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-        MarkAsAutoRoutedElement( family, subRoute ) ;
-        SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3 ) ;
+        MarkAsAutoRoutedElement( family, subRoute, connector1, connector2, connector3 ) ;
+        SetRoutingFromToConnectorIdsForFitting( family ) ;
         EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
       }
@@ -311,8 +312,8 @@ namespace Arent3d.Architecture.Routing
         transaction.Start() ;
         var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
         if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-        MarkAsAutoRoutedElement( family, subRoute ) ;
-        SetRoutingFromToConnectorIdsForFitting( family, connector1, connector2, connector3, connector4 ) ;
+        MarkAsAutoRoutedElement( family, subRoute, connector1, connector2, connector3, connector4 ) ;
+        SetRoutingFromToConnectorIdsForFitting( family ) ;
         EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
       }
@@ -371,17 +372,30 @@ namespace Arent3d.Architecture.Routing
 
 
 
-    private void MarkAsAutoRoutedElement( Element element, SubRoute subRoute )
+    private static void MarkAsAutoRoutedElement( Element element, SubRoute subRoute, PassingEndPointInfo passingEndPointInfo )
     {
-      MarkAsAutoRoutedElement( element, subRoute.Route.RouteId, subRoute.SubRouteIndex );
+      MarkAsAutoRoutedElement( element, subRoute.Route.RouteId, subRoute.SubRouteIndex, passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints );
     }
-    private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex )
+
+    private static void MarkAsAutoRoutedElement( Element element, SubRoute subRoute, params Connector[] connectors )
+    {
+      MarkAsAutoRoutedElement( element, subRoute.Route.RouteId, subRoute.SubRouteIndex, GetNearestEnd( connectors, true ), GetNearestEnd( connectors, false ) ) ;
+    }
+
+    private static IEnumerable<IEndPointIndicator> GetNearestEnd( Connector[] connectors, bool isFrom )
+    {
+      return connectors.SelectMany( c => c.Owner.GetNearestEndPointIndicators( isFrom ) ) ;
+    }
+
+    private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex, IEnumerable<IEndPointIndicator> nearestFrom, IEnumerable<IEndPointIndicator> nearestTo )
     {
       element.SetProperty( RoutingParameter.RouteName, routeId ) ;
       element.SetProperty( RoutingParameter.SubRouteIndex, subRouteIndex ) ;
+      element.SetProperty( RoutingParameter.NearestFromSideEndPoints, EndPointIndicator.ToString( nearestFrom ) );
+      element.SetProperty( RoutingParameter.NearestToSideEndPoints, EndPointIndicator.ToString( nearestTo ) );
     }
 
-    private static void SetRoutingFromToConnectorIdsForFitting( Element element, params Connector[] connectors )
+    private static void SetRoutingFromToConnectorIdsForFitting( Element element )
     {
       var connectorSet = element.GetConnectors().Select( c => c.GetIndicator() ).ToHashSet() ;
 

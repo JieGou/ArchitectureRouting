@@ -419,6 +419,18 @@ namespace Arent3d.Architecture.Routing
       return document.GetAllStorables<Route>() ;
     }
 
+    public static IEnumerable<IEndPointIndicator> GetNearestEndPointIndicators( this Element element, bool isFrom )
+    {
+      if ( false == element.TryGetProperty( isFrom ? RoutingParameter.NearestFromSideEndPoints : RoutingParameter.NearestToSideEndPoints, out string? str ) ) {
+        return Array.Empty<IEndPointIndicator>() ;
+      }
+      if ( null == str ) {
+        return Array.Empty<IEndPointIndicator>() ;
+      }
+
+      return EndPointIndicator.ParseIndicatorList( str ) ;
+    }
+
     #endregion
 
     #region Center Lines

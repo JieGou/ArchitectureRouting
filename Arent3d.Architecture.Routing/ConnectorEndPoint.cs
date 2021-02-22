@@ -9,6 +9,11 @@ namespace Arent3d.Architecture.Routing
   public class ConnectorEndPoint : EndPoint
   {
     /// <summary>
+    /// Returns the indicator for this end point.
+    /// </summary>
+    public override IEndPointIndicator EndPointIndicator => RoutingConnector.GetIndicator() ;
+
+    /// <summary>
     /// Returns the related <see cref="Connector"/> which is an end point of a route.
     /// </summary>
     public Connector RoutingConnector { get ; }

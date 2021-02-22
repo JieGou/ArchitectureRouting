@@ -1,3 +1,4 @@
+using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Autodesk.Revit.DB ;
@@ -24,61 +25,22 @@ namespace Arent3d.Architecture.Routing.App
       RouteName = subRoute.Route.RouteId ;
       SubRouteIndex = subRoute.SubRouteIndex ;
 
-      var passPointDic = CreatePassPointDictionary( elementToPassThrough.Document ) ;
-
-      CollectEndPoints( elementToPassThrough, true, passPointDic, _fromElms ) ;
-      CollectEndPoints( elementToPassThrough, false, passPointDic, _toElms ) ;
+      CollectEndPoints( elementToPassThrough, true, _fromElms ) ;
+      CollectEndPoints( elementToPassThrough, false, _toElms ) ;
     }
 
-    private static IReadOnlyDictionary<(int, int), int> CreatePassPointDictionary( Document document )
+    private static void CollectEndPoints( Element element, bool isFrom, HashSet<(int, int)> foundElms )
     {
-      var dic = new Dictionary<(int, int), int>() ;
-
-      foreach ( var passPoint in document.GetAllFamilyInstances( RoutingFamilyType.PassPoint ) ) {
-        var passPointId = passPoint.Id.IntegerValue ;
-        foreach ( var con in passPoint.GetPassPointConnectors( true ).Concat( passPoint.GetPassPointConnectors( false ) ) ) {
-          dic.Add( ( con.ElementId, con.ConnectorId ), passPointId ) ;
-        }
-      }
-
-      return dic ;
-    }
-
-    private void CollectEndPoints( Element element, bool isFrom, IReadOnlyDictionary<(int, int), int> passPointDictionary, HashSet<(int, int)> foundElms )
-    {
-      var stack = new Stack<Element>() ;
-      stack.Push( element ) ;
-
-      var done = new HashSet<int> { element.Id.IntegerValue } ;
-
-      while ( 0 < stack.Count ) {
-        var e = stack.Pop() ;
-        foreach ( var connector in e.GetRoutingConnectors( isFrom ) ) {
-          var passPoint = GetPassPoint( passPointDictionary, connector ) ;
-          if ( passPoint.HasValue ) {
-            // register pass point and finish searching
-            foundElms.Add( ( passPoint.Value, 0 ) ) ;
-          }
-          else {
-            foreach ( var c in connector.GetLogicallyConnectedConnectors() ) {
-              var passPoint2 = GetPassPoint( passPointDictionary, c ) ;
-              if ( passPoint2.HasValue ) {
-                // register pass point and finish searching
-                foundElms.Add( ( passPoint2.Value, 0 ) ) ;
-              }
-              else if ( false == done.Add( c.Owner.Id.IntegerValue ) ) {
-                // already added (do nothing)
-              }
-              else if ( IsTargetSubRoute( c.Owner ) ) {
-                // add into searching targets.
-                stack.Push( c.Owner ) ;
-              }
-              else {
-                // end point
-                foundElms.Add( ( c.Owner.Id.IntegerValue, c.Id ) ) ;
-              }
-            }
-          }
+      foreach ( var indicator in element.GetNearestEndPointIndicators( isFrom ) ) {
+        switch ( indicator ) {
+          case ConnectorIndicator ci :
+            foundElms.Add( ( ci.ElementId, ci.ConnectorId ) ) ;
+            break ;
+          case PassPointEndIndicator pp :
+            foundElms.Add( ( pp.ElementId, 0 ) ) ;
+            break ;
+          default :
+            throw new InvalidOperationException() ;
         }
       }
     }

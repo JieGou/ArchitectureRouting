@@ -5,8 +5,12 @@ namespace Arent3d.Architecture.Routing
 {
   public readonly struct PassPointEndIndicator : IEquatable<PassPointEndIndicator>, IEndPointIndicator
   {
+    public static readonly PassPointEndIndicator InvalidConnectorIndicator = new PassPointEndIndicator( 0, PassPointEndSide.Forward ) ;
+
     public int ElementId { get ; }
     public PassPointEndSide SideType { get ; }
+
+    public bool IsInvalid => ( ElementId == 0 ) ;
 
     public PassPointEndIndicator( int elementId, PassPointEndSide sideType )
     {
@@ -59,6 +63,16 @@ namespace Arent3d.Architecture.Routing
     public static bool operator !=( PassPointEndIndicator left, PassPointEndIndicator right )
     {
       return ! left.Equals( right ) ;
+    }
+
+    public override string ToString()
+    {
+      return EndPointIndicator.ToString( this ) ;
+    }
+
+    public static ConnectorIndicator Parse( string str )
+    {
+      return EndPointIndicator.ParseConnectorIndicator( str ) ;
     }
   }
 }

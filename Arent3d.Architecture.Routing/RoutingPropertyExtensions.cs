@@ -14,6 +14,10 @@ namespace Arent3d.Architecture.Routing
     RoutedElementFromSideConnectorIds,
     [ParameterGuid( "6b594a61-ebec-4bc9-bbfb-e5abda7372cb" ), NameOnRevit( "Route To-side Connector Ids" )]
     RoutedElementToSideConnectorIds,
+    [ParameterGuid( "5e822fe8-274e-41e0-b197-27a75bd52500" ), NameOnRevit( "Nearest From-side End Points" )]
+    NearestFromSideEndPoints,
+    [ParameterGuid( "7a6ec320-3c94-489a-89d2-dfb783ae8ae1" ), NameOnRevit( "Nearest To-side End Points" )]
+    NearestToSideEndPoints,
 
     // PassPointSharedParameters
     [ParameterGuid( "b975f161-499f-4cc6-8e11-0d7ddf25b1f4" ), NameOnRevit( "PassPoint From-side Element Id" )]

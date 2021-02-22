@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     /// <param name="routingTarget">Processed routing target, given by <see cref="RoutingTargets"/> property.</param>
     /// <param name="result">Routing result.</param>
-    protected abstract void OnRoutingTargetProcessed( TAutoRoutingTarget routingTarget, IAutoRoutingResult result ) ;
+    protected abstract void OnRoutingTargetProcessed( TAutoRoutingTarget routingTarget, AutoRoutingResult result ) ;
 
     /// <summary>
     /// When overridden in a derived class, this method is called after all route generations. It is good to postprocess for an execution.
@@ -59,7 +59,8 @@ namespace Arent3d.Architecture.Routing
           var (src, result) = item ;
           if ( null == result || ! ( src is TAutoRoutingTarget srcTarget ) ) return ;
 
-          ThreadDispatcher.Dispatch( () => OnRoutingTargetProcessed( srcTarget, result ) ) ;
+          var wrapper = new AutoRoutingResult( result ) ;
+          ThreadDispatcher.Dispatch( () => OnRoutingTargetProcessed( srcTarget, wrapper ) ) ;
         } ) ;
       }
 

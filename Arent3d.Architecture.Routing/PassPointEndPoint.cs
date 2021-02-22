@@ -16,6 +16,11 @@ namespace Arent3d.Architecture.Routing
 
   public class PassPointEndPoint : EndPoint
   {
+    /// <summary>
+    /// Returns the indicator for this end point.
+    /// </summary>
+    public override IEndPointIndicator EndPointIndicator => new PassPointEndIndicator( Element.Id.IntegerValue, SideType ) ;
+
     public FamilyInstance Element { get ; }
 
     public PassPointEndSide SideType { get ; }

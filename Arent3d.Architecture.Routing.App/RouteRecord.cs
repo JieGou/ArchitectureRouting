@@ -30,7 +30,8 @@ namespace Arent3d.Architecture.Routing.App
     [Ignore]
     public ConnectorIndicator ToId => new ConnectorIndicator( ToElementId, ToConnectorId ) ;
 
-    [Index( 5 ), Name( "Pass Point IDs" ), TypeConverter( typeof( IntArrayConverter ) )]
+    //[Index( 5 ), Name( "Pass Point IDs" ), TypeConverter( typeof( IntArrayConverter ) )]
+    [Ignore]
     public int[] PassPoints { get ; set ; }
 
     public RouteRecord( string routeId, ConnectorIndicator fromId, ConnectorIndicator toId, params int[] passPoints )

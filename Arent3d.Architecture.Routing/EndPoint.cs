@@ -15,7 +15,12 @@ namespace Arent3d.Architecture.Routing
     /// Owner route of the end point.
     /// </summary>
     public Route OwnerRoute { get ; }
-    
+
+    /// <summary>
+    /// Returns the indicator for this end point.
+    /// </summary>
+    public abstract IEndPointIndicator EndPointIndicator { get ; }
+
     /// <summary>
     /// Returns the representative connector whose parameters are used for MEP system creation.
     /// </summary>
@@ -113,7 +118,7 @@ namespace Arent3d.Architecture.Routing
         public double GetTeeBranchLength( IPipeDiameter header, IPipeDiameter branch )
         {
           if ( header.Outside < branch.Outside ) {
-            return header.Outside * 1.0 + GetReducerLength( header, branch) ;
+            return header.Outside * 1.0 + GetReducerLength( header, branch ) ;
           }
           else {
             return header.Outside * 0.5 + branch.Outside * 0.5 ; // provisional
@@ -132,7 +137,7 @@ namespace Arent3d.Architecture.Routing
 
         private double GetReducerLength( IPipeDiameter header, IPipeDiameter branch )
         {
-          return 0.0 ;  // TODO
+          return 0.0 ; // TODO
         }
 
         public double GetWeldMinDistance( IPipeDiameter diameter )

@@ -7,9 +7,11 @@ namespace Arent3d.Architecture.Routing
   public readonly struct ConnectorIndicator : IEquatable<ConnectorIndicator>, IEndPointIndicator
   {
     public static readonly ConnectorIndicator InvalidConnectorIndicator = new ConnectorIndicator( 0, 0 ) ;
-    
+
     public int ElementId { get ; }
     public int ConnectorId { get ; }
+
+    public bool IsInvalid => ( ElementId == 0 || ConnectorId == 0 ) ;
 
     public ConnectorIndicator( int elementId, int connectorId )
     {
@@ -68,20 +70,12 @@ namespace Arent3d.Architecture.Routing
 
     public override string ToString()
     {
-      return $"c:{ElementId}/{ConnectorId}" ;
+      return EndPointIndicator.ToString( this ) ;
     }
 
-    private static readonly char[] ConnectPointSplitter = { '/' } ;
     public static ConnectorIndicator Parse( string str )
     {
-      if ( false == str.StartsWith( "c:" ) ) return InvalidConnectorIndicator ;
-
-      var array = str.Substring( 2 ).Split( ConnectPointSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
-      if ( array.Length < 2 ) return InvalidConnectorIndicator ;
-
-      if ( false == int.TryParse( array[ 0 ], out var elmId ) || false == int.TryParse( array[ 1 ], out var connId ) ) return InvalidConnectorIndicator ;
-
-      return new ConnectorIndicator( elmId, connId ) ;
+      return EndPointIndicator.ParseConnectorIndicator( str ) ;
     }
   }
 }

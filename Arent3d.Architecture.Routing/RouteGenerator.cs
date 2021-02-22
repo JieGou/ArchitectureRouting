@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing
       // TODO
     }
 
-    protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, IAutoRoutingResult result )
+    protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, AutoRoutingResult result )
     {
       result.DebugExport( GetDebugFileName( _document, routingTarget ) ) ;
       var ductCreator = new MEPSystemCreator( _document, routingTarget, _routeMEPSystems[ routingTarget.SubRoute.Route ] ) ;
@@ -99,7 +99,7 @@ namespace Arent3d.Architecture.Routing
       }
 
       foreach ( var routeEdge in result.RouteEdges ) {
-        ductCreator.CreateEdgeElement( routeEdge ) ;
+        ductCreator.CreateEdgeElement( routeEdge, result.GetPassingEndPoints( routeEdge ) ) ;
       }
 
       ductCreator.ConnectAllVertices( routingTarget ) ;
