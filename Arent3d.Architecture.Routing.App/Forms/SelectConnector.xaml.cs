@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       foreach ( var conn in familyDocument.GetAllElements<ConnectorElement>().Where( IsTargetConnectorElement ) ) {
         ConnectorList.Add( new ConnectorInfoClass( familyInstance, familyInstanceTransform, conn, _firstConnector ) ) ;
       }
+      ConnectorList.Add( new ConnectorInfoClass( familyInstance ) ) ;
 
       this.Left = 0 ;
       this.Top += 10 ;
@@ -65,14 +66,27 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       public event PropertyChangedEventHandler? PropertyChanged ;
 
-      private FamilyInstance FamilyInstance { get ; }
+      private Instance Instance { get ; }
 
-      private XYZ ConnectorPosition { get ; }
-      private ConnectorElement ConnectorElement { get ; }
+      private XYZ? ConnectorPosition { get ; }
+      private ConnectorElement? ConnectorElement { get ; }
+
+      /// <summary>
+      /// ConnectorInfo for the center of an instance.
+      /// </summary>
+      /// <param name="instance">Instance.</param>
+      public ConnectorInfoClass( Instance instance )
+      {
+        Instance = instance ;
+        ConnectorElement = null ;
+        ConnectorPosition = null ;
+
+        IsEnabled = true ;
+      }
 
       public ConnectorInfoClass( FamilyInstance familyInstance, Transform familyInstanceTransform, ConnectorElement connectorElement, Connector? firstElement )
       {
-        FamilyInstance = familyInstance ;
+        Instance = familyInstance ;
         ConnectorElement = connectorElement ;
         ConnectorPosition = familyInstanceTransform.OfPoint( connectorElement.Origin ) ;
 
@@ -86,32 +100,16 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       public override string ToString()
       {
+        if ( null == ConnectorElement ) return "Origin of this element" ;
         return $"{ConnectorElement.Name} - {UnitUtils.ConvertFromInternalUnits( ConnectorElement.Radius, UnitTypeId.Millimeters ) * 2} - {ConnectorElement.get_Parameter( BuiltInParameter.RBS_PIPE_FLOW_DIRECTION_PARAM )?.AsValueString()}" ;
       }
 
       public Connector? GetConnector()
       {
         if ( false == IsEnabled || false == IsSelected ) return null ;
+        if ( null == ConnectorElement ) return null ;
 
-        return FamilyInstance.MEPModel.ConnectorManager.Connectors.OfType<Connector>().FirstOrDefault( IsMatch ) ;
-      }
-
-      private static Document SetFamDoc( Document famdoc, FamilyInstance pfi )
-      {
-        FamilyType? ft = null ;
-        using ( var tx = new Transaction( famdoc ) ) {
-          tx.Start( "Set Family Type" ) ;
-          foreach ( FamilyType ftm in famdoc.FamilyManager.Types ) {
-            if ( ftm.Name == pfi.Name ) {
-              ft = ftm ;
-            }
-          }
-
-          famdoc.FamilyManager.CurrentType = ft ;
-          tx.Commit() ;
-        }
-
-        return famdoc ;
+        return Instance.GetConnectors().FirstOrDefault( IsMatch ) ;
       }
 
       private bool IsMatch( Connector connector )
@@ -122,6 +120,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       private bool HasCompatibleType( Connector connector )
       {
         if ( false == connector.IsAnyEnd() ) return false ;
+        if ( null == ConnectorElement ) return true ;
+
         if ( connector.Domain != ConnectorElement.Domain ) return false ;
 
         if ( ConnectorElement.SystemClassification != MEPSystemClassification.Global ) {

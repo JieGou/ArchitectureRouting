@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
@@ -90,13 +91,11 @@ namespace Arent3d.Architecture.Routing
     /// <param name="toId">To connector.</param>
     /// <param name="passPointIds">Pass point sequence, if needed.</param>
     /// <returns>False, if any connector id or pass point id is not found, or has any contradictions in the from-to list (i.e., one connector is registered as both from and end).</returns>
-    public bool RegisterConnectors( ConnectorIndicator fromId, ConnectorIndicator toId, params int[] passPointIds )
+    public bool RegisterConnectors( IEndPointIndicator fromId, IEndPointIndicator toId, params int[] passPointIds )
     {
       // check id.
-      var fromConn = Document.FindConnector( fromId ) ;
-      if ( null == fromConn ) return false ;
-      var toConn = Document.FindConnector( toId ) ;
-      if ( null == toConn ) return false ;
+      if ( fromId is ConnectorIndicator fromInd && null == Document.FindConnector( fromInd ) ) return false ;
+      if ( toId is ConnectorIndicator toInd && null == Document.FindConnector( toInd ) ) return false ;
 
       foreach ( var passPointId in passPointIds ) {
         if ( null == Document.FindPassPointElement( passPointId ) ) return false ;

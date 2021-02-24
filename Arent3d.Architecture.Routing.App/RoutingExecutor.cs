@@ -165,6 +165,8 @@ namespace Arent3d.Architecture.Routing.App
       var result = new List<Route>() ; // Ordered by the original from-to record order.
 
       await foreach ( var record in fromToList ) {
+        if ( null == record.FromId || null == record.ToId ) continue ;
+
         if ( false == dic.TryGetValue( record.RouteId, out var route ) ) {
           if ( oldRoutes.TryGetValue( record.RouteId, out route ) ) {
             route.Clear() ;

@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
@@ -41,14 +42,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         var tempColor = SetTempColor( uiDocument, routes, fromElement ) ;
         try {
           var (toConnector, toElement) = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromConnector, fromElement.GetRouteName() ) ;
+          var fromEndPoint = GetEndPointIndicator( fromElement, fromConnector, toElement, toConnector ) ;
+          var toEndPoint = GetEndPointIndicator( toElement, toConnector, fromElement, fromConnector ) ;
 
           if ( GetSubRoute( routes, fromElement ) is { } subRoute1 ) {
-            var splitter = new RouteSplitter( subRoute1, fromElement, toConnector, false ) ;
+            var splitter = new RouteSplitter( subRoute1, fromElement, toEndPoint, false ) ;
             routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute1.Route ) ) ;
             routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute1.Route ) ) ;
           }
           else if ( GetSubRoute( routes, toElement ) is { } subRoute2 ) {
-            var splitter = new RouteSplitter( subRoute2, toElement, fromConnector, true ) ;
+            var splitter = new RouteSplitter( subRoute2, toElement, fromEndPoint, true ) ;
             routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute2.Route ) ) ;
             routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute2.Route ) ) ;
           }
@@ -57,7 +60,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
               var name = "Picked_" + i ;
               if ( routes.ContainsKey( name ) ) continue ;
 
-              routeRecords.Add( new RouteRecord( name, fromConnector.GetIndicator(), toConnector.GetIndicator() ) ) ;
+              routeRecords.Add( new RouteRecord( name, fromEndPoint, toEndPoint ) ) ;
               break ;
             }
           }
@@ -71,6 +74,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         yield return record ;
       }
     }
+
     private static IDisposable SetTempColor( UIDocument uiDocument, RouteCache routes, Element element )
     {
       using var transaction = new Transaction( uiDocument.Document ) ;
@@ -88,7 +92,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         throw ;
       }
     }
-
 
     private static void DisposeTempColor( Document document, IDisposable tempColor )
     {
@@ -128,16 +131,46 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       return route.GetSubRoute( subRouteIndex.Value ) ;
     }
 
+    private static IEndPointIndicator GetEndPointIndicator( Instance instance, Connector? connector, Instance anotherInstance, Connector? anotherConnector )
+    {
+      if ( null != connector ) return connector.GetIndicator() ;
+
+      var center = GetCenter( instance ) ;
+      var anotherPos = ( null == anotherConnector ) ? GetCenter( anotherInstance ) : GetConnectorPosition( anotherConnector ) ;
+      var dir = anotherPos - center ;
+
+      double x = Math.Abs( dir.X ), y = Math.Abs( dir.Y ) ;
+      if ( x < y ) {
+        dir = ( 0 <= dir.Y ) ? XYZ.BasisY : -XYZ.BasisY ;
+      }
+      else {
+        dir = ( 0 <= dir.X ) ? XYZ.BasisX : -XYZ.BasisX ;
+      }
+
+      return new CoordinateIndicator( center, dir ) ;
+    }
+
+    private static XYZ GetCenter( Instance instance )
+    {
+      return instance.GetTotalTransform().Origin ;
+    }
+
+    private static XYZ GetConnectorPosition( Connector connector )
+    {
+      return connector.Origin ;
+    }
+
+
     private class RouteSplitter
     {
       private readonly RouteInfoDetector _detector ;
-      private readonly ConnectorIndicator _newConnectorIndicator ;
+      private readonly IEndPointIndicator _newIndicator ;
       private readonly bool _newConnectorIsFromConnector ;
 
-      public RouteSplitter( SubRoute subRoute, Element splitElement, Connector newConnector, bool newConnectorIsFromConnector )
+      public RouteSplitter( SubRoute subRoute, Element splitElement, IEndPointIndicator endPointIndicator, bool newConnectorIsFromConnector )
       {
         _detector = new RouteInfoDetector( subRoute, splitElement ) ;
-        _newConnectorIndicator = newConnector.GetIndicator() ;
+        _newIndicator = endPointIndicator ;
         _newConnectorIsFromConnector = newConnectorIsFromConnector ;
       }
 
@@ -148,22 +181,22 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
           if ( index < 0 ) continue ;
 
           if ( _newConnectorIsFromConnector ) {
-            yield return CreateInsertedRouteRecordFrom( route.RouteId, info, index, _newConnectorIndicator ) ;
+            yield return CreateInsertedRouteRecordFrom( route.RouteId, info, index, _newIndicator ) ;
           }
           else {
-            yield return CreateInsertedRouteRecordTo( route.RouteId, info, index, _newConnectorIndicator ) ;
+            yield return CreateInsertedRouteRecordTo( route.RouteId, info, index, _newIndicator ) ;
           }
         }
       }
 
-      private static RouteRecord CreateInsertedRouteRecordFrom( string routeName, RouteInfo info, int index, ConnectorIndicator newConnectorIndicator )
+      private static RouteRecord CreateInsertedRouteRecordFrom( string routeName, RouteInfo info, int index, IEndPointIndicator newIndicator )
       {
-        return new RouteRecord( routeName, newConnectorIndicator, info.ToId, info.PassPoints.SubArray( index ) ) ;
+        return new RouteRecord( routeName, newIndicator, info.ToId, info.PassPoints.SubArray( index ) ) ;
       }
 
-      private static RouteRecord CreateInsertedRouteRecordTo( string routeName, RouteInfo info, int index, ConnectorIndicator newConnectorIndicator )
+      private static RouteRecord CreateInsertedRouteRecordTo( string routeName, RouteInfo info, int index, IEndPointIndicator newIndicator )
       {
-        return new RouteRecord( routeName, info.FromId, newConnectorIndicator, info.PassPoints.SubArray( 0, index ) ) ;
+        return new RouteRecord( routeName, info.FromId, newIndicator, info.PassPoints.SubArray( 0, index ) ) ;
       }
     }
   }

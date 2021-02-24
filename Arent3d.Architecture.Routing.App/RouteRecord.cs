@@ -1,6 +1,10 @@
 using System ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Revit.Csv.Converters ;
+using CsvHelper ;
+using CsvHelper.Configuration ;
 using CsvHelper.Configuration.Attributes ;
+using CsvHelper.TypeConversion ;
 
 namespace Arent3d.Architecture.Routing.App
 {
@@ -12,35 +16,21 @@ namespace Arent3d.Architecture.Routing.App
     [Index( 0 ), Name( "Route ID" )]
     public string RouteId { get ; set ; }
 
-    [Index( 1 ), Name( "From Element ID", "From Family Instance ID" )]
-    public int FromElementId { get ; set ; }
+    [Index( 1 ), Name( "From" ), TypeConverter( typeof( EndPointIndicatorConverter ) )]
+    public IEndPointIndicator? FromId { get ; set ; }
 
-    [Index( 2 ), Name( "From Connector ID" )]
-    public int FromConnectorId { get ; set ; }
+    [Index( 2 ), Name( "To" ), TypeConverter( typeof( EndPointIndicatorConverter ) )]
+    public IEndPointIndicator? ToId { get ; set ; }
 
-    [Ignore]
-    public ConnectorIndicator FromId => new ConnectorIndicator( FromElementId, FromConnectorId ) ;
-
-    [Index( 3 ), Name( "To Element ID", "To Family Instance ID" )]
-    public int ToElementId { get ; set ; }
-
-    [Index( 4 ), Name( "To Connector ID" )]
-    public int ToConnectorId { get ; set ; }
-
-    [Ignore]
-    public ConnectorIndicator ToId => new ConnectorIndicator( ToElementId, ToConnectorId ) ;
-
-    //[Index( 5 ), Name( "Pass Point IDs" ), TypeConverter( typeof( IntArrayConverter ) )]
+    //[Index( 3 ), Name( "Pass Point IDs" ), TypeConverter( typeof( IntArrayConverter ) )]
     [Ignore]
     public int[] PassPoints { get ; set ; }
 
-    public RouteRecord( string routeId, ConnectorIndicator fromId, ConnectorIndicator toId, params int[] passPoints )
+    public RouteRecord( string routeId, IEndPointIndicator fromId, IEndPointIndicator toId, params int[] passPoints )
     {
       RouteId = routeId ;
-      FromElementId = fromId.ElementId ;
-      FromConnectorId = fromId.ConnectorId ;
-      ToElementId = toId.ElementId ;
-      ToConnectorId = toId.ConnectorId ;
+      FromId = fromId ;
+      ToId = toId ;
       PassPoints = passPoints ;
     }
 
@@ -52,6 +42,22 @@ namespace Arent3d.Architecture.Routing.App
     {
       RouteId = string.Empty ;
       PassPoints = Array.Empty<int>() ;
+      FromId = null ;
+      ToId = null ;
+    }
+  }
+
+  internal class EndPointIndicatorConverter : ITypeConverter
+  {
+    public string ConvertToString( object? value, IWriterRow row, MemberMapData memberMapData )
+    {
+      if ( null == value ) return string.Empty ;
+      return EndPointIndicator.ToString( (IEndPointIndicator) value ) ;
+    }
+
+    public object? ConvertFromString( string text, IReaderRow row, MemberMapData memberMapData )
+    {
+      return EndPointIndicator.ParseIndicator( text ) ;
     }
   }
 }

@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
@@ -79,11 +80,11 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    public static EndPoint? GetEndPoint( IAutoRoutingEndPoint endPoint )
+    public static EndPointBase? GetEndPoint( IAutoRoutingEndPoint endPoint )
     {
       return endPoint switch
       {
-        EndPoint ep => ep,
+        EndPointBase ep => ep,
         IPseudoEndPoint pep => GetEndPoint( pep.Source ),
         _ => null,
       } ;
@@ -100,7 +101,7 @@ namespace Arent3d.Architecture.Routing
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZ() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZ() ;
 
-      var baseConnector = ( routeEdge.LineInfo as EndPoint )?.ReferenceConnector ;
+      var baseConnector = ( routeEdge.LineInfo as EndPointBase )?.ReferenceConnector ;
       if ( null == baseConnector ) throw new InvalidOperationException() ;
 
       var element = baseConnector.Domain switch

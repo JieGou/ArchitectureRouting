@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -12,8 +13,8 @@ namespace Arent3d.Architecture.Routing.App
   {
     public string RouteName { get ; }
     public int SubRouteIndex { get ; }
-    private readonly HashSet<(int, int)> _fromElms = new() ;
-    private readonly HashSet<(int, int)> _toElms = new() ;
+    private readonly HashSet<IEndPointIndicator> _fromElms = new() ;
+    private readonly HashSet<IEndPointIndicator> _toElms = new() ;
 
     /// <summary>
     /// Create a <see cref="RouteInfoDetector"/>.
@@ -29,31 +30,18 @@ namespace Arent3d.Architecture.Routing.App
       CollectEndPoints( elementToPassThrough, false, _toElms ) ;
     }
 
-    private static void CollectEndPoints( Element element, bool isFrom, HashSet<(int, int)> foundElms )
+    private static void CollectEndPoints( Element element, bool isFrom, HashSet<IEndPointIndicator> foundElms )
     {
       foreach ( var indicator in element.GetNearestEndPointIndicators( isFrom ) ) {
         switch ( indicator ) {
-          case ConnectorIndicator ci :
-            foundElms.Add( ( ci.ElementId, ci.ConnectorId ) ) ;
-            break ;
           case PassPointEndIndicator pp :
-            foundElms.Add( ( pp.ElementId, 0 ) ) ;
+            foundElms.Add( new PassPointEndIndicator( pp.ElementId, PassPointEndSide.Forward ) ) ;
             break ;
           default :
-            throw new InvalidOperationException() ;
+            foundElms.Add( indicator ) ;
+            break ;
         }
       }
-    }
-
-    private bool IsTargetSubRoute( Element elm )
-    {
-      return ( elm.GetRouteName() == RouteName ) && ( elm.GetSubRouteIndex() == SubRouteIndex ) ;
-    }
-
-    private static int? GetPassPoint( IReadOnlyDictionary<(int, int), int> passPointDictionary, Connector connector )
-    {
-      if ( passPointDictionary.TryGetValue( ( connector.Owner.Id.IntegerValue, connector.Id ), out var i ) ) return i ;
-      return null ;
     }
 
     /// <summary>
@@ -69,10 +57,10 @@ namespace Arent3d.Architecture.Routing.App
     /// </returns>
     public int GetPassedThroughPassPointIndex( RouteInfo info )
     {
-      var list = new List<(int, int)>() ;
-      list.Add( ( info.FromId.ElementId, info.FromId.ConnectorId ) ) ;
-      list.AddRange( info.PassPoints.Select( id => ( id, 0 ) ) ) ;
-      list.Add( ( info.ToId.ElementId, info.ToId.ConnectorId ) ) ;
+      var list = new List<IEndPointIndicator>() ;
+      list.Add( info.FromId ) ;
+      list.AddRange( info.PassPoints.Select( id => (IEndPointIndicator) new PassPointEndIndicator( id, PassPointEndSide.Forward ) ) ) ;
+      list.Add( info.ToId ) ;
 
       for ( var i = list.Count - 2 ; i >= 0 ; --i ) {
         if ( _fromElms.Contains( list[ i ] ) && _toElms.Contains( list[ i + 1 ] ) ) {

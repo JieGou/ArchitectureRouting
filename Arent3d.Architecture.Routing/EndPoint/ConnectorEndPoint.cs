@@ -1,12 +1,12 @@
 using Autodesk.Revit.DB ;
 using MathLib ;
 
-namespace Arent3d.Architecture.Routing
+namespace Arent3d.Architecture.Routing.EndPoint
 {
   /// <summary>
-  /// An <see cref="EndPoint"/> for a concrete connector <see cref="RoutingConnector"/>.
+  /// An <see cref="RoutingConnector"/> for a concrete connector <see cref="EndPointBase"/>.
   /// </summary>
-  public class ConnectorEndPoint : EndPoint
+  public class ConnectorEndPoint : EndPointBase
   {
     /// <summary>
     /// Returns the indicator for this end point.

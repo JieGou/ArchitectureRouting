@@ -1,15 +1,14 @@
-using System ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 
-namespace Arent3d.Architecture.Routing
+namespace Arent3d.Architecture.Routing.EndPoint
 {
   /// <summary>
   /// An end on auto routing.
   /// </summary>
-  public abstract class EndPoint : IAutoRoutingEndPoint
+  public abstract class EndPointBase : IAutoRoutingEndPoint
   {
     /// <summary>
     /// Owner route of the end point.
@@ -67,7 +66,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="ownerRoute">Owner route.</param>
     /// <param name="connector">A Revit connector object.</param>
     /// <param name="isStart">True if this end point represents a start end point.</param>
-    protected EndPoint( Route ownerRoute, Connector connector, bool isStart )
+    protected EndPointBase( Route ownerRoute, Connector connector, bool isStart )
     {
       OwnerRoute = ownerRoute ;
       ReferenceConnector = connector ;
@@ -91,7 +90,7 @@ namespace Arent3d.Architecture.Routing
       public ProcessConstraint ProcessConstraint => ProcessConstraint.None ;
       public string FluidPhase { get ; }
 
-      public RouteCondition( EndPoint endPoint )
+      public RouteCondition( EndPointBase endPoint )
       {
         Diameter = endPoint.ReferenceConnector.GetDiameter() ;
 
@@ -103,7 +102,7 @@ namespace Arent3d.Architecture.Routing
 
       private class PipeSpec : IPipeSpec
       {
-        private readonly EndPoint _endPoint ;
+        private readonly EndPointBase _endPoint ;
 
         public double GetLongElbowSize( IPipeDiameter diameter )
         {
@@ -147,7 +146,7 @@ namespace Arent3d.Architecture.Routing
 
         public string Name => _endPoint.ReferenceConnector.MEPSystem.Name ; // provisional
 
-        public PipeSpec( EndPoint endPoint )
+        public PipeSpec( EndPointBase endPoint )
         {
           _endPoint = endPoint ;
         }

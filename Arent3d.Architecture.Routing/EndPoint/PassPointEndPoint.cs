@@ -1,7 +1,7 @@
 using Autodesk.Revit.DB ;
 using MathLib ;
 
-namespace Arent3d.Architecture.Routing
+namespace Arent3d.Architecture.Routing.EndPoint
 {
   /// <summary>
   /// Determines whether which side of a pass point a pass point end is on.
@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing
     Reverse,
   }
 
-  public class PassPointEndPoint : EndPoint
+  public class PassPointEndPoint : EndPointBase
   {
     /// <summary>
     /// Returns the indicator for this end point.

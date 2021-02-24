@@ -1,16 +1,13 @@
 using System ;
+using Arent3d.Routing ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing
+namespace Arent3d.Architecture.Routing.EndPoint
 {
-  public readonly struct PassPointEndIndicator : IEquatable<PassPointEndIndicator>, IEndPointIndicator
+  public class PassPointEndIndicator : IEquatable<PassPointEndIndicator>, IEndPointIndicator
   {
-    public static readonly PassPointEndIndicator InvalidConnectorIndicator = new PassPointEndIndicator( 0, PassPointEndSide.Forward ) ;
-
     public int ElementId { get ; }
     public PassPointEndSide SideType { get ; }
-
-    public bool IsInvalid => ( ElementId == 0 ) ;
 
     public PassPointEndIndicator( int elementId, PassPointEndSide sideType )
     {
@@ -18,12 +15,17 @@ namespace Arent3d.Architecture.Routing
       SideType = sideType ;
     }
 
-    public FamilyInstance? GetPassPointElement( Document document )
+    private FamilyInstance? GetPassPointElement( Document document )
     {
       return document.FindPassPointElement( ElementId ) ;
     }
 
-    public EndPoint? GetEndPoint( Document document, SubRoute subRoute, bool isFrom )
+    public EndPointBase? GetAutoRoutingEndPoint( Document document, SubRoute subRoute, bool isFrom )
+    {
+      return GetEndPoint( document, subRoute, isFrom ) ;
+    }
+
+    public EndPointBase? GetEndPoint( Document document, SubRoute subRoute, bool isFrom )
     {
       if ( ( SideType == PassPointEndSide.Forward ) != isFrom ) throw new InvalidOperationException() ;
 
@@ -70,9 +72,9 @@ namespace Arent3d.Architecture.Routing
       return EndPointIndicator.ToString( this ) ;
     }
 
-    public static ConnectorIndicator Parse( string str )
+    public static PassPointEndIndicator? Parse( string str )
     {
-      return EndPointIndicator.ParseConnectorIndicator( str ) ;
+      return EndPointIndicator.ParsePassPointEndIndicator( str ) ;
     }
   }
 }

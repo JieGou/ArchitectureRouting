@@ -1,5 +1,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.EndPoint ;
+using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -19,13 +21,14 @@ namespace Arent3d.Architecture.Routing
     public IEnumerable<IEndPointIndicator> FromEndPointIndicators => _fromEndPointIndicators ;
     public IEnumerable<IEndPointIndicator> ToEndPointIndicators => _toEndPointIndicators ;
 
-    public IEnumerable<EndPoint> GetFromEndPoints( Document document )
+    public IEnumerable<EndPointBase> GetFromEndPoints( Document document )
     {
-      return FromEndPointIndicators.Select( ind => ind.GetEndPoint( document, this, true ) ).NonNull() ;
+      return _fromEndPointIndicators.Select( ep => ep.GetAutoRoutingEndPoint( document, this, true ) ).NonNull() ;
     }
-    public IEnumerable<EndPoint> GetToEndPoints( Document document )
+
+    public IEnumerable<EndPointBase> GetToEndPoints( Document document )
     {
-      return ToEndPointIndicators.Select( ind => ind.GetEndPoint( document, this, false ) ).NonNull() ;
+      return _toEndPointIndicators.Select( ep => ep.GetAutoRoutingEndPoint( document, this, false ) ).NonNull() ;
     }
 
     internal SubRoute( Route route, int index )

@@ -1,17 +1,13 @@
 using System ;
-using System.Linq ;
+using Arent3d.Routing ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing
+namespace Arent3d.Architecture.Routing.EndPoint
 {
-  public readonly struct ConnectorIndicator : IEquatable<ConnectorIndicator>, IEndPointIndicator
+  public class ConnectorIndicator : IEquatable<ConnectorIndicator>, IEndPointIndicator
   {
-    public static readonly ConnectorIndicator InvalidConnectorIndicator = new ConnectorIndicator( 0, 0 ) ;
-
     public int ElementId { get ; }
     public int ConnectorId { get ; }
-
-    public bool IsInvalid => ( ElementId == 0 || ConnectorId == 0 ) ;
 
     public ConnectorIndicator( int elementId, int connectorId )
     {
@@ -28,7 +24,12 @@ namespace Arent3d.Architecture.Routing
       return document.FindConnector( this ) ;
     }
 
-    public EndPoint? GetEndPoint( Document document, SubRoute subRoute, bool isFrom )
+    public EndPointBase? GetAutoRoutingEndPoint( Document document, SubRoute subRoute, bool isFrom )
+    {
+      return GetEndPoint( document, subRoute, isFrom ) ;
+    }
+
+    public EndPointBase? GetEndPoint( Document document, SubRoute subRoute, bool isFrom )
     {
       var conn = GetConnector( document ) ;
       if ( null == conn ) return null ;
@@ -73,7 +74,7 @@ namespace Arent3d.Architecture.Routing
       return EndPointIndicator.ToString( this ) ;
     }
 
-    public static ConnectorIndicator Parse( string str )
+    public static ConnectorIndicator? Parse( string str )
     {
       return EndPointIndicator.ParseConnectorIndicator( str ) ;
     }

@@ -1,5 +1,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Routing ;
 
 namespace Arent3d.Architecture.Routing
@@ -39,7 +40,7 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private static IEnumerable<EndPoint> SeekEndPoints( Dictionary<IRouteEdge, PassingEndPointInfo> dic, IReadOnlyDictionary<IRouteVertex, (List<IRouteEdge> Enter, List<IRouteEdge> Exit)> linkInfo, IRouteEdge edge, bool seekFrom )
+    private static IEnumerable<EndPointBase> SeekEndPoints( Dictionary<IRouteEdge, PassingEndPointInfo> dic, IReadOnlyDictionary<IRouteVertex, (List<IRouteEdge> Enter, List<IRouteEdge> Exit)> linkInfo, IRouteEdge edge, bool seekFrom )
     {
       if ( false == dic.TryGetValue( edge, out var fromTo ) ) {
         fromTo = new PassingEndPointInfo() ;
@@ -68,31 +69,31 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private void RegisterFrom( EndPoint? endPoint )
+    private void RegisterFrom( EndPointBase? endPoint )
     {
       if ( null != endPoint ) {
         _fromEndPoints.Add( endPoint ) ;
       }
     }
-    private void RegisterTo( EndPoint? endPoint )
+    private void RegisterTo( EndPointBase? endPoint )
     {
       if ( null != endPoint ) {
         _toEndPoints.Add( endPoint ) ;
       }
     }
 
-    private void RegisterFrom( IEnumerable<EndPoint> endPoints )
+    private void RegisterFrom( IEnumerable<EndPointBase> endPoints )
     {
       _fromEndPoints.UnionWith( endPoints ) ;
     }
-    private void RegisterTo( IEnumerable<EndPoint> endPoints )
+    private void RegisterTo( IEnumerable<EndPointBase> endPoints )
     {
       _toEndPoints.UnionWith( endPoints ) ;
     }
 
-    private readonly HashSet<EndPoint> _fromEndPoints = new HashSet<EndPoint>() ;
+    private readonly HashSet<EndPointBase> _fromEndPoints = new HashSet<EndPointBase>() ;
 
-    private readonly HashSet<EndPoint> _toEndPoints = new HashSet<EndPoint>() ;
+    private readonly HashSet<EndPointBase> _toEndPoints = new HashSet<EndPointBase>() ;
 
     private PassingEndPointInfo()
     {

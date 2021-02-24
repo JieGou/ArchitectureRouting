@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
@@ -19,17 +20,17 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Routing end points which fluid flows from.
     /// </summary>
-    private readonly IReadOnlyCollection<EndPoint> _fromEndPoints ;
+    private readonly IReadOnlyCollection<EndPointBase> _fromEndPoints ;
 
     /// <summary>
     /// Routing end points which fluid flows to.
     /// </summary>
-    private readonly IReadOnlyCollection<EndPoint> _toEndPoints ;
+    private readonly IReadOnlyCollection<EndPointBase> _toEndPoints ;
 
     /// <summary>
     /// Returns all routing end points.
     /// </summary>
-    public IEnumerable<EndPoint> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
+    public IEnumerable<EndPointBase> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
 
     public AutoRoutingTarget( Document document, SubRoute subRoute )
     {
@@ -60,7 +61,7 @@ namespace Arent3d.Architecture.Routing
     private void SyncTermPositions( IEnumerable<(IAutoRoutingEndPoint, Vector3d)> positions )
     {
       foreach ( var (autoRoutingEndPoint, position) in positions ) {
-        if ( ! ( autoRoutingEndPoint is EndPoint endPoint ) ) throw new Exception() ;
+        if ( ! ( autoRoutingEndPoint is EndPointBase endPoint ) ) throw new Exception() ;
 
         endPoint.SetPosition( position ) ;
       }
@@ -99,7 +100,7 @@ namespace Arent3d.Architecture.Routing
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints
     {
-      public AutoRoutingSpatialConstraints( IReadOnlyCollection<EndPoint> fromEndPoints, IReadOnlyCollection<EndPoint> toEndPoints )
+      public AutoRoutingSpatialConstraints( IReadOnlyCollection<IAutoRoutingEndPoint> fromEndPoints, IReadOnlyCollection<IAutoRoutingEndPoint> toEndPoints )
       {
         Starts = fromEndPoints ;
         Destination = toEndPoints ;

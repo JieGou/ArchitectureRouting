@@ -1,5 +1,6 @@
 using System ;
 using System.Text ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
@@ -7,12 +8,12 @@ namespace Arent3d.Architecture.Routing
 {
   public class RouteInfo
   {
-    public ConnectorIndicator FromId { get ; }
-    public ConnectorIndicator ToId { get ; }
+    public IEndPointIndicator FromId { get ; }
+    public IEndPointIndicator ToId { get ; }
 
     public int[] PassPoints { get ; }
 
-    public RouteInfo( ConnectorIndicator fromId, ConnectorIndicator toId, params int[] passPoints )
+    public RouteInfo( IEndPointIndicator fromId, IEndPointIndicator toId, params int[] passPoints )
     {
       FromId = fromId ;
       ToId = toId ;
@@ -23,13 +24,13 @@ namespace Arent3d.Architecture.Routing
   [StorableConverterOf( typeof( RouteInfo ) )]
   internal class RouteInfoConverter : StorableConverterBase<RouteInfo, string>
   {
-    private static readonly char[] FieldSplitter = { ',' } ;
+    private static readonly char[] FieldSplitter = { '|' } ;
     
     protected override RouteInfo NativeToCustom( Element storedElement, string nativeTypeValue )
     {
       var split = nativeTypeValue.Split( FieldSplitter, StringSplitOptions.RemoveEmptyEntries ) ;
-      var fromId = Parse( 0 < split.Length ? split[ 0 ] : string.Empty ) ;
-      var toId = Parse( 1 < split.Length ? split[ 1 ] : string.Empty ) ;
+      var fromId = EndPointIndicator.ParseIndicator( 0 < split.Length ? split[ 0 ] : string.Empty ) ?? throw new InvalidOperationException() ;
+      var toId = EndPointIndicator.ParseIndicator( 1 < split.Length ? split[ 1 ] : string.Empty ) ?? throw new InvalidOperationException() ;
       if ( split.Length <= 2 ) {
         return new RouteInfo( fromId, toId, Array.Empty<int>() ) ;
       }
@@ -46,25 +47,15 @@ namespace Arent3d.Architecture.Routing
     {
       var builder = new StringBuilder() ;
 
-      builder.Append( Stringify( customTypeValue.FromId ) ) ;
-      builder.Append( ',' ) ;
-      builder.Append( Stringify( customTypeValue.ToId ) ) ;
+      builder.Append( customTypeValue.FromId ) ;
+      builder.Append( '|' ) ;
+      builder.Append( customTypeValue.ToId ) ;
       foreach ( var id in customTypeValue.PassPoints ) {
-        builder.Append( ',' ) ;
+        builder.Append( '|' ) ;
         builder.Append( id ) ;
       }
 
       return builder.ToString() ;
-    }
-
-    private static ConnectorIndicator Parse( string str )
-    {
-      return ConnectorIndicator.Parse( str ) ;
-    }
-
-    private static string Stringify( ConnectorIndicator indicator )
-    {
-      return indicator.ToString() ;
     }
   }
 }

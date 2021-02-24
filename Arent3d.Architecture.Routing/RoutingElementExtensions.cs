@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -222,13 +223,13 @@ namespace Arent3d.Architecture.Routing
 
     private static readonly char[] PassPointConnectorSeparator = { '|' } ;
 
-    public static IReadOnlyCollection<ConnectorIndicator> GetPassPointConnectors( this Element element, bool isFrom )
+    public static IEnumerable<ConnectorIndicator> GetPassPointConnectors( this Element element, bool isFrom )
     {
       var parameter = isFrom ? RoutingParameter.PassPointNextToFromSideConnectorIds : RoutingParameter.PassPointNextToToSideConnectorIds ;
       if ( false == element.TryGetProperty( parameter, out string? str ) ) return Array.Empty<ConnectorIndicator>() ;
       if ( string.IsNullOrEmpty( str ) ) return Array.Empty<ConnectorIndicator>() ;
 
-      return str!.Split( PassPointConnectorSeparator, StringSplitOptions.RemoveEmptyEntries ).Select( ConnectorIndicator.Parse ) ;
+      return str!.Split( PassPointConnectorSeparator, StringSplitOptions.RemoveEmptyEntries ).Select( ConnectorIndicator.Parse ).NonNull() ;
     }
 
     public static bool IsPassPoint( this Element element )
