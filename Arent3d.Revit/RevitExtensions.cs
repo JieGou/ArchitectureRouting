@@ -42,5 +42,12 @@ namespace Arent3d.Revit
     {
       return document.GetElementById<TElement>( new ElementId( elementId ) ) ;
     }
+
+    public static void Deconstruct( this XYZ xyz, out double x, out double y, out double z )
+    {
+      x = xyz.X ;
+      y = xyz.Y ;
+      z = xyz.Z ;
+    }
   }
 }

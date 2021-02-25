@@ -88,9 +88,9 @@ namespace Arent3d.Architecture.Routing.EndPoint
       if ( false == double.TryParse( match.Groups[ 2 ].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var y ) ) return null ;
       if ( false == double.TryParse( match.Groups[ 3 ].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var z ) ) return null ;
 
-      if ( false == double.TryParse( match.Groups[ 1 ].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var vx ) ) return null ;
-      if ( false == double.TryParse( match.Groups[ 2 ].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var vy ) ) return null ;
-      if ( false == double.TryParse( match.Groups[ 3 ].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var vz ) ) return null ;
+      if ( false == double.TryParse( match.Groups[ 4 ].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var vx ) ) return null ;
+      if ( false == double.TryParse( match.Groups[ 5 ].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var vy ) ) return null ;
+      if ( false == double.TryParse( match.Groups[ 6 ].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var vz ) ) return null ;
 
       return new CoordinateIndicator( new XYZ( x, y, z ), new XYZ( vx, vy, vz ) ) ;
     }

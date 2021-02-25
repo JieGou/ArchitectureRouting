@@ -19,18 +19,26 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     public ObservableCollection<ConnectorInfoClass> ConnectorList { get ; } = new() ;
 
-    public SelectConnector( FamilyInstance familyInstance, Connector? firstConnector = null )
+    public SelectConnector( Element element, Connector? firstConnector = null )
     {
       InitializeComponent() ;
 
       _firstConnector = firstConnector ;
 
-      var familyInstanceTransform = familyInstance.GetTotalTransform() ;
-      var familyDocument = familyInstance.Document.EditFamily( familyInstance.Symbol.Family ) ;
-      foreach ( var conn in familyDocument.GetAllElements<ConnectorElement>().Where( IsTargetConnectorElement ) ) {
-        ConnectorList.Add( new ConnectorInfoClass( familyInstance, familyInstanceTransform, conn, _firstConnector ) ) ;
+      if ( element is FamilyInstance familyInstance ) {
+        var familyInstanceTransform = familyInstance.GetTotalTransform() ;
+        var familyDocument = familyInstance.Document.EditFamily( familyInstance.Symbol.Family ) ;
+        foreach ( var conn in familyDocument.GetAllElements<ConnectorElement>().Where( IsTargetConnectorElement ) ) {
+          ConnectorList.Add( new ConnectorInfoClass( familyInstance, familyInstanceTransform, conn, _firstConnector ) ) ;
+        }
       }
-      ConnectorList.Add( new ConnectorInfoClass( familyInstance ) ) ;
+      else if ( element is MEPCurve curve ) {
+        foreach ( var c in curve.GetConnectors().Where( IsTargetConnector ) ) {
+          ConnectorList.Add( new ConnectorInfoClass( c, _firstConnector ) ) ;
+        }
+      }
+
+      ConnectorList.Add( new ConnectorInfoClass( element ) ) ;
 
       this.Left = 0 ;
       this.Top += 10 ;
@@ -38,6 +46,18 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private static bool IsTargetConnectorElement( ConnectorElement el )
     {
+      return el.Domain switch
+      {
+        Domain.DomainPiping => true,
+        Domain.DomainHvac => true,
+        _ => false
+      } ;
+    }
+
+    private static bool IsTargetConnector( Connector el )
+    {
+      if ( false == el.IsAnyEnd() ) return false ;
+
       return el.Domain switch
       {
         Domain.DomainPiping => true,
@@ -66,18 +86,20 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       public event PropertyChangedEventHandler? PropertyChanged ;
 
-      private Instance Instance { get ; }
+      private Element Element { get ; }
 
       private XYZ? ConnectorPosition { get ; }
+      private Connector? Connector { get ; }
       private ConnectorElement? ConnectorElement { get ; }
 
       /// <summary>
-      /// ConnectorInfo for the center of an instance.
+      /// ConnectorInfo for the center of an element.
       /// </summary>
-      /// <param name="instance">Instance.</param>
-      public ConnectorInfoClass( Instance instance )
+      /// <param name="element">Instance.</param>
+      public ConnectorInfoClass( Element element )
       {
-        Instance = instance ;
+        Element = element ;
+        Connector = null ;
         ConnectorElement = null ;
         ConnectorPosition = null ;
 
@@ -86,11 +108,22 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       public ConnectorInfoClass( FamilyInstance familyInstance, Transform familyInstanceTransform, ConnectorElement connectorElement, Connector? firstElement )
       {
-        Instance = familyInstance ;
+        Element = familyInstance ;
+        Connector = null ;
         ConnectorElement = connectorElement ;
         ConnectorPosition = familyInstanceTransform.OfPoint( connectorElement.Origin ) ;
 
         IsEnabled = ( null == firstElement ) || ( HasCompatibleType( firstElement ) && firstElement.HasSameShape( ConnectorElement ) ) ;
+      }
+
+      public ConnectorInfoClass( Connector connector, Connector? firstElement )
+      {
+        Element = connector.Owner ;
+        Connector = connector ;
+        ConnectorElement = null ;
+        ConnectorPosition = connector.Origin ;
+
+        IsEnabled = ( false == connector.IsConnected ) && ( ( null == firstElement ) || ( HasCompatibleType( firstElement ) && firstElement.HasSameShape( connector ) ) ) ;
       }
 
       private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )
@@ -100,16 +133,25 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       public override string ToString()
       {
-        if ( null == ConnectorElement ) return "Origin of this element" ;
-        return $"{ConnectorElement.Name} - {UnitUtils.ConvertFromInternalUnits( ConnectorElement.Radius, UnitTypeId.Millimeters ) * 2} - {ConnectorElement.get_Parameter( BuiltInParameter.RBS_PIPE_FLOW_DIRECTION_PARAM )?.AsValueString()}" ;
+        if ( null != ConnectorElement ) {
+          return $"{ConnectorElement.Name} - {UnitUtils.ConvertFromInternalUnits( ConnectorElement.Radius, UnitTypeId.Millimeters ) * 2} - {ConnectorElement.get_Parameter( BuiltInParameter.RBS_PIPE_FLOW_DIRECTION_PARAM )?.AsValueString()}" ;
+        }
+        else if ( null != Connector ) {
+          return $"{Connector.Id} - {UnitUtils.ConvertFromInternalUnits( Connector.Radius, UnitTypeId.Millimeters ) * 2} - {Connector.Direction}" ;
+        }
+        else {
+          return "Origin of this element" ;
+        }
       }
 
       public Connector? GetConnector()
       {
         if ( false == IsEnabled || false == IsSelected ) return null ;
-        if ( null == ConnectorElement ) return null ;
 
-        return Instance.GetConnectors().FirstOrDefault( IsMatch ) ;
+        if ( null != Connector ) return Connector ;
+
+        if ( null == ConnectorElement ) return null ;
+        return Element.GetConnectors().FirstOrDefault( IsMatch ) ;
       }
 
       private bool IsMatch( Connector connector )

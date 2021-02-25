@@ -131,12 +131,12 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       return route.GetSubRoute( subRouteIndex.Value ) ;
     }
 
-    private static IEndPointIndicator GetEndPointIndicator( Instance instance, Connector? connector, Instance anotherInstance, Connector? anotherConnector )
+    private static IEndPointIndicator GetEndPointIndicator( Element element, Connector? connector, Element anotherElement, Connector? anotherConnector )
     {
       if ( null != connector ) return connector.GetIndicator() ;
 
-      var center = GetCenter( instance ) ;
-      var anotherPos = ( null == anotherConnector ) ? GetCenter( anotherInstance ) : GetConnectorPosition( anotherConnector ) ;
+      var center = GetCenter( element ) ;
+      var anotherPos = ( null == anotherConnector ) ? GetCenter( anotherElement ) : GetConnectorPosition( anotherConnector ) ;
       var dir = anotherPos - center ;
 
       double x = Math.Abs( dir.X ), y = Math.Abs( dir.Y ) ;
@@ -150,9 +150,33 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       return new CoordinateIndicator( center, dir ) ;
     }
 
-    private static XYZ GetCenter( Instance instance )
+    private static XYZ GetCenter( Element element )
     {
-      return instance.GetTotalTransform().Origin ;
+      return element switch
+      {
+        MEPCurve curve => GetCenter( curve ),
+        Instance instance => instance.GetTotalTransform().Origin,
+        _ => throw new InvalidOperationException(),
+      } ;
+    }
+
+    private static XYZ GetCenter( MEPCurve curve )
+    {
+      double minX = +double.MaxValue, minY = -double.MaxValue, minZ = +double.MaxValue ;
+      double maxX = -double.MaxValue, maxY = +double.MaxValue, maxZ = -double.MaxValue ;
+
+      foreach ( var c in curve.GetConnectors().Where( c => c.IsAnyEnd() ) ) {
+        var (x, y, z) = c.Origin ;
+
+        if ( x < minX ) minX = x ;
+        if ( maxX < x ) maxX = x ;
+        if ( y < minY ) minY = y ;
+        if ( maxY < y ) maxY = y ;
+        if ( z < minZ ) minZ = z ;
+        if ( maxZ < z ) maxZ = z ;
+      }
+
+      return new XYZ( ( minX + maxX ) * 0.5, ( minY + maxY ) * 0.5, ( minZ + maxZ ) * 0.5 ) ;
     }
 
     private static XYZ GetConnectorPosition( Connector connector )

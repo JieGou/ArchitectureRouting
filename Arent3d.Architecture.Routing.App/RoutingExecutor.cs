@@ -119,15 +119,15 @@ namespace Arent3d.Architecture.Routing.App
       } ;
     }
 
-    private void ExecuteRouting( Domain domain, IReadOnlyCollection<Route> routesInType, IProgressData? progressData )
+    private void ExecuteRouting( Domain domain, IReadOnlyCollection<Route> routes, IProgressData? progressData )
     {
-      ThreadDispatcher.Dispatch( () => routesInType.ForEach( r => r.Save() ) ) ;
+      ThreadDispatcher.Dispatch( () => routes.ForEach( r => r.Save() ) ) ;
 
-      var targets = routesInType.SelectMany( route => route.SubRoutes.Select( subRoute => new AutoRoutingTarget( _document, subRoute ) ) ).EnumerateAll() ;
+      var targets = routes.SelectMany( CreateRoutingTargets ).EnumerateAll() ;
 
       ICollisionCheckTargetCollector collector ;
       using ( progressData?.Reserve( 0.05 ) ) {
-        collector = CreateCollisionCheckTargetCollector( domain, routesInType ) ;
+        collector = CreateCollisionCheckTargetCollector( domain, routes ) ;
       }
 
       RouteGenerator generator ;
@@ -140,6 +140,11 @@ namespace Arent3d.Architecture.Routing.App
       }
 
       RegisterBadConnectors( generator.GetBadConnectorSet() ) ;
+    }
+
+    private IEnumerable<AutoRoutingTarget> CreateRoutingTargets( Route route )
+    {
+      return route.SubRoutes.Select( subRoute => new AutoRoutingTarget( _document, subRoute ) ) ;
     }
 
     private ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )

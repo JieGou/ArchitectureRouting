@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing.App
 {
   public static class ConnectorPicker
   {
-    public static (Connector? Connector, Instance PickedElement) GetConnector( UIDocument uiDocument, string message, Connector? firstConnector = null, string? firstRouteId = null )
+    public static (Connector? Connector, Element PickedElement) GetConnector( UIDocument uiDocument, string message, Connector? firstConnector = null, string? firstRouteId = null )
     {
       var document = uiDocument.Document ;
 
@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.App
       while ( true ) {
         var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, filter, message ) ;
 
-        var element = document.GetElementById<Instance>( pickedObject.ElementId ) ;
+        var element = document.GetElement( pickedObject.ElementId ) ;
         if ( null == element ) continue ;
 
         var (result, connector) = FindConnector( uiDocument, element, message, firstConnector ) ;
@@ -29,17 +29,17 @@ namespace Arent3d.Architecture.Routing.App
       }
     }
 
-    private static (bool Result, Connector? Connector) FindConnector( UIDocument uiDocument, Instance element, string message, Connector? firstConnector )
+    private static (bool Result, Connector? Connector) FindConnector( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
     {
       if ( element.IsAutoRoutingGeneratedElement() ) {
         return GetEndOfRouting( element, ( null == firstConnector ) ) ;
       }
       else {
-        return SelectFromDialog( uiDocument, (FamilyInstance) element, message, firstConnector ) ;
+        return SelectFromDialog( uiDocument, element, message, firstConnector ) ;
       }
     }
 
-    private static (bool Result, Connector? Connector) GetEndOfRouting( Instance element, bool fromConnector )
+    private static (bool Result, Connector? Connector) GetEndOfRouting( Element element, bool fromConnector )
     {
       var routeName = element.GetRouteName() ;
       if ( null == routeName ) return ( false, null ) ;
@@ -48,11 +48,11 @@ namespace Arent3d.Architecture.Routing.App
       return ( ( null != connector ), connector ) ;
     }
 
-    private static (bool Result, Connector? Connector) SelectFromDialog( UIDocument uiDocument, FamilyInstance familyInstance, string message, Connector? firstConnector )
+    private static (bool Result, Connector? Connector) SelectFromDialog( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
     {
-      uiDocument.SetSelection( familyInstance ) ;
+      uiDocument.SetSelection( element ) ;
 
-      var sv = new SelectConnector( familyInstance, firstConnector ) { Title = message } ;
+      var sv = new SelectConnector( element, firstConnector ) { Title = message } ;
       sv.ShowDialog() ;
 
       uiDocument.ClearSelection() ;
@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.App
       {
         return elem switch
         {
-          MEPCurve => elem.IsAutoRoutingGeneratedElement(),
+          MEPCurve => true,
           FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement(),
           _ => false,
         } ;

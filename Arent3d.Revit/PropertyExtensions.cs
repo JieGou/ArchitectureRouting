@@ -229,7 +229,7 @@ namespace Arent3d.Revit
     public static bool HasParameter<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum
     {
       if ( false == PropertyDefinitions<TPropertyEnum>.AllParameterGuids.TryGetValue( propertyEnum, out var guid ) ) return false ;
-      return ( null != elm.get_Parameter( guid ) ) ;
+      return ( true == elm.get_Parameter( guid )?.HasValue ) ;
     }
 
     public static bool HasParameter<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum, StorageType type ) where TPropertyEnum : Enum
