@@ -42,16 +42,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         var tempColor = SetTempColor( uiDocument, routes, fromElement ) ;
         try {
           var (toConnector, toElement) = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromConnector, fromElement.GetRouteName() ) ;
-          var fromEndPoint = GetEndPointIndicator( fromElement, fromConnector, toElement, toConnector ) ;
-          var toEndPoint = GetEndPointIndicator( toElement, toConnector, fromElement, fromConnector ) ;
+          var fromIndicator = GetEndPointIndicator( fromElement, fromConnector, toElement, toConnector ) ;
+          var toIndicator = GetEndPointIndicator( toElement, toConnector, fromElement, fromConnector ) ;
 
           if ( GetSubRoute( routes, fromElement ) is { } subRoute1 ) {
-            var splitter = new RouteSplitter( subRoute1, fromElement, toEndPoint, false ) ;
+            var splitter = new RouteSplitter( subRoute1, fromElement, toIndicator, false ) ;
             routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute1.Route ) ) ;
             routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute1.Route ) ) ;
           }
           else if ( GetSubRoute( routes, toElement ) is { } subRoute2 ) {
-            var splitter = new RouteSplitter( subRoute2, toElement, fromEndPoint, true ) ;
+            var splitter = new RouteSplitter( subRoute2, toElement, fromIndicator, true ) ;
             routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute2.Route ) ) ;
             routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute2.Route ) ) ;
           }
@@ -60,7 +60,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
               var name = "Picked_" + i ;
               if ( routes.ContainsKey( name ) ) continue ;
 
-              routeRecords.Add( new RouteRecord( name, fromEndPoint, toEndPoint ) ) ;
+              routeRecords.Add( new RouteRecord( name, fromIndicator, toIndicator ) ) ;
               break ;
             }
           }

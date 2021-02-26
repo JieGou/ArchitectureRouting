@@ -222,20 +222,29 @@ namespace Arent3d.Architecture.Routing
     {
       return route._subRoutes.SelectMany( subRoute => subRoute.AllEndPointIndicators ).Any( ind => ind.ParentBranch( route.Document ) == this ) ;
     }
-    
-    public IEnumerable<Route> CollectAllDescendantBranches()
+
+    public static IEnumerable<Route> CollectAllDescendantBranches( IEnumerable<Route> routes )
     {
-      var routes = new HashSet<Route>() ;
-      AddChildren( routes, this ) ;
-      return routes ;
+      var routeSet = new HashSet<Route>() ;
+      foreach ( var route in routes ) {
+        AddChildren( routeSet, route ) ;
+      }
+      return routeSet ;
     }
 
-    private static void AddChildren( HashSet<Route> routes, Route root )
+    public IEnumerable<Route> CollectAllDescendantBranches()
     {
-      if ( false == routes.Add( root ) ) return ;
+      var routeSet = new HashSet<Route>() ;
+      AddChildren( routeSet, this ) ;
+      return routeSet ;
+    }
+
+    private static void AddChildren( HashSet<Route> routeSet, Route root )
+    {
+      if ( false == routeSet.Add( root ) ) return ;
 
       foreach ( var child in root.GetChildBranches() ) {
-        AddChildren( routes, child ) ;
+        AddChildren( routeSet, child ) ;
       }
     }
 
