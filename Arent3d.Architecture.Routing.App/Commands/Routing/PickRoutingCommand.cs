@@ -121,6 +121,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
     private static SubRoute? GetSubRoute( IReadOnlyDictionary<string, Route> routes, Element fromElement )
     {
+      if ( fromElement.IsPassPoint() ) return null ;
+      
       var routeName = fromElement.GetRouteName() ;
       if ( null == routeName ) return null ;
 
@@ -135,8 +137,35 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       if ( null != connector ) return connector.GetIndicator() ;
 
-      var center = GetCenter( element ) ;
       var anotherPos = ( null == anotherConnector ) ? GetCenter( anotherElement ) : GetConnectorPosition( anotherConnector ) ;
+      if ( element.IsPassPoint() && element is Instance instance ) {
+        return GetPassPointBranchIndicator( instance, anotherPos ) ;
+      }
+      else {
+        return GetCoordinateIndicator( element, anotherPos ) ;
+      }
+    }
+
+    private static IEndPointIndicator GetPassPointBranchIndicator( Instance passPointInstance, XYZ anotherPos )
+    {
+      var transform = passPointInstance.GetTotalTransform() ;
+      var dir = anotherPos - transform.Origin ;
+      double cos = transform.BasisY.DotProduct( dir ), sin = transform.BasisZ.DotProduct( dir ) ;
+      var angleDegree = ToNormalizedDegree( Math.Atan2( sin, cos ) ) ;
+
+      return new PassPointBranchEndIndicator( passPointInstance.Id.IntegerValue, angleDegree ) ;
+    }
+
+    private static double ToNormalizedDegree( double radian )
+    {
+      var cornerCount = Math.Round( radian / ( 0.5 * Math.PI ) ) ;
+      cornerCount -= Math.Floor( cornerCount / 4 ) * 4 ; // [0, 1, 2, 3]
+      return 90 * cornerCount ;// [0, 90, 180, 270]
+    }
+
+    private static IEndPointIndicator GetCoordinateIndicator( Element element, XYZ anotherPos )
+    {
+      var center = GetCenter( element ) ;
       var dir = anotherPos - center ;
 
       double x = Math.Abs( dir.X ), y = Math.Abs( dir.Y ) ;

@@ -22,11 +22,6 @@ namespace Arent3d.Architecture.Routing.EndPoint
 
     public EndPointBase? GetAutoRoutingEndPoint( Document document, SubRoute subRoute, bool isFrom )
     {
-      return GetEndPoint( document, subRoute, isFrom ) ;
-    }
-
-    public EndPointBase? GetEndPoint( Document document, SubRoute subRoute, bool isFrom )
-    {
       if ( ( SideType == PassPointEndSide.Forward ) != isFrom ) throw new InvalidOperationException() ;
 
       var familyInstance = GetPassPointElement( document ) ;

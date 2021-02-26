@@ -18,6 +18,7 @@ namespace Arent3d.Architecture.Routing.EndPoint
 
     private static readonly char[] ConnectPointSplitter = { '/' } ;
     private static readonly char[] PassPointEndSplitter = { '/' } ;
+    private static readonly char[] PassPointBranchEndSplitter = { '/' } ;
     private static readonly char[] IndicatorListSplitter = { '|' } ;
 
     public static IEnumerable<IEndPointIndicator> ParseIndicatorList( string str )
@@ -32,6 +33,7 @@ namespace Arent3d.Architecture.Routing.EndPoint
         "c:" => ParseConnectorIndicatorImpl( str.Substring( 2 ) ),
         "p:" => ParsePassPointEndIndicatorImpl( str.Substring( 2 ) ),
         "o:" => ParseCoordinateIndicatorImpl( str.Substring( 2 ) ),
+        "t:" => ParsePassPointBranchEndIndicatorImpl( str.Substring( 2 ) ),
         _ => null,
       } ;
     }
@@ -55,6 +57,13 @@ namespace Arent3d.Architecture.Routing.EndPoint
       if ( false == str.StartsWith( "o:" ) ) return null ;
 
       return ParseCoordinateIndicatorImpl( str.Substring( 2 ) ) ;
+    }
+
+    public static PassPointBranchEndIndicator? ParsePassPointBranchEndIndicator( string str )
+    {
+      if ( false == str.StartsWith( "t:" ) ) return null ;
+
+      return ParsePassPointBranchEndIndicatorImpl( str.Substring( 2 ) ) ;
     }
 
     private static ConnectorIndicator? ParseConnectorIndicatorImpl( string substring )
@@ -114,6 +123,16 @@ namespace Arent3d.Architecture.Routing.EndPoint
       }
     }
 
+    private static PassPointBranchEndIndicator? ParsePassPointBranchEndIndicatorImpl( string substring )
+    {
+      var array = substring.Split( PassPointBranchEndSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
+      if ( array.Length < 2 ) return null ;
+
+      if ( false == int.TryParse( array[ 0 ], out var elmId ) || false == double.TryParse( array[ 1 ], NumberStyles.Any, CultureInfo.InvariantCulture, out var angle ) ) return null ;
+
+      return new PassPointBranchEndIndicator( elmId, angle ) ;
+    }
+
     #endregion
 
     #region Stringifier
@@ -141,6 +160,11 @@ namespace Arent3d.Architecture.Routing.EndPoint
     public static string ToString( CoordinateIndicator ep )
     {
       return $"o:{ToString( ep.Origin )}/{ToString( ep.Direction )}" ;
+    }
+
+    public static string ToString( PassPointBranchEndIndicator ep )
+    {
+      return FormattableString.Invariant( $"t:{ep.ElementId}/{ep.AngleDegree}" ) ;
     }
 
     private static string ToString( XYZ xyz )

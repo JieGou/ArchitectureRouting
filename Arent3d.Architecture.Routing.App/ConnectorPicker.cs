@@ -1,6 +1,5 @@
 ﻿using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
-using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
@@ -21,6 +20,8 @@ namespace Arent3d.Architecture.Routing.App
 
         var element = document.GetElement( pickedObject.ElementId ) ;
         if ( null == element ) continue ;
+
+        if ( element.IsPassPoint() ) return ( Connector: null, PickedElement: element ) ;
 
         var (result, connector) = FindConnector( uiDocument, element, message, firstConnector ) ;
         if ( false == result ) continue ;
@@ -87,7 +88,7 @@ namespace Arent3d.Architecture.Routing.App
         return elem switch
         {
           MEPCurve => true,
-          FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement(),
+          FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement() || fi.IsPassPoint(),
           _ => false,
         } ;
       }
