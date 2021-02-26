@@ -75,8 +75,14 @@ namespace Arent3d.Architecture.Routing
     {
       if ( routeVertex is not TerminalPoint ) return ;
 
-      if ( GetEndPoint( routeVertex.LineInfo ) is PassPointEndPoint ep ) {
-        PassPointConnectorMapper.Add( ep.Element.Id, ep.SideType, connector ) ;
+      switch ( GetEndPoint( routeVertex.LineInfo ) ) {
+        case PassPointEndPoint ep :
+          PassPointConnectorMapper.Add( ep.Element.Id, ep.SideType, connector ) ;
+          break ;
+
+        case PassPointBranchEndPoint ep :
+          PassPointConnectorMapper.AddBranch( ep.Element.Id, connector ) ;
+          break ;
       }
     }
 
@@ -198,14 +204,34 @@ namespace Arent3d.Architecture.Routing
     }
 
     /// <summary>
+    /// Connect all connectors.
+    /// </summary>
+    /// <param name="document">Document of the connectors.</param>
+    /// <param name="connectors">Connectors to be connected</param>
+    public static (bool Success, Element? Fitting) ConnectConnectors( Document document, IReadOnlyList<Connector> connectors )
+    {
+      switch ( connectors.Count ) {
+        case 1 : return ( false, null ) ;
+        case 2 : return ConnectTwoConnectors( document, connectors[ 0 ], connectors[ 1 ] ) ;
+        case 3 : return ConnectThreeConnectors( document, connectors[ 0 ], connectors[ 1 ], connectors[ 2 ] ) ;
+        case 4 : return ConnectFourConnectors( document, connectors[ 0 ], connectors[ 1 ], connectors[ 2 ], connectors[ 3 ] ) ;
+        default : return ( false, null ) ;
+      }
+    }
+
+    /// <summary>
     /// Connect two connectors. Elbow is inserted if needed.
     /// </summary>
+    /// <param name="document"></param>
     /// <param name="connector1"></param>
     /// <param name="connector2"></param>
-    /// <param name="subRoute">Related sub route.</param>
-    private void ConnectTwoConnectors( Connector connector1, Connector connector2, SubRoute subRoute )
+    /// <returns>
+    /// <para>Success: false if error occurs.</para>
+    /// <para>Fitting: Fitting if inserted.</para>
+    /// </returns>
+    private static (bool Success, FamilyInstance? Fitting) ConnectTwoConnectors( Document document, Connector connector1, Connector connector2 )
     {
-      using var connectorTransaction = new SubTransaction( _document ) ;
+      using var connectorTransaction = new SubTransaction( document ) ;
       try {
         connectorTransaction.Start() ;
         connector1.ConnectTo( connector2 ) ;
@@ -213,8 +239,7 @@ namespace Arent3d.Architecture.Routing
       }
       catch {
         connectorTransaction.RollBack() ;
-        AddBadConnectorSet( connector1, connector2 ) ;
-        return ;
+        return ( false, null ) ;
       }
 
       var dir1 = connector1.CoordinateSystem.BasisZ.To3d() ;
@@ -222,36 +247,40 @@ namespace Arent3d.Architecture.Routing
 
       if ( 0.9 < Math.Abs( Vector3d.Dot( dir1, dir2 ) ) ) {
         // Connect directly(-1) or bad connection(+1)
+        return ( true, null ) ;
       }
       else {
         // Orthogonal
-        using var transaction = new SubTransaction( _document ) ;
+        using var transaction = new SubTransaction( document ) ;
         try {
           transaction.Start() ;
-          var family = _document.Create.NewElbowFitting( connector1, connector2 ) ;
+          var family = document.Create.NewElbowFitting( connector1, connector2 ) ;
           if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-          MarkAsAutoRoutedElement( family, subRoute, connector1, connector2 ) ;
-          SetRoutingFromToConnectorIdsForFitting( family ) ;
-          EraseZeroLengthMEPCurves( family ) ;
           transaction.Commit() ;
+
+          return ( true, family ) ;
         }
         catch {
           transaction.RollBack() ;
-          AddBadConnectorSet( connector1, connector2 ) ;
+          return ( false, null ) ;
         }
       }
     }
 
     /// <summary>
-    /// Connect three connectors. Tee is inserted.
+    /// Connect three connectors. Tee is inserted if needed.
     /// </summary>
+    /// <param name="document"></param>
     /// <param name="connector1"></param>
     /// <param name="connector2"></param>
     /// <param name="connector3"></param>
-    /// <param name="subRoute">Related sub route.</param>
-    private void ConnectThreeConnectors( Connector connector1, Connector connector2, Connector connector3, SubRoute subRoute )
+    /// <returns>
+    /// <para>Success: false if error occurs.</para>
+    /// <para>Fitting: Fitting if inserted.</para>
+    /// </returns>
+    private static (bool Success, FamilyInstance? Fitting) ConnectThreeConnectors( Document document, Connector connector1, Connector connector2, Connector connector3 )
     {
-      using var connectorTransaction = new SubTransaction( _document ) ;
+      using var connectorTransaction = new SubTransaction( document ) ;
       try {
         connectorTransaction.Start() ;
         connector1.ConnectTo( connector2 ) ;
@@ -261,37 +290,39 @@ namespace Arent3d.Architecture.Routing
       }
       catch {
         connectorTransaction.RollBack() ;
-        AddBadConnectorSet( connector1, connector2, connector3 ) ;
-        return ;
+        return ( false, null ) ;
       }
 
-      using var transaction = new SubTransaction( _document ) ;
+      using var transaction = new SubTransaction( document ) ;
       try {
         transaction.Start() ;
-        var family = _document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
+        var family = document.Create.NewTeeFitting( connector1, connector2, connector3 ) ;
         if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-        MarkAsAutoRoutedElement( family, subRoute, connector1, connector2, connector3 ) ;
-        SetRoutingFromToConnectorIdsForFitting( family ) ;
-        EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
+
+        return ( true, family ) ;
       }
       catch {
         transaction.RollBack() ;
-        AddBadConnectorSet( connector1, connector2, connector3 ) ;
+        return ( false, null ) ;
       }
     }
 
     /// <summary>
-    /// Connect four connectors. Cross is inserted.
+    /// Connect four connectors. Cross is inserted if needed.
     /// </summary>
+    /// <param name="document"></param>
     /// <param name="connector1"></param>
     /// <param name="connector2"></param>
     /// <param name="connector3"></param>
     /// <param name="connector4"></param>
-    /// <param name="subRoute">Related sub route.</param>
-    private void ConnectFourConnectors( Connector connector1, Connector connector2, Connector connector3, Connector connector4, SubRoute subRoute )
+    /// <returns>
+    /// <para>Success: false if error occurs.</para>
+    /// <para>Fitting: Fitting if inserted.</para>
+    /// </returns>
+    private static (bool Success, FamilyInstance? Fitting) ConnectFourConnectors( Document document, Connector connector1, Connector connector2, Connector connector3, Connector connector4 )
     {
-      using var connectorTransaction = new SubTransaction( _document ) ;
+      using var connectorTransaction = new SubTransaction( document ) ;
       try {
         connectorTransaction.Start() ;
         connector1.ConnectTo( connector2 ) ;
@@ -304,24 +335,87 @@ namespace Arent3d.Architecture.Routing
       }
       catch {
         connectorTransaction.RollBack() ;
-        AddBadConnectorSet( connector1, connector2, connector3, connector4 ) ;
-        return ;
+        return ( false, null ) ;
       }
 
-      using var transaction = new SubTransaction( _document ) ;
+      using var transaction = new SubTransaction( document ) ;
       try {
         transaction.Start() ;
-        var family = _document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
+        var family = document.Create.NewCrossFitting( connector1, connector2, connector3, connector4 ) ;
         if ( HasReverseConnectorDirection( family ) ) throw new Exception() ;
-        MarkAsAutoRoutedElement( family, subRoute, connector1, connector2, connector3, connector4 ) ;
-        SetRoutingFromToConnectorIdsForFitting( family ) ;
-        EraseZeroLengthMEPCurves( family ) ;
         transaction.Commit() ;
+
+        return ( true, family ) ;
       }
       catch {
         transaction.RollBack() ;
-        AddBadConnectorSet( connector1, connector2, connector3, connector4 ) ;
+        return ( false, null ) ;
       }
+    }
+
+    /// <summary>
+    /// Connect two connectors. Elbow is inserted if needed.
+    /// </summary>
+    /// <param name="connector1"></param>
+    /// <param name="connector2"></param>
+    /// <param name="subRoute">Related sub route.</param>
+    private void ConnectTwoConnectors( Connector connector1, Connector connector2, SubRoute subRoute )
+    {
+      var (success, fitting) = ConnectTwoConnectors( _document, connector1, connector2 ) ;
+      if ( false == success ) {
+        AddBadConnectorSet( connector1, connector2 ) ;
+        return ;
+      }
+      if ( null == fitting ) return ;
+
+      MarkAsAutoRoutedElement( fitting, subRoute, connector1, connector2 ) ;
+      SetRoutingFromToConnectorIdsForFitting( fitting ) ;
+      EraseZeroLengthMEPCurves( fitting ) ;
+    }
+
+    /// <summary>
+    /// Connect three connectors. Tee is inserted.
+    /// </summary>
+    /// <param name="connector1"></param>
+    /// <param name="connector2"></param>
+    /// <param name="connector3"></param>
+    /// <param name="subRoute">Related sub route.</param>
+    private void ConnectThreeConnectors( Connector connector1, Connector connector2, Connector connector3, SubRoute subRoute )
+    {
+      var (success, fitting) = ConnectThreeConnectors( _document, connector1, connector2, connector3 ) ;
+      if ( false == success ) {
+        AddBadConnectorSet( connector1, connector2, connector3 ) ;
+        return ;
+      }
+
+      if ( null == fitting ) return ;
+
+      MarkAsAutoRoutedElement( fitting, subRoute, connector1, connector2, connector3 ) ;
+      SetRoutingFromToConnectorIdsForFitting( fitting ) ;
+      EraseZeroLengthMEPCurves( fitting ) ;
+    }
+
+    /// <summary>
+    /// Connect four connectors. Cross is inserted.
+    /// </summary>
+    /// <param name="connector1"></param>
+    /// <param name="connector2"></param>
+    /// <param name="connector3"></param>
+    /// <param name="connector4"></param>
+    /// <param name="subRoute">Related sub route.</param>
+    private void ConnectFourConnectors( Connector connector1, Connector connector2, Connector connector3, Connector connector4, SubRoute subRoute )
+    {
+      var (success, fitting) = ConnectFourConnectors( _document, connector1, connector2, connector3, connector4 ) ;
+      if ( false == success ) {
+        AddBadConnectorSet( connector1, connector2, connector3 ) ;
+        return ;
+      }
+
+      if ( null == fitting ) return ;
+
+      MarkAsAutoRoutedElement( fitting, subRoute, connector1, connector2, connector3, connector4 ) ;
+      SetRoutingFromToConnectorIdsForFitting( fitting ) ;
+      EraseZeroLengthMEPCurves( fitting ) ;
     }
 
     private static bool HasReverseConnectorDirection( FamilyInstance familyInstance )

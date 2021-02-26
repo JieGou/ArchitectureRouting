@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing
     protected override IReadOnlyCollection<AutoRoutingTarget> RoutingTargets { get ; }
 
     protected override ICollisionCheck CollisionCheckTree { get ; }
-    
+
     protected override IStructureGraph StructureGraph { get ; }
 
     /// <summary>
@@ -122,14 +122,32 @@ namespace Arent3d.Architecture.Routing
 
     protected override void OnGenerationFinished()
     {
-      foreach ( var (passPointId, (conn1, conn2)) in _globalPassPointConnectorMapper ) {
+      var list = new List<Connector>() ;
+
+      foreach ( var (passPointId, (conn1, conn2, others)) in _globalPassPointConnectorMapper ) {
         // pass point must have from-side and to-side connector
         if ( null == conn1 || null == conn2 ) throw new InvalidOperationException() ;
 
         var element = _document.GetElement( new ElementId( passPointId ) ) ;
         element.SetPassPointConnectors( new[] { conn1 }, new[] { conn2 } ) ;
 
-        conn1.ConnectTo( conn2 ) ;
+        list.Clear() ;
+        list.Add( conn1 ) ;
+        list.Add( conn2 ) ;
+        if ( null != others ) list.AddRange( others ) ;
+
+        var routeName = conn1.Owner.GetRouteName() ?? conn2.Owner.GetRouteName() ;
+        var subRouteIndex = conn1.Owner.GetSubRouteIndex() ?? conn2.Owner.GetSubRouteIndex() ;
+
+        var (success, fitting) = MEPSystemCreator.ConnectConnectors( _document, list ) ;
+        if ( success && null != fitting ) {
+          // set routing id.
+          if ( null != routeName ) fitting.SetProperty( RoutingParameter.RouteName, routeName ) ;
+          if ( null != subRouteIndex ) fitting.SetProperty( RoutingParameter.SubRouteIndex, subRouteIndex.Value ) ;
+
+          // Relate fitting to the pass point.
+          element.SetProperty( RoutingParameter.RelatedPassPointId, passPointId ) ;
+        }
       }
     }
   }
