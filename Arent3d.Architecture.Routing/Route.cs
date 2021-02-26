@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
+using Arent3d.Architecture.Routing.CommandTermCaches ;
 using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
@@ -197,6 +198,48 @@ namespace Arent3d.Architecture.Routing
       var indicators = SubRoutes.SelectMany( subRoute => subRoute.FromEndPointIndicators.Concat( subRoute.ToEndPointIndicators ) ).OfType<ConnectorIndicator>() ;
       return indicators.Select( ind => ind.GetConnector( document ) ).NonNull() ;
     }
+
+    #region Branches
+
+    public HashSet<Route> GetParentBranches()
+    {
+      var routes = new HashSet<Route>() ;
+      foreach ( var subRoute in _subRoutes ) {
+        routes.UnionWith( subRoute.AllEndPointIndicators.Select( ind => ind.ParentBranch( Document ) ).NonNull() ) ;
+      }
+
+      routes.Remove( this ) ;
+
+      return routes ;
+    }
+
+    public IEnumerable<Route> GetChildBranches()
+    {
+      return RouteCache.Get( Document ).Values.Where( this.IsParentBranch ) ;
+    }
+
+    public bool IsParentBranch( Route route )
+    {
+      return route._subRoutes.SelectMany( subRoute => subRoute.AllEndPointIndicators ).Any( ind => ind.ParentBranch( route.Document ) == this ) ;
+    }
+    
+    public IEnumerable<Route> CollectAllDescendantBranches()
+    {
+      var routes = new HashSet<Route>() ;
+      AddChildren( routes, this ) ;
+      return routes ;
+    }
+
+    private static void AddChildren( HashSet<Route> routes, Route root )
+    {
+      if ( false == routes.Add( root ) ) return ;
+
+      foreach ( var child in root.GetChildBranches() ) {
+        AddChildren( routes, child ) ;
+      }
+    }
+
+    #endregion
 
     #region Store
 

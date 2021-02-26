@@ -123,7 +123,8 @@ namespace Arent3d.Architecture.Routing.App
     {
       ThreadDispatcher.Dispatch( () => routes.ForEach( r => r.Save() ) ) ;
 
-      var targets = routes.SelectMany( CreateRoutingTargets ).EnumerateAll() ;
+      var priorities = CollectPriorities( routes ) ;
+      var targets = routes.SelectMany( route => CreateRoutingTargets( route, priorities[ route ] ) ).EnumerateAll() ;
 
       ICollisionCheckTargetCollector collector ;
       using ( progressData?.Reserve( 0.05 ) ) {
@@ -142,9 +143,44 @@ namespace Arent3d.Architecture.Routing.App
       RegisterBadConnectors( generator.GetBadConnectorSet() ) ;
     }
 
-    private IEnumerable<AutoRoutingTarget> CreateRoutingTargets( Route route )
+    private static IReadOnlyDictionary<Route, int> CollectPriorities( IReadOnlyCollection<Route> routes )
     {
-      return route.SubRoutes.Select( subRoute => new AutoRoutingTarget( _document, subRoute ) ) ;
+      var dic = new Dictionary<Route, int>() ;
+
+      var routesToParents = routes.ToDictionary( route => route, route => route.GetParentBranches() ) ;
+      var index = 0 ;
+      var routesToRemove = new List<Route>() ;
+
+      while ( 0 < routesToParents.Count ) {
+        routesToRemove.Clear() ;
+        foreach ( var (route, parents) in routesToParents ) {
+          if ( 0 == parents.Count ) {
+            dic.Add( route, index ) ;
+            routesToRemove.Add( route ) ;
+          }
+        }
+
+        if ( routesToParents.Count == routesToRemove.Count ) break ;
+
+        // next layers.
+        foreach ( var route in routesToRemove ) {
+          routesToParents.Remove( route ) ;
+        }
+        foreach ( var set in routesToParents.Values ) {
+          set.ExceptWith( routesToRemove ) ;
+        }
+
+        ++index ;
+      }
+
+      if ( dic.Count != routes.Count ) throw new InvalidOperationException() ;
+
+      return dic ;
+    }
+
+    private IEnumerable<AutoRoutingTarget> CreateRoutingTargets( Route route, int priority )
+    {
+      return route.SubRoutes.Select( subRoute => new AutoRoutingTarget( _document, subRoute, priority ) ) ;
     }
 
     private ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )
@@ -165,7 +201,7 @@ namespace Arent3d.Architecture.Routing.App
     private async Task<IReadOnlyCollection<Route>> ConvertToRoutes( IAsyncEnumerable<RouteRecord> fromToList )
     {
       var oldRoutes = ThreadDispatcher.Dispatch( () => CommandTermCaches.RouteCache.Get( _document ) ) ;
-      
+
       var dic = new Dictionary<string, Route>() ;
       var result = new List<Route>() ; // Ordered by the original from-to record order.
 

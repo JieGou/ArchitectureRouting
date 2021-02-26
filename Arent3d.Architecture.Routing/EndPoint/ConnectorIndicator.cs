@@ -6,6 +6,8 @@ namespace Arent3d.Architecture.Routing.EndPoint
 {
   public class ConnectorIndicator : IEquatable<ConnectorIndicator>, IEndPointIndicator
   {
+    public Route? ParentBranch( Document document ) => null ;  // ConnectorIndicator has no parent branch.
+
     public int ElementId { get ; }
     public int ConnectorId { get ; }
 

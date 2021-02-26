@@ -6,6 +6,8 @@ namespace Arent3d.Architecture.Routing.EndPoint
 {
   public class PassPointEndIndicator : IEquatable<PassPointEndIndicator>, IEndPointIndicator
   {
+    public Route? ParentBranch( Document document ) => null ;  // PassPointEndIndicator has no parent branch (provisional).
+
     public int ElementId { get ; }
     public PassPointEndSide SideType { get ; }
 

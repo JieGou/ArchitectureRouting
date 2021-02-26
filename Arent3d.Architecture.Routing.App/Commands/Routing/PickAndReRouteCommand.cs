@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         // newly select
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route." ) ;
 
-        return RouteRecordUtils.ToRouteRecords( pickInfo.Route ).EnumerateAll().ToAsyncEnumerable() ;
+        return pickInfo.Route.CollectAllDescendantBranches().SelectMany( RouteRecordUtils.ToRouteRecords ).EnumerateAll().ToAsyncEnumerable() ;
       }
     }
   }

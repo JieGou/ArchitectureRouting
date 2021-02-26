@@ -13,13 +13,13 @@ namespace Arent3d.Architecture.Routing
     
     public int SubRouteIndex { get ; }
 
-    public int Priority => 1 ;  // provisional
-
     private readonly List<IEndPointIndicator> _fromEndPointIndicators = new() ;
     private readonly List<IEndPointIndicator> _toEndPointIndicators = new() ;
 
     public IEnumerable<IEndPointIndicator> FromEndPointIndicators => _fromEndPointIndicators ;
     public IEnumerable<IEndPointIndicator> ToEndPointIndicators => _toEndPointIndicators ;
+
+    public IEnumerable<IEndPointIndicator> AllEndPointIndicators => _fromEndPointIndicators.Concat( _toEndPointIndicators ) ;
 
     public IEnumerable<EndPointBase> GetFromEndPoints( Document document )
     {

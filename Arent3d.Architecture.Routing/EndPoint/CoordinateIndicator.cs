@@ -7,6 +7,8 @@ namespace Arent3d.Architecture.Routing.EndPoint
 {
   public class CoordinateIndicator : IEquatable<CoordinateIndicator>, IEndPointIndicator
   {
+    public Route? ParentBranch( Document document ) => null ;  // CoordinateIndicator has no parent branch.
+
     public XYZ Origin { get ; }
     public XYZ Direction { get ; }
 

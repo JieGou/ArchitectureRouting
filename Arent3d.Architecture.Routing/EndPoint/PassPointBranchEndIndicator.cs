@@ -1,10 +1,20 @@
 using System ;
+using Arent3d.Architecture.Routing.CommandTermCaches ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoint
 {
   public class PassPointBranchEndIndicator : IEquatable<PassPointBranchEndIndicator>, IEndPointIndicator
   {
+    public Route? ParentBranch( Document document )
+    {
+      var routeName = GetPassPointElement( document )?.GetRouteName() ;
+      if ( null == routeName ) return null ;
+
+      RouteCache.Get( document ).TryGetValue( routeName, out var route ) ;
+      return route ;
+    }
+
     public int ElementId { get ; }
     public double AngleDegree { get ; }
 

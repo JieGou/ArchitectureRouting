@@ -32,13 +32,13 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     public IEnumerable<EndPointBase> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
 
-    public AutoRoutingTarget( Document document, SubRoute subRoute )
+    public AutoRoutingTarget( Document document, SubRoute subRoute, int priority )
     {
       SubRoute = subRoute ;
       _fromEndPoints = subRoute.GetFromEndPoints( document ).EnumerateAll() ;
       _toEndPoints = subRoute.GetToEndPoints( document ).EnumerateAll() ;
 
-      Condition = new AutoRoutingCondition( document, SubRoute ) ;
+      Condition = new AutoRoutingCondition( document, SubRoute, priority ) ;
     }
 
     public IAutoRoutingSpatialConstraints? CreateConstraints()
@@ -74,9 +74,10 @@ namespace Arent3d.Architecture.Routing
     {
       private readonly SubRoute _subRoute ;
 
-      public AutoRoutingCondition( Document document, SubRoute subRoute )
+      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority )
       {
         _subRoute = subRoute ;
+        Priority = priority ;
         IsRoutingOnPipeRacks = DocumentMapper.Get( document ).IsRoutingOnPipeRacks( subRoute ) ;
         AllowHorizontalBranches = DocumentMapper.Get( document ).AllowHorizontalBranches( subRoute ) ;
         FixedBopHeight = GetHeight( subRoute.GetReferenceConnector() ) ;
@@ -85,7 +86,7 @@ namespace Arent3d.Architecture.Routing
       public bool IsRoutingOnPipeRacks { get ; }
       public LineType Type => _subRoute.Route.ServiceType ;
       public string FluidPhase => _subRoute.Route.FluidPhase ;
-      public int Priority => _subRoute.Priority ;
+      public int Priority { get ; }
       public string GroupName => string.Empty ;
       public LoopType LoopType => _subRoute.Route.LoopType ;
 

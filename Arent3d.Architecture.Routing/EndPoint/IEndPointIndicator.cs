@@ -10,6 +10,7 @@ namespace Arent3d.Architecture.Routing.EndPoint
   public interface IEndPointIndicator : IEquatable<IEndPointIndicator>
   {
     EndPointBase? GetAutoRoutingEndPoint( Document document, SubRoute subRoute, bool isFrom ) ;
+    Route? ParentBranch( Document document ) ;
   }
 
   public static class EndPointIndicator
