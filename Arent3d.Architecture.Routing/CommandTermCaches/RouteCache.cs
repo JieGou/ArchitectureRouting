@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.CommandTermCaches
 
     private RouteCache( Document document ) : base( document )
     {
-      _dic = document.GetAllStorables<Route>().ToDictionary( route => route.RouteId ) ;
+      _dic = document.GetAllStorables<Route>().ToDictionary( route => route.RouteName ) ;
     }
 
     public IEnumerator<KeyValuePair<string, Route>> GetEnumerator()

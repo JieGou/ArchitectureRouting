@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    public string LineId => SubRoute.Route.RouteId ;
+    public string LineId => SubRoute.Route.RouteName ;
 
     public ICommonRoutingCondition Condition { get ; }
 

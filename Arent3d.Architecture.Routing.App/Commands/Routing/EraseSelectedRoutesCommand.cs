@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         using var tx = new Transaction( document ) ;
         tx.Start( "Erase selected routes" ) ;
         try {
-          RouteGenerator.EraseRoutes( document, selectedRoutes.Select( route => route.RouteId ), true ) ;
+          RouteGenerator.EraseRoutes( document, selectedRoutes.Select( route => route.RouteName ), true ) ;
 
           tx.Commit() ;
         }

@@ -95,7 +95,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
       ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
       ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
 
-      instance.SetProperty( RoutingParameter.RouteName, pickInfo.Route.RouteId ) ;
+      instance.SetProperty( RoutingParameter.RouteName, pickInfo.Route.RouteName ) ;
       
       return instance ;
     }

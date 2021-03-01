@@ -239,7 +239,16 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsPassPoint( this FamilyInstance element )
     {
-      return element.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ;
+      return element.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) || element.HasParameter( RoutingParameter.RelatedPassPointId ) ;
+    }
+
+    public static int? GetPassPointId( this Element element )
+    {
+      if ( element is not FamilyInstance fi ) return null ;
+
+      if ( fi.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) return fi.Id.IntegerValue ;
+      if ( element.TryGetProperty( RoutingParameter.RelatedPassPointId, out int id ) ) return id ;
+      return null ;
     }
 
     #endregion
@@ -336,6 +345,23 @@ namespace Arent3d.Architecture.Routing
     private static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, BuiltInCategory[] builtInCategories, ElementFilter filter ) where TElement : Element
     {
       return document.GetAllElements<Element>().OfCategory( builtInCategories ).OfNotElementType().Where( filter ).OfType<TElement>() ;
+    }
+
+    public static IEnumerable<FamilyInstance> GetAllElementsOfPassPoint( this Document document, int passPointId )
+    {
+      var parameterName = document.GetParameterName( RoutingParameter.RelatedPassPointId ) ;
+      if ( null == parameterName ) yield break ;
+
+      var elm = document.GetElementById<FamilyInstance>( passPointId ) ;
+      if ( null == elm ) yield break ;
+      if ( elm.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) yield return elm ;
+
+      var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
+
+      foreach ( var e in document.GetAllElements<Element>().OfCategory( RoutingBuiltInCategories ).OfNotElementType().Where( filter ).OfType<FamilyInstance>() ) {
+        if ( e.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) continue ;
+        if ( e.TryGetProperty( RoutingParameter.RelatedPassPointId, out int id ) && id == passPointId ) yield return e ;
+      }
     }
 
     public static string? GetRouteName( this Element element )

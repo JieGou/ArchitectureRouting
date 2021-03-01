@@ -38,20 +38,20 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       {
         var routes = RouteCache.Get( uiDocument.Document ) ;
 
-        var (fromConnector, fromElement) = ConnectorPicker.GetConnector( uiDocument, "Select the first connector" ) ;
-        var tempColor = SetTempColor( uiDocument, routes, fromElement ) ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, "Select the first connector", null ) ;
+        var tempColor = SetTempColor( uiDocument, fromPickResult ) ;
         try {
-          var (toConnector, toElement) = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromConnector, fromElement.GetRouteName() ) ;
-          var fromIndicator = GetEndPointIndicator( fromElement, fromConnector, toElement, toConnector ) ;
-          var toIndicator = GetEndPointIndicator( toElement, toConnector, fromElement, fromConnector ) ;
+          var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromPickResult ) ;
+          var fromIndicator = GetEndPointIndicator( fromPickResult, toPickResult ) ;
+          var toIndicator = GetEndPointIndicator( toPickResult, fromPickResult ) ;
 
-          if ( GetSubRoute( routes, fromElement ) is { } subRoute1 ) {
-            var splitter = new RouteSplitter( subRoute1, fromElement, toIndicator, false ) ;
+          if ( fromPickResult.SubRoute is { } subRoute1 ) {
+            var splitter = new RouteSplitter( subRoute1, fromPickResult.PickedElement!, toIndicator, false ) ;
             routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute1.Route ) ) ;
             routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute1.Route ) ) ;
           }
-          else if ( GetSubRoute( routes, toElement ) is { } subRoute2 ) {
-            var splitter = new RouteSplitter( subRoute2, toElement, fromIndicator, true ) ;
+          else if ( toPickResult.SubRoute is { } subRoute2 ) {
+            var splitter = new RouteSplitter( subRoute2, fromPickResult.PickedElement!, fromIndicator, true ) ;
             routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute2.Route ) ) ;
             routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute2.Route ) ) ;
           }
@@ -75,14 +75,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
     }
 
-    private static IDisposable SetTempColor( UIDocument uiDocument, RouteCache routes, Element element )
+    private static IDisposable SetTempColor( UIDocument uiDocument, ConnectorPicker.IPickResult pickResult )
     {
       using var transaction = new Transaction( uiDocument.Document ) ;
       try {
         transaction.Start( "Change Picked Element Color" ) ;
         
         var tempColor = new TempColor( uiDocument.ActiveView, new Color( 0, 0, 255 ) ) ;
-        tempColor.AddRange( GetRelatedElements( routes, element ) ) ;
+        tempColor.AddRange( pickResult.GetAllRelatedElements() ) ;
 
         transaction.Commit() ;
         return tempColor ;
@@ -109,40 +109,17 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
     }
 
-    private static IEnumerable<ElementId> GetRelatedElements( RouteCache routes, Element element )
+    private static IEndPointIndicator GetEndPointIndicator( ConnectorPicker.IPickResult pickResult, ConnectorPicker.IPickResult anotherResult )
     {
-      if ( GetSubRoute( routes, element ) is { } subRoute ) {
-        return element.Document.GetAllElementsOfSubRoute<Element>( subRoute.Route.RouteId, subRoute.SubRouteIndex ).Select( e => e.Id ) ;
-      }
-      else {
-        return new[] { element.Id } ;
-      }
-    }
+      if ( pickResult.PickedConnector is { } connector ) return connector.GetIndicator() ;
 
-    private static SubRoute? GetSubRoute( IReadOnlyDictionary<string, Route> routes, Element fromElement )
-    {
-      if ( fromElement.IsPassPoint() ) return null ;
-      
-      var routeName = fromElement.GetRouteName() ;
-      if ( null == routeName ) return null ;
-
-      var subRouteIndex = fromElement.GetSubRouteIndex() ;
-      if ( null == subRouteIndex ) return null ;
-
-      if ( false == routes.TryGetValue( routeName, out var route ) ) return null ;
-      return route.GetSubRoute( subRouteIndex.Value ) ;
-    }
-
-    private static IEndPointIndicator GetEndPointIndicator( Element element, Connector? connector, Element anotherElement, Connector? anotherConnector )
-    {
-      if ( null != connector ) return connector.GetIndicator() ;
-
-      var anotherPos = ( null == anotherConnector ) ? GetCenter( anotherElement ) : GetConnectorPosition( anotherConnector ) ;
+      var element = pickResult.PickedElement ;
+      var anotherPos = anotherResult.GetOrigin() ;
       if ( element.IsPassPoint() && element is Instance instance ) {
         return GetPassPointBranchIndicator( instance, anotherPos ) ;
       }
       else {
-        return GetCoordinateIndicator( element, anotherPos ) ;
+        return GetCoordinateIndicator( pickResult.GetOrigin(), anotherPos ) ;
       }
     }
 
@@ -163,10 +140,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       return 90 * cornerCount ;// [0, 90, 180, 270]
     }
 
-    private static IEndPointIndicator GetCoordinateIndicator( Element element, XYZ anotherPos )
+    private static IEndPointIndicator GetCoordinateIndicator( XYZ origin, XYZ anotherPos )
     {
-      var center = GetCenter( element ) ;
-      var dir = anotherPos - center ;
+      var dir = anotherPos - origin ;
 
       double x = Math.Abs( dir.X ), y = Math.Abs( dir.Y ) ;
       if ( x < y ) {
@@ -176,41 +152,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         dir = ( 0 <= dir.X ) ? XYZ.BasisX : -XYZ.BasisX ;
       }
 
-      return new CoordinateIndicator( center, dir ) ;
-    }
-
-    private static XYZ GetCenter( Element element )
-    {
-      return element switch
-      {
-        MEPCurve curve => GetCenter( curve ),
-        Instance instance => instance.GetTotalTransform().Origin,
-        _ => throw new InvalidOperationException(),
-      } ;
-    }
-
-    private static XYZ GetCenter( MEPCurve curve )
-    {
-      double minX = +double.MaxValue, minY = -double.MaxValue, minZ = +double.MaxValue ;
-      double maxX = -double.MaxValue, maxY = +double.MaxValue, maxZ = -double.MaxValue ;
-
-      foreach ( var c in curve.GetConnectors().Where( c => c.IsAnyEnd() ) ) {
-        var (x, y, z) = c.Origin ;
-
-        if ( x < minX ) minX = x ;
-        if ( maxX < x ) maxX = x ;
-        if ( y < minY ) minY = y ;
-        if ( maxY < y ) maxY = y ;
-        if ( z < minZ ) minZ = z ;
-        if ( maxZ < z ) maxZ = z ;
-      }
-
-      return new XYZ( ( minX + maxX ) * 0.5, ( minY + maxY ) * 0.5, ( minZ + maxZ ) * 0.5 ) ;
-    }
-
-    private static XYZ GetConnectorPosition( Connector connector )
-    {
-      return connector.Origin ;
+      return new CoordinateIndicator( origin, dir ) ;
     }
 
 
@@ -234,10 +176,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
           if ( index < 0 ) continue ;
 
           if ( _newConnectorIsFromConnector ) {
-            yield return CreateInsertedRouteRecordFrom( route.RouteId, info, index, _newIndicator ) ;
+            yield return CreateInsertedRouteRecordFrom( route.RouteName, info, index, _newIndicator ) ;
           }
           else {
-            yield return CreateInsertedRouteRecordTo( route.RouteId, info, index, _newIndicator ) ;
+            yield return CreateInsertedRouteRecordTo( route.RouteName, info, index, _newIndicator ) ;
           }
         }
       }

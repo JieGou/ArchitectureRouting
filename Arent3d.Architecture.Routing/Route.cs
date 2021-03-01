@@ -23,9 +23,9 @@ namespace Arent3d.Architecture.Routing
     public const string DefaultInsulationType = "None" ;
 
     /// <summary>
-    /// Unique identifier of a route.
+    /// Unique identifier name of a route.
     /// </summary>
-    public string RouteId { get ; private set ; }
+    public string RouteName { get ; private set ; }
 
     /// <summary>
     /// Reverse dictionary to search which sub route an end point belongs to.
@@ -69,12 +69,12 @@ namespace Arent3d.Architecture.Routing
     /// <param name="owner">Owner element.</param>
     private Route( Element owner ) : base( owner, false )
     {
-      RouteId = string.Empty ;
+      RouteName = string.Empty ;
     }
 
     public Route( Document document, string routeId ) : base( document, false )
     {
-      RouteId = routeId ;
+      RouteName = routeId ;
     }
 
     public void Clear()
@@ -263,13 +263,13 @@ namespace Arent3d.Architecture.Routing
 
     protected override void LoadAllFields( FieldReader reader )
     {
-      RouteId = reader.GetSingle<string>( RouteIdField ) ;
+      RouteName = reader.GetSingle<string>( RouteIdField ) ;
       reader.GetArray<RouteInfo>( RouteInfosField ).ForEach( info => RegisterConnectors( info.FromId, info.ToId, info.PassPoints ) ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
-      writer.SetSingle( RouteIdField, RouteId ) ;
+      writer.SetSingle( RouteIdField, RouteName ) ;
       writer.SetArray( RouteInfosField, _routeInfos ) ;
     }
 

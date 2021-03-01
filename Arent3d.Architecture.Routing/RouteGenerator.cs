@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     private void ErasePreviousRoutes()
     {
-      ThreadDispatcher.Dispatch( () => EraseRoutes( _document, RoutingTargets.Select( t => t.SubRoute.Route.RouteId ), false ) ) ;
+      ThreadDispatcher.Dispatch( () => EraseRoutes( _document, RoutingTargets.Select( t => t.SubRoute.Route.RouteName ), false ) ) ;
     }
 
     public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints )
@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing
       var list = document.GetAllElementsOfRoute<Element>().Where( e => e.GetRouteName() is { } routeName && hashSet.Contains( routeName ) ) ;
       if ( false == eraseRouteStoragesAndPassPoints ) {
         // do not erase pass points
-        list = list.Where( p => false == p.IsPassPoint() ) ;
+        list = list.Where( p => false == ( p is FamilyInstance fi && fi.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) ) ;
       }
 
       document.Delete( list.SelectMany( SelectAllRelatedElements ).Select( elm => elm.Id ).Distinct().ToArray() ) ;

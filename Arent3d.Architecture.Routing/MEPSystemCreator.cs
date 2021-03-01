@@ -469,12 +469,12 @@ namespace Arent3d.Architecture.Routing
 
     private static void MarkAsAutoRoutedElement( Element element, SubRoute subRoute, PassingEndPointInfo passingEndPointInfo )
     {
-      MarkAsAutoRoutedElement( element, subRoute.Route.RouteId, subRoute.SubRouteIndex, passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints );
+      MarkAsAutoRoutedElement( element, subRoute.Route.RouteName, subRoute.SubRouteIndex, passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints );
     }
 
     private static void MarkAsAutoRoutedElement( Element element, SubRoute subRoute, params Connector[] connectors )
     {
-      MarkAsAutoRoutedElement( element, subRoute.Route.RouteId, subRoute.SubRouteIndex, GetNearestEnd( connectors, true ), GetNearestEnd( connectors, false ) ) ;
+      MarkAsAutoRoutedElement( element, subRoute.Route.RouteName, subRoute.SubRouteIndex, GetNearestEnd( connectors, true ), GetNearestEnd( connectors, false ) ) ;
     }
 
     private static IEnumerable<IEndPointIndicator> GetNearestEnd( Connector[] connectors, bool isFrom )

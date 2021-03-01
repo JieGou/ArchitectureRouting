@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.App
     /// <param name="elementToPassThrough">A passed-through element.</param>
     public RouteInfoDetector( SubRoute subRoute, Element elementToPassThrough )
     {
-      RouteName = subRoute.Route.RouteId ;
+      RouteName = subRoute.Route.RouteName ;
       SubRouteIndex = subRoute.SubRouteIndex ;
 
       CollectEndPoints( elementToPassThrough, true, _fromElms ) ;

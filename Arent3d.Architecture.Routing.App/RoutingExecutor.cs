@@ -154,7 +154,7 @@ namespace Arent3d.Architecture.Routing.App
       while ( 0 < routesToParents.Count ) {
         routesToRemove.Clear() ;
         foreach ( var (route, parents) in routesToParents ) {
-          if ( 0 == parents.Count ) {
+          if ( 0 == parents.Count( routesToParents.ContainsKey ) ) {
             dic.Add( route, index ) ;
             routesToRemove.Add( route ) ;
           }
