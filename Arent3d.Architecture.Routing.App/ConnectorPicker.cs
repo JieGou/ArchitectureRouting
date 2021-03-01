@@ -274,7 +274,7 @@ namespace Arent3d.Architecture.Routing.App
         return elem.GetConnectors().Any( IsTargetConnector ) && IsRoutableElement( elem ) ;
       }
 
-      private static bool IsRoutableForCenter( Element elem )
+      private bool IsRoutableForCenter( Element elem )
       {
         return ( elem is FamilyInstance fi ) && ( false == fi.IsPassPoint() || IsPassPointWithoutBranch( fi ) ) ;
       }
@@ -296,7 +296,7 @@ namespace Arent3d.Architecture.Routing.App
         return true ;
       }
 
-      private static bool IsPassPointWithoutBranch( FamilyInstance fi )
+      protected virtual bool IsPassPointWithoutBranch( FamilyInstance fi )
       {
         if ( fi.GetPassPointId() is not { } id ) return false ;
 
@@ -339,6 +339,11 @@ namespace Arent3d.Architecture.Routing.App
       protected override bool IsRoutableElement( Element elem )
       {
         return base.IsRoutableElement( elem ) && _compatibleResult.IsCompatibleTo( elem ) ;
+      }
+
+      protected override bool IsPassPointWithoutBranch( FamilyInstance fi )
+      {
+        return base.IsPassPointWithoutBranch( fi ) && ( fi.GetPassPointId() is not int id || _compatibleResult.PickedElement.GetPassPointId() != id ) ;
       }
     }
   }

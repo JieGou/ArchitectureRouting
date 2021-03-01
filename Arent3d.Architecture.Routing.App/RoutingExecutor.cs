@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
+using Arent3d.Architecture.Routing.EndPoint ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -205,6 +206,7 @@ namespace Arent3d.Architecture.Routing.App
       var dic = new Dictionary<string, Route>() ;
       var result = new List<Route>() ; // Ordered by the original from-to record order.
 
+      var parents = new HashSet<Route>() ;
       await foreach ( var record in fromToList ) {
         if ( null == record.FromId || null == record.ToId ) continue ;
 
@@ -221,7 +223,15 @@ namespace Arent3d.Architecture.Routing.App
         }
 
         route.RegisterConnectors( record.FromId, record.ToId, record.PassPoints ) ;
+        if ( record.FromId.ParentBranch( _document ) is {} fromParent ) {
+          parents.Add( fromParent ) ;
+        }
+        if ( record.ToId.ParentBranch( _document ) is {} toParent ) {
+          parents.Add( toParent ) ;
+        }
       }
+
+      result.AddRange( parents.Where( p => false == dic.ContainsKey( p.RouteName ) ) ) ;
 
       return result ;
     }
