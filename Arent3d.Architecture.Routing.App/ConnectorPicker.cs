@@ -252,7 +252,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private static bool IsPickTargetConnector( Connector connector )
     {
-      return connector.IsAnyEnd() && ( false == connector.IsConnected ) && connector.Domain switch
+      return connector.IsAnyEnd() && connector.Domain switch
       {
         Domain.DomainPiping => true,
         Domain.DomainHvac => true,
