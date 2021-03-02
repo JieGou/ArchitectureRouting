@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
     private static void WriteFromTo( Document document, string csvFileName )
     {
-      var fromToList = document.CollectRoutes().SelectMany( RouteRecordUtils.ToRouteRecords ) ;
+      var fromToList = document.CollectRoutes().ToSegmentsWithName().ToRouteRecords( document ) ;
 
       using var writer = new StreamWriter( csvFileName, false ) ;
       writer.WriteCsvFile( fromToList ) ;

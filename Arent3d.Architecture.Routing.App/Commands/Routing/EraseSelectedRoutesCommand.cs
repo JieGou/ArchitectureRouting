@@ -1,6 +1,8 @@
 using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
+using System.Threading.Tasks ;
+using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
@@ -13,35 +15,31 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "Erase Selected Routes" )]
   [Image( "resources/MEP.ico" )]
-  public class EraseSelectedRoutesCommand : IExternalCommand
+  public class EraseSelectedRoutesCommand : RoutingCommandBase
   {
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
+    protected override async IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
     {
-      try {
-        var uiDocument = commandData.Application.ActiveUIDocument ;
-        var document = uiDocument.Document ;
+      await Task.Yield() ;
+
+      // use lazy evaluation because GetRouteSegments()'s call time is not in the transaction.
+      var document = uiDocument.Document ;
+      var recreatedRoutes = ThreadDispatcher.Dispatch( () =>
+      {
         var selectedRoutes = Route.CollectAllDescendantBranches( SelectRoutes( uiDocument ) ) ;
 
-        using var tx = new Transaction( document ) ;
-        tx.Start( "Erase selected routes" ) ;
-        try {
-          RouteGenerator.EraseRoutes( document, selectedRoutes.Select( route => route.RouteName ), true ) ;
+        var allRoutes = Route.GetAllRelatedBranches( selectedRoutes ) ;
+        allRoutes.ExceptWith( selectedRoutes ) ;
+        RouteGenerator.EraseRoutes( document, selectedRoutes.Select( route => route.RouteName ), true ) ;
+        return allRoutes ;
+      } ) ;
 
-          tx.Commit() ;
-        }
-        catch {
-          tx.RollBack() ;
-          return Result.Failed ;
-        }
-
-        return Result.Succeeded ;
-      }
-      catch ( OperationCanceledException ) {
-        return Result.Cancelled ;
+      // Returns affected, but not deleted routes to recreate them.
+      foreach ( var seg in recreatedRoutes.ToSegmentsWithName().EnumerateAll() ) {
+        yield return seg ;
       }
     }
 
-    private IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
+    private static IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
     {
       var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
       if ( 0 < list.Count ) return list ;

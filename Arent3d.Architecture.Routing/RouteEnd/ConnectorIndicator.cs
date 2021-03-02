@@ -1,15 +1,15 @@
 using System ;
-using Arent3d.Routing ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.EndPoint
+namespace Arent3d.Architecture.Routing.RouteEnd
 {
   public class ConnectorIndicator : IEquatable<ConnectorIndicator>, IEndPointIndicator
   {
-    public Route? ParentBranch( Document document ) => null ;  // ConnectorIndicator has no parent branch.
+    public (Route? Route, SubRoute? SubRoute) ParentBranch( Document document ) => ( null, null ) ;  // ConnectorIndicator has no parent branch.
 
     public int ElementId { get ; }
     public int ConnectorId { get ; }
+    public bool IsOneSided => true ;
 
     public ConnectorIndicator( int elementId, int connectorId )
     {
@@ -26,12 +26,27 @@ namespace Arent3d.Architecture.Routing.EndPoint
       return document.FindConnector( this ) ;
     }
 
-    public EndPointBase? GetAutoRoutingEndPoint( Document document, SubRoute subRoute, bool isFrom )
+    public EndPointBase? GetEndPoint( Document document, SubRoute subRoute )
     {
       var conn = GetConnector( document ) ;
       if ( null == conn ) return null ;
 
-      return new ConnectorEndPoint( subRoute.Route, conn, isFrom ) ;
+      return new ConnectorEndPoint( subRoute.Route, conn ) ;
+    }
+
+    public bool IsValid( Document document, bool isFrom )
+    {
+      return ( null != GetConnector( document ) ) ;
+    }
+
+    public void Accept( IEndPointIndicatorVisitor visitor )
+    {
+      visitor.Visit( this ) ;
+    }
+
+    public T Accept<T>( IEndPointIndicatorVisitor<T> visitor )
+    {
+      return visitor.Visit( this ) ;
     }
 
     public bool Equals( ConnectorIndicator other )

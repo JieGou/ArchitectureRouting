@@ -2,6 +2,7 @@
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -300,13 +301,14 @@ namespace Arent3d.Architecture.Routing.App
       {
         if ( fi.GetPassPointId() is not { } id ) return false ;
 
-        return ( false == RouteCache.Get( fi.Document ).Values.Any( route => route.RouteInfos.Any( ri => HasBranch( ri, id ) ) ) ) ;
+        var document = fi.Document ;
+        return ( false == RouteCache.Get( document ).Values.Any( route => route.RouteSegments.Any( ri => HasBranch( document, ri, id ) ) ) ) ;
       }
 
-      private static bool HasBranch( RouteInfo routeInfo, int passPointId )
+      private static bool HasBranch( Document document, RouteSegment segment, int passPointId )
       {
-        if ( routeInfo.FromId is EndPoint.PassPointBranchEndIndicator pp1 && pp1.ElementId == passPointId ) return true ;
-        if ( routeInfo.ToId is EndPoint.PassPointBranchEndIndicator pp2 && pp2.ElementId == passPointId ) return true ;
+        if ( segment.FromId is PassPointBranchEndIndicator pp1 && pp1.ElementId == passPointId ) return true ;
+        if ( segment.ToId is PassPointBranchEndIndicator pp2 && pp2.ElementId == passPointId ) return true ;
 
         return false ;
       }

@@ -42,15 +42,14 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     private static ITree CreateTreeByFactory( IReadOnlyCollection<TreeElement> treeElements )
     {
       if ( 0 == treeElements.Count ) {
-       return TreeFactory.GetTreeInstanceToBuild( TreeFactory.TreeType.Dummy, null! ) ;  // Dummyの場合はtreeElementsを使用しない
+        return TreeFactory.GetTreeInstanceToBuild( TreeFactory.TreeType.Dummy, null! ) ; // Dummyの場合はtreeElementsを使用しない
       }
-      else{
+      else {
         var tree = TreeFactory.GetTreeInstanceToBuild( TreeFactory.TreeType.Bvh, treeElements ) ;
         tree.Build() ;
         return tree ;
       }
     }
-
 
 
     public IEnumerable<Box3d> GetCollidedBoxes( Box3d box )

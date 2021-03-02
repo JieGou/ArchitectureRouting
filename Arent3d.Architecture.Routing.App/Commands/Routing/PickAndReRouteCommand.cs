@@ -13,19 +13,19 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Image( "resources/MEP.ico" )]
   public class PickAndReRouteCommand : RoutingCommandBase
   {
-    protected override IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
     {
       var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
 
       if ( 0 < list.Count ) {
-        return list.SelectMany( RouteRecordUtils.ToRouteRecords ).EnumerateAll().ToAsyncEnumerable() ;
+        return list.ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
 
       }
       else {
         // newly select
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route." ) ;
 
-        return pickInfo.Route.CollectAllDescendantBranches().SelectMany( RouteRecordUtils.ToRouteRecords ).EnumerateAll().ToAsyncEnumerable() ;
+        return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
       }
     }
   }

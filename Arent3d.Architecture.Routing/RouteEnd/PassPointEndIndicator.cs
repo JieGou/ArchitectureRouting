@@ -1,20 +1,18 @@
 using System ;
-using Arent3d.Routing ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.EndPoint
+namespace Arent3d.Architecture.Routing.RouteEnd
 {
   public class PassPointEndIndicator : IEquatable<PassPointEndIndicator>, IEndPointIndicator
   {
-    public Route? ParentBranch( Document document ) => null ;  // PassPointEndIndicator has no parent branch (provisional).
+    public (Route? Route, SubRoute? SubRoute) ParentBranch( Document document ) => ( null, null ) ;  // PassPointEndIndicator has no parent branch (provisional).
 
     public int ElementId { get ; }
-    public PassPointEndSide SideType { get ; }
+    public bool IsOneSided => false ;
 
-    public PassPointEndIndicator( int elementId, PassPointEndSide sideType )
+    public PassPointEndIndicator( int elementId )
     {
       ElementId = elementId ;
-      SideType = sideType ;
     }
 
     private FamilyInstance? GetPassPointElement( Document document )
@@ -22,19 +20,32 @@ namespace Arent3d.Architecture.Routing.EndPoint
       return document.FindPassPointElement( ElementId ) ;
     }
 
-    public EndPointBase? GetAutoRoutingEndPoint( Document document, SubRoute subRoute, bool isFrom )
+    public EndPointBase? GetEndPoint( Document document, SubRoute subRoute )
     {
-      if ( ( SideType == PassPointEndSide.Forward ) != isFrom ) throw new InvalidOperationException() ;
-
       var familyInstance = GetPassPointElement( document ) ;
       if ( null == familyInstance ) return null ;
 
-      return new PassPointEndPoint( subRoute.Route, familyInstance, SideType, subRoute.GetReferenceConnector() ) ;
+      return new PassPointEndPoint( subRoute.Route, familyInstance, subRoute.GetReferenceConnector() ) ;
+    }
+
+    public bool IsValid( Document document, bool isFrom )
+    {
+      return ( null != GetPassPointElement( document ) ) ;
+    }
+
+    public void Accept( IEndPointIndicatorVisitor visitor )
+    {
+      visitor.Visit( this ) ;
+    }
+
+    public T Accept<T>( IEndPointIndicatorVisitor<T> visitor )
+    {
+      return visitor.Visit( this ) ;
     }
 
     public bool Equals( PassPointEndIndicator other )
     {
-      return ElementId == other.ElementId && SideType == other.SideType ;
+      return ElementId == other.ElementId ;
     }
 
     public bool Equals( IEndPointIndicator indicator )
@@ -49,9 +60,7 @@ namespace Arent3d.Architecture.Routing.EndPoint
 
     public override int GetHashCode()
     {
-      unchecked {
-        return ( ElementId * 2 ) ^ (int) SideType ;
-      }
+      return ElementId ;
     }
 
     public static bool operator ==( PassPointEndIndicator left, PassPointEndIndicator right )

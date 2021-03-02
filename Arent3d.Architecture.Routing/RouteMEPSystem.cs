@@ -6,18 +6,21 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
-using Autodesk.Revit.DB.Structure.StructuralSections ;
 
 namespace Arent3d.Architecture.Routing
 {
   public class RouteMEPSystem
   {
+    private readonly double _diameterTolerance ;
+
     public MEPSystemType MEPSystemType { get ; }
     public MEPSystem? MEPSystem { get ; }
     public MEPCurveType CurveType { get ; }
 
     public RouteMEPSystem( Document document, Route route )
     {
+      _diameterTolerance = document.Application.VertexTolerance ;
+      
       var allConnectors = route.GetAllConnectors( document ).EnumerateAll() ;
       MEPSystemType = GetSystemType( document, allConnectors ) ;
 
@@ -26,6 +29,61 @@ namespace Arent3d.Architecture.Routing
 
       CurveType = GetMEPCurveType( document, allConnectors, MEPSystemType ) ;
     }
+
+    public double Get90ElbowSize( double diameter )
+    {
+      return diameter * 1.5 ; // provisional
+    }
+
+    public double Get45ElbowSize( double diameter )
+    {
+      return diameter * 1.5 ; // provisional
+    }
+
+    public double GetTeeHeaderLength( double headerDiameter, double branchDiameter )
+    {
+      if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
+        if ( headerDiameter < branchDiameter ) {
+          return headerDiameter * 1.0 ; // provisional
+        }
+        else {
+          return headerDiameter * 0.5 + branchDiameter * 0.5 ; // provisional
+        }
+      }
+      else {
+        return branchDiameter * 0.5 + GetWeldMinDistance( branchDiameter ) ; // provisional
+      }
+    }
+
+    public double GetTeeBranchLength( double headerDiameter, double branchDiameter )
+    {
+      if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
+        if ( headerDiameter < branchDiameter ) {
+          return headerDiameter * 1.0 + GetReducerLength( headerDiameter, branchDiameter ) ; // provisional
+        }
+        else {
+          return headerDiameter * 0.5 + branchDiameter * 0.5 ; // provisional
+        }
+      }
+      else {
+        return headerDiameter * 0.5 + GetWeldMinDistance( branchDiameter ) ; // provisional
+      }
+    }
+
+    public double GetReducerLength( double diameter1, double diameter2 )
+    {
+      if ( diameter1 <= 0 || diameter2 <= 0 || Math.Abs( diameter1 - diameter2 ) < _diameterTolerance ) return 0 ;
+
+      // TODO: find reducer size
+
+      return 0 ;
+    }
+
+    public double GetWeldMinDistance( double diameter )
+    {
+      return 1.0 / 120 ;  // 1/10 inches.
+    }
+
 
     #region Get MEPSystemType
 
@@ -126,7 +184,7 @@ namespace Arent3d.Architecture.Routing
 
     #region Get MEPCurveType
     
-    private static MEPCurveType GetMEPCurveType( Document document, IReadOnlyCollection<Connector> connectors, MEPSystemType systemType )
+    private MEPCurveType GetMEPCurveType( Document document, IReadOnlyCollection<Connector> connectors, MEPSystemType systemType )
     {
       HashSet<int>? available = null ;
       foreach ( var connector in connectors.Where( c => IsCompatibleMEPSystemType( systemType, GetSystemClassification( c ) ) ) ) {
@@ -146,7 +204,7 @@ namespace Arent3d.Architecture.Routing
       return document.GetElementById<MEPCurveType>( available.First() )! ;
     }
 
-    private static (Type, Func<MEPCurveType, bool>) GetIsCompatibleFunc( Connector connector )
+    private (Type, Func<MEPCurveType, bool>) GetIsCompatibleFunc( Connector connector )
     {
       return connector.Domain switch
       {
@@ -156,7 +214,7 @@ namespace Arent3d.Architecture.Routing
       } ;
     }
 
-    private static bool IsCompatibleDuctType( MEPCurveType type, Connector connector )
+    private bool IsCompatibleDuctType( MEPCurveType type, Connector connector )
     {
       if ( false == HasCompatibleShape( type, connector ) ) return false ;
       if ( type is not DuctType dt ) return false ;
@@ -164,7 +222,7 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    private static bool IsCompatiblePipeType( MEPCurveType type, Connector connector )
+    private bool IsCompatiblePipeType( MEPCurveType type, Connector connector )
     {
       if ( false == HasCompatibleShape( type, connector ) ) return false ;
       if ( type is not PipeType pt ) return false ;
@@ -172,29 +230,18 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    private static bool HasCompatibleShape( MEPCurveType type, Connector connector )
+    private bool HasCompatibleShape( MEPCurveType type, Connector connector )
     {
       if ( type.Shape != connector.Shape ) return false ;
 
-      var nominalDiameter = GetNominalDiameter( connector ) ;
+      var nominalDiameter = connector.GetDiameter() ;
       if ( false == HasAnyNominalDiameter( type, nominalDiameter ) ) return false ;
       // TODO: other parameters
 
       return true ;
     }
 
-    private static double GetNominalDiameter( Connector connector )
-    {
-      return connector.Shape switch
-      {
-        ConnectorProfileType.Oval => connector.Radius * 2,
-        ConnectorProfileType.Rectangular => Math.Max( connector.Width, connector.Height ),
-        ConnectorProfileType.Round => connector.Radius * 2,
-        _ => throw new ArgumentOutOfRangeException(),
-      } ;
-    }
-
-    private static bool HasAnyNominalDiameter( MEPCurveType type, double nominalDiameter )
+    private bool HasAnyNominalDiameter( MEPCurveType type, double nominalDiameter )
     {
       var document = type.Document ;
       var rpm = type.RoutingPreferenceManager ;
@@ -209,7 +256,7 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private static bool HasAnyNominalDiameter( Document document, RoutingPreferenceRule rule, double nominalDiameter )
+    private bool HasAnyNominalDiameter( Document document, RoutingPreferenceRule rule, double nominalDiameter )
     {
       if ( false == GetCriteria( rule ).OfType<PrimarySizeCriterion>().All( criterion => IsMatchRange( criterion, nominalDiameter ) ) ) return false ;
 
@@ -231,9 +278,9 @@ namespace Arent3d.Architecture.Routing
     }
 
 
-    private static bool HasAnyNominalDiameter( Segment segment, double nominalDiameter )
+    private bool HasAnyNominalDiameter( Segment segment, double nominalDiameter )
     {
-      return segment.GetSizes().Any( size => Math.Abs( size.NominalDiameter - nominalDiameter ) < 1e-2 ) ;
+      return segment.GetSizes().Any( size => Math.Abs( size.NominalDiameter - nominalDiameter ) < _diameterTolerance ) ;
     }
 
     #endregion

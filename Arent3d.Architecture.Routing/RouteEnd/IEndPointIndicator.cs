@@ -5,21 +5,51 @@ using System.Text.RegularExpressions ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.EndPoint
+namespace Arent3d.Architecture.Routing.RouteEnd
 {
+  /// <summary>
+  /// Base interface of an indicator.
+  /// </summary>
   public interface IEndPointIndicator : IEquatable<IEndPointIndicator>
   {
-    EndPointBase? GetAutoRoutingEndPoint( Document document, SubRoute subRoute, bool isFrom ) ;
-    Route? ParentBranch( Document document ) ;
+    /// <summary>
+    /// Gets an end point from the document.
+    /// </summary>
+    /// <param name="document"></param>
+    /// <param name="subRoute"></param>
+    /// <returns></returns>
+    EndPointBase? GetEndPoint( Document document, SubRoute subRoute ) ;
+
+    /// <summary>
+    /// Gets a parent route when the end point is dependent to it.
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    (Route? Route, SubRoute? SubRoute) ParentBranch( Document document ) ;
+
+    /// <summary>
+    /// Gets whether the indicated point exists in the document.
+    /// </summary>
+    /// <param name="document"></param>
+    /// <param name="isFrom"></param>
+    /// <returns></returns>
+    bool IsValid( Document document, bool isFrom ) ;
+
+    /// <summary>
+    /// Gets whether this indicator is only one side of from-to.
+    /// </summary>
+    /// <returns>True if it can be either of from-end and to-end.</returns>
+    bool IsOneSided { get ; }
+
+    void Accept( IEndPointIndicatorVisitor visitor ) ;
+    T Accept<T>( IEndPointIndicatorVisitor<T> visitor ) ;
   }
 
   public static class EndPointIndicator
   {
     #region Parser
 
-    private static readonly char[] ConnectPointSplitter = { '/' } ;
-    private static readonly char[] PassPointEndSplitter = { '/' } ;
-    private static readonly char[] PassPointBranchEndSplitter = { '/' } ;
+    private static readonly char[] IndicatorSplitter = { '/' } ;
     private static readonly char[] IndicatorListSplitter = { '|' } ;
 
     public static IEnumerable<IEndPointIndicator> ParseIndicatorList( string str )
@@ -35,6 +65,7 @@ namespace Arent3d.Architecture.Routing.EndPoint
         "p:" => ParsePassPointEndIndicatorImpl( str.Substring( 2 ) ),
         "o:" => ParseCoordinateIndicatorImpl( str.Substring( 2 ) ),
         "t:" => ParsePassPointBranchEndIndicatorImpl( str.Substring( 2 ) ),
+        "r:" => ParseRouteIndicatorImpl( str.Substring( 2 ) ),
         _ => null,
       } ;
     }
@@ -67,9 +98,16 @@ namespace Arent3d.Architecture.Routing.EndPoint
       return ParsePassPointBranchEndIndicatorImpl( str.Substring( 2 ) ) ;
     }
 
+    public static RouteIndicator? ParseRouteIndicator( string str )
+    {
+      if ( false == str.StartsWith( "r:" ) ) return null ;
+
+      return ParseRouteIndicatorImpl( str.Substring( 2 ) ) ;
+    }
+
     private static ConnectorIndicator? ParseConnectorIndicatorImpl( string substring )
     {
-      var array = substring.Split( ConnectPointSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
+      var array = substring.Split( IndicatorSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
       if ( array.Length < 2 ) return null ;
 
       if ( false == int.TryParse( array[ 0 ], out var elmId ) || false == int.TryParse( array[ 1 ], out var connId ) ) return null ;
@@ -79,12 +117,9 @@ namespace Arent3d.Architecture.Routing.EndPoint
 
     private static PassPointEndIndicator? ParsePassPointEndIndicatorImpl( string substring )
     {
-      var array = substring.Split( PassPointEndSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
-      if ( array.Length < 2 ) return null ;
+      if ( false == int.TryParse( substring, out var elmId ) ) return null ;
 
-      if ( false == int.TryParse( array[ 0 ], out var elmId ) || false == TryParseEndSide( array[ 1 ], out var endSide ) ) return null ;
-
-      return new PassPointEndIndicator( elmId, endSide ) ;
+      return new PassPointEndIndicator( elmId ) ;
     }
 
     private static readonly Regex XYZRegex = new Regex( @"^\s*\(\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\s*,\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\s*,\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\s*\)\s*/\s*\(\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\s*,\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\s*,\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\s*\)\s*$", RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant ) ;
@@ -105,33 +140,29 @@ namespace Arent3d.Architecture.Routing.EndPoint
       return new CoordinateIndicator( new XYZ( x, y, z ), new XYZ( vx, vy, vz ) ) ;
     }
 
-    private static bool TryParseEndSide( string s, out PassPointEndSide endSide )
-    {
-      endSide = default ;
-
-      if ( 1 != s.Length ) return false ;
-
-      switch ( s[ 0 ] ) {
-        case '+' :
-          endSide = PassPointEndSide.Forward ;
-          return true ;
-
-        case '-' :
-          endSide = PassPointEndSide.Reverse ;
-          return true ;
-
-        default : return false ;
-      }
-    }
-
     private static PassPointBranchEndIndicator? ParsePassPointBranchEndIndicatorImpl( string substring )
     {
-      var array = substring.Split( PassPointBranchEndSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
+      var array = substring.Split( IndicatorSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
       if ( array.Length < 2 ) return null ;
 
       if ( false == int.TryParse( array[ 0 ], out var elmId ) || false == double.TryParse( array[ 1 ], NumberStyles.Any, CultureInfo.InvariantCulture, out var angle ) ) return null ;
 
       return new PassPointBranchEndIndicator( elmId, angle ) ;
+    }
+
+    private static RouteIndicator? ParseRouteIndicatorImpl( string substring )
+    {
+      var array = substring.Split( IndicatorSplitter, 2, StringSplitOptions.RemoveEmptyEntries ) ;
+      if ( array.Length < 2 ) return null ;
+
+      if ( false == int.TryParse( array[ 1 ], out var subRouteIndex ) ) return null ;
+
+      return new RouteIndicator( Unescape( array[ 0 ] ), subRouteIndex ) ;
+    }
+
+    private static string Unescape( string str )
+    {
+      return Uri.UnescapeDataString( str ) ;
     }
 
     #endregion
@@ -155,7 +186,7 @@ namespace Arent3d.Architecture.Routing.EndPoint
 
     public static string ToString( PassPointEndIndicator ep )
     {
-      return $"p:{ep.ElementId}/{( ep.SideType == PassPointEndSide.Forward ? '+' : '-' )}" ;
+      return $"p:{ep.ElementId}" ;
     }
 
     public static string ToString( CoordinateIndicator ep )
@@ -168,9 +199,19 @@ namespace Arent3d.Architecture.Routing.EndPoint
       return FormattableString.Invariant( $"t:{ep.ElementId}/{ep.AngleDegree}" ) ;
     }
 
+    public static string ToString( RouteIndicator ep )
+    {
+      return FormattableString.Invariant( $"r:{Escape( ep.RouteName )}/{ep.SubRouteIndex}" ) ;
+    }
+
     private static string ToString( XYZ xyz )
     {
       return FormattableString.Invariant( $"({xyz.X}, {xyz.Y}, {xyz.Z})" ) ;
+    }
+
+    private static string Escape( string str )
+    {
+      return Uri.EscapeDataString( str ) ;
     }
 
     #endregion

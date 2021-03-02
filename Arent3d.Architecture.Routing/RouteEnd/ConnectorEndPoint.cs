@@ -1,7 +1,7 @@
 using Autodesk.Revit.DB ;
 using MathLib ;
 
-namespace Arent3d.Architecture.Routing.EndPoint
+namespace Arent3d.Architecture.Routing.RouteEnd
 {
   /// <summary>
   /// An <see cref="RoutingConnector"/> for a concrete connector <see cref="EndPointBase"/>.
@@ -24,19 +24,21 @@ namespace Arent3d.Architecture.Routing.EndPoint
     public override Vector3d Position => RoutingConnector.Origin.To3d() ;
 
     /// <summary>
-    /// Returns the first pipe direction.
+    /// Returns the flow vector.
     /// </summary>
-    public override Vector3d Direction
+    public override Vector3d GetDirection( bool isFrom )
     {
-      get
-      {
-        var dir = RoutingConnector.CoordinateSystem.BasisZ.To3d() ;
-        return IsStart ? dir : -dir ;
-      }
+      return RoutingConnector.CoordinateSystem.BasisZ.To3d().ForEndPointType( isFrom ) ;
     }
 
-    public ConnectorEndPoint( Route ownerRoute, Connector connector, bool isFromSide )
-      : base( ownerRoute, connector, isFromSide )
+    /// <summary>
+    /// Returns the end point's diameter.
+    /// </summary>
+    /// <returns>Diameter.</returns>
+    public override double? GetDiameter() => RoutingConnector.GetDiameter() ;
+
+    public ConnectorEndPoint( Route ownerRoute, Connector connector )
+      : base( ownerRoute, connector )
     {
       RoutingConnector = connector ;
     }

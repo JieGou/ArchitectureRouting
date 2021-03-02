@@ -3,7 +3,7 @@ using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
-using Arent3d.Architecture.Routing.EndPoint ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
@@ -22,57 +22,120 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     /// Collects from-to records to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected override IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
     {
       return ReadRouteRecordsByPick( uiDocument ).EnumerateAll().ToAsyncEnumerable() ;
     }
 
-    /// <summary>
-    /// Returns hard-coded sample from-to records.
-    /// </summary>
-    /// <returns>Routing from-to records.</returns>
-    private static IEnumerable<RouteRecord> ReadRouteRecordsByPick( UIDocument uiDocument )
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> ReadRouteRecordsByPick( UIDocument uiDocument )
     {
-      var routeRecords = new List<RouteRecord>() ;
-      UiThread.RevitUiDispatcher.Invoke( () =>
+      var segments = UiThread.RevitUiDispatcher.Invoke( () =>
       {
-        var routes = RouteCache.Get( uiDocument.Document ) ;
-
+        var document = uiDocument.Document ;
         var fromPickResult = ConnectorPicker.GetConnector( uiDocument, "Select the first connector", null ) ;
         var tempColor = SetTempColor( uiDocument, fromPickResult ) ;
         try {
           var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromPickResult ) ;
-          var fromIndicator = GetEndPointIndicator( fromPickResult, toPickResult ) ;
-          var toIndicator = GetEndPointIndicator( toPickResult, fromPickResult ) ;
 
-          if ( fromPickResult.SubRoute is { } subRoute1 ) {
-            var splitter = new RouteSplitter( subRoute1, fromPickResult.PickedElement!, toIndicator, false ) ;
-            routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute1.Route ) ) ;
-            routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute1.Route ) ) ;
-          }
-          else if ( toPickResult.SubRoute is { } subRoute2 ) {
-            var splitter = new RouteSplitter( subRoute2, fromPickResult.PickedElement!, fromIndicator, true ) ;
-            routeRecords.AddRange( RouteRecordUtils.ToRouteRecords( subRoute2.Route ) ) ;
-            routeRecords.AddRange( splitter.CreateInsertedRouteRecords( subRoute2.Route ) ) ;
-          }
-          else {
-            for ( var i = routes.Count + 1 ; ; ++i ) {
-              var name = "Picked_" + i ;
-              if ( routes.ContainsKey( name ) ) continue ;
-
-              routeRecords.Add( new RouteRecord( name, fromIndicator, toIndicator ) ) ;
-              break ;
-            }
-          }
+          return CreateNewSegmentList( document, fromPickResult, toPickResult ) ;
         }
         finally {
-          DisposeTempColor( uiDocument.Document, tempColor ) ;
+          DisposeTempColor( document, tempColor ) ;
         }
       } ) ;
 
-      foreach ( var record in routeRecords ) {
+      foreach ( var record in segments ) {
         yield return record ;
       }
+    }
+
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    {
+      var fromIndicator = GetEndPointIndicator( fromPickResult, toPickResult ) ;
+      var toIndicator = GetEndPointIndicator( toPickResult, fromPickResult ) ;
+
+      if ( fromPickResult.SubRoute is { } subRoute1 ) {
+        return CreateNewSegmentListForRoutePick( subRoute1, fromPickResult, toIndicator, false ) ;
+      }
+
+      if ( toPickResult.SubRoute is { } subRoute2 ) {
+        return CreateNewSegmentListForRoutePick( subRoute2, toPickResult, fromIndicator, true ) ;
+      }
+
+      var routes = RouteCache.Get( document ) ;
+
+      for ( var i = routes.Count + 1 ; ; ++i ) {
+        var name = "Picked_" + i ;
+        if ( routes.ContainsKey( name ) ) continue ;
+
+        return new[] { ( name, new RouteSegment( fromIndicator, toIndicator, -1 ) ) } ;
+      }
+    }
+
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPointIndicator anotherIndicator, bool anotherIndicatorIsFromSide )
+    {
+      return CreateSubBranchRoute( subRoute, routePickResult, anotherIndicator, anotherIndicatorIsFromSide ) ;
+
+      // on adding new segment into picked route.
+      //return AppendNewSegmentIntoPickedRoute( subRoute, routePickResult, anotherIndicator, anotherIndicatorIsFromSide ) ;
+    }
+
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPointIndicator anotherIndicator, bool anotherIndicatorIsFromSide )
+    {
+      var routes = RouteCache.Get( subRoute.Route.Document ) ;
+      var newIndicator = new RouteIndicator( subRoute.Route.RouteName, subRoute.SubRouteIndex ) ;
+
+      for ( var i = routes.Count + 1 ; ; ++i ) {
+        var name = "Picked_" + i ;
+        if ( routes.ContainsKey( name ) ) continue ;
+
+        if ( anotherIndicatorIsFromSide ) {
+          return new[] { ( name, new RouteSegment( anotherIndicator, newIndicator, -1 ) ) } ;
+        }
+        else {
+          return new[] { ( name, new RouteSegment( newIndicator, anotherIndicator, -1 ) ) } ;
+        }
+      }
+    }
+
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPointIndicator anotherIndicator, bool anotherIndicatorIsFromSide )
+    {
+      var segments = subRoute.Route.ToSegmentsWithNameList() ;
+      segments.Add( CreateNewSegment( subRoute, routePickResult, anotherIndicator, anotherIndicatorIsFromSide ) ) ;
+      return segments ;
+    }
+
+    private static (string RouteName, RouteSegment Segment) CreateNewSegment( SubRoute subRoute, ConnectorPicker.IPickResult pickResult, IEndPointIndicator newEndPointIndicator, bool newEndPointIndicatorIsFromSide )
+    {
+      var detector = new RouteSegmentDetector( subRoute, pickResult.PickedElement ) ;
+      foreach ( var segment in subRoute.Route.RouteSegments.EnumerateAll() ) {
+        if ( false == detector.IsPassingThrough( segment ) ) continue ;
+
+        if ( newEndPointIndicatorIsFromSide ) {
+          return ( subRoute.Route.RouteName, new RouteSegment( newEndPointIndicator, segment.ToId, -1 ) ) ;
+        }
+        else {
+          return ( subRoute.Route.RouteName, new RouteSegment( segment.FromId, newEndPointIndicator, -1 ) ) ;
+        }
+      }
+
+      // fall through: coordinational record.
+      var origin = pickResult.GetOrigin() ;
+      var pickedIndicator = GetEndPointIndicator( pickResult.PickedElement.Document, subRoute, origin, newEndPointIndicator ) ;
+      if ( newEndPointIndicatorIsFromSide ) {
+        return ( subRoute.Route.RouteName, new RouteSegment( newEndPointIndicator, pickedIndicator, -1 ) ) ;
+      }
+      else {
+        return ( subRoute.Route.RouteName, new RouteSegment( pickedIndicator, newEndPointIndicator, -1 ) ) ;
+      }
+    }
+
+    private static IEndPointIndicator GetEndPointIndicator( Document document, SubRoute subRoute, XYZ origin, IEndPointIndicator target )
+    {
+      var endPoint = target.GetEndPoint( document, subRoute ) ;
+      if ( null == endPoint ) return new CoordinateIndicator( origin, XYZ.BasisX ) ;
+
+      return GetCoordinateIndicator( origin, endPoint.Position.ToXYZ() ) ;
     }
 
     private static IDisposable SetTempColor( UIDocument uiDocument, ConnectorPicker.IPickResult pickResult )
@@ -153,46 +216,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
 
       return new CoordinateIndicator( origin, dir ) ;
-    }
-
-
-    private class RouteSplitter
-    {
-      private readonly RouteInfoDetector _detector ;
-      private readonly IEndPointIndicator _newIndicator ;
-      private readonly bool _newConnectorIsFromConnector ;
-
-      public RouteSplitter( SubRoute subRoute, Element splitElement, IEndPointIndicator endPointIndicator, bool newConnectorIsFromConnector )
-      {
-        _detector = new RouteInfoDetector( subRoute, splitElement ) ;
-        _newIndicator = endPointIndicator ;
-        _newConnectorIsFromConnector = newConnectorIsFromConnector ;
-      }
-
-      public IEnumerable<RouteRecord> CreateInsertedRouteRecords( Route route )
-      {
-        foreach ( var info in route.RouteInfos ) {
-          var index = _detector.GetPassedThroughPassPointIndex( info ) ;
-          if ( index < 0 ) continue ;
-
-          if ( _newConnectorIsFromConnector ) {
-            yield return CreateInsertedRouteRecordFrom( route.RouteName, info, index, _newIndicator ) ;
-          }
-          else {
-            yield return CreateInsertedRouteRecordTo( route.RouteName, info, index, _newIndicator ) ;
-          }
-        }
-      }
-
-      private static RouteRecord CreateInsertedRouteRecordFrom( string routeName, RouteInfo info, int index, IEndPointIndicator newIndicator )
-      {
-        return new RouteRecord( routeName, newIndicator, info.ToId, info.PassPoints.SubArray( index ) ) ;
-      }
-
-      private static RouteRecord CreateInsertedRouteRecordTo( string routeName, RouteInfo info, int index, IEndPointIndicator newIndicator )
-      {
-        return new RouteRecord( routeName, info.FromId, newIndicator, info.PassPoints.SubArray( 0, index ) ) ;
-      }
     }
   }
 }

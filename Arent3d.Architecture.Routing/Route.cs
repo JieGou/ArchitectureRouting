@@ -3,7 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
-using Arent3d.Architecture.Routing.EndPoint ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
@@ -30,14 +30,14 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Reverse dictionary to search which sub route an end point belongs to.
     /// </summary>
-    private readonly Dictionary<IEndPointIndicator, (SubRoute, bool)> _subRouteMap = new() ;
+    private readonly Dictionary<(IEndPointIndicator Indicator, bool IsFrom), SubRoute> _subRouteMap = new() ;
 
     public string FluidPhase => DefaultFluidPhase ;
     public LineType ServiceType => LineType.Utility ;
     public LoopType LoopType => LoopType.Non ;
     public double Temperature => 30 ; // provisional
 
-    private readonly List<RouteInfo> _routeInfos = new() ;
+    private readonly List<RouteSegment> _routeSegments = new() ;
     private readonly List<SubRoute> _subRoutes = new() ;
 
     public IReadOnlyCollection<SubRoute> SubRoutes => _subRoutes ;
@@ -48,12 +48,13 @@ namespace Arent3d.Architecture.Routing
       return _subRoutes[ index ] ;
     }
 
-    public IReadOnlyCollection<RouteInfo> RouteInfos => _routeInfos ;
+    public IReadOnlyCollection<RouteSegment> RouteSegments => _routeSegments ;
 
     public ConnectorIndicator? FirstFromConnector()
     {
       return _subRoutes.SelectMany( subRoute => subRoute.FromEndPointIndicators.OfType<ConnectorIndicator>() ).FirstOrDefault() ;
     }
+
     public ConnectorIndicator? FirstToConnector()
     {
       return _subRoutes.SelectMany( subRoute => subRoute.ToEndPointIndicators.OfType<ConnectorIndicator>() ).FirstOrDefault() ;
@@ -80,7 +81,7 @@ namespace Arent3d.Architecture.Routing
     public void Clear()
     {
       _subRouteMap.Clear() ;
-      _routeInfos.Clear() ;
+      _routeSegments.Clear() ;
       _subRoutes.Clear() ;
       _domain = null ;
     }
@@ -88,93 +89,69 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Add from-to information.
     /// </summary>
-    /// <param name="fromId">From connector.</param>
-    /// <param name="toId">To connector.</param>
-    /// <param name="passPointIds">Pass point sequence, if needed.</param>
+    /// <param name="segment">From-to segment.</param>
     /// <returns>False, if any connector id or pass point id is not found, or has any contradictions in the from-to list (i.e., one connector is registered as both from and end).</returns>
-    public bool RegisterConnectors( IEndPointIndicator fromId, IEndPointIndicator toId, params int[] passPointIds )
+    public bool RegisterSegment( RouteSegment segment )
     {
+      var fromId = segment.FromId ;
+      var toId = segment.ToId ;
+
       // check id.
-      if ( fromId is ConnectorIndicator fromInd && null == Document.FindConnector( fromInd ) ) return false ;
-      if ( toId is ConnectorIndicator toInd && null == Document.FindConnector( toInd ) ) return false ;
+      if ( false == fromId.IsValid( Document, true ) ) return false ;
+      if ( false == toId.IsValid( Document, false ) ) return false ;
 
-      foreach ( var passPointId in passPointIds ) {
-        if ( null == Document.FindPassPointElement( passPointId ) ) return false ;
+      if ( fromId.IsOneSided && _subRouteMap.ContainsKey( ( fromId, false ) ) ) {
+        // contradiction!
+        return false ;
       }
 
-      // split by segments
-      var segments = new List<(IEndPointIndicator, IEndPointIndicator)>() ;
-      if ( 0 == passPointIds.Length ) {
-        segments.Add( ( fromId, toId ) ) ;
-      }
-      else {
-        int n = passPointIds.Length ;
-        segments.Add( ( fromId, new PassPointEndIndicator( passPointIds[ 0 ], PassPointEndSide.Reverse ) ) ) ;
-        for ( int i = 1 ; i < n ; ++i ) {
-          segments.Add( ( new PassPointEndIndicator( passPointIds[ i - 1 ], PassPointEndSide.Forward ), new PassPointEndIndicator( passPointIds[ i ], PassPointEndSide.Reverse ) ) ) ;
-        }
-
-        segments.Add( ( new PassPointEndIndicator( passPointIds[ n - 1 ], PassPointEndSide.Forward ), toId ) ) ;
+      if ( toId.IsOneSided && _subRouteMap.ContainsKey( ( toId, true ) ) ) {
+        // contradiction!
+        return false ;
       }
 
-      foreach ( var (from, to) in segments ) {
-        if ( _subRouteMap.TryGetValue( from, out var pair1 ) && true == pair1.Item2 ) {
-          // contradiction!
-          return false ;
-        }
+      if ( false == _subRouteMap.TryGetValue( ( fromId, true ), out var subRoute1 ) ) subRoute1 = null ;
+      if ( false == _subRouteMap.TryGetValue( ( toId, false ), out var subRoute2 ) ) subRoute2 = null ;
 
-        if ( _subRouteMap.TryGetValue( to, out var pair2 ) && false == pair2.Item2 ) {
-          // contradiction!
-          return false ;
-        }
-      }
-
-      foreach ( var (from, to) in segments ) {
-        _subRouteMap.TryGetValue( from, out var pair1 ) ;
-        _subRouteMap.TryGetValue( to, out var pair2 ) ;
-        var subRoute1 = pair1.Item1 ;
-        var subRoute2 = pair2.Item1 ;
-        if ( null != subRoute1 ) {
-          if ( null != subRoute2 ) {
-            if ( subRoute1 != subRoute2 ) {
-              // merge.
-              foreach ( var ind in subRoute2.FromEndPointIndicators ) {
-                _subRouteMap[ ind ] = ( subRoute1, false ) ;
-              }
-
-              foreach ( var ind in subRoute2.ToEndPointIndicators ) {
-                _subRouteMap[ ind ] = ( subRoute1, true ) ;
-              }
-
-              subRoute1.Merge( subRoute2 ) ;
+      if ( null != subRoute1 ) {
+        if ( null != subRoute2 ) {
+          if ( subRoute1 != subRoute2 ) {
+            // merge.
+            foreach ( var ind in subRoute2.FromEndPointIndicators ) {
+              _subRouteMap[ ( ind, true ) ] = subRoute1 ;
             }
-            else {
-              // already added.
+
+            foreach ( var ind in subRoute2.ToEndPointIndicators ) {
+              _subRouteMap[ ( ind, false ) ] = subRoute1 ;
             }
+
+            subRoute1.Merge( subRoute2 ) ;
           }
           else {
-            // to is newly added
-            subRoute1.AddTo( to ) ;
-            _subRouteMap.Add( to, ( subRoute1, true ) ) ;
+            // already added.
           }
         }
-        else if ( null != subRoute2 ) {
-          // from is newly added
-          subRoute2.AddFrom( from ) ;
-          _subRouteMap.Add( from, ( subRoute2, false ) ) ;
-        }
         else {
-          // new sub route.
-          var subRoute = new SubRoute( this, _subRoutes.Count ) ;
-          subRoute.AddFrom( from ) ;
-          subRoute.AddTo( to ) ;
-          _subRoutes.Add( subRoute ) ;
-          _subRouteMap.Add( from, ( subRoute, false ) ) ;
-          _subRouteMap.Add( to, ( subRoute, true ) ) ;
+          // toId is newly added
+          subRoute1.AddSegment( segment ) ;
+          _subRouteMap.Add( ( toId, false ), subRoute1 ) ;
         }
       }
+      else if ( null != subRoute2 ) {
+        // fromId is newly added
+        subRoute2.AddSegment( segment ) ;
+        _subRouteMap.Add( ( fromId, true ), subRoute2 ) ;
+      }
+      else {
+        // new sub route.
+        var subRoute = new SubRoute( this, _subRoutes.Count ) ;
+        subRoute.AddSegment( segment ) ;
+        _subRoutes.Add( subRoute ) ;
+        _subRouteMap.Add( ( fromId, true ), subRoute ) ;
+        _subRouteMap.Add( ( toId, false ), subRoute ) ;
+      }
 
-      _routeInfos.Add( new RouteInfo( fromId, toId, passPointIds ) ) ;
+      _routeSegments.Add( segment ) ;
       return true ;
     }
 
@@ -201,11 +178,37 @@ namespace Arent3d.Architecture.Routing
 
     #region Branches
 
+    public static HashSet<Route> GetAllRelatedBranches( IEnumerable<Route> routeList )
+    {
+      var routes = new HashSet<Route>() ;
+      foreach ( var route in routeList ) {
+        route.CollectRelatedBranches( routes ) ;
+      }
+
+      return routes ;
+    }
+
+    public IReadOnlyCollection<Route> GetAllRelatedBranches()
+    {
+      var routes = new HashSet<Route>() ;
+      CollectRelatedBranches( routes ) ;
+      return routes ;
+    }
+
+    private void CollectRelatedBranches( HashSet<Route> routes )
+    {
+      AddChildren( routes, this, r =>
+      {
+        r.GetParentBranches().ForEach( parent => parent.CollectRelatedBranches( routes ) ) ;
+      } ) ;
+    }
+
+
     public HashSet<Route> GetParentBranches()
     {
       var routes = new HashSet<Route>() ;
       foreach ( var subRoute in _subRoutes ) {
-        routes.UnionWith( subRoute.AllEndPointIndicators.Select( ind => ind.ParentBranch( Document ) ).NonNull() ) ;
+        routes.UnionWith( subRoute.AllEndPointIndicators.Select( ind => ind.ParentBranch( Document ).Route ).NonNull() ) ;
       }
 
       routes.Remove( this ) ;
@@ -215,15 +218,15 @@ namespace Arent3d.Architecture.Routing
 
     public IEnumerable<Route> GetChildBranches()
     {
-      return RouteCache.Get( Document ).Values.Where( this.IsParentBranch ) ;
+      return RouteCache.Get( Document ).Values.Where( IsParentBranch ) ;
     }
 
     public bool IsParentBranch( Route route )
     {
-      return route._subRoutes.SelectMany( subRoute => subRoute.AllEndPointIndicators ).Any( ind => ind.ParentBranch( route.Document ) == this ) ;
+      return route._subRoutes.SelectMany( subRoute => subRoute.AllEndPointIndicators ).Any( ind => ind.ParentBranch( route.Document ).Route == this ) ;
     }
 
-    public static IEnumerable<Route> CollectAllDescendantBranches( IEnumerable<Route> routes )
+    public static IReadOnlyCollection<Route> CollectAllDescendantBranches( IEnumerable<Route> routes )
     {
       var routeSet = new HashSet<Route>() ;
       foreach ( var route in routes ) {
@@ -232,19 +235,20 @@ namespace Arent3d.Architecture.Routing
       return routeSet ;
     }
 
-    public IEnumerable<Route> CollectAllDescendantBranches()
+    public IReadOnlyCollection<Route> CollectAllDescendantBranches()
     {
       var routeSet = new HashSet<Route>() ;
       AddChildren( routeSet, this ) ;
       return routeSet ;
     }
 
-    private static void AddChildren( HashSet<Route> routeSet, Route root )
+    private static void AddChildren( HashSet<Route> routeSet, Route root, Action<Route>? onAdd = null )
     {
       if ( false == routeSet.Add( root ) ) return ;
+      onAdd?.Invoke( root ) ;
 
       foreach ( var child in root.GetChildBranches() ) {
-        AddChildren( routeSet, child ) ;
+        AddChildren( routeSet, child, onAdd ) ;
       }
     }
 
@@ -252,25 +256,25 @@ namespace Arent3d.Architecture.Routing
 
     #region Store
 
-    private const string RouteIdField = "RouteId" ;
-    private const string RouteInfosField = "RouteInfos" ;
+    private const string RouteNameField = "RouteName" ;
+    private const string RouteSegmentsField = "RouteSegments" ;
 
     protected override void SetupAllFields( FieldGenerator generator )
     {
-      generator.SetSingle<string>( RouteIdField ) ;
-      generator.SetArray<RouteInfo>( RouteInfosField ) ;
+      generator.SetSingle<string>( RouteNameField ) ;
+      generator.SetArray<RouteSegment>( RouteSegmentsField ) ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
     {
-      RouteName = reader.GetSingle<string>( RouteIdField ) ;
-      reader.GetArray<RouteInfo>( RouteInfosField ).ForEach( info => RegisterConnectors( info.FromId, info.ToId, info.PassPoints ) ) ;
+      RouteName = reader.GetSingle<string>( RouteNameField ) ;
+      reader.GetArray<RouteSegment>( RouteSegmentsField ).ForEach( segment => RegisterSegment( segment ) ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
-      writer.SetSingle( RouteIdField, RouteName ) ;
-      writer.SetArray( RouteInfosField, _routeInfos ) ;
+      writer.SetSingle( RouteNameField, RouteName ) ;
+      writer.SetArray( RouteSegmentsField, _routeSegments ) ;
     }
 
     #endregion

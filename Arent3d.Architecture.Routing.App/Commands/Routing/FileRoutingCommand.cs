@@ -20,12 +20,12 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     /// Collects from-to records to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected override IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
     {
       var csvFileName = OpenFromToCsv() ;
       if ( null == csvFileName ) return null ;
 
-      return ReadRouteRecordsFromFile( csvFileName ) ;
+      return ReadRouteRecordsFromFile( csvFileName ).ToSegmentsWithName( uiDocument.Document ) ;
     }
 
     private static async IAsyncEnumerable<RouteRecord> ReadRouteRecordsFromFile( string csvFileName )

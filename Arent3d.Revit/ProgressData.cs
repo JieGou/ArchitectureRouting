@@ -161,6 +161,41 @@ namespace Arent3d.Revit
     /// <remarks>
     /// It is not equivalent to
     /// <code>
+    /// var n = col.Count() ;
+    /// foreach ( var item in col ) {
+    ///   using ( progressData?.Reserve( 1.0 / n ) ) {
+    ///     func( item ) ;
+    ///   }
+    /// }
+    /// </code>
+    /// because this method includes collection enumeration into the using block.
+    /// </remarks>
+    /// <param name="progressData">Progress data.</param>
+    /// <param name="n">Assumed enumeration count.</param>
+    /// <param name="col">A collection.</param>
+    /// <param name="func">An operation which is applied for each elements in <see cref="col"/>, with index from 0.</param>
+    /// <typeparam name="T">Item type of the collection.</typeparam>
+    public static void ForEach<T>( this IProgressData? progressData, int n, IEnumerable<T> col, Action<T, int> func )
+    {
+      var step = 1.0 / n ;
+      using var enumerator = col.GetEnumerator() ;
+      for ( var i = 0 ; ; ++i ) {
+        using ( progressData?.Reserve( step ) ) {
+          if ( false == enumerator.MoveNext() ) {
+            return ;
+          }
+
+          func( enumerator.Current, i ) ;
+        }
+      }
+    }
+
+    /// <summary>
+    /// Enumerate and progress a collection action.
+    /// </summary>
+    /// <remarks>
+    /// It is not equivalent to
+    /// <code>
     /// foreach ( var item in col ) {
     ///   using ( progressData?.Reserve( 1.0 / col.Count ) ) {
     ///     func( item ) ;
@@ -174,6 +209,29 @@ namespace Arent3d.Revit
     /// <param name="func">An operation which is applied for each elements in <see cref="col"/>.</param>
     /// <typeparam name="T">Item type of the collection.</typeparam>
     public static void ForEach<T>( this IProgressData? progressData, IReadOnlyCollection<T> col, Action<T> func )
+    {
+      progressData.ForEach( col.Count, col, func ) ;
+    }
+
+    /// <summary>
+    /// Enumerate and progress a collection action.
+    /// </summary>
+    /// <remarks>
+    /// It is not equivalent to
+    /// <code>
+    /// foreach ( var item in col ) {
+    ///   using ( progressData?.Reserve( 1.0 / col.Count ) ) {
+    ///     func( item ) ;
+    ///   }
+    /// }
+    /// </code>
+    /// because this method includes collection enumeration into the using block.
+    /// </remarks>
+    /// <param name="progressData">Progress data.</param>
+    /// <param name="col">A collection.</param>
+    /// <param name="func">An operation which is applied for each elements in <see cref="col"/>, with index from 0.</param>
+    /// <typeparam name="T">Item type of the collection.</typeparam>
+    public static void ForEach<T>( this IProgressData? progressData, IReadOnlyCollection<T> col, Action<T, int> func )
     {
       progressData.ForEach( col.Count, col, func ) ;
     }

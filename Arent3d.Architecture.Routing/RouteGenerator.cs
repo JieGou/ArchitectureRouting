@@ -20,12 +20,13 @@ namespace Arent3d.Architecture.Routing
     private readonly List<Connector[]> _badConnectors = new() ;
     private readonly PassPointConnectorMapper _globalPassPointConnectorMapper = new() ;
 
-    public RouteGenerator( IEnumerable<AutoRoutingTarget> targets, Document document, CollisionTree.ICollisionCheckTargetCollector collector )
+    public RouteGenerator( IReadOnlyCollection<Route> routes, Document document, CollisionTree.ICollisionCheckTargetCollector collector )
     {
       _document = document ;
 
+      _routeMEPSystems = CreateRouteMEPSystems( document, routes ) ;
+      var targets = AutoRoutingTargetGenerator.Run( _document, routes, _routeMEPSystems ) ;
       RoutingTargets = targets.EnumerateAll() ;
-      _routeMEPSystems = CreateRouteMEPSystems( document, RoutingTargets ) ;
       ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
 
       CollisionCheckTree = new CollisionTree.CollisionTree( collector ) ;
@@ -34,9 +35,9 @@ namespace Arent3d.Architecture.Routing
       Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;
     }
 
-    private static IReadOnlyDictionary<Route, RouteMEPSystem> CreateRouteMEPSystems( Document document, IReadOnlyCollection<AutoRoutingTarget> routingTargets )
+    private static IReadOnlyDictionary<Route, RouteMEPSystem> CreateRouteMEPSystems( Document document, IReadOnlyCollection<Route> routes )
     {
-      return ThreadDispatcher.Dispatch( () => routingTargets.Select( target => target.SubRoute.Route ).Distinct().ToDictionary( route => route, route => new RouteMEPSystem( document, route ) ) ) ;
+      return ThreadDispatcher.Dispatch( () => routes.Distinct().ToDictionary( route => route, route => new RouteMEPSystem( document, route ) ) ) ;
     }
 
     public IReadOnlyCollection<Connector[]> GetBadConnectorSet() => _badConnectors ;
@@ -52,7 +53,7 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     private void ErasePreviousRoutes()
     {
-      ThreadDispatcher.Dispatch( () => EraseRoutes( _document, RoutingTargets.Select( t => t.SubRoute.Route.RouteName ), false ) ) ;
+      ThreadDispatcher.Dispatch( () => EraseRoutes( _document, RoutingTargets.SelectMany( t => t.Routes ).Select( route => route.RouteName ), false ) ) ;
     }
 
     public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints )
@@ -84,13 +85,16 @@ namespace Arent3d.Architecture.Routing
 
     protected override void OnGenerationStarted()
     {
+      RoutingTargets.DumpRoutingTargets( GetTargetsLogFileName( _document ) ) ;
+
       // TODO
     }
 
     protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, AutoRoutingResult result )
     {
-      result.DebugExport( GetDebugFileName( _document, routingTarget ) ) ;
-      var ductCreator = new MEPSystemCreator( _document, routingTarget, _routeMEPSystems[ routingTarget.SubRoute.Route ] ) ;
+      result.DebugExport( GetResultLogFileName( _document, routingTarget ) ) ;
+
+      var ductCreator = new MEPSystemCreator( _document, routingTarget, _routeMEPSystems ) ;
 
       foreach ( var routeVertex in result.RouteVertices ) {
         if ( routeVertex is not TerminalPoint ) continue ;
@@ -102,7 +106,7 @@ namespace Arent3d.Architecture.Routing
         ductCreator.CreateEdgeElement( routeEdge, result.GetPassingEndPoints( routeEdge ) ) ;
       }
 
-      ductCreator.ConnectAllVertices( routingTarget ) ;
+      ductCreator.ConnectAllVertices() ;
 
       _globalPassPointConnectorMapper.Merge( ductCreator.PassPointConnectorMapper ) ;
 
@@ -112,12 +116,6 @@ namespace Arent3d.Architecture.Routing
     private void RegisterBadConnectors( IEnumerable<Connector[]> badConnectorSet )
     {
       _badConnectors.AddRange( badConnectorSet ) ;
-    }
-
-    private static string GetDebugFileName( Document document, AutoRoutingTarget routingTarget )
-    {
-      var dir = Path.Combine( Path.GetDirectoryName( document.PathName )!, Path.GetFileNameWithoutExtension( document.PathName ) ) ;
-      return Path.Combine( Directory.CreateDirectory( dir ).FullName, routingTarget.LineId + ".log" ) ;
     }
 
     protected override void OnGenerationFinished()
@@ -149,6 +147,22 @@ namespace Arent3d.Architecture.Routing
           element.SetProperty( RoutingParameter.RelatedPassPointId, passPointId ) ;
         }
       }
+    }
+
+    private static string GetLogDirectoryName( Document document )
+    {
+      var dir = Path.Combine( Path.GetDirectoryName( document.PathName )!, Path.GetFileNameWithoutExtension( document.PathName ) ) ;
+      return Directory.CreateDirectory( dir ).FullName ;
+    }
+
+    private static string GetTargetsLogFileName( Document document )
+    {
+      return Path.Combine( GetLogDirectoryName( document ), "RoutingTargets.xml" ) ;
+    }
+
+    private static string GetResultLogFileName( Document document, AutoRoutingTarget routingTarget )
+    {
+      return Path.Combine( GetLogDirectoryName( document ), routingTarget.LineId + ".log" ) ;
     }
   }
 }

@@ -1,5 +1,5 @@
 using System ;
-using Arent3d.Architecture.Routing.EndPoint ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit.Csv.Converters ;
 using CsvHelper ;
 using CsvHelper.Configuration ;
@@ -13,38 +13,23 @@ namespace Arent3d.Architecture.Routing.App
   /// </summary>
   public class RouteRecord
   {
-    [Index( 0 ), Name( "Route ID" )]
-    public string RouteId { get ; set ; }
+    [Index( 0 ), Name( "Route Name" )]
+    public string RouteName { get ; set ; } = string.Empty ;
 
-    [Index( 1 ), Name( "From" ), TypeConverter( typeof( EndPointIndicatorConverter ) )]
-    public IEndPointIndicator? FromId { get ; set ; }
+    [Index( 1 ), Name( "From Key" )]
+    public string FromKey { get ; set ; } = string.Empty ;
 
-    [Index( 2 ), Name( "To" ), TypeConverter( typeof( EndPointIndicatorConverter ) )]
-    public IEndPointIndicator? ToId { get ; set ; }
+    [Index( 2 ), Name( "From End" ), TypeConverter( typeof( EndPointIndicatorConverter ) )]
+    public IEndPointIndicator? FromIndicator { get ; set ; }
 
-    //[Index( 3 ), Name( "Pass Point IDs" ), TypeConverter( typeof( IntArrayConverter ) )]
-    [Ignore]
-    public int[] PassPoints { get ; set ; }
+    [Index( 3 ), Name( "To Key" )]
+    public string ToKey { get ; set ; } = string.Empty ;
 
-    public RouteRecord( string routeId, IEndPointIndicator fromId, IEndPointIndicator toId, params int[] passPoints )
-    {
-      RouteId = routeId ;
-      FromId = fromId ;
-      ToId = toId ;
-      PassPoints = passPoints ;
-    }
+    [Index( 4 ), Name( "To End" ), TypeConverter( typeof( EndPointIndicatorConverter ) )]
+    public IEndPointIndicator? ToIndicator { get ; set ; }
 
-    public RouteRecord( string routeId, RouteInfo routeInfo ) : this( routeId, routeInfo.FromId, routeInfo.ToId, routeInfo.PassPoints )
-    {
-    }
-
-    public RouteRecord()
-    {
-      RouteId = string.Empty ;
-      PassPoints = Array.Empty<int>() ;
-      FromId = null ;
-      ToId = null ;
-    }
+    [Index( 5 ), Name( "Nominal Diameter" )]
+    public double NominalDiameter { get ; set ; } = -1 ;
   }
 
   internal class EndPointIndicatorConverter : ITypeConverter

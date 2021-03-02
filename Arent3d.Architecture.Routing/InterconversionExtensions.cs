@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing
       return new PipeDiameter( diameter ) ;
     }
 
-    public static IPipeDiameter GetDiameter( this Connector connector )
+    public static double GetDiameter( this Connector connector )
     {
       return ( connector.Shape switch
       {
@@ -31,26 +31,26 @@ namespace Arent3d.Architecture.Routing
         ConnectorProfileType.Rectangular => Math.Max( connector.Width, connector.Height ),
         ConnectorProfileType.Round => connector.Radius * 2,
         _ => throw new ArgumentOutOfRangeException(),
-      } ).DiameterValueToPipeDiameter() ;
+      } ) ;
     }
 
-    public static void SetDiameter( this Connector connector, IPipeDiameter diameter )
+    public static void SetDiameter( this Connector connector, double diameter )
     {
       switch ( connector.Shape ) {
         case ConnectorProfileType.Oval :
-          connector.Radius = diameter.Outside * 0.5 ;
+          connector.Radius = diameter * 0.5 ;
           break ;
 
         case ConnectorProfileType.Rectangular :
         {
-          var ratio = diameter.Outside / Math.Max( connector.Width, connector.Height ) ;
+          var ratio = diameter / Math.Max( connector.Width, connector.Height ) ;
           connector.Width *= ratio ;
           connector.Height *= ratio ;
           break ;
         }
 
         case ConnectorProfileType.Round :
-          connector.Radius = diameter.Outside * 0.5 ;
+          connector.Radius = diameter * 0.5 ;
           break ;
 
         default : throw new ArgumentOutOfRangeException() ;

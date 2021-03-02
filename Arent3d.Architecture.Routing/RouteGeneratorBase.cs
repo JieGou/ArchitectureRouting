@@ -1,6 +1,5 @@
 using System ;
 using System.Collections.Generic ;
-using System.Threading.Tasks ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
 
@@ -57,7 +56,7 @@ namespace Arent3d.Architecture.Routing
         mainProgress.ForEach( RoutingTargets.Count, ApiForAutoRouting.Execute( StructureGraph, RoutingTargets, CollisionCheckTree ), item =>
         {
           var (src, result) = item ;
-          if ( null == result || ! ( src is TAutoRoutingTarget srcTarget ) ) return ;
+          if ( src is not TAutoRoutingTarget srcTarget ) return ;
 
           var wrapper = new AutoRoutingResult( result ) ;
           ThreadDispatcher.Dispatch( () => OnRoutingTargetProcessed( srcTarget, wrapper ) ) ;

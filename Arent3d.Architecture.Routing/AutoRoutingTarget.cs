@@ -1,7 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.EndPoint ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
@@ -11,34 +11,127 @@ using MathLib ;
 namespace Arent3d.Architecture.Routing
 {
   public class AutoRoutingTarget : IAutoRoutingTarget
-  {
+  { 
     /// <summary>
-    /// A <see cref="SubRoute"/> which an <see cref="AutoRoutingTarget"/> belongs to.
+    /// All routes an <see cref="AutoRoutingTarget"/> is related to.
     /// </summary>
-    public SubRoute SubRoute { get ; }
-
+    public IReadOnlyCollection<Route> Routes { get ; }
+    
     /// <summary>
     /// Routing end points which fluid flows from.
     /// </summary>
-    private readonly IReadOnlyCollection<EndPointBase> _fromEndPoints ;
+    private readonly IReadOnlyCollection<AutoRoutingEndPoint> _fromEndPoints ;
 
     /// <summary>
     /// Routing end points which fluid flows to.
     /// </summary>
-    private readonly IReadOnlyCollection<EndPointBase> _toEndPoints ;
+    private readonly IReadOnlyCollection<AutoRoutingEndPoint> _toEndPoints ;
+
+    private readonly IReadOnlyDictionary<AutoRoutingEndPoint, SubRoute> _ep2SubRoute ;
 
     /// <summary>
     /// Returns all routing end points.
     /// </summary>
-    public IEnumerable<EndPointBase> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
+    public IEnumerable<AutoRoutingEndPoint> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
 
-    public AutoRoutingTarget( Document document, SubRoute subRoute, int priority )
+    public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<Route, RouteMEPSystem> routeMepSystemDictionary )
     {
-      SubRoute = subRoute ;
-      _fromEndPoints = subRoute.GetFromEndPoints( document ).EnumerateAll() ;
-      _toEndPoints = subRoute.GetToEndPoints( document ).EnumerateAll() ;
+      Routes = subRoutes.Select( subRoute => subRoute.Route ).Distinct().EnumerateAll() ;
 
-      Condition = new AutoRoutingCondition( document, SubRoute, priority ) ;
+      var depths = GetDepths( document, subRoutes ) ;
+
+      var dic = new Dictionary<AutoRoutingEndPoint, SubRoute>() ;
+      _fromEndPoints = GenerateEndPointList( subRoutes, subRoute => GetFromEndPoints( subRoute, document, depths[ subRoute ], routeMepSystemDictionary[ subRoute.Route ] ), dic ) ;
+      _toEndPoints = GenerateEndPointList( subRoutes, subRoute => GetToEndPoints( subRoute, document, depths[ subRoute ], routeMepSystemDictionary[ subRoute.Route ] ), dic ) ;
+      _ep2SubRoute = dic ;
+      
+      AutoRoutingEndPoint.ApplyDepths( _fromEndPoints, _toEndPoints ) ;
+
+      var firstSubRoute = subRoutes.First() ;
+      LineId = $"{firstSubRoute.Route.RouteName}@{firstSubRoute.SubRouteIndex}" ;
+
+      Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ] ) ;
+    }
+
+    private static Dictionary<SubRoute, int> GetDepths( Document document, IReadOnlyCollection<SubRoute> subRoutes )
+    {
+      var parentInfo = CollectSubRouteParents( document, subRoutes ) ;
+
+      var result = new Dictionary<SubRoute, int>() ;
+      var newDepthList = new List<SubRoute>() ;
+      var newDepth = 0 ;
+      while ( 0 < parentInfo.Count ) {
+        newDepthList.Clear() ;
+
+        foreach ( var (subRoute, parents) in parentInfo ) {
+          if ( 0 == parents.Count ) {
+            newDepthList.Add( subRoute ) ;
+          }
+        }
+        
+        foreach ( var subRoute in newDepthList ) {
+          result.Add( subRoute, newDepth ) ;
+
+          parentInfo.Remove( subRoute ) ;
+        }
+        
+        foreach ( var (_, parents) in parentInfo ) {
+          parents.RemoveAll( newDepthList.Contains ) ;
+        }
+
+        ++newDepth ;
+      }
+
+      return result ;
+    }
+
+    private static IReadOnlyCollection<AutoRoutingEndPoint> GenerateEndPointList( IEnumerable<SubRoute> subRoutes, Func<SubRoute, IEnumerable<AutoRoutingEndPoint>> generator, Dictionary<AutoRoutingEndPoint, SubRoute> dic )
+    {
+      var list = new List<AutoRoutingEndPoint>() ;
+
+      foreach ( var subRoute in subRoutes ) {
+        foreach ( var ep in generator( subRoute ) ) {
+          list.Add( ep ) ;
+          dic.Add( ep, subRoute ) ;
+        }
+      }
+
+      return list ;
+    }
+
+    private static Dictionary<SubRoute, List<SubRoute>> CollectSubRouteParents( Document document, IReadOnlyCollection<SubRoute> subRoutes )
+    {
+      var subRouteAndParents = subRoutes.ToDictionary( r => r, r => new List<SubRoute>() ) ;
+
+      foreach ( var subRoute in subRoutes ) {
+        foreach ( var parent in subRoute.AllEndPointIndicators.Select( ep => ep.ParentBranch( document ).SubRoute ).NonNull() ) {
+          if ( false == subRouteAndParents.TryGetValue( subRoute, out var list ) ) continue ; // not contained.
+
+          list.Add( parent ) ;
+        }
+      }
+
+      return subRouteAndParents ;
+    }
+
+    private static IEnumerable<AutoRoutingEndPoint> GetFromEndPoints( SubRoute subRoute, Document document, int depth, RouteMEPSystem routeMepSystem )
+    {
+      var edgeDiameter = subRoute.GetDiameter( document ) ;
+      var targetEndPointIndicators = subRoute.FromEndPointIndicators.Where( ep => IsRoutingTargetEnd( document, ep ) ) ;
+      var endPoints = targetEndPointIndicators.Select( ep => ep.GetEndPoint( document, subRoute ) ).NonNull() ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth, routeMepSystem, edgeDiameter ) ) ;
+    }
+    private static IEnumerable<AutoRoutingEndPoint> GetToEndPoints( SubRoute subRoute, Document document, int depth, RouteMEPSystem routeMepSystem )
+    {
+      var edgeDiameter = subRoute.GetDiameter( document ) ;
+      var targetEndPointIndicators = subRoute.ToEndPointIndicators.Where( ep => IsRoutingTargetEnd( document, ep ) ) ;
+      var endPoints = targetEndPointIndicators.Select( ep => ep.GetEndPoint( document, subRoute ) ).NonNull() ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, routeMepSystem, edgeDiameter ) ) ;
+    }
+
+    private static bool IsRoutingTargetEnd( Document document, IEndPointIndicator ep )
+    {
+      return ( ep is not RouteIndicator ) ;
     }
 
     public IAutoRoutingSpatialConstraints? CreateConstraints()
@@ -50,7 +143,7 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    public string LineId => SubRoute.Route.RouteName ;
+    public string LineId { get ; }
 
     public ICommonRoutingCondition Condition { get ; }
 
@@ -58,13 +151,20 @@ namespace Arent3d.Architecture.Routing
 
     public Action<IEnumerable<(IAutoRoutingEndPoint, Vector3d)>> PositionInitialized => SyncTermPositions ;
 
-    private void SyncTermPositions( IEnumerable<(IAutoRoutingEndPoint, Vector3d)> positions )
+    private static void SyncTermPositions( IEnumerable<(IAutoRoutingEndPoint, Vector3d)> positions )
     {
       foreach ( var (autoRoutingEndPoint, position) in positions ) {
-        if ( ! ( autoRoutingEndPoint is EndPointBase endPoint ) ) throw new Exception() ;
+        if ( autoRoutingEndPoint is not AutoRoutingEndPoint endPoint ) throw new Exception() ;
 
-        endPoint.SetPosition( position ) ;
+        // do nothing now.
       }
+    }
+
+    public SubRoute GetSubRoute( IRouteEdge routeEdge )
+    {
+      if ( routeEdge.LineInfo is not AutoRoutingEndPoint ep ) throw new InvalidOperationException() ;
+
+      return _ep2SubRoute[ ep ] ;
     }
 
 
@@ -80,14 +180,12 @@ namespace Arent3d.Architecture.Routing
         Priority = priority ;
         IsRoutingOnPipeRacks = DocumentMapper.Get( document ).IsRoutingOnPipeRacks( subRoute ) ;
         AllowHorizontalBranches = DocumentMapper.Get( document ).AllowHorizontalBranches( subRoute ) ;
-        FixedBopHeight = GetHeight( subRoute.GetReferenceConnector() ) ;
+        FixedBopHeight = null ;
       }
 
       public bool IsRoutingOnPipeRacks { get ; }
       public LineType Type => _subRoute.Route.ServiceType ;
-      public string FluidPhase => _subRoute.Route.FluidPhase ;
       public int Priority { get ; }
-      public string GroupName => string.Empty ;
       public LoopType LoopType => _subRoute.Route.LoopType ;
 
       public bool AllowHorizontalBranches { get ; }
@@ -95,13 +193,13 @@ namespace Arent3d.Architecture.Routing
 
       private static double GetHeight( Connector connector )
       {
-        return connector.Origin.Z ;
+        return connector.Origin.Z - connector.GetDiameter() * 0.5 ;
       }
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints
     {
-      public AutoRoutingSpatialConstraints( IReadOnlyCollection<IAutoRoutingEndPoint> fromEndPoints, IReadOnlyCollection<IAutoRoutingEndPoint> toEndPoints )
+      public AutoRoutingSpatialConstraints( IEnumerable<IAutoRoutingEndPoint> fromEndPoints, IEnumerable<IAutoRoutingEndPoint> toEndPoints )
       {
         Starts = fromEndPoints ;
         Destination = toEndPoints ;

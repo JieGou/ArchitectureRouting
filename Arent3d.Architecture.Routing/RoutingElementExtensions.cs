@@ -1,13 +1,14 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.EndPoint ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
+using Autodesk.Revit.DB.Structure ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -249,6 +250,26 @@ namespace Arent3d.Architecture.Routing
       if ( fi.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) return fi.Id.IntegerValue ;
       if ( element.TryGetProperty( RoutingParameter.RelatedPassPointId, out int id ) ) return id ;
       return null ;
+    }
+
+    public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double radius )
+    {
+      var symbol = document.GetFamilySymbol( RoutingFamilyType.PassPoint )! ;
+      if ( false == symbol.IsActive ) symbol.Activate() ;
+
+      var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural ) ;
+      instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
+      instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius * 2.0 ) ;
+
+      var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
+      var rotationAngle = Math.Atan2( direction.Y, direction.X ) ;
+
+      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
+      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
+
+      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
+      
+      return instance ;
     }
 
     #endregion

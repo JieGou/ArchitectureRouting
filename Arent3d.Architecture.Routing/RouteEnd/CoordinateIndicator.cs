@@ -1,16 +1,15 @@
 using System ;
-using Arent3d.Routing ;
 using Autodesk.Revit.DB ;
-using MathLib ;
 
-namespace Arent3d.Architecture.Routing.EndPoint
+namespace Arent3d.Architecture.Routing.RouteEnd
 {
   public class CoordinateIndicator : IEquatable<CoordinateIndicator>, IEndPointIndicator
   {
-    public Route? ParentBranch( Document document ) => null ;  // CoordinateIndicator has no parent branch.
+    public (Route? Route, SubRoute? SubRoute) ParentBranch( Document document ) => ( null, null ) ;  // CoordinateIndicator has no parent branch.
 
     public XYZ Origin { get ; }
     public XYZ Direction { get ; }
+    public bool IsOneSided => false ;
 
     public CoordinateIndicator( XYZ origin, XYZ direction )
     {
@@ -18,9 +17,24 @@ namespace Arent3d.Architecture.Routing.EndPoint
       Direction = direction ;
     }
 
-    public EndPointBase? GetAutoRoutingEndPoint( Document document, SubRoute subRoute, bool isFrom )
+    public EndPointBase? GetEndPoint( Document document, SubRoute subRoute )
     {
-      return new CoordinateEndPoint( this, subRoute, isFrom ) ;
+      return new CoordinateEndPoint( this, subRoute ) ;
+    }
+
+    public bool IsValid( Document document, bool isFrom )
+    {
+      return true ;
+    }
+
+    public void Accept( IEndPointIndicatorVisitor visitor )
+    {
+      visitor.Visit( this ) ;
+    }
+
+    public T Accept<T>( IEndPointIndicatorVisitor<T> visitor )
+    {
+      return visitor.Visit( this ) ;
     }
 
     public bool Equals( CoordinateIndicator other )

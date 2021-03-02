@@ -2,21 +2,22 @@ using System ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.EndPoint
+namespace Arent3d.Architecture.Routing.RouteEnd
 {
   public class PassPointBranchEndIndicator : IEquatable<PassPointBranchEndIndicator>, IEndPointIndicator
   {
-    public Route? ParentBranch( Document document )
+    public (Route? Route, SubRoute? SubRoute) ParentBranch( Document document )
     {
       var routeName = GetPassPointElement( document )?.GetRouteName() ;
-      if ( null == routeName ) return null ;
+      if ( null == routeName ) return ( null, null ) ;
 
       RouteCache.Get( document ).TryGetValue( routeName, out var route ) ;
-      return route ;
+      return ( route, null ) ;
     }
 
     public int ElementId { get ; }
     public double AngleDegree { get ; }
+    public bool IsOneSided => true ;
 
     public PassPointBranchEndIndicator( int elementId, double angleDegree )
     {
@@ -29,12 +30,27 @@ namespace Arent3d.Architecture.Routing.EndPoint
       return document.FindPassPointElement( ElementId ) ;
     }
 
-    public EndPointBase? GetAutoRoutingEndPoint( Document document, SubRoute subRoute, bool isFrom )
+    public EndPointBase? GetEndPoint( Document document, SubRoute subRoute )
     {
       var familyInstance = GetPassPointElement( document ) ;
       if ( null == familyInstance ) return null ;
 
-      return new PassPointBranchEndPoint( subRoute.Route, familyInstance, AngleDegree, isFrom, subRoute.GetReferenceConnector() ) ;
+      return new PassPointBranchEndPoint( subRoute.Route, familyInstance, AngleDegree, subRoute.GetReferenceConnector() ) ;
+    }
+
+    public bool IsValid( Document document, bool isFrom )
+    {
+      return ( null != GetPassPointElement( document ) ) ;
+    }
+
+    public void Accept( IEndPointIndicatorVisitor visitor )
+    {
+      visitor.Visit( this ) ;
+    }
+
+    public T Accept<T>( IEndPointIndicatorVisitor<T> visitor )
+    {
+      return visitor.Visit( this ) ;
     }
 
     public bool Equals( PassPointBranchEndIndicator other )

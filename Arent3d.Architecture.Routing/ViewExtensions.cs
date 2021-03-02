@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing
         }
 
         view.Name = $"{name} - {RoutingViewPostFix}" ;
-        view.ViewTemplateId = new ElementId( -1 ) ;
+        view.ViewTemplateId = ElementId.InvalidElementId ;
         view.get_Parameter( BuiltInParameter.VIEW_DISCIPLINE ).Set( 4095 ) ;
 
         var pvr = view.GetViewRange() ;

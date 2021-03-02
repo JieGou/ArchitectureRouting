@@ -1,7 +1,7 @@
 using Autodesk.Revit.DB ;
 using MathLib ;
 
-namespace Arent3d.Architecture.Routing.EndPoint
+namespace Arent3d.Architecture.Routing.RouteEnd
 {
   /// <summary>
   /// Determines whether which side of a pass point a pass point end is on.
@@ -19,11 +19,9 @@ namespace Arent3d.Architecture.Routing.EndPoint
     /// <summary>
     /// Returns the indicator for this end point.
     /// </summary>
-    public override IEndPointIndicator EndPointIndicator => new PassPointEndIndicator( Element.Id.IntegerValue, SideType ) ;
+    public override IEndPointIndicator EndPointIndicator => new PassPointEndIndicator( Element.Id.IntegerValue ) ;
 
     public FamilyInstance Element { get ; }
-
-    public PassPointEndSide SideType { get ; }
 
     /// <summary>
     /// Returns the starting position to be routed.
@@ -31,15 +29,20 @@ namespace Arent3d.Architecture.Routing.EndPoint
     public override Vector3d Position => Element.GetTotalTransform().Origin.To3d() ;
 
     /// <summary>
-    /// Returns the first pipe direction.
+    /// Returns the flow vector.
     /// </summary>
-    public override Vector3d Direction => Element.GetTotalTransform().BasisX.To3d() ;
+    public override Vector3d GetDirection( bool isFrom ) => Element.GetTotalTransform().BasisX.To3d() ; // Not negated between from-end and to-end.
 
-    public PassPointEndPoint( Route ownerRoute, FamilyInstance familyInstance, PassPointEndSide sideType, Connector referenceConnector )
-      : base( ownerRoute, referenceConnector, ( sideType == PassPointEndSide.Forward ) )
+    /// <summary>
+    /// Returns the end point's diameter.
+    /// </summary>
+    /// <returns>-1: Has no original diameter.</returns>
+    public override double? GetDiameter() => null ;
+
+    public PassPointEndPoint( Route ownerRoute, FamilyInstance familyInstance, Connector referenceConnector )
+      : base( ownerRoute, referenceConnector )
     {
       Element = familyInstance ;
-      SideType = sideType ;
     }
   }
 }

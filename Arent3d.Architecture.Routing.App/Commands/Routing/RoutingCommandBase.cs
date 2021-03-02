@@ -17,10 +17,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       var executor = new RoutingExecutor( document, commandData.View ) ;
 
-      IAsyncEnumerable<RouteRecord>? routeRecords ;
+      IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? segments ;
       try {
-        routeRecords = ReadRouteRecords( commandData.Application.ActiveUIDocument ) ;
-        if ( null == routeRecords ) return Result.Cancelled ;
+        segments = GetRouteSegments( commandData.Application.ActiveUIDocument ) ;
+        if ( null == segments ) return Result.Cancelled ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         var tokenSource = new CancellationTokenSource() ;
         using var progress = ProgressBar.Show( tokenSource ) ;
 
-        var task = Task.Run( () => executor.Run( routeRecords, progress ), tokenSource.Token ) ;
+        var task = Task.Run( () => executor.Run( segments, progress ), tokenSource.Token ) ;
         task.ConfigureAwait( false ) ;
         ThreadDispatcher.WaitWithDoEvents( task ) ;
 
@@ -67,9 +67,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     }
 
     /// <summary>
-    /// Collects from-to records to be auto-routed.
+    /// Collects route segments to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected abstract IAsyncEnumerable<RouteRecord>? ReadRouteRecords( UIDocument uiDocument ) ;
+    protected abstract IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument ) ;
   }
 }

@@ -106,7 +106,8 @@ namespace Arent3d.Architecture.Routing.App
 
       var o = from.Origin.To3d() ;
       var dir = to.Origin.To3d() - o ;
-      if ( dir.sqrMagnitude < 1e-12 ) return ( null, null ) ;
+      var tole = curve.Document.Application.VertexTolerance ;
+      if ( dir.sqrMagnitude < tole * tole ) return ( null, null ) ;
 
       var line = new MathLib.Line( o, dir ) ;
       var dist = line.DistanceTo( position.To3d(), 0 ) ;

@@ -1,6 +1,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.EndPoint ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Routing ;
 
 namespace Arent3d.Architecture.Routing
@@ -40,7 +40,7 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private static IEnumerable<EndPointBase> SeekEndPoints( Dictionary<IRouteEdge, PassingEndPointInfo> dic, IReadOnlyDictionary<IRouteVertex, (List<IRouteEdge> Enter, List<IRouteEdge> Exit)> linkInfo, IRouteEdge edge, bool seekFrom )
+    private static IEnumerable<IEndPointIndicator> SeekEndPoints( Dictionary<IRouteEdge, PassingEndPointInfo> dic, IReadOnlyDictionary<IRouteVertex, (List<IRouteEdge> Enter, List<IRouteEdge> Exit)> linkInfo, IRouteEdge edge, bool seekFrom )
     {
       if ( false == dic.TryGetValue( edge, out var fromTo ) ) {
         fromTo = new PassingEndPointInfo() ;
@@ -49,8 +49,8 @@ namespace Arent3d.Architecture.Routing
 
       if ( seekFrom ) {
         if ( 0 == fromTo._fromEndPoints.Count ) {
-          if ( edge.Start is TerminalPoint ) {
-            fromTo.RegisterFrom( MEPSystemCreator.GetEndPoint( edge.Start.LineInfo ) ) ;
+          if ( edge.Start is TerminalPoint tp ) {
+            fromTo.RegisterFrom( tp.LineInfo.GetEndPoint() ) ;
           }
           fromTo.RegisterFrom( linkInfo[ edge.Start ].Enter.SelectMany( e => SeekEndPoints( dic, linkInfo, e, true ) ) ) ;
         }
@@ -59,8 +59,8 @@ namespace Arent3d.Architecture.Routing
       }
       else {
         if ( 0 == fromTo._toEndPoints.Count ) {
-          if ( edge.End is TerminalPoint ) {
-            fromTo.RegisterTo( MEPSystemCreator.GetEndPoint( edge.End.LineInfo ) ) ;
+          if ( edge.End is TerminalPoint tp ) {
+            fromTo.RegisterTo( tp.LineInfo.GetEndPoint() ) ;
           }
           fromTo.RegisterTo( linkInfo[ edge.End ].Exit.SelectMany( e => SeekEndPoints( dic, linkInfo, e, false ) ) ) ;
         }
@@ -72,34 +72,34 @@ namespace Arent3d.Architecture.Routing
     private void RegisterFrom( EndPointBase? endPoint )
     {
       if ( null != endPoint ) {
-        _fromEndPoints.Add( endPoint ) ;
+        _fromEndPoints.Add( endPoint.EndPointIndicator ) ;
       }
     }
     private void RegisterTo( EndPointBase? endPoint )
     {
       if ( null != endPoint ) {
-        _toEndPoints.Add( endPoint ) ;
+        _toEndPoints.Add( endPoint.EndPointIndicator ) ;
       }
     }
 
-    private void RegisterFrom( IEnumerable<EndPointBase> endPoints )
+    private void RegisterFrom( IEnumerable<IEndPointIndicator> endPoints )
     {
       _fromEndPoints.UnionWith( endPoints ) ;
     }
-    private void RegisterTo( IEnumerable<EndPointBase> endPoints )
+    private void RegisterTo( IEnumerable<IEndPointIndicator> endPoints )
     {
       _toEndPoints.UnionWith( endPoints ) ;
     }
 
-    private readonly HashSet<EndPointBase> _fromEndPoints = new HashSet<EndPointBase>() ;
+    private readonly HashSet<IEndPointIndicator> _fromEndPoints = new() ;
 
-    private readonly HashSet<EndPointBase> _toEndPoints = new HashSet<EndPointBase>() ;
+    private readonly HashSet<IEndPointIndicator> _toEndPoints = new() ;
 
     private PassingEndPointInfo()
     {
     }
 
-    public IEnumerable<IEndPointIndicator> FromEndPoints => _fromEndPoints.Select( ep => ep.EndPointIndicator ) ;
-    public IEnumerable<IEndPointIndicator> ToEndPoints => _toEndPoints.Select( ep => ep.EndPointIndicator ) ;
+    public IEnumerable<IEndPointIndicator> FromEndPoints => _fromEndPoints ;
+    public IEnumerable<IEndPointIndicator> ToEndPoints => _toEndPoints ;
   }
 }

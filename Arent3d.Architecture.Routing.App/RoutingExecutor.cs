@@ -3,7 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
-using Arent3d.Architecture.Routing.EndPoint ;
+using Arent3d.Architecture.Routing.CommandTermCaches ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -70,7 +70,7 @@ namespace Arent3d.Architecture.Routing.App
     /// <param name="fromToList">Routing from-to records.</param>
     /// <param name="progressData">Progress data which is notified the status.</param>
     /// <returns>Result of execution.</returns>
-    public async Task<RoutingExecutionResult> Run( IAsyncEnumerable<RouteRecord> fromToList, IProgressData? progressData = null )
+    public async Task<RoutingExecutionResult> Run( IAsyncEnumerable<(string RouteName, RouteSegment Segment)> fromToList, IProgressData? progressData = null )
     {
       try {
         IReadOnlyCollection<Route> routes ;
@@ -124,9 +124,6 @@ namespace Arent3d.Architecture.Routing.App
     {
       ThreadDispatcher.Dispatch( () => routes.ForEach( r => r.Save() ) ) ;
 
-      var priorities = CollectPriorities( routes ) ;
-      var targets = routes.SelectMany( route => CreateRoutingTargets( route, priorities[ route ] ) ).EnumerateAll() ;
-
       ICollisionCheckTargetCollector collector ;
       using ( progressData?.Reserve( 0.05 ) ) {
         collector = CreateCollisionCheckTargetCollector( domain, routes ) ;
@@ -134,7 +131,7 @@ namespace Arent3d.Architecture.Routing.App
 
       RouteGenerator generator ;
       using ( progressData?.Reserve( 0.02 ) ) {
-        generator = new RouteGenerator( targets, _document, collector ) ;
+        generator = new RouteGenerator( routes, _document, collector ) ;
       }
 
       using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
@@ -142,46 +139,6 @@ namespace Arent3d.Architecture.Routing.App
       }
 
       RegisterBadConnectors( generator.GetBadConnectorSet() ) ;
-    }
-
-    private static IReadOnlyDictionary<Route, int> CollectPriorities( IReadOnlyCollection<Route> routes )
-    {
-      var dic = new Dictionary<Route, int>() ;
-
-      var routesToParents = routes.ToDictionary( route => route, route => route.GetParentBranches() ) ;
-      var index = 0 ;
-      var routesToRemove = new List<Route>() ;
-
-      while ( 0 < routesToParents.Count ) {
-        routesToRemove.Clear() ;
-        foreach ( var (route, parents) in routesToParents ) {
-          if ( 0 == parents.Count( routesToParents.ContainsKey ) ) {
-            dic.Add( route, index ) ;
-            routesToRemove.Add( route ) ;
-          }
-        }
-
-        if ( routesToParents.Count == routesToRemove.Count ) break ;
-
-        // next layers.
-        foreach ( var route in routesToRemove ) {
-          routesToParents.Remove( route ) ;
-        }
-        foreach ( var set in routesToParents.Values ) {
-          set.ExceptWith( routesToRemove ) ;
-        }
-
-        ++index ;
-      }
-
-      if ( dic.Count != routes.Count ) throw new InvalidOperationException() ;
-
-      return dic ;
-    }
-
-    private IEnumerable<AutoRoutingTarget> CreateRoutingTargets( Route route, int priority )
-    {
-      return route.SubRoutes.Select( subRoute => new AutoRoutingTarget( _document, subRoute, priority ) ) ;
     }
 
     private ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )
@@ -199,40 +156,39 @@ namespace Arent3d.Architecture.Routing.App
     /// </summary>
     /// <param name="fromToList">Routing from-to records.</param>
     /// <returns>Routing objects</returns>
-    private async Task<IReadOnlyCollection<Route>> ConvertToRoutes( IAsyncEnumerable<RouteRecord> fromToList )
+    private async Task<IReadOnlyCollection<Route>> ConvertToRoutes( IAsyncEnumerable<(string RouteName, RouteSegment Segment)> fromToList )
     {
       var oldRoutes = ThreadDispatcher.Dispatch( () => CommandTermCaches.RouteCache.Get( _document ) ) ;
 
       var dic = new Dictionary<string, Route>() ;
-      var result = new List<Route>() ; // Ordered by the original from-to record order.
+      var result = new List<Route>() ;
 
       var parents = new HashSet<Route>() ;
-      await foreach ( var record in fromToList ) {
-        if ( null == record.FromId || null == record.ToId ) continue ;
-
-        if ( false == dic.TryGetValue( record.RouteId, out var route ) ) {
-          if ( oldRoutes.TryGetValue( record.RouteId, out route ) ) {
+      await foreach ( var (routeName, segment) in fromToList ) {
+        if ( false == dic.TryGetValue( routeName, out var route ) ) {
+          if ( oldRoutes.TryGetValue( routeName, out route ) ) {
             route.Clear() ;
           }
           else {
-            route = new Route( _document, record.RouteId ) ;
+            route = new Route( _document, routeName ) ;
           }
 
-          dic.Add( record.RouteId, route ) ;
+          dic.Add( routeName, route ) ;
           result.Add( route ) ;
         }
 
-        route.RegisterConnectors( record.FromId, record.ToId, record.PassPoints ) ;
-        if ( record.FromId.ParentBranch( _document ) is {} fromParent ) {
-          parents.Add( fromParent ) ;
+        if ( segment.FromId.ParentBranch( _document ).Route is {} fromParent ) {
+          parents.UnionWith( fromParent.GetAllRelatedBranches() ) ;
         }
-        if ( record.ToId.ParentBranch( _document ) is {} toParent ) {
-          parents.Add( toParent ) ;
+        if ( segment.ToId.ParentBranch( _document ).Route is {} toParent ) {
+          parents.UnionWith( toParent.GetAllRelatedBranches() ) ;
         }
+
+        route.RegisterSegment( segment ) ;
       }
 
       result.AddRange( parents.Where( p => false == dic.ContainsKey( p.RouteName ) ) ) ;
-
+      
       return result ;
     }
 
