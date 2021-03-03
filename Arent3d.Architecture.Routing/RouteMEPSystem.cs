@@ -19,32 +19,35 @@ namespace Arent3d.Architecture.Routing
     public RouteMEPSystem( Document document, Route route )
     {
       var allConnectors = route.GetAllConnectors( document ).EnumerateAll() ;
-      var (connector, mepSystemType) = GetSystemType( document, allConnectors ) ;
-      MEPSystemType = mepSystemType ;
+      MEPSystemType = GetSystemType( document, allConnectors ) ;
 
       //MEPSystem = CreateMEPSystem( document, connector, allConnectors ) ;
       MEPSystem = null ;
 
-      CurveType = GetMEPCurveType( document, connector ) ;
+      CurveType = GetMEPCurveType( document, allConnectors, MEPSystemType ) ;
     }
 
     #region Get MEPSystemType
 
-    private static (Connector, MEPSystemType) GetSystemType( Document document, IEnumerable<Connector> connectors )
+    private static MEPSystemType GetSystemType( Document document, IEnumerable<Connector> connectors )
     {
-      return connectors.Select( connector => ( connector, GetSystemType( document, connector ) ) ).First( tuple => null != tuple.Item2 )! ;
+      return connectors.Select( connector => GetSystemType( document, connector ) ).NonNull().First()! ;
     }
     private static MEPSystemType? GetSystemType( Document document, Connector connector )
     {
       var systemClassification = GetSystemClassification( connector ) ;
       foreach ( var type in document.GetAllElements<MEPSystemType>() ) {
-        if ( type.SystemClassification == systemClassification ) {
-          return type ;
-        }
+        if ( IsCompatibleMEPSystemType( type, systemClassification ) ) return type ;
       }
 
       return null ;
     }
+
+    private static bool IsCompatibleMEPSystemType( MEPSystemType type, MEPSystemClassification systemClassification )
+    {
+      return ( type.SystemClassification == systemClassification ) ;
+    }
+
     private static MEPSystemClassification GetSystemClassification( Connector connector )
     {
       return connector.Domain switch
@@ -123,13 +126,24 @@ namespace Arent3d.Architecture.Routing
 
     #region Get MEPCurveType
     
-    private static MEPCurveType GetMEPCurveType( Document document, Connector connector )
+    private static MEPCurveType GetMEPCurveType( Document document, IReadOnlyCollection<Connector> connectors, MEPSystemType systemType )
     {
-      var (concreteType, isCompatibleType) = GetIsCompatibleFunc( connector ) ;
+      HashSet<int>? available = null ;
+      foreach ( var connector in connectors.Where( c => IsCompatibleMEPSystemType( systemType, GetSystemClassification( c ) ) ) ) {
+        var (concreteType, isCompatibleType) = GetIsCompatibleFunc( connector ) ;
+        var curveTypes = document.GetAllElements<MEPCurveType>( concreteType ).Where( isCompatibleType ).Select( e => e.Id.IntegerValue ) ;
+        if ( null == available ) {
+          available = curveTypes.ToHashSet() ;
+        }
+        else {
+          available.IntersectWith( curveTypes ) ;
+        }
 
-      var curveTypes = document.GetAllElements<MEPCurveType>( concreteType ).Where( isCompatibleType ).ToList() ;
-      
-      return curveTypes.FirstOrDefault() ?? throw new InvalidOperationException( $"{nameof( MEPCurveType )} for connector {connector.Owner.Name}:{connector.Id} is not found." ) ;
+        if ( 0 == available.Count ) throw new InvalidOperationException( $"Available {nameof( MEPCurveType )} is not found." ) ;
+      }
+      if ( null == available ) throw new InvalidOperationException( $"Available {nameof( MEPCurveType )} is not found." ) ;
+
+      return document.GetElementById<MEPCurveType>( available.First() )! ;
     }
 
     private static (Type, Func<MEPCurveType, bool>) GetIsCompatibleFunc( Connector connector )
@@ -162,9 +176,64 @@ namespace Arent3d.Architecture.Routing
     {
       if ( type.Shape != connector.Shape ) return false ;
 
+      var nominalDiameter = GetNominalDiameter( connector ) ;
+      if ( false == HasAnyNominalDiameter( type, nominalDiameter ) ) return false ;
       // TODO: other parameters
 
       return true ;
+    }
+
+    private static double GetNominalDiameter( Connector connector )
+    {
+      return connector.Shape switch
+      {
+        ConnectorProfileType.Oval => connector.Radius * 2,
+        ConnectorProfileType.Rectangular => Math.Max( connector.Width, connector.Height ),
+        ConnectorProfileType.Round => connector.Radius * 2,
+        _ => throw new ArgumentOutOfRangeException(),
+      } ;
+    }
+
+    private static bool HasAnyNominalDiameter( MEPCurveType type, double nominalDiameter )
+    {
+      var document = type.Document ;
+      var rpm = type.RoutingPreferenceManager ;
+      return GetRules( rpm, RoutingPreferenceRuleGroupType.Segments ).All( rule => HasAnyNominalDiameter( document, rule, nominalDiameter ) ) ;
+    }
+
+    private static IEnumerable<RoutingPreferenceRule> GetRules( RoutingPreferenceManager rpm, RoutingPreferenceRuleGroupType groupType )
+    {
+      var count = rpm.GetNumberOfRules( groupType ) ;
+      for ( var i = 0 ; i < count ; ++i ) {
+        yield return rpm.GetRule( groupType, i ) ;
+      }
+    }
+
+    private static bool HasAnyNominalDiameter( Document document, RoutingPreferenceRule rule, double nominalDiameter )
+    {
+      if ( false == GetCriteria( rule ).OfType<PrimarySizeCriterion>().All( criterion => IsMatchRange( criterion, nominalDiameter ) ) ) return false ;
+
+      var segment = document.GetElementById<Segment>( rule.MEPPartId ) ;
+      return ( null != segment ) && HasAnyNominalDiameter( segment, nominalDiameter ) ;
+    }
+
+    private static IEnumerable<RoutingCriterionBase> GetCriteria( RoutingPreferenceRule rule )
+    {
+      var count = rule.NumberOfCriteria ;
+      for ( var i = 0 ; i < count ; ++i ) {
+        yield return rule.GetCriterion( i ) ;
+      }
+    }
+
+    private static bool IsMatchRange( PrimarySizeCriterion criterion, double nominalDiameter )
+    {
+      return criterion.MinimumSize <= nominalDiameter && nominalDiameter <= criterion.MaximumSize ;
+    }
+
+
+    private static bool HasAnyNominalDiameter( Segment segment, double nominalDiameter )
+    {
+      return segment.GetSizes().Any( size => Math.Abs( size.NominalDiameter - nominalDiameter ) < 1e-2 ) ;
     }
 
     #endregion
