@@ -91,12 +91,12 @@ namespace Arent3d.Architecture.Routing.Rack
 
     public bool IsExactIntersect( Rack rack2 )
     {
-      return _exactBox.IsIntersect( rack2._exactBox ) ;
+      return _exactBox.IsIntersect( rack2._exactBox, 0 ) ;
     }
 
     public bool IsLooseIntersect( Rack rack2 )
     {
-      return _looseBox.IsIntersect( rack2._looseBox ) ;
+      return _looseBox.IsIntersect( rack2._looseBox, 0 ) ;
     }
 
     private Box2d CalcExactBox( Box3d box )
