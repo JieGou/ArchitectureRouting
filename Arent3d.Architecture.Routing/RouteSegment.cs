@@ -9,23 +9,36 @@ namespace Arent3d.Architecture.Routing
 {
   public class RouteSegment
   {
-    public double PreferredNominalDiameter { get ; }
+    public double PreferredNominalDiameter { get ; private set ; }
 
     public IEndPointIndicator FromId { get ; }
     public IEndPointIndicator ToId { get ; }
 
-    public double? GetRealNominalDiameter( Document document, SubRoute subRoute )
+    public double? GetRealNominalDiameter( Document document )
     {
       if ( 0 < PreferredNominalDiameter ) return PreferredNominalDiameter ;
 
-      if ( FromId.GetEndPoint( document, subRoute ) is { } ep1 && ep1.GetDiameter() is { } d1 ) {
+      return GetRealNominalDiameterFromEndPoints( document ) ;
+    }
+
+    private double? GetRealNominalDiameterFromEndPoints( Document document )
+    {
+      if ( FromId.GetEndPointDiameter( document ) is { } d1 ) {
         return d1 ;
       }
-      if ( ToId.GetEndPoint( document, subRoute ) is { } ep2 && ep2.GetDiameter() is { } d2 ) {
+      if ( ToId.GetEndPointDiameter( document ) is { } d2 ) {
         return d2 ;
       }
 
       return null ;
+    }
+
+    public bool ApplyRealNominalDiameter( Document document )
+    {
+      if ( GetRealNominalDiameterFromEndPoints( document ) is not {} d ) return false ;
+
+      PreferredNominalDiameter = d ;
+      return true ;
     }
 
     public RouteSegment( IEndPointIndicator fromId, IEndPointIndicator toId, double preferredNominalDiameter )

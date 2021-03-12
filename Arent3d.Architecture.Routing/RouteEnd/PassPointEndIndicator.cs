@@ -28,6 +28,8 @@ namespace Arent3d.Architecture.Routing.RouteEnd
       return new PassPointEndPoint( subRoute.Route, familyInstance, subRoute.GetReferenceConnector() ) ;
     }
 
+    public double? GetEndPointDiameter( Document document ) => null ;
+
     public bool IsValid( Document document, bool isFrom )
     {
       return ( null != GetPassPointElement( document ) ) ;

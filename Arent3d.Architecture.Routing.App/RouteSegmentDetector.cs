@@ -11,6 +11,7 @@ namespace Arent3d.Architecture.Routing.App
   /// </summary>
   public class RouteSegmentDetector
   {
+    public Document Document { get ; }
     public string RouteName { get ; }
     public int SubRouteIndex { get ; }
     private readonly HashSet<IEndPointIndicator> _fromElms = new() ;
@@ -23,6 +24,7 @@ namespace Arent3d.Architecture.Routing.App
     /// <param name="elementToPassThrough">A passed-through element.</param>
     public RouteSegmentDetector( SubRoute subRoute, Element elementToPassThrough )
     {
+      Document = subRoute.Route.Document ;
       RouteName = subRoute.Route.RouteName ;
       SubRouteIndex = subRoute.SubRouteIndex ;
 
@@ -48,7 +50,27 @@ namespace Arent3d.Architecture.Routing.App
     /// </returns>
     public bool IsPassingThrough( RouteSegment info )
     {
-      return ( _fromElms.Contains( info.FromId ) && _toElms.Contains( info.ToId ) ) ;
+      return ContainsFromEndPoint( info.FromId ) && ContainsToEndPoint( info.ToId ) ;
+    }
+
+    private bool ContainsFromEndPoint( IEndPointIndicator indicator )
+    {
+      if ( indicator is RouteIndicator routeIndicator ) {
+        if ( routeIndicator.GetSubRoute( Document ) is not { } subRoute ) return false ;
+        return subRoute.Segments.Any( seg => ContainsFromEndPoint( seg.FromId ) ) ;
+      }
+
+      return _fromElms.Contains( indicator ) ;
+    }
+
+    private bool ContainsToEndPoint( IEndPointIndicator indicator )
+    {
+      if ( indicator is RouteIndicator routeIndicator ) {
+        if ( routeIndicator.GetSubRoute( Document ) is not { } subRoute ) return false ;
+        return subRoute.Segments.Any( seg => ContainsToEndPoint( seg.ToId ) ) ;
+      }
+
+      return _toElms.Contains( indicator ) ;
     }
   }
 }

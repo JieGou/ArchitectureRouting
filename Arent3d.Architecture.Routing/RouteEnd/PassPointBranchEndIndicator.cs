@@ -25,6 +25,8 @@ namespace Arent3d.Architecture.Routing.RouteEnd
       AngleDegree = angleDegree ;
     }
 
+    public double? GetEndPointDiameter( Document document ) => null ;
+
     private FamilyInstance? GetPassPointElement( Document document )
     {
       return document.FindPassPointElement( ElementId ) ;

@@ -42,7 +42,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
       transaction.Start( "Insert Pass Point" ) ;
       try {
         var elm = InsertPassPointElement( document, pickInfo ) ;
-        var routeRecords = GetNewSegmentList( pickInfo.SubRoute, pickInfo.Element, elm.Id.IntegerValue ).ToSegmentsWithName( pickInfo.SubRoute.Route.RouteName ) ;
+        var route = pickInfo.SubRoute.Route ;
+        var routeRecords = GetRelatedBranchSegments( pickInfo.SubRoute.Route ) ;
+        routeRecords = routeRecords.Concat( GetNewSegmentList( pickInfo.SubRoute, pickInfo.Element, elm.Id.IntegerValue ).ToSegmentsWithName( route.RouteName ) ).EnumerateAll() ;
 
         var tokenSource = new CancellationTokenSource() ;
         using var progress = ProgressBar.Show( tokenSource ) ;
@@ -78,6 +80,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
       }
     }
 
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetRelatedBranchSegments( Route route )
+    {
+      // add all related branches
+      var relatedBranches = route.GetAllRelatedBranches() ;
+      relatedBranches.Remove( route ) ;
+      return relatedBranches.ToSegmentsWithName() ;
+    }
+
     private static FamilyInstance InsertPassPointElement( Document document, PointOnRoutePicker.PickInfo pickInfo )
     {
       return document.AddPassPoint( pickInfo.Route.RouteName, pickInfo.Position, pickInfo.RouteDirection, pickInfo.Radius ) ;
@@ -90,8 +100,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
       foreach ( var segment in subRoute.Route.RouteSegments.EnumerateAll() ) {
         if ( detector.IsPassingThrough( segment ) ) {
           // split segment
-          yield return new RouteSegment( segment.FromId, passPoint, segment.PreferredNominalDiameter ) ;
-          yield return new RouteSegment( passPoint, segment.ToId, segment.PreferredNominalDiameter ) ;
+          var diameter = segment.GetRealNominalDiameter( subRoute.Route.Document ) ?? segment.PreferredNominalDiameter ;
+          yield return new RouteSegment( segment.FromId, passPoint, diameter ) ;
+          yield return new RouteSegment( passPoint, segment.ToId, diameter ) ;
         }
         else {
           yield return segment ;

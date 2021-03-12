@@ -18,8 +18,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
 
       if ( 0 < list.Count ) {
-        return list.ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
-
+        return Route.CollectAllDescendantBranches( list ).ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
       }
       else {
         // newly select

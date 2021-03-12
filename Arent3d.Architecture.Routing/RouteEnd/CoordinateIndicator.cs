@@ -22,6 +22,8 @@ namespace Arent3d.Architecture.Routing.RouteEnd
       return new CoordinateEndPoint( this, subRoute ) ;
     }
 
+    public double? GetEndPointDiameter( Document document ) => null ;
+
     public bool IsValid( Document document, bool isFrom )
     {
       return true ;

@@ -8,17 +8,26 @@ namespace Arent3d.Architecture.Routing.RouteEnd
     public string RouteName { get ; }
     public int SubRouteIndex { get ; }
     public bool IsOneSided => false ;
-    
+
     public RouteIndicator( string routeName, int subRouteIndex )
     {
       RouteName = routeName ;
       SubRouteIndex = subRouteIndex ;
     }
-    
+
+    public SubRoute? GetSubRoute( Document document )
+    {
+      if ( false == CommandTermCaches.RouteCache.Get( document ).TryGetValue( RouteName, out var route ) ) return null ;
+
+      return route.GetSubRoute( SubRouteIndex ) ;
+    }
+
     public EndPointBase? GetEndPoint( Document document, SubRoute subRoute )
     {
       return new RouteEndPoint( this, subRoute ) ;
     }
+
+    public double? GetEndPointDiameter( Document document ) => null ;
 
     public (Route? Route, SubRoute? SubRoute) ParentBranch( Document document )
     {

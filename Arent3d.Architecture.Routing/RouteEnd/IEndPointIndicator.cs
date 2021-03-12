@@ -21,6 +21,13 @@ namespace Arent3d.Architecture.Routing.RouteEnd
     EndPointBase? GetEndPoint( Document document, SubRoute subRoute ) ;
 
     /// <summary>
+    /// Gets the specified diameter when the end point has it.
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    double? GetEndPointDiameter( Document document ) ;
+
+    /// <summary>
     /// Gets a parent route when the end point is dependent to it.
     /// </summary>
     /// <param name="document"></param>

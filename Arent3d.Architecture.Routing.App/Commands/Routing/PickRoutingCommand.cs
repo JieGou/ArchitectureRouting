@@ -68,7 +68,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         var name = "Picked_" + i ;
         if ( routes.ContainsKey( name ) ) continue ;
 
-        return new[] { ( name, new RouteSegment( fromIndicator, toIndicator, -1 ) ) } ;
+        var segment = new RouteSegment( fromIndicator, toIndicator, -1 ) ;
+        segment.ApplyRealNominalDiameter( document ) ;
+        return new[] { ( name, segment ) } ;
       }
     }
 
@@ -89,12 +91,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         var name = "Picked_" + i ;
         if ( routes.ContainsKey( name ) ) continue ;
 
+        RouteSegment segment ;
         if ( anotherIndicatorIsFromSide ) {
-          return new[] { ( name, new RouteSegment( anotherIndicator, newIndicator, -1 ) ) } ;
+          segment = new RouteSegment( anotherIndicator, newIndicator, -1 ) ;
         }
         else {
-          return new[] { ( name, new RouteSegment( newIndicator, anotherIndicator, -1 ) ) } ;
+          segment = new RouteSegment( newIndicator, anotherIndicator, -1 ) ;
         }
+        segment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
+
+        return new[] { ( name, segment ) } ;
       }
     }
 
@@ -111,22 +117,32 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       foreach ( var segment in subRoute.Route.RouteSegments.EnumerateAll() ) {
         if ( false == detector.IsPassingThrough( segment ) ) continue ;
 
+        RouteSegment newSegment ;
         if ( newEndPointIndicatorIsFromSide ) {
-          return ( subRoute.Route.RouteName, new RouteSegment( newEndPointIndicator, segment.ToId, -1 ) ) ;
+          newSegment = new RouteSegment( newEndPointIndicator, segment.ToId, -1 ) ;
         }
         else {
-          return ( subRoute.Route.RouteName, new RouteSegment( segment.FromId, newEndPointIndicator, -1 ) ) ;
+          newSegment = new RouteSegment( segment.FromId, newEndPointIndicator, -1 ) ;
         }
+        newSegment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
+
+        return ( subRoute.Route.RouteName, newSegment ) ;
       }
 
       // fall through: coordinational record.
       var origin = pickResult.GetOrigin() ;
       var pickedIndicator = GetEndPointIndicator( pickResult.PickedElement.Document, subRoute, origin, newEndPointIndicator ) ;
-      if ( newEndPointIndicatorIsFromSide ) {
-        return ( subRoute.Route.RouteName, new RouteSegment( newEndPointIndicator, pickedIndicator, -1 ) ) ;
-      }
-      else {
-        return ( subRoute.Route.RouteName, new RouteSegment( pickedIndicator, newEndPointIndicator, -1 ) ) ;
+      {
+        RouteSegment newSegment ;
+        if ( newEndPointIndicatorIsFromSide ) {
+          newSegment = new RouteSegment( newEndPointIndicator, pickedIndicator, -1 ) ;
+        }
+        else {
+          newSegment = new RouteSegment( pickedIndicator, newEndPointIndicator, -1 ) ;
+        }
+        newSegment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
+
+        return ( subRoute.Route.RouteName, newSegment ) ;
       }
     }
 

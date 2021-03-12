@@ -188,7 +188,7 @@ namespace Arent3d.Architecture.Routing
       return routes ;
     }
 
-    public IReadOnlyCollection<Route> GetAllRelatedBranches()
+    public HashSet<Route> GetAllRelatedBranches()
     {
       var routes = new HashSet<Route>() ;
       CollectRelatedBranches( routes ) ;

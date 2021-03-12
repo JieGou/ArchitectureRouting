@@ -34,6 +34,11 @@ namespace Arent3d.Architecture.Routing.RouteEnd
       return new ConnectorEndPoint( subRoute.Route, conn ) ;
     }
 
+    public double? GetEndPointDiameter( Document document )
+    {
+      return GetConnector( document )?.GetDiameter() ;
+    }
+
     public bool IsValid( Document document, bool isFrom )
     {
       return ( null != GetConnector( document ) ) ;

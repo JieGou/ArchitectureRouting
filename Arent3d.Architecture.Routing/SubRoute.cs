@@ -32,6 +32,8 @@ namespace Arent3d.Architecture.Routing
       _routeSegments.Add( segment ) ;
     }
 
+    public IReadOnlyCollection<RouteSegment> Segments => _routeSegments ;
+
     internal void Merge( SubRoute another )
     {
       _routeSegments.AddRange( another._routeSegments ) ;
@@ -59,7 +61,7 @@ namespace Arent3d.Architecture.Routing
 
     public double GetDiameter( Document document )
     {
-      return _routeSegments.Select( seg => seg.GetRealNominalDiameter( document, this ) ).NonNull().Append( DefaultDiameter ).FirstOrDefault() ;
+      return _routeSegments.Select( seg => seg.GetRealNominalDiameter( document ) ).NonNull().Append( DefaultDiameter ).FirstOrDefault() ;
     }
   }
 }
