@@ -1,3 +1,5 @@
+using System.IO ;
+using System.Reflection ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
@@ -8,19 +10,30 @@ namespace Arent3d.Revit.UI
   {
     protected abstract IAppUIBase? CreateAppUI( UIControlledApplication application ) ;
 
-    protected virtual void OnDocumentListenStarted( Document document )
+    protected abstract string GetLanguageDirectoryPath() ;
+
+    protected static string GetDefaultLanguageDirectoryPath( Assembly assembly )
     {
+      var assemblyPath = assembly.Location ;
+
+      var dirPath = Path.GetDirectoryName( assemblyPath )! ;
+      var assemblyName = Path.GetFileNameWithoutExtension( assemblyPath )! ;
+
+      return Path.Combine( dirPath, assemblyName, "Lang" ) ;
     }
 
-    protected virtual void OnDocumentListenFinished( Document document )
-    {
-    }
+    protected abstract void OnDocumentListenStarted( Document document ) ;
+
+    protected abstract void OnDocumentListenFinished( Document document ) ;
 
     private IAppUIBase? _ui ;
 
     public Result OnStartup( UIControlledApplication application )
     {
       ThreadDispatcher.UiDispatcher = UiThread.RevitUiDispatcher ;
+
+      I18n.LanguageConverter.SetApplicationLanguage( application.ControlledApplication.Language ) ;
+      I18n.LanguageConverter.AddLanguageDirectoryPath( GetLanguageDirectoryPath() ) ;
 
       if ( null != _ui ) return Result.Failed ;
       _ui = CreateAppUI( application ) ;

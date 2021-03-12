@@ -1,0 +1,49 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <!-- Application UI Strings -->
+        <key>App.Routing.TabName</key>
+        <string>自動ルーティング</string>
+
+        <key>App.Panels.Routing.Initialize</key>
+        <string>有効化</string>
+
+        <key>App.Panels.Routing.Routing</key>
+        <string>ルーティング</string>
+
+        <key>App.Panels.Routing.PassPoints</key>
+        <string>通過点</string>
+
+        <key>App.Panels.Routing.Racks</key>
+        <string>パイプスペース</string>
+
+        <!-- Application UI Button Strings -->
+        <key>App.Commands.Routing.FileRoutingCommand</key>
+        <string>From-Toのインポート</string>
+
+
+        <!-- Parameter Names -->
+        <key>Revit.Property.Builtin.Width</key>
+        <string>幅</string>
+
+        <key>Revit.Property.Builtin.Height</key>
+        <string>高さ</string>
+
+        <key>Revit.Property.Builtin.DiameterR1</key>
+        <string>呼び径r1</string>
+
+        <key>Revit.Property.Builtin.DiameterR2</key>
+        <string>呼び径r2</string>
+
+        <key>Revit.Property.Builtin.DiameterR3</key>
+        <string>呼び径r3</string>
+
+        <key>Revit.Property.Builtin.OffsetWidth</key>
+        <string>オフセット幅</string>
+
+        <key>Revit.Property.Builtin.OffsetHeight</key>
+        <string>オフセット高さ</string>
+
+    </dict>
+</plist>

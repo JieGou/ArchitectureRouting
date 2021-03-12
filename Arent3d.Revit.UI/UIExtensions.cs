@@ -26,7 +26,7 @@ namespace Arent3d.Revit.UI
       var commandClass = typeof( TButtonCommand ) ;
 
       var name = commandClass.FullName!.ToSnakeCase() ;
-      var text = commandClass.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? commandClass.Name.SeparateByWords() ;
+      var text = GetDisplayName( commandClass ) ;
       var description = commandClass.GetCustomAttribute<DescriptionAttribute>()?.Description ;
 
       var buttonData = new PushButtonData( name, text, commandClass.Assembly.Location, commandClass.FullName ) ;
@@ -45,6 +45,13 @@ namespace Arent3d.Revit.UI
       }
 
       return buttonData ;
+    }
+
+    private static string GetDisplayName( Type commandClass )
+    {
+      return commandClass.GetCustomAttribute<DisplayNameKeyAttribute>()?.GetApplicationString()
+             ?? commandClass.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName
+             ?? commandClass.Name.SeparateByWords() ;
     }
 
     private static ImageSource? ToImageSource( string assemblyName, ImageAttribute attr )

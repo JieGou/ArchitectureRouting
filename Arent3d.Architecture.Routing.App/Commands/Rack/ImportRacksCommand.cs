@@ -48,11 +48,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Rack
     private static void GenerateRack( Document document, RackRecord rackRecord )
     {
       var symbol = document.GetFamilySymbol( RoutingFamilyType.RackGuide ) ! ;
+      var instance = symbol.Instantiate( rackRecord.Origin, rackRecord.Level, StructuralType.NonStructural ) ;
 
-      if ( false == symbol.IsActive ) symbol.Activate() ;
-
-      var level = GetLevel( document, rackRecord.Level ) ;
-      var instance = document.Create.NewFamilyInstance( rackRecord.Origin, symbol, level, StructuralType.NonStructural ) ;
       instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
 
       rackRecord.Size_X.To( instance, "幅" ) ; // TODO
@@ -63,11 +60,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Rack
 
       ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( XYZ.Zero, XYZ.BasisZ ), rackRecord.RotationDegree.Deg2Rad() ) ;
       ElementTransformUtils.MoveElement( document, instance.Id, rackRecord.Origin - instance.GetTotalTransform().Origin ) ;
-    }
-
-    private static Level? GetLevel( Document document, string levelName )
-    {
-      return document.GetAllElements<Level>().FirstOrDefault( l => l.Name == levelName ) ;
     }
 
     private static IEnumerable<RackRecord> ReadRackRecordsFromFile( string csvFileName )

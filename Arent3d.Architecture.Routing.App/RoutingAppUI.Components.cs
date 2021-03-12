@@ -2,6 +2,7 @@ using Arent3d.Architecture.Routing.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.App.Commands.PassPoint ;
 using Arent3d.Architecture.Routing.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.App.Commands.Rack ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -10,12 +11,12 @@ namespace Arent3d.Architecture.Routing.App
 {
   partial class RoutingAppUI
   {
-    private const string RibbonTabName = "Routing Assist" ;
+    private const string RibbonTabNameKey = "App.Routing.TabName" ;
 
-    private static readonly (string Key, string Title) InitPanel = ( Key: "arent3d.architecture.routing.init", Title: "Initialize" ) ;
-    private static readonly (string Key, string Title) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", Title: "Routing" ) ;
-    private static readonly (string Key, string Title) PassPointPanel = ( Key: "arent3d.architecture.routing.passpoint", Title: "Pass Points" ) ;
-    private static readonly (string Key, string Title) RackPanel = ( Key: "arent3d.architecture.routing.rack", Title: "Racks" ) ;
+    private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init", TitleKey: "App.Panels.Routing.Initialize" ) ;
+    private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", TitleKey: "App.Panels.Routing.Routing" ) ;
+    private static readonly (string Key, string TitleKey) PassPointPanel = ( Key: "arent3d.architecture.routing.passpoint", TitleKey: "App.Panels.Routing.PassPoints" ) ;
+    private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "App.Panels.Routing.Racks" ) ;
 
 
     private readonly RibbonButton _initializeCommandButton ;
@@ -39,14 +40,14 @@ namespace Arent3d.Architecture.Routing.App
 
     private RoutingAppUI( UIControlledApplication application )
     {
-      var tab = application.CreateRibbonTabEx( RibbonTabName ) ;
+      var tab = application.CreateRibbonTabEx( ToDisplayName( RibbonTabNameKey ) ) ;
       {
-        var initPanel = tab.CreateRibbonPanel( InitPanel.Key, InitPanel.Title ) ;
+        var initPanel = tab.CreateRibbonPanel( InitPanel.Key, ToDisplayName( InitPanel.TitleKey ) ) ;
         _initializeCommandButton = initPanel.AddButton<InitializeCommand>() ;
         _showRoutingViewsCommandButton = initPanel.AddButton<ShowRoutingViewsCommand>() ;
       }
       {
-        var routingPanel = tab.CreateRibbonPanel( RoutingPanel.Key, RoutingPanel.Title ) ;
+        var routingPanel = tab.CreateRibbonPanel( RoutingPanel.Key, ToDisplayName( RoutingPanel.TitleKey ) ) ;
         _pickRoutingCommandButton = routingPanel.AddButton<PickRoutingCommand>() ;
         _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
         routingPanel.AddSeparator() ;
@@ -59,17 +60,22 @@ namespace Arent3d.Architecture.Routing.App
         _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
       }
       {
-        var passPointPanel = tab.CreateRibbonPanel( PassPointPanel.Key, PassPointPanel.Title ) ;
+        var passPointPanel = tab.CreateRibbonPanel( PassPointPanel.Key, ToDisplayName( PassPointPanel.TitleKey ) ) ;
         _insertPassPointCommandButton = passPointPanel.AddButton<InsertPassPointCommand>() ;
       }
       {
-        var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, RackPanel.Title ) ;
+        var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
         _importRacksCommandButton = rackPanel.AddButton<ImportRacksCommand>() ;
         _exportRacksCommandButton = rackPanel.AddButton<ExportRacksCommand>() ;
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
       }
 
       InitializeRibbon() ;
+    }
+
+    private static string ToDisplayName( string key )
+    {
+      return LanguageConverter.GetAppStringByKey( key ) ?? LanguageConverter.GetDefaultString( key ) ;
     }
 
     private void InitializeRibbon()

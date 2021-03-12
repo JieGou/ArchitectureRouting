@@ -46,6 +46,12 @@
     <None Remove="resources\Initialize-32.bmp" />
     <Resource Include="resources\Initialize-32.bmp" />
     <None Remove="resources\Arent-Generic Models-Box.rfa" />
+    <None Update="Arent3d.Architecture.Routing.App\Lang\en-US.plist">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Arent3d.Architecture.Routing.App\Lang\ja-JP.plist">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

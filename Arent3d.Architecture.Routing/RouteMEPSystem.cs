@@ -6,6 +6,7 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
+using Autodesk.Revit.DB.Structure ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -30,58 +31,89 @@ namespace Arent3d.Architecture.Routing
       CurveType = GetMEPCurveType( document, allConnectors, MEPSystemType ) ;
     }
 
+    private SizeTable<double>? _90ElbowSize ;
     public double Get90ElbowSize( double diameter )
     {
-      return diameter * 1.5 ; // provisional
+      return ( _90ElbowSize ??= new( Calculate90ElbowSize ) ).Get( diameter ) ;
     }
 
+    private SizeTable<double>? _45ElbowSize ;
     public double Get45ElbowSize( double diameter )
     {
-      return diameter * 1.5 ; // provisional
+      return ( _45ElbowSize ??= new( Calculate45ElbowSize ) ).Get( diameter ) ;
     }
 
+    private SizeTable<(double, double)>? _teeHeaderLength ;
     public double GetTeeHeaderLength( double headerDiameter, double branchDiameter )
     {
       if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
-        if ( headerDiameter < branchDiameter ) {
-          return headerDiameter * 1.0 ; // provisional
-        }
-        else {
-          return headerDiameter * 0.5 + branchDiameter * 0.5 ; // provisional
-        }
+        return ( _teeHeaderLength ??= new( CalculateTeeHeaderLength ) ).Get( ( headerDiameter, branchDiameter ) ) ;
       }
       else {
-        return branchDiameter * 0.5 + GetWeldMinDistance( branchDiameter ) ; // provisional
+        return branchDiameter * 0.5 ; // provisional
       }
     }
 
+    private SizeTable<(double, double)>? _teeBranchLength ;
     public double GetTeeBranchLength( double headerDiameter, double branchDiameter )
     {
       if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
-        if ( headerDiameter < branchDiameter ) {
-          return headerDiameter * 1.0 + GetReducerLength( headerDiameter, branchDiameter ) ; // provisional
-        }
-        else {
-          return headerDiameter * 0.5 + branchDiameter * 0.5 ; // provisional
-        }
+        return ( _teeBranchLength ??= new( CalculateTeeBranchLength ) ).Get( ( headerDiameter, branchDiameter ) ) ;
       }
       else {
-        return headerDiameter * 0.5 + GetWeldMinDistance( branchDiameter ) ; // provisional
+        return headerDiameter * 0.5 ; // provisional
       }
     }
 
+    private SizeTable<(double, double)>? _reducerLength ;
     public double GetReducerLength( double diameter1, double diameter2 )
     {
       if ( diameter1 <= 0 || diameter2 <= 0 || Math.Abs( diameter1 - diameter2 ) < _diameterTolerance ) return 0 ;
 
-      // TODO: find reducer size
-
-      return 0 ;
+      return ( _reducerLength ??= new( CalculateReducerLength ) ).Get( ( diameter1, diameter2 ) ) ;
     }
 
     public double GetWeldMinDistance( double diameter )
     {
       return 1.0 / 120 ;  // 1/10 inches.
+    }
+
+    private double Calculate90ElbowSize( double diameter )
+    {
+      return diameter * 1.5 ; // provisional
+    }
+    private double Calculate45ElbowSize( double diameter )
+    {
+      return diameter * 1.5 ; // provisional
+    }
+    private double CalculateTeeHeaderLength( (double, double) value )
+    {
+      var (headerDiameter, branchDiameter) = value ;
+      if ( headerDiameter < branchDiameter ) {
+        return headerDiameter * 1.0 ; // provisional
+      }
+      else {
+        return headerDiameter * 0.5 + branchDiameter * 0.5 ; // provisional
+      }
+    }
+    private double CalculateTeeBranchLength( (double, double) value )
+    {
+      var (headerDiameter, branchDiameter) = value ;
+      if ( headerDiameter < branchDiameter ) {
+        return headerDiameter * 1.0 + GetReducerLength( headerDiameter, branchDiameter ) ; // provisional
+      }
+      else {
+        return headerDiameter * 0.5 + branchDiameter * 0.5 ; // provisional
+      }
+    }
+
+    public double CalculateReducerLength( (double, double) value )
+    {
+      var (diameter1, diameter2) = value ;
+
+      // TODO: find reducer size
+
+      return 0 ;
     }
 
 

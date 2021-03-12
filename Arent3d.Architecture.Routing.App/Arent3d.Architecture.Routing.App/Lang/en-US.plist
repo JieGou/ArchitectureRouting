@@ -1,0 +1,50 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <!-- Application UI Strings -->
+        <key>App.Routing.TabName</key>
+        <string>Routing Assist</string>
+
+        <key>App.Panels.Routing.Initialize</key>
+        <string>Setup</string>
+
+        <key>App.Panels.Routing.Routing</key>
+        <string>Routing</string>
+
+        <key>App.Panels.Routing.PassPoints</key>
+        <string>Pass Points</string>
+
+        <key>App.Panels.Routing.Racks</key>
+        <string>Pipe Spaces</string>
+
+        <!-- Application UI Button Strings -->
+        <key>App.Commands.Routing.FileRoutingCommand</key>
+        <string>Import From-To</string>
+
+
+        <!-- Parameter Names -->
+        <key>Revit.Property.Builtin.Width</key>
+        <string>Width</string>
+
+        <key>Revit.Property.Builtin.Height</key>
+        <string>Height</string>
+
+        <key>Revit.Property.Builtin.DiameterR1</key>
+        <string>Nominal diameter r1</string>
+
+        <key>Revit.Property.Builtin.DiameterR2</key>
+        <string>Nominal diameter r2</string>
+
+        <key>Revit.Property.Builtin.DiameterR3</key>
+        <string>Nominal diameter r3</string>
+
+        <key>Revit.Property.Builtin.OffsetWidth</key>
+        <string>Offset Width</string>
+
+        <key>Revit.Property.Builtin.OffsetHeight</key>
+        <string>Offset Height</string>
+
+
+    </dict>
+</plist>

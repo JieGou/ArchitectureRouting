@@ -5,6 +5,7 @@ using System.Linq ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Structure ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -64,6 +65,25 @@ namespace Arent3d.Architecture.Routing
     {
       if ( false == AllBuiltInCategories.TryGetValue( familyType, out var builtInCategory ) ) return null ;
       return document.GetAllElements<FamilySymbol>().OfCategory( builtInCategory ).FirstOrDefault( e => e.FamilyName == familyName ) ;
+    }
+
+    public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, string levelName, StructuralType structuralType )
+    {
+      var level = GetLevel( symbol.Document, levelName ) ;
+      if ( null == level ) throw new InvalidOperationException() ;
+      return symbol.Instantiate( position, level, structuralType ) ;
+    }
+    public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, Level level, StructuralType structuralType )
+    {
+      var document = symbol.Document ;
+      if ( false == symbol.IsActive ) symbol.Activate() ;
+
+      return document.Create.NewFamilyInstance( position, symbol, level, structuralType ) ;
+    }
+
+    private static Level? GetLevel( Document document, string levelName )
+    {
+      return document.GetAllElements<Level>().FirstOrDefault( l => l.Name == levelName ) ;
     }
 
     private static bool LoadFamilySymbol( Document document, string familyName )
