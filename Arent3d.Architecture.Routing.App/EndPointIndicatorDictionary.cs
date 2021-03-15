@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.App
 
       if ( _dic.TryGetValue( key, out var ind ) ) {
         // use previous indicator.
-        return ind ;
+        return ConvertByIndicatorType( ind, indicator ) ;
       }
 
       if ( null == indicator ) return null ;
@@ -35,14 +35,31 @@ namespace Arent3d.Architecture.Routing.App
       return indicator ;
     }
 
+    private static IEndPointIndicator ConvertByIndicatorType( IEndPointIndicator indicator, IEndPointIndicator? refIndicator )
+    {
+      if ( refIndicator is PassPointBranchEndIndicator branch && indicator is PassPointEndIndicator pp ) {
+        return new PassPointBranchEndIndicator( pp.ElementId, branch.AngleDegree ) ;
+      }
+
+      return indicator ;
+    }
+
     private IEndPointIndicator GetCalculatedIndicator( string routeName, IEndPointIndicator indicator )
     {
-      if ( indicator is not CoordinateIndicator ind ) return indicator ;
+      return indicator switch
+      {
+        CoordinateIndicator coordInd => ConvertCoordinateIndicatorToPassPointEndIndicator( routeName, coordInd ),
+        PassPointBranchEndIndicator => throw new InvalidOperationException( "A PassPointBranchEndIndicator is before PassPointEndIndicator." ),
+        _ => indicator
+      } ;
+    }
 
+    private IEndPointIndicator ConvertCoordinateIndicatorToPassPointEndIndicator( string routeName, CoordinateIndicator coordInd )
+    {
       // convert to PassPointEndIndicator
       IEndPointIndicator AddPassPoint()
       {
-        var familyInstance = _document.AddPassPoint( routeName, ind.Origin, ind.Direction, -1 ) ;
+        var familyInstance = _document.AddPassPoint( routeName, coordInd.Origin, coordInd.Direction, -1 ) ;
         return new PassPointEndIndicator( familyInstance.Id.IntegerValue ) ;
       }
 
@@ -59,7 +76,6 @@ namespace Arent3d.Architecture.Routing.App
   {
     private int _index = 0 ;
     private readonly Document _document ;
-    private readonly Dictionary<string, IEndPointIndicator> _dic = new() ;
     private readonly Dictionary<IEndPointIndicator, string> _sameNameDic = new() ;
 
     public EndPointIndicatorDictionaryForExport( Document document )
@@ -74,11 +90,6 @@ namespace Arent3d.Architecture.Routing.App
         return ( string.Empty, ind ) ;
       }
 
-      if ( _dic.TryGetValue( key, out var lastIndicator ) ) {
-        return ( key, lastIndicator ) ;
-      }
-
-      _dic.Add( key, ind ) ;
       return ( key, ind ) ;
     }
 

@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         var name = "Picked_" + i ;
         if ( routes.ContainsKey( name ) ) continue ;
 
-        var segment = new RouteSegment( fromIndicator, toIndicator, -1 ) ;
+        var segment = new RouteSegment( fromIndicator, toIndicator, -1, false ) ;
         segment.ApplyRealNominalDiameter( document ) ;
         routes.FindOrCreate( name ) ;
         list.Add( ( name, segment ) ) ;
@@ -123,10 +123,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
         RouteSegment segment ;
         if ( anotherIndicatorIsFromSide ) {
-          segment = new RouteSegment( anotherIndicator, newIndicator, -1 ) ;
+          segment = new RouteSegment( anotherIndicator, newIndicator, -1, false ) ;
         }
         else {
-          segment = new RouteSegment( newIndicator, anotherIndicator, -1 ) ;
+          segment = new RouteSegment( newIndicator, anotherIndicator, -1, false ) ;
         }
         segment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
 
@@ -149,10 +149,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
         RouteSegment newSegment ;
         if ( newEndPointIndicatorIsFromSide ) {
-          newSegment = new RouteSegment( newEndPointIndicator, segment.ToId, -1 ) ;
+          newSegment = new RouteSegment( newEndPointIndicator, segment.ToId, -1, false ) ;
         }
         else {
-          newSegment = new RouteSegment( segment.FromId, newEndPointIndicator, -1 ) ;
+          newSegment = new RouteSegment( segment.FromId, newEndPointIndicator, -1, false ) ;
         }
         newSegment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
 
@@ -165,10 +165,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       {
         RouteSegment newSegment ;
         if ( newEndPointIndicatorIsFromSide ) {
-          newSegment = new RouteSegment( newEndPointIndicator, pickedIndicator, -1 ) ;
+          newSegment = new RouteSegment( newEndPointIndicator, pickedIndicator, -1, false ) ;
         }
         else {
-          newSegment = new RouteSegment( pickedIndicator, newEndPointIndicator, -1 ) ;
+          newSegment = new RouteSegment( pickedIndicator, newEndPointIndicator, -1, false ) ;
         }
         newSegment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
 

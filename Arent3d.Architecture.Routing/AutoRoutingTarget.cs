@@ -176,10 +176,12 @@ namespace Arent3d.Architecture.Routing
 
       public AutoRoutingCondition( Document document, SubRoute subRoute, int priority )
       {
+        var documentData = DocumentMapper.Get( document ) ;
+
         _subRoute = subRoute ;
         Priority = priority ;
-        IsRoutingOnPipeRacks = DocumentMapper.Get( document ).IsRoutingOnPipeRacks( subRoute ) ;
-        AllowHorizontalBranches = DocumentMapper.Get( document ).AllowHorizontalBranches( subRoute ) ;
+        IsRoutingOnPipeRacks = ( 0 < documentData.RackCollection.RackCount ) && subRoute.IsRoutingOnPipeSpace ;
+        AllowHorizontalBranches = documentData.AllowHorizontalBranches( subRoute ) ;
         FixedBopHeight = null ;
       }
 

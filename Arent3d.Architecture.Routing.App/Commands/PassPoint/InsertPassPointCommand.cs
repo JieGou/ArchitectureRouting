@@ -101,8 +101,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
         if ( detector.IsPassingThrough( segment ) ) {
           // split segment
           var diameter = segment.GetRealNominalDiameter( subRoute.Route.Document ) ?? segment.PreferredNominalDiameter ;
-          yield return new RouteSegment( segment.FromId, passPoint, diameter ) ;
-          yield return new RouteSegment( passPoint, segment.ToId, diameter ) ;
+          var isRoutingOnPipeSpace = segment.IsRoutingOnPipeSpace ;
+          yield return new RouteSegment( segment.FromId, passPoint, diameter, isRoutingOnPipeSpace ) ;
+          yield return new RouteSegment( passPoint, segment.ToId, diameter, isRoutingOnPipeSpace ) ;
         }
         else {
           yield return segment ;

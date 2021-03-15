@@ -30,6 +30,9 @@ namespace Arent3d.Architecture.Routing.App
 
     [Index( 5 ), Name( "Nominal Diameter" )]
     public double NominalDiameter { get ; set ; } = -1 ;
+
+    [Index( 6 ), Name( "On Pipe Space" )]
+    public bool IsRoutingOnPipeSpace { get ; set ; } = false ;
   }
 
   internal class EndPointIndicatorConverter : ITypeConverter
