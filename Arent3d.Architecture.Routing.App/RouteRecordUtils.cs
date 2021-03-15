@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.App
         var fromIndicator = indDic.GetIndicator( record.RouteName, record.FromKey, record.FromIndicator ) ;
         var toIndicator = indDic.GetIndicator( record.RouteName, record.FromKey, record.ToIndicator ) ;
         if ( null == fromIndicator || null == toIndicator ) continue ;
-        yield return ( record.RouteName, new RouteSegment( fromIndicator, toIndicator, record.NominalDiameter ) ) ;
+        yield return ( record.RouteName, new RouteSegment( fromIndicator, toIndicator, record.NominalDiameter, record.IsRoutingOnPipeSpace ) ) ;
       }
     }
 

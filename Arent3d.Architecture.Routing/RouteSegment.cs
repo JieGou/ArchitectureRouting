@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing
 
     public IEndPointIndicator FromId { get ; }
     public IEndPointIndicator ToId { get ; }
+    public bool IsRoutingOnPipeSpace { get ; internal set ; } = false ;
 
     public double? GetRealNominalDiameter( Document document )
     {
@@ -33,6 +34,11 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
+    public void ChangePreferredNominalDiameter( double d )
+    {
+      PreferredNominalDiameter = d ;
+    }
+
     public bool ApplyRealNominalDiameter( Document document )
     {
       if ( GetRealNominalDiameterFromEndPoints( document ) is not {} d ) return false ;
@@ -41,9 +47,10 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    public RouteSegment( IEndPointIndicator fromId, IEndPointIndicator toId, double preferredNominalDiameter )
+    public RouteSegment( IEndPointIndicator fromId, IEndPointIndicator toId, double preferredNominalDiameter, bool isRoutingOnPipeSpace )
     {
       PreferredNominalDiameter = preferredNominalDiameter ;
+      IsRoutingOnPipeSpace = isRoutingOnPipeSpace ;
       FromId = fromId ;
       ToId = toId ;
     }
@@ -57,13 +64,27 @@ namespace Arent3d.Architecture.Routing
     protected override RouteSegment NativeToCustom( Element storedElement, string nativeTypeValue )
     {
       var split = nativeTypeValue.Split( FieldSplitter, StringSplitOptions.RemoveEmptyEntries ) ;
-      if ( 3 != split.Length ) throw new InvalidOperationException() ;
+      if ( 3 != split.Length && 4 != split.Length ) throw new InvalidOperationException() ;
 
       if ( false == double.TryParse( split[ 0 ], NumberStyles.Any, CultureInfo.InvariantCulture, out var nominalDiameter ) ) throw new InvalidOperationException() ;
       var fromId = EndPointIndicator.ParseIndicator( split[ 1 ] ) ?? throw new InvalidOperationException() ;
       var toId = EndPointIndicator.ParseIndicator( split[ 2 ] ) ?? throw new InvalidOperationException() ;
+      var isRoutingOnPipeSpace = ( 3 < split.Length && ParseBool( split[ 3 ], false ) ) ;
 
-      return new RouteSegment( fromId, toId, nominalDiameter ) ;
+      return new RouteSegment( fromId, toId, nominalDiameter, isRoutingOnPipeSpace ) ;
+    }
+
+    private static bool ParseBool( string s, bool bDefault )
+    {
+      return s.ToLower() switch
+      {
+        "0" => false,
+        "f" => false,
+        "" => false,
+        "1" => true,
+        "T" => true,
+        _ => bDefault,
+      } ;
     }
 
     protected override string CustomToNative( Element storedElement, RouteSegment customTypeValue )
@@ -75,6 +96,8 @@ namespace Arent3d.Architecture.Routing
       builder.Append( customTypeValue.FromId ) ;
       builder.Append( '|' ) ;
       builder.Append( customTypeValue.ToId ) ;
+      builder.Append( '|' ) ;
+      builder.Append( customTypeValue.IsRoutingOnPipeSpace ? 'T' : 'F' ) ;
 
       return builder.ToString() ;
     }

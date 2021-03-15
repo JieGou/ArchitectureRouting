@@ -34,6 +34,35 @@ namespace Arent3d.Architecture.Routing
 
     public IReadOnlyCollection<RouteSegment> Segments => _routeSegments ;
 
+    public bool IsRoutingOnPipeSpace
+    {
+      get
+      {
+        if ( Domain.DomainHvac == Route.Domain ) return false ; // HVac is direct-routing only.
+
+        return Segments.First().IsRoutingOnPipeSpace ;
+      }
+    }
+
+    public void ChangeIsRoutingOnPipeSpace( bool value )
+    {
+      foreach ( var seg in Segments ) {
+        seg.IsRoutingOnPipeSpace = value ;
+      }
+    }
+
+    public double GetDiameter( Document document )
+    {
+      return _routeSegments.Select( seg => seg.GetRealNominalDiameter( document ) ).NonNull().Append( DefaultDiameter ).FirstOrDefault() ;
+    }
+
+    public void ChangePreferredNominalDiameter( double nominalDiameter )
+    {
+      foreach ( var seg in Segments ) {
+        seg.ChangePreferredNominalDiameter( nominalDiameter ) ;
+      }
+    }
+
     internal void Merge( SubRoute another )
     {
       _routeSegments.AddRange( another._routeSegments ) ;
@@ -57,11 +86,6 @@ namespace Arent3d.Architecture.Routing
     public Connector GetReferenceConnector()
     {
       return GetReferenceConnectorInSubRoute() ?? Route.GetReferenceConnector() ;
-    }
-
-    public double GetDiameter( Document document )
-    {
-      return _routeSegments.Select( seg => seg.GetRealNominalDiameter( document ) ).NonNull().Append( DefaultDiameter ).FirstOrDefault() ;
     }
   }
 }
