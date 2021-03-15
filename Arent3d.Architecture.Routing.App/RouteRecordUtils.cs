@@ -30,8 +30,8 @@ namespace Arent3d.Architecture.Routing.App
       var indDic = new EndPointIndicatorDictionaryForImport( document ) ;
 
       await foreach ( var record in routeRecords ) {
-        var fromIndicator = indDic.GetIndicator( record.RouteName, record.FromKey, record.FromIndicator ) ;
-        var toIndicator = indDic.GetIndicator( record.RouteName, record.FromKey, record.ToIndicator ) ;
+        var fromIndicator = indDic.GetIndicator( record.RouteName, record.FromKey, record.FromIndicator! ) ;
+        var toIndicator = indDic.GetIndicator( record.RouteName, record.ToKey, record.ToIndicator! ) ;
         if ( null == fromIndicator || null == toIndicator ) continue ;
         yield return ( record.RouteName, new RouteSegment( fromIndicator, toIndicator, record.NominalDiameter, record.IsRoutingOnPipeSpace ) ) ;
       }
