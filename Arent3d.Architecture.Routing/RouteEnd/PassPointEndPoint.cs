@@ -1,3 +1,5 @@
+using System.Collections.Generic ;
+using System.Linq ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 
@@ -32,6 +34,23 @@ namespace Arent3d.Architecture.Routing.RouteEnd
     /// Returns the flow vector.
     /// </summary>
     public override Vector3d GetDirection( bool isFrom ) => Element.GetTotalTransform().BasisX.To3d() ; // Not negated between from-end and to-end.
+
+    /// <summary>
+    /// Returns the required minimum straight length.
+    /// </summary>
+    public override double GetMinimumStraightLength( RouteMEPSystem routeMepSystem, double edgeDiameter, bool isFrom )
+    {
+      var elmId = Element.Id.IntegerValue ;
+      var subRoute = CommandTermCaches.RouteCache.Get( Element.Document ).CollectAllSubRoutes().FirstOrDefault( sr => GetPassPointBranchEndIndicator( sr, elmId ).Any() ) ;
+      if ( null == subRoute ) return 0 ;
+
+      return routeMepSystem.GetTeeHeaderLength( edgeDiameter, subRoute.GetDiameter( Element.Document ) ) ;
+    }
+
+    private static IEnumerable<PassPointBranchEndIndicator> GetPassPointBranchEndIndicator( SubRoute subRoute, int elmId )
+    {
+      return subRoute.AllEndPointIndicators.OfType<PassPointBranchEndIndicator>().Where( ind => ind.ElementId == elmId ) ;
+    }
 
     /// <summary>
     /// Returns the end point's diameter.

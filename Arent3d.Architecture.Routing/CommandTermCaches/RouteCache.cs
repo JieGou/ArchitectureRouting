@@ -34,6 +34,22 @@ namespace Arent3d.Architecture.Routing.CommandTermCaches
 
     public IEnumerable<Route> Values => _dic.Values ;
 
+    public IEnumerable<SubRoute> CollectAllSubRoutes() => Values.SelectMany( route => route.SubRoutes ) ;
+
+    /// <summary>
+    /// Generate and register new Route if needed.
+    /// </summary>
+    /// <param name="routeName">Name of the route.</param>
+    /// <returns>Route.</returns>
+    public Route FindOrCreate( string routeName )
+    {
+      if ( _dic.TryGetValue( routeName, out var route ) ) return route ;
+
+      route = new Route( Document, routeName ) ;
+      _dic.Add( routeName, route ) ;
+      return route ;
+    }
+
     /// <summary>
     /// Removes all routes from both cache and document data storages.
     /// </summary>

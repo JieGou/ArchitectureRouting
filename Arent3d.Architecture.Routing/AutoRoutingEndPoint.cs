@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing
   {
     public EndPointBase EndPoint { get ; }
 
-    private readonly double _reducerLength ;
+    private readonly double _minimumStraightLength ;
     private readonly double _angleToleranceRadian ;
 
     /// <summary>
@@ -33,13 +33,13 @@ namespace Arent3d.Architecture.Routing
       IsStart = isFrom ;
       Priority = priority ;
       Depth = priority ;
-      _reducerLength = routeMepSystem.GetReducerLength( endPoint.GetDiameter() ?? -1, edgeDiameter ) ;
+      _minimumStraightLength = routeMepSystem.GetReducerLength( endPoint.GetDiameter() ?? -1, edgeDiameter ) + EndPoint.GetMinimumStraightLength( routeMepSystem, edgeDiameter, IsStart ) ;
       _angleToleranceRadian = routeMepSystem.CurveType.Document.Application.AngleTolerance ;
 
       PipeCondition = new RouteCondition( routeMepSystem, endPoint, edgeDiameter ) ;
     }
 
-    public Vector3d Position => EndPoint.Position + _reducerLength * Direction.ForEndPointType( IsStart ) ;
+    public Vector3d Position => EndPoint.Position + _minimumStraightLength * Direction.ForEndPointType( IsStart ) ;
 
     public Vector3d Direction => Sanitize( EndPoint.GetDirection( IsStart ) ) ;
 

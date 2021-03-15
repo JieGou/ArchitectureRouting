@@ -166,12 +166,8 @@ namespace Arent3d.Architecture.Routing.App
       var parents = new HashSet<Route>() ;
       await foreach ( var (routeName, segment) in fromToList ) {
         if ( false == dic.TryGetValue( routeName, out var route ) ) {
-          if ( oldRoutes.TryGetValue( routeName, out route ) ) {
-            route.Clear() ;
-          }
-          else {
-            route = new Route( _document, routeName ) ;
-          }
+          route = oldRoutes.FindOrCreate( routeName ) ;
+          route.Clear() ;
 
           dic.Add( routeName, route ) ;
           result.Add( route ) ;

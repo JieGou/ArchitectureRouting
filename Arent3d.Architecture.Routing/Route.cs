@@ -73,7 +73,12 @@ namespace Arent3d.Architecture.Routing
       RouteName = string.Empty ;
     }
 
-    public Route( Document document, string routeId ) : base( document, false )
+    /// <summary>
+    /// Called by RouteCache.
+    /// </summary>
+    /// <param name="document"></param>
+    /// <param name="routeId"></param>
+    internal Route( Document document, string routeId ) : base( document, false )
     {
       RouteName = routeId ;
     }

@@ -30,6 +30,11 @@ namespace Arent3d.Architecture.Routing.RouteEnd
     public abstract Vector3d Position { get ; }
 
     /// <summary>
+    /// Returns the required minimum straight length.
+    /// </summary>
+    public virtual double GetMinimumStraightLength( RouteMEPSystem routeMepSystem, double edgeDiameter, bool isFrom ) => 0 ;
+
+    /// <summary>
     /// Returns the flow vector.
     /// </summary>
     public abstract Vector3d GetDirection( bool isFrom ) ;

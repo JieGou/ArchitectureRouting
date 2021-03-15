@@ -62,6 +62,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         return CreateNewSegmentListForRoutePick( subRoute2, toPickResult, fromIndicator, true ) ;
       }
 
+      var parentRoute1 = ( fromIndicator as PassPointBranchEndIndicator )?.ParentBranch( document ).Route ;
+      var parentRoute2 = ( toIndicator as PassPointBranchEndIndicator )?.ParentBranch( document ).Route ;
+      var list = UnionRoutes( parentRoute1, parentRoute2 ) ;
+
       var routes = RouteCache.Get( document ) ;
 
       for ( var i = routes.Count + 1 ; ; ++i ) {
@@ -70,7 +74,33 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
         var segment = new RouteSegment( fromIndicator, toIndicator, -1 ) ;
         segment.ApplyRealNominalDiameter( document ) ;
-        return new[] { ( name, segment ) } ;
+        routes.FindOrCreate( name ) ;
+        list.Add( ( name, segment ) ) ;
+        return list ;
+      }
+    }
+
+    private static List<(string RouteName, RouteSegment Segment)> UnionRoutes( Route? parentRoute1, Route? parentRoute2 )
+    {
+      HashSet<Route>? routes = null ;
+      if ( null != parentRoute1 ) {
+        routes = parentRoute1.GetAllRelatedBranches() ;
+      }
+
+      if ( null != parentRoute2 ) {
+        if ( null != routes ) {
+          routes.UnionWith( parentRoute2.GetAllRelatedBranches() );
+        }
+        else {
+          routes = parentRoute2.GetAllRelatedBranches() ;
+        }
+      }
+
+      if ( null == routes ) {
+        return new List<(string RouteName, RouteSegment Segment)>() ;
+      }
+      else {
+        return routes.ToSegmentsWithName().ToList() ;
       }
     }
 
