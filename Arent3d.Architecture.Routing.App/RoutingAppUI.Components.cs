@@ -1,5 +1,6 @@
 using Arent3d.Architecture.Routing.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.App.Commands.PassPoint ;
+using Arent3d.Architecture.Routing.App.Commands.BranchPoint;
 using Arent3d.Architecture.Routing.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.App.Commands.Rack ;
 using Arent3d.Revit.I18n ;
@@ -15,7 +16,6 @@ namespace Arent3d.Architecture.Routing.App
 
     private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init", TitleKey: "App.Panels.Routing.Initialize" ) ;
     private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", TitleKey: "App.Panels.Routing.Routing" ) ;
-    //private static readonly (string Key, string TitleKey) PassPointPanel = ( Key: "arent3d.architecture.routing.passpoint", TitleKey: "App.Panels.Routing.PassPoints" ) ;
     private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "App.Panels.Routing.Racks" ) ;
 
 
@@ -28,13 +28,13 @@ namespace Arent3d.Architecture.Routing.App
     private readonly RibbonButton _allReRouteCommandButton ;
     
     private readonly RibbonButton _insertPassPointCommandButton ;
-    //private readonly RibbonButton _insertBranchPointCommandButton ; //just show dialog
+    private readonly RibbonButton _insertBranchPointCommandButton ; //just show dialog
     
     private readonly RibbonButton _eraseSelectedRoutesCommandButton ;
     private readonly RibbonButton _eraseAllRoutesCommandButton ;
     
-    //private readonly RibbonButton _replaceFromToCommandButton ;//just show dialog
-    //private readonly RibbonButton _showFromToWindowCommandButton ;//just show dialog
+    private readonly RibbonButton _replaceFromToCommandButton ;//just show dialog
+    private readonly RibbonButton _showFromToWindowCommandButton ;//just show dialog
     
     private readonly RibbonButton _fileRoutingCommandButton ;
     private readonly RibbonButton _exportRoutingCommandButton ;
@@ -59,13 +59,13 @@ namespace Arent3d.Architecture.Routing.App
         _allReRouteCommandButton = routingPanel.AddButton<AllReRouteCommand>() ;
         
         _insertPassPointCommandButton = routingPanel.AddButton<InsertPassPointCommand>() ;
-        //_insertBranchPointCommandButton = routingPanel.AddButton<>()
+        _insertBranchPointCommandButton = routingPanel.AddButton<InsertBranchPointCommand>();
         
         _eraseSelectedRoutesCommandButton = routingPanel.AddButton<EraseSelectedRoutesCommand>() ;
         _eraseAllRoutesCommandButton = routingPanel.AddButton<EraseAllRoutesCommand>() ;
 
-        //_replaceFromToCommandButton = routingPanel.AddButton<>();
-        //_showFromToWindowCommandButton = routingPanel.AddButton<>();
+        _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>();
+        _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindow>();
 
         _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
         _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
@@ -98,8 +98,12 @@ namespace Arent3d.Architecture.Routing.App
       _eraseAllRoutesCommandButton.Enabled = false ;
       _exportRoutingCommandButton.Enabled = false ;
 
-      _insertPassPointCommandButton.Enabled = false ;
+      _insertPassPointCommandButton.Enabled = false;
+      _insertBranchPointCommandButton.Enabled = false;
 
+      _replaceFromToCommandButton.Enabled = false;
+      _showFromToWindowCommandButton.Enabled = false;
+      
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
       _eraseAllRacksCommandButton.Enabled = false ;
@@ -126,7 +130,11 @@ namespace Arent3d.Architecture.Routing.App
       _exportRoutingCommandButton.Enabled = setupIsDone ;
 
       _insertPassPointCommandButton.Enabled = setupIsDone ;
+      _insertBranchPointCommandButton.Enabled = setupIsDone;
 
+      _replaceFromToCommandButton.Enabled = setupIsDone;
+      _showFromToWindowCommandButton.Enabled = setupIsDone;
+      
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
