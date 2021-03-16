@@ -9,7 +9,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Re-Route Selected" )]
+  [DisplayName( "Re-Route\nSelected" )]
   [Image( "resources/MEP.ico" )]
   public class PickAndReRouteCommand : RoutingCommandBase
   {

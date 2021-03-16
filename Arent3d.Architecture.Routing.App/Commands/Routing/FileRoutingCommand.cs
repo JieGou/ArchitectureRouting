@@ -12,7 +12,7 @@ using CsvHelper ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.FileRoutingCommand", DefaultString = "Import From-To" )]
+  [DisplayNameKey( "App.Commands.Routing.FileRoutingCommand", DefaultString = "Import\nFrom-To" )]
   [Image( "resources/ImportFromTo.png" )]
   public class FileRoutingCommand : RoutingCommandBase
   {

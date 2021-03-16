@@ -8,9 +8,9 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
     [Transaction( TransactionMode.Manual )]
-    [DisplayName( "From-To Window" )]
+    [DisplayName( "From-To\nWindow" )]
     [Image( "resources/From-ToWindow.png")]
-    public class ShowFrom_ToWindow : IExternalCommand
+    public class ShowFrom_ToWindowCommand : IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {

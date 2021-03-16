@@ -12,7 +12,7 @@
     <key>App.Panels.Routing.Racks</key>
     <string>PS</string>
     <key>App.Commands.Routing.FileRoutingCommand</key>
-    <string>From-Toのインポート</string>
+    <string>Impor\nFrom-To</string>
     <key>Revit.Property.Builtin.Width</key>
     <string>幅</string>
     <key>Revit.Property.Builtin.Height</key>

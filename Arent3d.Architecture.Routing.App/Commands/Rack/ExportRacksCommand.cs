@@ -13,7 +13,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Rack
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Export PS" )]
+  [DisplayName( "Export\nPS" )]
   [Image( "resources/ExportPS.png" )]
   public class ExportRacksCommand : IExternalCommand
   {

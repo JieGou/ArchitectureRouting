@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.App
         _eraseAllRoutesCommandButton = routingPanel.AddButton<EraseAllRoutesCommand>() ;
 
         _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>();
-        _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindow>();
+        _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>();
 
         _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
         _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
@@ -75,6 +75,9 @@ namespace Arent3d.Architecture.Routing.App
         _importRacksCommandButton = rackPanel.AddButton<ImportRacksCommand>() ;
         _exportRacksCommandButton = rackPanel.AddButton<ExportRacksCommand>() ;
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
+      }
+      {
+        
       }
 
       InitializeRibbon() ;

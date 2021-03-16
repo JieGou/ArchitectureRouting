@@ -13,7 +13,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Delete From-To" )]
+  [DisplayName( "Delete\nFrom-To" )]
   [Image( "resources/DeleteFrom-To.png" )]
   public class EraseSelectedRoutesCommand : RoutingCommandBase
   {
