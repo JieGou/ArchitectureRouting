@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init", TitleKey: "App.Panels.Routing.Initialize" ) ;
     private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", TitleKey: "App.Panels.Routing.Routing" ) ;
-    private static readonly (string Key, string TitleKey) PassPointPanel = ( Key: "arent3d.architecture.routing.passpoint", TitleKey: "App.Panels.Routing.PassPoints" ) ;
+    //private static readonly (string Key, string TitleKey) PassPointPanel = ( Key: "arent3d.architecture.routing.passpoint", TitleKey: "App.Panels.Routing.PassPoints" ) ;
     private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "App.Panels.Routing.Racks" ) ;
 
 
@@ -23,16 +23,22 @@ namespace Arent3d.Architecture.Routing.App
     private readonly RibbonButton _showRoutingViewsCommandButton ;
 
     private readonly RibbonButton _pickRoutingCommandButton ;
-    private readonly RibbonButton _fileRoutingCommandButton ;
 
     private readonly RibbonButton _pickAndReRouteCommandButton ;
     private readonly RibbonButton _allReRouteCommandButton ;
+    
+    private readonly RibbonButton _insertPassPointCommandButton ;
+    //private readonly RibbonButton _insertBranchPointCommandButton ; //just show dialog
+    
     private readonly RibbonButton _eraseSelectedRoutesCommandButton ;
     private readonly RibbonButton _eraseAllRoutesCommandButton ;
+    
+    //private readonly RibbonButton _replaceFromToCommandButton ;//just show dialog
+    //private readonly RibbonButton _showFromToWindowCommandButton ;//just show dialog
+    
+    private readonly RibbonButton _fileRoutingCommandButton ;
     private readonly RibbonButton _exportRoutingCommandButton ;
-
-    private readonly RibbonButton _insertPassPointCommandButton ;
-
+    
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
     private readonly RibbonButton _eraseAllRacksCommandButton ;
@@ -49,19 +55,20 @@ namespace Arent3d.Architecture.Routing.App
       {
         var routingPanel = tab.CreateRibbonPanel( RoutingPanel.Key, ToDisplayName( RoutingPanel.TitleKey ) ) ;
         _pickRoutingCommandButton = routingPanel.AddButton<PickRoutingCommand>() ;
-        _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
-        routingPanel.AddSeparator() ;
         _pickAndReRouteCommandButton = routingPanel.AddButton<PickAndReRouteCommand>() ;
         _allReRouteCommandButton = routingPanel.AddButton<AllReRouteCommand>() ;
-        routingPanel.AddSeparator() ;
+        
+        _insertPassPointCommandButton = routingPanel.AddButton<InsertPassPointCommand>() ;
+        //_insertBranchPointCommandButton = routingPanel.AddButton<>()
+        
         _eraseSelectedRoutesCommandButton = routingPanel.AddButton<EraseSelectedRoutesCommand>() ;
         _eraseAllRoutesCommandButton = routingPanel.AddButton<EraseAllRoutesCommand>() ;
-        routingPanel.AddSeparator() ;
+
+        //_replaceFromToCommandButton = routingPanel.AddButton<>();
+        //_showFromToWindowCommandButton = routingPanel.AddButton<>();
+
+        _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
         _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
-      }
-      {
-        var passPointPanel = tab.CreateRibbonPanel( PassPointPanel.Key, ToDisplayName( PassPointPanel.TitleKey ) ) ;
-        _insertPassPointCommandButton = passPointPanel.AddButton<InsertPassPointCommand>() ;
       }
       {
         var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;

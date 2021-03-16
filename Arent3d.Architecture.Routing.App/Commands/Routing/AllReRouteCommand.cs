@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "Re-Route All" )]
-  [Image( "resources/MEP.ico" )]
+  [Image( "resources/RerouteAll.png" )]
   public class AllReRouteCommand : RoutingCommandBase
   {
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )

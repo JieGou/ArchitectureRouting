@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "Pick From-To" )]
-  [Image( "resources/MEP.ico" )]
+  [Image( "resources/PickFrom-To.png" )]
   public class PickRoutingCommand : RoutingCommandBase
   {
     /// <summary>

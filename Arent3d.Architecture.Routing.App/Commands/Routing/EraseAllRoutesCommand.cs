@@ -9,8 +9,8 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Erase All Routes" )]
-  [Image( "resources/MEP.ico" )]
+  [DisplayName( "Delete All From-To" )]
+  [Image( "resources/DeleteAllFrom-To.png" )]
   public class EraseAllRoutesCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )

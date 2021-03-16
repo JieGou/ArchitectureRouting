@@ -19,8 +19,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "Insert Pass Point" )]
-  [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
+  [Image( "resources/InsertPassPoint.png", ImageType = ImageType.Large )]
   public class InsertPassPointCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )

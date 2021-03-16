@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "App.Commands.Routing.FileRoutingCommand", DefaultString = "Import From-To" )]
-  [Image( "resources/MEP.ico" )]
+  [Image( "resources/ImportFromTo.png" )]
   public class FileRoutingCommand : RoutingCommandBase
   {
     /// <summary>

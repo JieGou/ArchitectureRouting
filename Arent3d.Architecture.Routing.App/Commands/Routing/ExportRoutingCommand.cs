@@ -11,7 +11,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.ReadOnly )]
   [DisplayName( "Export From-To" )]
-  [Image( "resources/MEP.ico" )]
+  [Image( "resources/ExportFromTo.png" )]
   public class ExportRoutingCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
