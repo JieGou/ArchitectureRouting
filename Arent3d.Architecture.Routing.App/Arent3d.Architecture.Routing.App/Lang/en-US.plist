@@ -18,6 +18,9 @@
         <key>App.Panels.Routing.Racks</key>
         <string>Pipe Spaces</string>
 
+        <key>App.Panels.Routing.Selecting</key>
+        <string>Selected From-To</string>
+
         <!-- Application UI Button Strings -->
         <key>App.Commands.Routing.FileRoutingCommand</key>
         <string>Import From-To</string>
