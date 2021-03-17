@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     /// Collects from-to records to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
     {
       var csvFileName = OpenFromToCsv() ;
       if ( null == csvFileName ) return null ;
@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
     private static string? OpenFromToCsv()
     {
-      using var dlg = new FileSaveDialog( $"{"Dialog.Commands.Routing.FromTo.FileName".GetAppStringByKeyOrDefault( null )} (*.csv)|*.csv" )
+      using var dlg = new FileOpenDialog( $"{"Dialog.Commands.Routing.FromTo.FileName".GetAppStringByKeyOrDefault( null )} (*.csv)|*.csv" )
       {
         Title = "Dialog.Commands.Routing.FromTo.Title.Import".GetAppStringByKeyOrDefault( null )
       } ;

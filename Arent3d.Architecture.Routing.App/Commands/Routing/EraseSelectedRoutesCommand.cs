@@ -19,10 +19,13 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.EraseSelectedRoutes" ;
 
-    protected override async IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
-      await Task.Yield() ;
+      return GetSelectedRouteSegments( uiDocument ).EnumerateAll().ToAsyncEnumerable() ;
+    }
 
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( UIDocument uiDocument )
+    {
       // use lazy evaluation because GetRouteSegments()'s call time is not in the transaction.
       var document = uiDocument.Document ;
       var recreatedRoutes = ThreadDispatcher.Dispatch( () =>

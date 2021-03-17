@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickAndReRoute" ;
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
     {
       var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
 

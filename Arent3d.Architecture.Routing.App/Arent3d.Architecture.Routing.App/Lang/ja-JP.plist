@@ -46,12 +46,12 @@
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Routing.PickRouting.PickFirst</key>
-        <string>From-Toの始点を選択してください</string>
+        <string>From-Toの始点を選択してください。</string>
         <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
-        <string>From-Toの終点を選択してください</string>
+        <string>From-Toの終点を選択してください。</string>
 
         <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
-        <string>再ルーティングしたいFrom-Toを選択してください</string>
+        <string>再ルーティングしたいFrom-Toを選択してください。</string>
 
         <key>Dialog.Commands.Routing.FromTo.FileName</key>
         <string>From-Toリスト ファイル</string>
@@ -59,6 +59,9 @@
         <string>From-Toリストの保存</string>
         <key>Dialog.Commands.Routing.FromTo.Title.Import</key>
         <string>From-Toリストの読込</string>
+
+        <key>Dialog.Commands.PassPoint.Insert.Pick</key>
+        <string>通過点を挿入したいFrom-Toを選択してください。</string>
 
 
         <!-- Parameter Names -->
