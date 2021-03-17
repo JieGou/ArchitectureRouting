@@ -17,7 +17,7 @@
 
         <key>App.Panels.Routing.Racks</key>
         <string>Pipe Spaces</string>
-
+            
         <key>App.Panels.Routing.Selecting</key>
         <string>Selected From-To</string>
 
@@ -71,6 +71,46 @@
         <string>From-To&#xA;Window</string>
 
 
+        <!-- Transaction Names -->
+        <key>TransactionName.Commands.Routing.PickRouting</key>
+        <string>Add From-To</string>
+
+        <key>TransactionName.Commands.Routing.RoutingFromFile</key>
+        <string>Import From-To</string>
+
+        <key>TransactionName.Commands.Routing.PickAndReRoute</key>
+        <string>Reroute Selected</string>
+
+        <key>TransactionName.Commands.Routing.RerouteAll</key>
+        <string>Reroute All</string>
+
+        <key>TransactionName.Commands.Routing.EraseSelectedRoutes</key>
+        <string>Erase Selected</string>
+
+        <key>TransactionName.Commands.Routing.EraseAllRoutes</key>
+        <string>Erase All From-Tos</string>
+
+
+        <!-- Dialogs -->
+        <key>Dialog.Commands.Routing.PickRouting.PickFirst</key>
+        <string>Pick the FROM point of a from-to.</string>
+        <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
+        <string>Pick the TO point of a from-to.</string>
+
+        <key>Dialog.Commands.Routing.PickAndReRoute.Pick</key>
+        <string>Pick a from-to to reroute.</string>
+
+        <key>Dialog.Commands.Routing.FromTo.FileName</key>
+        <string>From-to list file</string>
+        <key>Dialog.Commands.Routing.FromTo.Title.Export</key>
+        <string>Export from-to list file</string>
+        <key>Dialog.Commands.Routing.FromTo.Title.Import</key>
+        <string>Import from-to list file</string>
+
+        <key>Dialog.Commands.PassPoint.Insert.Pick</key>
+        <string>Pick a from-to to insert a pass point.</string>
+
+
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
         <string>Width</string>
@@ -79,13 +119,13 @@
         <string>Height</string>
 
         <key>Revit.Property.Builtin.DiameterR1</key>
-        <string>Nominal diameter r1</string>
+        <string>Nominal Diameter r1</string>
 
         <key>Revit.Property.Builtin.DiameterR2</key>
-        <string>Nominal diameter r2</string>
+        <string>Nominal Diameter r2</string>
 
         <key>Revit.Property.Builtin.DiameterR3</key>
-        <string>Nominal diameter r3</string>
+        <string>Nominal Diameter r3</string>
 
         <key>Revit.Property.Builtin.OffsetWidth</key>
         <string>Offset Width</string>

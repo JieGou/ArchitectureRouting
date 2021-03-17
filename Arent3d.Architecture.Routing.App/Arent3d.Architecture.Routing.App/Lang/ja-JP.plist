@@ -30,13 +30,13 @@
 
     <key>App.Commands.Initialization.ShowRoutingViewsCommand</key>
     <string>Plans</string>
-
+      
     <key>App.Commands.PassPoint.InsertPassPointCommand</key>
     <string>Insert&#xA;Pass Point</string>
 
     <key>App.Commands.Rack.EraseAllRacksCommand</key>
     <string>Delete&#xA;All PS</string>
-
+      
     <key>App.Commands.Rack.ExportRacksCommand</key>
     <string>Export&#xA;PS</string>
     
@@ -70,6 +70,45 @@
     <key>App.Commands.Routing.ShowFrom_ToWindowCommand</key>
     <string>From-To&#xA;Window</string>
 
+      <!-- Transaction Names -->
+      <key>TransactionName.Commands.Routing.PickRouting</key>
+      <string>From-Toの作成</string>
+
+      <key>TransactionName.Commands.Routing.RoutingFromFile</key>
+      <string>From-Toの読込</string>
+
+      <key>TransactionName.Commands.Routing.PickAndReRoute</key>
+      <string>選択From-Toを再ルーティング</string>
+
+      <key>TransactionName.Commands.Routing.RerouteAll</key>
+      <string>全て再ルーティング</string>
+
+      <key>TransactionName.Commands.Routing.EraseSelectedRoutes</key>
+      <string>選択From-Toを削除</string>
+
+      <key>TransactionName.Commands.Routing.EraseAllRoutes</key>
+      <string>全てのFrom-Toを削除</string>
+
+
+      <!-- Dialogs -->
+      <key>Dialog.Commands.Routing.PickRouting.PickFirst</key>
+      <string>From-Toの始点を選択してください。</string>
+      <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
+      <string>From-Toの終点を選択してください。</string>
+
+      <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
+      <string>再ルーティングしたいFrom-Toを選択してください。</string>
+
+      <key>Dialog.Commands.Routing.FromTo.FileName</key>
+      <string>From-Toリスト ファイル</string>
+      <key>Dialog.Commands.Routing.FromTo.Title.Export</key>
+      <string>From-Toリストの保存</string>
+      <key>Dialog.Commands.Routing.FromTo.Title.Import</key>
+      <string>From-Toリストの読込</string>
+
+      <key>Dialog.Commands.PassPoint.Insert.Pick</key>
+      <string>通過点を挿入したいFrom-Toを選択してください。</string>
+      
     <!-- Parameter Names -->
     <key>Revit.Property.Builtin.Width</key>
     <string>幅</string>

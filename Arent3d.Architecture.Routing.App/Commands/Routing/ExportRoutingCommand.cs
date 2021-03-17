@@ -2,6 +2,7 @@ using System.ComponentModel ;
 using System.IO ;
 using System.Linq ;
 using Arent3d.Revit.Csv ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -18,7 +19,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
 
-      using var dlg = new FileSaveDialog( "Routing from-to list (*.csv)|*.csv" ) { Title = "Export from-to list file" } ;
+      using var dlg = new FileSaveDialog( $"{"Dialog.Commands.Routing.FromTo.FileName".GetAppStringByKeyOrDefault( null )} (*.csv)|*.csv" )
+      {
+        Title = "Dialog.Commands.Routing.FromTo.Title.Export".GetAppStringByKeyOrDefault( null )
+      } ;
 
       if ( ItemSelectionDialogResult.Confirmed != dlg.Show() ) return Result.Succeeded ;
 

@@ -6,12 +6,12 @@ using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
@@ -20,62 +20,31 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "App.Commands.PassPoint.InsertPassPointCommand", DefaultString = "Insert\nPass Point" )]
   [Image( "resources/InsertPassPoint.png", ImageType = ImageType.Large )]
-  public class InsertPassPointCommand : IExternalCommand
+  public class InsertPassPointCommand : Routing.RoutingCommandBase
   {
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.PassPoint.Insert" ;
+
+    /// <summary>
+    /// Collects from-to records to be auto-routed.
+    /// </summary>
+    /// <returns>Routing from-to records.</returns>
+    protected override async IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
+      await Task.Yield() ;
 
-      PointOnRoutePicker.PickInfo pickInfo ;
-      try {
-        pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Pick a point on a route." ) ;
-      }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        return Result.Cancelled ;
-      }
+      var segments = UiThread.RevitUiDispatcher.Invoke( () =>
+      {
+        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Dialog.Commands.PassPoint.Insert.Pick".GetAppStringByKeyOrDefault( null ) ) ;
 
-      var executor = new RoutingExecutor( document, commandData.View ) ;
-
-      using var transaction = new Transaction( document ) ;
-      transaction.Start( "Insert Pass Point" ) ;
-      try {
+        var document = uiDocument.Document ;
         var elm = InsertPassPointElement( document, pickInfo ) ;
         var route = pickInfo.SubRoute.Route ;
-        var routeRecords = GetRelatedBranchSegments( pickInfo.SubRoute.Route ) ;
-        routeRecords = routeRecords.Concat( GetNewSegmentList( pickInfo.SubRoute, pickInfo.Element, elm.Id.IntegerValue ).ToSegmentsWithName( route.RouteName ) ).EnumerateAll() ;
+        var routeRecords = GetRelatedBranchSegments( route ) ;
+        return routeRecords.Concat( GetNewSegmentList( pickInfo.SubRoute, pickInfo.Element, elm.Id.IntegerValue ).ToSegmentsWithName( route.RouteName ) ).EnumerateAll() ;
+      } ) ;
 
-        var tokenSource = new CancellationTokenSource() ;
-        using var progress = ProgressBar.Show( tokenSource ) ;
-
-        var task = Task.Run( () => executor.Run( routeRecords.ToAsyncEnumerable(), progress ), tokenSource.Token ) ;
-        task.ConfigureAwait( false ) ;
-        ThreadDispatcher.WaitWithDoEvents( task ) ;
-
-        if ( task.IsCanceled || RoutingExecutionResult.Cancel == task.Result ) {
-          transaction.RollBack() ;
-          return Result.Cancelled ;
-        }
-        else if ( RoutingExecutionResult.Success == task.Result ) {
-          transaction.Commit() ;
-
-          if ( executor.HasBadConnectors ) {
-            CommandUtils.AlertBadConnectors( executor.GetBadConnectorSet() ) ;
-          }
-
-          return Result.Succeeded ;
-        }
-        else {
-          return Result.Failed ;
-        }
-      }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        return Result.Cancelled ;
-      }
-      finally {
-        if ( transaction.HasStarted() ) {
-          transaction.RollBack() ;
-        }
+      foreach ( var record in segments ) {
+        yield return record ;
       }
     }
 

@@ -1,6 +1,7 @@
 using System.ComponentModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -20,7 +21,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var hashSet = cache.Keys.ToHashSet() ;
 
       using var tx = new Transaction( document ) ;
-      tx.Start( "Erase all routes" ) ;
+      tx.Start( "TransactionName.Commands.Routing.EraseAllRoutes".GetAppStringByKeyOrDefault( null ) ) ;
       try {
         RouteGenerator.EraseRoutes( document, hashSet, true ) ;
         cache.Drop( hashSet ) ;

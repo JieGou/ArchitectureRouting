@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI.Forms ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -13,22 +14,25 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      var document = commandData.Application.ActiveUIDocument.Document ;
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var document = uiDocument.Document ;
 
       var executor = new RoutingExecutor( document, commandData.View ) ;
 
       IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? segments ;
       try {
-        segments = GetRouteSegments( commandData.Application.ActiveUIDocument ) ;
+        segments = GetRouteSegmentsBeforeTransaction( uiDocument ) ;
         if ( null == segments ) return Result.Cancelled ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
       }
 
-      using var transaction = new Transaction( document, "Routing Assist" ) ;
+      using var transaction = new Transaction( document, GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ) ) ;
       try {
         transaction.Start() ;
+
+        segments = segments.Concat( GetRouteSegmentsInTransaction( uiDocument ) ) ;
 
         var tokenSource = new CancellationTokenSource() ;
         using var progress = ProgressBar.Show( tokenSource ) ;
@@ -66,10 +70,29 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
     }
 
+    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)> ConvertRouteSegments( UIDocument uiDocument, IAsyncEnumerable<(string RouteName, RouteSegment Segment)> segments )
+    {
+      return segments ;
+    }
+
+    protected abstract string GetTransactionNameKey() ;
+
     /// <summary>
-    /// Collects route segments to be auto-routed.
+    /// Collects route segments to be auto-routed (before transaction).
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected abstract IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument ) ;
+    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
+    {
+      return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
+    }
+
+    /// <summary>
+    /// Collects route segments to be auto-routed (in transaction).
+    /// </summary>
+    /// <returns>Routing from-to records.</returns>
+    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
+    {
+      return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
+    }
   }
 }

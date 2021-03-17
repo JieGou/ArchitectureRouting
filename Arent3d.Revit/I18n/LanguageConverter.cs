@@ -47,21 +47,31 @@ namespace Arent3d.Revit.I18n
       return dic ;
     }
 
-    public static string? GetAppStringByKey( string keyName )
+    public static string? GetAppStringByKey( this string keyName )
     {
       if ( string.IsNullOrEmpty( keyName ) ) return keyName ;
 
       return GetStringByKey( GetAppDictionary(), keyName ) ;
     }
 
-    public static string? GetStringByKey( this Document document, string keyName )
+    public static string GetAppStringByKeyOrDefault( this string keyName, string? defaultString )
+    {
+      return keyName.GetAppStringByKey() ?? defaultString ?? keyName.GetDefaultStringByKey() ;
+    }
+
+    public static string? GetDocumentStringByKey( this string keyName, Document document )
     {
       if ( string.IsNullOrEmpty( keyName ) ) return keyName ;
 
       return GetStringByKey( GetDocumentDictionary( document ), keyName ) ;
     }
 
-    public static string GetDefaultString( string keyName )
+    public static string GetDocumentStringByKeyOrDefault( this string keyName, Document document, string? defaultString )
+    {
+      return keyName.GetDocumentStringByKey( document ) ?? defaultString ?? keyName.GetDefaultStringByKey() ;
+    }
+
+    public static string GetDefaultStringByKey( this string keyName )
     {
       var lastPart = GetLastPart( keyName ) ;
       if ( null == lastPart ) return keyName ;

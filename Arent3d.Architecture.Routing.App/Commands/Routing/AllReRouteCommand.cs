@@ -13,7 +13,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Image( "resources/RerouteAll.png" )]
   public class AllReRouteCommand : RoutingCommandBase
   {
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RerouteAll" ;
+
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
       return uiDocument.Document.CollectRoutes().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
     }

@@ -15,7 +15,7 @@ namespace Arent3d.Revit.UI
 
     public string GetApplicationString()
     {
-      return LanguageConverter.GetAppStringByKey( Key ) ?? DefaultString ?? LanguageConverter.GetDefaultString( Key ) ;
+      return Key.GetAppStringByKeyOrDefault( DefaultString ) ;
     }
   }
 }
