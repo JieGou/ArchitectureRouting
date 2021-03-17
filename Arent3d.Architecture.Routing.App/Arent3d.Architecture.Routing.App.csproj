@@ -47,10 +47,6 @@
     <Resource Include="resources\Initialize-32.bmp" />
     <None Remove="resources\Initialize.png" />
     <Resource Include="resources\Initialize.png" />
-
-    <None Remove="resources\InitializeTest.png" />
-    <Resource Include="resources\InitializeTest.png" />
-    
     <None Remove="resources\Plans.png" />
     <Resource Include="resources\Plans.png" />
     <None Remove="resources\RerouteAll.png" />
