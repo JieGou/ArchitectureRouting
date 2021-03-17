@@ -10,7 +10,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.ReadOnly )]
-  [DisplayName( "Export\nFrom-To" )]
+  [DisplayNameKey( "App.Commands.Routing.ExportRoutingCommand", DefaultString = "Export\nFrom-To" )]
   [Image( "resources/ExportFromTo.png" )]
   public class ExportRoutingCommand : IExternalCommand
   {

@@ -9,7 +9,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Re-Route\nAll" )]
+  [DisplayNameKey( "App.Commands.Routing.AllReRouteCommand", DefaultString = "Reroute\nAll" )]
   [Image( "resources/RerouteAll.png" )]
   public class AllReRouteCommand : RoutingCommandBase
   {

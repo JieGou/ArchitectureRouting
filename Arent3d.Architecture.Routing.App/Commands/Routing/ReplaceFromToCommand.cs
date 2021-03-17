@@ -8,7 +8,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
     [Transaction( TransactionMode.Manual )]
-    [DisplayName( "Replace\nFrom-To" )]
+    [DisplayNameKey( "App.Commands.Routing.ReplaceFromToCommand", DefaultString = "Replace\nFrom-To" )]
     [Image( "resources/ReplaceFromTo.png")]
     public class ReplaceFromToCommand : IExternalCommand
     {

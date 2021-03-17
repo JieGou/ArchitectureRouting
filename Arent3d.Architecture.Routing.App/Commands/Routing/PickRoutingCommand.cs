@@ -14,7 +14,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Pick\nFrom-To" )]
+  [DisplayNameKey( "App.Commands.Routing.PickRoutingCommand", DefaultString = "Pick\nFrom-To" )]
   [Image( "resources/PickFrom-To.png" )]
   public class PickRoutingCommand : RoutingCommandBase
   {

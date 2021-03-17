@@ -9,7 +9,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Rack
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayName( "Delete\nAll PS" )]
+  [DisplayNameKey( "App.Commands.Rack.EraseAllRacksCommand", DefaultString = "Delete\nAll PS" )]
   [Image( "resources/DeleteAllPS.png" )]
   public class EraseAllRacksCommand : IExternalCommand
   {

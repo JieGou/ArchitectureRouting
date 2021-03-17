@@ -9,7 +9,7 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 namespace Arent3d.Architecture.Routing.App.Commands.BranchPoint
 {
     [Transaction( TransactionMode.Manual )]
-    [DisplayName( "Insert\nBranch Point" )]
+    [DisplayNameKey( "App.Commands.BranchPoint.InsertBranchPointCommand", DefaultString = "Insert\nBranch Point" )]
     [Image( "resources/InsertBranchPoint.png", ImageType = ImageType.Large )]
     public class InsertBranchPointCommand : IExternalCommand
     {
