@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using System.Linq ;
 using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Revit ;
@@ -29,6 +30,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
 
       using var transaction = new Transaction( document, GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ) ) ;
+      SetupFailureHandlingOptions( transaction ) ;
       try {
         transaction.Start() ;
 
@@ -70,9 +72,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
     }
 
-    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)> ConvertRouteSegments( UIDocument uiDocument, IAsyncEnumerable<(string RouteName, RouteSegment Segment)> segments )
+    private static void SetupFailureHandlingOptions( Transaction transaction )
     {
-      return segments ;
+      transaction.SetFailureHandlingOptions( ModifyFailureHandlingOptions( transaction.GetFailureHandlingOptions() ) ) ;
+    }
+
+    private static FailureHandlingOptions ModifyFailureHandlingOptions( FailureHandlingOptions handlingOptions )
+    {
+      handlingOptions = handlingOptions.SetFailuresPreprocessor( new RoutingFailuresPreprocessor() ) ;
+      
+      return handlingOptions ;
     }
 
     protected abstract string GetTransactionNameKey() ;
@@ -93,6 +102,33 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
       return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
+    }
+
+
+    private class RoutingFailuresPreprocessor : IFailuresPreprocessor
+    {
+      public FailureProcessingResult PreprocessFailures( FailuresAccessor failuresAccessor )
+      {
+        var document = failuresAccessor.GetDocument() ;
+
+        var elementsToDelete = new HashSet<ElementId>() ;
+        foreach ( var failure in failuresAccessor.GetFailureMessages() ) {
+          foreach ( var elmId in failure.GetFailingElementIds() ) {
+            if ( document.GetElementById<MEPCurve>( elmId ) is null ) continue ;
+            elementsToDelete.Add( elmId ) ;
+          }
+        }
+
+        if ( 0 < elementsToDelete.Count ) {
+          failuresAccessor.DeleteElements( elementsToDelete.ToList() ) ;
+          TaskDialog.Show( "Dialog.Commands.Routing.Dialog.Title.Error".GetAppStringByKeyOrDefault( null ), "Dialog.Commands.Routing.Common.Dialog.Body.Error.DeletedSomeFailedElements".GetAppStringByKeyOrDefault( null ) ) ;
+
+          return FailureProcessingResult.ProceedWithCommit ;
+        }
+        else {
+          return FailureProcessingResult.Continue ;
+        }
+      }
     }
   }
 }

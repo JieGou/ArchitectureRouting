@@ -110,6 +110,11 @@
         <key>Dialog.Commands.PassPoint.Insert.Pick</key>
         <string>Pick a from-to to insert a pass point.</string>
 
+        <key>Dialog.Commands.Routing.Dialog.Title.Error</key>
+        <string>Routing Error</string>
+        <key>Dialog.Commands.Routing.Dialog.Body.Error.DeletedSomeFailedElements</key>
+        <string>Some elements cannot be created on routing.&#xA;Add pass points to generate valid route shape.</string>
+
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

@@ -1,136 +1,144 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
-  <dict>
+    <dict>
 
-    <!-- Application UI Strings -->
-    <key>App.Routing.TabName</key>
-    <string>自動ルーティング</string>
-    
-    <key>App.Panels.Routing.Initialize</key>
-    <string>Setup</string>
-    
-    <key>App.Panels.Routing.Routing</key>
-    <string>From-To</string>
-    
-    <key>App.Panels.Routing.PassPoints</key>
-    <string>通過点</string>
-    
-    <key>App.Panels.Routing.Racks</key>
-    <string>PS</string>
-    
-    <key>App.Panels.Routing.Selecting</key>
-    <string>Selected From-To</string>
+        <!-- Application UI Strings -->
+        <key>App.Routing.TabName</key>
+        <string>自動ルーティング</string>
+        
+        <key>App.Panels.Routing.Initialize</key>
+        <string>Setup</string>
+        
+        <key>App.Panels.Routing.Routing</key>
+        <string>From-To</string>
+        
+        <key>App.Panels.Routing.PassPoints</key>
+        <string>通過点</string>
+        
+        <key>App.Panels.Routing.Racks</key>
+        <string>PS</string>
+        
+        <key>App.Panels.Routing.Selecting</key>
+        <string>Selected From-To</string>
 
-    <!-- Application UI Button Strings -->
-    <key>App.Commands.BranchPoint.InsertBranchPointCommand</key>
-    <string>Insert&#xA;Branch Point</string>
+        <!-- Application UI Button Strings -->
+        <key>App.Commands.BranchPoint.InsertBranchPointCommand</key>
+        <string>Insert&#xA;Branch Point</string>
 
-    <key>App.Commands.Initialization.InitializeCommand</key>
-    <string>Initialize</string>
+        <key>App.Commands.Initialization.InitializeCommand</key>
+        <string>Initialize</string>
 
-    <key>App.Commands.Initialization.ShowRoutingViewsCommand</key>
-    <string>Plans</string>
-      
-    <key>App.Commands.PassPoint.InsertPassPointCommand</key>
-    <string>Insert&#xA;Pass Point</string>
+        <key>App.Commands.Initialization.ShowRoutingViewsCommand</key>
+        <string>Plans</string>
+          
+        <key>App.Commands.PassPoint.InsertPassPointCommand</key>
+        <string>Insert&#xA;Pass Point</string>
 
-    <key>App.Commands.Rack.EraseAllRacksCommand</key>
-    <string>Delete&#xA;All PS</string>
-      
-    <key>App.Commands.Rack.ExportRacksCommand</key>
-    <string>Export&#xA;PS</string>
-    
-    <key>App.Commands.Rack.ImportRacksCommand</key>
-    <string>Import&#xA;PS</string>
+        <key>App.Commands.Rack.EraseAllRacksCommand</key>
+        <string>Delete&#xA;All PS</string>
+          
+        <key>App.Commands.Rack.ExportRacksCommand</key>
+        <string>Export&#xA;PS</string>
+        
+        <key>App.Commands.Rack.ImportRacksCommand</key>
+        <string>Import&#xA;PS</string>
 
-    <key>App.Commands.Routing.AllReRouteCommand</key>
-    <string>Reroute&#xA;All</string>
+        <key>App.Commands.Routing.AllReRouteCommand</key>
+        <string>Reroute&#xA;All</string>
 
-    <key>App.Commands.Routing.EraseAllRoutesCommand</key>
-    <string>Delete&#xA;All From-To</string>
+        <key>App.Commands.Routing.EraseAllRoutesCommand</key>
+        <string>Delete&#xA;All From-To</string>
 
-    <key>App.Commands.Routing.EraseSelectedRoutesCommand</key>
-    <string>Delete&#xA;From-To</string>
+        <key>App.Commands.Routing.EraseSelectedRoutesCommand</key>
+        <string>Delete&#xA;From-To</string>
 
-    <key>App.Commands.Routing.ExportRoutingCommand</key>
-    <string>Export&#xA;From-To</string>
-    
-    <key>App.Commands.Routing.FileRoutingCommand</key>
-    <string>Import&#xA;From-To</string>
+        <key>App.Commands.Routing.ExportRoutingCommand</key>
+        <string>Export&#xA;From-To</string>
+        
+        <key>App.Commands.Routing.FileRoutingCommand</key>
+        <string>Import&#xA;From-To</string>
 
-    <key>App.Commands.Routing.PickAndReRouteCommand</key>
-    <string>Reroute&#xA;Selected</string>
+        <key>App.Commands.Routing.PickAndReRouteCommand</key>
+        <string>Reroute&#xA;Selected</string>
 
-    <key>App.Commands.Routing.PickRoutingCommand</key>
-    <string>Pick&#xA;From-To</string>
+        <key>App.Commands.Routing.PickRoutingCommand</key>
+        <string>Pick&#xA;From-To</string>
 
-    <key>App.Commands.Routing.ReplaceFromToCommand</key>
-    <string>Replace&#xA;From-To</string>
+        <key>App.Commands.Routing.ReplaceFromToCommand</key>
+        <string>Replace&#xA;From-To</string>
 
-    <key>App.Commands.Routing.ShowFrom_ToWindowCommand</key>
-    <string>From-To&#xA;Window</string>
-
-      <!-- Transaction Names -->
-      <key>TransactionName.Commands.Routing.PickRouting</key>
-      <string>From-Toの作成</string>
-
-      <key>TransactionName.Commands.Routing.RoutingFromFile</key>
-      <string>From-Toの読込</string>
-
-      <key>TransactionName.Commands.Routing.PickAndReRoute</key>
-      <string>選択From-Toを再ルーティング</string>
-
-      <key>TransactionName.Commands.Routing.RerouteAll</key>
-      <string>全て再ルーティング</string>
-
-      <key>TransactionName.Commands.Routing.EraseSelectedRoutes</key>
-      <string>選択From-Toを削除</string>
-
-      <key>TransactionName.Commands.Routing.EraseAllRoutes</key>
-      <string>全てのFrom-Toを削除</string>
+        <key>App.Commands.Routing.ShowFrom_ToWindowCommand</key>
+        <string>From-To&#xA;Window</string>
 
 
-      <!-- Dialogs -->
-      <key>Dialog.Commands.Routing.PickRouting.PickFirst</key>
-      <string>From-Toの始点を選択してください。</string>
-      <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
-      <string>From-Toの終点を選択してください。</string>
+        <!-- Transaction Names -->
+        <key>TransactionName.Commands.Routing.PickRouting</key>
+        <string>From-Toの作成</string>
 
-      <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
-      <string>再ルーティングしたいFrom-Toを選択してください。</string>
+        <key>TransactionName.Commands.Routing.RoutingFromFile</key>
+        <string>From-Toの読込</string>
 
-      <key>Dialog.Commands.Routing.FromTo.FileName</key>
-      <string>From-Toリスト ファイル</string>
-      <key>Dialog.Commands.Routing.FromTo.Title.Export</key>
-      <string>From-Toリストの保存</string>
-      <key>Dialog.Commands.Routing.FromTo.Title.Import</key>
-      <string>From-Toリストの読込</string>
+        <key>TransactionName.Commands.Routing.PickAndReRoute</key>
+        <string>選択From-Toを再ルーティング</string>
 
-      <key>Dialog.Commands.PassPoint.Insert.Pick</key>
-      <string>通過点を挿入したいFrom-Toを選択してください。</string>
-      
-    <!-- Parameter Names -->
-    <key>Revit.Property.Builtin.Width</key>
-    <string>幅</string>
-    
-    <key>Revit.Property.Builtin.Height</key>
-    <string>高さ</string>
-    
-    <key>Revit.Property.Builtin.DiameterR1</key>
-    <string>呼び径r1</string>
-    
-    <key>Revit.Property.Builtin.DiameterR2</key>
-    <string>呼び径r2</string>
-    
-    <key>Revit.Property.Builtin.DiameterR3</key>
-    <string>呼び径r3</string>
-    
-    <key>Revit.Property.Builtin.OffsetWidth</key>
-    <string>オフセット幅</string>
-    
-    <key>Revit.Property.Builtin.OffsetHeight</key>
-    <string>オフセット高さ</string>
-    
-  </dict>
+        <key>TransactionName.Commands.Routing.RerouteAll</key>
+        <string>全て再ルーティング</string>
+
+        <key>TransactionName.Commands.Routing.EraseSelectedRoutes</key>
+        <string>選択From-Toを削除</string>
+
+        <key>TransactionName.Commands.Routing.EraseAllRoutes</key>
+        <string>全てのFrom-Toを削除</string>
+
+
+        <!-- Dialogs -->
+        <key>Dialog.Commands.Routing.PickRouting.PickFirst</key>
+        <string>From-Toの始点を選択してください。</string>
+        <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
+        <string>From-Toの終点を選択してください。</string>
+
+        <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
+        <string>再ルーティングしたいFrom-Toを選択してください。</string>
+
+        <key>Dialog.Commands.Routing.FromTo.FileName</key>
+        <string>From-Toリスト ファイル</string>
+        <key>Dialog.Commands.Routing.FromTo.Title.Export</key>
+        <string>From-Toリストの保存</string>
+        <key>Dialog.Commands.Routing.FromTo.Title.Import</key>
+        <string>From-Toリストの読込</string>
+
+        <key>Dialog.Commands.PassPoint.Insert.Pick</key>
+        <string>通過点を挿入したいFrom-Toを選択してください。</string>
+
+        <key>Dialog.Commands.Routing.Dialog.Title.Error</key>
+        <string>ルーティング エラー</string>
+        <key>Dialog.Commands.Routing.Dialog.Body.Error.DeletedSomeFailedElements</key>
+        <string>ルーティング時、一部の要素が作成できませんでした。&#xA;通過点を指定することでエラーのない形状を作成できます。</string>
+
+
+        <!-- Parameter Names -->
+        <key>Revit.Property.Builtin.Width</key>
+        <string>幅</string>
+
+        <key>Revit.Property.Builtin.Height</key>
+        <string>高さ</string>
+
+        <key>Revit.Property.Builtin.DiameterR1</key>
+        <string>呼び径r1</string>
+
+        <key>Revit.Property.Builtin.DiameterR2</key>
+        <string>呼び径r2</string>
+
+        <key>Revit.Property.Builtin.DiameterR3</key>
+        <string>呼び径r3</string>
+
+        <key>Revit.Property.Builtin.OffsetWidth</key>
+        <string>オフセット幅</string>
+
+        <key>Revit.Property.Builtin.OffsetHeight</key>
+        <string>オフセット高さ</string>
+
+    </dict>
+>>>>>>> e9a54a6 (Routing error handling.)
 </plist>
 
