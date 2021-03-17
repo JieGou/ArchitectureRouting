@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI.Forms ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -26,7 +27,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         return Result.Cancelled ;
       }
 
-      using var transaction = new Transaction( document, "Routing Assist" ) ;
+      using var transaction = new Transaction( document, GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ) ) ;
       try {
         transaction.Start() ;
 
@@ -65,6 +66,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         return Result.Failed ;
       }
     }
+
+    protected abstract string GetTransactionNameKey() ;
 
     /// <summary>
     /// Collects route segments to be auto-routed.

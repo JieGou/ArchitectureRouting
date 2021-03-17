@@ -1,6 +1,7 @@
 using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
@@ -13,6 +14,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Image( "resources/MEP.ico" )]
   public class PickAndReRouteCommand : RoutingCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickAndReRoute" ;
+
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
     {
       var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
@@ -22,7 +25,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
       else {
         // newly select
-        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route." ) ;
+        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.PickAndReRoute.Pick".GetAppStringByKeyOrDefault( null ) ) ;
 
         return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
       }

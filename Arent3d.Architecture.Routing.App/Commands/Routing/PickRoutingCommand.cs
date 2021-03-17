@@ -5,6 +5,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
 using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
@@ -18,6 +19,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Image( "resources/MEP.ico" )]
   public class PickRoutingCommand : RoutingCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickRouting" ;
+
     /// <summary>
     /// Collects from-to records to be auto-routed.
     /// </summary>
@@ -32,10 +35,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var segments = UiThread.RevitUiDispatcher.Invoke( () =>
       {
         var document = uiDocument.Document ;
-        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, "Select the first connector", null ) ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null ) ;
         var tempColor = SetTempColor( uiDocument, fromPickResult ) ;
         try {
-          var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Select the second connector", fromPickResult ) ;
+          var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult ) ;
 
           return CreateNewSegmentList( document, fromPickResult, toPickResult ) ;
         }

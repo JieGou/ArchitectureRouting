@@ -17,6 +17,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Image( "resources/MEP.ico" )]
   public class EraseSelectedRoutesCommand : RoutingCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.EraseSelectedRoutes" ;
+
     protected override async IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegments( UIDocument uiDocument )
     {
       await Task.Yield() ;

@@ -75,7 +75,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private static string ToDisplayName( string key )
     {
-      return LanguageConverter.GetAppStringByKey( key ) ?? LanguageConverter.GetDefaultString( key ) ;
+      return key.GetAppStringByKeyOrDefault( null ) ;
     }
 
     private void InitializeRibbon()
