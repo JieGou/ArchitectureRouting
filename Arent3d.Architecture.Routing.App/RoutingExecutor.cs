@@ -1,9 +1,10 @@
 using System ;
+using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
-using Arent3d.Architecture.Routing.CommandTermCaches ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -12,13 +13,6 @@ using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledEx
 
 namespace Arent3d.Architecture.Routing.App
 {
-  public enum RoutingExecutionResult
-  {
-    Success,
-    Failure,
-    Cancel,
-  }
-
   /// <summary>
   /// Routing execution object.
   /// </summary>
@@ -84,7 +78,7 @@ namespace Arent3d.Architecture.Routing.App
           ExecuteRouting( domain, routesOfDomain, p ) ;
         }
 
-        return RoutingExecutionResult.Success ;
+        return RoutingExecutionResult.GetSuccess( routes ) ;
       }
       catch ( OperationCanceledException ) {
         return RoutingExecutionResult.Cancel ;
@@ -191,6 +185,121 @@ namespace Arent3d.Architecture.Routing.App
     private void RegisterBadConnectors( IEnumerable<Connector[]> badConnectorSet )
     {
       _badConnectors.AddRange( badConnectorSet ) ;
+    }
+
+    private readonly List<PipeInfo> _deletedPipeInfo = new() ;
+
+    public bool HasDeletedElements => ( 0 < _deletedPipeInfo.Count ) ;
+
+    public void RegisterDeletedPipe( ElementId deletingPipeId )
+    {
+      var elm = _document.GetElement( deletingPipeId ) ;
+      if ( null == elm ) throw new InvalidOperationException() ;
+
+      if ( PipeInfo.Create( elm ) is { } info ) {
+        _deletedPipeInfo.Add( info ) ;
+      }
+    }
+
+    private static (int, int) ToTuple( Connector conn ) => ( conn.Owner.Id.IntegerValue, conn.Id ) ;
+
+    public void RunPostProcess( RoutingExecutionResult result )
+    {
+      if ( RoutingExecutionResultType.Success != result.Type ) return ;
+
+      AddReducerParameters( result.GeneratedRoutes ) ;
+    }
+
+    private void AddReducerParameters( IEnumerable<Route> routes )
+    {
+      var routeDic = routes.ToDictionary( route => route.RouteName ) ;
+
+      foreach ( var pipeInfo in _document.GetAllElementsOfRoute<MEPCurve>().Select( c => PipeInfo.Create( c, routeDic ) ).NonNull().Concat( _deletedPipeInfo ) ) {
+        foreach ( var reducer in pipeInfo.GetNeighborReducers( _document ) ) {
+          pipeInfo.ApplyToReducer( reducer ) ;
+        }
+      }
+    }
+
+    private class PipeInfo
+    {
+      public static PipeInfo? Create( Element elm )
+      {
+        return Create( elm, null ) ;
+      }
+
+      public static PipeInfo? Create( Element elm, IReadOnlyDictionary<string, Route>? routeDic )
+      {
+        if ( elm.GetRouteName() is not { } routeName ) return null ;
+        if ( null != routeDic && false == routeDic.ContainsKey( routeName ) ) return null ;
+        if ( elm.GetSubRouteIndex() is not { } subRouteIndex ) return null ;
+        if ( false == elm.TryGetProperty( RoutingParameter.NearestFromSideEndPoints, out string? fromSide ) ) return null ;
+        if ( false == elm.TryGetProperty( RoutingParameter.NearestToSideEndPoints, out string? toSide ) ) return null ;
+
+        var connectors = elm.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).ToList() ;
+
+        return new PipeInfo( elm.Id, routeName, subRouteIndex, fromSide!, toSide!, connectors ) ;
+      }
+
+      public ElementId ElementId { get ; }
+      public string RouteName { get ; }
+      public int SubRouteIndex { get ; }
+      public string RoutedElementFromSideConnectorIds { get ; }
+      public string RoutedElementToSideConnectorIds { get ; }
+      public IReadOnlyCollection<Connector> ConnectingConnectors { get ; }
+
+      private PipeInfo( ElementId elmId, string routeName, int subRouteIndex, string fromSide, string toSide, List<Connector> connectors )
+      {
+        ElementId = elmId ;
+        RouteName = routeName ;
+        SubRouteIndex = subRouteIndex ;
+        RoutedElementFromSideConnectorIds = fromSide ;
+        RoutedElementToSideConnectorIds = toSide ;
+        ConnectingConnectors = connectors ;
+      }
+
+      public IEnumerable<FamilyInstance> GetNeighborReducers( Document document )
+      {
+        return GetNeighborReducers( document, GetEndPoints( RoutedElementFromSideConnectorIds ), true ).Concat( GetNeighborReducers( document, GetEndPoints( RoutedElementToSideConnectorIds ), false ) ) ;
+      }
+
+      public void ApplyToReducer( FamilyInstance reducer )
+      {
+        reducer.SetProperty( RoutingParameter.RouteName, RouteName ) ;
+        reducer.SetProperty( RoutingParameter.SubRouteIndex, SubRouteIndex ) ;
+        reducer.SetProperty( RoutingParameter.NearestFromSideEndPoints, RoutedElementFromSideConnectorIds ) ;
+        reducer.SetProperty( RoutingParameter.NearestToSideEndPoints, RoutedElementToSideConnectorIds ) ;
+      }
+
+      private static HashSet<(int, int)> GetEndPoints( string indicators )
+      {
+        return EndPointIndicator.ParseIndicatorList( indicators ).OfType<ConnectorIndicator>().Select( c => ( c.ElementId, c.ConnectorId ) ).ToHashSet() ;
+      }
+
+      private IEnumerable<FamilyInstance> GetNeighborReducers( Document document, HashSet<(int, int)> endPoints, bool isFrom )
+      {
+        var doneElms = new HashSet<ElementId> { ElementId } ;
+        var stack = new Stack<Connector>() ;
+        ConnectingConnectors.Where( c => c.IsValidObject ).ForEach( stack.Push ) ;
+
+        while ( 0 < stack.Count ) {
+          var connector = stack.Pop() ;
+          var connTuple = ToTuple( connector ) ;
+          if ( endPoints.Contains( connTuple ) ) continue ;
+
+          var owner = document.GetElement( new ElementId( connTuple.Item1 ) ) ;
+          if ( owner is not FamilyInstance nextElm ) continue ;
+          if ( false == doneElms.Add( nextElm.Id ) ) continue ;
+          if ( false == nextElm.IsFittingElement() ) continue ;
+          if ( null != nextElm.GetRouteName() ) continue ;
+
+          var conn = owner.GetConnectorManager()?.Lookup( connTuple.Item2 ) ;
+          if ( null == conn ) continue ;
+
+          conn.GetOtherConnectorsInOwner().SelectMany( c => c.GetConnectedConnectors() ).ForEach( stack.Push ) ;
+          yield return nextElm ;
+        }
+      }
     }
   }
 }

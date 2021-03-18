@@ -6,6 +6,7 @@ using System.Threading.Tasks ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI.Forms ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -29,10 +30,50 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         return Result.Cancelled ;
       }
 
-      using var transaction = new Transaction( document, GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ) ) ;
-      SetupFailureHandlingOptions( transaction ) ;
+      using var transactionGroup = new TransactionGroup( document ) ;
       try {
-        transaction.Start() ;
+        transactionGroup.Start( GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ) ) ;
+
+        var result = GenerateRoutes( uiDocument, executor, segments ) ;
+        if ( RoutingExecutionResultType.Cancel == result.Type ) {
+          transactionGroup.RollBack() ;
+          return Result.Cancelled ;
+        }
+        else if ( RoutingExecutionResultType.Failure == result.Type ) {
+          transactionGroup.RollBack() ;
+          return Result.Failed ;
+        }
+
+        AppendParametersToRevitGeneratedElements( uiDocument, executor, result ) ;
+
+        transactionGroup.Commit() ;
+
+        if ( executor.HasDeletedElements ) {
+          CommandUtils.AlertDeletedElements() ;
+        }
+        if ( executor.HasBadConnectors ) {
+          CommandUtils.AlertBadConnectors( executor.GetBadConnectorSet() ) ;
+        }
+
+        return Result.Succeeded ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        transactionGroup.RollBack() ;
+        return Result.Cancelled ;
+      }
+      catch ( Exception e ) {
+        TaskDialog.Show( "error", e.ToString() ) ;
+        transactionGroup.RollBack() ;
+        return Result.Failed ;
+      }
+    }
+
+    private RoutingExecutionResult GenerateRoutes( UIDocument uiDocument, RoutingExecutor executor, IAsyncEnumerable<(string RouteName, RouteSegment Segment)> segments )
+    {
+      using var transaction = new Transaction( uiDocument.Document ) ;
+      SetupFailureHandlingOptions( transaction, executor ) ;
+      try {
+        transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
 
         segments = segments.Concat( GetRouteSegmentsInTransaction( uiDocument ) ) ;
 
@@ -43,44 +84,54 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         task.ConfigureAwait( false ) ;
         ThreadDispatcher.WaitWithDoEvents( task ) ;
 
-        if ( task.IsCanceled || RoutingExecutionResult.Cancel == task.Result ) {
+        if ( task.IsCanceled ) {
           transaction.RollBack() ;
-          return Result.Cancelled ;
+          return RoutingExecutionResult.Cancel ;
         }
-        else if ( RoutingExecutionResult.Success == task.Result ) {
-          transaction.Commit() ;
 
-          if ( executor.HasBadConnectors ) {
-            CommandUtils.AlertBadConnectors( executor.GetBadConnectorSet() ) ;
-          }
-
-          return Result.Succeeded ;
-        }
-        else {
+        var result = task.Result ;
+        if ( RoutingExecutionResultType.Success != result.Type ) {
           transaction.RollBack() ;
-          return Result.Failed ;
+          return result ;
         }
+
+        transaction.Commit() ;
+        return result ;
       }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      catch {
         transaction.RollBack() ;
-        return Result.Cancelled ;
-      }
-      catch ( Exception e ) {
-        TaskDialog.Show( "error", e.ToString() ) ;
-        transaction.RollBack() ;
-        return Result.Failed ;
+        throw ;
       }
     }
 
-    private static void SetupFailureHandlingOptions( Transaction transaction )
+    private void AppendParametersToRevitGeneratedElements( UIDocument uiDocument, RoutingExecutor executor, RoutingExecutionResult result )
     {
-      transaction.SetFailureHandlingOptions( ModifyFailureHandlingOptions( transaction.GetFailureHandlingOptions() ) ) ;
+      using var transaction = new Transaction( uiDocument.Document ) ;
+      try {
+        transaction.Start( "TransactionName.Commands.Routing.Common.SetupParameters".GetAppStringByKeyOrDefault( "Setup Parameter" ) ) ;
+
+        executor.RunPostProcess( result ) ;
+
+        transaction.Commit() ;
+      }
+      catch{
+        transaction.RollBack() ;
+        throw ;
+      }
     }
 
-    private static FailureHandlingOptions ModifyFailureHandlingOptions( FailureHandlingOptions handlingOptions )
+
+    private static void SetupFailureHandlingOptions( Transaction transaction, RoutingExecutor executor )
     {
-      handlingOptions = handlingOptions.SetFailuresPreprocessor( new RoutingFailuresPreprocessor() ) ;
-      
+      transaction.SetFailureHandlingOptions( ModifyFailureHandlingOptions( transaction.GetFailureHandlingOptions(), executor ) ) ;
+    }
+
+    private static FailureHandlingOptions ModifyFailureHandlingOptions( FailureHandlingOptions handlingOptions, RoutingExecutor executor )
+    {
+      var failuresPreprocessor = new RoutingFailuresPreprocessor( executor ) ;
+
+      handlingOptions = handlingOptions.SetFailuresPreprocessor( failuresPreprocessor ) ;
+
       return handlingOptions ;
     }
 
@@ -107,6 +158,13 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
     private class RoutingFailuresPreprocessor : IFailuresPreprocessor
     {
+      private readonly RoutingExecutor _executor ;
+      
+      public RoutingFailuresPreprocessor( RoutingExecutor executor )
+      {
+        _executor = executor ;
+      }
+
       public FailureProcessingResult PreprocessFailures( FailuresAccessor failuresAccessor )
       {
         var document = failuresAccessor.GetDocument() ;
@@ -120,8 +178,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         }
 
         if ( 0 < elementsToDelete.Count ) {
+          elementsToDelete.ForEach( _executor.RegisterDeletedPipe ) ;
           failuresAccessor.DeleteElements( elementsToDelete.ToList() ) ;
-          TaskDialog.Show( "Dialog.Commands.Routing.Dialog.Title.Error".GetAppStringByKeyOrDefault( null ), "Dialog.Commands.Routing.Common.Dialog.Body.Error.DeletedSomeFailedElements".GetAppStringByKeyOrDefault( null ) ) ;
 
           return FailureProcessingResult.ProceedWithCommit ;
         }

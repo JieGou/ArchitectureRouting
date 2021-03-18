@@ -72,6 +72,11 @@
 
 
         <!-- Transaction Names -->
+        <key>TransactionName.Commands.Routing.Common.Routing</key>
+        <string>ルーティング</string>
+        <key>TransactionName.Commands.Routing.Common.SetupParameters</key>
+        <string>パラメータ追加</string>
+
         <key>TransactionName.Commands.Routing.PickRouting</key>
         <string>From-Toの作成</string>
 
@@ -114,6 +119,8 @@
         <string>ルーティング エラー</string>
         <key>Dialog.Commands.Routing.Dialog.Body.Error.DeletedSomeFailedElements</key>
         <string>ルーティング時、一部の要素が作成できませんでした。&#xA;通過点を指定することでエラーのない形状を作成できます。</string>
+        <key>Dialog.Commands.Routing.Dialog.Body.Error.FittingCannotBeInserted</key>
+        <string>以下のコネクタに対し、継手要素が挿入できませんでした：&#xA;&#xA;{0}</string>
 
 
         <!-- Parameter Names -->

@@ -549,7 +549,7 @@ namespace Arent3d.Architecture.Routing
       {
         if ( false == conn.IsAnyEnd() ) return ;
 
-        foreach ( var partner in conn.GetLogicallyConnectedConnectors().Where( c => connectorSet.Contains( c.GetIndicator() ) ) ) {
+        foreach ( var partner in conn.GetConnectedConnectors().Where( c => connectorSet.Contains( c.GetIndicator() ) ) ) {
           if ( null == partner ) return ;
           if ( partner.IsRoutingConnector( true ) ) {
             toList.Add( conn.Id ) ;

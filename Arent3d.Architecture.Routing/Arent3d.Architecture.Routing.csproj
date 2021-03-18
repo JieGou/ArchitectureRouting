@@ -10,6 +10,10 @@
     <Authors>Arent Inc.</Authors>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <DefineConstants>TRACE;DUMP_LOGS;</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="Architecture.Routing.Core">
       <HintPath>..\Libraries\Architecture.Routing.Core.dll</HintPath>

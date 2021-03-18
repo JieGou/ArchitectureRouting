@@ -85,14 +85,18 @@ namespace Arent3d.Architecture.Routing
 
     protected override void OnGenerationStarted()
     {
-      RoutingTargets.DumpRoutingTargets( GetTargetsLogFileName( _document ) ) ;
+#if DUMP_LOGS
+      RoutingTargets.DumpRoutingTargets( GetTargetsLogFileName( _document ), CollisionCheckTree ) ;
+#endif
 
       // TODO
     }
 
     protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, AutoRoutingResult result )
     {
+#if DUMP_LOGS
       result.DebugExport( GetResultLogFileName( _document, routingTarget ) ) ;
+#endif
 
       var ductCreator = new MEPSystemCreator( _document, routingTarget, _routeMEPSystems ) ;
 

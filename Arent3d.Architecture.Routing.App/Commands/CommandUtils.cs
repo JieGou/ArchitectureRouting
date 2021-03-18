@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -9,9 +10,15 @@ namespace Arent3d.Architecture.Routing.App.Commands
 {
   public static class CommandUtils
   {
+    public static void AlertDeletedElements()
+    {
+      TaskDialog.Show( "Dialog.Commands.Routing.Dialog.Title.Error".GetAppStringByKeyOrDefault( null ), "Dialog.Commands.Routing.Common.Dialog.Body.Error.DeletedSomeFailedElements".GetAppStringByKeyOrDefault( null ) ) ;
+    }
+
     public static void AlertBadConnectors( IEnumerable<Connector[]> badConnectorSet )
     {
-      TaskDialog.Show( "Connection error", "Some elbows, tees and/or connectors could not be inserted.\n\n・" + string.Join( "\n・", badConnectorSet.Select( GetConnectorInfo ) ) ) ;
+      var body = string.Format( "Dialog.Commands.Routing.Common.Dialog.Body.Error.FittingCannotBeInserted".GetAppStringByKeyOrDefault( null ), "・" + string.Join( "\n・", badConnectorSet.Select( GetConnectorInfo ) ) ) ;
+      TaskDialog.Show( "Dialog.Commands.Routing.Dialog.Title.Error".GetAppStringByKeyOrDefault( null ), body ) ;
     }
 
     private static string GetConnectorInfo( Connector[] connectorSet )

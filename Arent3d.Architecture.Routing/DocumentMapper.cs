@@ -18,6 +18,8 @@ namespace Arent3d.Architecture.Routing
 
     public static void Register( Document document )
     {
+      if ( _mapper.ContainsKey( document ) ) return ; // duplicated
+
       _mapper.Add( document, new DocumentData( document ) ) ;
       
       // TODO: search auto routing families

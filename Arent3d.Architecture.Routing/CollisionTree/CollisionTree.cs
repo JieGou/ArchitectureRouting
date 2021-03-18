@@ -4,6 +4,9 @@ using System.Linq ;
 using Arent3d.CollisionLib ;
 using Arent3d.GeometryLib ;
 using Arent3d.Routing ;
+#if DUMP_LOGS
+using Arent3d.Utility ;
+#endif
 using Autodesk.Revit.DB ;
 using MathLib ;
 
@@ -13,30 +16,36 @@ namespace Arent3d.Architecture.Routing.CollisionTree
   {
     private readonly ITree _treeBody ;
 
+#if DUMP_LOGS
+    public IReadOnlyCollection<(ElementId ElementId, Box3d Box)> TreeElementBoxes { get ; } 
+
     public CollisionTree( ICollisionCheckTargetCollector collector )
     {
-      _treeBody = CreateTree( collector ) ;
+      TreeElementBoxes = CollectTreeElementBoxes( collector ).ToList() ;
+      _treeBody = CreateTree( TreeElementBoxes.Select( box => new TreeElement( new BoxGeometryBody( box.Box ) ) ) ) ;
+    }
+#else
+    public CollisionTree( ICollisionCheckTargetCollector collector )
+    {
+      _treeBody = CreateTree( CollectTreeElementBoxes( collector ).Select( box => new TreeElement( new BoxGeometryBody( box ) ) ).ToList() ) ;
+    }
+#endif
+
+    private static ITree CreateTree( IReadOnlyCollection<TreeElement> elms )
+    {
+      return CreateTreeByFactory( elms ) ;
     }
 
-    private static ITree CreateTree( ICollisionCheckTargetCollector collector )
+    private static IEnumerable<(ElementId ElementId, Box3d Box)> CollectTreeElementBoxes( ICollisionCheckTargetCollector collector )
     {
-      return CreateTreeByFactory( CollectTreeElements( collector ) ) ;
-    }
-
-    private static IReadOnlyCollection<TreeElement> CollectTreeElements( ICollisionCheckTargetCollector collector )
-    {
-      var treeElements = new List<TreeElement>() ;
-
       foreach ( var element in collector.GetCollisionCheckTargets() ) {
         var geom = element.get_Geometry( new Options { DetailLevel = ViewDetailLevel.Coarse, ComputeReferences = false, IncludeNonVisibleObjects = false } ) ;
         if ( null == geom ) continue ;
 
         if ( false == collector.IsTargetGeometryElement( geom ) ) continue ;
 
-        treeElements.Add( new TreeElement( new BoxGeometryBody( geom.GetBoundingBox().To3d() ) ) ) ;
+        yield return ( element.Id, geom.GetBoundingBox().To3d() ) ;
       }
-
-      return treeElements ;
     }
 
     private static ITree CreateTreeByFactory( IReadOnlyCollection<TreeElement> treeElements )

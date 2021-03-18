@@ -21,6 +21,7 @@
         <key>App.Panels.Routing.Selecting</key>
         <string>Selected From-To</string>
 
+
         <!-- Application UI Button Strings -->
         <key>App.Commands.BranchPoint.InsertBranchPointCommand</key>
         <string>Insert&#xA;Branch Point</string>
@@ -72,6 +73,11 @@
 
 
         <!-- Transaction Names -->
+        <key>TransactionName.Commands.Routing.Common.Routing</key>
+        <string>Routing</string>
+        <key>TransactionName.Commands.Routing.Common.SetupParameters</key>
+        <string>Setup Parameters</string>
+
         <key>TransactionName.Commands.Routing.PickRouting</key>
         <string>Add From-To</string>
 
@@ -114,6 +120,8 @@
         <string>Routing Error</string>
         <key>Dialog.Commands.Routing.Dialog.Body.Error.DeletedSomeFailedElements</key>
         <string>Some elements cannot be created on routing.&#xA;Add pass points to generate valid route shape.</string>
+        <key>Dialog.Commands.Routing.Dialog.Body.Error.FittingCannotBeInserted</key>
+        <string>Some fitting elements could not be inserted on the following connectors:&#xA;&#xA;{0}</string>
 
 
         <!-- Parameter Names -->

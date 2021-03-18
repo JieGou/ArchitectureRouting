@@ -1,11 +1,16 @@
+#if DUMP_LOGS
 using System ;
 using System.Collections.Generic ;
 using System.Globalization ;
 using System.Linq ;
 using System.Xml ;
+using Arent3d.Architecture.Routing.CollisionTree ;
+using Arent3d.CollisionLib ;
+using Arent3d.GeometryLib ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
+using Autodesk.Revit.DB ;
 using MathLib ;
 
 namespace Arent3d.Architecture.Routing
@@ -17,12 +22,17 @@ namespace Arent3d.Architecture.Routing
   {
     #region Routing Targets Writer
 
-    public static void DumpRoutingTargets( this IEnumerable<IAutoRoutingTarget> routingTargets, string file )
+    public static void DumpRoutingTargets( this IEnumerable<IAutoRoutingTarget> routingTargets, string file, ICollisionCheck? collision )
     {
       using var writer = XmlWriter.Create( file, new XmlWriterSettings { Indent = true, IndentChars = "  ", } ) ;
 
       writer.WriteStartDocument() ;
-      writer.WriteTargets( "Targets", routingTargets ) ;
+      using ( writer.WriteElement( "Routing" ) ) {
+        writer.WriteTargets( "Targets", routingTargets ) ;
+        if ( collision is CollisionTree.CollisionTree tree ) {
+          writer.WriteCollision( "Collision", tree ) ;
+        }
+      }
       writer.WriteEndDocument() ;
     }
 
@@ -95,6 +105,24 @@ namespace Arent3d.Architecture.Routing
      writer.WriteElementString( "FluidPhase", condition.FluidPhase ) ;
     }
 
+    private static void WriteCollision( this XmlWriter writer, string elmName, CollisionTree.CollisionTree collision )
+    {
+      using var _ = writer.WriteElement( elmName ) ;
+
+      foreach ( var box in collision.TreeElementBoxes ) {
+        writer.WriteBoxWithId( "Element", box.Box, box.ElementId.IntegerValue ) ;
+      }
+    }
+
+    private static void WriteBoxWithId( this XmlWriter writer, string elmName, Box3d box, int id )
+    {
+      using var _ = writer.WriteElement( elmName ) ;
+      writer.WriteAttributeString( "ElementId", id.ToString() ) ;
+
+      writer.WriteVector( "Min", box.Min ) ;
+      writer.WriteVector( "Max", box.Max ) ;
+    }
+
     private static void WriteVector( this XmlWriter writer, string elmName, Vector3d dir )
     {
       using var _ = writer.WriteElement( elmName ) ;
@@ -108,11 +136,17 @@ namespace Arent3d.Architecture.Routing
 
     #region Routing Targets Reader
 
-    public static IReadOnlyCollection<IAutoRoutingTarget> RoutingTargetsFromDump( string file )
+    public static (IReadOnlyCollection<IAutoRoutingTarget>, ICollisionCheck?) RoutingTargetsFromDump( string file )
     {
       using var reader = XmlReader.Create( file ) ;
 
-      return reader.ReadTargets( "Targets" ) ;
+      reader.ReadToFollowing( "Routing" ) ;
+      reader.ReadStartElement( "Routing" ) ;
+      var targets = reader.ReadTargets( "Targets" ) ;
+      var tree = reader.ReadCollisionTree( "Collision" ) ;
+      reader.ReadEndElement() ;
+
+      return ( targets, tree ) ;
     }
 
     private static IReadOnlyCollection<IAutoRoutingTarget> ReadTargets( this XmlReader reader, string elmName )
@@ -271,6 +305,80 @@ namespace Arent3d.Architecture.Routing
       return condition ;
     }
 
+    private class DumpedCollisionTree : ICollisionCheck
+    {
+      private readonly ITree _treeBody ;
+
+      public DumpedCollisionTree( IReadOnlyCollection<Box3d> boxes )
+      {
+        _treeBody = CreateTreeByFactory( boxes.Select( ToTreeElement ) ) ;
+      }
+
+      private static TreeElement ToTreeElement( Box3d box )
+      {
+        return new TreeElement( new BoxGeometryBody( box ) ) ;
+      }
+
+      private static ITree CreateTreeByFactory( IReadOnlyCollection<TreeElement> treeElements )
+      {
+        if ( 0 == treeElements.Count ) {
+          return TreeFactory.GetTreeInstanceToBuild( TreeFactory.TreeType.Dummy, null! ) ; // Dummyの場合はtreeElementsを使用しない
+        }
+        else {
+          var tree = TreeFactory.GetTreeInstanceToBuild( TreeFactory.TreeType.Bvh, treeElements ) ;
+          tree.Build() ;
+          return tree ;
+        }
+      }
+
+      public IEnumerable<Box3d> GetCollidedBoxes( Box3d box )
+      {
+        return this._treeBody.BoxIntersects( GetGeometryBodyBox( box ) ).Select( element => element.GlobalBox3d ) ;
+      }
+
+      public IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesInDetailToRack( Box3d box )
+      {
+        // Aggregated Tree から呼ぶこと、これを単独で呼ばないこと
+        var tuples = this._treeBody.GetIntersectsInDetailToRack( GetGeometryBodyBox( box ) ) ;
+        foreach ( var tuple in tuples ) {
+          yield return ( tuple.body.GetBounds(), tuple.cond, true ) ;
+        }
+      }
+
+      public IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesAndConditions( Box3d box, bool bIgnoreStructure )
+      {
+        var tuples = this._treeBody.GetIntersectAndRoutingCondition( GetGeometryBodyBox( box ) ) ;
+        foreach ( var tuple in tuples ) {
+          if ( null != tuple.cond ) {
+            yield return ( tuple.body.GetGlobalGeometryBox(), tuple.cond, false ) ;
+            continue ;
+          }
+
+          foreach ( var geo in tuple.Item1.GetGlobalGeometries() ) {
+            yield return ( geo.GetBounds(), null, tuple.isStructure ) ;
+          }
+        }
+      }
+
+      private static IGeometryBody GetGeometryBodyBox( Box3d box ) => new CollisionBox( box ) ;
+    }
+    private static ICollisionCheck? ReadCollisionTree( this XmlReader reader, string elmName )
+    {
+      if ( ! reader.IsStartElement( elmName ) ) return null ;
+
+      var list = new List<Box3d>() ;
+
+      reader.ReadToFollowing( elmName ) ;
+      reader.ReadStartElement( elmName ) ;
+      while ( reader.IsStartElement() ) {
+        list.Add( ReadBox( reader, "Element" ) ) ;
+      }
+
+      reader.ReadEndElement() ;
+
+      return new DumpedCollisionTree( list ) ;
+    }
+
     private static bool ReadBool( XmlReader reader, string tagName )
     {
       var str = reader.ReadElementString( tagName ) ;
@@ -290,6 +398,15 @@ namespace Arent3d.Architecture.Routing
     {
       var str = reader.ReadElementString( tagName ) ;
       return Enum.TryParse( str, out TEnum val ) ? val : default ;
+    }
+    private static Box3d ReadBox( XmlReader reader, string tagName )
+    {
+      reader.ReadStartElement( tagName ) ;
+      var min = ReadVector( reader, "Min" ) ;
+      var max = ReadVector( reader, "Max" ) ;
+      reader.ReadEndElement() ;
+
+      return new Box3d( min, max ) ;
     }
     private static Vector3d ReadVector( XmlReader reader, string tagName )
     {
@@ -366,3 +483,4 @@ namespace Arent3d.Architecture.Routing
     #endregion
   }
 }
+#endif
