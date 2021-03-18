@@ -27,7 +27,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 #else
     public CollisionTree( ICollisionCheckTargetCollector collector )
     {
-      _treeBody = CreateTree( CollectTreeElementBoxes( collector ).Select( box => new TreeElement( new BoxGeometryBody( box ) ) ).ToList() ) ;
+      _treeBody = CreateTree( CollectTreeElementBoxes( collector ).Select( tuple => new TreeElement( new BoxGeometryBody( tuple.Box ) ) ).ToList() ) ;
     }
 #endif
 
