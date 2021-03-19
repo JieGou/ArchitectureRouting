@@ -145,11 +145,11 @@
 
         <key>Dialog.Commands.Routing.Dialog.Title.Error</key>
         <string>Routing Error</string>
-        <key>Dialog.Commands.Routing.Common.Dialog.Body.Error.ExceptionOccured</key>
+        <key>Dialog.Commands.Routing.Common.Body.Error.ExceptionOccured</key>
         <string>An unhandled exception occured.</string>
-        <key>Dialog.Commands.Routing.Common.Dialog.Body.Error.DeletedSomeFailedElements</key>
+        <key>Dialog.Commands.Routing.Common.Body.Error.DeletedSomeFailedElements</key>
         <string>Some elements cannot be created on routing.&#xA;Add pass points to generate valid route shape.</string>
-        <key>Dialog.Commands.Routing.Common.Dialog.Body.Error.FittingCannotBeInserted</key>
+        <key>Dialog.Commands.Routing.Common.Body.Error.FittingCannotBeInserted</key>
         <string>Some fitting elements could not be inserted on the following connectors:&#xA;&#xA;{0}</string>
 
 
