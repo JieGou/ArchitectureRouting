@@ -73,10 +73,25 @@
 
 
         <!-- Transaction Names -->
+        <key>TransactionName.Commands.Initialization.Initialize</key>
+        <string>Setup Auto Routing</string>
+        <key>TransactionName.Commands.Initialization.CreateRoutingViews</key>
+        <string>Create Routing Views</string>
+
+        <key>TransactionName.Commands.Rack.EraseAll</key>
+        <string>Erase All Pipe Spaces</string>
+        <key>TransactionName.Commands.Rack.Import</key>
+        <string>Import Pipe Spaces</string>
+
         <key>TransactionName.Commands.Routing.Common.Routing</key>
         <string>Routing</string>
         <key>TransactionName.Commands.Routing.Common.SetupParameters</key>
         <string>Setup Parameters</string>
+
+        <key>TransactionName.Commands.Routing.Common.ChangeColor</key>
+        <string>Change Color for Highlighting</string>
+        <key>TransactionName.Commands.Routing.Common.RevertColor</key>
+        <string>Restore Color for Highlighting</string>
 
         <key>TransactionName.Commands.Routing.PickRouting</key>
         <string>Add From-To</string>
@@ -98,6 +113,18 @@
 
 
         <!-- Dialogs -->
+        <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
+        <string>Routing Setup Error</string>
+        <key>Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup</key>
+        <string>Failed to set up some routing families or parameters.</string>
+
+        <key>Dialog.Commands.Rack.PS.FileName</key>
+        <string>Pipe space list file</string>
+        <key>Dialog.Commands.Rack.PS.Title.Export</key>
+        <string>Export Pipe space list file</string>
+        <key>Dialog.Commands.Rack.PS.Title.Import</key>
+        <string>Import Pipe space list file</string>
+
         <key>Dialog.Commands.Routing.PickRouting.PickFirst</key>
         <string>Pick the FROM point of a from-to.</string>
         <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
@@ -118,9 +145,11 @@
 
         <key>Dialog.Commands.Routing.Dialog.Title.Error</key>
         <string>Routing Error</string>
-        <key>Dialog.Commands.Routing.Dialog.Body.Error.DeletedSomeFailedElements</key>
+        <key>Dialog.Commands.Routing.Common.Dialog.Body.Error.ExceptionOccured</key>
+        <string>An unhandled exception occured.</string>
+        <key>Dialog.Commands.Routing.Common.Dialog.Body.Error.DeletedSomeFailedElements</key>
         <string>Some elements cannot be created on routing.&#xA;Add pass points to generate valid route shape.</string>
-        <key>Dialog.Commands.Routing.Dialog.Body.Error.FittingCannotBeInserted</key>
+        <key>Dialog.Commands.Routing.Common.Dialog.Body.Error.FittingCannotBeInserted</key>
         <string>Some fitting elements could not be inserted on the following connectors:&#xA;&#xA;{0}</string>
 
 
@@ -130,6 +159,9 @@
 
         <key>Revit.Property.Builtin.Height</key>
         <string>Height</string>
+
+        <key>Revit.Property.Builtin.Length</key>
+        <string>Length</string>
 
         <key>Revit.Property.Builtin.DiameterR1</key>
         <string>Nominal Diameter r1</string>

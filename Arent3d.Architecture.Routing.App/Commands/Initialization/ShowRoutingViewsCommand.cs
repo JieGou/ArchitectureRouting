@@ -1,5 +1,6 @@
-using System.ComponentModel ;
+using System ;
 using Arent3d.Architecture.Routing.App.Forms ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -15,14 +16,22 @@ namespace Arent3d.Architecture.Routing.App.Commands.Initialization
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      var doc = commandData.Application.ActiveUIDocument.Document ;
+      var document = commandData.Application.ActiveUIDocument.Document ;
 
-      var dialog = new GetLevel( doc ) ;
-      if ( true == dialog.ShowDialog() ) {
-        doc.CreateRoutingView( dialog.GetSelectedLevels() ) ;
+      var dialog = new GetLevel( document ) ;
+      if ( false == dialog.ShowDialog() ) return Result.Succeeded ;
+
+      try {
+        return document.Transaction( "TransactionName.Commands.Initialization.CreateRoutingViews".GetAppStringByKeyOrDefault( "Create Routing Views" ), _ =>
+        {
+          document.CreateRoutingView( dialog.GetSelectedLevels() ) ;
+          return Result.Succeeded ;
+        } ) ;
       }
-
-      return Result.Succeeded ;
+      catch ( Exception e ) {
+        CommandUtils.DebugAlertException( e ) ;
+        return Result.Failed ;
+      }
     }
   }
 }

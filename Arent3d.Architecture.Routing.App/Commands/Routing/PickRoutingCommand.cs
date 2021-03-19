@@ -189,36 +189,22 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
     private static IDisposable SetTempColor( UIDocument uiDocument, ConnectorPicker.IPickResult pickResult )
     {
-      using var transaction = new Transaction( uiDocument.Document ) ;
-      try {
-        transaction.Start( "Change Picked Element Color" ) ;
-        
-        var tempColor = new TempColor( uiDocument.ActiveView, new Color( 0, 0, 255 ) ) ;
+      var tempColor = new TempColor( uiDocument.ActiveView, new Color( 0, 0, 255 ) ) ;
+      uiDocument.Document.Transaction( "TransactionName.Commands.Routing.Common.ChangeColor".GetAppStringByKeyOrDefault( null ), t =>
+      {
         tempColor.AddRange( pickResult.GetAllRelatedElements() ) ;
-
-        transaction.Commit() ;
-        return tempColor ;
-      }
-      catch {
-        transaction.RollBack() ;
-        throw ;
-      }
+        return Result.Succeeded ;
+      } ) ;
+      return tempColor ;
     }
 
     private static void DisposeTempColor( Document document, IDisposable tempColor )
     {
-      using var transaction = new Transaction( document ) ;
-      try {
-        transaction.Start( "Revert Picked Element Color" ) ;
-
+      document.Transaction( "TransactionName.Commands.Routing.Common.RevertColor".GetAppStringByKeyOrDefault( null ), t =>
+      {
         tempColor.Dispose() ;
-
-        transaction.Commit() ;
-      }
-      catch {
-        transaction.RollBack() ;
-        throw ;
-      }
+        return Result.Succeeded ;
+      } ) ;
     }
 
     private static IEndPointIndicator GetEndPointIndicator( ConnectorPicker.IPickResult pickResult, ConnectorPicker.IPickResult anotherResult )

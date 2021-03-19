@@ -50,11 +50,13 @@ namespace Arent3d.Revit
 
     private static void Document_Created( object sender, DocumentCreatedEventArgs e )
     {
+      if ( null == e.Document ) return ;
       DocumentListeningStarted?.Invoke( e.Document, new DocumentEventArgs( e.Document ) ) ;
     }
 
     private static void Document_Opened( object sender, DocumentOpenedEventArgs e )
     {
+      if ( null == e.Document ) return ;
       DocumentListeningStarted?.Invoke( e.Document, new DocumentEventArgs( e.Document ) ) ;
     }
 

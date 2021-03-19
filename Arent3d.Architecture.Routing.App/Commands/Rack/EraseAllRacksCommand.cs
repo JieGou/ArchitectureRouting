@@ -1,6 +1,6 @@
 using System ;
-using System.ComponentModel ;
 using System.Linq ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -16,19 +16,19 @@ namespace Arent3d.Architecture.Routing.App.Commands.Rack
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-      using var tx = new Transaction( document ) ;
-      tx.Start( "Erase all routes" ) ;
       try {
-        document.Delete( document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ).Select( fi => fi.Id ).ToList() ) ;
+        var result = document.Transaction( "TransactionName.Commands.Rack.EraseAll".GetAppStringByKeyOrDefault( "Erase All Pipe Spaces" ), _ =>
+        {
+          document.Delete( document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ).Select( fi => fi.Id ).ToList() ) ;
+          return Result.Succeeded ;
+        } ) ;
 
-        tx.Commit() ;
+        return result ;
       }
-      catch {
-        tx.RollBack() ;
+      catch ( Exception e ) {
+        CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
-
-      return Result.Succeeded ;
     }
   }
 }

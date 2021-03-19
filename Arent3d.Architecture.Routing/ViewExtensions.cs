@@ -18,8 +18,6 @@ namespace Arent3d.Architecture.Routing
       var floorPlanFamily = document.GetAllElements<ViewFamilyType>().FirstOrDefault( viewFamilyType => viewFamilyType.ViewFamily == ViewFamily.FloorPlan ) ?? throw new InvalidOperationException() ;
       var views = document.GetAllElements<View>() ;
 
-      using var tx = new Transaction( document ) ;
-      tx.Start( "Create Views" ) ;
       foreach ( var (id, name) in levels ) {
         var view = ViewPlan.Create( document, floorPlanFamily.Id, id ) ;
         foreach ( Category cat in view.Document.Settings.Categories ) {
@@ -57,8 +55,6 @@ namespace Arent3d.Architecture.Routing
           }
         }
       }
-
-      tx.Commit() ;
     }
 
     private static FilterElement CreateElementFilter<TFamilyTypeEnum>( Document document ) where TFamilyTypeEnum : Enum

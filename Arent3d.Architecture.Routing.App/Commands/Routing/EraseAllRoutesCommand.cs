@@ -1,3 +1,4 @@
+using System ;
 using System.ComponentModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
@@ -20,20 +21,18 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var cache = RouteCache.Get( document ) ;
       var hashSet = cache.Keys.ToHashSet() ;
 
-      using var tx = new Transaction( document ) ;
-      tx.Start( "TransactionName.Commands.Routing.EraseAllRoutes".GetAppStringByKeyOrDefault( null ) ) ;
       try {
-        RouteGenerator.EraseRoutes( document, hashSet, true ) ;
-        cache.Drop( hashSet ) ;
-
-        tx.Commit() ;
+        return document.Transaction( "TransactionName.Commands.Routing.EraseAllRoutes".GetAppStringByKeyOrDefault( null ), _ =>
+        {
+          RouteGenerator.EraseRoutes( document, hashSet, true ) ;
+          cache.Drop( hashSet ) ;
+          return Result.Succeeded ;
+        } ) ;
       }
-      catch {
-        tx.RollBack() ;
+      catch ( Exception e ) {
+        CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
-
-      return Result.Succeeded ;
     }
   }
 }

@@ -4,6 +4,7 @@ using System.ComponentModel ;
 using System.IO ;
 using Arent3d.Revit ;
 using Arent3d.Revit.Csv ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
@@ -21,7 +22,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Rack
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
 
-      using var dlg = new FileSaveDialog( "Routing from-to list (*.csv)|*.csv" ) { Title = "Export from-to list file" } ;
+      using var dlg = new FileSaveDialog( $"{"Dialog.Commands.Rack.PS.FileName".GetAppStringByKeyOrDefault( "Pipe space list file" )} (*.csv)|*.csv" )
+      {
+        Title = "Dialog.Commands.Rack.PS.Title.Export".GetAppStringByKeyOrDefault( null )
+      } ;
 
       if ( ItemSelectionDialogResult.Confirmed != dlg.Show() ) return Result.Succeeded ;
 

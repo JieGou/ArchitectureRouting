@@ -5,6 +5,7 @@ using System.Threading ;
 using System.Threading.Tasks ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -30,50 +31,41 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         return Result.Cancelled ;
       }
 
-      using var transactionGroup = new TransactionGroup( document ) ;
       try {
-        transactionGroup.Start( GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ) ) ;
+        var result = document.TransactionGroup( GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ), _ =>
+        {
+          var executionResult = GenerateRoutes( uiDocument, executor, segments ) ;
+          if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
+          if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
 
-        var result = GenerateRoutes( uiDocument, executor, segments ) ;
-        if ( RoutingExecutionResultType.Cancel == result.Type ) {
-          transactionGroup.RollBack() ;
-          return Result.Cancelled ;
-        }
-        else if ( RoutingExecutionResultType.Failure == result.Type ) {
-          transactionGroup.RollBack() ;
-          return Result.Failed ;
-        }
+          AppendParametersToRevitGeneratedElements( uiDocument, executor, executionResult ) ;
 
-        AppendParametersToRevitGeneratedElements( uiDocument, executor, result ) ;
+          return Result.Succeeded ;
+        } ) ;
 
-        transactionGroup.Commit() ;
+        if ( Result.Succeeded == result ) {
+          if ( executor.HasDeletedElements ) {
+            CommandUtils.AlertDeletedElements() ;
+          }
 
-        if ( executor.HasDeletedElements ) {
-          CommandUtils.AlertDeletedElements() ;
-        }
-        if ( executor.HasBadConnectors ) {
-          CommandUtils.AlertBadConnectors( executor.GetBadConnectorSet() ) ;
+          if ( executor.HasBadConnectors ) {
+            CommandUtils.AlertBadConnectors( executor.GetBadConnectorSet() ) ;
+          }
         }
 
-        return Result.Succeeded ;
-      }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        transactionGroup.RollBack() ;
-        return Result.Cancelled ;
+        return result ;
       }
       catch ( Exception e ) {
-        TaskDialog.Show( "error", e.ToString() ) ;
-        transactionGroup.RollBack() ;
+        CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
     }
 
     private RoutingExecutionResult GenerateRoutes( UIDocument uiDocument, RoutingExecutor executor, IAsyncEnumerable<(string RouteName, RouteSegment Segment)> segments )
     {
-      using var transaction = new Transaction( uiDocument.Document ) ;
-      SetupFailureHandlingOptions( transaction, executor ) ;
-      try {
-        transaction.Start( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ) ) ;
+      return uiDocument.Document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
+      {
+        SetupFailureHandlingOptions( transaction, executor ) ;
 
         segments = segments.Concat( GetRouteSegmentsInTransaction( uiDocument ) ) ;
 
@@ -84,40 +76,25 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         task.ConfigureAwait( false ) ;
         ThreadDispatcher.WaitWithDoEvents( task ) ;
 
-        if ( task.IsCanceled ) {
-          transaction.RollBack() ;
-          return RoutingExecutionResult.Cancel ;
-        }
+        if ( task.IsCanceled ) return ( Result.Cancelled, RoutingExecutionResult.Cancel ) ;
 
         var result = task.Result ;
-        if ( RoutingExecutionResultType.Success != result.Type ) {
-          transaction.RollBack() ;
-          return result ;
-        }
-
-        transaction.Commit() ;
-        return result ;
-      }
-      catch {
-        transaction.RollBack() ;
-        throw ;
-      }
+        return result.Type switch
+        {
+          RoutingExecutionResultType.Success => ( Result.Succeeded, result ),
+          RoutingExecutionResultType.Cancel => ( Result.Cancelled, result ),
+          _ => ( Result.Failed, result ),
+        } ;
+      }, RoutingExecutionResult.Cancel ) ;
     }
 
     private void AppendParametersToRevitGeneratedElements( UIDocument uiDocument, RoutingExecutor executor, RoutingExecutionResult result )
     {
-      using var transaction = new Transaction( uiDocument.Document ) ;
-      try {
-        transaction.Start( "TransactionName.Commands.Routing.Common.SetupParameters".GetAppStringByKeyOrDefault( "Setup Parameter" ) ) ;
-
+      uiDocument.Document.Transaction( "TransactionName.Commands.Routing.Common.SetupParameters".GetAppStringByKeyOrDefault( "Setup Parameter" ), _ =>
+      {
         executor.RunPostProcess( result ) ;
-
-        transaction.Commit() ;
-      }
-      catch{
-        transaction.RollBack() ;
-        throw ;
-      }
+        return Result.Succeeded ;
+      } ) ;
     }
 
 

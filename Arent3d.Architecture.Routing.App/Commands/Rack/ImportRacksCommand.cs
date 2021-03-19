@@ -5,6 +5,7 @@ using System.IO ;
 using System.Linq ;
 using Arent3d.Revit ;
 using Arent3d.Revit.Csv ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
@@ -28,19 +29,19 @@ namespace Arent3d.Architecture.Routing.App.Commands.Rack
       if ( 0 == list.Count ) return Result.Succeeded ;
 
       var document = commandData.Application.ActiveUIDocument.Document ;
-      using var transaction = new Transaction( document ) ;
       try {
-        transaction.Start( "Import racks" ) ;
+        var result = document.Transaction( "TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault( "Import Pipe Spaces" ), _ =>
+        {
+          foreach ( var rackRecord in list ) {
+            GenerateRack( document, rackRecord ) ;
+          }
+          return Result.Succeeded ;
+        } ) ;
 
-        foreach ( var rackRecord in list ) {
-          GenerateRack( document, rackRecord ) ;
-        }
-
-        transaction.Commit() ;
-        return Result.Succeeded ;
+        return result ;
       }
-      catch {
-        transaction.RollBack() ;
+      catch ( Exception e ) {
+        CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
     }
@@ -52,9 +53,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Rack
 
       instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
 
-      rackRecord.Size_X.To( instance, "幅" ) ; // TODO
-      rackRecord.Size_Y.To( instance, "高さ" ) ; // TODO
-      rackRecord.Size_Z.To( instance, "奥行き" ) ; // TODO
+      rackRecord.Size_X.To( instance, "Revit.Property.Builtin.Width".GetDocumentStringByKeyOrDefault( document, null ) ) ; // TODO
+      rackRecord.Size_Y.To( instance, "Revit.Property.Builtin.Height".GetDocumentStringByKeyOrDefault( document, null ) ) ; // TODO
+      rackRecord.Size_Z.To( instance, "Revit.Property.Builtin.Length".GetDocumentStringByKeyOrDefault( document, null ) ) ; // TODO
       rackRecord.Offset.To( instance, "Arent-Offset" ) ;
       rackRecord.Elevation.To( instance, BuiltInParameter.INSTANCE_ELEVATION_PARAM ) ;
 
@@ -73,7 +74,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Rack
 
     private static string? OpenFromToCsv()
     {
-      using var dlg = new FileOpenDialog( "Routing from-to list (*.csv)|*.csv" ) { Title = "Import from-to list file" } ;
+      using var dlg = new FileOpenDialog( $"{"Dialog.Commands.Rack.PS.FileName".GetAppStringByKeyOrDefault( "Pipe space list file" )} (*.csv)|*.csv" )
+      {
+        Title = "Dialog.Commands.Rack.PS.Title.Import".GetAppStringByKeyOrDefault( null )
+      } ;
 
       if ( ItemSelectionDialogResult.Confirmed != dlg.Show() ) return null ;
 

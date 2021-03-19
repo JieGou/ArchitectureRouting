@@ -30,26 +30,12 @@ namespace Arent3d.Architecture.Routing
     /// Setup all families and parameters used for routing application.
     /// </summary>
     /// <param name="document"></param>
-    public static void SetupRoutingFamiliesAndParameters( this Document document )
+    public static bool SetupRoutingFamiliesAndParameters( this Document document )
     {
-      if ( document.RoutingSettingsAreInitialized() ) return ;
+      document.MakeCertainAllRoutingFamilies() ;
+      document.MakeCertainAllRoutingParameters() ;
 
-      using var tx = new Transaction( document ) ;
-      tx.Start( "Setup routing" ) ;
-      try {
-        document.MakeCertainAllRoutingFamilies() ;
-        document.MakeCertainAllRoutingParameters() ;
-
-        if ( false == document.RoutingSettingsAreInitialized() ) {
-          throw new InvalidOperationException( "Failed to set up routing families and parameters." ) ;
-        }
-
-        tx.Commit() ;
-      }
-      catch ( Exception ) {
-        tx.RollBack() ;
-        throw ;
-      }
+      return document.RoutingSettingsAreInitialized() ;
     }
 
     #endregion

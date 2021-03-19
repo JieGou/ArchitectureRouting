@@ -12,13 +12,22 @@ namespace Arent3d.Architecture.Routing.App.Commands
   {
     public static void AlertDeletedElements()
     {
-      TaskDialog.Show( "Dialog.Commands.Routing.Dialog.Title.Error".GetAppStringByKeyOrDefault( null ), "Dialog.Commands.Routing.Common.Dialog.Body.Error.DeletedSomeFailedElements".GetAppStringByKeyOrDefault( null ) ) ;
+      TaskDialog.Show( "Dialog.Commands.Routing.Common.Title.Error".GetAppStringByKeyOrDefault( null ), "Dialog.Commands.Routing.Common.Body.Error.DeletedSomeFailedElements".GetAppStringByKeyOrDefault( null ) ) ;
     }
 
     public static void AlertBadConnectors( IEnumerable<Connector[]> badConnectorSet )
     {
-      var body = string.Format( "Dialog.Commands.Routing.Common.Dialog.Body.Error.FittingCannotBeInserted".GetAppStringByKeyOrDefault( null ), "・" + string.Join( "\n・", badConnectorSet.Select( GetConnectorInfo ) ) ) ;
-      TaskDialog.Show( "Dialog.Commands.Routing.Dialog.Title.Error".GetAppStringByKeyOrDefault( null ), body ) ;
+      var body = string.Format( "Dialog.Commands.Routing.Common.Body.Error.FittingCannotBeInserted".GetAppStringByKeyOrDefault( null ), "・" + string.Join( "\n・", badConnectorSet.Select( GetConnectorInfo ) ) ) ;
+      TaskDialog.Show( "Dialog.Commands.Routing.Common.Title.Error".GetAppStringByKeyOrDefault( null ), body ) ;
+    }
+
+    public static void DebugAlertException( Exception e )
+    {
+#if DEBUG
+      TaskDialog.Show( "Debug", e.ToString() ) ;
+#else
+      TaskDialog.Show( "Dialog.Commands.Routing.Common.Title.Error".GetAppStringByKeyOrDefault( null ), "Dialog.Commands.Routing.Common.Body.Error.ExceptionOccured".GetAppStringByKeyOrDefault( null ) ) ;
+#endif
     }
 
     private static string GetConnectorInfo( Connector[] connectorSet )

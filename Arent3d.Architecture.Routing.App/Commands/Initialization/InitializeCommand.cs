@@ -1,4 +1,5 @@
-using System.ComponentModel ;
+using System ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -15,11 +16,25 @@ namespace Arent3d.Architecture.Routing.App.Commands.Initialization
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      var doc = commandData.Application.ActiveUIDocument.Document ;
+      var document = commandData.Application.ActiveUIDocument.Document ;
+      if ( document.RoutingSettingsAreInitialized() ) return Result.Succeeded ;
 
-      doc.SetupRoutingFamiliesAndParameters() ;
+      try {
+        var result = document.Transaction( "TransactionName.Commands.Initialization.Initialize".GetAppStringByKeyOrDefault( "Setup Routing" ), _ =>
+        {
+          return document.SetupRoutingFamiliesAndParameters() ? Result.Succeeded : Result.Failed ;
+        } ) ;
 
-      return Result.Succeeded ;
+        if ( Result.Failed == result ) {
+          TaskDialog.Show( "Dialog.Commands.Initialization.Dialog.Title.Error".GetAppStringByKeyOrDefault( null ), "Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup".GetAppStringByKeyOrDefault( null ) ) ;
+        }
+
+        return result ;
+      }
+      catch ( Exception e ) {
+        CommandUtils.DebugAlertException( e ) ;
+        return Result.Failed ;
+      }
     }
   }
 }
