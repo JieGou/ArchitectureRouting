@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using Arent3d.Architecture.Routing.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.App.Commands.PassPoint ;
 using Arent3d.Architecture.Routing.App.Commands.BranchPoint;
 using Arent3d.Architecture.Routing.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.App.Commands.Rack ;
+using Arent3d.Architecture.Routing.App.Commands.Selecting;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
@@ -17,7 +19,7 @@ namespace Arent3d.Architecture.Routing.App
     private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init", TitleKey: "App.Panels.Routing.Initialize" ) ;
     private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", TitleKey: "App.Panels.Routing.Routing" ) ;
     private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "App.Panels.Routing.Racks" ) ;
-
+    private static readonly (string Key, string TitleKey) SelectingPanel = (Key: "arent3d.architecture.routing.selecting", TitleKey:"App.Panels.Routing.Selecting");
 
     private readonly RibbonButton _initializeCommandButton ;
     private readonly RibbonButton _showRoutingViewsCommandButton ;
@@ -42,6 +44,9 @@ namespace Arent3d.Architecture.Routing.App
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
     private readonly RibbonButton _eraseAllRacksCommandButton ;
+
+    private readonly RibbonButton _modifySelectecFromToCommandButton;
+
 
 
     private RoutingAppUI( UIControlledApplication application )
@@ -77,9 +82,9 @@ namespace Arent3d.Architecture.Routing.App
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
       }
       {
-        
+        var selectingPanel = tab.CreateRibbonPanel(SelectingPanel.Key, ToDisplayName(SelectingPanel.TitleKey));
+        _modifySelectecFromToCommandButton = selectingPanel.AddButton<ModifySelectedFromToCommand>() ;
       }
-
       InitializeRibbon() ;
     }
 
@@ -110,6 +115,8 @@ namespace Arent3d.Architecture.Routing.App
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
       _eraseAllRacksCommandButton.Enabled = false ;
+
+      _modifySelectecFromToCommandButton.Enabled = false;
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
@@ -141,6 +148,8 @@ namespace Arent3d.Architecture.Routing.App
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
+
+      _modifySelectecFromToCommandButton.Enabled = setupIsDone;
     }
   }
 }
