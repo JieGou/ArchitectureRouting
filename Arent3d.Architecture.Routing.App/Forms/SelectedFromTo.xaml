@@ -1,0 +1,53 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.App.Forms.SelectedFromTo"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
+        mc:Ignorable="d"
+        Title="SelectedFromTo" Height="200" Width="400">
+    
+    <Window.Resources>
+        <Style TargetType="ComboBox">
+            <Setter Property="Margin" Value="5,1,5,1"/>
+        </Style>
+        <Style TargetType="CheckBox">
+            <Setter Property="Margin" Value="5,1,2,1"/>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <StackPanel Orientation="Horizontal">
+            <ComboBox x:Name="DiameterComboBox"
+                      ItemsSource="{Binding DiameterList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      SelectionChanged="DiameterComboBox_Changed" 
+                      FontSize="20"
+                      SelectedIndex="{Binding CurrentIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      VerticalAlignment="Center">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Diameter}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <ComboBox x:Name="SystemTypeComboBox"
+                      ItemsSource="{Binding DiameterList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      SelectionChanged="DiameterComboBox_Changed" 
+                      FontSize="20"
+                      SelectedIndex="{Binding CurrentIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      VerticalAlignment="Center">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Diameter}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <CheckBox x:Name="Direct"
+                      VerticalAlignment="Center"/>
+            <Label Content="Direct" VerticalAlignment="Center"/>
+            <Button Content="Apply" VerticalAlignment="Center"/>
+            
+        </StackPanel>
+        
+        
+    </Grid>
+</Window>
