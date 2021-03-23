@@ -10,7 +10,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
         {
             InitializeComponent();
             string[] commandNames = allCommandName.Split('.');
-            messageBlock.Text = commandNames.Last();
+            //messageBlock.Text = commandNames.Last();
+            messageBlock.Text = allCommandName;
         }
     }
 }
