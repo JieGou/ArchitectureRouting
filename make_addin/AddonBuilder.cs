@@ -66,7 +66,7 @@ namespace Arent3d.Architecture
       }
     }
 
-    private void WriteAssembly( XmlWriter xml, string assemblyPath, AssemblyDefinition assembly )
+    private static void WriteAssembly( XmlWriter xml, string assemblyPath, AssemblyDefinition assembly )
     {
       var vendorId = assembly.GetCustomAttribute<Revit.RevitAddinVendorAttribute>()!.VendorId;
       var vendorDescription = assembly.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company ?? string.Empty;
@@ -89,14 +89,15 @@ namespace Arent3d.Architecture
             if ( type.GetCustomAttribute<DescriptionAttribute>() is { } desc ) {
               xml.WriteElementString( "LongDescription", desc.Description );
             }
+            xml.WriteElementString( "ClientId", attr.Guid.ToString() );
             break;
           case RevitAddInType.Application:
             xml.WriteElementString( "Name", type.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? type.Name );
+            xml.WriteElementString( "AddInId", attr.Guid.ToString() );
             break;
           }
           xml.WriteElementString( "FullClassName", type.FullName );
           xml.WriteElementString( "Assembly", assemblyPath );
-          xml.WriteElementString( "AddInId", attr.Guid.ToString() );
           xml.WriteElementString( "VendorId", vendorId );
           xml.WriteElementString( "VendorDescription", vendorDescription );
         }

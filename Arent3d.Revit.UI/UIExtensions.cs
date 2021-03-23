@@ -20,7 +20,7 @@ namespace Arent3d.Revit.UI
 
       return (RibbonButton) ribbonPanel.AddItem( CreateButton<TCommand>( assemblyName ) ) ;
     }
-    
+
     private static PushButtonData CreateButton<TButtonCommand>( string assemblyName ) where TButtonCommand : IExternalCommand
     {
       var commandClass = typeof( TButtonCommand ) ;
@@ -63,6 +63,26 @@ namespace Arent3d.Revit.UI
       catch ( Exception ) {
         return null ;
       }
+    }
+
+    public static bool CanPostCommand<TCommand>( this UIApplication app ) where TCommand : IExternalCommand
+    {
+      if ( typeof( TCommand ).GetCustomAttribute<RevitAddinAttribute>() is not { } attr ) return false ;
+
+      var commandId = RevitCommandId.LookupCommandId( attr.Guid.ToString() ) ;
+      if ( null == commandId ) return false ;
+
+      return app.CanPostCommand( commandId ) ;
+    }
+
+    public static void PostCommand<TCommand>( this UIApplication app ) where TCommand : IExternalCommand
+    {
+      if ( typeof( TCommand ).GetCustomAttribute<RevitAddinAttribute>() is not { } attr ) throw new InvalidOperationException() ;
+
+      var commandId = RevitCommandId.LookupCommandId( attr.Guid.ToString() ) ;
+      if ( null == commandId ) return ;
+
+      app.PostCommand( commandId ) ;
     }
   }
 }
