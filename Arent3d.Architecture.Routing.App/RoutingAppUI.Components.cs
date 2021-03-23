@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.App
     private readonly RibbonButton _exportRacksCommandButton ;
     private readonly RibbonButton _eraseAllRacksCommandButton ;
 
-    private readonly RibbonButton _modifySelectecFromToCommandButton;
+    private readonly RibbonButton _modifySelectedFromToCommandButton;
 
 
 
@@ -83,7 +83,7 @@ namespace Arent3d.Architecture.Routing.App
       }
       {
         var selectingPanel = tab.CreateRibbonPanel(SelectingPanel.Key, ToDisplayName(SelectingPanel.TitleKey));
-        _modifySelectecFromToCommandButton = selectingPanel.AddButton<ModifySelectedFromToCommand>() ;
+        _modifySelectedFromToCommandButton = selectingPanel.AddButton<GetSelectedFromToInfo>() ;
       }
       InitializeRibbon() ;
     }
@@ -116,7 +116,7 @@ namespace Arent3d.Architecture.Routing.App
       _exportRacksCommandButton.Enabled = false ;
       _eraseAllRacksCommandButton.Enabled = false ;
 
-      _modifySelectecFromToCommandButton.Enabled = false;
+      _modifySelectedFromToCommandButton.Enabled = false;
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
@@ -149,7 +149,7 @@ namespace Arent3d.Architecture.Routing.App
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
 
-      _modifySelectecFromToCommandButton.Enabled = setupIsDone;
+      _modifySelectedFromToCommandButton.Enabled = setupIsDone;
     }
   }
 }
