@@ -25,6 +25,9 @@
     <Reference Include="Arent3d.Utility">
       <HintPath>..\Libraries\Arent3d.Utility.dll</HintPath>
     </Reference>
+    <Reference Include="ICSharpCode.SharpDevelop, Version=4.2.0.8792, Culture=neutral, PublicKeyToken=f829da5c02be14ee">
+      <HintPath>C:\Program Files\Autodesk\Revit 2021\SDA\bin\ICSharpCode.SharpDevelop.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="RevitAPI">

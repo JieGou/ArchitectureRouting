@@ -24,16 +24,16 @@ namespace Arent3d.Architecture.Routing
       
       var allConnectors = route.GetAllConnectors( document ).EnumerateAll() ;
       MEPSystemType = GetSystemType( document, allConnectors ) ;
-
       //MEPSystem = CreateMEPSystem( document, connector, allConnectors ) ;
       MEPSystem = null ;
-
+      
       CurveType = GetMEPCurveType( document, allConnectors, MEPSystemType ) ;
     }
 
     private SizeTable<double>? _90ElbowSize ;
     public double Get90ElbowSize( double diameter )
     {
+      
       return ( _90ElbowSize ??= new( Calculate90ElbowSize ) ).Get( diameter ) ;
     }
 
@@ -123,6 +123,7 @@ namespace Arent3d.Architecture.Routing
     {
       return connectors.Select( connector => GetSystemType( document, connector ) ).NonNull().First()! ;
     }
+    //toyoda
     private static MEPSystemType? GetSystemType( Document document, Connector connector )
     {
       var systemClassification = GetSystemClassification( connector ) ;
@@ -133,11 +134,13 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
+    //toyoda
     private static bool IsCompatibleMEPSystemType( MEPSystemType type, MEPSystemClassification systemClassification )
     {
       return ( type.SystemClassification == systemClassification ) ;
     }
 
+    //toyoda
     private static MEPSystemClassification GetSystemClassification( Connector connector )
     {
       return connector.Domain switch
@@ -273,11 +276,12 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    private bool HasAnyNominalDiameter( MEPCurveType type, double nominalDiameter )
+    //Changed privet to public by Toyoda 20210324
+    public bool HasAnyNominalDiameter( MEPCurveType type, double nominalDiameter )
     {
       var document = type.Document ;
       var rpm = type.RoutingPreferenceManager ;
-      return GetRules( rpm, RoutingPreferenceRuleGroupType.Segments ).All( rule => HasAnyNominalDiameter( document, rule, nominalDiameter ) ) ;
+      return RouteMEPSystemEtensions.GetRules(this, rpm, RoutingPreferenceRuleGroupType.Segments ).All( rule => HasAnyNominalDiameter( document, rule, nominalDiameter ) ) ;
     }
 
     private static IEnumerable<RoutingPreferenceRule> GetRules( RoutingPreferenceManager rpm, RoutingPreferenceRuleGroupType groupType )
@@ -290,25 +294,11 @@ namespace Arent3d.Architecture.Routing
 
     private bool HasAnyNominalDiameter( Document document, RoutingPreferenceRule rule, double nominalDiameter )
     {
-      if ( false == GetCriteria( rule ).OfType<PrimarySizeCriterion>().All( criterion => IsMatchRange( criterion, nominalDiameter ) ) ) return false ;
+      if ( false == RouteMEPSystemEtensions.GetCriteria(this, rule ).OfType<PrimarySizeCriterion>().All( criterion => RouteMEPSystemEtensions.IsMatchRange(this, criterion, nominalDiameter ) ) ) return false ;
 
       var segment = document.GetElementById<Segment>( rule.MEPPartId ) ;
       return ( null != segment ) && HasAnyNominalDiameter( segment, nominalDiameter ) ;
     }
-
-    private static IEnumerable<RoutingCriterionBase> GetCriteria( RoutingPreferenceRule rule )
-    {
-      var count = rule.NumberOfCriteria ;
-      for ( var i = 0 ; i < count ; ++i ) {
-        yield return rule.GetCriterion( i ) ;
-      }
-    }
-
-    private static bool IsMatchRange( PrimarySizeCriterion criterion, double nominalDiameter )
-    {
-      return criterion.MinimumSize <= nominalDiameter && nominalDiameter <= criterion.MaximumSize ;
-    }
-
 
     private bool HasAnyNominalDiameter( Segment segment, double nominalDiameter )
     {

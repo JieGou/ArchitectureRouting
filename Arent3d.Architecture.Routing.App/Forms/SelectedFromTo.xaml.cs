@@ -14,6 +14,7 @@ using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB.Mechanical;
 using Arent3d.Architecture.Routing.App.Commands.Selecting;
+using Arent3d.Architecture.Routing.App.ViewModel;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
@@ -21,13 +22,14 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
         public ObservableCollection<DiameterInfo> DiameterList { get; }
 
-        
-        
         public int? CurrentIndex { get; set; }
-        public SelectedFromTo(Document doc, IList<double> values, int currentIndex)
+        public bool CurrentDirect { get; set; }
+        
+        public SelectedFromTo(Document doc, IList<double> values, int currentIndex, bool direct)
         {
             InitializeComponent();
             CurrentIndex = currentIndex;
+            CurrentDirect = direct;
             DiameterList = new ObservableCollection<DiameterInfo>(values.Select(ToDiameterInfo));
         }
 
@@ -49,9 +51,28 @@ namespace Arent3d.Architecture.Routing.App.Forms
             if (DiameterComboBox.IsDropDownOpen)
             {
                 DiameterInfo item = (DiameterInfo)DiameterComboBox.SelectedItem;
-                MessageBox.Show(item.Diameter.ToString());
+                int selectedIndex = DiameterComboBox.SelectedIndex;
+                /*MessageBox.Show(item.Diameter.ToString());
+                MessageBox.Show(selectedIndex.ToString());*/
+                //SelectedFromToViewModel.ApplySelectedDiameter(selectedIndex);
             }
-            
+        }
+
+        private void Direct_OnChecked(object sender, RoutedEventArgs e)
+        {
+            //SelectedFromToViewModel.IsDirect = CurrentDirect;
+        }
+
+        private void Direct_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            //SelectedFromToViewModel.IsDirect = CurrentDirect;
+        }
+
+
+        private void ApplyButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            SelectedFromToViewModel.ApplySelectedDiameter(DiameterComboBox.SelectedIndex, CurrentDirect);
+            this.Close();
         }
     }
 

@@ -42,9 +42,16 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
             <CheckBox x:Name="Direct"
+                      IsChecked="{Binding CurrentDirect, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      Checked="Direct_OnChecked"
+                      Unchecked="Direct_OnUnchecked"
                       VerticalAlignment="Center"/>
             <Label Content="Direct" VerticalAlignment="Center"/>
-            <Button Content="Apply" VerticalAlignment="Center"/>
+            <Button x:Name="ApplyButton"
+                    Content="Apply" 
+                    Width="50" Height="Auto"
+                    Click="ApplyButton_OnClick"
+                    VerticalAlignment="Center"/>
             
         </StackPanel>
         
