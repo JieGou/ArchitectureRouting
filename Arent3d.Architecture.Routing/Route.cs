@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing
   /// Route definition class.
   /// </summary>
   [Guid( "83A448F4-E120-44E0-A220-F2D3F11B6A05" )]
-  [StorableVisibility( AppInfo.VendorId, AppInfo.ApplicationGuid )]
+  [StorableVisibility( AppInfo.VendorId )]
   public sealed class Route : StorableBase
   {
     public const string DefaultFluidPhase = "None" ;
