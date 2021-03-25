@@ -56,14 +56,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Selecting
             
             //System Type Info(PinpingSystemType in lookup)
             var connector = pickInfo.ReferenceConnector;
-            var systemTypes = routeMepSystem.GetSystemTypes(uiDocument.Document, connector);
+            var systemTypes = routeMepSystem.GetSystemTypes(uiDocument.Document, connector)
+                .Select(s => new { Sorted = s, Index = s.Name}).OrderBy(s => s.Index).Select(s => s.Sorted).ToList();
             var systemType = routeMepSystem.MEPSystemType;
             var systemTypeIndex = systemTypes.Select(s => s.Id).ToList().FindIndex(n => n == systemType.Id);
 
             //CurveType Info
             var curveType = routeMepSystem.CurveType;
             var type = curveType.GetType();
-            var curveTypes = routeMepSystem.GetCurveTypes(uiDocument.Document, type);
+            var curveTypes = routeMepSystem.GetCurveTypes(uiDocument.Document, type)
+                .Select(c => new { Sorted = c, Index = c.Name}).OrderBy(c => c.Index).Select(c => c.Sorted).ToList();;
             var curveTypeIndex = curveTypes.Select(s => s.Id).ToList().FindIndex(n => n == curveType.Id);
 
             //Direct Info

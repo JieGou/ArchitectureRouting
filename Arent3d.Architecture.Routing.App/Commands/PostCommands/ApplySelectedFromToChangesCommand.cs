@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Linq;
 using Arent3d.Architecture.Routing.App.ViewModel;
 using Arent3d.Revit ;
 using Arent3d.Utility;
@@ -42,13 +43,13 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
                 //routeMepSystem.MEPSystem = systemTypeList[SelectedFromToViewModel.SelectedSystemTypeIndex];
                 
                 //Change CurveType
-                TaskDialog.Show("curvetype", routeMepSystem.CurveType.Name);
                 //routeMepSystem.CurveType = curveTypes[SelectedFromToViewModel.SelectedCurveTypeIndex];
                 
                 //Change Direct
                 pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace(SelectedFromToViewModel.IsDirect);
 
-                
+                //return base.GetRouteSegmentsInTransaction(uiDocument);
+                // qustion
                 return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
             }
             else

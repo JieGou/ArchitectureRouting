@@ -35,6 +35,9 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         
         //Direct
         public static bool IsDirect { get; set; }
+        
+        //Dialog
+        private static SelectedFromTo? OpenedDialog ;
 
 
 
@@ -63,9 +66,14 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
             CurveTypes = curveTypes;
             IsDirect = direct;
 
+            if ( OpenedDialog != null )
+            {
+                OpenedDialog.Close();    
+            }
             var dialog = new SelectedFromTo(uiDocument.Document, diameters ,diameterIndex, 
                 systemTypes, systemTypeIndex, CurveTypes, curveTypeIndex, type ,direct);
             dialog.Show();
+            OpenedDialog = dialog ;
         }
 
         /// <summary>
@@ -91,5 +99,24 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
                 return false;
             }
         }
+
+        /// <summary>
+        /// Reset Diameter List by Curve Type
+        /// </summary>
+        /// <param name="curveTypeIndex"></param>
+        /// <returns></returns>
+        public static IList<double> ResetNominalDiameters(int curveTypeIndex)
+        {
+            IList<double> resultDiameters = new List<double>();
+        
+            if ( UiDoc != null && TargetPickInfo != null && CurveTypes != null) 
+            {
+                RouteMEPSystem routeMepSystem = new RouteMEPSystem(UiDoc.Document, TargetPickInfo.Route);
+                resultDiameters = routeMepSystem.GetNominalDiameters( CurveTypes[curveTypeIndex] ) ;
+            }
+
+            return resultDiameters ;
+        }
+        
     }
 }

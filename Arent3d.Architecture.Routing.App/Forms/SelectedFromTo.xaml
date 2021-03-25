@@ -17,7 +17,7 @@
     </Window.Resources>
     <Grid>
         <StackPanel Orientation="Horizontal">
-            <Label Content="Dimeter" VerticalAlignment="Center"/>
+            <Label Content="Diameter" VerticalAlignment="Center"/>
             <ComboBox x:Name="DiameterComboBox"
                       ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                       SelectionChanged="DiameterComboBox_Changed" 
@@ -31,7 +31,7 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
             
-            <Label Content="SystemType" VerticalAlignment="Center"/>
+            <Label Content="System Type" VerticalAlignment="Center"/>
             <ComboBox x:Name="SystemTypeComboBox"
                       ItemsSource="{Binding SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                       SelectionChanged="SystemTypeComboBox_OnSelectionChanged"
@@ -60,7 +60,7 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
             
-            <Label Content="Direct" VerticalAlignment="Center"/>
+            <Label Content="Via PS" VerticalAlignment="Center"/>
             
             <CheckBox x:Name="Direct"
                       IsChecked="{Binding CurrentDirect, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
