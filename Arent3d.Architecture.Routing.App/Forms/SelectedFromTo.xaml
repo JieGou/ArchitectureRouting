@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
         mc:Ignorable="d"
-        Title="SelectedFromTo" Height="200" Width="400">
+        Title="SelectedFromTo" Height="200" Width="450">
     
     <Window.Resources>
         <Style TargetType="ComboBox">
@@ -21,7 +21,7 @@
                       ItemsSource="{Binding DiameterList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                       SelectionChanged="DiameterComboBox_Changed" 
                       FontSize="20"
-                      SelectedIndex="{Binding CurrentIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                       VerticalAlignment="Center">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
@@ -30,14 +30,26 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
             <ComboBox x:Name="SystemTypeComboBox"
-                      ItemsSource="{Binding DiameterList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                      SelectionChanged="DiameterComboBox_Changed" 
+                      ItemsSource="{Binding SystemTypeList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      SelectionChanged="SystemTypeComboBox_OnSelectionChanged"
                       FontSize="20"
-                      SelectedIndex="{Binding CurrentIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                       VerticalAlignment="Center">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding Diameter}"/>
+                        <TextBlock Text="{Binding SystemTypeText}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <ComboBox x:Name="CurveTypeComboBox"
+                      ItemsSource="{Binding CurveTypeList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      SelectionChanged="CurveTypeComboBox_OnSelectionChanged"
+                      FontSize="20"
+                      SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      VerticalAlignment="Center">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding CurveTypeText}"/>
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>

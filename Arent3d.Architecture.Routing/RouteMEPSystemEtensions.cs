@@ -6,6 +6,7 @@ using System.Linq;
 using Autodesk.Revit.DB;
 using Arent3d.Architecture.Routing;
 using Arent3d.Revit;
+using Autodesk.Revit.DB.Plumbing;
 
 
 namespace Arent3d.Architecture.Routing
@@ -57,6 +58,23 @@ namespace Arent3d.Architecture.Routing
             return criterion.MinimumSize <= nominalDiameter && nominalDiameter <= criterion.MaximumSize;
         }
 
+        public static IList<MEPSystemType> GetSystemTypeList(this RouteMEPSystem rms, Document doc, Connector connector)
+        {
+            //IList<MEPSystem> resultList = new List<MEPSystem>();
+            var systemClassification = RouteMEPSystem.GetSystemClassification( connector ) ;
+
+            var resultList = doc.GetAllElements<MEPSystemType>()
+                .Where(s => RouteMEPSystem.IsCompatibleMEPSystemType(s, systemClassification))
+                .Select(s => s).ToList();
+            /*foreach ( var test in doc.GetAllElements<MEPSystemType>() )
+            {
+                if (IsCompatibleMEPSystemType(test, systemClassification))
+                {
+                    Debug.Print(test.Name) ;
+                }*/
+            return resultList;
+        }
+
         private static Segment? GetTargetSegment(this RouteMEPSystem rms, MEPCurveType type)
         {
             Segment? targetSegment = null;
@@ -69,7 +87,6 @@ namespace Arent3d.Architecture.Routing
             }
 
             return targetSegment;
-
         }
         
     }

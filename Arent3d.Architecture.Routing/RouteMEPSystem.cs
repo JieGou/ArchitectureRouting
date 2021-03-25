@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using System.Diagnostics;
 using System.Linq ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
@@ -7,6 +8,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
 using Autodesk.Revit.DB.Structure ;
+
 
 namespace Arent3d.Architecture.Routing
 {
@@ -124,24 +126,26 @@ namespace Arent3d.Architecture.Routing
       return connectors.Select( connector => GetSystemType( document, connector ) ).NonNull().First()! ;
     }
     //toyoda
-    private static MEPSystemType? GetSystemType( Document document, Connector connector )
+    public static MEPSystemType? GetSystemType( Document document, Connector connector )
     {
       var systemClassification = GetSystemClassification( connector ) ;
-      foreach ( var type in document.GetAllElements<MEPSystemType>() ) {
-        if ( IsCompatibleMEPSystemType( type, systemClassification ) ) return type ;
+
+      foreach ( var type in document.GetAllElements<MEPSystemType>() )
+      {
+        if (IsCompatibleMEPSystemType(type, systemClassification)) return type;
       }
 
       return null ;
     }
 
     //toyoda
-    private static bool IsCompatibleMEPSystemType( MEPSystemType type, MEPSystemClassification systemClassification )
+    public static bool IsCompatibleMEPSystemType( MEPSystemType type, MEPSystemClassification systemClassification )
     {
       return ( type.SystemClassification == systemClassification ) ;
     }
-
+    
     //toyoda
-    private static MEPSystemClassification GetSystemClassification( Connector connector )
+    public static MEPSystemClassification GetSystemClassification( Connector connector )
     {
       return connector.Domain switch
       {

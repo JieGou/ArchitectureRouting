@@ -17,6 +17,7 @@ using System.Drawing;
 using System.Windows;
 using System.Windows.Input;
 using Arent3d.Architecture.Routing.App.ViewModel;
+using Arent3d.Revit;
 using Autodesk.Revit.DB.Plumbing;
 using ICSharpCode.SharpDevelop;
 
@@ -47,23 +48,23 @@ namespace Arent3d.Architecture.Routing.App.Commands.Selecting
             var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.PickAndReRoute.Pick".GetAppStringByKeyOrDefault( null ) ) ;
             
             RouteMEPSystem routeMepSystem = new RouteMEPSystem(uiDocument.Document, pickInfo.Route);
-
+            //TaskDialog("pipingsystem", routeMepSystem.MEPSystem.)
             //Diameter Info
             var diameterList = routeMepSystem.GetNominalDiameterList(routeMepSystem.CurveType);
             var diameter = pickInfo.SubRoute.GetDiameter(uiDocument.Document);
             var diameterIndex = diameterList.ToList().FindIndex(i => Math.Abs(i - diameter) <  uiDocument.Document.Application.VertexTolerance);
             
-            //System Type Info
-
-            /*var systemTypeList = pickInfo.ReferenceConnector.PipeSystemType;
-            TaskDialog.Show("system type", RouteMEPSystem.GetSystemType(uiDocument.Document, pickInfo.ReferenceConnector).ToString());
-            */
+            //System Type Info(PinpingSystemType in lookup)
+            var connector = pickInfo.ReferenceConnector;
+            var systemTypeList = routeMepSystem.GetSystemTypeList(uiDocument.Document, connector);
+            var systemType = routeMepSystem.MEPSystemType;
+            var systemTypeIndex = systemTypeList.Select(s => s.Id).ToList().FindIndex(n => n == systemType.Id);
 
             //Direct Info
             var direct = pickInfo.SubRoute.IsRoutingOnPipeSpace;
 
             //Show Dialog with pickInfo
-            SelectedFromToViewModel.ShowSelectedFromToDialog(uiDocument, diameterIndex, diameterList, direct, pickInfo);
+            SelectedFromToViewModel.ShowSelectedFromToDialog(uiDocument, diameterIndex, diameterList, systemTypeList, systemTypeIndex, direct, pickInfo);
             
 
             return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>();

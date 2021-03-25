@@ -16,14 +16,19 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     static class SelectedFromToViewModel 
     {
         private static UIDocument? UiDoc { get; set; }
-        
         //Selecting PickInfo 
         public static PointOnRoutePicker.PickInfo? TargetPickInfo {get; set; }
         
+        //Diameter
         public static int CurrentIndex { get; set; }
-        public static int SelectedIndex { get; set; }
+        public static int SelectedDiameterIndex { get; set; }
         public static IList<double>? DiameterList { get; set; }
         
+        //SystemTypd 
+        public static int SelectedSystemTypeIndex { get; set; }
+        public static IList<MEPSystemType>? SystemTypeList { get; set; }
+        
+        //Direct
         public static bool IsDirect { get; set; }
 
 
@@ -42,29 +47,34 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         /// <param name="diameterList"></param>
         /// <param name="direct"></param>
         /// <param name="selectedPickInfo"></param>
-        public static void ShowSelectedFromToDialog(UIDocument uiDocument, int targetIndex, IList<double> diameterList,
+        public static void ShowSelectedFromToDialog(UIDocument uiDocument, int diameterIndex, IList<double> diameterList
+            , IList<MEPSystemType> systemTypeList, int systemTypeIndex,
             bool direct, PointOnRoutePicker.PickInfo selectedPickInfo)
         {
             UiDoc = uiDocument;
             TargetPickInfo = selectedPickInfo;
             DiameterList = diameterList;
+            SystemTypeList = systemTypeList;
             IsDirect = direct;
 
-            var dialog = new SelectedFromTo(uiDocument.Document, diameterList, targetIndex, direct);
+            var dialog = new SelectedFromTo(uiDocument.Document, diameterList ,diameterIndex, 
+                systemTypeList, systemTypeIndex, direct);
             dialog.Show();
         }
 
         /// <summary>
         /// Set Dilaog Parameters and send PostCommand
         /// </summary>
-        /// <param name="selectedIndex"></param>
+        /// <param name="selectedDiameter"></param>
+        /// <param name="selectedSystemType"></param>
         /// <param name="selectedDirect"></param>
         /// <returns></returns>
-        public static bool ApplySelectedDiameter(int selectedIndex, bool selectedDirect)
+        public static bool ApplySelectedDiameter(int selectedDiameter, int selectedSystemType ,bool selectedDirect)
         {
             if (UiDoc != null)
             {
-                SelectedIndex = selectedIndex;
+                SelectedDiameterIndex = selectedDiameter;
+                SelectedSystemTypeIndex = selectedSystemType;
                 IsDirect = selectedDirect;
                 UiDoc.Application.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
                 return true;
@@ -74,6 +84,5 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
                 return false;
             }
         }
-        
     }
 }

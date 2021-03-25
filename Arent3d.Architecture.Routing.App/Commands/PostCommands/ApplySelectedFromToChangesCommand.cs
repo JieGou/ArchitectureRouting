@@ -28,14 +28,17 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
         {
             var pickInfo = SelectedFromToViewModel.TargetPickInfo;
             var diameterList = SelectedFromToViewModel.DiameterList;
+            var systemTypeList = SelectedFromToViewModel.SystemTypeList;
             
             if (diameterList != null && pickInfo != null)
             {
-                
-                
                 //Change Diameter
-                pickInfo.SubRoute.ChangePreferredNominalDiameter(diameterList[SelectedFromToViewModel.SelectedIndex]);
+                pickInfo.SubRoute.ChangePreferredNominalDiameter(diameterList[SelectedFromToViewModel.SelectedDiameterIndex]);
                 TaskDialog.Show( "Selected Diameter", UnitUtils.ConvertFromInternalUnits(pickInfo.SubRoute.GetDiameter(uiDocument.Document),UnitTypeId.Millimeters).ToString() ) ;
+                
+                //Change SystemType
+                RouteMEPSystem routeMepSystem = new RouteMEPSystem(uiDocument.Document, pickInfo.Route);
+                //routeMepSystem.MEPSystem = systemTypeList[SelectedFromToViewModel.SelectedSystemTypeIndex];
                 
                 //Change Direct
                 pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace(SelectedFromToViewModel.IsDirect);
