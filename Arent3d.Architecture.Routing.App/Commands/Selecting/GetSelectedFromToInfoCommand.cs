@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Selecting
 
             //Direct Info
             var direct = pickInfo.SubRoute.IsRoutingOnPipeSpace;
-
+            
             //Show Dialog with pickInfo
             SelectedFromToViewModel.ShowSelectedFromToDialog(uiDocument, diameterIndex, diameters, systemTypeIndex, systemTypes 
                 ,curveTypeIndex, curveTypes, type,  direct, pickInfo);

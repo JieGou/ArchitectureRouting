@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         public static bool IsDirect { get; set; }
         
         //Dialog
-        private static SelectedFromTo? OpenedDialog ;
+        private static SelectedFromTo? _openedDialog ;
 
 
 
@@ -66,14 +66,14 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
             CurveTypes = curveTypes;
             IsDirect = direct;
 
-            if ( OpenedDialog != null )
+            if ( _openedDialog != null )
             {
-                OpenedDialog.Close();    
+                _openedDialog.Close();    
             }
             var dialog = new SelectedFromTo(uiDocument.Document, diameters ,diameterIndex, 
                 systemTypes, systemTypeIndex, CurveTypes, curveTypeIndex, type ,direct);
             dialog.Show();
-            OpenedDialog = dialog ;
+            _openedDialog = dialog ;
         }
 
         /// <summary>
