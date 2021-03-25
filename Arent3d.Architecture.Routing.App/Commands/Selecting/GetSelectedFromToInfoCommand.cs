@@ -24,8 +24,10 @@ using ICSharpCode.SharpDevelop;
 namespace Arent3d.Architecture.Routing.App.Commands.Selecting
 {
     [Transaction( TransactionMode.Manual )]
-    [DisplayName( "Modify Selected From-To" )]
-    public class GetSelectedFromToInfo : Routing.RoutingCommandBase
+    [DisplayName( "Modify From-To" )]
+    [DisplayNameKey( "App.Commands.Selecting.GetSelectedFromToInfoCommand", DefaultString = "Modify From-To" )]
+    [Image( "resources/MEP.ico" )]
+    public class GetSelectedFromToInfoCommand : Routing.RoutingCommandBase
     {
         protected override string GetTransactionNameKey() => "TransactionName.Commands.Selecting.GetSelectedFromToInfo" ;
 

@@ -68,6 +68,9 @@
         <key>App.Commands.Routing.ReplaceFromToCommand</key>
         <string>Replace&#xA;From-To</string>
 
+        <key>App.Commands.Selecting.GetSelectedFromToInfoCommand</key>
+        <string>Modify&#xA;From-To</string>
+
         <key>App.Commands.Routing.ShowFrom_ToWindowCommand</key>
         <string>From-To&#xA;Window</string>
 

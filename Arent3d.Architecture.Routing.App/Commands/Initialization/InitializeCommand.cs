@@ -11,7 +11,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "App.Commands.Initialization.InitializeCommand", DefaultString = "Initialize" )]
-  //testing image size
   [Image( "resources/Initialize.png", ImageType = ImageType.Large )]
   public class InitializeCommand : IExternalCommand
   {

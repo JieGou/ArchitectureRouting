@@ -19,7 +19,6 @@ namespace Arent3d.Architecture.Routing.App
     private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init", TitleKey: "App.Panels.Routing.Initialize" ) ;
     private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", TitleKey: "App.Panels.Routing.Routing" ) ;
     private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "App.Panels.Routing.Racks" ) ;
-    private static readonly (string Key, string TitleKey) SelectingPanel = (Key: "arent3d.architecture.routing.selecting", TitleKey:"App.Panels.Routing.Selecting");
 
     private readonly RibbonButton _initializeCommandButton ;
     private readonly RibbonButton _showRoutingViewsCommandButton ;
@@ -70,6 +69,7 @@ namespace Arent3d.Architecture.Routing.App
         _eraseAllRoutesCommandButton = routingPanel.AddButton<EraseAllRoutesCommand>() ;
 
         _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>();
+        _modifySelectedFromToCommandButton = routingPanel.AddButton<GetSelectedFromToInfoCommand>() ;
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>();
 
         _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
@@ -81,10 +81,10 @@ namespace Arent3d.Architecture.Routing.App
         _exportRacksCommandButton = rackPanel.AddButton<ExportRacksCommand>() ;
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
       }
-      {
+      /*{
         var selectingPanel = tab.CreateRibbonPanel(SelectingPanel.Key, ToDisplayName(SelectingPanel.TitleKey));
         _modifySelectedFromToCommandButton = selectingPanel.AddButton<GetSelectedFromToInfo>() ;
-      }
+      }*/
       InitializeRibbon() ;
     }
 
