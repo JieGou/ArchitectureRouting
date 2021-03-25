@@ -5,8 +5,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
         mc:Ignorable="d"
-        Title="SelectedFromTo" Height="200" Width="1000">
-    
+        Title="ModifyFromTo" Height="500" Width="550">
+
     <Window.Resources>
         <Style TargetType="ComboBox">
             <Setter Property="Margin" Value="5,1,5,1"/>
@@ -16,66 +16,120 @@
         </Style>
     </Window.Resources>
     <Grid>
-        <StackPanel Orientation="Horizontal">
-            <Label Content="Diameter" VerticalAlignment="Center"/>
-            <ComboBox x:Name="DiameterComboBox"
-                      ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                      SelectionChanged="DiameterComboBox_Changed" 
-                      FontSize="20"
-                      SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                      VerticalAlignment="Center">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Diameter}"/>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            
-            <Label Content="System Type" VerticalAlignment="Center"/>
-            <ComboBox x:Name="SystemTypeComboBox"
-                      ItemsSource="{Binding SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                      SelectionChanged="SystemTypeComboBox_OnSelectionChanged"
-                      FontSize="20"
-                      SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                      VerticalAlignment="Center">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding SystemTypeText}"/>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            
-            <Label Content="{Binding CurveTypeLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" 
-                   VerticalAlignment="Center"/>
-            <ComboBox x:Name="CurveTypeComboBox"
-                      ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                      SelectionChanged="CurveTypeComboBox_OnSelectionChanged"
-                      FontSize="20"
-                      SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                      VerticalAlignment="Center">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding CurveTypeText}"/>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            
-            <Label Content="Via PS" VerticalAlignment="Center"/>
-            
-            <CheckBox x:Name="Direct"
-                      IsChecked="{Binding CurrentDirect, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                      Checked="Direct_OnChecked"
-                      Unchecked="Direct_OnUnchecked"
-                      VerticalAlignment="Center"/>
-            
-            <Button x:Name="ApplyButton"
-                    Content="Apply" 
-                    Width="50" Height="Auto"
-                    Click="ApplyButton_OnClick"
-                    VerticalAlignment="Center"/>
-            
-        </StackPanel>
-        
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Label Content="Diameter" 
+               HorizontalAlignment="Left"
+               VerticalAlignment="Center"
+               Grid.Column="0"
+               Grid.Row="0"/>
+        <ComboBox x:Name="DiameterComboBox"
+                  Grid.Column="1"
+                  Grid.Row="0"
+                  Grid.ColumnSpan="3"
+                  ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  SelectionChanged="DiameterComboBox_Changed" 
+                  FontSize="20"
+                  SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  VerticalAlignment="Center">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Diameter}"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <Label Content="System Type" 
+               HorizontalAlignment="Left"
+               VerticalAlignment="Center"
+               Grid.Column="0"
+               Grid.Row="1"/>
+        <ComboBox x:Name="SystemTypeComboBox"
+                  Grid.Column="1"
+                  Grid.Row="1"
+                  Grid.ColumnSpan="3"
+                  ItemsSource="{Binding SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  SelectionChanged="SystemTypeComboBox_OnSelectionChanged"
+                  FontSize="20"
+                  SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  VerticalAlignment="Center">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding SystemTypeText}"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <Label Content="{Binding CurveTypeLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" 
+               HorizontalAlignment="Left"
+               VerticalAlignment="Center"
+               Grid.Column="0"
+               Grid.Row="2"/>
+        <ComboBox x:Name="CurveTypeComboBox"
+                  Grid.Column="1"
+                  Grid.Row="2"
+                  Grid.ColumnSpan="3"
+                  ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  SelectionChanged="CurveTypeComboBox_OnSelectionChanged"
+                  FontSize="20"
+                  SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  VerticalAlignment="Center">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding CurveTypeText}"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <Label Content="Via PS" 
+               HorizontalAlignment="Left"
+               VerticalAlignment="Center"
+               Grid.Column="0"
+               Grid.Row="3"/>
+
+        <CheckBox x:Name="Direct"
+                  Grid.Column="1"
+                  Grid.Row="3"
+                  Grid.ColumnSpan="3"
+                  IsChecked="{Binding CurrentDirect, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  Checked="Direct_OnChecked"
+                  Unchecked="Direct_OnUnchecked"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"/>
+
+
+        <Button x:Name="OK"
+            Content="OK" HorizontalAlignment="Center" 
+            Margin="10,37,85,37" Grid.Row="4" 
+            Click="OK_Click"
+            VerticalAlignment="Center" 
+            Width="150" Grid.ColumnSpan="2"/>
+        <Button x:Name="ApplyButton"
+            Margin="0"
+            Content="Apply" 
+            Height="Auto"
+            Click="Apply_OnClick"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center" Grid.Column="1" Grid.Row="4"
+            Width="150" Grid.ColumnSpan="2"/>
+        <Button x:Name="Cancel"
+            Click="Cancel_Click"
+            Content="Cancel" Grid.Column="2" 
+            HorizontalAlignment="Center" 
+            Margin="85,37,10,37" Grid.Row="4" 
+            VerticalAlignment="Center" 
+            Width="150" Grid.ColumnSpan="2"/>
     </Grid>
 </Window>

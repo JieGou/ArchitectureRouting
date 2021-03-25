@@ -122,17 +122,24 @@ namespace Arent3d.Architecture.Routing.App.Forms
             //SelectedFromToViewModel.IsDirect = CurrentDirect;
         }
 
-        
+        //OK Button
+        private void OK_Click(object sender, RoutedEventArgs e)
+        {
+            SelectedFromToViewModel.ApplySelectedDiameter(DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex,
+                CurveTypeComboBox.SelectedIndex, CurrentDirect);
+            this.Close();
+        }
         //Apply Button
-        private void ApplyButton_OnClick(object sender, RoutedEventArgs e)
+        private void Apply_OnClick(object sender, RoutedEventArgs e)
         {
             SelectedFromToViewModel.ApplySelectedDiameter(DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, 
                 CurveTypeComboBox.SelectedIndex , CurrentDirect);
-            this.Close();
         }
 
-
-        
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
     }
 
 
