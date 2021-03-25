@@ -115,6 +115,8 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
                 resultDiameters = routeMepSystem.GetNominalDiameters( CurveTypes[curveTypeIndex] ) ;
             }
 
+            Diameters = resultDiameters ;
+
             return resultDiameters ;
         }
         

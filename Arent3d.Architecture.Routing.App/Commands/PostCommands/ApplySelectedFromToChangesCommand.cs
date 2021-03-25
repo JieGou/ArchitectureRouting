@@ -33,23 +33,23 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
             var systemTypes = SelectedFromToViewModel.SystemTypes;
             var curveTypes = SelectedFromToViewModel.CurveTypes;
             
-            if (diameters != null && pickInfo != null)
+            if (diameters != null && pickInfo != null && systemTypes != null && curveTypes != null)
             {
                 //Change Diameter
                 pickInfo.SubRoute.ChangePreferredNominalDiameter(diameters[SelectedFromToViewModel.SelectedDiameterIndex]);
                 
                 //Change SystemType
+                pickInfo.SubRoute.ChangeSystemType(systemTypes[SelectedFromToViewModel.SelectedSystemTypeIndex]);
                 RouteMEPSystem routeMepSystem = new RouteMEPSystem(uiDocument.Document, pickInfo.Route);
-                //routeMepSystem.MEPSystem = systemTypeList[SelectedFromToViewModel.SelectedSystemTypeIndex];
                 
                 //Change CurveType
-                //routeMepSystem.CurveType = curveTypes[SelectedFromToViewModel.SelectedCurveTypeIndex];
+                pickInfo.SubRoute.ChangeCurveType(curveTypes[SelectedFromToViewModel.SelectedCurveTypeIndex]);
                 
                 //Change Direct
                 pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace(SelectedFromToViewModel.IsDirect);
 
                 //return base.GetRouteSegmentsInTransaction(uiDocument);
-                // qustion
+                // question IsDirect is false after Reroute
                 return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
             }
             else
