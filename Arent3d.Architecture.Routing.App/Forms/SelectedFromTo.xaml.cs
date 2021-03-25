@@ -21,30 +21,34 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public partial class SelectedFromTo : Window
     {
         //Diameter Info
-        public ObservableCollection<DiameterInfo> DiameterList { get; }
+        public ObservableCollection<DiameterInfo> Diameters { get; }
         public int? DiameterIndex { get; set; }
         
         //SystemType Info
-        public ObservableCollection<SystemTypeInfo> SystemTypeList { get; }
+        public ObservableCollection<SystemTypeInfo> SystemTypes { get; }
         public int? SystemTypeIndex { get; set; }
         
         //CurveType Info
-        public ObservableCollection<CurveTypeInfo> CurveTypeList { get; }
+        public ObservableCollection<CurveTypeInfo> CurveTypes { get; }
         public  int? CurveTypeIndex { get; set; }
+        public  string CurveTypeLabel { get; set; }
 
         //Direct Info
         public bool CurrentDirect { get; set; }
         
-        public SelectedFromTo(Document doc, IList<double> diameterList, int diameterIndex,
-             IList<MEPSystemType> systemTypeList , int systemTypeIndex,bool direct)
+        public SelectedFromTo(Document doc, IList<double> diameters, int diameterIndex,
+             IList<MEPSystemType> systemTypes , int systemTypeIndex, 
+             IList<MEPCurveType> curveTypes, int curveTypeIndex, Type type ,bool direct)
         {
             InitializeComponent();
             DiameterIndex = diameterIndex;
             SystemTypeIndex = systemTypeIndex;
-            
+            CurveTypeIndex = curveTypeIndex;
+            CurveTypeLabel = type.Name;
             CurrentDirect = direct;
-            DiameterList = new ObservableCollection<DiameterInfo>(diameterList.Select(ToDiameterInfo));
-            SystemTypeList = new ObservableCollection<SystemTypeInfo>(systemTypeList.Select(ToSystemTypeInfo));
+            Diameters= new ObservableCollection<DiameterInfo>(diameters.Select(ToDiameterInfo));
+            SystemTypes = new ObservableCollection<SystemTypeInfo>(systemTypes.Select(ToSystemTypeInfo));
+            CurveTypes = new ObservableCollection<CurveTypeInfo>(curveTypes.Select(ToCurveTypeInfo));
         }
 
 
@@ -59,6 +63,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
             return new SystemTypeInfo {SystemTypeText = systemType.Name};
         }
 
+        private static CurveTypeInfo ToCurveTypeInfo(MEPCurveType curveType)
+        {
+            return new CurveTypeInfo {CurveTypeText = curveType.Name};
+        }
+
 
         //Diameter 
         public class DiameterInfo
@@ -68,11 +77,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         private void DiameterComboBox_Changed(object sender, SelectionChangedEventArgs e)
         {
-            if (DiameterComboBox.IsDropDownOpen)
+            /*if (DiameterComboBox.IsDropDownOpen)
             {
                 DiameterInfo item = (DiameterInfo)DiameterComboBox.SelectedItem;
                 int selectedIndex = DiameterComboBox.SelectedIndex;
-            }
+            }*/
         }
         
         //SystemType
@@ -83,11 +92,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
         
         private void SystemTypeComboBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (SystemTypeComboBox.IsDropDownOpen)
+            /*if (SystemTypeComboBox.IsDropDownOpen)
             {
                 SystemTypeInfo item = (SystemTypeInfo) SystemTypeComboBox.SelectedItem;
                 int selectedIndex = SystemTypeComboBox.SelectedIndex;
-            }
+            }*/
         }
         
         //CurveType
@@ -98,8 +107,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
         
         private void CurveTypeComboBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            CurveTypeInfo item = (CurveTypeInfo) CurveTypeComboBox.SelectedItem;
-            int selectedIndex = CurveTypeComboBox.SelectedIndex;
+            /*CurveTypeInfo item = (CurveTypeInfo) CurveTypeComboBox.SelectedItem;
+            int selectedIndex = CurveTypeComboBox.SelectedIndex;*/
         }
         
         //Direct
@@ -117,7 +126,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
         //Apply Button
         private void ApplyButton_OnClick(object sender, RoutedEventArgs e)
         {
-            SelectedFromToViewModel.ApplySelectedDiameter(DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurrentDirect);
+            SelectedFromToViewModel.ApplySelectedDiameter(DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, 
+                CurveTypeComboBox.SelectedIndex ,CurrentDirect);
             this.Close();
         }
 

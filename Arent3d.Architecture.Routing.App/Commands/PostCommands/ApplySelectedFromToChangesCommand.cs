@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Arent3d.Architecture.Routing.App.ViewModel;
 using Arent3d.Revit ;
@@ -27,22 +28,26 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
         protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsBeforeTransaction(UIDocument uiDocument)
         {
             var pickInfo = SelectedFromToViewModel.TargetPickInfo;
-            var diameterList = SelectedFromToViewModel.DiameterList;
-            var systemTypeList = SelectedFromToViewModel.SystemTypeList;
+            var diameters = SelectedFromToViewModel.Diameters;
+            var systemTypes = SelectedFromToViewModel.SystemTypes;
+            var curveTypes = SelectedFromToViewModel.CurveTypes;
             
-            if (diameterList != null && pickInfo != null)
+            if (diameters != null && pickInfo != null)
             {
                 //Change Diameter
-                pickInfo.SubRoute.ChangePreferredNominalDiameter(diameterList[SelectedFromToViewModel.SelectedDiameterIndex]);
-                TaskDialog.Show( "Selected Diameter", UnitUtils.ConvertFromInternalUnits(pickInfo.SubRoute.GetDiameter(uiDocument.Document),UnitTypeId.Millimeters).ToString() ) ;
+                pickInfo.SubRoute.ChangePreferredNominalDiameter(diameters[SelectedFromToViewModel.SelectedDiameterIndex]);
                 
                 //Change SystemType
                 RouteMEPSystem routeMepSystem = new RouteMEPSystem(uiDocument.Document, pickInfo.Route);
                 //routeMepSystem.MEPSystem = systemTypeList[SelectedFromToViewModel.SelectedSystemTypeIndex];
                 
+                //Change CurveType
+                TaskDialog.Show("curvetype", routeMepSystem.CurveType.Name);
+                //routeMepSystem.CurveType = curveTypes[SelectedFromToViewModel.SelectedCurveTypeIndex];
+                
                 //Change Direct
                 pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace(SelectedFromToViewModel.IsDirect);
-                TaskDialog.Show("Direct", pickInfo.SubRoute.IsRoutingOnPipeSpace.ToString());
+
                 
                 return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
             }

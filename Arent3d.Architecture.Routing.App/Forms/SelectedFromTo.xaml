@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
         mc:Ignorable="d"
-        Title="SelectedFromTo" Height="200" Width="450">
+        Title="SelectedFromTo" Height="200" Width="1000">
     
     <Window.Resources>
         <Style TargetType="ComboBox">
@@ -17,8 +17,9 @@
     </Window.Resources>
     <Grid>
         <StackPanel Orientation="Horizontal">
+            <Label Content="Dimeter" VerticalAlignment="Center"/>
             <ComboBox x:Name="DiameterComboBox"
-                      ItemsSource="{Binding DiameterList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                       SelectionChanged="DiameterComboBox_Changed" 
                       FontSize="20"
                       SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
@@ -29,8 +30,10 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
+            
+            <Label Content="SystemType" VerticalAlignment="Center"/>
             <ComboBox x:Name="SystemTypeComboBox"
-                      ItemsSource="{Binding SystemTypeList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      ItemsSource="{Binding SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                       SelectionChanged="SystemTypeComboBox_OnSelectionChanged"
                       FontSize="20"
                       SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
@@ -41,8 +44,11 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
+            
+            <Label Content="{Binding CurveTypeLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" 
+                   VerticalAlignment="Center"/>
             <ComboBox x:Name="CurveTypeComboBox"
-                      ItemsSource="{Binding CurveTypeList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                      ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                       SelectionChanged="CurveTypeComboBox_OnSelectionChanged"
                       FontSize="20"
                       SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
@@ -53,12 +59,15 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
+            
+            <Label Content="Direct" VerticalAlignment="Center"/>
+            
             <CheckBox x:Name="Direct"
                       IsChecked="{Binding CurrentDirect, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                       Checked="Direct_OnChecked"
                       Unchecked="Direct_OnUnchecked"
                       VerticalAlignment="Center"/>
-            <Label Content="Direct" VerticalAlignment="Center"/>
+            
             <Button x:Name="ApplyButton"
                     Content="Apply" 
                     Width="50" Height="Auto"

@@ -48,23 +48,30 @@ namespace Arent3d.Architecture.Routing.App.Commands.Selecting
             var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.PickAndReRoute.Pick".GetAppStringByKeyOrDefault( null ) ) ;
             
             RouteMEPSystem routeMepSystem = new RouteMEPSystem(uiDocument.Document, pickInfo.Route);
-            //TaskDialog("pipingsystem", routeMepSystem.MEPSystem.)
+   
             //Diameter Info
-            var diameterList = routeMepSystem.GetNominalDiameterList(routeMepSystem.CurveType);
+            var diameters = routeMepSystem.GetNominalDiameters(routeMepSystem.CurveType);
             var diameter = pickInfo.SubRoute.GetDiameter(uiDocument.Document);
-            var diameterIndex = diameterList.ToList().FindIndex(i => Math.Abs(i - diameter) <  uiDocument.Document.Application.VertexTolerance);
+            var diameterIndex = diameters.ToList().FindIndex(i => Math.Abs(i - diameter) <  uiDocument.Document.Application.VertexTolerance);
             
             //System Type Info(PinpingSystemType in lookup)
             var connector = pickInfo.ReferenceConnector;
-            var systemTypeList = routeMepSystem.GetSystemTypeList(uiDocument.Document, connector);
+            var systemTypes = routeMepSystem.GetSystemTypes(uiDocument.Document, connector);
             var systemType = routeMepSystem.MEPSystemType;
-            var systemTypeIndex = systemTypeList.Select(s => s.Id).ToList().FindIndex(n => n == systemType.Id);
+            var systemTypeIndex = systemTypes.Select(s => s.Id).ToList().FindIndex(n => n == systemType.Id);
+
+            //CurveType Info
+            var curveType = routeMepSystem.CurveType;
+            var type = curveType.GetType();
+            var curveTypes = routeMepSystem.GetCurveTypes(uiDocument.Document, type);
+            var curveTypeIndex = curveTypes.Select(s => s.Id).ToList().FindIndex(n => n == curveType.Id);
 
             //Direct Info
             var direct = pickInfo.SubRoute.IsRoutingOnPipeSpace;
 
             //Show Dialog with pickInfo
-            SelectedFromToViewModel.ShowSelectedFromToDialog(uiDocument, diameterIndex, diameterList, systemTypeList, systemTypeIndex, direct, pickInfo);
+            SelectedFromToViewModel.ShowSelectedFromToDialog(uiDocument, diameterIndex, diameters, systemTypeIndex, systemTypes 
+                ,curveTypeIndex, curveTypes, type,  direct, pickInfo);
             
 
             return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>();

@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing
         /// <param name="rms"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static IList<double> GetNominalDiameterList(this RouteMEPSystem rms, MEPCurveType type)
+        public static IList<double> GetNominalDiameters(this RouteMEPSystem rms, MEPCurveType type)
         {
             IList<double> resultList = new List<double>();
             var segment = GetTargetSegment(rms, type);
@@ -52,26 +52,48 @@ namespace Arent3d.Architecture.Routing
             }
         }
 
+        public static bool IsCompatibleCurveType(this RouteMEPSystem rms, MEPCurveType curveType, Type targetCurveType)
+        {
+            return (curveType.GetType() == targetCurveType);
+        }
+
         public static bool IsMatchRange(this RouteMEPSystem rms, PrimarySizeCriterion criterion,
             double nominalDiameter)
         {
             return criterion.MinimumSize <= nominalDiameter && nominalDiameter <= criterion.MaximumSize;
         }
 
-        public static IList<MEPSystemType> GetSystemTypeList(this RouteMEPSystem rms, Document doc, Connector connector)
+        /// <summary>
+        /// Get Target SystemTypeList
+        /// </summary>
+        /// <param name="rms"></param>
+        /// <param name="doc"></param>
+        /// <param name="connector"></param>
+        /// <returns></returns>
+        public static IList<MEPSystemType> GetSystemTypes(this RouteMEPSystem rms, Document doc, Connector connector)
         {
-            //IList<MEPSystem> resultList = new List<MEPSystem>();
             var systemClassification = RouteMEPSystem.GetSystemClassification( connector ) ;
 
             var resultList = doc.GetAllElements<MEPSystemType>()
                 .Where(s => RouteMEPSystem.IsCompatibleMEPSystemType(s, systemClassification))
                 .Select(s => s).ToList();
-            /*foreach ( var test in doc.GetAllElements<MEPSystemType>() )
-            {
-                if (IsCompatibleMEPSystemType(test, systemClassification))
-                {
-                    Debug.Print(test.Name) ;
-                }*/
+
+            return resultList;
+        }
+        
+        /// <summary>
+        /// Get Target CurveTypeList
+        /// </summary>
+        /// <param name="rms"></param>
+        /// <param name="doc"></param>
+        /// <param name="connector"></param>
+        /// <returns></returns>
+        public static IList<MEPCurveType> GetCurveTypes(this RouteMEPSystem rms, Document doc, Type type)
+        {
+            var resultList = doc.GetAllElements<MEPCurveType>()
+                .Where(s => IsCompatibleCurveType(rms, s, type))
+                .Select(s => s).ToList();
+            
             return resultList;
         }
 
