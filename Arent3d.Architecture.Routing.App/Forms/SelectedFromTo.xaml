@@ -41,11 +41,6 @@
                   FontSize="20"
                   SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   VerticalAlignment="Center">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding Diameter}"/>
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
         </ComboBox>
 
         <Label Content="System Type" 
@@ -61,11 +56,6 @@
                   FontSize="20"
                   SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   VerticalAlignment="Center">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding SystemTypeText}"/>
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
         </ComboBox>
 
         <Label Content="{Binding CurveTypeLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" 
@@ -81,11 +71,6 @@
                   FontSize="20"
                   SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   VerticalAlignment="Center">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding CurveTypeText}"/>
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
         </ComboBox>
 
         <Label Content="Via PS" 
@@ -98,8 +83,6 @@
                   Grid.Column="1"
                   Grid.Row="3"
                   IsChecked="{Binding CurrentDirect, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                  Checked="Direct_OnChecked"
-                  Unchecked="Direct_OnUnchecked"
                   HorizontalAlignment="Left"
                   VerticalAlignment="Center"/>
 
