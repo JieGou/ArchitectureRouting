@@ -12,6 +12,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Forms\UserControls\**" />
+    <EmbeddedResource Remove="Forms\UserControls\**" />
+    <None Remove="Forms\UserControls\**" />
+    <Page Remove="Forms\UserControls\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj" />
     <ProjectReference Include="..\Arent3d.Revit.Csv\Arent3d.Revit.Csv.csproj" />
     <ProjectReference Include="..\Arent3d.Revit.UI\Arent3d.Revit.UI.csproj" />
@@ -24,9 +31,6 @@
     </Reference>
     <Reference Include="Arent3d.Utility">
       <HintPath>..\Libraries\Arent3d.Utility.dll</HintPath>
-    </Reference>
-    <Reference Include="ICSharpCode.SharpDevelop, Version=4.2.0.8792, Culture=neutral, PublicKeyToken=f829da5c02be14ee">
-      <HintPath>C:\Program Files\Autodesk\Revit 2021\SDA\bin\ICSharpCode.SharpDevelop.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />

@@ -81,10 +81,7 @@ namespace Arent3d.Architecture.Routing.App
         _exportRacksCommandButton = rackPanel.AddButton<ExportRacksCommand>() ;
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
       }
-      /*{
-        var selectingPanel = tab.CreateRibbonPanel(SelectingPanel.Key, ToDisplayName(SelectingPanel.TitleKey));
-        _modifySelectedFromToCommandButton = selectingPanel.AddButton<GetSelectedFromToInfo>() ;
-      }*/
+      
       InitializeRibbon() ;
     }
 

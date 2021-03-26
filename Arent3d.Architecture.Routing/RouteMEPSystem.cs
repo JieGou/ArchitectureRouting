@@ -130,21 +130,18 @@ namespace Arent3d.Architecture.Routing
     {
       var systemClassification = GetSystemClassification( connector ) ;
 
-      foreach ( var type in document.GetAllElements<MEPSystemType>() )
-      {
+      foreach ( var type in document.GetAllElements<MEPSystemType>() ) {
         if (IsCompatibleMEPSystemType(type, systemClassification)) return type;
       }
 
       return null ;
     }
-
-    //toyoda
+    
     public static bool IsCompatibleMEPSystemType( MEPSystemType type, MEPSystemClassification systemClassification )
     {
       return ( type.SystemClassification == systemClassification ) ;
     }
     
-    //toyoda
     public static MEPSystemClassification GetSystemClassification( Connector connector )
     {
       return connector.Domain switch
@@ -279,26 +276,18 @@ namespace Arent3d.Architecture.Routing
 
       return true ;
     }
-
-    //Changed privet to public by Toyoda 20210324
+    
     public bool HasAnyNominalDiameter( MEPCurveType type, double nominalDiameter )
     {
       var document = type.Document ;
       var rpm = type.RoutingPreferenceManager ;
-      return RouteMEPSystemEtensions.GetRules(this, rpm, RoutingPreferenceRuleGroupType.Segments ).All( rule => HasAnyNominalDiameter( document, rule, nominalDiameter ) ) ;
+      return this.GetRules(rpm, RoutingPreferenceRuleGroupType.Segments ).All( rule => HasAnyNominalDiameter( document, rule, nominalDiameter ) ) ;
     }
-
-    private static IEnumerable<RoutingPreferenceRule> GetRules( RoutingPreferenceManager rpm, RoutingPreferenceRuleGroupType groupType )
-    {
-      var count = rpm.GetNumberOfRules( groupType ) ;
-      for ( var i = 0 ; i < count ; ++i ) {
-        yield return rpm.GetRule( groupType, i ) ;
-      }
-    }
+    
 
     private bool HasAnyNominalDiameter( Document document, RoutingPreferenceRule rule, double nominalDiameter )
     {
-      if ( false == RouteMEPSystemEtensions.GetCriteria(this, rule ).OfType<PrimarySizeCriterion>().All( criterion => RouteMEPSystemEtensions.IsMatchRange(this, criterion, nominalDiameter ) ) ) return false ;
+      if ( false == this.GetCriteria(rule ).OfType<PrimarySizeCriterion>().All( criterion => RouteMEPSystemEtensions.IsMatchRange(this, criterion, nominalDiameter ) ) ) return false ;
 
       var segment = document.GetElementById<Segment>( rule.MEPPartId ) ;
       return ( null != segment ) && HasAnyNominalDiameter( segment, nominalDiameter ) ;
