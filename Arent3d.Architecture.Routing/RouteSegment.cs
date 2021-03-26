@@ -82,7 +82,7 @@ namespace Arent3d.Architecture.Routing
         "f" => false,
         "" => false,
         "1" => true,
-        "T" => true,
+        "t" => true,
         _ => bDefault,
       } ;
     }
