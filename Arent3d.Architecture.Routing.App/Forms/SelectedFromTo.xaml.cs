@@ -140,6 +140,24 @@ namespace Arent3d.Architecture.Routing.App.Forms
         {
             this.Close();
         }
+
+        private void Dialog3Buttons_OnOKClick(object sender, RoutedEventArgs e)
+        {
+            SelectedFromToViewModel.ApplySelectedDiameter(DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex,
+                CurveTypeComboBox.SelectedIndex, CurrentDirect);
+            this.Close();
+        }
+
+        private void Dialog3Buttons_OnApplyClick(object sender, RoutedEventArgs e)
+        {
+            SelectedFromToViewModel.ApplySelectedDiameter(DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex,
+                CurveTypeComboBox.SelectedIndex, CurrentDirect);
+        }
+
+        private void Dialog3Buttons_OnCancelClick(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
     }
 
 

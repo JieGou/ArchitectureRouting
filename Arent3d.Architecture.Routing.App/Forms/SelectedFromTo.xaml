@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
         mc:Ignorable="d"
-        Title="ModifyFromTo" Height="500" Width="550">
+        Title="ModifyFromTo" Height="300" Width="400">
 
     <Window.Resources>
         <Style TargetType="ComboBox">
@@ -17,9 +17,7 @@
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
@@ -38,7 +36,6 @@
         <ComboBox x:Name="DiameterComboBox"
                   Grid.Column="1"
                   Grid.Row="0"
-                  Grid.ColumnSpan="3"
                   ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   SelectionChanged="DiameterComboBox_Changed" 
                   FontSize="20"
@@ -59,7 +56,6 @@
         <ComboBox x:Name="SystemTypeComboBox"
                   Grid.Column="1"
                   Grid.Row="1"
-                  Grid.ColumnSpan="3"
                   ItemsSource="{Binding SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   SelectionChanged="SystemTypeComboBox_OnSelectionChanged"
                   FontSize="20"
@@ -80,7 +76,6 @@
         <ComboBox x:Name="CurveTypeComboBox"
                   Grid.Column="1"
                   Grid.Row="2"
-                  Grid.ColumnSpan="3"
                   ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   SelectionChanged="CurveTypeComboBox_OnSelectionChanged"
                   FontSize="20"
@@ -102,34 +97,17 @@
         <CheckBox x:Name="Direct"
                   Grid.Column="1"
                   Grid.Row="3"
-                  Grid.ColumnSpan="3"
                   IsChecked="{Binding CurrentDirect, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   Checked="Direct_OnChecked"
                   Unchecked="Direct_OnUnchecked"
-                  HorizontalAlignment="Center"
+                  HorizontalAlignment="Left"
                   VerticalAlignment="Center"/>
 
-
-        <Button x:Name="OK"
-            Content="OK" HorizontalAlignment="Center" 
-            Margin="10,37,85,37" Grid.Row="4" 
-            Click="OK_Click"
-            VerticalAlignment="Center" 
-            Width="150" Grid.ColumnSpan="2"/>
-        <Button x:Name="ApplyButton"
-            Margin="0"
-            Content="Apply" 
-            Height="Auto"
-            Click="Apply_OnClick"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center" Grid.Column="1" Grid.Row="4"
-            Width="150" Grid.ColumnSpan="2"/>
-        <Button x:Name="Cancel"
-            Click="Cancel_Click"
-            Content="Cancel" Grid.Column="2" 
-            HorizontalAlignment="Center" 
-            Margin="85,37,10,37" Grid.Row="4" 
-            VerticalAlignment="Center" 
-            Width="150" Grid.ColumnSpan="2"/>
+        <local:Dialog3Buttons Grid.ColumnSpan="2" Grid.Row="4"
+                              VerticalAlignment="Center"
+                              HorizontalAlignment="Right"
+                              OnOKClick="Dialog3Buttons_OnOKClick"
+                              OnApplyClick="Dialog3Buttons_OnApplyClick"
+                              OnCancelClick="Dialog3Buttons_OnCancelClick"/>
     </Grid>
 </Window>
