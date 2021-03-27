@@ -38,7 +38,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Selecting
 
       //System Type Info(PinpingSystemType in lookup)
       var connector = pickInfo.ReferenceConnector ;
-      //var systemTypes = routeMepSystem.GetSystemTypes( uiDocument.Document, connector ).Select( s => new { Sorted = s, Index = s.Name } ).OrderBy( s => s.Index ).Select( s => s.Sorted ).ToList() ;
       var systemTypes = routeMepSystem.GetSystemTypes( uiDocument.Document, connector ).OrderBy( s => s.Name ).ToList() ;
       var systemType = routeMepSystem.MEPSystemType ;
       var systemTypeIndex = systemTypes.FindIndex( s => s.Id == systemType.Id ) ;

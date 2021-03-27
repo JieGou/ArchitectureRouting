@@ -281,13 +281,13 @@ namespace Arent3d.Architecture.Routing
     {
       var document = type.Document ;
       var rpm = type.RoutingPreferenceManager ;
-      return this.GetRules(rpm, RoutingPreferenceRuleGroupType.Segments ).All( rule => HasAnyNominalDiameter( document, rule, nominalDiameter ) ) ;
+      return this.GetRules( rpm, RoutingPreferenceRuleGroupType.Segments ).All( rule => HasAnyNominalDiameter( document, rule, nominalDiameter ) ) ;
     }
     
 
     private bool HasAnyNominalDiameter( Document document, RoutingPreferenceRule rule, double nominalDiameter )
     {
-      if ( false == this.GetCriteria(rule ).OfType<PrimarySizeCriterion>().All( criterion => RouteMEPSystemEtensions.IsMatchRange(this, criterion, nominalDiameter ) ) ) return false ;
+      if ( false == this.GetCriteria( rule ).OfType<PrimarySizeCriterion>().All( criterion => this.IsMatchRange( criterion, nominalDiameter ) ) ) return false ;
 
       var segment = document.GetElementById<Segment>( rule.MEPPartId ) ;
       return ( null != segment ) && HasAnyNominalDiameter( segment, nominalDiameter ) ;
