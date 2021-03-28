@@ -16,11 +16,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public int? DiameterIndex { get ; set ; }
 
     //SystemType Info
-    public ObservableCollection<String> SystemTypes { get ; }
+    public ObservableCollection<MEPSystemType> SystemTypes { get ; }
     public int? SystemTypeIndex { get ; set ; }
 
     //CurveType Info
-    public ObservableCollection<String> CurveTypes { get ; }
+    public ObservableCollection<MEPCurveType> CurveTypes { get ; }
     public int? CurveTypeIndex { get ; set ; }
     public string CurveTypeLabel { get ; set ; }
 
@@ -36,8 +36,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       CurveTypeLabel = type.Name ;
       CurrentDirect = direct ;
       Diameters = new ObservableCollection<string>( diameters.Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
-      SystemTypes = new ObservableCollection<string>( systemTypes.Select( s => s.Name ) ) ;
-      CurveTypes = new ObservableCollection<string>( curveTypes.Select( c => c.Name ) ) ;
+      SystemTypes = new ObservableCollection<MEPSystemType>( systemTypes ) ;
+      CurveTypes = new ObservableCollection<MEPCurveType>( curveTypes ) ;
     }
 
 
