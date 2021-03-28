@@ -5,20 +5,23 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
         mc:Ignorable="d"
-        Title="ModifyFromTo" Height="300" Width="400">
+        Title="ModifyFromTo" Height="Auto" Width="Auto">
 
     <Window.Resources>
         <Style TargetType="ComboBox">
             <Setter Property="Margin" Value="5,1,5,1"/>
         </Style>
         <Style TargetType="CheckBox">
-            <Setter Property="Margin" Value="5,1,2,1"/>
+            <Setter Property="Margin" Value="5,1,5,1"/>
+        </Style>
+        <Style TargetType="local:Dialog3Buttons">
+            <Setter Property="Margin" Value="5,1,2,5"/>
         </Style>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>

@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public SelectedFromTo( Document doc, IList<double> diameters, int diameterIndex, IList<MEPSystemType> systemTypes, int systemTypeIndex, IList<MEPCurveType> curveTypes, int curveTypeIndex, Type type, bool direct )
     {
       InitializeComponent() ;
+      this.SizeToContent = SizeToContent.WidthAndHeight;
       DiameterIndex = diameterIndex ;
       SystemTypeIndex = systemTypeIndex ;
       CurveTypeIndex = curveTypeIndex ;
