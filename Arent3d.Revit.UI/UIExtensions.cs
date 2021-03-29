@@ -46,7 +46,7 @@ namespace Arent3d.Revit.UI
 
       return buttonData ;
     }
-    
+
     private static string GetDisplayName( Type commandClass )
     {
       return commandClass.GetCustomAttribute<DisplayNameKeyAttribute>()?.GetApplicationString()
