@@ -14,8 +14,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.BranchPoint
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      commandData.Application.PostCommand<PostCommands.TestCommand>() ;
-
       var dialog = new ShowDialog( this.ToString() ) ;
       dialog.Show() ;
 

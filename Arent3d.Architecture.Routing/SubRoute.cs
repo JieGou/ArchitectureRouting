@@ -87,5 +87,15 @@ namespace Arent3d.Architecture.Routing
     {
       return GetReferenceConnectorInSubRoute() ?? Route.GetReferenceConnector() ;
     }
+    
+    public void ChangeSystemType(MEPSystemType systemType)
+    {
+      
+    }
+    
+    public void ChangeCurveType(MEPCurveType curveType)
+    {
+      
+    }
   }
 }

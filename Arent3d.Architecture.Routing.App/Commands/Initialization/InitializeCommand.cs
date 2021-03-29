@@ -1,6 +1,7 @@
 using System ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Architecture.Routing;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -10,7 +11,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "App.Commands.Initialization.InitializeCommand", DefaultString = "Initialize" )]
-  //testing image size
   [Image( "resources/Initialize.png", ImageType = ImageType.Large )]
   public class InitializeCommand : IExternalCommand
   {

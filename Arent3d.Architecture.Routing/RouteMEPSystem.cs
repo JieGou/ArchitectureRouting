@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using System.Diagnostics;
 using System.Linq ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
@@ -7,6 +8,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
 using Autodesk.Revit.DB.Structure ;
+
 
 namespace Arent3d.Architecture.Routing
 {
@@ -24,16 +26,16 @@ namespace Arent3d.Architecture.Routing
       
       var allConnectors = route.GetAllConnectors( document ).EnumerateAll() ;
       MEPSystemType = GetSystemType( document, allConnectors ) ;
-
       //MEPSystem = CreateMEPSystem( document, connector, allConnectors ) ;
       MEPSystem = null ;
-
+      
       CurveType = GetMEPCurveType( document, allConnectors, MEPSystemType ) ;
     }
 
     private SizeTable<double>? _90ElbowSize ;
     public double Get90ElbowSize( double diameter )
     {
+      
       return ( _90ElbowSize ??= new( Calculate90ElbowSize ) ).Get( diameter ) ;
     }
 
@@ -123,22 +125,24 @@ namespace Arent3d.Architecture.Routing
     {
       return connectors.Select( connector => GetSystemType( document, connector ) ).NonNull().First()! ;
     }
+    
     private static MEPSystemType? GetSystemType( Document document, Connector connector )
     {
       var systemClassification = GetSystemClassification( connector ) ;
+
       foreach ( var type in document.GetAllElements<MEPSystemType>() ) {
-        if ( IsCompatibleMEPSystemType( type, systemClassification ) ) return type ;
+        if (IsCompatibleMEPSystemType(type, systemClassification)) return type;
       }
 
       return null ;
     }
-
-    private static bool IsCompatibleMEPSystemType( MEPSystemType type, MEPSystemClassification systemClassification )
+    
+    public static bool IsCompatibleMEPSystemType( MEPSystemType type, MEPSystemClassification systemClassification )
     {
       return ( type.SystemClassification == systemClassification ) ;
     }
-
-    private static MEPSystemClassification GetSystemClassification( Connector connector )
+    
+    public static MEPSystemClassification GetSystemClassification( Connector connector )
     {
       return connector.Domain switch
       {
@@ -272,43 +276,22 @@ namespace Arent3d.Architecture.Routing
 
       return true ;
     }
-
-    private bool HasAnyNominalDiameter( MEPCurveType type, double nominalDiameter )
+    
+    public bool HasAnyNominalDiameter( MEPCurveType type, double nominalDiameter )
     {
       var document = type.Document ;
       var rpm = type.RoutingPreferenceManager ;
-      return GetRules( rpm, RoutingPreferenceRuleGroupType.Segments ).All( rule => HasAnyNominalDiameter( document, rule, nominalDiameter ) ) ;
+      return this.GetRules( rpm, RoutingPreferenceRuleGroupType.Segments ).All( rule => HasAnyNominalDiameter( document, rule, nominalDiameter ) ) ;
     }
-
-    private static IEnumerable<RoutingPreferenceRule> GetRules( RoutingPreferenceManager rpm, RoutingPreferenceRuleGroupType groupType )
-    {
-      var count = rpm.GetNumberOfRules( groupType ) ;
-      for ( var i = 0 ; i < count ; ++i ) {
-        yield return rpm.GetRule( groupType, i ) ;
-      }
-    }
+    
 
     private bool HasAnyNominalDiameter( Document document, RoutingPreferenceRule rule, double nominalDiameter )
     {
-      if ( false == GetCriteria( rule ).OfType<PrimarySizeCriterion>().All( criterion => IsMatchRange( criterion, nominalDiameter ) ) ) return false ;
+      if ( false == this.GetCriteria( rule ).OfType<PrimarySizeCriterion>().All( criterion => this.IsMatchRange( criterion, nominalDiameter ) ) ) return false ;
 
       var segment = document.GetElementById<Segment>( rule.MEPPartId ) ;
       return ( null != segment ) && HasAnyNominalDiameter( segment, nominalDiameter ) ;
     }
-
-    private static IEnumerable<RoutingCriterionBase> GetCriteria( RoutingPreferenceRule rule )
-    {
-      var count = rule.NumberOfCriteria ;
-      for ( var i = 0 ; i < count ; ++i ) {
-        yield return rule.GetCriterion( i ) ;
-      }
-    }
-
-    private static bool IsMatchRange( PrimarySizeCriterion criterion, double nominalDiameter )
-    {
-      return criterion.MinimumSize <= nominalDiameter && nominalDiameter <= criterion.MaximumSize ;
-    }
-
 
     private bool HasAnyNominalDiameter( Segment segment, double nominalDiameter )
     {

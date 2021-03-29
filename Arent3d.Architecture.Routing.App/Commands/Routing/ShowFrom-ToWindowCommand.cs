@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            var dialog = new ShowDialog(this.ToString());
+            var dialog = new FromToWindow();
             dialog.Show();
 
             return Result.Succeeded;

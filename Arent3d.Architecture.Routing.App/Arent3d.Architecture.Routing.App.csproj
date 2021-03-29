@@ -12,6 +12,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Forms\UserControls\**" />
+    <EmbeddedResource Remove="Forms\UserControls\**" />
+    <None Remove="Forms\UserControls\**" />
+    <Page Remove="Forms\UserControls\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj" />
     <ProjectReference Include="..\Arent3d.Revit.Csv\Arent3d.Revit.Csv.csproj" />
     <ProjectReference Include="..\Arent3d.Revit.UI\Arent3d.Revit.UI.csproj" />
