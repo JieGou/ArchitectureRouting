@@ -15,7 +15,7 @@ using System.Windows.Shapes;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
-    public delegate void ClickEventHandler(object sender, RoutedEventArgs e);
+    //public delegate void ClickEventHandlerButton(object sender, RoutedEventArgs e);
 
     /// <summary>
     /// Dialog3Buttons.xaml の相互作用ロジック
