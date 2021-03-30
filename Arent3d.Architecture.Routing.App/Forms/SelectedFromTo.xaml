@@ -31,29 +31,14 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Label Content="Diameter" 
-               HorizontalAlignment="Left"
-               VerticalAlignment="Center"
-               Grid.Column="0"
-               Grid.Row="0"/>
-        <ComboBox x:Name="DiameterComboBox"
-                  Grid.Column="1"
-                  Grid.Row="0"
-                  ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                  SelectionChanged="DiameterComboBox_Changed" 
-                  FontSize="20"
-                  SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                  VerticalAlignment="Center">
-        </ComboBox>
-
         <Label Content="System Type" 
                HorizontalAlignment="Left"
                VerticalAlignment="Center"
                Grid.Column="0"
-               Grid.Row="1"/>
+               Grid.Row="0"/>
         <ComboBox x:Name="SystemTypeComboBox"
                   Grid.Column="1"
-                  Grid.Row="1"
+                  Grid.Row="0"
                   ItemsSource="{Binding SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   DisplayMemberPath="Name"
                   SelectionChanged="SystemTypeComboBox_OnSelectionChanged"
@@ -66,15 +51,30 @@
                HorizontalAlignment="Left"
                VerticalAlignment="Center"
                Grid.Column="0"
-               Grid.Row="2"/>
+               Grid.Row="1"/>
         <ComboBox x:Name="CurveTypeComboBox"
                   Grid.Column="1"
-                  Grid.Row="2"
+                  Grid.Row="1"
                   ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   DisplayMemberPath="Name"
                   SelectionChanged="CurveTypeComboBox_OnSelectionChanged"
                   FontSize="20"
                   SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  VerticalAlignment="Center">
+        </ComboBox>
+        
+        <Label Content="Diameter" 
+               HorizontalAlignment="Left"
+               VerticalAlignment="Center"
+               Grid.Column="0"
+               Grid.Row="2"/>
+        <ComboBox x:Name="DiameterComboBox"
+                  Grid.Column="1"
+                  Grid.Row="2"
+                  ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  SelectionChanged="DiameterComboBox_Changed" 
+                  FontSize="20"
+                  SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   VerticalAlignment="Center">
         </ComboBox>
 

@@ -2,7 +2,9 @@
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Collections.Specialized ;
+using System.Windows ;
 using System.Windows.Input ;
+using System.Windows.Interop ;
 using Arent3d.Architecture.Routing.App.Commands.Selecting ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Architecture.Routing.App.Commands ;
@@ -67,6 +69,14 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       }
 
       var dialog = new SelectedFromTo( uiDocument.Document, diameters, diameterIndex, systemTypes, systemTypeIndex, CurveTypes, curveTypeIndex, type, direct ) ;
+      System.Windows.Interop.WindowInteropHelper helper = new System.Windows.Interop.WindowInteropHelper(dialog);
+      HwndSource? hwndSource = HwndSource.FromHwnd(UiDoc.Application.MainWindowHandle);
+      Window? wnd = hwndSource.RootVisual as Window;
+      if(wnd != null) {
+        dialog.Owner = wnd ;
+        dialog.Show() ;
+        _openedDialog = dialog ;
+      }
       dialog.Show() ;
       _openedDialog = dialog ;
     }
