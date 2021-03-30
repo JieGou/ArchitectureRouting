@@ -9,7 +9,7 @@ using Arent3d.Architecture.Routing.App.ViewModel ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
-  public partial class SelectedFromTo : Window
+  public partial class SelectedFromTo : ModalWindowBase
   {
     //Diameter Info
     public ObservableCollection<string> Diameters { get ; set ; }
