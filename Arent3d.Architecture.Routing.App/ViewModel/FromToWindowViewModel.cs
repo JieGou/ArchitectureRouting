@@ -44,12 +44,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         {
           Id = route.RouteName,
           From = route.FirstFromConnector(),
-          FromType = route.FirstFromConnector()?.ToString().Split(':')[0],
-          FromConnectorId = route.FirstFromConnector()?.ConnectorId.ToString(),
-          FromElementId = route.FirstFromConnector()?.ElementId.ToString(),
-          ToType = route.FirstToConnector()?.ToString().Split(':')[0],
-          ToConnectorId = route.FirstToConnector()?.ConnectorId.ToString(),
-          ToElementId = route.FirstToConnector()?.ElementId.ToString(),
+          To = route.FirstToConnector(),
           Domain = routeMepSystem.CurveType.GetType().Name.Split( 'T' )[ 0 ] + " Type",
           SystemTypes = systemTypeList,
           SystemType = systemType,

@@ -24,11 +24,11 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}"/>
                 <DataGridTextColumn Header="From Type" Binding="{Binding FromType}"/>
-                <DataGridTextColumn Header="From ConnectorId" Binding="{Binding FromConnectorId}"/>
-                <DataGridTextColumn Header="From ElementId" Binding="{Binding FromElementId}"/>
+                <DataGridTextColumn Header="From Id" Binding="{Binding FromId}"/>
+                <DataGridTextColumn Header="From SubId" Binding="{Binding FromSubId}"/>
                 <DataGridTextColumn Header="To Type" Binding="{Binding ToType}"/>
-                <DataGridTextColumn Header="To Id" Binding="{Binding ToConnectorId}"/>
-                <DataGridTextColumn Header="To SubId" Binding="{Binding ToElementId}"/>
+                <DataGridTextColumn Header="To Id" Binding="{Binding ToId}"/>
+                <DataGridTextColumn Header="To SubId" Binding="{Binding ToSubId}"/>
                 <DataGridTextColumn Header="Domain" Binding="{Binding Domain}"/>
                 <DataGridTemplateColumn Header="SystemType">
                     <DataGridTemplateColumn.CellTemplate>

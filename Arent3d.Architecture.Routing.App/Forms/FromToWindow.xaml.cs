@@ -13,12 +13,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
   
   public partial class FromToWindow : ModalWindowBase
   {
-    /*public List<string>? Diameters { get ; set ; }
-    public int? DiameterIndex { get ; set ; }*/
     public ObservableCollection<FromToItems> FromToItemsList { get ; set ; }
-
-    //public FromToWindow(Document doc, IList<double> diameters, int diameterIndex)
-    //public FromToWindow( Document doc, IEnumerable<Route> allRoute )
+    
     public FromToWindow( UIDocument uiDoc, ObservableCollection<FromToItems> fromToItemsList):base(uiDoc)
     {
       InitializeComponent() ;
@@ -33,16 +29,16 @@ namespace Arent3d.Architecture.Routing.App.Forms
       
       //From
       public ConnectorIndicator? From { get ; set ; }
-      public string? FromType { get ; set ; }
-      public string? FromConnectorId { get ; set ; }
-      public string? FromElementId { get ; set ; }
+      public string? FromType => From?.ToString().Split( ':' )[ 0 ] ;
+      public string? FromId => From?.ElementId.ToString() ;
+      public string? FromSubId => From?.ConnectorId.ToString() ;
 
       
-      //public string? From { get ; set ; } ここから。ConnectorIndicatorの
-      //適切な値を、Textに表示できるように
-      public string? ToType { get ; set ; }
-      public string? ToConnectorId { get ; set ; }
-      public string? ToElementId { get ; set ; }
+      //To
+      public ConnectorIndicator? To { get ; set ; }
+      public string? ToType => To?.ToString().Split( ':' )[ 0 ] ;
+      public string? ToId => To?.ElementId.ToString() ;
+      public string? ToSubId => To?.ConnectorId.ToString() ;
 
       public string? Domain { get ; set ; }
 
