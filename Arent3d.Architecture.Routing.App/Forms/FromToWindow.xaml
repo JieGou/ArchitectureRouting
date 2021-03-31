@@ -12,7 +12,8 @@
                 VerticalAlignment="Top"
                 HorizontalAlignment="Right"
                 ImportOnClick="Dilog2Buttons_OnImportOnClick"
-                ExportOnClick="Dilog2Buttons_OnExportOnClick" Margin="0,5,2,5"/>
+                ExportOnClick="Dilog2Buttons_OnExportOnClick" 
+                Margin="0,5,0,5"/>
         
         <DataGrid x:Name="FromToList"
                   ItemsSource="{Binding FromToItemsList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" 
@@ -61,7 +62,8 @@
                 HorizontalAlignment="Right"
                 OnOKClick="Dialog3Buttons_OnOnOKClick"
                 OnApplyClick="Dialog3Buttons_OnOnApplyClick"
-                OnCancelClick="Dialog3Buttons_OnOnCancelClick"  Margin="0,0,2,5"/>
+                OnCancelClick="Dialog3Buttons_OnOnCancelClick"  
+                Margin="0,0,0,5"/>
 
     </Grid>
 </local:ModalWindowBase>
