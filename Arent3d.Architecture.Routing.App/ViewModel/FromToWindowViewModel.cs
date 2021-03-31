@@ -39,7 +39,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         int curveTypeIndex = curveTypeList.ToList().FindIndex( c => c.Id == curveType.Id ) ;
         IEnumerable<string> subRouteDiameters = route.SubRoutes.Select(s => (int)Math.Round(UnitUtils.ConvertFromInternalUnits( s.GetDiameter(UiDoc.Document), UnitTypeId.Millimeters )) + " mm" );
         
-        var test = route.FirstFromConnector() ;
+        var test = route.GetSubRoute(0)?.FromEndPointIndicators;
         fromToItemsList.Add(new FromToWindow.FromToItems()
         {
           Id = route.RouteName,
@@ -65,16 +65,10 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       }
       
       //var dialog = new FromToWindow( uiDocument.Document, allRoutes );
-      var dialog = new FromToWindow( uiDocument.Document, fromToItemsList );
-
-      System.Windows.Interop.WindowInteropHelper helper = new System.Windows.Interop.WindowInteropHelper(dialog);
-      HwndSource? hwndSource = HwndSource.FromHwnd(UiDoc.Application.MainWindowHandle);
-      Window? wnd = hwndSource.RootVisual as Window;
-      if(wnd != null) {
-        dialog.Owner = wnd ;
-        dialog.Show() ;
-        _openedDialog = dialog ;
-      }
+      var dialog = new FromToWindow( uiDocument, fromToItemsList );
+      
+      dialog.Show() ;
+      _openedDialog = dialog ;
     }
   }
 }

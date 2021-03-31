@@ -6,6 +6,7 @@ using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
+using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
@@ -27,7 +28,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     //Direct Info
     public bool CurrentDirect { get ; set ; }
 
-    public SelectedFromTo( Document doc, IList<double> diameters, int diameterIndex, IList<MEPSystemType> systemTypes, int systemTypeIndex, IList<MEPCurveType> curveTypes, int curveTypeIndex, Type type, bool direct )
+    public SelectedFromTo( UIDocument uiDoc, IList<double> diameters, int diameterIndex, IList<MEPSystemType> systemTypes, int systemTypeIndex, IList<MEPCurveType> curveTypes, int curveTypeIndex, Type type, bool direct ):base(uiDoc)
     {
       InitializeComponent() ;
       this.SizeToContent = SizeToContent.WidthAndHeight;

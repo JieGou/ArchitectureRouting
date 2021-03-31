@@ -68,15 +68,8 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         _openedDialog.Close() ;
       }
 
-      var dialog = new SelectedFromTo( uiDocument.Document, diameters, diameterIndex, systemTypes, systemTypeIndex, CurveTypes, curveTypeIndex, type, direct ) ;
-      System.Windows.Interop.WindowInteropHelper helper = new System.Windows.Interop.WindowInteropHelper(dialog);
-      HwndSource? hwndSource = HwndSource.FromHwnd(UiDoc.Application.MainWindowHandle);
-      Window? wnd = hwndSource.RootVisual as Window;
-      if(wnd != null) {
-        dialog.Owner = wnd ;
-        dialog.Show() ;
-        _openedDialog = dialog ;
-      }
+      var dialog = new SelectedFromTo( uiDocument, diameters, diameterIndex, systemTypes, systemTypeIndex, CurveTypes, curveTypeIndex, type, direct ) ;
+      
       dialog.Show() ;
       _openedDialog = dialog ;
     }

@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     //public FromToWindow(Document doc, IList<double> diameters, int diameterIndex)
     //public FromToWindow( Document doc, IEnumerable<Route> allRoute )
-    public FromToWindow( Document doc, ObservableCollection<FromToItems> fromToItemsList )
+    public FromToWindow( UIDocument uiDoc, ObservableCollection<FromToItems> fromToItemsList):base(uiDoc)
     {
       InitializeComponent() ;
 

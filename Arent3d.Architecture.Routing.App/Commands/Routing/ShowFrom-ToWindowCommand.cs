@@ -1,13 +1,7 @@
-﻿using System ;
-using System.Collections.Generic ;
-using System.ComponentModel ;
-using System.Linq ;
-using Arent3d.Architecture.Routing.App.Forms;
+﻿using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
-using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
-using Autodesk.Revit.DB;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
