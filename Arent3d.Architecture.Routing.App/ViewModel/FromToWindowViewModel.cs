@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices ;
 using System.Windows ;
 using System.Windows.Interop ;
 using Arent3d.Architecture.Routing.App.Forms ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -38,6 +39,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         var curveType = routeMepSystem.CurveType ;
         int curveTypeIndex = curveTypeList.ToList().FindIndex( c => c.Id == curveType.Id ) ;
         IEnumerable<string> subRouteDiameters = route.SubRoutes.Select(s => (int)Math.Round(UnitUtils.ConvertFromInternalUnits( s.GetDiameter(UiDoc.Document), UnitTypeId.Millimeters )) + " mm" );
+        IEnumerable<string> allPassPoints = route.GetAllPassPointEndIndicators().ToList().Select(p => p.ToString()) ;
         
         var test = route.GetSubRoute(0)?.FromEndPointIndicators;
         fromToItemsList.Add(new FromToWindow.FromToItems()
@@ -53,16 +55,15 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
           CurveType = curveType,
           CurveTypeIndex = curveTypeIndex,
           Diameters = string.Join( ",", subRouteDiameters ),
-          //PassPoints = 
+          PassPoints = string.Join( ",", allPassPoints ),
           Direct = route.GetSubRoute(0)?.IsRoutingOnPipeSpace,
         });
         
       }
       
-      //var dialog = new FromToWindow( uiDocument.Document, allRoutes );
       var dialog = new FromToWindow( uiDocument, fromToItemsList );
       
-      dialog.Show() ;
+      dialog.ShowDialog() ;
       _openedDialog = dialog ;
     }
   }
