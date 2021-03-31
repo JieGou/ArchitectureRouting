@@ -70,7 +70,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 
       var dialog = new SelectedFromTo( uiDocument, diameters, diameterIndex, systemTypes, systemTypeIndex, CurveTypes, curveTypeIndex, type, direct ) ;
       
-      dialog.Show() ;
+      dialog.ShowDialog() ;
       _openedDialog = dialog ;
     }
 
