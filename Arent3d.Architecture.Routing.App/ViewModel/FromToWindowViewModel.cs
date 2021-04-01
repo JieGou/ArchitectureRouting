@@ -1,31 +1,25 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
-using System.Diagnostics ;
 using System.Linq ;
-using System.Runtime.CompilerServices ;
-using System.Windows ;
-using System.Windows.Interop ;
 using Arent3d.Architecture.Routing.App.Forms ;
-using Arent3d.Architecture.Routing.RouteEnd ;
-using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.ViewModel
 {
-  public class FromToWindowViewModel
+  public class FromToWindowViewModel : ViewModelBase
   {
-    private static UIDocument? UiDoc { get ; set ; }
+    
     //Dialog
-    private static FromToWindow? _openedDialog ;
+    //private static FromToWindow? OpenedDialog ;
     
     public static void ShowFromToWindow( UIDocument uiDocument, IEnumerable<Route> allRoutes)
     {
       UiDoc = uiDocument ;
 
-      if ( _openedDialog != null ) {
-        _openedDialog.Close() ;
+      if ( OpenedDialog != null ) {
+        OpenedDialog.Close() ;
       }
 
       ObservableCollection<FromToWindow.FromToItems> fromToItemsList = new ObservableCollection<FromToWindow.FromToItems>() ;
@@ -64,7 +58,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       var dialog = new FromToWindow( uiDocument, fromToItemsList );
       
       dialog.ShowDialog() ;
-      _openedDialog = dialog ;
+      OpenedDialog = dialog ;
     }
   }
 }

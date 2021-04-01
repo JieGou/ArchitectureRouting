@@ -37,9 +37,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
 
         //Change Direct
         pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace( SelectedFromToViewModel.IsDirect ) ;
-
-        //return base.GetRouteSegmentsInTransaction(uiDocument);
-        // question IsDirect is false after Reroute
+        
         return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
       }
       else {
