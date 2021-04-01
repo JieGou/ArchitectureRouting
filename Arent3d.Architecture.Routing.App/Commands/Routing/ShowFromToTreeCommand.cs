@@ -28,6 +28,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
       var dp = uiDocument.Application.GetDockablePane( dpid ) ;
+   
       if ( ! dp.IsShown() ) {
         dp.Show() ;
       }

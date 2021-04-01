@@ -35,7 +35,6 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         IEnumerable<string> subRouteDiameters = route.SubRoutes.Select(s => (int)Math.Round(UnitUtils.ConvertFromInternalUnits( s.GetDiameter(UiDoc.Document), UnitTypeId.Millimeters )) + " mm" );
         IEnumerable<string> allPassPoints = route.GetAllPassPointEndIndicators().ToList().Select(p => p.ToString()) ;
         
-        var test = route.GetSubRoute(0)?.FromEndPointIndicators;
         fromToItemsList.Add(new FromToWindow.FromToItems()
         {
           Id = route.RouteName,

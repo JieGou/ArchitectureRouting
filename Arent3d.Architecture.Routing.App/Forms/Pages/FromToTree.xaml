@@ -11,18 +11,22 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
  
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
-                <TextBlock Text="Document Name   : "/>
-                <TextBlock Name="docName"/>
-            </StackPanel>
+            <Label Content="From-To View" FontSize="20"/>
+        </StackPanel>
  
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
                 <TextBlock Text="ActiveView Name  : "/>
                 <TextBlock Name="viewName"/>
             </StackPanel>
             <TreeView Grid.Row="2" Name="FromToTreeView" Margin="5"/>
- 
-        </Grid>
+
+        <StackPanel Grid.Row="3" Orientation="Vertical" Margin="5">
+            <Label Content="Selected From-To" FontSize="20"/>
+        </StackPanel>
+
+    </Grid>
 </Page>

@@ -1,8 +1,11 @@
 ﻿using System ;
+using System.Collections ;
 using System.Collections.Generic ;
+using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
+using Arent3d.Architecture.Routing.App.ViewModel ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Frame = Autodesk.Revit.DB.Frame ;
@@ -14,10 +17,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public ExternalCommandData? eData = null ;
     public Document? doc = null ;
     public UIDocument? uiDoc = null ;
+    public FromToTreeViewModel? vm = null ;
 
     public FromToTree()
     {
       InitializeComponent() ;
+
+      vm = new FromToTreeViewModel() ;
     }
 
 
@@ -36,13 +42,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       data.FrameworkElement = this as FrameworkElement ;
       // Define initial pane position in Revit ui
-      data.InitialState = new DockablePaneState
-      {
-        DockPosition = DockPosition.Tabbed,
-        TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser
-      } ;
+      data.InitialState = new DockablePaneState { DockPosition = DockPosition.Tabbed, TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser } ;
     }
-    
+
     /// <summary>
     /// initialize page
     /// </summary>
@@ -52,62 +54,68 @@ namespace Arent3d.Architecture.Routing.App.Forms
       doc = uiApplication.ActiveUIDocument.Document ;
       uiDoc = uiApplication.ActiveUIDocument ;
 
-      // get the current document name
-      docName.Text = doc.PathName.ToString().Split( '\\' ).Last() ;
       // get the active view name
       viewName.Text = doc.ActiveView.Name ;
       // call the treeview display method
-      DisplayTreeViewItem() ;
+      DisplayTreeViewItem( uiDoc ) ;
     }
 
     /// <summary>
     /// set TreeViewItems
     /// </summary>
-    public void DisplayTreeViewItem()
+    public void DisplayTreeViewItem( UIDocument uiDoc )
     {
       // clear items first
       FromToTreeView.Items.Clear() ;
 
-      // viewtypename and treeviewitem dictionary
-      SortedDictionary<string, TreeViewItem> viewTypeDictionary = new SortedDictionary<string, TreeViewItem>() ;
+      // routename and childrenname dictionary
+      SortedDictionary<string, TreeViewItem> routeDictionary = new SortedDictionary<string, TreeViewItem>() ;
 
-      //viewtypename
-      List<string> viewTypeNames = new List<string>() ;
+      // routenames
+      List<string> routeNames = new List<string>() ;
+
+      List<string> childBranchNames = new List<string>() ;
+      List<SubRoute> subRoutes = new List<SubRoute>() ; //change to List<Route> childBranches = new List<Route>()
 
       //collect view type
       List<Element> elements = new FilteredElementCollector( doc ).OfClass( typeof( View ) ).ToList() ;
 
-      foreach ( var element in elements ) {
-        View? view = element as View ;
+      // collect Routes
+      ObservableCollection<Route> allRoutes = new ObservableCollection<Route>( uiDoc.Document.CollectRoutes() ) ;
 
-        if ( view != null ) {
-          viewTypeNames.Add( view.ViewType.ToString() ) ;
+
+      foreach ( var r in allRoutes ) {
+        routeNames.Add( r.RouteName ) ;
+
+        //get ChildBranches
+        //foreach ( var c in r.GetChildBranches() ) {
+        foreach ( var c in r.SubRoutes ) {
+          childBranchNames.Add( c.ToString() ) ;
+          subRoutes.Add( c ) ;
         }
       }
 
-      //create treeviewitem for viewtype
-      foreach ( var viewTypeName in viewTypeNames.Distinct().OrderBy( name => name ).ToList() ) {
-        // create viewtype treeviewitem
-        TreeViewItem viewTypeItem = new TreeViewItem() { Header = viewTypeName } ;
+      // create Route tree
+      foreach ( var routeName in routeNames.Distinct().OrderBy( name => name ).ToList() ) {
+        // create route treeviewitem
+        TreeViewItem routeItem = new TreeViewItem() { Header = routeName } ;
         // store in dict
-        viewTypeDictionary[ viewTypeName ] = viewTypeItem ;
+        routeDictionary[ routeName ] = routeItem ;
         // add to treeview
-        FromToTreeView.Items.Add( viewTypeItem ) ;
+        FromToTreeView.Items.Add( routeItem ) ;
       }
+      
+      // create branches tree
+      /* foreach ( var c in childBranchNames ) {
+   TreeViewItem viewItem = new TreeViewItem() { Header = c } ;
+   // 
+   routeDictionary[c].Items.Add( viewItem ) ;
+ }*/
 
-      foreach ( var element in elements ) {
-        // view
-        View? view = element as View ;
-        if ( view != null ) {
-          // viewname
-          string viewName = view.Name ;
-          // view typename
-          string viewTypeName = view.ViewType.ToString() ;
-          // create view treeviewitem
-          TreeViewItem viewItem = new TreeViewItem() { Header = viewName } ;
-          // view item add to view type
-          viewTypeDictionary[ viewTypeName ].Items.Add( viewItem ) ;
-        }
+      foreach ( var c in subRoutes ) {
+        TreeViewItem viewItem = new TreeViewItem() { Header = c } ;
+        // 
+        routeDictionary[ c.Route.RouteName ].Items.Add( viewItem ) ;
       }
     }
   }
