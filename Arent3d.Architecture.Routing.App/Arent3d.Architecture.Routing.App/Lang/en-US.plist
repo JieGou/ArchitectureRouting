@@ -74,6 +74,9 @@
         <key>App.Commands.Routing.ShowFrom_ToWindowCommand</key>
         <string>From-To&#xA;Window</string>
 
+        <key>App.Commands.Routing.ShowFromTreeCommand</key>
+        <string>From-To&#xA;Tree</string>
+
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -113,6 +116,15 @@
 
         <key>TransactionName.Commands.Routing.EraseAllRoutes</key>
         <string>Erase All From-Tos</string>
+
+        <key>TransactionName.Commands.Selecting.GetSelectedFromToInfo</key>
+        <string>Show Selected From-To Window</string>
+
+        <key>TransactionName.Commands.ShowFrom_ToWindowCommand</key>
+        <string>Show From-To Window</string>
+
+        <key>TransactionName.Commands.ShowFromTreeCommand</key>
+        <string>Show From-To Tree</string>
 
 
         <!-- Dialogs -->

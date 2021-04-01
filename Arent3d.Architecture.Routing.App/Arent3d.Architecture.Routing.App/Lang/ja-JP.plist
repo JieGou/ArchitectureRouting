@@ -73,6 +73,9 @@
         <key>App.Commands.Routing.ShowFrom_ToWindowCommand</key>
         <string>From-To&#xA;Window</string>
 
+        <key>App.Commands.Routing.ShowFromTreeCommand</key>
+        <string>From-To&#xA;Tree</string>
+
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -112,6 +115,17 @@
 
         <key>TransactionName.Commands.Routing.EraseAllRoutes</key>
         <string>全てのFrom-Toを削除</string>
+
+        <key>TransactionName.Commands.Selecting.GetSelectedFromToInfo</key>
+        <string>選択From-Toウィンドウを表示</string>
+
+        <key>TransactionName.Commands.ShowFrom_ToWindowCommand</key>
+        <string>From-Toウィンドウを表示</string>
+
+        <key>TransactionName.Commands.ShowFromTreeCommand</key>
+        <string>From-Toツリーを表示</string>
+        
+        
 
 
         <!-- Dialogs -->
