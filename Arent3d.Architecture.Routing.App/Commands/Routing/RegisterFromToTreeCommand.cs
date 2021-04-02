@@ -55,8 +55,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       FromToTree dock = new FromToTree() ;
       _dockableWindow = dock ;
       _uiApp = uiApplication ;
-  
-
+      
       // Use unique guid identifier for this dockable pane
       var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
       try {

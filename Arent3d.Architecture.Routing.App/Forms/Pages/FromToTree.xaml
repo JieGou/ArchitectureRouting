@@ -6,27 +6,24 @@
       xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
       mc:Ignorable="d"
       Title="FromToTree" Height="800" Width="450" Background="White">
-    <Grid Background="White" Margin="5" >
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+    <Grid Background="White" Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
- 
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
-            <Label Content="From-To View" FontSize="20"/>
-        </StackPanel>
- 
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
-                <TextBlock Text="ActiveView Name  : "/>
-                <TextBlock Name="viewName"/>
-            </StackPanel>
-            <TreeView Grid.Row="2" Name="FromToTreeView" Margin="5"/>
 
-        <StackPanel Grid.Row="3" Orientation="Vertical" Margin="5">
-            <Label Content="Selected From-To" FontSize="20"/>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Width="Auto">
+            <Label Content="From-To View" FontSize="20" />
         </StackPanel>
+
+
+        <TreeView Name="FromToTreeView" Width="Auto" Grid.Row="1"
+                  BorderBrush="LightGray" BorderThickness="1"
+                  SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"/>
+
+
+        <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto"/>
 
     </Grid>
 </Page>

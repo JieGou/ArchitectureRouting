@@ -17,13 +17,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public ExternalCommandData? eData = null ;
     public Document? doc = null ;
     public UIDocument? uiDoc = null ;
-    public FromToTreeViewModel? vm = null ;
+    
+    public List<Route> AllRoutes = new List<Route>() ;
 
     public FromToTree()
     {
       InitializeComponent() ;
-
-      vm = new FromToTreeViewModel() ;
+      
     }
 
 
@@ -53,70 +53,116 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       doc = uiApplication.ActiveUIDocument.Document ;
       uiDoc = uiApplication.ActiveUIDocument ;
-
-      // get the active view name
-      viewName.Text = doc.ActiveView.Name ;
+      AllRoutes = uiDoc.Document.CollectRoutes().ToList() ;
       // call the treeview display method
-      DisplayTreeViewItem( uiDoc ) ;
+      DisplayTreeViewItem( AllRoutes ) ;
+      //DisplaySelectedFromTo( allRoutes.ToList()[ 0 ] ) ;
     }
 
     /// <summary>
     /// set TreeViewItems
     /// </summary>
-    public void DisplayTreeViewItem( UIDocument uiDoc )
+    public void DisplayTreeViewItem( IEnumerable<Route> allRoutes )
     {
       // clear items first
       FromToTreeView.Items.Clear() ;
 
       // routename and childrenname dictionary
       SortedDictionary<string, TreeViewItem> routeDictionary = new SortedDictionary<string, TreeViewItem>() ;
-
-      // routenames
-      List<string> routeNames = new List<string>() ;
-
-      List<string> childBranchNames = new List<string>() ;
-      List<SubRoute> subRoutes = new List<SubRoute>() ; //change to List<Route> childBranches = new List<Route>()
+      
+      List<Route> childBranches = new List<Route>() ;
+      List<SubRoute> subRoutes = new List<SubRoute>() ; //test for subroutes
 
       //collect view type
       List<Element> elements = new FilteredElementCollector( doc ).OfClass( typeof( View ) ).ToList() ;
 
       // collect Routes
-      ObservableCollection<Route> allRoutes = new ObservableCollection<Route>( uiDoc.Document.CollectRoutes() ) ;
+      ObservableCollection<Route> routes = new ObservableCollection<Route>( allRoutes ) ;
 
 
-      foreach ( var r in allRoutes ) {
-        routeNames.Add( r.RouteName ) ;
-
+      foreach ( var r in routes ) {
         //get ChildBranches
-        //foreach ( var c in r.GetChildBranches() ) {
+        
+        childBranches.AddRange(r.GetChildBranches().ToList()) ;
         foreach ( var c in r.SubRoutes ) {
-          childBranchNames.Add( c.ToString() ) ;
           subRoutes.Add( c ) ;
         }
       }
 
       // create Route tree
-      foreach ( var routeName in routeNames.Distinct().OrderBy( name => name ).ToList() ) {
+      //foreach ( var route in routes.Where(r => r.IsParentBranch(r) == true).Distinct().OrderBy( r => r.RouteName ).ToList() ) {
+      foreach ( var route in routes.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
         // create route treeviewitem
-        TreeViewItem routeItem = new TreeViewItem() { Header = routeName } ;
+        TreeViewItem routeItem = new TreeViewItem() { Header = route.RouteName } ;
         // store in dict
-        routeDictionary[ routeName ] = routeItem ;
+        routeDictionary[ route.RouteName ] = routeItem ;
         // add to treeview
         FromToTreeView.Items.Add( routeItem ) ;
       }
-      
-      // create branches tree
-      /* foreach ( var c in childBranchNames ) {
-   TreeViewItem viewItem = new TreeViewItem() { Header = c } ;
-   // 
-   routeDictionary[c].Items.Add( viewItem ) ;
- }*/
 
-      foreach ( var c in subRoutes ) {
+      // create branches tree
+      foreach ( var c in childBranches ) {
+        TreeViewItem viewItem = new TreeViewItem() { Header = c.RouteName } ;
+        
+        routeDictionary[ c.GetParentBranches().ToList()[0].RouteName ].Items.Add( viewItem ) ;
+      }
+
+      /*foreach ( var c in subRoutes ) {
         TreeViewItem viewItem = new TreeViewItem() { Header = c } ;
         // 
         routeDictionary[ c.Route.RouteName ].Items.Add( viewItem ) ;
+      }*/
+    }
+
+    /// <summary>
+    /// Set SelectedFromtTo Dialog by Selected Route
+    /// </summary>
+    /// <param name="route"></param>
+    public void DisplaySelectedFromTo( Route route )
+    {
+      if ( doc != null && uiDoc != null ) {
+        SelectedFromToViewModel.SetSelectedFromToInfo( uiDoc, doc, route ) ;
       }
+
+      if ( SelectedFromToViewModel.Diameters != null ) {
+        SelectedFromTo.Diameters = new ObservableCollection<string>( SelectedFromToViewModel.Diameters.Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
+      }
+
+      SelectedFromTo.DiameterIndex = SelectedFromToViewModel.DiameterIndex ;
+
+      if ( SelectedFromToViewModel.SystemTypes != null ) {
+        SelectedFromTo.SystemTypes = new ObservableCollection<MEPSystemType>( SelectedFromToViewModel.SystemTypes ) ;
+      }
+
+      SelectedFromTo.SystemTypeIndex = SelectedFromToViewModel.SystemTypeIndex ;
+
+      SelectedFromTo.CurveTypeIndex = SelectedFromToViewModel.CurveTypeIndex ;
+
+      if ( SelectedFromToViewModel.CurveTypes != null ) {
+        SelectedFromTo.CurveTypes = new ObservableCollection<MEPCurveType>( SelectedFromToViewModel.CurveTypes ) ;
+        SelectedFromTo.CurveTypeLabel = SelectedFromTo.CurveTypes[ (int) SelectedFromTo.CurveTypeIndex ].GetType().Name.Split( 'T' )[ 0 ] + " Type" ;
+        ;
+      }
+
+      SelectedFromTo.CurrentDirect = SelectedFromToViewModel.IsDirect ;
+      
+      SelectedFromTo.ResetDialog();
+    }
+
+    /// <summary>
+    /// event on selected FromToTreeView
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void FromToTreeView_OnSelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
+    {
+      var selectedItem = (TreeViewItem) FromToTreeView.SelectedItem ;
+      var selectedItemName = selectedItem.Header.ToString() ;
+      var selectedRoute = AllRoutes.Find( r => r.RouteName == selectedItem.Header.ToString() ) ;
+      
+      DisplaySelectedFromTo( selectedRoute ) ;
+      
+      
     }
   }
 }

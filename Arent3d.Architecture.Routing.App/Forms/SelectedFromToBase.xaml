@@ -1,0 +1,96 @@
+﻿<UserControl x:Class="Arent3d.Architecture.Routing.App.Forms.SelectedFromToBase"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
+             mc:Ignorable="d"
+             x:Name="root"
+             Background="White"
+             Height="Auto" Width="Auto">
+    <Border BorderBrush="LightGray" BorderThickness="1">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Label Content="System Type"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Grid.Column="0"
+                   Grid.Row="0" />
+            <ComboBox x:Name="SystemTypeComboBox"
+                      Grid.Column="1"
+                      Grid.Row="0"
+                      ItemsSource="{Binding  SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                      DisplayMemberPath="Name"
+                      SelectionChanged="SystemTypeComboBox_SelectionChanged"
+                      FontSize="20"
+                      SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                      VerticalAlignment="Center">
+            </ComboBox>
+
+            <Label x:Name="CurveTypeDomain"
+                   Content="{Binding CurveTypeLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Grid.Column="0"
+                   Grid.Row="1" />
+            <ComboBox x:Name="CurveTypeComboBox"
+                      Grid.Column="1"
+                      Grid.Row="1"
+                      ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                      DisplayMemberPath="Name"
+                      SelectionChanged="CurveTypeComboBox_SelectionChanged"
+                      FontSize="20"
+                      SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                      VerticalAlignment="Center">
+            </ComboBox>
+
+            <Label Content="Diameter"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Grid.Column="0"
+                   Grid.Row="2" />
+            <ComboBox x:Name="DiameterComboBox"
+                      Grid.Column="1"
+                      Grid.Row="2"
+                      ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                      SelectionChanged="DiameterComboBox_SelectionChanged"
+                      FontSize="20"
+                      SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                      VerticalAlignment="Center">
+            </ComboBox>
+
+            <Label Content="Via PS"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Grid.Column="0"
+                   Grid.Row="3" />
+
+            <CheckBox x:Name="Direct"
+                      Grid.Column="1"
+                      Grid.Row="3"
+                      IsChecked="{Binding CurrentDirect, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                      Checked="Direct_OnChecked"
+                      Unchecked="Direct_OnUnchecked"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center" />
+
+            <local:Dialog3Buttons Grid.ColumnSpan="2" Grid.Row="4"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Right"
+                                  OnOKClick="Dialog3Buttons_OnOKClick"
+                                  OnApplyClick="Dialog3Buttons_OnApplyClick"
+                                  OnCancelClick="Dialog3Buttons_OnCancelClick" />
+        </Grid>
+    </Border>
+</UserControl>

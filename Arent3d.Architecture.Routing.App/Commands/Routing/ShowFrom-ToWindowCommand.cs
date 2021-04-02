@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
@@ -9,21 +11,21 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     [Transaction( TransactionMode.Manual )]
     [DisplayNameKey( "App.Commands.Routing.ShowFrom_ToWindowCommand", DefaultString = "From-To\nWindow" )]
     [Image( "resources/From-ToWindow.png")]
-    public class ShowFrom_ToWindowCommand : Routing.RoutingCommandBase
+    public class ShowFrom_ToWindowCommand : IExternalCommand
     {
-        protected override string GetTransactionNameKey() => "TransactionName.Commands.ShowFrom_ToWindowCommand" ;
-
-        protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
+        private UIDocument? _uiDocument = null ;
+        public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
         {
-            return ShowFromToWindow( uiDocument ) ;
-        }
-        private IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? ShowFromToWindow( UIDocument uiDocument )
-        {
-            var allRoutes = uiDocument.Document.CollectRoutes() ;
+            _uiDocument = commandData.Application.ActiveUIDocument ;
+            try {
+                FromToWindowViewModel.ShowFromToWindow( _uiDocument ) ;
+            }
+            catch ( Exception e ) {
+                TaskDialog.Show( "ShowFrom_ToWindowCommand", e.Message ) ;
+            }
             
-            FromToWindowViewModel.ShowFromToWindow(uiDocument, allRoutes);
-
-            return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
+            return Result.Succeeded;
         }
+        
     }
 }

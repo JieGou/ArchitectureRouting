@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
@@ -12,29 +14,24 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Regeneration( RegenerationOption.Manual )]
   [DisplayNameKey( "App.Commands.Routing.ShowFromTreeCommand", DefaultString = "From-To\nTree" )]
   [Image( "resources/MEP.ico" )]
-  public class ShowFromToTreeCommand : Routing.RoutingCommandBase
+  public class ShowFromToTreeCommand : IExternalCommand
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.ShowFromTreeCommand" ;
-
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
+    private UIDocument? _uiDocument = null ;
+    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      return ShowFromTree( uiDocument ) ;
-    }
-
-    private IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? ShowFromTree( UIDocument uiDocument )
-    {
-      var allRoutes = uiDocument.Document.CollectRoutes() ;
-
-
-      var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
-      var dp = uiDocument.Application.GetDockablePane( dpid ) ;
-   
-      if ( ! dp.IsShown() ) {
-        dp.Show() ;
+      _uiDocument = commandData.Application.ActiveUIDocument ;
+      try {
+        var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
+        var dp = _uiDocument.Application.GetDockablePane( dpid ) ;
+        if ( ! dp.IsShown() ) {
+          dp.Show() ;
+        }
+      }
+      catch ( Exception e ) {
+        TaskDialog.Show( "ShowFromToTreeCommand", e.Message ) ;
       }
 
-
-      return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
+      return Result.Succeeded ;
     }
   }
 }
