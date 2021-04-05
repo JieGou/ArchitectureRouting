@@ -21,6 +21,21 @@ namespace Arent3d.Revit.UI
       return (RibbonButton) ribbonPanel.AddItem( CreateButton<TCommand>( assemblyName ) ) ;
     }
 
+    /// <summary>
+    /// Add PushButton with AvailabilityClassName
+    /// </summary>
+    /// <param name="ribbonPanel"></param>
+    /// <param name="availabilityClassName"></param>
+    /// <typeparam name="TCommand"></typeparam>
+    /// <returns></returns>
+    public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel, string availabilityClassName ) where TCommand : IExternalCommand
+    {
+      var assemblyName = Assembly.GetCallingAssembly().GetName().Name ;
+      var pushButtonData = CreateButton<TCommand>( assemblyName, availabilityClassName ) ;
+      //pushButtonData.AvailabilityClassName = availabilityClassName ;
+
+      return (RibbonButton) ribbonPanel.AddItem( pushButtonData ) ;
+    }
     private static PushButtonData CreateButton<TButtonCommand>( string assemblyName ) where TButtonCommand : IExternalCommand
     {
       var commandClass = typeof( TButtonCommand ) ;
@@ -43,6 +58,41 @@ namespace Arent3d.Revit.UI
       if ( null != description ) {
         buttonData.LongDescription = description ;
       }
+
+      return buttonData ;
+    }
+    
+    /// <summary>
+    /// CreateButton with AvailabilityClassName
+    /// </summary>
+    /// <param name="assemblyName"></param>
+    /// <param name="availabilityClassName"></param>
+    /// <typeparam name="TButtonCommand"></typeparam>
+    /// <returns></returns>
+    private static PushButtonData CreateButton<TButtonCommand>( string assemblyName,  string availabilityClassName) where TButtonCommand : IExternalCommand
+    {
+      var commandClass = typeof( TButtonCommand ) ;
+
+      var name = commandClass.FullName!.ToSnakeCase() ;
+      var text = GetDisplayName( commandClass ) ;
+      var description = commandClass.GetCustomAttribute<DescriptionAttribute>()?.Description ;
+
+      var buttonData = new PushButtonData( name, text, commandClass.Assembly.Location, commandClass.FullName ) ;
+
+      foreach ( var attr in commandClass.GetCustomAttributes<ImageAttribute>() ) {
+        switch ( attr.ImageType ) {
+          case ImageType.Normal : buttonData.Image = ToImageSource( assemblyName, attr ) ; break ;
+          case ImageType.Large : buttonData.LargeImage = ToImageSource( assemblyName, attr ) ; break ;
+          case ImageType.Tooltip : buttonData.ToolTipImage = ToImageSource( assemblyName, attr ) ; break ;
+          default : break ;
+        }
+      }
+
+      if ( null != description ) {
+        buttonData.LongDescription = description ;
+      }
+
+      buttonData.AvailabilityClassName = availabilityClassName ;
 
       return buttonData ;
     }

@@ -26,6 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="AdWindows, Version=3.0.4.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>C:\Program Files\Autodesk\Revit 2021\AdWindows.dll</HintPath>
+    </Reference>
     <Reference Include="Arent3d.Math">
       <HintPath>..\Libraries\Arent3d.Math.dll</HintPath>
     </Reference>
