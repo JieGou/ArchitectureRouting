@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Windows ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -49,13 +48,28 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
     }
 
+    // document opened event
+    private void Application_DocumentChanged( object sender, Autodesk.Revit.DB.Events.DocumentChangedEventArgs e )
+    {
+      var addedElementIds = e.GetAddedElementIds() ;
+      var deletedElementIds = e.GetDeletedElementIds() ;
+      var modifiedElementIds = e.GetModifiedElementIds() ;
+      var transactions = e.GetTransactionNames() ;
+
+      // provide ExternalCommandData object to dockable page
+      if ( _dockableWindow != null && _uiApp != null && transactions[ 0 ].ToString() == "ルーティング" ) {
+        _dockableWindow.CustomInitiator( _uiApp ) ;
+      }
+    }
+
+
     public Result Execute( UIApplication uiApplication )
     {
       //dockable window
       FromToTree dock = new FromToTree() ;
       _dockableWindow = dock ;
       _uiApp = uiApplication ;
-      
+
       // Use unique guid identifier for this dockable pane
       var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
       try {
@@ -65,6 +79,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         _uiApp.Application.DocumentOpened += new EventHandler<DocumentOpenedEventArgs>( Application_DocumentOpened ) ;
         // subscribe view activated event
         _uiApp.ViewActivated += new EventHandler<ViewActivatedEventArgs>( Application_ViewActivated ) ;
+        // subscribe document changed event
+        _uiApp.Application.DocumentChanged += new EventHandler<DocumentChangedEventArgs>( Application_DocumentChanged ) ;
       }
       catch ( Exception e ) {
         // show error info dialog

@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Collections ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
@@ -8,7 +7,6 @@ using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using Frame = Autodesk.Revit.DB.Frame ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
@@ -17,13 +15,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public ExternalCommandData? eData = null ;
     public Document? doc = null ;
     public UIDocument? uiDoc = null ;
-    
+
     public List<Route> AllRoutes = new List<Route>() ;
 
     public FromToTree()
     {
       InitializeComponent() ;
-      
     }
 
 
@@ -56,6 +53,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       AllRoutes = uiDoc.Document.CollectRoutes().ToList() ;
       // call the treeview display method
       DisplayTreeViewItem( AllRoutes ) ;
+
       //DisplaySelectedFromTo( allRoutes.ToList()[ 0 ] ) ;
     }
 
@@ -65,11 +63,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public void DisplayTreeViewItem( IEnumerable<Route> allRoutes )
     {
       // clear items first
+      var test = FromToTreeView ;
+      var test2 = FromToTreeView.Items ;
       FromToTreeView.Items.Clear() ;
 
       // routename and childrenname dictionary
       SortedDictionary<string, TreeViewItem> routeDictionary = new SortedDictionary<string, TreeViewItem>() ;
-      
+
       List<Route> childBranches = new List<Route>() ;
       List<SubRoute> subRoutes = new List<SubRoute>() ; //test for subroutes
 
@@ -77,13 +77,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
       List<Element> elements = new FilteredElementCollector( doc ).OfClass( typeof( View ) ).ToList() ;
 
       // collect Routes
-      ObservableCollection<Route> routes = new ObservableCollection<Route>( allRoutes ) ;
+      List<Route> routes = new List<Route>( allRoutes ) ;
 
 
       foreach ( var r in routes ) {
         //get ChildBranches
-        
-        childBranches.AddRange(r.GetChildBranches().ToList()) ;
+
+        childBranches.AddRange( r.GetChildBranches().ToList() ) ;
         foreach ( var c in r.SubRoutes ) {
           subRoutes.Add( c ) ;
         }
@@ -103,8 +103,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       // create branches tree
       foreach ( var c in childBranches ) {
         TreeViewItem viewItem = new TreeViewItem() { Header = c.RouteName } ;
-        
-        routeDictionary[ c.GetParentBranches().ToList()[0].RouteName ].Items.Add( viewItem ) ;
+
+        routeDictionary[ c.GetParentBranches().ToList()[ 0 ].RouteName ].Items.Add( viewItem ) ;
       }
 
       /*foreach ( var c in subRoutes ) {
@@ -145,8 +145,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       SelectedFromTo.CurrentDirect = SelectedFromToViewModel.IsDirect ;
-      
-      SelectedFromTo.ResetDialog();
+
+      SelectedFromTo.ResetDialog() ;
     }
 
     /// <summary>
@@ -156,13 +156,19 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="e"></param>
     private void FromToTreeView_OnSelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
     {
-      var selectedItem = (TreeViewItem) FromToTreeView.SelectedItem ;
-      var selectedItemName = selectedItem.Header.ToString() ;
+      if ( FromToTreeView.SelectedItem is not TreeViewItem selectedItem ) {
+        return ;
+      }
+
       var selectedRoute = AllRoutes.Find( r => r.RouteName == selectedItem.Header.ToString() ) ;
-      
+      var targetElements = doc?.GetAllElementsOfRouteName<Element>( selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
+
+      //Select targetElements
+      uiDoc?.Selection.SetElementIds( targetElements ) ;
+      //Show targetElements
+      uiDoc?.ShowElements( targetElements ) ;
+
       DisplaySelectedFromTo( selectedRoute ) ;
-      
-      
     }
   }
 }

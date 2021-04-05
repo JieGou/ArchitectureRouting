@@ -1,17 +1,8 @@
 ﻿using System ;
 using System.Collections.Generic ;
-using System.Collections.ObjectModel ;
-using System.Collections.Specialized ;
 using System.Linq ;
-using System.Windows ;
-using System.Windows.Input ;
-using System.Windows.Interop ;
-using Arent3d.Architecture.Routing.App.Commands.Selecting ;
 using Arent3d.Architecture.Routing.App.Forms ;
-using Arent3d.Architecture.Routing.App.Commands ;
-using Arent3d.Architecture.Routing.App.Commands.PostCommands ;
 using Arent3d.Revit.UI ;
-using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -23,7 +14,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 
     //Route
     public static Route? TargetRoute { get ; set ; }
-    
+
     //Selecting PickInfo 
     public static PointOnRoutePicker.PickInfo? TargetPickInfo { get ; set ; }
 
@@ -75,7 +66,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       }
 
       var dialog = new SelectedFromTo( uiDocument, diameters, diameterIndex, systemTypes, systemTypeIndex, CurveTypes, curveTypeIndex, type, direct ) ;
-      
+
       dialog.ShowDialog() ;
       _openedDialog = dialog ;
     }
@@ -86,16 +77,16 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     /// <param name="uiDoc"></param>
     /// <param name="doc"></param>
     /// <param name="route"></param>
-    public static void SetSelectedFromToInfo(UIDocument uiDoc, Document doc, Route route)
+    public static void SetSelectedFromToInfo( UIDocument uiDoc, Document doc, Route route )
     {
-      UiDoc =  uiDoc;
-      
+      UiDoc = uiDoc ;
+
       TargetRoute = route ;
       RouteMEPSystem routeMepSystem = new RouteMEPSystem( doc, route ) ;
-      
+
       //Diameter Info
       Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;
-      var diameter = route.GetSubRoute(0)?.GetDiameter(doc);
+      var diameter = route.GetSubRoute( 0 )?.GetDiameter( doc ) ;
       if ( diameter != null ) {
         DiameterIndex = Diameters.ToList().FindIndex( i => Math.Abs( ( i - (double) diameter ) ) < doc.Application.VertexTolerance ) ;
       }
@@ -111,9 +102,9 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       CurveTypes = routeMepSystem.GetCurveTypes( doc, type ).OrderBy( s => s.Name ).ToList() ;
       CurveTypeIndex = CurveTypes.ToList().FindIndex( c => c.Id == curveType.Id ) ;
       //Direct Info
-      IsDirect =  route.GetSubRoute(0)?.IsRoutingOnPipeSpace ?? throw new ArgumentNullException(nameof(IsDirect));
-      
-      //uiDoc.ShowElements(route.OwnerElement?.Id);
+      IsDirect = route.GetSubRoute( 0 )?.IsRoutingOnPipeSpace ?? throw new ArgumentNullException( nameof( IsDirect ) ) ;
+
+      //uiDoc.ShowElements());
     }
 
     /// <summary>
@@ -147,7 +138,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     {
       IList<double> resultDiameters = new List<double>() ;
 
-      if ( UiDoc != null && CurveTypes != null && TargetRoute != null) {
+      if ( UiDoc != null && CurveTypes != null && TargetRoute != null ) {
         RouteMEPSystem routeMepSystem = new RouteMEPSystem( UiDoc.Document, TargetRoute ) ;
         resultDiameters = routeMepSystem.GetNominalDiameters( CurveTypes[ curveTypeIndex ] ) ;
       }

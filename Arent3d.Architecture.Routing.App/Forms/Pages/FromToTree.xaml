@@ -20,10 +20,10 @@
 
         <TreeView Name="FromToTreeView" Width="Auto" Grid.Row="1"
                   BorderBrush="LightGray" BorderThickness="1"
-                  SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"/>
+                  SelectedItemChanged="FromToTreeView_OnSelectedItemChanged" />
 
 
-        <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto"/>
+        <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" />
 
     </Grid>
 </Page>

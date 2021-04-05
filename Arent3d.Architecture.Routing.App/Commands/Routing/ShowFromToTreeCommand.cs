@@ -1,8 +1,4 @@
 ﻿using System ;
-using System.Collections.Generic ;
-using System.Windows ;
-using Arent3d.Architecture.Routing.App.Forms ;
-using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -17,6 +13,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   public class ShowFromToTreeCommand : IExternalCommand
   {
     private UIDocument? _uiDocument = null ;
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       _uiDocument = commandData.Application.ActiveUIDocument ;

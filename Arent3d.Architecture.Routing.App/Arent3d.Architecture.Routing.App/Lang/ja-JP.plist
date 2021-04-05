@@ -125,8 +125,6 @@
         <key>TransactionName.Commands.ShowFromTreeCommand</key>
         <string>From-Toツリーを表示</string>
         
-        
-
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>

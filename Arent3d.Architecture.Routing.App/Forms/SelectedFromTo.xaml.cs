@@ -12,9 +12,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
 {
   public partial class SelectedFromTo : ModalWindowBase
   {
-    //Route
-    //public Route Route ;
-    
     //Diameter Info
     public ObservableCollection<string> Diameters { get ; set ; }
     public int? DiameterIndex { get ; set ; }
@@ -31,14 +28,14 @@ namespace Arent3d.Architecture.Routing.App.Forms
     //Direct Info
     public bool CurrentDirect { get ; set ; }
 
-    public SelectedFromTo( UIDocument uiDoc, IList<double> diameters, int diameterIndex, IList<MEPSystemType> systemTypes, int systemTypeIndex, IList<MEPCurveType> curveTypes, int curveTypeIndex, Type type, bool direct ):base(uiDoc)
+    public SelectedFromTo( UIDocument uiDoc, IList<double> diameters, int diameterIndex, IList<MEPSystemType> systemTypes, int systemTypeIndex, IList<MEPCurveType> curveTypes, int curveTypeIndex, Type type, bool direct ) : base( uiDoc )
     {
       InitializeComponent() ;
-      this.SizeToContent = SizeToContent.WidthAndHeight;
+      this.SizeToContent = SizeToContent.WidthAndHeight ;
       DiameterIndex = diameterIndex ;
       SystemTypeIndex = systemTypeIndex ;
       CurveTypeIndex = curveTypeIndex ;
-      CurveTypeLabel = type.Name.Split( 'T' )[ 0 ] + " Type";
+      CurveTypeLabel = type.Name.Split( 'T' )[ 0 ] + " Type" ;
       CurrentDirect = direct ;
       Diameters = new ObservableCollection<string>( diameters.Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
       SystemTypes = new ObservableCollection<MEPSystemType>( systemTypes ) ;
@@ -61,12 +58,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       if ( CurveTypeComboBox.IsDropDownOpen ) //avoid chnages in construction
       {
-        /*int selectedIndex = CurveTypeComboBox.SelectedIndex ;
+        int selectedIndex = CurveTypeComboBox.SelectedIndex ;
 
-        Diameters = new ObservableCollection<string>( SelectedFromToViewModel.ResetNominalDiameters( selectedIndex,  ).Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
+        Diameters = new ObservableCollection<string>( SelectedFromToViewModel.ResetNominalDiameters( selectedIndex ).Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
         DiameterComboBox.ItemsSource = Diameters ;
 
-        DiameterComboBox.SelectedIndex = Diameters.Count - 1 ;*/
+        DiameterComboBox.SelectedIndex = Diameters.Count - 1 ;
       }
     }
 

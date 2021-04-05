@@ -36,6 +36,7 @@ namespace Arent3d.Revit.UI
 
       return (RibbonButton) ribbonPanel.AddItem( pushButtonData ) ;
     }
+
     private static PushButtonData CreateButton<TButtonCommand>( string assemblyName ) where TButtonCommand : IExternalCommand
     {
       var commandClass = typeof( TButtonCommand ) ;
@@ -48,9 +49,15 @@ namespace Arent3d.Revit.UI
 
       foreach ( var attr in commandClass.GetCustomAttributes<ImageAttribute>() ) {
         switch ( attr.ImageType ) {
-          case ImageType.Normal : buttonData.Image = ToImageSource( assemblyName, attr ) ; break ;
-          case ImageType.Large : buttonData.LargeImage = ToImageSource( assemblyName, attr ) ; break ;
-          case ImageType.Tooltip : buttonData.ToolTipImage = ToImageSource( assemblyName, attr ) ; break ;
+          case ImageType.Normal :
+            buttonData.Image = ToImageSource( assemblyName, attr ) ;
+            break ;
+          case ImageType.Large :
+            buttonData.LargeImage = ToImageSource( assemblyName, attr ) ;
+            break ;
+          case ImageType.Tooltip :
+            buttonData.ToolTipImage = ToImageSource( assemblyName, attr ) ;
+            break ;
           default : break ;
         }
       }
@@ -61,7 +68,7 @@ namespace Arent3d.Revit.UI
 
       return buttonData ;
     }
-    
+
     /// <summary>
     /// CreateButton with AvailabilityClassName
     /// </summary>
@@ -69,7 +76,7 @@ namespace Arent3d.Revit.UI
     /// <param name="availabilityClassName"></param>
     /// <typeparam name="TButtonCommand"></typeparam>
     /// <returns></returns>
-    private static PushButtonData CreateButton<TButtonCommand>( string assemblyName,  string availabilityClassName) where TButtonCommand : IExternalCommand
+    private static PushButtonData CreateButton<TButtonCommand>( string assemblyName, string availabilityClassName ) where TButtonCommand : IExternalCommand
     {
       var commandClass = typeof( TButtonCommand ) ;
 
@@ -81,9 +88,15 @@ namespace Arent3d.Revit.UI
 
       foreach ( var attr in commandClass.GetCustomAttributes<ImageAttribute>() ) {
         switch ( attr.ImageType ) {
-          case ImageType.Normal : buttonData.Image = ToImageSource( assemblyName, attr ) ; break ;
-          case ImageType.Large : buttonData.LargeImage = ToImageSource( assemblyName, attr ) ; break ;
-          case ImageType.Tooltip : buttonData.ToolTipImage = ToImageSource( assemblyName, attr ) ; break ;
+          case ImageType.Normal :
+            buttonData.Image = ToImageSource( assemblyName, attr ) ;
+            break ;
+          case ImageType.Large :
+            buttonData.LargeImage = ToImageSource( assemblyName, attr ) ;
+            break ;
+          case ImageType.Tooltip :
+            buttonData.ToolTipImage = ToImageSource( assemblyName, attr ) ;
+            break ;
           default : break ;
         }
       }
@@ -99,9 +112,7 @@ namespace Arent3d.Revit.UI
 
     private static string GetDisplayName( Type commandClass )
     {
-      return commandClass.GetCustomAttribute<DisplayNameKeyAttribute>()?.GetApplicationString()
-             ?? commandClass.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName
-             ?? commandClass.Name.SeparateByWords() ;
+      return commandClass.GetCustomAttribute<DisplayNameKeyAttribute>()?.GetApplicationString() ?? commandClass.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? commandClass.Name.SeparateByWords() ;
     }
 
     private static ImageSource? ToImageSource( string assemblyName, ImageAttribute attr )
