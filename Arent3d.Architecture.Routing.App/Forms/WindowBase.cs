@@ -9,12 +9,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public WindowBase( UIDocument uiDoc )
     {
       //Set RevitWindow To owner
-      System.Windows.Interop.WindowInteropHelper? helper = new System.Windows.Interop.WindowInteropHelper( this ) ;
-      HwndSource? hwndSource = HwndSource.FromHwnd( uiDoc.Application.MainWindowHandle ) ;
-      if ( hwndSource != null ) {
-        Window? wnd = hwndSource.RootVisual as Window ;
-        this.Owner = wnd ;
-      }
+      var helper = new System.Windows.Interop.WindowInteropHelper( this ) ;
+      helper.Owner = uiDoc.Application.MainWindowHandle ;
     }
 
     public delegate void ClickEventHandler( object sender, RoutedEventArgs e ) ;
