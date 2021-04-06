@@ -36,26 +36,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
       DiameterIndex = diameterIndex ;
       SystemTypeIndex = systemTypeIndex ;
       CurveTypeIndex = curveTypeIndex ;
-      //CurveTypeLabel = type.Name.Split( 'T' )[ 0 ] + " Type" ;
-      CurveTypeLabel = GetTypeLabel( type.Name );
+      CurveTypeLabel = FromToUtils.GetTypeLabel( type.Name ) ;  
       CurrentDirect = direct ;
       Diameters = new ObservableCollection<string>( diameters.Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
       SystemTypes = new ObservableCollection<MEPSystemType>( systemTypes ) ;
       CurveTypes = new ObservableCollection<MEPCurveType>( curveTypes ) ;
     }
-
-    /// <summary>
-    /// Get LabelName From CurveType
-    /// </summary>
-    /// <param name="targetStrings"></param>
-    /// <returns></returns>
-    private string GetTypeLabel(string targetStrings)
-    {
-      string[] splitStrings = Regex.Split( targetStrings, "Type" ) ;
-
-      return splitStrings[ 0 ] + " Type";
-    }
-
 
     //Diameter 
     private void DiameterComboBox_Changed( object sender, SelectionChangedEventArgs e )
