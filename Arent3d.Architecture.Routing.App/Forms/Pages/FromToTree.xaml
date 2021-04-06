@@ -22,10 +22,30 @@
                   BorderBrush="LightGray" BorderThickness="1"
                   SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"
                   MouseDoubleClick="FromToTreeView_OnMouseDoubleClick"
-                  />
+                  VirtualizingStackPanel.IsVirtualizing="True"
+                  >
+            <TreeView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <local:FromToVirtualizingStackPanel/>
+                </ItemsPanelTemplate>
+            </TreeView.ItemsPanel>
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="TreeViewItem">
+                    <Setter Property="ItemsPanel">
+                        <Setter.Value>
+                            <ItemsPanelTemplate>
+                                <local:FromToVirtualizingStackPanel/>
+                            </ItemsPanelTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TreeView.ItemContainerStyle>
+            
+            
+        </TreeView>
 
 
-        <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" />
+            <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" />
 
     </Grid>
 </Page>

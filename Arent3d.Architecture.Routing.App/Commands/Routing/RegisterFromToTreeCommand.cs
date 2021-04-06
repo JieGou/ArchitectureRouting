@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
+using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -48,6 +49,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       // provide ExternalCommandData object to dockable page
       if ( _dockableWindow != null && _uiApp != null ) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
+        FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
       }
     }
 
