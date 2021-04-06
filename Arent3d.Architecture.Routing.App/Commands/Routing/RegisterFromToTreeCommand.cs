@@ -1,5 +1,8 @@
 ﻿using System ;
+using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
+using Arent3d.Revit.I18n ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
@@ -57,16 +60,30 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var transactions = e.GetTransactionNames() ;
 
       // provide ExternalCommandData object to dockable page
-      if ( _dockableWindow != null && _uiApp != null && transactions[ 0 ].ToString() == "ルーティング" ) {
+      if ( _dockableWindow != null && _uiApp != null && transactions.Any(GetRoutingTransactions)){
         _dockableWindow.CustomInitiator( _uiApp ) ;
       }
+    }
+    
+    private static bool GetRoutingTransactions( string t )
+    {
+      var routingTransactions = new List<string>
+      {
+        "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ),
+        "TransactionName.Commands.Routing.Common.PickRouting".GetAppStringByKeyOrDefault( "Pick\nFrom-To" ),
+        "TransactionName.Commands.Routing.Common.EraseSelectedRoutes".GetAppStringByKeyOrDefault( "Delete\nFrom-To" ),
+        "TransactionName.Commands.Routing.Common.EraseAllRoutes".GetAppStringByKeyOrDefault( "Delete\nAll From-To" ),
+        "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" )
+      } ;
+
+      return routingTransactions.Contains( t ) ;
     }
 
 
     public Result Execute( UIApplication uiApplication )
     {
       //dockable window
-      FromToTree dock = new FromToTree() ;
+      var dock = new FromToTree() ;
       _dockableWindow = dock ;
       _uiApp = uiApplication ;
 
@@ -74,7 +91,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
       try {
         // register dockable pane
-        _uiApp.RegisterDockablePane( dpid, "From-To Tree", _dockableWindow as IDockablePaneProvider ) ;
+        _uiApp.RegisterDockablePane( dpid, "From-To Tree", _dockableWindow ) ;
         // subscribe document opend event
         _uiApp.Application.DocumentOpened += new EventHandler<DocumentOpenedEventArgs>( Application_DocumentOpened ) ;
         // subscribe view activated event
