@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private readonly RibbonButton _modifySelectedFromToCommandButton ;
 
-    private readonly RibbonButton _monitorSelectionCommandButtonl ;
+    private readonly RibbonButton _monitorSelectionCommandButton ;
 
 
     private RoutingAppUI( UIControlledApplication application )
@@ -84,7 +84,7 @@ namespace Arent3d.Architecture.Routing.App
         _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
         _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
 
-        _monitorSelectionCommandButtonl = routingPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
+        _monitorSelectionCommandButton = routingPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
       {
         var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
@@ -129,8 +129,6 @@ namespace Arent3d.Architecture.Routing.App
       _eraseAllRacksCommandButton.Enabled = false ;
 
       _modifySelectedFromToCommandButton.Enabled = false ;
-
-      _monitorSelectionCommandButtonl.Enabled = false ;
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
