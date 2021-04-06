@@ -1,4 +1,4 @@
-﻿<local:ModalWindowBase x:Class="Arent3d.Architecture.Routing.App.Forms.SelectedFromTo"
+﻿<local:WindowBase x:Class="Arent3d.Architecture.Routing.App.Forms.SelectedFromTo"
                        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -98,4 +98,4 @@
                               OnApplyClick="Dialog3Buttons_OnApplyClick"
                               OnCancelClick="Dialog3Buttons_OnCancelClick" />
     </Grid>
-</local:ModalWindowBase>
+</local:WindowBase>

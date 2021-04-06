@@ -1,4 +1,4 @@
-﻿<local:ModalWindowBase x:Class="Arent3d.Architecture.Routing.App.Forms.FromToWindow"
+﻿<local:WindowBase x:Class="Arent3d.Architecture.Routing.App.Forms.FromToWindow"
                        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -63,4 +63,4 @@
             Margin="0,0,0,5" />
 
     </Grid>
-</local:ModalWindowBase>
+</local:WindowBase>
