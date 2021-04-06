@@ -20,16 +20,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
       }
 
       // Raise the SelectionChangedEvent
-      List<ElementId> elementIds = uiApp.ActiveUIDocument.Selection.GetElementIds().OrderBy( id => id.IntegerValue ).ToList() ;
+      var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( uiDoc ).EnumerateAll() ;
 
-      var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDoc ).EnumerateAll() ;
-
-      if ( 0 < list.Count ) {
-        var selectedRouteName = list.ToList()[ 0 ].RouteName ;
+      if ( 0 < selectedRoutes.Count ) {
+        var selectedRouteName = selectedRoutes.ToList()[ 0 ].RouteName ;
         if ( selectedRouteName != PreviousSelectedRoute ) {
           FromToTreeViewModel.GetSelectedRouteName(selectedRouteName);
         }
-        PreviousSelectedRoute = list.ToList()[ 0 ].RouteName ;
+        PreviousSelectedRoute = selectedRoutes.ToList()[ 0 ].RouteName ;
       }
       
 
