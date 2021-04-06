@@ -7,7 +7,7 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
-  public partial class FromToWindow : ModalWindowBase
+  public partial class FromToWindow : WindowBase
   {
     public ObservableCollection<FromToItems> FromToItemsList { get ; set ; }
 
