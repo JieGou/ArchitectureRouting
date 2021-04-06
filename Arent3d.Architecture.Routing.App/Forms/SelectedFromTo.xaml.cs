@@ -4,13 +4,14 @@ using System.Linq ;
 using System.Windows ;
 using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
+using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
-  public partial class SelectedFromTo : ModalWindowBase
+  public partial class SelectedFromTo : WindowBase
   {
     //Diameter Info
     public ObservableCollection<string> Diameters { get ; set ; }
@@ -35,11 +36,24 @@ namespace Arent3d.Architecture.Routing.App.Forms
       DiameterIndex = diameterIndex ;
       SystemTypeIndex = systemTypeIndex ;
       CurveTypeIndex = curveTypeIndex ;
-      CurveTypeLabel = type.Name.Split( 'T' )[ 0 ] + " Type" ;
+      //CurveTypeLabel = type.Name.Split( 'T' )[ 0 ] + " Type" ;
+      CurveTypeLabel = GetTypeLabel( type.Name );
       CurrentDirect = direct ;
       Diameters = new ObservableCollection<string>( diameters.Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
       SystemTypes = new ObservableCollection<MEPSystemType>( systemTypes ) ;
       CurveTypes = new ObservableCollection<MEPCurveType>( curveTypes ) ;
+    }
+
+    /// <summary>
+    /// Get LabelName From CurveType
+    /// </summary>
+    /// <param name="targetStrings"></param>
+    /// <returns></returns>
+    private string GetTypeLabel(string targetStrings)
+    {
+      string[] splitStrings = Regex.Split( targetStrings, "Type" ) ;
+
+      return splitStrings[ 0 ] + " Type";
     }
 
 

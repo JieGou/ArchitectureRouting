@@ -2,6 +2,7 @@
 using System.Windows ;
 using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
+using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 
@@ -28,8 +29,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public SelectedFromToBase()
     {
       InitializeComponent() ;
-
-      //this.SizeToContent = SizeToContent.WidthAndHeight;
+      
       DiameterIndex = 0 ;
       SystemTypeIndex = 0 ;
       CurveTypeIndex = 0 ;
@@ -38,6 +38,18 @@ namespace Arent3d.Architecture.Routing.App.Forms
       Diameters = new ObservableCollection<string>() ;
       SystemTypes = new ObservableCollection<MEPSystemType>() ;
       CurveTypes = new ObservableCollection<MEPCurveType>() ;
+    }
+    
+    /// <summary>
+    /// Get LableName from CurveType
+    /// </summary>
+    /// <param name="targetStrings"></param>
+    /// <returns></returns>
+    public string GetTypeLabel(string targetStrings)
+    {
+      string[] splitStrings = Regex.Split( targetStrings, "Type" ) ;
+
+      return splitStrings[ 0 ] + " Type";
     }
 
     private void SystemTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
