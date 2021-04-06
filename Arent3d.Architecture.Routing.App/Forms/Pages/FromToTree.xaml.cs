@@ -57,8 +57,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
     private void DisplayTreeViewItem( IReadOnlyCollection<Route> allRoutes )
     {
       // clear items first
-      var test = FromToTreeView ;
-      var test2 = FromToTreeView.Items ;
       FromToTreeView.Items.Clear() ;
 
       // routename and childrenname dictionary
