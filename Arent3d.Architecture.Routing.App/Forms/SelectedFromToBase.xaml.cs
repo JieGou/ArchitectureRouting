@@ -1,4 +1,5 @@
-﻿using System.Linq ;
+﻿using System.Collections.Generic ;
+using System.Linq ;
 using System.Windows ;
 using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
@@ -87,6 +88,37 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
     }
 
+    /// <summary>
+    /// Update Diameters, SystemTypes, and CurveTypes
+    /// </summary>
+    /// <param name="diameters"></param>
+    /// <param name="systemTypes"></param>
+    /// <param name="curveTypes"></param>
+    public void UpdateFromToParameters( IList<double>? diameters, IList<MEPSystemType>? systemTypes, IList<MEPCurveType>? curveTypes )
+    {
+      Diameters.Clear();
+      SystemTypes.Clear();
+      CurveTypes.Clear();
+
+      if ( diameters != null ) {
+        foreach ( var d in diameters ) {
+          Diameters.Add(UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" );
+        }
+      }
+
+      if ( systemTypes != null ) {
+        foreach ( var s in systemTypes ) {
+          SystemTypes.Add(s);
+        }
+      }
+
+      if ( curveTypes != null ) {
+        foreach ( var c in curveTypes ) {
+          CurveTypes.Add(c);
+        }
+      }
+    }
+    
     public void ResetDialog()
     {
       SystemTypeComboBox.ItemsSource = SystemTypes ;
