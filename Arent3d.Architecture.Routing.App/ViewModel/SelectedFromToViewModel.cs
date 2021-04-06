@@ -82,7 +82,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       UiDoc = uiDoc ;
 
       TargetRoute = route ;
-      RouteMEPSystem routeMepSystem = new RouteMEPSystem( doc, route ) ;
+      var routeMepSystem = new RouteMEPSystem( doc, route ) ;
 
       //Diameter Info
       Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;

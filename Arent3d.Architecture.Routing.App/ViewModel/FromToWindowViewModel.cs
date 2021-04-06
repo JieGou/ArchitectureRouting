@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         OpenedDialog.Close() ;
       }
 
-      ObservableCollection<FromToWindow.FromToItems> fromToItemsList = new ObservableCollection<FromToWindow.FromToItems>() ;
+      var fromToItemsList = new ObservableCollection<FromToWindow.FromToItems>() ;
 
       foreach ( var route in allRoutes ) {
         RouteMEPSystem routeMepSystem = new RouteMEPSystem( UiDoc.Document, route ) ;
