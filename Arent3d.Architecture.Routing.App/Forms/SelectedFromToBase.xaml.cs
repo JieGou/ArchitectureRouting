@@ -141,6 +141,18 @@ namespace Arent3d.Architecture.Routing.App.Forms
       Direct.IsChecked = CurrentDirect ;
     }
 
+    public void ClearDialog()
+    {
+      DiameterIndex = 0 ;
+      SystemTypeIndex = 0 ;
+      CurveTypeIndex = 0 ;
+      CurveTypeLabel = "Type" ;
+      CurrentDirect = false ;
+      Diameters.Clear();
+      SystemTypes.Clear();
+      CurveTypes.Clear();
+    }
+
     private void Direct_OnChecked( object sender, RoutedEventArgs e )
     {
       SelectedFromToViewModel.IsDirect = true ;

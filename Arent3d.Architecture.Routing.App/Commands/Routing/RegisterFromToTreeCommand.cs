@@ -9,6 +9,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
+using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
@@ -40,6 +41,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       // provide ExternalCommandData object to dockable page
       if ( _dockableWindow != null && _uiApp != null ) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
+        //Clear Selection
+        _uiApp.ActiveUIDocument.Selection.SetElementIds(new List<ElementId>());
+        //_uiApp.ActiveUIDocument.Selection.GetElementIds().Clear();
       }
     }
 

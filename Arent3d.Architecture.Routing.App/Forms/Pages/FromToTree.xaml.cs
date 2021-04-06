@@ -49,6 +49,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       AllRoutes = UiDoc.Document.CollectRoutes().ToList() ;
       // call the treeview display method
       DisplayTreeViewItem( AllRoutes ) ;
+      SelectedFromTo.ClearDialog();
     }
 
     /// <summary>
