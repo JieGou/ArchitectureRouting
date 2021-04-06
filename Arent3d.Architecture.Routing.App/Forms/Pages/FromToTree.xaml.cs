@@ -10,13 +10,12 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
-  public partial class FromToTree : Page, IDisposable, IDockablePaneProvider
+  public partial class FromToTree : Page, IDockablePaneProvider
   {
-    public ExternalCommandData? eData = null ;
-    public Document? doc = null ;
-    public UIDocument? uiDoc = null ;
+    private Document? Doc { get ; set ; } 
+    private UIDocument? UiDoc { get ; set ; } 
 
-    public List<Route> AllRoutes = new List<Route>() ;
+    private IReadOnlyCollection<Route>? AllRoutes { get ; set ; } 
 
     public FromToTree()
     {
@@ -27,13 +26,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public class FromTo
     {
       public Route? Route { get ; set ; }
-      // public 
     }
 
-    public void Dispose()
-    {
-      this.Dispose() ;
-    }
+
 
     public void SetupDockablePane( DockablePaneProviderData data )
     {
@@ -48,19 +43,17 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="uiApplication"></param>
     public void CustomInitiator( UIApplication uiApplication )
     {
-      doc = uiApplication.ActiveUIDocument.Document ;
-      uiDoc = uiApplication.ActiveUIDocument ;
-      AllRoutes = uiDoc.Document.CollectRoutes().ToList() ;
+      Doc = uiApplication.ActiveUIDocument.Document ;
+      UiDoc = uiApplication.ActiveUIDocument ;
+      AllRoutes = UiDoc.Document.CollectRoutes().ToList() ;
       // call the treeview display method
       DisplayTreeViewItem( AllRoutes ) ;
-
-      //DisplaySelectedFromTo( allRoutes.ToList()[ 0 ] ) ;
     }
 
     /// <summary>
     /// set TreeViewItems
     /// </summary>
-    public void DisplayTreeViewItem( IEnumerable<Route> allRoutes )
+    private void DisplayTreeViewItem( IReadOnlyCollection<Route> allRoutes )
     {
       // clear items first
       var test = FromToTreeView ;
@@ -68,30 +61,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
       FromToTreeView.Items.Clear() ;
 
       // routename and childrenname dictionary
-      SortedDictionary<string, TreeViewItem> routeDictionary = new SortedDictionary<string, TreeViewItem>() ;
+      var routeDictionary = new SortedDictionary<string, TreeViewItem>() ;
 
-      List<Route> childBranches = new List<Route>() ;
-      List<SubRoute> subRoutes = new List<SubRoute>() ; //test for subroutes
-
-      //collect view type
-      List<Element> elements = new FilteredElementCollector( doc ).OfClass( typeof( View ) ).ToList() ;
+      var childBranches = new List<Route>() ;
 
       // collect Routes
-      List<Route> routes = new List<Route>( allRoutes ) ;
+      //List<Route> routes = new List<Route>( allRoutes ) ;
 
-
-      foreach ( var r in routes ) {
+      foreach ( var r in allRoutes ) {
         //get ChildBranches
-
         childBranches.AddRange( r.GetChildBranches().ToList() ) ;
-        foreach ( var c in r.SubRoutes ) {
-          subRoutes.Add( c ) ;
-        }
       }
 
       // create Route tree
       //foreach ( var route in routes.Where(r => r.IsParentBranch(r) == true).Distinct().OrderBy( r => r.RouteName ).ToList() ) {
-      foreach ( var route in routes.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
+      foreach ( var route in allRoutes.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
         // create route treeviewitem
         TreeViewItem routeItem = new TreeViewItem() { Header = route.RouteName } ;
         // store in dict
@@ -106,22 +90,16 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         routeDictionary[ c.GetParentBranches().ToList()[ 0 ].RouteName ].Items.Add( viewItem ) ;
       }
-
-      /*foreach ( var c in subRoutes ) {
-        TreeViewItem viewItem = new TreeViewItem() { Header = c } ;
-        // 
-        routeDictionary[ c.Route.RouteName ].Items.Add( viewItem ) ;
-      }*/
     }
 
     /// <summary>
     /// Set SelectedFromtTo Dialog by Selected Route
     /// </summary>
     /// <param name="route"></param>
-    public void DisplaySelectedFromTo( Route route )
+    private void DisplaySelectedFromTo( Route route )
     {
-      if ( doc != null && uiDoc != null ) {
-        SelectedFromToViewModel.SetSelectedFromToInfo( uiDoc, doc, route ) ;
+      if ( Doc != null && UiDoc != null ) {
+        SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, route ) ;
       }
 
       if ( SelectedFromToViewModel.Diameters != null ) {
@@ -140,7 +118,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       if ( SelectedFromToViewModel.CurveTypes != null ) {
         SelectedFromTo.CurveTypes = new ObservableCollection<MEPCurveType>( SelectedFromToViewModel.CurveTypes ) ;
-        SelectedFromTo.CurveTypeLabel = SelectedFromTo.CurveTypes[ (int) SelectedFromTo.CurveTypeIndex ].GetType().Name.Split( 'T' )[ 0 ] + " Type" ;
+        SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel(SelectedFromTo.CurveTypes[ (int) SelectedFromTo.CurveTypeIndex ].GetType().Name);
         ;
       }
 
@@ -160,15 +138,18 @@ namespace Arent3d.Architecture.Routing.App.Forms
         return ;
       }
 
-      var selectedRoute = AllRoutes.Find( r => r.RouteName == selectedItem.Header.ToString() ) ;
-      var targetElements = doc?.GetAllElementsOfRouteName<Element>( selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
+      var selectedRoute = AllRoutes?.ToList().Find( r => r.RouteName == selectedItem.Header.ToString() ) ;
+      
+      if ( selectedRoute != null ) {
+        var targetElements = Doc?.GetAllElementsOfRouteName<Element>( selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
+        //Select targetElements
+        UiDoc?.Selection.SetElementIds( targetElements ) ;
+        //Show targetElements
+        UiDoc?.ShowElements( targetElements ) ;
+        
+        DisplaySelectedFromTo( selectedRoute ) ;
+      }
 
-      //Select targetElements
-      uiDoc?.Selection.SetElementIds( targetElements ) ;
-      //Show targetElements
-      uiDoc?.ShowElements( targetElements ) ;
-
-      DisplaySelectedFromTo( selectedRoute ) ;
     }
   }
 }
