@@ -4,6 +4,7 @@ using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
+using System.Windows.Input ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -13,8 +14,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
   public partial class FromToTree : Page, IDockablePaneProvider
   {
     private Document? Doc { get ; set ; } 
-    private UIDocument? UiDoc { get ; set ; } 
-
+    private UIDocument? UiDoc { get ; set ; }
+    
     private IReadOnlyCollection<Route>? AllRoutes { get ; set ; } 
 
     public FromToTree()
@@ -74,7 +75,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       // create Route tree
-      //foreach ( var route in routes.Where(r => r.IsParentBranch(r) == true).Distinct().OrderBy( r => r.RouteName ).ToList() ) {
       foreach ( var route in allRoutes.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
         // create route treeviewitem
         TreeViewItem routeItem = new TreeViewItem() { Header = route.RouteName } ;
@@ -102,25 +102,15 @@ namespace Arent3d.Architecture.Routing.App.Forms
         SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, route ) ;
       }
 
-      if ( SelectedFromToViewModel.Diameters != null ) {
-        SelectedFromTo.Diameters = new ObservableCollection<string>( SelectedFromToViewModel.Diameters.Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
-      }
+      SelectedFromTo.UpdateFromToParameters(SelectedFromToViewModel.Diameters, SelectedFromToViewModel.SystemTypes, SelectedFromToViewModel.CurveTypes);
 
       SelectedFromTo.DiameterIndex = SelectedFromToViewModel.DiameterIndex ;
-
-      if ( SelectedFromToViewModel.SystemTypes != null ) {
-        SelectedFromTo.SystemTypes = new ObservableCollection<MEPSystemType>( SelectedFromToViewModel.SystemTypes ) ;
-      }
 
       SelectedFromTo.SystemTypeIndex = SelectedFromToViewModel.SystemTypeIndex ;
 
       SelectedFromTo.CurveTypeIndex = SelectedFromToViewModel.CurveTypeIndex ;
 
-      if ( SelectedFromToViewModel.CurveTypes != null ) {
-        SelectedFromTo.CurveTypes = new ObservableCollection<MEPCurveType>( SelectedFromToViewModel.CurveTypes ) ;
-        SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel(SelectedFromTo.CurveTypes[ (int) SelectedFromTo.CurveTypeIndex ].GetType().Name);
-        ;
-      }
+      SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel(SelectedFromTo.CurveTypes[ (int) SelectedFromTo.CurveTypeIndex ].GetType().Name);
 
       SelectedFromTo.CurrentDirect = SelectedFromToViewModel.IsDirect ;
 
@@ -128,7 +118,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     }
 
     /// <summary>
-    /// event on selected FromToTreeView
+    /// event on selected FromToTreeView to select FromTo Element
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
@@ -144,12 +134,29 @@ namespace Arent3d.Architecture.Routing.App.Forms
         var targetElements = Doc?.GetAllElementsOfRouteName<Element>( selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
         //Select targetElements
         UiDoc?.Selection.SetElementIds( targetElements ) ;
-        //Show targetElements
-        UiDoc?.ShowElements( targetElements ) ;
-        
+
         DisplaySelectedFromTo( selectedRoute ) ;
       }
+    }
 
+    /// <summary>
+    /// event on MouseDoubleClicked to focus selected FromTo Element
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void FromToTreeView_OnMouseDoubleClick( object sender, MouseButtonEventArgs e )
+    {
+      if ( FromToTreeView.SelectedItem is not TreeViewItem selectedItem ) {
+        return ;
+      }
+
+      var selectedRoute = AllRoutes?.ToList().Find( r => r.RouteName == selectedItem.Header.ToString() ) ;
+      
+      if ( selectedRoute != null ) {
+        var targetElements = Doc?.GetAllElementsOfRouteName<Element>( selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
+        //Show targetElements
+        UiDoc?.ShowElements( targetElements ) ;
+      }
     }
   }
 }

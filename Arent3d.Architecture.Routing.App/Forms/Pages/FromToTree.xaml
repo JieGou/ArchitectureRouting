@@ -20,7 +20,9 @@
 
         <TreeView Name="FromToTreeView" Width="Auto" Grid.Row="1"
                   BorderBrush="LightGray" BorderThickness="1"
-                  SelectedItemChanged="FromToTreeView_OnSelectedItemChanged" />
+                  SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"
+                  MouseDoubleClick="FromToTreeView_OnMouseDoubleClick"
+                  />
 
 
         <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" />
