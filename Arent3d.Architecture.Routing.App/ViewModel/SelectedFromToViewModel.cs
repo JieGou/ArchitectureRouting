@@ -88,7 +88,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;
       var diameter = route.GetSubRoute( 0 )?.GetDiameter( doc ) ;
       if ( diameter != null ) {
-        DiameterIndex = Diameters.ToList().FindIndex( i => Math.Abs( ( i - (double) diameter ) ) < doc.Application.VertexTolerance ) ;
+        DiameterIndex = Diameters.FindDoubleIndex( diameter, doc ) ;
       }
 
       //System Type Info(PinpingSystemType in lookup)
