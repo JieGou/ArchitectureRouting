@@ -75,19 +75,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
     }
 
-    private void Dialog3Buttons_OnOKClick( object sender, System.Windows.RoutedEventArgs e )
-    {
-    }
-
-    private void Dialog3Buttons_OnApplyClick( object sender, System.Windows.RoutedEventArgs e )
-    {
-      SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
-    }
-
-    private void Dialog3Buttons_OnCancelClick( object sender, System.Windows.RoutedEventArgs e )
-    {
-    }
-
     /// <summary>
     /// Update Diameters, SystemTypes, and CurveTypes
     /// </summary>
@@ -162,5 +149,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       SelectedFromToViewModel.IsDirect = false ;
     }
-  }
+
+    private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
+    {
+      SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
+
+    }
+
+    private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
+    {
+      
+    }
+
+        private void Dialog2Buttons_Loaded(object sender, RoutedEventArgs e)
+        {
+
+        }
+    }
 }

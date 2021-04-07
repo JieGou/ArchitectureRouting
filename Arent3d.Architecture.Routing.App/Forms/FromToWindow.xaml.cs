@@ -60,12 +60,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
     }
 
 
-    private void Dilog2Buttons_OnImportOnClick( object sender, RoutedEventArgs e )
+    private void Dilog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
       TaskDialog.Show( "test", "Import" ) ;
     }
 
-    private void Dilog2Buttons_OnExportOnClick( object sender, RoutedEventArgs e )
+    private void Dilog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
     {
       TaskDialog.Show( "test", "Export" ) ;
     }
