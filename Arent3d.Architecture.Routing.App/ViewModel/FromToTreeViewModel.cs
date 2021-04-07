@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     public static void GetSelectedRouteName(string selectedRouteName)
     {
       if ( FromToTreePanel != null ) {
-        FromToTreePanel.SelectTreeViewItem(selectedRouteName); 
+        FromToTreePanel.SelectTreeViewItem(selectedRouteName);
       }
       else {
         return ;
