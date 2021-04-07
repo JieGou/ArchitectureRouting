@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
           Id = route.RouteName,
           From = route.FirstFromConnector(),
           To = route.FirstToConnector(),
-          Domain = FromToUtils.GetTypeLabel(curveType.GetType().Name),
+          Domain = UIHelper.GetTypeLabel(curveType.GetType().Name),
           SystemTypes = systemTypeList,
           SystemType = systemType,
           SystemTypeIndex = systemTypeIndex,
