@@ -65,9 +65,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       var childBranches = new List<Route>() ;
 
-      // collect Routes
-      //List<Route> routes = new List<Route>( allRoutes ) ;
-
       foreach ( var r in allRoutes ) {
         //get ChildBranches
         childBranches.AddRange( r.GetChildBranches().ToList() ) ;
