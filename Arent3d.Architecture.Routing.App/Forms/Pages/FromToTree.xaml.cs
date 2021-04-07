@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
+using System.Diagnostics ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
@@ -65,13 +66,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       var childBranches = new List<Route>() ;
 
-      foreach ( var r in allRoutes ) {
+      var parentFromTos = new List<Route>() ;
+      
+      
+      foreach ( var route in allRoutes ) {
         //get ChildBranches
-        childBranches.AddRange( r.GetChildBranches().ToList() ) ;
+        if ( route.HasParent() ) {
+          childBranches.Add(route);
+        }
+        else {
+          parentFromTos.Add(route);
+        }
       }
 
       // create Route tree
-      foreach ( var route in allRoutes.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
+      foreach ( var route in parentFromTos.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
         // create route treeviewitem
         TreeViewItem routeItem = new TreeViewItem() { Header = route.RouteName } ;
         // store in dict

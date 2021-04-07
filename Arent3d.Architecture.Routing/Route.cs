@@ -252,6 +252,17 @@ namespace Arent3d.Architecture.Routing
       return routeSet ;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public bool HasParent()
+    {
+      var parents = GetParentBranches() ;
+
+      return parents.Count > 0 ;
+    }
+
     private static void AddChildren( HashSet<Route> routeSet, Route root, Action<Route>? onAdd = null )
     {
       if ( false == routeSet.Add( root ) ) return ;
