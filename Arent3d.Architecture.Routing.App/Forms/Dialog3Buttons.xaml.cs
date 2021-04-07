@@ -8,6 +8,42 @@ namespace Arent3d.Architecture.Routing.App.Forms
   /// </summary>
   public partial class Dialog3Buttons : UserControl
   {
+    public string LeftButton
+    {
+        get { return (string)GetValue(LeftButtonProperty); }
+        set { SetValue(LeftButtonProperty, value); }
+    }
+
+    public static readonly DependencyProperty LeftButtonProperty = DependencyProperty.Register("LeftButtont",
+        typeof(string),
+        typeof(Dialog3Buttons),
+        new PropertyMetadata("OK"));
+
+    public string CenterButton
+    {
+        get { return (string)GetValue(CenterButtonProperty); }
+        set { SetValue(CenterButtonProperty, value); }
+    }
+
+    public static readonly DependencyProperty CenterButtonProperty = DependencyProperty.Register("CenterButton",
+        typeof(string),
+        typeof(Dialog3Buttons),
+        new PropertyMetadata("Apply"));
+
+
+
+        public string RightButton
+    {
+        get { return (string)GetValue(RightButtonProperty); }
+        set { SetValue(RightButtonProperty, value); }
+    }
+
+    public static readonly DependencyProperty RightButtonProperty = DependencyProperty.Register("RightButton",
+        typeof(string),
+        typeof(Dialog3Buttons),
+        new PropertyMetadata("Cancel"));
+
+
     public Dialog3Buttons()
     {
       InitializeComponent() ;
