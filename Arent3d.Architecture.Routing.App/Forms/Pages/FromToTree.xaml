@@ -5,7 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
       mc:Ignorable="d"
-      Title="FromToTree" Height="800" Width="450" Background="White">
+      Title="FromToTree" Height="Auto" Width="Auto" Background="White">
     <Grid Background="White" Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -13,39 +13,18 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Width="Auto">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Width="Auto" Height="Auto">
             <Label Content="From-To View" FontSize="20" />
         </StackPanel>
 
 
-        <TreeView Name="FromToTreeView" Width="Auto" Grid.Row="1"
+        <TreeView Name="FromToTreeView" Width="Auto" Height="100" Grid.Row="1"
                   BorderBrush="LightGray" BorderThickness="1"
                   SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"
                   MouseDoubleClick="FromToTreeView_OnMouseDoubleClick"
-                  VirtualizingStackPanel.IsVirtualizing="True"
-                  >
-            <TreeView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <local:FromToVirtualizingStackPanel/>
-                </ItemsPanelTemplate>
-            </TreeView.ItemsPanel>
-            <TreeView.ItemContainerStyle>
-                <Style TargetType="TreeViewItem">
-                    <Setter Property="ItemsPanel">
-                        <Setter.Value>
-                            <ItemsPanelTemplate>
-                                <local:FromToVirtualizingStackPanel/>
-                            </ItemsPanelTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </TreeView.ItemContainerStyle>
-            
-            
-        </TreeView>
-
-
-            <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" />
+                  VirtualizingStackPanel.IsVirtualizing="True"/>
+        
+        <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" />
 
     </Grid>
 </Page>

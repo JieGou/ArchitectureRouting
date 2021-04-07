@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       AllRoutes = UiDoc.Document.CollectRoutes().ToList() ;
       // call the treeview display method
       DisplayTreeViewItem( AllRoutes ) ;
-      SelectedFromTo.ClearDialog();
+      SelectedFromTo.ClearDialog() ;
     }
 
     /// <summary>
@@ -67,15 +67,15 @@ namespace Arent3d.Architecture.Routing.App.Forms
       var childBranches = new List<Route>() ;
 
       var parentFromTos = new List<Route>() ;
-      
-      
+
+
       foreach ( var route in allRoutes ) {
         //get ChildBranches
         if ( route.HasParent() ) {
-          childBranches.Add(route);
+          childBranches.Add( route ) ;
         }
         else {
-          parentFromTos.Add(route);
+          parentFromTos.Add( route ) ;
         }
       }
 
@@ -171,162 +171,40 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="selectedRouteName"></param>
     public void SelectTreeViewItem( string selectedRouteName )
     {
-      var targetItem = GetTreeViewItemFromName( selectedRouteName ) ;
-      var tvi = FromToTreeView.ItemContainerGenerator.ContainerFromItem(targetItem) 
-        as TreeViewItem;
-
-      if (tvi != null)
-      {
-        tvi.IsSelected = true;
+      var targetItem = GetTreeViewItemFromName( FromToTreeView.Items , selectedRouteName ) ;
+      
+      if ( targetItem != null ) {
+        // Select in TreeView
+        targetItem.IsSelected = true ;
+        // Scorll to Item
+        targetItem.BringIntoView();
       }
     }
 
     /// <summary>
     /// Get TreeViewItemObject from RouteName
     /// </summary>
-    /// <param name="routeName"></param>
+    /// <param name="collection"></param>
+    /// <param name="targetName"></param>
     /// <returns></returns>
-    private object? GetTreeViewItemFromName( string routeName )
+    private TreeViewItem? GetTreeViewItemFromName(ItemCollection collection, String targetName)
     {
-      foreach ( var item  in FromToTreeView.Items ) {
-        if ( item is TreeViewItem treeViewItem ) {
-          if ( treeViewItem.Header.ToString() == routeName ) {
-            return item ;
-          }
-          else {
-            continue;
-          }
+      foreach(TreeViewItem item in collection)
+      {
+        // Find in current
+        if (item.Header.Equals(targetName))
+        {
+          return item;
         }
-        else {
-          continue ;
-        }
+        // Find in Childs
+        TreeViewItem? childItem = this.GetTreeViewItemFromName(item.Items, targetName);
+          if (childItem != null)
+          {
+            item.IsExpanded = true;
+            return childItem;
+          }
       }
-
-      return null ;
-    }
-    
-    private object? GetTreeViewItemFromIndex( int index )
-    {
-      var targetItem = FromToTreeView.Items.GetItemAt( index ) ;
-      if ( targetItem != null ) {
-        return targetItem ;
-      }
-      return null ;
-    }
-    
-    /// <summary>
-    /// Recursively search for an item in this subtree.
-    /// </summary>
-    /// <param name="container">
-    /// The parent ItemsControl. This can be a TreeView or a TreeViewItem.
-    /// </param>
-    /// <param name="item">
-    /// The item to search for.
-    /// </param>
-    /// <returns>
-    /// The TreeViewItem that contains the specified item.
-    /// </returns>
-    public TreeViewItem? GetTreeViewItem( ItemsControl? container, object item )
-    {
-      if ( container != null ) {
-        if ( container.DataContext == item ) {
-          return container as TreeViewItem ;
-        }
-
-        // Expand the current container
-        if ( container is TreeViewItem && ! ( (TreeViewItem) container ).IsExpanded ) {
-          container.SetValue( TreeViewItem.IsExpandedProperty, true ) ;
-        }
-
-        // Try to generate the ItemsPresenter and the ItemsPanel.
-        // by calling ApplyTemplate.  Note that in the 
-        // virtualizing case even if the item is marked 
-        // expanded we still need to do this step in order to 
-        // regenerate the visuals because they may have been virtualized away.
-
-        container.ApplyTemplate() ;
-        ItemsPresenter? itemsPresenter = (ItemsPresenter?) container.Template.FindName( "ItemsHost", container ) ;
-        if ( itemsPresenter != null ) {
-          itemsPresenter.ApplyTemplate() ;
-        }
-        else {
-          // The Tree template has not named the ItemsPresenter, 
-          // so walk the descendents and find the child.
-          itemsPresenter = FindVisualChild<ItemsPresenter>( container );
-          if ( itemsPresenter == null ) {
-            container.UpdateLayout() ;
-
-            itemsPresenter = FindVisualChild<ItemsPresenter>( container ) ;
-          }
-        }
-
-        System.Windows.Controls.Panel itemsHostPanel = (System.Windows.Controls.Panel) VisualTreeHelper.GetChild( itemsPresenter, 0 ) ;
-
-
-        // Ensure that the generator for this panel has been created.
-        UIElementCollection children = itemsHostPanel.Children ;
-
-        FromToVirtualizingStackPanel? virtualizingPanel = itemsHostPanel as FromToVirtualizingStackPanel ;
-
-        for ( int i = 0, count = container.Items.Count ; i < count ; i++ ) {
-          TreeViewItem subContainer ;
-          if ( virtualizingPanel != null ) {
-            // Bring the item into view so 
-            // that the container will be generated.
-            virtualizingPanel.BringIntoView( i ) ;
-
-            subContainer = (TreeViewItem) container.ItemContainerGenerator.ContainerFromIndex( i ) ;
-          }
-          else {
-            subContainer = (TreeViewItem) container.ItemContainerGenerator.ContainerFromIndex( i ) ;
-
-            // Bring the item into view to maintain the 
-            // same behavior as with a virtualizing panel.
-            subContainer.BringIntoView() ;
-          }
-
-          if ( subContainer != null ) {
-            // Search the next level for the object.
-            TreeViewItem? resultContainer = GetTreeViewItem( subContainer, item ) ;
-            if ( resultContainer != null ) {
-              return resultContainer ;
-            }
-            else {
-              // The object is not under this TreeViewItem
-              // so collapse it.
-              subContainer.IsExpanded = false ;
-            }
-          }
-        }
-      }
-
-      return null ;
-    }
-
-    /// <summary>
-    /// Search for an element of a certain type in the visual tree.
-    /// </summary>
-    /// <typeparam name="T">The type of element to find.</typeparam>
-    /// <param name="visual">The parent element.</param>
-    /// <returns></returns>
-    private T? FindVisualChild<T>( Visual visual ) where T : Visual
-    {
-      for ( int i = 0 ; i < VisualTreeHelper.GetChildrenCount( visual ) ; i++ ) {
-        Visual? child = (Visual?) VisualTreeHelper.GetChild( visual, i ) ;
-        if ( child != null ) {
-          T? correctlyTyped = child as T ;
-          if ( correctlyTyped != null ) {
-            return correctlyTyped ;
-          }
-
-          T? descendent = FindVisualChild<T>( child ) ;
-          if ( descendent != null ) {
-            return descendent ;
-          }
-        }
-      }
-
-      return null ;
+      return null;
     }
   }
 }
