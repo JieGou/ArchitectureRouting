@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       DiameterIndex = diameterIndex ;
       SystemTypeIndex = systemTypeIndex ;
       CurveTypeIndex = curveTypeIndex ;
-      CurveTypeLabel = FromToUtils.GetTypeLabel( type.Name ) ;  
+      CurveTypeLabel = UIHelper.GetTypeLabel( type.Name ) ;  
       CurrentDirect = direct ;
       Diameters = new ObservableCollection<string>( diameters.Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
       SystemTypes = new ObservableCollection<MEPSystemType>( systemTypes ) ;

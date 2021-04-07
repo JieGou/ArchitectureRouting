@@ -1,6 +1,6 @@
 ﻿namespace Arent3d.Architecture.Routing.App
 {
-  public static class FromToUtils
+  public static class UIHelper
   {
     /// <summary>
     /// Get LabelName From CurveType
