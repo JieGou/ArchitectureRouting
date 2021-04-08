@@ -91,7 +91,7 @@
                                   VerticalAlignment="Center"
                                   HorizontalAlignment="Right"
                                   LeftOnClick="Dialog2Buttons_OnLeftOnClick"
-                                  RightOnClick="Dialog2Buttons_OnRightOnClick" Loaded="Dialog2Buttons_Loaded"/>
+                                  RightOnClick="Dialog2Buttons_OnRightOnClick" Loaded="Dialog2Buttons_Loaded" />
         </Grid>
     </Border>
 </UserControl>

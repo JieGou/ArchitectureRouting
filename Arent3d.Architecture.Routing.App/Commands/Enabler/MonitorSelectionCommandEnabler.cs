@@ -10,6 +10,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
   public class MonitorSelectionCommandEnabler : IExternalCommandAvailability
   {
     private string? PreviousSelectedRoute = null ;
+
     public bool IsCommandAvailable( UIApplication uiApp, CategorySet selectedCategories )
     {
       var uiDoc = uiApp.ActiveUIDocument ;
@@ -25,11 +26,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
       if ( 0 < selectedRoutes.Count ) {
         var selectedRouteName = selectedRoutes.ToList()[ 0 ].RouteName ;
         if ( selectedRouteName != PreviousSelectedRoute ) {
-          FromToTreeViewModel.GetSelectedRouteName(selectedRouteName);
+          FromToTreeViewModel.GetSelectedRouteName( selectedRouteName ) ;
         }
+
         PreviousSelectedRoute = selectedRoutes.ToList()[ 0 ].RouteName ;
       }
-      
+      else if ( PreviousSelectedRoute != null ) {
+        FromToTreeViewModel.ClearSelection() ;
+        PreviousSelectedRoute = null ;
+      }
+
 
       return false ;
     }

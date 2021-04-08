@@ -1,9 +1,11 @@
 ﻿using System ;
+using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
@@ -40,9 +42,35 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       // provide ExternalCommandData object to dockable page
       if ( _dockableWindow != null && _uiApp != null ) {
+        var doc = _uiApp.ActiveUIDocument.Document ;
+        //Initialize TreeView
         _dockableWindow.CustomInitiator( _uiApp ) ;
+        // Get Selected Routes
+        var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( _uiApp.ActiveUIDocument ).EnumerateAll() ;
+
+        //Get ElementIds in activeview
+        ElementOwnerViewFilter elementOwnerViewFilter = new ElementOwnerViewFilter( doc.ActiveView.Id ) ;
+        FilteredElementCollector collector = new FilteredElementCollector( doc, doc.ActiveView.Id ) ;
+        var elementsInActiveView = collector.ToElementIds() ;
+
+        if ( 0 < selectedRoutes.Count ) {
+          var selectedRouteName = selectedRoutes.ToList()[ 0 ].RouteName ;
+          var targetElements = doc?.GetAllElementsOfRouteName<Element>( selectedRouteName ).Select( elem => elem.Id ).ToList() ;
+
+          if ( targetElements != null ) {
+            if ( elementsInActiveView.Any( ids => targetElements.Contains( ids ) ) ) {
+              //Select TreeViewItem
+              FromToTreeViewModel.GetSelectedRouteName( selectedRouteName ) ;
+            }
+            else {
+              FromToTreeViewModel.ClearSelection();
+            }
+          }
+        }
       }
     }
+    
+    
 
     // document opened event
     private void Application_DocumentOpened( object sender, Autodesk.Revit.DB.Events.DocumentOpenedEventArgs e )
@@ -63,11 +91,11 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var transactions = e.GetTransactionNames() ;
 
       // provide ExternalCommandData object to dockable page
-      if ( _dockableWindow != null && _uiApp != null && transactions.Any(GetRoutingTransactions)){
+      if ( _dockableWindow != null && _uiApp != null && transactions.Any( GetRoutingTransactions ) ) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
       }
     }
-    
+
     private static bool GetRoutingTransactions( string t )
     {
       var routingTransactions = new List<string>
