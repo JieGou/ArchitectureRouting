@@ -8,12 +8,12 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
   {
     //FromToTree
     public static FromToTree? FromToTreePanel { get ; set ; }
-    
-    
-    public static void GetSelectedRouteName(string selectedRouteName)
+
+
+    public static void GetSelectedRouteName( string selectedRouteName )
     {
       if ( FromToTreePanel != null ) {
-        FromToTreePanel.SelectTreeViewItem(selectedRouteName);
+        FromToTreePanel.SelectTreeViewItem( selectedRouteName ) ;
       }
       else {
         return ;
@@ -26,7 +26,15 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 
       return allRoutes ;
     }
-    
-    
+
+    public static void ClearSelection()
+    {
+      if ( FromToTreePanel != null ) {
+        FromToTreePanel.ClearSelection() ;
+      }
+      else {
+        return ;
+      }
+    }
   }
 }

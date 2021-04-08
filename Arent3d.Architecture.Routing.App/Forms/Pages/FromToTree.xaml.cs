@@ -40,6 +40,15 @@ namespace Arent3d.Architecture.Routing.App.Forms
     }
 
     /// <summary>
+    /// clear selection and SelectedFromToDialog
+    /// </summary>
+    public void ClearSelection()
+    {
+      ClearSelectedItem() ;
+      SelectedFromTo.ClearDialog() ;
+    }
+
+    /// <summary>
     /// initialize page
     /// </summary>
     /// <param name="uiApplication"></param>
@@ -50,7 +59,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
       AllRoutes = UiDoc.Document.CollectRoutes().ToList() ;
       // call the treeview display method
       DisplayTreeViewItem( AllRoutes ) ;
-      SelectedFromTo.ClearDialog() ;
     }
 
     /// <summary>
@@ -58,6 +66,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// </summary>
     private void DisplayTreeViewItem( IReadOnlyCollection<Route> allRoutes )
     {
+      //clear selection;
+      ClearSelectedItem() ;
       // clear items first
       FromToTreeView.Items.Clear() ;
 
@@ -171,13 +181,23 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="selectedRouteName"></param>
     public void SelectTreeViewItem( string selectedRouteName )
     {
-      var targetItem = GetTreeViewItemFromName( FromToTreeView.Items , selectedRouteName ) ;
-      
+      var targetItem = GetTreeViewItemFromName( FromToTreeView.Items, selectedRouteName ) ;
+
       if ( targetItem != null ) {
         // Select in TreeView
         targetItem.IsSelected = true ;
         // Scorll to Item
-        targetItem.BringIntoView();
+        targetItem.BringIntoView() ;
+      }
+    }
+
+    /// <summary>
+    /// Clear selection it treeview
+    /// </summary>
+    private void ClearSelectedItem()
+    {
+      if ( FromToTreeView.SelectedItem is TreeViewItem selectedItem ) {
+        selectedItem.IsSelected = false ;
       }
     }
 
@@ -187,24 +207,23 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="collection"></param>
     /// <param name="targetName"></param>
     /// <returns></returns>
-    private TreeViewItem? GetTreeViewItemFromName(ItemCollection collection, String targetName)
+    private TreeViewItem? GetTreeViewItemFromName( ItemCollection collection, String targetName )
     {
-      foreach(TreeViewItem item in collection)
-      {
+      foreach ( TreeViewItem item in collection ) {
         // Find in current
-        if (item.Header.Equals(targetName))
-        {
-          return item;
+        if ( item.Header.Equals( targetName ) ) {
+          return item ;
         }
+
         // Find in Childs
-        TreeViewItem? childItem = this.GetTreeViewItemFromName(item.Items, targetName);
-          if (childItem != null)
-          {
-            item.IsExpanded = true;
-            return childItem;
-          }
+        TreeViewItem? childItem = this.GetTreeViewItemFromName( item.Items, targetName ) ;
+        if ( childItem != null ) {
+          item.IsExpanded = true ;
+          return childItem ;
+        }
       }
-      return null;
+
+      return null ;
     }
   }
 }

@@ -103,7 +103,6 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       CurveTypeIndex = CurveTypes.ToList().FindIndex( c => c.Id == curveType.Id ) ;
       //Direct Info
       IsDirect = route.GetSubRoute( 0 )?.IsRoutingOnPipeSpace ?? throw new ArgumentNullException( nameof( IsDirect ) ) ;
-      
     }
 
     /// <summary>
