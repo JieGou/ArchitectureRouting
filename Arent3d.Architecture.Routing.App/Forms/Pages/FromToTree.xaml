@@ -5,7 +5,9 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
       mc:Ignorable="d"
-      Title="FromToTree" Height="Auto" Width="Auto" Background="White">
+      Title="FromToTree" 
+      x:Name="root"
+      Height="Auto" Width="Auto" Background="White">
     <Grid Background="White" Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -22,7 +24,8 @@
                   BorderBrush="LightGray" BorderThickness="1"
                   SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"
                   MouseDoubleClick="FromToTreeView_OnMouseDoubleClick"
-                  VirtualizingStackPanel.IsVirtualizing="True"/>
+                  VirtualizingStackPanel.IsVirtualizing="True">
+        </TreeView>
         
         <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" />
 
