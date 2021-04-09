@@ -45,14 +45,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         var doc = _uiApp.ActiveUIDocument.Document ;
         //Initialize TreeView
         _dockableWindow.CustomInitiator( _uiApp ) ;
+        
         // Get Selected Routes
         var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( _uiApp.ActiveUIDocument ).EnumerateAll() ;
-
+        var selectedConnectors = doc.CollectRoutes().SelectMany( r => r.GetAllConnectors( doc ) ).ToList() ;
+        
         //Get ElementIds in activeview
         ElementOwnerViewFilter elementOwnerViewFilter = new ElementOwnerViewFilter( doc.ActiveView.Id ) ;
         FilteredElementCollector collector = new FilteredElementCollector( doc, doc.ActiveView.Id ) ;
         var elementsInActiveView = collector.ToElementIds() ;
-
+        
         if ( 0 < selectedRoutes.Count ) {
           var selectedRouteName = selectedRoutes.ToList()[ 0 ].RouteName ;
           var targetElements = doc?.GetAllElementsOfRouteName<Element>( selectedRouteName ).Select( elem => elem.Id ).ToList() ;
@@ -60,12 +62,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
           if ( targetElements != null ) {
             if ( elementsInActiveView.Any( ids => targetElements.Contains( ids ) ) ) {
               //Select TreeViewItem
-              FromToTreeViewModel.GetSelectedRouteName( selectedRouteName ) ;
-            }
-            else {
-              FromToTreeViewModel.ClearSelection();
+              FromToTreeViewModel.GetSelectedElementId( selectedRoutes.ToList()[ 0 ].OwnerElement?.Id ) ;
             }
           }
+        }
+        else if ( selectedConnectors.Any( c => _uiApp.ActiveUIDocument.Selection.GetElementIds().Contains(c.Owner.Id) )  ) {
+          var selectedElementId = _uiApp.ActiveUIDocument.Selection.GetElementIds().FirstOrDefault() ;
+          FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
+        }
+        else {
+          FromToTreeViewModel.ClearSelection();
         }
       }
     }

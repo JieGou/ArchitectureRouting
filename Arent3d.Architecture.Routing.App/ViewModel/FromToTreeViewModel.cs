@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.App.Forms ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.ViewModel
@@ -10,10 +11,10 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     public static FromToTree? FromToTreePanel { get ; set ; }
 
 
-    public static void GetSelectedRouteName( string selectedRouteName )
+    public static void GetSelectedElementId( ElementId? elementId )
     {
       if ( FromToTreePanel != null ) {
-        FromToTreePanel.SelectTreeViewItem( selectedRouteName ) ;
+        FromToTreePanel.SelectTreeViewItem( elementId ) ;
       }
       else {
         return ;

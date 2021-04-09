@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
 {
   public class MonitorSelectionCommandEnabler : IExternalCommandAvailability
   {
-    private string? PreviousSelectedRoute = null ;
+    private ElementId? PreviousSelectedRouteElementId = null ;
 
     public bool IsCommandAvailable( UIApplication uiApp, CategorySet selectedCategories )
     {
@@ -22,19 +22,28 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
 
       // Raise the SelectionChangedEvent
       var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( uiDoc ).EnumerateAll() ;
-
+      var selectedConnectors = uiDoc.Document.CollectRoutes().SelectMany( r => r.GetAllConnectors( uiDoc.Document ) ).ToList() ;
+      
+      ElementId? selectedElementId = null ;
+      // if route selected
       if ( 0 < selectedRoutes.Count ) {
-        var selectedRouteName = selectedRoutes.ToList()[ 0 ].RouteName ;
-        if ( selectedRouteName != PreviousSelectedRoute ) {
-          FromToTreeViewModel.GetSelectedRouteName( selectedRouteName ) ;
+        selectedElementId = selectedRoutes.ToList()[ 0 ].OwnerElement?.Id ;
+        if ( selectedElementId != PreviousSelectedRouteElementId ) {
+          FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
         }
-
-        PreviousSelectedRoute = selectedRoutes.ToList()[ 0 ].RouteName ;
+        PreviousSelectedRouteElementId = selectedElementId ; ;
+      } 
+      // if Connector selected
+      else if ( selectedConnectors.Any( c => uiDoc.Selection.GetElementIds().Contains(c.Owner.Id) )  ) {
+        selectedElementId = uiDoc.Selection.GetElementIds().FirstOrDefault() ;
+        FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
+        PreviousSelectedRouteElementId = selectedElementId ; 
       }
-      else if ( PreviousSelectedRoute != null ) {
+      else if ( PreviousSelectedRouteElementId != null ) {
         FromToTreeViewModel.ClearSelection() ;
-        PreviousSelectedRoute = null ;
+        PreviousSelectedRouteElementId = null ;
       }
+      
 
 
       return false ;
