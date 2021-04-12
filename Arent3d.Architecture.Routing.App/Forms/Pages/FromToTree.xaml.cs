@@ -9,6 +9,7 @@ using System.Windows.Controls ;
 using System.Windows.Input ;
 using System.Windows.Media ;
 using System.Windows.Media.Imaging ;
+using Arent3d.Architecture.Routing.App.Model ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -58,7 +59,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       UiDoc = uiApplication.ActiveUIDocument ;
       AllRoutes = UiDoc.Document.CollectRoutes().ToList() ;
       // call the treeview display method
-      DisplayTreeViewItem( AllRoutes ) ;
+      DisplayTreeViewItem(AllRoutes);
     }
 
     /// <summary>
@@ -78,7 +79,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
           var childBranches = new List<Route>() ;
 
           var parentFromTos = new List<Route>() ;
-
 
           foreach ( var route in allRoutes ) {
             // get ChildBranches
@@ -102,9 +102,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
             FromToTreeView.Items.Add( routeItem ) ;
             // add connector to branch treeviewitem
             AddConnectorItemToTreeViewItem( Doc, routeItem, route ) ;
-            /*foreach ( var subRoute in route.SubRoutes ) {
-              TreeViewItem subrouteItem = new TreeViewItem() { Uid = route.OwnerElement?.Id.ToString(), Tag = "Route" } ;
-            }*/
           }
 
           // create branches tree
@@ -121,6 +118,20 @@ namespace Arent3d.Architecture.Routing.App.Forms
         }
       }
     }
+
+    private void DisplayTreeViewItem( UIApplication uiApp, IReadOnlyCollection<Route> allRoutes )
+    {
+      var fromToVm = new FromToTreeViewModel() ;
+
+      fromToVm.FromToModel = new FromToModel(uiApp) ;
+      fromToVm.SetFromToItems();
+
+      FromToTreeView.DataContext = fromToVm ;
+
+      FromToTreeView.ItemsSource = fromToVm.FromToItems ;
+      
+    }
+
 
     /// <summary>
     /// GetParentTree recursively
@@ -258,7 +269,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         case "Connector" :
           targetElements.Add( UIHelper.GetElementIdFromViewItem( selectedItem ) ) ;
           UiDoc?.Selection.SetElementIds( targetElements ) ;
-          SelectedFromTo.ClearDialog();
+          SelectedFromTo.ClearDialog() ;
           break ;
       }
     }
@@ -310,7 +321,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         // Scorll to Item
         targetItem.BringIntoView() ;
         if ( targetItem.Tag.ToString() == "Connector" ) {
-          SelectedFromTo.ClearDialog();
+          SelectedFromTo.ClearDialog() ;
         }
       }
     }

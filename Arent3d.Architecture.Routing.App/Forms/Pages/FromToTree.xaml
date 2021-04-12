@@ -5,7 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
       mc:Ignorable="d"
-      Title="FromToTree" 
+      Title="FromToTree"
       x:Name="root"
       Height="Auto" Width="Auto" Background="White">
     <Grid Background="White" Margin="5">
@@ -25,8 +25,13 @@
                   SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"
                   MouseDoubleClick="FromToTreeView_OnMouseDoubleClick"
                   VirtualizingStackPanel.IsVirtualizing="True">
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate DataType="local:FromToItem" ItemsSource="{Binding Children}">
+                    <TextBlock Text="{Binding Name}" />
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
         </TreeView>
-        
+
         <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" />
 
     </Grid>
