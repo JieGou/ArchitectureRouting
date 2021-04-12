@@ -30,7 +30,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public SelectedFromToBase()
     {
       InitializeComponent() ;
-      
+
       DiameterIndex = 0 ;
       SystemTypeIndex = 0 ;
       CurveTypeIndex = 0 ;
@@ -40,17 +40,17 @@ namespace Arent3d.Architecture.Routing.App.Forms
       SystemTypes = new ObservableCollection<MEPSystemType>() ;
       CurveTypes = new ObservableCollection<MEPCurveType>() ;
     }
-    
+
     /// <summary>
     /// Get LableName from CurveType
     /// </summary>
     /// <param name="targetStrings"></param>
     /// <returns></returns>
-    public string GetTypeLabel(string targetStrings)
+    public string GetTypeLabel( string targetStrings )
     {
       string[] splitStrings = Regex.Split( targetStrings, "Type" ) ;
 
-      return splitStrings[ 0 ] + " Type";
+      return splitStrings[ 0 ] + " Type" ;
     }
 
     private void SystemTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -75,19 +75,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
     }
 
-    private void Dialog3Buttons_OnOKClick( object sender, System.Windows.RoutedEventArgs e )
-    {
-    }
-
-    private void Dialog3Buttons_OnApplyClick( object sender, System.Windows.RoutedEventArgs e )
-    {
-      SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
-    }
-
-    private void Dialog3Buttons_OnCancelClick( object sender, System.Windows.RoutedEventArgs e )
-    {
-    }
-
     /// <summary>
     /// Update Diameters, SystemTypes, and CurveTypes
     /// </summary>
@@ -96,29 +83,29 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="curveTypes"></param>
     public void UpdateFromToParameters( IList<double>? diameters, IList<MEPSystemType>? systemTypes, IList<MEPCurveType>? curveTypes )
     {
-      Diameters.Clear();
-      SystemTypes.Clear();
-      CurveTypes.Clear();
+      Diameters.Clear() ;
+      SystemTypes.Clear() ;
+      CurveTypes.Clear() ;
 
       if ( diameters != null ) {
         foreach ( var d in diameters ) {
-          Diameters.Add(UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" );
+          Diameters.Add( UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ;
         }
       }
 
       if ( systemTypes != null ) {
         foreach ( var s in systemTypes ) {
-          SystemTypes.Add(s);
+          SystemTypes.Add( s ) ;
         }
       }
 
       if ( curveTypes != null ) {
         foreach ( var c in curveTypes ) {
-          CurveTypes.Add(c);
+          CurveTypes.Add( c ) ;
         }
       }
     }
-    
+
     public void ResetDialog()
     {
       SystemTypeComboBox.ItemsSource = SystemTypes ;
@@ -141,6 +128,18 @@ namespace Arent3d.Architecture.Routing.App.Forms
       Direct.IsChecked = CurrentDirect ;
     }
 
+    public void ClearDialog()
+    {
+      DiameterIndex = 0 ;
+      SystemTypeIndex = 0 ;
+      CurveTypeIndex = 0 ;
+      CurveTypeLabel = "Type" ;
+      Direct.IsChecked = false ;
+      Diameters.Clear() ;
+      SystemTypes.Clear() ;
+      CurveTypes.Clear() ;
+    }
+
     private void Direct_OnChecked( object sender, RoutedEventArgs e )
     {
       SelectedFromToViewModel.IsDirect = true ;
@@ -149,6 +148,19 @@ namespace Arent3d.Architecture.Routing.App.Forms
     private void Direct_OnUnchecked( object sender, RoutedEventArgs e )
     {
       SelectedFromToViewModel.IsDirect = false ;
+    }
+
+    private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
+    {
+      SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
+    }
+
+    private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
+    {
+    }
+
+    private void Dialog2Buttons_Loaded( object sender, RoutedEventArgs e )
+    {
     }
   }
 }

@@ -8,11 +8,11 @@
                        mc:Ignorable="d"
                        Title="FromToWindow" Height="450" Width="700">
     <Grid>
-        <local:Dilog2Buttons
+        <local:Dialog2Buttons
             VerticalAlignment="Top"
             HorizontalAlignment="Right"
-            ImportOnClick="Dilog2Buttons_OnImportOnClick"
-            ExportOnClick="Dilog2Buttons_OnExportOnClick"
+            LeftOnClick="Dilog2Buttons_OnLeftOnClick"
+            RightOnClick="Dilog2Buttons_OnRightOnClick"
             Margin="0,5,0,5" />
 
         <DataGrid x:Name="FromToList"
@@ -57,6 +57,9 @@
         <local:Dialog3Buttons
             VerticalAlignment="Bottom"
             HorizontalAlignment="Right"
+            LeftButton="OK"
+            CenterButton="Apply"
+            RightButton="Cancel"
             OnOKClick="Dialog3Buttons_OnOnOKClick"
             OnApplyClick="Dialog3Buttons_OnOnApplyClick"
             OnCancelClick="Dialog3Buttons_OnOnCancelClick"

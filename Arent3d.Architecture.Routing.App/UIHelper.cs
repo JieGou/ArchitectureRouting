@@ -1,4 +1,8 @@
-﻿namespace Arent3d.Architecture.Routing.App
+﻿using System ;
+using System.Windows.Controls ;
+using Autodesk.Revit.DB ;
+
+namespace Arent3d.Architecture.Routing.App
 {
   public static class UIHelper
   {
@@ -14,6 +18,12 @@
       }
 
       return targetStrings ;
+    }
+
+    public static ElementId GetElementIdFromViewItem( TreeViewItem treeViewItem )
+    {
+      var elementId = new ElementId( Convert.ToInt32( treeViewItem.Uid ) ) ;
+      return elementId ;
     }
   }
 }

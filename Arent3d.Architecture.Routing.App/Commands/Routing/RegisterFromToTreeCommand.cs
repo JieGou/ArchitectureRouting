@@ -1,13 +1,17 @@
 ﻿using System ;
+using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
+using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
+using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
@@ -38,9 +42,41 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       // provide ExternalCommandData object to dockable page
       if ( _dockableWindow != null && _uiApp != null ) {
+        var doc = _uiApp.ActiveUIDocument.Document ;
+        //Initialize TreeView
         _dockableWindow.CustomInitiator( _uiApp ) ;
+        
+        // Get Selected Routes
+        var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( _uiApp.ActiveUIDocument ).EnumerateAll() ;
+        var selectedConnectors = doc.CollectRoutes().SelectMany( r => r.GetAllConnectors( doc ) ).ToList() ;
+        
+        //Get ElementIds in activeview
+        ElementOwnerViewFilter elementOwnerViewFilter = new ElementOwnerViewFilter( doc.ActiveView.Id ) ;
+        FilteredElementCollector collector = new FilteredElementCollector( doc, doc.ActiveView.Id ) ;
+        var elementsInActiveView = collector.ToElementIds() ;
+        
+        if ( 0 < selectedRoutes.Count ) {
+          var selectedRouteName = selectedRoutes.ToList()[ 0 ].RouteName ;
+          var targetElements = doc?.GetAllElementsOfRouteName<Element>( selectedRouteName ).Select( elem => elem.Id ).ToList() ;
+
+          if ( targetElements != null ) {
+            if ( elementsInActiveView.Any( ids => targetElements.Contains( ids ) ) ) {
+              //Select TreeViewItem
+              FromToTreeViewModel.GetSelectedElementId( selectedRoutes.ToList()[ 0 ].OwnerElement?.Id ) ;
+            }
+          }
+        }
+        else if ( selectedConnectors.Any( c => _uiApp.ActiveUIDocument.Selection.GetElementIds().Contains(c.Owner.Id) )  ) {
+          var selectedElementId = _uiApp.ActiveUIDocument.Selection.GetElementIds().FirstOrDefault() ;
+          FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
+        }
+        else {
+          FromToTreeViewModel.ClearSelection();
+        }
       }
     }
+    
+    
 
     // document opened event
     private void Application_DocumentOpened( object sender, Autodesk.Revit.DB.Events.DocumentOpenedEventArgs e )
@@ -48,6 +84,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       // provide ExternalCommandData object to dockable page
       if ( _dockableWindow != null && _uiApp != null ) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
+        FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
       }
     }
 
@@ -60,11 +97,11 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var transactions = e.GetTransactionNames() ;
 
       // provide ExternalCommandData object to dockable page
-      if ( _dockableWindow != null && _uiApp != null && transactions.Any(GetRoutingTransactions)){
+      if ( _dockableWindow != null && _uiApp != null && transactions.Any( GetRoutingTransactions ) ) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
       }
     }
-    
+
     private static bool GetRoutingTransactions( string t )
     {
       var routingTransactions = new List<string>
