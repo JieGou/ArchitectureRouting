@@ -19,9 +19,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
 {
   public partial class FromToTree : Page, IDockablePaneProvider
   {
-    private Document? Doc { get ; set ; }
-    private UIDocument? UiDoc { get ; set ; }
-    private IReadOnlyCollection<Route>? AllRoutes { get ; set ; }
+    private static Document? Doc { get ; set ; }
+    private static UIDocument? UiDoc { get ; set ; }
+    private static IReadOnlyCollection<Route>? AllRoutes { get ; set ; }
 
     private SortedDictionary<string, TreeViewItem>? ItemDictionary { get ; set ; }
 
@@ -59,77 +59,19 @@ namespace Arent3d.Architecture.Routing.App.Forms
       UiDoc = uiApplication.ActiveUIDocument ;
       AllRoutes = UiDoc.Document.CollectRoutes().ToList() ;
       // call the treeview display method
-      DisplayTreeViewItem(AllRoutes);
-    }
-
-    /// <summary>
-    /// set TreeViewItems
-    /// </summary>
-    private void DisplayTreeViewItem( IReadOnlyCollection<Route> allRoutes )
-    {
-      if ( FromToTreeView != null ) {
-        //clear selection;
-        ClearSelectedItem() ;
-        // clear items first
-        FromToTreeView.Items.Clear() ;
-
-        if ( ItemDictionary != null ) {
-          ItemDictionary.Clear() ;
-
-          var childBranches = new List<Route>() ;
-
-          var parentFromTos = new List<Route>() ;
-
-          foreach ( var route in allRoutes ) {
-            // get ChildBranches
-            if ( route.HasParent() ) {
-              childBranches.Add( route ) ;
-            }
-            // get ChildBranches
-            else {
-              parentFromTos.Add( route ) ;
-            }
-          }
-
-          // create Route tree
-          foreach ( var route in parentFromTos.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
-            // create route treeviewitem/
-            TreeViewItem routeItem = new TreeViewItem() { Uid = route.OwnerElement?.Id.ToString(), Tag = "Route" } ;
-            SetHeaderStackPanel( routeItem, route.RouteName ) ;
-            // store in dict
-            ItemDictionary[ route.RouteName ] = routeItem ;
-            // add to treeview
-            FromToTreeView.Items.Add( routeItem ) ;
-            // add connector to branch treeviewitem
-            AddConnectorItemToTreeViewItem( Doc, routeItem, route ) ;
-          }
-
-          // create branches tree
-          foreach ( var c in childBranches ) {
-            TreeViewItem branchItem = new TreeViewItem() { Uid = c.OwnerElement?.Id.ToString(), Tag = "Route" } ;
-            SetHeaderStackPanel( branchItem, c.RouteName ) ;
-            var parentRouteName = c.GetParentBranches().ToList().Last().RouteName ;
-            // search own parent TreeViewItem
-            ItemDictionary[ parentRouteName ].Items.Add( branchItem ) ;
-            ItemDictionary[ c.RouteName ] = branchItem ;
-            // add connector to branch treeviewitem
-            AddConnectorItemToTreeViewItem( Doc, branchItem, c ) ;
-          }
-        }
-      }
+      DisplayTreeViewItem( uiApplication, AllRoutes ) ;
     }
 
     private void DisplayTreeViewItem( UIApplication uiApp, IReadOnlyCollection<Route> allRoutes )
     {
       var fromToVm = new FromToTreeViewModel() ;
 
-      fromToVm.FromToModel = new FromToModel(uiApp) ;
-      fromToVm.SetFromToItems();
+      fromToVm.FromToModel = new FromToModel( uiApp ) ;
+      fromToVm.SetFromToItems() ;
 
       FromToTreeView.DataContext = fromToVm ;
 
       FromToTreeView.ItemsSource = fromToVm.FromToItems ;
-      
     }
 
 
@@ -157,32 +99,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       return null ;
-    }
-
-    /// <summary>
-    /// Add Conncecotor to FromTo TreeVieItem
-    /// </summary>
-    /// <param name="doc"></param>
-    /// <param name="targetItem"></param>
-    /// <param name="targetRoute"></param>
-    private void AddConnectorItemToTreeViewItem( Document? doc, TreeViewItem targetItem, Route targetRoute )
-    {
-      if ( Doc != null ) {
-        var connectors = targetRoute.GetAllConnectors( Doc ) ;
-        foreach ( var connector in connectors ) {
-          if ( connector.Owner is FamilyInstance familyInstance ) {
-            TreeViewItem viewItem = new TreeViewItem() { Uid = connector.Owner.Id.ToString(), Tag = "Connector" } ;
-            SetHeaderStackPanel( viewItem, familyInstance.Symbol.Family.Name + ":" + connector.Owner.Name ) ;
-            targetItem.Items.Add( viewItem ) ;
-          }
-          else {
-            continue ;
-          }
-        }
-      }
-      else {
-        return ;
-      }
     }
 
     /// <summary>
@@ -221,7 +137,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// Set SelectedFromtTo Dialog by Selected Route
     /// </summary>
     /// <param name="route"></param>
-    private void DisplaySelectedFromTo( Route route )
+    private void DisplaySelectedFromTo( Route? route )
     {
       if ( Doc != null && UiDoc != null ) {
         SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, route ) ;
@@ -249,28 +165,18 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="e"></param>
     private void FromToTreeView_OnSelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
     {
-      if ( FromToTreeView.SelectedItem is not TreeViewItem selectedItem ) {
-        return ;
-      }
+      var selectedItem = FromToTreeView.SelectedItem ;
+      ( selectedItem as FromToItem )?.OnSelected() ;
 
-      List<ElementId>? targetElements = new List<ElementId>() ;
-      switch ( selectedItem.Tag ) {
-        case "Route" :
-          var selectedRoute = AllRoutes?.ToList().Find( r => r.OwnerElement?.Id == UIHelper.GetElementIdFromViewItem( selectedItem ) ) ;
-
-          if ( selectedRoute != null ) {
-            targetElements = Doc?.GetAllElementsOfRouteName<Element>( selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
-            //Select targetElements
-            UiDoc?.Selection.SetElementIds( targetElements ) ;
-            DisplaySelectedFromTo( selectedRoute ) ;
-          }
-
-          break ;
-        case "Connector" :
-          targetElements.Add( UIHelper.GetElementIdFromViewItem( selectedItem ) ) ;
-          UiDoc?.Selection.SetElementIds( targetElements ) ;
+      if ( selectedItem is FromToItem selectedRFromToItem ) {
+        if ( selectedRFromToItem.DisplaySelectedFromTo ) {
+          // show SelectedFromTo 
+          DisplaySelectedFromTo( ( selectedItem as FromToItem.RouteItem )?.SelectedRoute ) ;
+        }
+        else {
+          // don't show SelectedFromTo 
           SelectedFromTo.ClearDialog() ;
-          break ;
+        }
       }
     }
 
@@ -281,29 +187,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="e"></param>
     private void FromToTreeView_OnMouseDoubleClick( object sender, MouseButtonEventArgs e )
     {
-      if ( FromToTreeView.SelectedItem is not TreeViewItem selectedItem ) {
-        return ;
-      }
-
-      selectedItem.IsExpanded = false ;
-
-      List<ElementId>? targetElements = new List<ElementId>() ;
-      switch ( selectedItem.Tag ) {
-        case "Route" :
-          var selectedRoute = AllRoutes?.ToList().Find( r => r.OwnerElement?.Id == UIHelper.GetElementIdFromViewItem( selectedItem ) ) ;
-
-          if ( selectedRoute != null ) {
-            targetElements = Doc?.GetAllElementsOfRouteName<Element>( selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
-            //Select targetElements
-            UiDoc?.ShowElements( targetElements ) ;
-          }
-
-          break ;
-        case "Connector" :
-          targetElements.Add( UIHelper.GetElementIdFromViewItem( selectedItem ) ) ;
-          UiDoc?.ShowElements( targetElements ) ;
-          break ;
-      }
+      var selectedItem = FromToTreeView.SelectedItem ;
+      ( selectedItem as FromToItem )?.OnDoubleClicked() ;
     }
 
 
