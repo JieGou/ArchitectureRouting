@@ -258,9 +258,8 @@ namespace Arent3d.Architecture.Routing
     /// <returns></returns>
     public bool HasParent()
     {
-      var parents = GetParentBranches() ;
-
-      return parents.Count > 0 ;
+      return _subRoutes.SelectMany( subRoute => subRoute.AllEndPointIndicators ).
+        Any( ind => null != ind.ParentBranch( Document ).Route ) ;
     }
 
     private static void AddChildren( HashSet<Route> routeSet, Route root, Action<Route>? onAdd = null )
