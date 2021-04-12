@@ -26,13 +26,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
       
       ElementId? selectedElementId = null ;
       // if route selected
-      if ( 0 < selectedRoutes.Count ) {
-        selectedElementId = selectedRoutes.ToList()[ 0 ].OwnerElement?.Id ;
+      if ( selectedRoutes.FirstOrDefault() is {} selectedRoute ) {
+        selectedElementId = selectedRoute.OwnerElement?.Id ;
         if ( selectedElementId != PreviousSelectedRouteElementId ) {
           FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
         }
         PreviousSelectedRouteElementId = selectedElementId ; ;
-      } 
+      }
+      
       // if Connector selected
       else if ( selectedConnectors.Any( c => uiDoc.Selection.GetElementIds().Contains(c.Owner.Id) )  ) {
         selectedElementId = uiDoc.Selection.GetElementIds().FirstOrDefault() ;
