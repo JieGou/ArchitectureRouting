@@ -23,8 +23,7 @@
         <TreeView Name="FromToTreeView" Width="Auto" Height="100" Grid.Row="1"
                   BorderBrush="LightGray" BorderThickness="1"
                   SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"
-                  MouseDoubleClick="FromToTreeView_OnMouseDoubleClick"
-                  VirtualizingStackPanel.IsVirtualizing="True">
+                  MouseDoubleClick="FromToTreeView_OnMouseDoubleClick">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="local:FromToItem" ItemsSource="{Binding Children}">
                     <TextBlock Text="{Binding Name}" />
