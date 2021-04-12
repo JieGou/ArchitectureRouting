@@ -1,5 +1,4 @@
 ﻿using System ;
-using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -8,9 +7,10 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.ShowFrom_ToWindowCommand", DefaultString = "From-To\nWindow" )]
-  [Image( "resources/From-ToWindow.png" )]
-  public class ShowFrom_ToWindowCommand : IExternalCommand
+  [Regeneration( RegenerationOption.Manual )]
+  [DisplayNameKey( "App.Commands.Routing.ShowFromTreeCommand", DefaultString = "From-To\nTree" )]
+  [Image( "resources/MEP.ico" )]
+  public class ShowFromToTreeCommand : IExternalCommand
   {
     private UIDocument? _uiDocument = null ;
 
@@ -18,10 +18,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       _uiDocument = commandData.Application.ActiveUIDocument ;
       try {
-        FromToWindowViewModel.ShowFromToWindow( _uiDocument ) ;
+        var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
+        var dp = _uiDocument.Application.GetDockablePane( dpid ) ;
+        if ( ! dp.IsShown() ) {
+          dp.Show() ;
+        }
       }
       catch ( Exception e ) {
-        TaskDialog.Show( "ShowFrom_ToWindowCommand", e.Message ) ;
+        TaskDialog.Show( "ShowFromToTreeCommand", e.Message ) ;
       }
 
       return Result.Succeeded ;

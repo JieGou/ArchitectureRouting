@@ -1,13 +1,19 @@
-using System.Collections.Generic;
+using System ;
+using System.Collections.Generic ;
+using System.Windows ;
+using Arent3d.Architecture.Routing.App.Commands ;
 using Arent3d.Architecture.Routing.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.App.Commands.PassPoint ;
-using Arent3d.Architecture.Routing.App.Commands.BranchPoint;
+using Arent3d.Architecture.Routing.App.Commands.BranchPoint ;
 using Arent3d.Architecture.Routing.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.App.Commands.Rack ;
-using Arent3d.Architecture.Routing.App.Commands.Selecting;
+using Arent3d.Architecture.Routing.App.Commands.Selecting ;
+using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -27,25 +33,27 @@ namespace Arent3d.Architecture.Routing.App
 
     private readonly RibbonButton _pickAndReRouteCommandButton ;
     private readonly RibbonButton _allReRouteCommandButton ;
-    
+
     private readonly RibbonButton _insertPassPointCommandButton ;
     private readonly RibbonButton _insertBranchPointCommandButton ; //just show dialog
-    
+
     private readonly RibbonButton _eraseSelectedRoutesCommandButton ;
     private readonly RibbonButton _eraseAllRoutesCommandButton ;
-    
-    private readonly RibbonButton _replaceFromToCommandButton ;//just show dialog
-    private readonly RibbonButton _showFromToWindowCommandButton ;//just show dialog
-    
+
+    private readonly RibbonButton _replaceFromToCommandButton ; //just show dialog
+    private readonly RibbonButton _showFromToWindowCommandButton ;
+    private readonly RibbonButton _showFromToTreeCommandButton ;
+
     private readonly RibbonButton _fileRoutingCommandButton ;
     private readonly RibbonButton _exportRoutingCommandButton ;
-    
+
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
     private readonly RibbonButton _eraseAllRacksCommandButton ;
 
-    private readonly RibbonButton _modifySelectedFromToCommandButton;
+    private readonly RibbonButton _modifySelectedFromToCommandButton ;
 
+    private readonly RibbonButton _monitorSelectionCommandButton ;
 
 
     private RoutingAppUI( UIControlledApplication application )
@@ -61,19 +69,22 @@ namespace Arent3d.Architecture.Routing.App
         _pickRoutingCommandButton = routingPanel.AddButton<PickRoutingCommand>() ;
         _pickAndReRouteCommandButton = routingPanel.AddButton<PickAndReRouteCommand>() ;
         _allReRouteCommandButton = routingPanel.AddButton<AllReRouteCommand>() ;
-        
+
         _insertPassPointCommandButton = routingPanel.AddButton<InsertPassPointCommand>() ;
-        _insertBranchPointCommandButton = routingPanel.AddButton<InsertBranchPointCommand>();
-        
+        _insertBranchPointCommandButton = routingPanel.AddButton<InsertBranchPointCommand>() ;
+
         _eraseSelectedRoutesCommandButton = routingPanel.AddButton<EraseSelectedRoutesCommand>() ;
         _eraseAllRoutesCommandButton = routingPanel.AddButton<EraseAllRoutesCommand>() ;
 
-        _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>();
+        _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>() ;
         _modifySelectedFromToCommandButton = routingPanel.AddButton<GetSelectedFromToInfoCommand>() ;
-        _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>();
+        _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
+        _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
 
         _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
         _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
+
+        _monitorSelectionCommandButton = routingPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
       {
         var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
@@ -81,7 +92,10 @@ namespace Arent3d.Architecture.Routing.App
         _exportRacksCommandButton = rackPanel.AddButton<ExportRacksCommand>() ;
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
       }
-      
+
+      application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters ;
+      application.ControlledApplication.ApplicationInitialized += new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ) ;
+
       InitializeRibbon() ;
     }
 
@@ -103,17 +117,18 @@ namespace Arent3d.Architecture.Routing.App
       _eraseAllRoutesCommandButton.Enabled = false ;
       _exportRoutingCommandButton.Enabled = false ;
 
-      _insertPassPointCommandButton.Enabled = false;
-      _insertBranchPointCommandButton.Enabled = false;
+      _insertPassPointCommandButton.Enabled = false ;
+      _insertBranchPointCommandButton.Enabled = false ;
 
-      _replaceFromToCommandButton.Enabled = false;
-      _showFromToWindowCommandButton.Enabled = false;
-      
+      _replaceFromToCommandButton.Enabled = false ;
+      _showFromToWindowCommandButton.Enabled = false ;
+      _showFromToTreeCommandButton.Enabled = false ;
+
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
       _eraseAllRacksCommandButton.Enabled = false ;
 
-      _modifySelectedFromToCommandButton.Enabled = false;
+      _modifySelectedFromToCommandButton.Enabled = false ;
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
@@ -137,16 +152,23 @@ namespace Arent3d.Architecture.Routing.App
       _exportRoutingCommandButton.Enabled = setupIsDone ;
 
       _insertPassPointCommandButton.Enabled = setupIsDone ;
-      _insertBranchPointCommandButton.Enabled = setupIsDone;
+      _insertBranchPointCommandButton.Enabled = setupIsDone ;
 
-      _replaceFromToCommandButton.Enabled = setupIsDone;
-      _showFromToWindowCommandButton.Enabled = setupIsDone;
-      
+      _replaceFromToCommandButton.Enabled = setupIsDone ;
+      _showFromToWindowCommandButton.Enabled = setupIsDone ;
+      _showFromToTreeCommandButton.Enabled = setupIsDone ;
+
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
 
-      _modifySelectedFromToCommandButton.Enabled = setupIsDone;
+      _modifySelectedFromToCommandButton.Enabled = setupIsDone ;
+    }
+
+    private void DockablePaneRegisters( object sender, ApplicationInitializedEventArgs e )
+    {
+      var fromToTreeRegisterCommand = new RegisterFromToTreeCommand() ;
+      fromToTreeRegisterCommand.Execute( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
     }
   }
 }

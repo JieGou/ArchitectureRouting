@@ -181,6 +181,11 @@ namespace Arent3d.Architecture.Routing
       return indicators.Select( ind => ind.GetConnector( document ) ).NonNull() ;
     }
 
+    public IEnumerable<PassPointEndIndicator> GetAllPassPointEndIndicators()
+    {
+      return Enumerable.Empty<PassPointEndIndicator>() ;
+    }
+
     #region Branches
 
     public static HashSet<Route> GetAllRelatedBranches( IEnumerable<Route> routeList )

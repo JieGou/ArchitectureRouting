@@ -4,12 +4,14 @@ using System.Linq ;
 using System.Windows ;
 using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
+using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
+using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
-  public partial class SelectedFromTo : Window
+  public partial class SelectedFromTo : WindowBase
   {
     //Diameter Info
     public ObservableCollection<string> Diameters { get ; set ; }
@@ -27,20 +29,19 @@ namespace Arent3d.Architecture.Routing.App.Forms
     //Direct Info
     public bool CurrentDirect { get ; set ; }
 
-    public SelectedFromTo( Document doc, IList<double> diameters, int diameterIndex, IList<MEPSystemType> systemTypes, int systemTypeIndex, IList<MEPCurveType> curveTypes, int curveTypeIndex, Type type, bool direct )
+    public SelectedFromTo( UIDocument uiDoc, IList<double> diameters, int diameterIndex, IList<MEPSystemType> systemTypes, int systemTypeIndex, IList<MEPCurveType> curveTypes, int curveTypeIndex, Type type, bool direct ) : base( uiDoc )
     {
       InitializeComponent() ;
-      this.SizeToContent = SizeToContent.WidthAndHeight;
+      this.SizeToContent = SizeToContent.WidthAndHeight ;
       DiameterIndex = diameterIndex ;
       SystemTypeIndex = systemTypeIndex ;
       CurveTypeIndex = curveTypeIndex ;
-      CurveTypeLabel = type.Name ;
+      CurveTypeLabel = UIHelper.GetTypeLabel( type.Name ) ;  
       CurrentDirect = direct ;
       Diameters = new ObservableCollection<string>( diameters.Select( d => UnitUtils.ConvertFromInternalUnits( d, UnitTypeId.Millimeters ) + " mm" ) ) ;
       SystemTypes = new ObservableCollection<MEPSystemType>( systemTypes ) ;
       CurveTypes = new ObservableCollection<MEPCurveType>( curveTypes ) ;
     }
-
 
     //Diameter 
     private void DiameterComboBox_Changed( object sender, SelectionChangedEventArgs e )
@@ -68,13 +69,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Dialog3Buttons_OnOKClick( object sender, RoutedEventArgs e )
     {
-      SelectedFromToViewModel.ApplySelectedDiameter( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
+      SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
       this.Close() ;
     }
 
     private void Dialog3Buttons_OnApplyClick( object sender, RoutedEventArgs e )
     {
-      SelectedFromToViewModel.ApplySelectedDiameter( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
+      SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
     }
 
     private void Dialog3Buttons_OnCancelClick( object sender, RoutedEventArgs e )

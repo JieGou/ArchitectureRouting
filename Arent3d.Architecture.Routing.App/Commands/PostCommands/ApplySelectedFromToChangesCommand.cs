@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic ;
 using System.ComponentModel ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
@@ -19,28 +20,49 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
 
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
     {
+      var route = SelectedFromToViewModel.TargetRoute ;
       var pickInfo = SelectedFromToViewModel.TargetPickInfo ;
       var diameters = SelectedFromToViewModel.Diameters ;
       var systemTypes = SelectedFromToViewModel.SystemTypes ;
       var curveTypes = SelectedFromToViewModel.CurveTypes ;
 
-      if ( diameters != null && pickInfo != null && systemTypes != null && curveTypes != null ) {
-        //Change Diameter
-        pickInfo.SubRoute.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
+      if ( diameters != null && systemTypes != null && curveTypes != null ) {
+        if ( route != null ) {
+          if ( route.GetSubRoute( 0 ) is { } subRoute ) {
+            //Change Diameter
+            subRoute.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
 
-        //Change SystemType
-        pickInfo.SubRoute.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
-        RouteMEPSystem routeMepSystem = new RouteMEPSystem( uiDocument.Document, pickInfo.Route ) ;
+            //Change SystemType
+            subRoute.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
 
-        //Change CurveType
-        pickInfo.SubRoute.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
+            //Change CurveType
+            subRoute.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
 
-        //Change Direct
-        pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace( SelectedFromToViewModel.IsDirect ) ;
+            //ChangeDirect
+            subRoute.ChangeIsRoutingOnPipeSpace( SelectedFromToViewModel.IsDirect ) ;
+          }
 
-        //return base.GetRouteSegmentsInTransaction(uiDocument);
-        // question IsDirect is false after Reroute
-        return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
+
+          return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
+        }
+        else if ( pickInfo != null ) {
+          //Change Diameter
+          pickInfo.SubRoute.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
+
+          //Change SystemType
+          pickInfo.SubRoute.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
+
+          //Change CurveType
+          pickInfo.SubRoute.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
+
+          //Change Direct
+          pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace( SelectedFromToViewModel.IsDirect ) ;
+
+          return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
+        }
+        else {
+          return base.GetRouteSegmentsInTransaction( uiDocument ) ;
+        }
       }
       else {
         return base.GetRouteSegmentsInTransaction( uiDocument ) ;

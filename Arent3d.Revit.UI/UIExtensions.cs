@@ -21,6 +21,22 @@ namespace Arent3d.Revit.UI
       return (RibbonButton) ribbonPanel.AddItem( CreateButton<TCommand>( assemblyName ) ) ;
     }
 
+    /// <summary>
+    /// Add PushButton with AvailabilityClassName
+    /// </summary>
+    /// <param name="ribbonPanel"></param>
+    /// <param name="availabilityClassName"></param>
+    /// <typeparam name="TCommand"></typeparam>
+    /// <returns></returns>
+    public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel, string availabilityClassName ) where TCommand : IExternalCommand
+    {
+      var assemblyName = Assembly.GetCallingAssembly().GetName().Name ;
+      var pushButtonData = CreateButton<TCommand>( assemblyName ) ;
+      pushButtonData.AvailabilityClassName = availabilityClassName ;
+
+      return (RibbonButton) ribbonPanel.AddItem( pushButtonData ) ;
+    }
+
     private static PushButtonData CreateButton<TButtonCommand>( string assemblyName ) where TButtonCommand : IExternalCommand
     {
       var commandClass = typeof( TButtonCommand ) ;
@@ -33,9 +49,15 @@ namespace Arent3d.Revit.UI
 
       foreach ( var attr in commandClass.GetCustomAttributes<ImageAttribute>() ) {
         switch ( attr.ImageType ) {
-          case ImageType.Normal : buttonData.Image = ToImageSource( assemblyName, attr ) ; break ;
-          case ImageType.Large : buttonData.LargeImage = ToImageSource( assemblyName, attr ) ; break ;
-          case ImageType.Tooltip : buttonData.ToolTipImage = ToImageSource( assemblyName, attr ) ; break ;
+          case ImageType.Normal :
+            buttonData.Image = ToImageSource( assemblyName, attr ) ;
+            break ;
+          case ImageType.Large :
+            buttonData.LargeImage = ToImageSource( assemblyName, attr ) ;
+            break ;
+          case ImageType.Tooltip :
+            buttonData.ToolTipImage = ToImageSource( assemblyName, attr ) ;
+            break ;
           default : break ;
         }
       }
@@ -49,9 +71,7 @@ namespace Arent3d.Revit.UI
 
     private static string GetDisplayName( Type commandClass )
     {
-      return commandClass.GetCustomAttribute<DisplayNameKeyAttribute>()?.GetApplicationString()
-             ?? commandClass.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName
-             ?? commandClass.Name.SeparateByWords() ;
+      return commandClass.GetCustomAttribute<DisplayNameKeyAttribute>()?.GetApplicationString() ?? commandClass.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? commandClass.Name.SeparateByWords() ;
     }
 
     private static ImageSource? ToImageSource( string assemblyName, ImageAttribute attr )
