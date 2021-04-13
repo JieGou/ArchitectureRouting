@@ -22,10 +22,22 @@ namespace Arent3d.Architecture.Routing
     public const string DefaultFluidPhase = "None" ;
     public const string DefaultInsulationType = "None" ;
 
+    private string _routeName = "None" ;
     /// <summary>
     /// Unique identifier name of a route.
     /// </summary>
-    public string RouteName { get ; private set ; }
+    public string RouteName
+    {
+      get
+      {
+        return this._routeName ;
+      }
+      set
+      {
+        this._routeName = value ;
+        RenameAllDescendents(value);
+      }
+    }
 
     /// <summary>
     /// Reverse dictionary to search which sub route an end point belongs to.
@@ -184,6 +196,11 @@ namespace Arent3d.Architecture.Routing
     public IEnumerable<PassPointEndIndicator> GetAllPassPointEndIndicators()
     {
       return Enumerable.Empty<PassPointEndIndicator>() ;
+    }
+
+    private void RenameAllDescendents( string newRouteName )
+    {
+      
     }
 
     #region Branches
