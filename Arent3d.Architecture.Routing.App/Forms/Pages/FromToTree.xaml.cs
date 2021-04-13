@@ -137,12 +137,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// Set SelectedFromtTo Dialog by Selected Route
     /// </summary>
     /// <param name="route"></param>
-    private void DisplaySelectedFromTo( Route? route )
+    private void DisplaySelectedFromTo()
     {
-      if ( Doc != null && UiDoc != null ) {
-        SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, route ) ;
-      }
-
       SelectedFromTo.UpdateFromToParameters( SelectedFromToViewModel.Diameters, SelectedFromToViewModel.SystemTypes, SelectedFromToViewModel.CurveTypes ) ;
 
       SelectedFromTo.DiameterIndex = SelectedFromToViewModel.DiameterIndex ;
@@ -166,12 +162,14 @@ namespace Arent3d.Architecture.Routing.App.Forms
     private void FromToTreeView_OnSelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
     {
       var selectedItem = FromToTreeView.SelectedItem ;
-      ( selectedItem as FromToItem )?.OnSelected() ;
 
-      if ( selectedItem is FromToItem selectedRFromToItem ) {
-        if ( selectedRFromToItem.DisplaySelectedFromTo ) {
+      if ( selectedItem is FromToItem selectedFromToItem ) {
+        
+        selectedFromToItem.OnSelected() ;
+        
+        if ( selectedFromToItem.DisplaySelectedFromTo ) {
           // show SelectedFromTo 
-          DisplaySelectedFromTo( ( selectedItem as FromToItem.RouteItem )?.SelectedRoute ) ;
+          DisplaySelectedFromTo() ;
         }
         else {
           // don't show SelectedFromTo 

@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     //FromToTree
     public static FromToTree? FromToTreePanel { get ; set ; }
 
-    public ObservableCollection<FromToItem>? FromToItems { get ; set ; }
+    public IReadOnlyCollection<FromToItem>? FromToItems { get ; set ; }
 
     public FromToTreeViewModel()
     {
