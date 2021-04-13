@@ -15,7 +15,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public string ItemTypeName { get ; init ; }
     public string ItemTag { get ; init ; }
     public ElementId? ElementId { get ; init ; }
-    public List<FromToItem>? Children { get ; set ; }
+    public IReadOnlyList<FromToItem> Children => ChildrenList ;
+    
+    private List<FromToItem> ChildrenList { get; set; }
     public abstract BitmapImage? Icon { get ; }
 
     public static SortedDictionary<string, FromToItem>? ItemDictionary { get ; set ; }
@@ -43,7 +45,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       ItemTypeName = "" ;
       ItemTag = "" ;
       ElementId = null ;
-      Children = new List<FromToItem>() ;
+      ChildrenList = new List<FromToItem>() ;
       DisplaySelectedFromTo = false ;
       AllRoutes = allRoutes ;
       Doc = doc ;
@@ -61,8 +63,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
       var parentFromTos = new List<Route>() ;
 
       ItemDictionary = new SortedDictionary<string, FromToItem>() ;
-
-      //IEnumerable<FromToItem> fromToItems ;
 
       foreach ( var route in allRoutes ) {
         if ( route.HasParent() ) {
@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         var parentRouteName = c.GetParentBranches().ToList().Last().RouteName ;
         // search own parent TreeViewItem
         if ( ItemDictionary != null ) {
-          ItemDictionary[ parentRouteName ].Children?.Add( branchItem ) ;
+          ItemDictionary[ parentRouteName ].ChildrenList.Add( branchItem ) ;
           ItemDictionary[ c.RouteName ] = branchItem ;
         }
 
@@ -105,7 +105,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       foreach ( var connector in routeItem.Connectors ) {
         if ( connector.Owner is FamilyInstance familyInstance && routeItem != null ) {
           var connectorItem = new FromToItem.ConnectorItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes ) { ItemTypeName = familyInstance.Symbol.Family.Name + ":" + connector.Owner.Name, ElementId = connector.Owner.Id, ItemTag = "Connector", DisplaySelectedFromTo = false } ;
-          routeItem?.Children?.Add( connectorItem ) ;
+          routeItem?.ChildrenList.Add( connectorItem ) ;
         }
         else {
           return ;
@@ -122,8 +122,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       private List<ElementId>? _targetElements ;
 
-
-      public override BitmapImage Icon { get ; } = new BitmapImage( new Uri( "../../resources/MEP.ico", UriKind.Relative ) ) ;
+      private static BitmapImage RouteItemIcon { get ; } = new BitmapImage( new Uri( "../../resources/MEP.ico", UriKind.Relative ) ) ;
+      public override BitmapImage Icon => RouteItemIcon ;
 
       public RouteItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes, Route ownRoute ) : base( doc, uiDoc, allRoutes )
       {
@@ -162,8 +162,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       private List<ElementId>? _targetElements ;
 
-      public override BitmapImage Icon { get ; } = new BitmapImage( new Uri( "../../resources/InsertBranchPoint.png", UriKind.Relative ) ) ;
-
+      private static BitmapImage RouteItemIcon { get ; } = new BitmapImage( new Uri( "../../resources/InsertBranchPoint.png", UriKind.Relative ) ) ;
+      public override BitmapImage Icon => RouteItemIcon ;
       public ConnectorItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes ) : base( doc, uiDoc, allRoutes )
       {
       }
@@ -187,8 +187,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       private List<ElementId>? _targetElements ;
 
-      public override BitmapImage Icon { get ; } = new BitmapImage( new Uri( "../../resources/InsertPassPoint.png", UriKind.Relative ) ) ;
-
+      private static BitmapImage RouteItemIcon { get ; } = new BitmapImage( new Uri( "../../resources/InsertPassPoint.png", UriKind.Relative ) ) ;
+      public override BitmapImage Icon => RouteItemIcon ;
       public SubRouteItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes ) : base( doc, uiDoc, allRoutes )
       {
       }
