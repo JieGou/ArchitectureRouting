@@ -10,16 +10,19 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
   public class FromToTreeViewModel : ViewModelBase
   {
     public FromToModel? FromToModel { get ; set ; }
+
     //FromToTree
     public static FromToTree? FromToTreePanel { get ; set ; }
-    
-    public ObservableCollection<FromToItem>? FromToItems { get ; set ; }
+
+    public IReadOnlyCollection<FromToItem>? FromToItems { get ; set ; }
 
     public FromToTreeViewModel()
     {
-      
     }
 
+    /// <summary>
+    /// set FromToItems to create TreeView
+    /// </summary>
     public void SetFromToItems()
     {
       FromToItems = FromToModel?.GetFromtToData() ;
@@ -33,13 +36,6 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       else {
         return ;
       }
-    }
-
-    public IEnumerable<Route> GetAllRoutes( UIDocument uiDocument )
-    {
-      var allRoutes = uiDocument.Document.CollectRoutes() ;
-
-      return allRoutes ;
     }
 
     public static void ClearSelection()

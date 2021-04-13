@@ -55,14 +55,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         FilteredElementCollector collector = new FilteredElementCollector( doc, doc.ActiveView.Id ) ;
         var elementsInActiveView = collector.ToElementIds() ;
         
-        if ( 0 < selectedRoutes.Count ) {
-          var selectedRouteName = selectedRoutes.ToList()[ 0 ].RouteName ;
+        if ( selectedRoutes.FirstOrDefault() is {} selectedRoute ) {
+          var selectedRouteName = selectedRoute.RouteName ;
           var targetElements = doc?.GetAllElementsOfRouteName<Element>( selectedRouteName ).Select( elem => elem.Id ).ToList() ;
 
           if ( targetElements != null ) {
             if ( elementsInActiveView.Any( ids => targetElements.Contains( ids ) ) ) {
               //Select TreeViewItem
-              FromToTreeViewModel.GetSelectedElementId( selectedRoutes.ToList()[ 0 ].OwnerElement?.Id ) ;
+              FromToTreeViewModel.GetSelectedElementId( selectedRoute.OwnerElement?.Id ) ;
             }
           }
         }
