@@ -164,9 +164,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       var selectedItem = FromToTreeView.SelectedItem ;
 
       if ( selectedItem is FromToItem selectedFromToItem ) {
-        
         selectedFromToItem.OnSelected() ;
-        
+
         if ( selectedFromToItem.DisplaySelectedFromTo ) {
           // show SelectedFromTo 
           DisplaySelectedFromTo() ;
@@ -197,15 +196,14 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public void SelectTreeViewItem( ElementId? elementId )
     {
       var targetItem = GetTreeViewItemFromElementId( FromToTreeView.Items, elementId ) ;
-
       if ( targetItem != null ) {
         // Select in TreeView
         targetItem.IsSelected = true ;
         // Scorll to Item
         targetItem.BringIntoView() ;
-        if ( targetItem.Tag.ToString() == "Connector" ) {
+        /*if ( targetItem.Tag.ToString() == "Connector" ) {
           SelectedFromTo.ClearDialog() ;
-        }
+        }*/
       }
     }
 
@@ -252,18 +250,22 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <returns></returns>
     private TreeViewItem? GetTreeViewItemFromElementId( ItemCollection collection, ElementId? elementId )
     {
+      // this method is in developing. This works only in Parent Item
       foreach ( var item in collection ) {
-        if ( item is TreeViewItem treeViewItem ) {
+        if ( item is FromToItem fromToItem && fromToItem.ElementId != null ) {
+          TreeViewItem? treeViewItem = FromToTreeView.ItemContainerGenerator.ContainerFromItem( item as object ) as TreeViewItem ; 
           // Find in current
-          if ( treeViewItem.Uid.Equals( elementId?.ToString() ) ) {
+          if ( fromToItem.ElementId.Equals( elementId ) ) {
             return treeViewItem ;
           }
 
           // Find in Childs
-          TreeViewItem? childItem = this.GetTreeViewItemFromElementId( treeViewItem.Items, elementId ) ;
-          if ( childItem != null ) {
-            treeViewItem.IsExpanded = true ;
-            return childItem ;
+          if ( treeViewItem != null ) {
+            TreeViewItem? childItem = this.GetTreeViewItemFromElementId( treeViewItem.Items, elementId ) ;
+            if ( childItem != null ) {
+              treeViewItem.IsExpanded = true ;
+              return childItem ;
+            }
           }
         }
       }

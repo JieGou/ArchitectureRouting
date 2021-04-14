@@ -17,17 +17,18 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public ElementId? ElementId { get ; init ; }
     public IReadOnlyList<FromToItem> Children => ChildrenList ;
     
-    private List<FromToItem> ChildrenList { get; set; }
+    private List<FromToItem> ChildrenList { get; }
     public abstract BitmapImage? Icon { get ; }
 
     public static SortedDictionary<string, FromToItem>? ItemDictionary { get ; set ; }
 
+    private bool _selected ;
     public bool Selected
     {
-      get { return this.Selected ; }
+      get { return this._selected ; }
       set
       {
-        this.Selected = value ;
+        this._selected = value ;
         if ( value == true ) {
           OnSelected() ;
         }
