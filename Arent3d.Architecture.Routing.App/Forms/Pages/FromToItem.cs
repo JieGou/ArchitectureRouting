@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
+using System.Data ;
 using System.Linq ;
 using System.Runtime.CompilerServices ;
 using System.Windows.Media.Imaging ;
@@ -13,16 +14,17 @@ namespace Arent3d.Architecture.Routing.App.Forms
   public abstract class FromToItem
   {
     public string ItemTypeName { get ; init ; }
-    public string ItemTag { get ; init ; }
+    private string ItemTag { get ; init ; }
     public ElementId? ElementId { get ; init ; }
     public IReadOnlyList<FromToItem> Children => ChildrenList ;
-    
-    private List<FromToItem> ChildrenList { get; }
+
+    private List<FromToItem> ChildrenList { get ; }
     public abstract BitmapImage? Icon { get ; }
 
     public static SortedDictionary<string, FromToItem>? ItemDictionary { get ; set ; }
 
     private bool _selected ;
+
     public bool Selected
     {
       get { return this._selected ; }
@@ -57,6 +59,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     public abstract void OnDoubleClicked() ;
 
+    /// <summary>
+    /// Create Hierarchical FromToData from allRoutes
+    /// </summary>
+    /// <param name="doc"></param>
+    /// <param name="uiDoc"></param>
+    /// <param name="allRoutes"></param>
+    /// <returns></returns>
     public static IEnumerable<FromToItem> CreateRouteFromToItems( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes )
     {
       var childBranches = new List<Route>() ;
@@ -83,6 +92,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         // add connector to Parent FromToItem
         routeItem.CreateConnectorItems( routeItem ) ;
+        // add subroute to Parent FromToItem
+        routeItem.CreateSubRouteItems( routeItem ) ;
         // add to fromToItems
         yield return routeItem ;
       }
@@ -98,9 +109,15 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         // add connector to branch treeviewitem
         branchItem.CreateConnectorItems( branchItem ) ;
+        // add subroute to Parent FromToItem
+        branchItem.CreateSubRouteItems( branchItem ) ;
       }
     }
 
+    /// <summary>
+    /// Create ConnecotorItems for Children
+    /// </summary>
+    /// <param name="routeItem"></param>
     private void CreateConnectorItems( RouteItem routeItem )
     {
       foreach ( var connector in routeItem.Connectors ) {
@@ -114,12 +131,30 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
     }
 
+    private void CreateSubRouteItems( RouteItem routeItem )
+    {
+      foreach ( var subRoute in routeItem.SubRoutes ) {
+        if ( routeItem != null ) {
+          var subRouteItem = new FromToItem.SubRouteItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes )
+          {
+            ItemTypeName = "SubRoute",
+            ElementId = Doc.GetAllElementsOfSubRoute<Element>( subRoute.Route.RouteName, subRoute.SubRouteIndex ).FirstOrDefault()?.Id,
+            ItemTag = "SubRoute",
+            DisplaySelectedFromTo = true,
+            Route = subRoute.Route,
+            SubRouteIndex = subRoute.SubRouteIndex
+          } ;
+          routeItem?.ChildrenList.Add( subRouteItem ) ;
+        }
+      }
+    }
 
     private class RouteItem : FromToItem
     {
       public Route? SelectedRoute ;
       public IEnumerable<Route> ChildBranches ;
       public IEnumerable<Connector> Connectors ;
+      public IEnumerable<SubRoute> SubRoutes ;
 
       private List<ElementId>? _targetElements ;
 
@@ -130,6 +165,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       {
         ChildBranches = allRoutes.Where( r => r.HasParent() && r.GetParentBranches().ToList().Last().RouteName == ownRoute.RouteName ) ;
         Connectors = ownRoute.GetAllConnectors( doc ) ;
+        SubRoutes = ownRoute.SubRoutes ;
       }
 
       public override void OnSelected()
@@ -165,6 +201,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       private static BitmapImage RouteItemIcon { get ; } = new BitmapImage( new Uri( "../../resources/InsertBranchPoint.png", UriKind.Relative ) ) ;
       public override BitmapImage Icon => RouteItemIcon ;
+
       public ConnectorItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes ) : base( doc, uiDoc, allRoutes )
       {
       }
@@ -186,19 +223,30 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private class SubRouteItem : FromToItem
     {
-      private List<ElementId>? _targetElements ;
+      public Route? Route { get ; init ; }
+      public int SubRouteIndex { get ; init ; }
 
+      private List<ElementId>? _targetElements ;
       private static BitmapImage RouteItemIcon { get ; } = new BitmapImage( new Uri( "../../resources/InsertPassPoint.png", UriKind.Relative ) ) ;
       public override BitmapImage Icon => RouteItemIcon ;
+
       public SubRouteItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes ) : base( doc, uiDoc, allRoutes )
       {
+        SubRouteIndex = 0 ;
       }
 
       public override void OnSelected()
       {
-        if ( ElementId != null ) {
-          _targetElements = new List<ElementId>() { ElementId } ;
-          UiDoc?.Selection.SetElementIds( _targetElements ) ;
+        _targetElements = new List<ElementId>() ;
+        // set SelectedRoute to SelectedFromToViewModel
+        SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, Route ) ;
+
+        if ( Route != null ) {
+          _targetElements = Doc.GetAllElementsOfSubRoute<Element>( Route.RouteName, SubRouteIndex ).Select( e => e.Id ).ToList() ;
+          //Select targetElements
+          if ( _targetElements != null ) {
+            UiDoc?.Selection.SetElementIds( _targetElements ) ;
+          }
         }
       }
 

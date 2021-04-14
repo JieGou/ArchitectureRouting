@@ -12,7 +12,7 @@
                     Margin="5">
             <TextBlock x:Name="messageBlock" FontSize="30" Foreground="Red" Text="TextBlock"/>
             <TextBlock FontSize="30" Foreground="Red">
-                is on developping!!!
+                is on developing!!!
             </TextBlock>
         </StackPanel>
     </Grid>

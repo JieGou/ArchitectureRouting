@@ -201,6 +201,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         targetItem.IsSelected = true ;
         // Scorll to Item
         targetItem.BringIntoView() ;
+        // this code is in developing
         /*if ( targetItem.Tag.ToString() == "Connector" ) {
           SelectedFromTo.ClearDialog() ;
         }*/
