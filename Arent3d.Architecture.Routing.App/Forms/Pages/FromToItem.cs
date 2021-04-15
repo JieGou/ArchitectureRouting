@@ -128,7 +128,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       else if ( endPoint is PassPointEndIndicator passPointEndIndicator ) {
         var passPointItem = new FromToItem.PassPointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes )
         {
-          ItemTypeName = passPointEndIndicator.ToString(), ElementId = new ElementId( passPointEndIndicator.ElementId ), ItemTag = "PassPoint", DisplaySelectedFromTo = false,
+          ItemTypeName = "PassPoint", ElementId = new ElementId( passPointEndIndicator.ElementId ), ItemTag = "PassPoint", DisplaySelectedFromTo = false,
         } ;
         routeItem?.ChildrenList.Add( passPointItem ) ;
       }
