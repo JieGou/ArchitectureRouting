@@ -149,7 +149,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       var subRouteItem = new FromToItem.SubRouteItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes )
       {
-        ItemTypeName = "Section(" + ( subRoute.SubRouteIndex + 1 ) + ")",
+        ItemTypeName = "Section",
         ElementId = Doc.GetAllElementsOfSubRoute<Element>( subRoute.Route.RouteName, subRoute.SubRouteIndex ).FirstOrDefault()?.Id,
         ItemTag = "SubRoute",
         DisplaySelectedFromTo = true,
