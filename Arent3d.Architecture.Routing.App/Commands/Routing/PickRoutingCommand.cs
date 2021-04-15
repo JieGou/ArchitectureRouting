@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
+using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
 using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit ;
@@ -75,22 +76,28 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var connector = connectorIndicator?.GetConnector( document ) ;
 
       if ( connector != null ) {
-        MEPSystemType? systemType ;
-        systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
-        for ( var i = routes.Count + 1 ; ; ++i ) {
-          var name = systemType?.Name + "_" + i ;
-          if ( routes.ContainsKey( name ) ) continue ;
+        var systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
+        string? name ;
+        var countIsMatch = routes.Count( r => Regex.IsMatch( r.Key, systemType?.Name ?? string.Empty ) ) ;
+        if ( countIsMatch > 0 ) {
+          name = systemType?.Name + "_" + countIsMatch ;
+        }
+        else {
+          name = systemType?.Name ;
+        }
 
+        if ( name != null ) {
           var segment = new RouteSegment( fromIndicator, toIndicator, -1, false ) ;
           segment.ApplyRealNominalDiameter( document ) ;
           routes.FindOrCreate( name ) ;
           list.Add( ( name, segment ) ) ;
           return list ;
         }
-      }
-      else {
+
         return list ;
       }
+
+      return list ;
     }
 
     private static List<(string RouteName, RouteSegment Segment)> UnionRoutes( Route? parentRoute1, Route? parentRoute2 )
@@ -133,22 +140,26 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var routeMepSystem = new RouteMEPSystem( subRoute.Route.Document, subRoute.Route ) ;
       var systemType = routeMepSystem.MEPSystemType ;
 
-      for ( var i = routes.Count + 1 ; ; ++i ) {
-        var name = systemType.Name + "_" + i ;
-        if ( routes.ContainsKey( name ) ) continue ;
-
-        RouteSegment segment ;
-        if ( anotherIndicatorIsFromSide ) {
-          segment = new RouteSegment( anotherIndicator, newIndicator, -1, false ) ;
-        }
-        else {
-          segment = new RouteSegment( newIndicator, anotherIndicator, -1, false ) ;
-        }
-
-        segment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
-
-        return new[] { ( name, segment ) } ;
+      string name ;
+      var countIsMatch = routes.Count( r => Regex.IsMatch( r.Key, systemType?.Name ?? string.Empty ) ) ;
+      if ( countIsMatch > 0 ) {
+        name = systemType?.Name + "_" + countIsMatch ;
       }
+      else {
+        name = systemType?.Name ?? throw new InvalidOperationException() ;
+      }
+
+      RouteSegment segment ;
+      if ( anotherIndicatorIsFromSide ) {
+        segment = new RouteSegment( anotherIndicator, newIndicator, -1, false ) ;
+      }
+      else {
+        segment = new RouteSegment( newIndicator, anotherIndicator, -1, false ) ;
+      }
+
+      segment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
+
+      return new[] { ( name, segment ) } ;
     }
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPointIndicator anotherIndicator, bool anotherIndicatorIsFromSide )
