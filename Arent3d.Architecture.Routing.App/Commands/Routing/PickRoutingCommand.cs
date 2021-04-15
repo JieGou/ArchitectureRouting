@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       var routes = RouteCache.Get( document ) ;
       var connectorIndicator = fromIndicator as ConnectorIndicator ;
-      
+
       var connector = connectorIndicator?.GetConnector( document ) ;
 
       if ( connector != null ) {
@@ -102,7 +102,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       if ( null != parentRoute2 ) {
         if ( null != routes ) {
-          routes.UnionWith( parentRoute2.GetAllRelatedBranches() );
+          routes.UnionWith( parentRoute2.GetAllRelatedBranches() ) ;
         }
         else {
           routes = parentRoute2.GetAllRelatedBranches() ;
@@ -132,7 +132,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       var routeMepSystem = new RouteMEPSystem( subRoute.Route.Document, subRoute.Route ) ;
       var systemType = routeMepSystem.MEPSystemType ;
-      
+
       for ( var i = routes.Count + 1 ; ; ++i ) {
         var name = systemType.Name + "_" + i ;
         if ( routes.ContainsKey( name ) ) continue ;
@@ -144,6 +144,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         else {
           segment = new RouteSegment( newIndicator, anotherIndicator, -1, false ) ;
         }
+
         segment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
 
         return new[] { ( name, segment ) } ;
@@ -170,6 +171,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         else {
           newSegment = new RouteSegment( segment.FromId, newEndPointIndicator, -1, false ) ;
         }
+
         newSegment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
 
         return ( subRoute.Route.RouteName, newSegment ) ;
@@ -186,6 +188,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         else {
           newSegment = new RouteSegment( pickedIndicator, newEndPointIndicator, -1, false ) ;
         }
+
         newSegment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
 
         return ( subRoute.Route.RouteName, newSegment ) ;
@@ -248,7 +251,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       var cornerCount = Math.Round( radian / ( 0.5 * Math.PI ) ) ;
       cornerCount -= Math.Floor( cornerCount / 4 ) * 4 ; // [0, 1, 2, 3]
-      return 90 * cornerCount ;// [0, 90, 180, 270]
+      return 90 * cornerCount ; // [0, 90, 180, 270]
     }
 
     private static IEndPointIndicator GetCoordinateIndicator( XYZ origin, XYZ anotherPos )
