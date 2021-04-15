@@ -77,22 +77,24 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       if ( connector != null ) {
         var systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
-        string? name ;
-        var countIsMatch = routes.Count( r => Regex.IsMatch( r.Key, systemType?.Name ?? string.Empty ) ) ;
-        if ( countIsMatch > 0 ) {
-          name = systemType?.Name + "_" + countIsMatch ;
+
+        string pattern = @"^" + Regex.Escape( systemType?.Name ?? string.Empty ) + @"_(\d+)$" ;
+        var countIsMatch = routes.Select( r => Regex.Match( r.Key, pattern ) ).Where( m => m.Success == true ).OrderBy( m => m.Groups[ 1 ].Value ).ToList() ;
+
+        int index ;
+        if ( countIsMatch.Any() ) {
+          index = int.Parse( countIsMatch.LastOrDefault()?.Groups[ 1 ].Value ?? string.Empty ) + 1 ;
         }
         else {
-          name = systemType?.Name ;
+          index = 1 ;
         }
 
-        if ( name != null ) {
-          var segment = new RouteSegment( fromIndicator, toIndicator, -1, false ) ;
-          segment.ApplyRealNominalDiameter( document ) ;
-          routes.FindOrCreate( name ) ;
-          list.Add( ( name, segment ) ) ;
-          return list ;
-        }
+        var name = systemType?.Name + "_" + index ;
+
+        var segment = new RouteSegment( fromIndicator, toIndicator, -1, false ) ;
+        segment.ApplyRealNominalDiameter( document ) ;
+        routes.FindOrCreate( name ) ;
+        list.Add( ( name, segment ) ) ;
 
         return list ;
       }
@@ -140,14 +142,18 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var routeMepSystem = new RouteMEPSystem( subRoute.Route.Document, subRoute.Route ) ;
       var systemType = routeMepSystem.MEPSystemType ;
 
-      string name ;
-      var countIsMatch = routes.Count( r => Regex.IsMatch( r.Key, systemType?.Name ?? string.Empty ) ) ;
-      if ( countIsMatch > 0 ) {
-        name = systemType?.Name + "_" + countIsMatch ;
+      string pattern = @"^" + Regex.Escape( systemType?.Name ?? string.Empty ) + @"_(\d+)$" ;
+      var countIsMatch = routes.Select( r => Regex.Match( r.Key, pattern ) ).Where( m => m.Success == true ).OrderBy( m => m.Groups[ 1 ].Value ).ToList() ;
+
+      int index ;
+      if ( countIsMatch.Any() ) {
+        index = int.Parse( countIsMatch.LastOrDefault()?.Groups[ 1 ].Value ?? string.Empty ) + 1 ;
       }
       else {
-        name = systemType?.Name ?? throw new InvalidOperationException() ;
+        index = 1 ;
       }
+
+      var name = systemType?.Name + "_" + index ;
 
       RouteSegment segment ;
       if ( anotherIndicatorIsFromSide ) {
