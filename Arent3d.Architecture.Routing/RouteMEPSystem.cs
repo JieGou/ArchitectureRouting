@@ -126,7 +126,7 @@ namespace Arent3d.Architecture.Routing
       return connectors.Select( connector => GetSystemType( document, connector ) ).NonNull().First()! ;
     }
     
-    private static MEPSystemType? GetSystemType( Document document, Connector connector )
+    public static MEPSystemType? GetSystemType( Document document, Connector connector )
     {
       var systemClassification = GetSystemClassification( connector ) ;
 

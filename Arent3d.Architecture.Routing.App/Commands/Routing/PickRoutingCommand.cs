@@ -70,15 +70,25 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var list = UnionRoutes( parentRoute1, parentRoute2 ) ;
 
       var routes = RouteCache.Get( document ) ;
+      var connectorIndicator = fromIndicator as ConnectorIndicator ;
+      
+      var connector = connectorIndicator?.GetConnector( document ) ;
 
-      for ( var i = routes.Count + 1 ; ; ++i ) {
-        var name = "Picked_" + i ;
-        if ( routes.ContainsKey( name ) ) continue ;
+      if ( connector != null ) {
+        MEPSystemType? systemType ;
+        systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
+        for ( var i = routes.Count + 1 ; ; ++i ) {
+          var name = systemType?.Name + "_" + i ;
+          if ( routes.ContainsKey( name ) ) continue ;
 
-        var segment = new RouteSegment( fromIndicator, toIndicator, -1, false ) ;
-        segment.ApplyRealNominalDiameter( document ) ;
-        routes.FindOrCreate( name ) ;
-        list.Add( ( name, segment ) ) ;
+          var segment = new RouteSegment( fromIndicator, toIndicator, -1, false ) ;
+          segment.ApplyRealNominalDiameter( document ) ;
+          routes.FindOrCreate( name ) ;
+          list.Add( ( name, segment ) ) ;
+          return list ;
+        }
+      }
+      else {
         return list ;
       }
     }
@@ -120,8 +130,11 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var routes = RouteCache.Get( subRoute.Route.Document ) ;
       var newIndicator = new RouteIndicator( subRoute.Route.RouteName, subRoute.SubRouteIndex ) ;
 
+      var routeMepSystem = new RouteMEPSystem( subRoute.Route.Document, subRoute.Route ) ;
+      var systemType = routeMepSystem.MEPSystemType ;
+      
       for ( var i = routes.Count + 1 ; ; ++i ) {
-        var name = "Picked_" + i ;
+        var name = systemType.Name + "_" + i ;
         if ( routes.ContainsKey( name ) ) continue ;
 
         RouteSegment segment ;
