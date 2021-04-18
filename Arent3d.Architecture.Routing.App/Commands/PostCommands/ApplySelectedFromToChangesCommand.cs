@@ -21,6 +21,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
     {
       var route = SelectedFromToViewModel.TargetRoute ;
+      var subRoute = SelectedFromToViewModel.TargetSubRoute ;
       var pickInfo = SelectedFromToViewModel.TargetPickInfo ;
       var diameters = SelectedFromToViewModel.Diameters ;
       var systemTypes = SelectedFromToViewModel.SystemTypes ;
@@ -28,19 +29,18 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
 
       if ( diameters != null && systemTypes != null && curveTypes != null ) {
         if ( route != null ) {
-          if ( route.GetSubRoute( 0 ) is { } subRoute ) {
-            //Change Diameter
-            subRoute.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
+          //Change Diameter
+            subRoute?.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
 
             //Change SystemType
-            subRoute.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
+            subRoute?.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
 
             //Change CurveType
-            subRoute.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
+            subRoute?.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
 
             //ChangeDirect
-            subRoute.ChangeIsRoutingOnPipeSpace( SelectedFromToViewModel.IsDirect ) ;
-          }
+            subRoute?.ChangeIsRoutingOnPipeSpace( SelectedFromToViewModel.IsDirect ) ;
+          
 
 
           return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;

@@ -5,6 +5,7 @@ using System.Data ;
 using System.Linq ;
 using System.Runtime.CompilerServices ;
 using System.Windows.Media.Imaging ;
+using Arent3d.Architecture.Routing.App.Commands ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Architecture.Routing.RouteEnd ;
 using Autodesk.Revit.DB ;
@@ -37,6 +38,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
         }
       }
     }
+
+    public bool IsMultiSelected { get ; set ; }
 
     public bool DisplaySelectedFromTo { get ; set ; }
     private IReadOnlyCollection<Route> AllRoutes { get ; set ; }
@@ -93,6 +96,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         // Create and add ChildItems
         routeItem.CreateChildItems( routeItem ) ;
+        routeItem.IsMultiSelected = routeItem.GetSelectingState( route ) ;
+        TaskDialog.Show( route.RouteName + "MultiSelect State", routeItem.IsMultiSelected.ToString() ) ;
         yield return routeItem ;
       }
 
@@ -107,6 +112,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         // Create and add ChildItems
         branchItem.CreateChildItems( branchItem ) ;
+        branchItem.IsMultiSelected = branchItem.GetSelectingState( c ) ;
+        TaskDialog.Show( c.RouteName + "MultiSelect State", branchItem.IsMultiSelected.ToString() ) ;
       }
     }
 
@@ -125,6 +132,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
             var connectorItem = new FromToItem.ConnectorItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes ) { ItemTypeName = familyInstance.Symbol.Family.Name + ":" + connector.Owner.Name, ElementId = connector.Owner.Id, ItemTag = "Connector", DisplaySelectedFromTo = false } ;
             routeItem?.ChildrenList.Add( connectorItem ) ;
           }
+
           break ;
         }
         // Create PassPointItem
@@ -193,6 +201,43 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
     }
 
+    private bool GetSelectingState( Route route )
+    {
+      var routeMepSystem = new RouteMEPSystem( Doc, route ) ;
+      var curveTypes = new List<MEPCurveType>() ;
+      var diameters = new List<double>() ;
+      foreach ( var subRoute in route.SubRoutes ) {
+        if ( ! curveTypes.Contains( routeMepSystem.CurveType ) ) {
+          curveTypes.Add( routeMepSystem.CurveType ) ;
+        }
+
+        if ( ! diameters.Contains( subRoute.GetDiameter( Doc ) ) ) {
+          diameters.Add( subRoute.GetDiameter( Doc ) ) ;
+        }
+      }
+
+      var curveTypeResult = false ;
+      var diameterResult = false ;
+
+      try {
+        var singleCurveType = curveTypes.SingleOrDefault() ;
+        curveTypeResult = false ;
+      }
+      catch {
+        curveTypeResult = true ;
+      }
+
+      try {
+        var singleDiameter = diameters.SingleOrDefault() ;
+        diameterResult = false ;
+      }
+      catch {
+        diameterResult = true ;
+      }
+
+      return curveTypeResult || diameterResult ;
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -225,7 +270,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         if ( _selectedRoute != null ) {
           // set SelectedRoute to SelectedFromToViewModel
-          SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, _selectedRoute ) ;
+          SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, _selectedRoute.GetSubRoute( 0 ) ) ;
 
           _targetElements = Doc?.GetAllElementsOfRouteName<Element>( _selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
           // Select targetElements
@@ -287,14 +332,14 @@ namespace Arent3d.Architecture.Routing.App.Forms
       public override void OnSelected()
       {
         _targetElements = new List<ElementId>() ;
-        // set SelectedRoute to SelectedFromToViewModel
-        SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, Route ) ;
 
         if ( Route != null ) {
           _targetElements = Doc.GetAllElementsOfSubRoute<Element>( Route.RouteName, SubRouteIndex ).Select( e => e.Id ).ToList() ;
           // Select targetElements
           if ( _targetElements != null ) {
             UiDoc?.Selection.SetElementIds( _targetElements ) ;
+            // set SelectedRoute to SelectedFromToViewModel
+            if ( UiDoc != null ) SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, Route.SubRoutes.ElementAt( SubRouteIndex ) ) ;
           }
         }
       }

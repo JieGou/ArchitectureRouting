@@ -14,6 +14,8 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 
     //Route
     public static Route? TargetRoute { get ; set ; }
+    
+    public static SubRoute? TargetSubRoute { get ; set ; }
 
     //Selecting PickInfo 
     public static PointOnRoutePicker.PickInfo? TargetPickInfo { get ; set ; }
@@ -76,35 +78,34 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     /// </summary>
     /// <param name="uiDoc"></param>
     /// <param name="doc"></param>
-    /// <param name="route"></param>
-    public static void SetSelectedFromToInfo( UIDocument uiDoc, Document doc, Route? route )
+    /// <param name="subRoute"></param>
+    public static void SetSelectedFromToInfo( UIDocument uiDoc, Document doc, SubRoute? subRoute )
     {
       UiDoc = uiDoc ;
 
-      TargetRoute = route ;
-      if ( route != null ) {
-        var routeMepSystem = new RouteMEPSystem( doc, route ) ;
+      TargetRoute = subRoute?.Route ;
+      TargetSubRoute = subRoute ;
+      if ( subRoute == null ) return ;
+      var routeMepSystem = new RouteMEPSystem( doc, subRoute.Route ) ;
 
-        //Diameter Info
-        Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;
-        var diameter = route.GetSubRoute( 0 )?.GetDiameter( doc ) ;
-        if ( diameter != null ) {
-          DiameterIndex = Diameters.FindDoubleIndex( diameter, doc ) ;
-        }
+      //Diameter Info
+      Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;
+      var diameter = subRoute.GetDiameter( doc ) ;
+      DiameterIndex = Diameters.FindDoubleIndex( diameter, doc ) ;
+      
 
-        //System Type Info(PinpingSystemType in lookup)
-        var connector = route.GetReferenceConnector() ;
-        SystemTypes = routeMepSystem.GetSystemTypes( doc, connector ).OrderBy( s => s.Name ).ToList() ;
-        var systemType = routeMepSystem.MEPSystemType ;
-        SystemTypeIndex = SystemTypes.ToList().FindIndex( s => s.Id == systemType.Id ) ;
-        //CurveType Info
-        var curveType = routeMepSystem.CurveType ;
-        var type = curveType.GetType() ;
-        CurveTypes = routeMepSystem.GetCurveTypes( doc, type ).OrderBy( s => s.Name ).ToList() ;
-        CurveTypeIndex = CurveTypes.ToList().FindIndex( c => c.Id == curveType.Id ) ;
-        //Direct Info
-        IsDirect = route.GetSubRoute( 0 )?.IsRoutingOnPipeSpace ?? throw new ArgumentNullException( nameof( IsDirect ) ) ;
-      }
+      //System Type Info(PinpingSystemType in lookup)
+      var connector = subRoute.GetReferenceConnector() ;
+      SystemTypes = routeMepSystem.GetSystemTypes( doc, connector ).OrderBy( s => s.Name ).ToList() ;
+      var systemType = routeMepSystem.MEPSystemType ;
+      SystemTypeIndex = SystemTypes.ToList().FindIndex( s => s.Id == systemType.Id ) ;
+      //CurveType Info
+      var curveType = routeMepSystem.CurveType ;
+      var type = curveType.GetType() ;
+      CurveTypes = routeMepSystem.GetCurveTypes( doc, type ).OrderBy( s => s.Name ).ToList() ;
+      CurveTypeIndex = CurveTypes.ToList().FindIndex( c => c.Id == curveType.Id ) ;
+      //Direct Info
+      IsDirect = subRoute.IsRoutingOnPipeSpace ;
     }
 
 
