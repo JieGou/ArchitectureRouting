@@ -10,6 +10,43 @@ namespace Arent3d.Revit
 {
   public static class StorageExtensions
   {
+    public static bool IsStorable<TStorableBase>( this Document document, ElementId elmId ) where TStorableBase : StorableBase
+    {
+      if ( Schema.Lookup( typeof( TStorableBase ).GUID ) is not { } schema ) return false ;
+
+      if ( document.GetElement( elmId ) is not { } element ) return false ;
+
+      var entity = element.GetEntity( schema ) ;
+      if ( null == entity || false == entity.IsValidObject || false == entity.IsValid() ) return false ;
+
+      return true ;
+    }
+
+    public static bool IsStorable<TStorableBase>( this Element element ) where TStorableBase : StorableBase
+    {
+      if ( Schema.Lookup( typeof( TStorableBase ).GUID ) is not { } schema ) return false ;
+
+      var entity = element.GetEntity( schema ) ;
+      if ( null == entity || false == entity.IsValidObject || false == entity.IsValid() ) return false ;
+
+      return true ;
+    }
+
+    public static IEnumerable<ElementId> FilterStorableElements<TStorableBase>( this Document document, IEnumerable<ElementId> elmIds ) where TStorableBase : StorableBase
+    {
+      if ( Schema.Lookup( typeof( TStorableBase ).GUID ) is not { } schema ) return Enumerable.Empty<ElementId>() ;
+
+      return elmIds.Where( elmId =>
+      {
+        if ( document.GetElement( elmId ) is not { } element ) return false ;
+
+        var entity = element.GetEntity( schema ) ;
+        if ( null == entity || false == entity.IsValidObject || false == entity.IsValid() ) return false ;
+
+        return true ;
+      } ) ;
+    }
+
     public static IEnumerable<TStorableBase> GetAllStorables<TStorableBase>( this Document document ) where TStorableBase : StorableBase
     {
       if ( Schema.Lookup( typeof( TStorableBase ).GUID ) is not { } schema ) yield break ;
