@@ -78,18 +78,15 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       if ( connector != null ) {
         var systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
 
-        string pattern = @"^" + Regex.Escape( systemType?.Name ?? string.Empty ) + @"_(\d+)$" ;
-        var countIsMatch = routes.Select( r => Regex.Match( r.Key, pattern ) ).Where( m => m.Success == true ).OrderBy( m => m.Groups[ 1 ].Value ).ToList() ;
+        var lastIndex = GetRouteNameIndex( routes, systemType?.Name ) ;
+          
+        /*string pattern = @"^" + Regex.Escape( systemType?.Name ?? string.Empty ) + @"_(\d+)$" ;
+        var regex = new Regex( pattern ) ;
 
-        int index ;
-        if ( countIsMatch.Any() ) {
-          index = int.Parse( countIsMatch.LastOrDefault()?.Groups[ 1 ].Value ?? string.Empty ) + 1 ;
-        }
-        else {
-          index = 1 ;
-        }
+        var lastIndex = routes.Keys.Select( k => regex.Match(k) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
+        */
 
-        var name = systemType?.Name + "_" + index ;
+        var name = systemType?.Name + "_" + lastIndex ;
 
         var segment = new RouteSegment( fromIndicator, toIndicator, -1, false ) ;
         segment.ApplyRealNominalDiameter( document ) ;
@@ -142,18 +139,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var routeMepSystem = new RouteMEPSystem( subRoute.Route.Document, subRoute.Route ) ;
       var systemType = routeMepSystem.MEPSystemType ;
 
-      string pattern = @"^" + Regex.Escape( systemType?.Name ?? string.Empty ) + @"_(\d+)$" ;
-      var countIsMatch = routes.Select( r => Regex.Match( r.Key, pattern ) ).Where( m => m.Success == true ).OrderBy( m => m.Groups[ 1 ].Value ).ToList() ;
+      
+      /*string pattern = @"^" + Regex.Escape( systemType?.Name ?? string.Empty ) + @"_(\d+)$" ;
+      var regex = new Regex( pattern ) ;
 
-      int index ;
-      if ( countIsMatch.Any() ) {
-        index = int.Parse( countIsMatch.LastOrDefault()?.Groups[ 1 ].Value ?? string.Empty ) + 1 ;
-      }
-      else {
-        index = 1 ;
-      }
+      var lastIndex = routes.Keys.Select( k => regex.Match(k) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
+      */
 
-      var name = systemType?.Name + "_" + index ;
+      var lastIndex = GetRouteNameIndex( routes, systemType?.Name ) ;
+      
+      var name = systemType?.Name + "_" + lastIndex  ;
 
       RouteSegment segment ;
       if ( anotherIndicatorIsFromSide ) {
@@ -284,6 +279,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
 
       return new CoordinateIndicator( origin, dir ) ;
+    }
+
+    private static int GetRouteNameIndex( RouteCache routes, string? targetName )
+    {
+      string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
+      var regex = new Regex( pattern ) ;
+
+      var lastIndex = routes.Keys.Select( k => regex.Match(k) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
+
+      return lastIndex + 1 ;
     }
   }
 }
