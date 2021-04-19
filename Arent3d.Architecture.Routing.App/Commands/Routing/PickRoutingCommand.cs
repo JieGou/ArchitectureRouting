@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
+using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
 using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit ;
@@ -70,17 +71,26 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var list = UnionRoutes( parentRoute1, parentRoute2 ) ;
 
       var routes = RouteCache.Get( document ) ;
+      var connectorIndicator = fromIndicator as ConnectorIndicator ;
 
-      for ( var i = routes.Count + 1 ; ; ++i ) {
-        var name = "Picked_" + i ;
-        if ( routes.ContainsKey( name ) ) continue ;
+      var connector = connectorIndicator?.GetConnector( document ) ;
+
+      if ( connector != null ) {
+        var systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
+
+        var nextIndex = GetRouteNameIndex( routes, systemType?.Name ) ;
+
+        var name = systemType?.Name + "_" + nextIndex ;
 
         var segment = new RouteSegment( fromIndicator, toIndicator, -1, false ) ;
         segment.ApplyRealNominalDiameter( document ) ;
         routes.FindOrCreate( name ) ;
         list.Add( ( name, segment ) ) ;
+
         return list ;
       }
+
+      return list ;
     }
 
     private static List<(string RouteName, RouteSegment Segment)> UnionRoutes( Route? parentRoute1, Route? parentRoute2 )
@@ -92,7 +102,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       if ( null != parentRoute2 ) {
         if ( null != routes ) {
-          routes.UnionWith( parentRoute2.GetAllRelatedBranches() );
+          routes.UnionWith( parentRoute2.GetAllRelatedBranches() ) ;
         }
         else {
           routes = parentRoute2.GetAllRelatedBranches() ;
@@ -120,21 +130,24 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var routes = RouteCache.Get( subRoute.Route.Document ) ;
       var newIndicator = new RouteIndicator( subRoute.Route.RouteName, subRoute.SubRouteIndex ) ;
 
-      for ( var i = routes.Count + 1 ; ; ++i ) {
-        var name = "Picked_" + i ;
-        if ( routes.ContainsKey( name ) ) continue ;
+      var routeMepSystem = new RouteMEPSystem( subRoute.Route.Document, subRoute.Route ) ;
+      var systemType = routeMepSystem.MEPSystemType ;
 
-        RouteSegment segment ;
-        if ( anotherIndicatorIsFromSide ) {
-          segment = new RouteSegment( anotherIndicator, newIndicator, -1, false ) ;
-        }
-        else {
-          segment = new RouteSegment( newIndicator, anotherIndicator, -1, false ) ;
-        }
-        segment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
+      var nextIndex = GetRouteNameIndex( routes, systemType?.Name ) ;
+      
+      var name = systemType?.Name + "_" + nextIndex  ;
 
-        return new[] { ( name, segment ) } ;
+      RouteSegment segment ;
+      if ( anotherIndicatorIsFromSide ) {
+        segment = new RouteSegment( anotherIndicator, newIndicator, -1, false ) ;
       }
+      else {
+        segment = new RouteSegment( newIndicator, anotherIndicator, -1, false ) ;
+      }
+
+      segment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
+
+      return new[] { ( name, segment ) } ;
     }
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPointIndicator anotherIndicator, bool anotherIndicatorIsFromSide )
@@ -157,6 +170,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         else {
           newSegment = new RouteSegment( segment.FromId, newEndPointIndicator, -1, false ) ;
         }
+
         newSegment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
 
         return ( subRoute.Route.RouteName, newSegment ) ;
@@ -173,6 +187,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         else {
           newSegment = new RouteSegment( pickedIndicator, newEndPointIndicator, -1, false ) ;
         }
+
         newSegment.ApplyRealNominalDiameter( subRoute.Route.Document ) ;
 
         return ( subRoute.Route.RouteName, newSegment ) ;
@@ -235,7 +250,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       var cornerCount = Math.Round( radian / ( 0.5 * Math.PI ) ) ;
       cornerCount -= Math.Floor( cornerCount / 4 ) * 4 ; // [0, 1, 2, 3]
-      return 90 * cornerCount ;// [0, 90, 180, 270]
+      return 90 * cornerCount ; // [0, 90, 180, 270]
     }
 
     private static IEndPointIndicator GetCoordinateIndicator( XYZ origin, XYZ anotherPos )
@@ -251,6 +266,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
 
       return new CoordinateIndicator( origin, dir ) ;
+    }
+
+    private static int GetRouteNameIndex( RouteCache routes, string? targetName )
+    {
+      string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
+      var regex = new Regex( pattern ) ;
+
+      var lastIndex = routes.Keys.Select( k => regex.Match(k) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
+
+      return lastIndex + 1 ;
     }
   }
 }
