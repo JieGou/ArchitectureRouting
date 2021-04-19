@@ -4,11 +4,13 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
 using Autodesk.Revit.UI.Selection ;
@@ -91,13 +93,19 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     // document opened event
     private void Application_DocumentChanged( object sender, Autodesk.Revit.DB.Events.DocumentChangedEventArgs e )
     {
-      var addedElementIds = e.GetAddedElementIds() ;
-      var deletedElementIds = e.GetDeletedElementIds() ;
-      var modifiedElementIds = e.GetModifiedElementIds() ;
+      var changedElementIds = new List<ElementId?>() ;
+      changedElementIds.AddRange( ( e.GetAddedElementIds() )) ;
+      changedElementIds.AddRange(e.GetDeletedElementIds()) ;
+      changedElementIds.AddRange(e.GetModifiedElementIds())  ;
+
       var transactions = e.GetTransactionNames() ;
+      
+      var allStorable = e.GetDocument().GetAllStorables<Route>() ;
+      
+      var changedRoute = allStorable.Where( r => changedElementIds.Contains(r.OwnerElement?.Id) ) ;
 
       // provide ExternalCommandData object to dockable page
-      if ( _dockableWindow != null && _uiApp != null && transactions.Any( GetRoutingTransactions ) ) {
+      if ( _dockableWindow != null && _uiApp != null && (transactions.Any( GetRoutingTransactions ) || changedRoute.Any())) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
       }
     }
