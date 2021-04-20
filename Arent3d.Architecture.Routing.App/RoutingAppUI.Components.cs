@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private readonly RibbonButton _replaceFromToCommandButton ; //just show dialog
     private readonly RibbonButton _showFromToWindowCommandButton ;
-    private readonly RibbonButton _showFromToTreeCommandButton ;
+    private static RibbonButton? _showFromToTreeCommandButton ;
 
     private readonly RibbonButton _fileRoutingCommandButton ;
     private readonly RibbonButton _exportRoutingCommandButton ;
@@ -122,7 +122,9 @@ namespace Arent3d.Architecture.Routing.App
 
       _replaceFromToCommandButton.Enabled = false ;
       _showFromToWindowCommandButton.Enabled = false ;
-      _showFromToTreeCommandButton.Enabled = false ;
+      if ( _showFromToTreeCommandButton != null ) {
+        _showFromToTreeCommandButton.Enabled = false ;
+      }
 
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
@@ -156,8 +158,10 @@ namespace Arent3d.Architecture.Routing.App
 
       _replaceFromToCommandButton.Enabled = setupIsDone ;
       _showFromToWindowCommandButton.Enabled = setupIsDone ;
-      _showFromToTreeCommandButton.Enabled = setupIsDone ;
+      if ( _showFromToTreeCommandButton != null ) {
+        _showFromToTreeCommandButton.Enabled = setupIsDone ;
 
+      }
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
@@ -169,6 +173,22 @@ namespace Arent3d.Architecture.Routing.App
     {
       var fromToTreeRegisterCommand = new RegisterFromToTreeCommand() ;
       fromToTreeRegisterCommand.Execute( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
+    }
+
+    /// <summary>
+    /// Toggle ShowFromToButton State
+    /// </summary>
+    /// <param name="isShown"></param>
+    public static void ToggleShowFromToTreeCommandButton(bool isShown)
+    {
+      if ( _showFromToTreeCommandButton != null ) {
+        if ( isShown ) {
+          _showFromToTreeCommandButton.ItemText = "Shown" ;
+        }
+        else {
+          _showFromToTreeCommandButton.ItemText = "Hide" ;
+        }
+      }
     }
   }
 }

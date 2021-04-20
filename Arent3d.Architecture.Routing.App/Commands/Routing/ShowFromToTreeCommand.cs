@@ -17,12 +17,17 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       _uiDocument = commandData.Application.ActiveUIDocument ;
+
       try {
         var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
         var dp = _uiDocument.Application.GetDockablePane( dpid ) ;
         if ( ! dp.IsShown() ) {
           dp.Show() ;
         }
+        else {
+          dp.Hide();
+        }
+        RoutingAppUI.ToggleShowFromToTreeCommandButton(dp.IsShown());
       }
       catch ( Exception e ) {
         TaskDialog.Show( "ShowFromToTreeCommand", e.Message ) ;

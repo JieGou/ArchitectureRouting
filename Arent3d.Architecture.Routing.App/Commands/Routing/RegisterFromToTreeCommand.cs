@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   {
     FromToTree? _dockableWindow = null ;
     UIApplication? _uiApp = null ;
+    DockablePaneId _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
 
     /// <summary>
     /// Executes the specIfied command Data
@@ -47,6 +48,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         var doc = _uiApp.ActiveUIDocument.Document ;
         //Initialize TreeView
         _dockableWindow.CustomInitiator( _uiApp ) ;
+        
+        //Initialize ShowFromToTreeButton
+        RoutingAppUI.ToggleShowFromToTreeCommandButton( _uiApp.GetDockablePane(_dpid).IsShown());
         
         // Get Selected Routes
         var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( _uiApp.ActiveUIDocument ).EnumerateAll() ;
@@ -78,8 +82,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
     }
     
-    
-
     // document opened event
     private void Application_DocumentOpened( object sender, Autodesk.Revit.DB.Events.DocumentOpenedEventArgs e )
     {
@@ -87,6 +89,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       if ( _dockableWindow != null && _uiApp != null ) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
         FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
+        //Initialize ShowFromToTreeButton
+        RoutingAppUI.ToggleShowFromToTreeCommandButton( _uiApp.GetDockablePane(_dpid).IsShown());
       }
     }
 
@@ -131,10 +135,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       _uiApp = uiApplication ;
 
       // Use unique guid identifier for this dockable pane
-      var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
+      _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
       try {
         // register dockable pane
-        _uiApp.RegisterDockablePane( dpid, "From-To Tree", _dockableWindow ) ;
+        _uiApp.RegisterDockablePane( _dpid, "From-To Tree", _dockableWindow ) ;
         // subscribe document opend event
         _uiApp.Application.DocumentOpened += new EventHandler<DocumentOpenedEventArgs>( Application_DocumentOpened ) ;
         // subscribe view activated event
