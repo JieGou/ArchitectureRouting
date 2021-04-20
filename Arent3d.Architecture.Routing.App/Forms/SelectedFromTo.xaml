@@ -87,6 +87,7 @@
         <CheckBox x:Name="Direct"
                   Grid.Column="1"
                   Grid.Row="3"
+                  IsThreeState="True"
                   IsChecked="{Binding CurrentDirect, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   HorizontalAlignment="Left"
                   VerticalAlignment="Center" />

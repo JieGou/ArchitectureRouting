@@ -149,7 +149,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( SelectedFromTo.CurveTypes[ (int) SelectedFromTo.CurveTypeIndex ].GetType().Name ) ;
 
-      SelectedFromTo.CurrentDirect = SelectedFromToViewModel.IsDirect ;
+      if ( SelectedFromToViewModel.IsDirect != null ) {
+        SelectedFromTo.CurrentDirect = (bool)SelectedFromToViewModel.IsDirect ;
+      }
+      else {
+        SelectedFromTo.CurrentDirect = null ;
+      }
+      
 
       SelectedFromTo.ResetDialog() ;
     }

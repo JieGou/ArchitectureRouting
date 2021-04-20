@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public string CurveTypeLabel { get ; set ; }
 
     //Direct Info
-    public bool CurrentDirect { get ; set ; }
+    public bool? CurrentDirect { get ; set ; }
 
     public SelectedFromToBase()
     {

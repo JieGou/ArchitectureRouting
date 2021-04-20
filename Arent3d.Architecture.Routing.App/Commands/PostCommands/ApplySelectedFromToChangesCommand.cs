@@ -30,17 +30,22 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
       if ( diameters != null && systemTypes != null && curveTypes != null ) {
         if ( route != null ) {
           //Change Diameter
+          if (SelectedFromToViewModel.SelectedDiameterIndex != -1) {
             subRoute?.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
-
-            //Change SystemType
-            subRoute?.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
-
-            //Change CurveType
-            subRoute?.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
-
-            //ChangeDirect
-            subRoute?.ChangeIsRoutingOnPipeSpace( SelectedFromToViewModel.IsDirect ) ;
+          }
           
+          //Change SystemType
+          subRoute?.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
+
+          //Change CurveType
+          if ( SelectedFromToViewModel.SelectedCurveTypeIndex != -1) {
+            subRoute?.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
+          }
+
+          //ChangeDirect
+          if ( SelectedFromToViewModel.IsDirect != null ) {
+            subRoute?.ChangeIsRoutingOnPipeSpace( (bool) SelectedFromToViewModel.IsDirect ) ;
+          }
 
 
           return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
@@ -56,7 +61,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
           pickInfo.SubRoute.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
 
           //Change Direct
-          pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace( SelectedFromToViewModel.IsDirect ) ;
+          if ( SelectedFromToViewModel.IsDirect != null ) {
+            pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace( (bool) SelectedFromToViewModel.IsDirect ) ;
+          }
 
           return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
         }

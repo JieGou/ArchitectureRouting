@@ -39,13 +39,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
     }
 
-    public bool IsMultiSelected { get ; set ; }
-
     public bool DisplaySelectedFromTo { get ; set ; }
     private IReadOnlyCollection<Route> AllRoutes { get ; set ; }
     private Document Doc { get ; }
     private UIDocument UiDoc { get ; }
-
 
     protected FromToItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes )
     {
@@ -62,6 +59,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public abstract void OnSelected() ;
 
     public abstract void OnDoubleClicked() ;
+
+    public abstract bool IsCurveTypeMultiSelected( Route route ) ;
+    public abstract bool IsDiameterMultiSelected( Route route ) ;
+    public abstract bool IsViaPsMultiSelected( Route route ) ;
 
     /// <summary>
     /// Create Hierarchical FromToData from allRoutes
@@ -96,8 +97,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         // Create and add ChildItems
         routeItem.CreateChildItems( routeItem ) ;
-        routeItem.IsMultiSelected = routeItem.GetSelectingState( route ) ;
-        TaskDialog.Show( route.RouteName + "MultiSelect State", routeItem.IsMultiSelected.ToString() ) ;
         yield return routeItem ;
       }
 
@@ -112,8 +111,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         // Create and add ChildItems
         branchItem.CreateChildItems( branchItem ) ;
-        branchItem.IsMultiSelected = branchItem.GetSelectingState( c ) ;
-        TaskDialog.Show( c.RouteName + "MultiSelect State", branchItem.IsMultiSelected.ToString() ) ;
       }
     }
 
@@ -201,42 +198,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
     }
 
-    private bool GetSelectingState( Route route )
-    {
-      var routeMepSystem = new RouteMEPSystem( Doc, route ) ;
-      var curveTypes = new List<MEPCurveType>() ;
-      var diameters = new List<double>() ;
-      foreach ( var subRoute in route.SubRoutes ) {
-        if ( ! curveTypes.Contains( routeMepSystem.CurveType ) ) {
-          curveTypes.Add( routeMepSystem.CurveType ) ;
-        }
-
-        if ( ! diameters.Contains( subRoute.GetDiameter( Doc ) ) ) {
-          diameters.Add( subRoute.GetDiameter( Doc ) ) ;
-        }
-      }
-
-      var curveTypeResult = false ;
-      var diameterResult = false ;
-
-      try {
-        var singleCurveType = curveTypes.SingleOrDefault() ;
-        curveTypeResult = false ;
-      }
-      catch {
-        curveTypeResult = true ;
-      }
-
-      try {
-        var singleDiameter = diameters.SingleOrDefault() ;
-        diameterResult = false ;
-      }
-      catch {
-        diameterResult = true ;
-      }
-
-      return curveTypeResult || diameterResult ;
-    }
 
     /// <summary>
     /// 
@@ -270,7 +231,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         if ( _selectedRoute != null ) {
           // set SelectedRoute to SelectedFromToViewModel
-          SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, _selectedRoute.GetSubRoute( 0 ) ) ;
+          SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, _selectedRoute.GetSubRoute( 0 ), this ) ;
 
           _targetElements = Doc?.GetAllElementsOfRouteName<Element>( _selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
           // Select targetElements
@@ -286,6 +247,88 @@ namespace Arent3d.Architecture.Routing.App.Forms
           // Select targetElements
           UiDoc?.ShowElements( _targetElements ) ;
         }
+      }
+
+      /// <summary>
+      /// Get CuveType's multi selected state
+      /// </summary>
+      /// <param name="route"></param>
+      /// <returns></returns>
+      public override bool IsCurveTypeMultiSelected( Route route )
+      {
+        var routeMepSystem = new RouteMEPSystem( Doc, route ) ;
+        var curveTypes = new List<MEPCurveType>() ;
+
+        foreach ( var subRoute in route.SubRoutes ) {
+          if ( ! curveTypes.Contains( routeMepSystem.CurveType ) ) {
+            curveTypes.Add( routeMepSystem.CurveType ) ;
+          }
+        }
+
+        var curveTypeResult = false ;
+        try {
+          var singleCurveType = curveTypes.SingleOrDefault() ;
+          curveTypeResult = false ;
+        }
+        catch {
+          curveTypeResult = true ;
+        }
+
+        return curveTypeResult ;
+      }
+
+      /// <summary>
+      /// Get Diameter's multi selected state
+      /// </summary>
+      /// <param name="route"></param>
+      /// <returns></returns>
+      public override bool IsDiameterMultiSelected( Route route )
+      {
+        var diameters = new List<double>() ;
+
+        foreach ( var subRoute in route.SubRoutes ) {
+          if ( ! diameters.Contains( subRoute.GetDiameter( Doc ) ) ) {
+            diameters.Add( subRoute.GetDiameter( Doc ) ) ;
+          }
+        }
+
+        var diameterResult = false ;
+        try {
+          var singleDiameter = diameters.SingleOrDefault() ;
+          diameterResult = false ;
+        }
+        catch {
+          diameterResult = true ;
+        }
+
+        return diameterResult ;
+      }
+
+      /// <summary>
+      /// Get ViaPs's multi selected state
+      /// </summary>
+      /// <param name="route"></param>
+      /// <returns></returns>
+      public override bool IsViaPsMultiSelected( Route route )
+      {
+        var directs = new List<bool>() ;
+
+        foreach ( var subRoute in route.SubRoutes ) {
+          if ( ! directs.Contains( ( subRoute.IsRoutingOnPipeSpace ) ) ) {
+            directs.Add( subRoute.IsRoutingOnPipeSpace ) ;
+          }
+        }
+
+        var directResult = false ;
+        try {
+          var singleDirect = directs.SingleOrDefault() ;
+          directResult = false ;
+        }
+        catch {
+          directResult = true ;
+        }
+
+        return directResult ;
       }
     }
 
@@ -311,6 +354,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
       public override void OnDoubleClicked()
       {
         UiDoc?.ShowElements( _targetElements ) ;
+      }
+
+      public override bool IsCurveTypeMultiSelected( Route route )
+      {
+        return false ;
+      }
+
+      public override bool IsDiameterMultiSelected( Route route )
+      {
+        return false ;
+      }
+
+      public override bool IsViaPsMultiSelected( Route route )
+      {
+        return false ;
       }
     }
 
@@ -339,7 +397,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
           if ( _targetElements != null ) {
             UiDoc?.Selection.SetElementIds( _targetElements ) ;
             // set SelectedRoute to SelectedFromToViewModel
-            if ( UiDoc != null ) SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, Route.SubRoutes.ElementAt( SubRouteIndex ) ) ;
+            if ( UiDoc != null ) SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, Route.SubRoutes.ElementAt( SubRouteIndex ), this ) ;
           }
         }
       }
@@ -347,6 +405,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
       public override void OnDoubleClicked()
       {
         UiDoc?.ShowElements( _targetElements ) ;
+      }
+
+      public override bool IsCurveTypeMultiSelected( Route route )
+      {
+        return false ;
+      }
+
+      public override bool IsDiameterMultiSelected( Route route )
+      {
+        return false ;
+      }
+
+      public override bool IsViaPsMultiSelected( Route route )
+      {
+        return false ;
       }
     }
 
@@ -373,6 +446,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
       public override void OnDoubleClicked()
       {
         UiDoc?.ShowElements( _targetElements ) ;
+      }
+
+      public override bool IsCurveTypeMultiSelected( Route route )
+      {
+        return false ;
+      }
+
+      public override bool IsDiameterMultiSelected( Route route )
+      {
+        return false ;
+      }
+
+      public override bool IsViaPsMultiSelected( Route route )
+      {
+        return false ;
       }
     }
   }
