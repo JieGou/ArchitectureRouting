@@ -19,11 +19,5 @@ namespace Arent3d.Architecture.Routing.App
 
       return targetStrings ;
     }
-
-    public static ElementId GetElementIdFromViewItem( TreeViewItem treeViewItem )
-    {
-      var elementId = new ElementId( Convert.ToInt32( treeViewItem.Uid ) ) ;
-      return elementId ;
-    }
   }
 }
