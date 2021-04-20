@@ -93,11 +93,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     // document opened event
     private void Application_DocumentChanged( object sender, Autodesk.Revit.DB.Events.DocumentChangedEventArgs e )
     {
-      var changedElementIds = new List<ElementId>() ;
-      changedElementIds.AddRange( ( e.GetAddedElementIds() )) ;
-      changedElementIds.AddRange(e.GetDeletedElementIds()) ;
-      changedElementIds.AddRange(e.GetModifiedElementIds())  ;
-
+      var changedElementIds = e.GetAddedElementIds().Concat( e.GetDeletedElementIds() ).Concat( e.GetModifiedElementIds() ) ; ;
+      
       var transactions = e.GetTransactionNames() ;
       
       var changedRoute = e.GetDocument().FilterStorableElements<Route>( changedElementIds ) ;
