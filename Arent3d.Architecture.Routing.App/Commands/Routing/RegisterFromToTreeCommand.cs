@@ -93,16 +93,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     // document opened event
     private void Application_DocumentChanged( object sender, Autodesk.Revit.DB.Events.DocumentChangedEventArgs e )
     {
-      var changedElementIds = new List<ElementId?>() ;
+      var changedElementIds = new List<ElementId>() ;
       changedElementIds.AddRange( ( e.GetAddedElementIds() )) ;
       changedElementIds.AddRange(e.GetDeletedElementIds()) ;
       changedElementIds.AddRange(e.GetModifiedElementIds())  ;
 
       var transactions = e.GetTransactionNames() ;
       
-      var allStorable = e.GetDocument().GetAllStorables<Route>() ;
-      
-      var changedRoute = allStorable.Where( r => changedElementIds.Contains(r.OwnerElement?.Id) ) ;
+      var changedRoute = e.GetDocument().FilterStorableElements<Route>( changedElementIds ) ;
 
       // provide ExternalCommandData object to dockable page
       if ( _dockableWindow != null && _uiApp != null && (transactions.Any( GetRoutingTransactions ) || changedRoute.Any())) {
