@@ -15,7 +15,9 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     //Route
     public static Route? TargetRoute { get ; set ; }
 
-    public static SubRoute? TargetSubRoute { get ; set ; }
+    public static IReadOnlyCollection<SubRoute>? TargetSubRoutes { get ; set ; }
+
+    public static bool? IsRoot { get ; set ; }
 
     //Selecting PickInfo 
     public static PointOnRoutePicker.PickInfo? TargetPickInfo { get ; set ; }
@@ -79,27 +81,28 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     /// <param name="uiDoc"></param>
     /// <param name="doc"></param>
     /// <param name="subRoute"></param>
-    public static void SetSelectedFromToInfo( UIDocument uiDoc, Document doc, SubRoute? subRoute, FromToItem fromToItem )
+    public static void SetSelectedFromToInfo( UIDocument uiDoc, Document doc, IReadOnlyCollection<SubRoute>? subRoutes, FromToItem fromToItem )
     {
       UiDoc = uiDoc ;
 
-      TargetRoute = subRoute?.Route ;
-      TargetSubRoute = subRoute ;
-      if ( subRoute == null ) return ;
-      var routeMepSystem = new RouteMEPSystem( doc, subRoute.Route ) ;
+      TargetRoute = subRoutes?.ElementAt( 0 ).Route ;
+      TargetSubRoutes = subRoutes ;
+
+      if ( subRoutes?.ElementAt( 0 ).Route is not { } route ) return ;
+      var routeMepSystem = new RouteMEPSystem( doc, route ) ;
 
       //Diameter Info
       Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;
-      double? diameter = subRoute.GetDiameter( doc ) ;
+      double? diameter = subRoutes.ElementAt( 0 ).GetDiameter( doc ) ;
       // if Diameter is multi selected, set null
-      if ( fromToItem.IsDiameterMultiSelected( subRoute.Route ) ) {
+      if ( fromToItem.IsDiameterMultiSelected( route ) ) {
         diameter = null ;
       }
 
       DiameterIndex = Diameters.FindDoubleIndex( diameter, doc ) ;
 
       //System Type Info(PinpingSystemType in lookup)
-      var connector = subRoute.GetReferenceConnector() ;
+      var connector = subRoutes.ElementAt( 0 ).GetReferenceConnector() ;
       SystemTypes = routeMepSystem.GetSystemTypes( doc, connector ).OrderBy( s => s.Name ).ToList() ;
       var systemType = routeMepSystem.MEPSystemType ;
       SystemTypeIndex = SystemTypes.ToList().FindIndex( s => s.Id == systemType?.Id ) ;
@@ -108,16 +111,16 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       var curveType = routeMepSystem.CurveType ;
       var type = curveType.GetType() ;
       // if CurveType is multi selected, set null
-      if ( fromToItem.IsCurveTypeMultiSelected( subRoute.Route ) ) {
+      if ( fromToItem.IsCurveTypeMultiSelected( route ) ) {
         curveType = null ;
       }
 
       CurveTypes = routeMepSystem.GetCurveTypes( doc, type ).OrderBy( s => s.Name ).ToList() ;
       CurveTypeIndex = CurveTypes.ToList().FindIndex( c => c.Id == curveType?.Id ) ;
       //Direct Info
-      IsDirect = subRoute.IsRoutingOnPipeSpace ;
+      IsDirect = subRoutes.ElementAt( 0 ).IsRoutingOnPipeSpace ;
       // if Direct is multi selected, set null
-      if ( fromToItem.IsViaPsMultiSelected( subRoute.Route ) ) {
+      if ( fromToItem.IsViaPsMultiSelected( route ) ) {
         IsDirect = null ;
       }
     }

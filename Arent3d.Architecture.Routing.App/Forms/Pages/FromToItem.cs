@@ -231,7 +231,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         if ( _selectedRoute != null ) {
           // set SelectedRoute to SelectedFromToViewModel
-          SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, _selectedRoute.GetSubRoute( 0 ), this ) ;
+          SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, _selectedRoute.SubRoutes.ToList(), this ) ;
 
           _targetElements = Doc?.GetAllElementsOfRouteName<Element>( _selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
           // Select targetElements
@@ -397,7 +397,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
           if ( _targetElements != null ) {
             UiDoc?.Selection.SetElementIds( _targetElements ) ;
             // set SelectedRoute to SelectedFromToViewModel
-            if ( UiDoc != null ) SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, Route.SubRoutes.ElementAt( SubRouteIndex ), this ) ;
+            var targetSubRoutes = new List<SubRoute> { Route.SubRoutes.ElementAt( SubRouteIndex ) } ;
+            if ( UiDoc != null ) SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, targetSubRoutes, this ) ;
           }
         }
       }

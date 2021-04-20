@@ -21,32 +21,33 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
     {
       var route = SelectedFromToViewModel.TargetRoute ;
-      var subRoute = SelectedFromToViewModel.TargetSubRoute ;
+      var subRoutes = SelectedFromToViewModel.TargetSubRoutes ;
       var pickInfo = SelectedFromToViewModel.TargetPickInfo ;
       var diameters = SelectedFromToViewModel.Diameters ;
       var systemTypes = SelectedFromToViewModel.SystemTypes ;
       var curveTypes = SelectedFromToViewModel.CurveTypes ;
 
       if ( diameters != null && systemTypes != null && curveTypes != null ) {
-        if ( route != null ) {
-          //Change Diameter
-          if (SelectedFromToViewModel.SelectedDiameterIndex != -1) {
-            subRoute?.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
-          }
-          
-          //Change SystemType
-          subRoute?.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
+        if ( route != null && subRoutes != null ) {
+          foreach ( var subRoute in subRoutes ) {
+            //Change Diameter
+            if ( SelectedFromToViewModel.SelectedDiameterIndex != -1 ) {
+              subRoute?.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
+            }
 
-          //Change CurveType
-          if ( SelectedFromToViewModel.SelectedCurveTypeIndex != -1) {
-            subRoute?.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
-          }
+            //Change SystemType
+            subRoute?.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
 
-          //ChangeDirect
-          if ( SelectedFromToViewModel.IsDirect != null ) {
-            subRoute?.ChangeIsRoutingOnPipeSpace( (bool) SelectedFromToViewModel.IsDirect ) ;
-          }
+            //Change CurveType
+            if ( SelectedFromToViewModel.SelectedCurveTypeIndex != -1 ) {
+              subRoute?.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
+            }
 
+            //ChangeDirect
+            if ( SelectedFromToViewModel.IsDirect != null ) {
+              subRoute?.ChangeIsRoutingOnPipeSpace( (bool) SelectedFromToViewModel.IsDirect ) ;
+            }
+          }
 
           return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
         }
