@@ -32,20 +32,20 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
           foreach ( var subRoute in subRoutes ) {
             //Change Diameter
             if ( SelectedFromToViewModel.SelectedDiameterIndex != -1 ) {
-              subRoute?.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
+              subRoute.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
             }
 
             //Change SystemType
-            subRoute?.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
+            subRoute.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
 
             //Change CurveType
             if ( SelectedFromToViewModel.SelectedCurveTypeIndex != -1 ) {
-              subRoute?.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
+              subRoute.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
             }
 
             //ChangeDirect
-            if ( SelectedFromToViewModel.IsDirect != null ) {
-              subRoute?.ChangeIsRoutingOnPipeSpace( (bool) SelectedFromToViewModel.IsDirect ) ;
+            if ( SelectedFromToViewModel.IsDirect is {} isDirect) {
+              subRoute.ChangeIsRoutingOnPipeSpace( isDirect ) ;
             }
           }
 
@@ -62,8 +62,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
           pickInfo.SubRoute.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
 
           //Change Direct
-          if ( SelectedFromToViewModel.IsDirect != null ) {
-            pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace( (bool) SelectedFromToViewModel.IsDirect ) ;
+          if ( SelectedFromToViewModel.IsDirect is {} isDirect ) {
+            pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace( isDirect ) ;
           }
 
           return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
