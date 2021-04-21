@@ -22,16 +22,16 @@ namespace Arent3d.Architecture.Routing.App
       string? targetTabName = "App.Routing.TabName".GetAppStringByKey() ;
 
 
-      selectionTab = GetRibbonTabFromName( targetTabName ) ;
+      selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
       if ( selectionTab == null ) {
         return ;
       }
       else {
         foreach ( var panel in selectionTab.Panels ) {
-          if ( panel.Source.Title == "From-To" ) {
+          if ( panel.Source.Title == "App.Panels.Routing.Monitor".GetAppStringByKeyOrDefault("Monitor Selection") ) {
             selectionPanel = panel ;
             foreach ( var item in panel.Source.Items ) {
-              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.routing%arent3d.architecture.routing.app.commands.monitor_selection_command" ) {
+              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.monitor%arent3d.architecture.routing.app.commands.monitor_selection_command" ) {
                 selectionButton = item ;
                 break ;
               }
@@ -47,34 +47,12 @@ namespace Arent3d.Architecture.Routing.App
       }
 
       if ( selectionPanel != null && selectionButton != null ) {
-        var position = GetPositionBeforeButton( "ID_REVIT_FILE_PRINT" ) ;
+        var position = UIHelper.GetPositionBeforeButton( "ID_REVIT_FILE_PRINT" ) ;
 
-        PlaceButtonOnQuickAccess( position, selectionButton ) ;
-        
+        UIHelper.PlaceButtonOnQuickAccess( position, selectionButton ) ;
+        // Remove Panel
+        UIHelper.RemovePanelFromTab(selectionTab, selectionPanel);
       }
     }
-
-    private static RibbonTab? GetRibbonTabFromName( string? targetTabName ) 
-      => ComponentManager.Ribbon.Tabs.ToList().Find( t => t.Id == targetTabName ) ;
-
-    private static int GetPositionBeforeButton( string s )
-    {
-      var items = ComponentManager.QuickAccessToolBar.Items.TakeWhile( item => item.Id != s ) ;
-
-      var position = items.Count() + 1 ;
-
-      return position ;
-    }
-
-    private static void PlaceButtonOnQuickAccess( int position, Autodesk.Windows.RibbonItem ribbonItem )
-    {
-      if ( position < ComponentManager.QuickAccessToolBar.Items.Count ) {
-        ComponentManager.QuickAccessToolBar.InsertStandardItem( position, ribbonItem ) ;
-      }
-      else {
-        ComponentManager.QuickAccessToolBar.AddStandardItem( ribbonItem ) ;
-      }
-    }
-    
   }
 }
