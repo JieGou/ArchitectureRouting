@@ -15,31 +15,19 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     //Route
     public static Route? TargetRoute { get ; set ; }
 
-    public static IReadOnlyCollection<SubRoute>? TargetSubRoutes { get ; set ; }
-
-
-    //Selecting PickInfo 
-    public static PointOnRoutePicker.PickInfo? TargetPickInfo { get ; private set ; }
-
     //Diameter
     public static int SelectedDiameterIndex { get ; private set ; }
-    private static IList<double>? Diameters { get ; set ; }
 
     //SystemType 
     public static int SelectedSystemTypeIndex { get ; private set ; }
-    private static IList<MEPSystemType>? SystemTypes { get ; set ; }
 
     //CurveType
     public static int SelectedCurveTypeIndex { get ; private set ; }
-    private static IList<MEPCurveType>? CurveTypes { get ; set ; }
 
     //Direct
     public static bool? IsDirect { get ; set ; }
 
-    //Dialog
-    private static SelectedFromTo? _openedDialog ;
-
-    public static PropertySource.RoutePropertySource? PropertySourceType { get ; set ; }
+    public static PropertySource.RoutePropertySource? PropertySourceType { get ; private set ; }
 
 
     static SelectedFromToViewModel()
@@ -47,36 +35,12 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     }
 
     /// <summary>
-    /// Show SelectedFromTo.xaml
-    /// </summary>
-    /// <param name="uiDocument"></param>
-    /// <param name="targetIndex"></param>
-    /// <param name="diameterList"></param>
-    /// <param name="direct"></param>
-    /// <param name="selectedPickInfo"></param>
-    public static void ShowSelectedFromToDialog( UIDocument uiDocument, int diameterIndex, IList<double> diameters, int systemTypeIndex, IList<MEPSystemType> systemTypes, int curveTypeIndex, IList<MEPCurveType> curveTypes, Type type, bool direct, PointOnRoutePicker.PickInfo selectedPickInfo )
-    {
-      UiDoc = uiDocument ;
-      TargetPickInfo = selectedPickInfo ;
-      Diameters = diameters ;
-      SystemTypes = systemTypes ;
-      CurveTypes = curveTypes ;
-      IsDirect = direct ;
-
-      _openedDialog?.Close() ;
-
-      var dialog = new SelectedFromTo( uiDocument, diameters, diameterIndex, systemTypes, systemTypeIndex, CurveTypes, curveTypeIndex, type, direct ) ;
-
-      dialog.ShowDialog() ;
-      _openedDialog = dialog ;
-    }
-
-    /// <summary>
-    /// Set Selected Fromt-To Info 
+    /// Set Selected Fromt-To Info
     /// </summary>
     /// <param name="uiDoc"></param>
     /// <param name="doc"></param>
-    /// <param name="subRoute"></param>
+    /// <param name="subRoutes"></param>
+    /// <param name="fromToItem"></param>
     public static void SetSelectedFromToInfo( UIDocument uiDoc, Document doc, IReadOnlyCollection<SubRoute>? subRoutes, FromToItem fromToItem )
     {
       UiDoc = uiDoc ;
@@ -123,8 +87,6 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         RouteMEPSystem routeMepSystem = new RouteMEPSystem( UiDoc.Document, TargetRoute ) ;
         resultDiameters = routeMepSystem.GetNominalDiameters( PropertySourceType.CurveTypes[ curveTypeIndex ] ) ;
       }
-
-      Diameters = resultDiameters ;
 
       return resultDiameters ;
     }

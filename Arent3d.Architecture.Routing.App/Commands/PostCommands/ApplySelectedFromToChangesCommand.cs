@@ -22,7 +22,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
       if ( SelectedFromToViewModel.PropertySourceType is { } propertySource ) {
         var route = propertySource.TargetRoute ;
         var subRoutes = propertySource.TargetSubRoutes ;
-        var pickInfo = SelectedFromToViewModel.TargetPickInfo ;
         var diameters = propertySource.Diameters ;
         var systemTypes = propertySource.SystemTypes ;
         var curveTypes = propertySource.CurveTypes ;
@@ -50,23 +49,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
             }
 
             return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
-          }
-          else if ( pickInfo != null ) {
-            //Change Diameter
-            pickInfo.SubRoute.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
-
-            //Change SystemType
-            pickInfo.SubRoute.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
-
-            //Change CurveType
-            pickInfo.SubRoute.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
-
-            //Change Direct
-            if ( SelectedFromToViewModel.IsDirect is { } isDirect ) {
-              pickInfo.SubRoute.ChangeIsRoutingOnPipeSpace( isDirect ) ;
-            }
-
-            return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
           }
           else {
             return base.GetRouteSegmentsInTransaction( uiDocument ) ;
