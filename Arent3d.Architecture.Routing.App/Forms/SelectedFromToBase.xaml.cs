@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public string CurveTypeLabel { get ; set ; }
 
     //Direct Info
-    public bool CurrentDirect { get ; set ; }
+    public bool? CurrentDirect { get ; set ; }
 
     public SelectedFromToBase()
     {
@@ -110,12 +110,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       SystemTypeComboBox.ItemsSource = SystemTypes ;
       if ( SystemTypeIndex != null ) {
-        SystemTypeComboBox.SelectedIndex = SelectedFromToViewModel.SystemTypeIndex ;
+        SystemTypeComboBox.SelectedIndex = (int) SystemTypeIndex ;
       }
 
       CurveTypeComboBox.ItemsSource = CurveTypes ;
       if ( CurveTypeIndex != null ) {
-        CurveTypeComboBox.SelectedIndex = SelectedFromToViewModel.CurveTypeIndex ;
+        CurveTypeComboBox.SelectedIndex = (int) CurveTypeIndex ;
       }
 
       CurveTypeDomain.Content = CurveTypeLabel ;
