@@ -137,19 +137,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// Set SelectedFromtTo Dialog by Selected Route
     /// </summary>
     /// <param name="route"></param>
-    private void DisplaySelectedFromTo()
+    private void DisplaySelectedFromTo( PropertySource.RoutePropertySource propertySource )
     {
-      SelectedFromTo.UpdateFromToParameters( SelectedFromToViewModel.Diameters, SelectedFromToViewModel.SystemTypes, SelectedFromToViewModel.CurveTypes ) ;
+      SelectedFromTo.UpdateFromToParameters( propertySource?.Diameters, propertySource?.SystemTypes, propertySource?.CurveTypes ) ;
 
-      SelectedFromTo.DiameterIndex = SelectedFromToViewModel.DiameterIndex ;
+      SelectedFromTo.DiameterIndex = propertySource?.DiameterIndex ;
 
-      SelectedFromTo.SystemTypeIndex = SelectedFromToViewModel.SystemTypeIndex ;
+      SelectedFromTo.SystemTypeIndex = propertySource?.SystemTypeIndex ;
 
-      SelectedFromTo.CurveTypeIndex = SelectedFromToViewModel.CurveTypeIndex ;
+      SelectedFromTo.CurveTypeIndex = propertySource?.CurveTypeIndex ;
 
-      SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( SelectedFromTo.CurveTypes[ (int) SelectedFromTo.CurveTypeIndex ].GetType().Name ) ;
+      if ( SelectedFromTo.CurveTypeIndex is { } index ) {
+        SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( SelectedFromTo.CurveTypes[ index ].GetType().Name ) ;
+      }
 
-      SelectedFromTo.CurrentDirect = SelectedFromToViewModel.IsDirect ;
+      SelectedFromTo.CurrentDirect = propertySource?.IsDirect ;
 
 
       SelectedFromTo.ResetDialog() ;
@@ -167,9 +169,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
       if ( selectedItem is FromToItem selectedFromToItem ) {
         selectedFromToItem.OnSelected() ;
 
-        if ( selectedFromToItem.DisplaySelectedFromTo ) {
+        if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routePropertySource ) {
           // show SelectedFromTo 
-          DisplaySelectedFromTo() ;
+          DisplaySelectedFromTo( routePropertySource ) ;
+        }
+        else if ( selectedFromToItem.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
+          // show Connector UI
+          var transform = connectorPropertySource.ConnectorTransform ;
         }
         else {
           // don't show SelectedFromTo 
@@ -255,7 +261,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       // this method is in developing. This works only in Parent Item
       foreach ( var item in collection ) {
         if ( item is FromToItem fromToItem && fromToItem.ElementId != null ) {
-          TreeViewItem? treeViewItem = FromToTreeView.ItemContainerGenerator.ContainerFromItem( item as object ) as TreeViewItem ; 
+          TreeViewItem? treeViewItem = FromToTreeView.ItemContainerGenerator.ContainerFromItem( item as object ) as TreeViewItem ;
           // Find in current
           if ( fromToItem.ElementId.Equals( elementId ) ) {
             return treeViewItem ;

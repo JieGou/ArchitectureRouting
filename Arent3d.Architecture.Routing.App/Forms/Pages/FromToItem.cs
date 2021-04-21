@@ -15,9 +15,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
 {
   public abstract class FromToItem
   {
-    public string ItemTypeName { get ; init ; }
+    public string ItemTypeName { get ; private init ; }
     private string ItemTag { get ; init ; }
-    public ElementId? ElementId { get ; init ; }
+    public ElementId? ElementId { get ; private init ; }
     public IReadOnlyList<FromToItem> Children => ChildrenList ;
 
     private List<FromToItem> ChildrenList { get ; }
@@ -38,11 +38,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
         }
       }
     }
-
-    public bool DisplaySelectedFromTo { get ; set ; }
     private IReadOnlyCollection<Route> AllRoutes { get ; set ; }
     private Document Doc { get ; }
     private UIDocument UiDoc { get ; }
+
+    // Property source for UI
+    public PropertySource? PropertySourceType { get ; private init ; }
 
     protected FromToItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes )
     {
@@ -50,7 +51,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
       ItemTag = "" ;
       ElementId = null ;
       ChildrenList = new List<FromToItem>() ;
-      DisplaySelectedFromTo = false ;
       AllRoutes = allRoutes ;
       Doc = doc ;
       UiDoc = uiDoc ;
@@ -59,10 +59,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public abstract void OnSelected() ;
 
     public abstract void OnDoubleClicked() ;
-
-    public abstract bool IsCurveTypeMultiSelected( Route route ) ;
-    public abstract bool IsDiameterMultiSelected( Route route ) ;
-    public abstract bool IsViaPsMultiSelected( Route route ) ;
 
     /// <summary>
     /// Create Hierarchical FromToData from allRoutes
@@ -89,7 +85,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       foreach ( var route in parentFromTos.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
-        var routeItem = new FromToItem.RouteItem( doc, uiDoc, allRoutes, route ) { ItemTypeName = route.RouteName, ElementId = route.OwnerElement?.Id, ItemTag = "Route", DisplaySelectedFromTo = true } ;
+        var routeItem = new FromToItem.RouteItem( doc, uiDoc, allRoutes, route ) { ItemTypeName = route.RouteName, ElementId = route.OwnerElement?.Id, ItemTag = "Route" } ;
         // store in dict
         if ( ItemDictionary != null ) {
           ItemDictionary[ route.RouteName ] = routeItem ;
@@ -101,7 +97,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       foreach ( var c in childBranches ) {
-        var branchItem = new FromToItem.RouteItem( doc, uiDoc, allRoutes, c ) { ItemTypeName = c.RouteName, ElementId = c.OwnerElement?.Id, ItemTag = "Route", DisplaySelectedFromTo = true } ;
+        var branchItem = new FromToItem.RouteItem( doc, uiDoc, allRoutes, c ) { ItemTypeName = c.RouteName, ElementId = c.OwnerElement?.Id, ItemTag = "Route"} ;
         var parentRouteName = c.GetParentBranches().ToList().Last().RouteName ;
         // search own parent TreeViewItem
         if ( ItemDictionary != null ) {
@@ -126,7 +122,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         {
           var connector = connectorIndicator.GetConnector( Doc ) ;
           if ( connector?.Owner is FamilyInstance familyInstance ) {
-            var connectorItem = new FromToItem.ConnectorItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes ) { ItemTypeName = familyInstance.Symbol.Family.Name + ":" + connector.Owner.Name, ElementId = connector.Owner.Id, ItemTag = "Connector", DisplaySelectedFromTo = false } ;
+            var connectorItem = new FromToItem.ConnectorItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, connector ) { ItemTypeName = familyInstance.Symbol.Family.Name + ":" + connector.Owner.Name, ElementId = connector.Owner.Id, ItemTag = "Connector" } ;
             routeItem?.ChildrenList.Add( connectorItem ) ;
           }
 
@@ -137,7 +133,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         {
           var passPointItem = new FromToItem.PassPointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes )
           {
-            ItemTypeName = "PassPoint", ElementId = new ElementId( passPointEndIndicator.ElementId ), ItemTag = "PassPoint", DisplaySelectedFromTo = false,
+            ItemTypeName = "PassPoint", ElementId = new ElementId( passPointEndIndicator.ElementId ), ItemTag = "PassPoint",
           } ;
           routeItem?.ChildrenList.Add( passPointItem ) ;
           break ;
@@ -152,15 +148,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="subRoute"></param>
     private void CreateSubRouteItem( RouteItem routeItem, SubRoute subRoute )
     {
-      var subRouteItem = new FromToItem.SubRouteItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes )
-      {
-        ItemTypeName = "Section",
-        ElementId = Doc.GetAllElementsOfSubRoute<Element>( subRoute.Route.RouteName, subRoute.SubRouteIndex ).FirstOrDefault()?.Id,
-        ItemTag = "SubRoute",
-        DisplaySelectedFromTo = true,
-        Route = subRoute.Route,
-        SubRouteIndex = subRoute.SubRouteIndex
-      } ;
+      var subRouteItem = new FromToItem.SubRouteItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, subRoute ) { ItemTypeName = "Section", ElementId = Doc.GetAllElementsOfSubRoute<Element>( subRoute.Route.RouteName, subRoute.SubRouteIndex ).FirstOrDefault()?.Id, ItemTag = "SubRoute" } ;
       routeItem?.ChildrenList.Add( subRouteItem ) ;
     }
 
@@ -205,8 +193,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
     private class RouteItem : FromToItem
     {
       private Route? _selectedRoute ;
-      private IEnumerable<Route> _childBranches ;
-      public readonly IEnumerable<Connector> Connectors ;
 
       public readonly IEnumerable<SubRoute> SubRoutes ;
 
@@ -218,9 +204,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       public RouteItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes, Route ownRoute ) : base( doc, uiDoc, allRoutes )
       {
-        _childBranches = allRoutes.Where( r => r.HasParent() && r.GetParentBranches().ToList().Last().RouteName == ownRoute.RouteName ) ;
-        Connectors = ownRoute.GetAllConnectors( doc ) ;
         SubRoutes = ownRoute.SubRoutes ;
+        PropertySourceType = new PropertySource.RoutePropertySource( doc, ownRoute.SubRoutes ) ;
       }
 
       public override void OnSelected()
@@ -229,15 +214,14 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         _selectedRoute = AllRoutes?.ToList().Find( r => r.OwnerElement?.Id == ElementId ) ;
 
-        if ( _selectedRoute != null ) {
-          // set SelectedRoute to SelectedFromToViewModel
-          SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, _selectedRoute.SubRoutes.ToList(), this ) ;
+        if ( _selectedRoute == null ) return ;
+        // set SelectedRoute to SelectedFromToViewModel
+        SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, _selectedRoute.SubRoutes.ToList(), this ) ;
 
-          _targetElements = Doc?.GetAllElementsOfRouteName<Element>( _selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
-          // Select targetElements
-          if ( _targetElements != null ) {
-            UiDoc?.Selection.SetElementIds( _targetElements ) ;
-          }
+        _targetElements = Doc?.GetAllElementsOfRouteName<Element>( _selectedRoute.RouteName ).Select( elem => elem.Id ).ToList() ;
+        // Select targetElements
+        if ( _targetElements != null ) {
+          UiDoc?.Selection.SetElementIds( _targetElements ) ;
         }
       }
 
@@ -248,88 +232,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
           UiDoc?.ShowElements( _targetElements ) ;
         }
       }
-
-      /// <summary>
-      /// Get CuveType's multi selected state
-      /// </summary>
-      /// <param name="route"></param>
-      /// <returns></returns>
-      public override bool IsCurveTypeMultiSelected( Route route )
-      {
-        var routeMepSystem = new RouteMEPSystem( Doc, route ) ;
-        var curveTypes = new List<MEPCurveType>() ;
-
-        foreach ( var subRoute in route.SubRoutes ) {
-          if ( ! curveTypes.Contains( routeMepSystem.CurveType ) ) {
-            curveTypes.Add( routeMepSystem.CurveType ) ;
-          }
-        }
-
-        var curveTypeResult = false ;
-        try {
-          var singleCurveType = curveTypes.SingleOrDefault() ;
-          curveTypeResult = false ;
-        }
-        catch {
-          curveTypeResult = true ;
-        }
-
-        return curveTypeResult ;
-      }
-
-      /// <summary>
-      /// Get Diameter's multi selected state
-      /// </summary>
-      /// <param name="route"></param>
-      /// <returns></returns>
-      public override bool IsDiameterMultiSelected( Route route )
-      {
-        var diameters = new List<double>() ;
-
-        foreach ( var subRoute in route.SubRoutes ) {
-          if ( ! diameters.Contains( subRoute.GetDiameter( Doc ) ) ) {
-            diameters.Add( subRoute.GetDiameter( Doc ) ) ;
-          }
-        }
-
-        var diameterResult = false ;
-        try {
-          var singleDiameter = diameters.SingleOrDefault() ;
-          diameterResult = false ;
-        }
-        catch {
-          diameterResult = true ;
-        }
-
-        return diameterResult ;
-      }
-
-      /// <summary>
-      /// Get ViaPs's multi selected state
-      /// </summary>
-      /// <param name="route"></param>
-      /// <returns></returns>
-      public override bool IsViaPsMultiSelected( Route route )
-      {
-        var directs = new List<bool>() ;
-
-        foreach ( var subRoute in route.SubRoutes ) {
-          if ( ! directs.Contains( ( subRoute.IsRoutingOnPipeSpace ) ) ) {
-            directs.Add( subRoute.IsRoutingOnPipeSpace ) ;
-          }
-        }
-
-        var directResult = false ;
-        try {
-          var singleDirect = directs.SingleOrDefault() ;
-          directResult = false ;
-        }
-        catch {
-          directResult = true ;
-        }
-
-        return directResult ;
-      }
     }
 
     private class ConnectorItem : FromToItem
@@ -339,88 +241,59 @@ namespace Arent3d.Architecture.Routing.App.Forms
       private static BitmapImage RouteItemIcon { get ; } = new BitmapImage( new Uri( "../../resources/InsertBranchPoint.png", UriKind.Relative ) ) ;
       public override BitmapImage Icon => RouteItemIcon ;
 
-      public ConnectorItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes ) : base( doc, uiDoc, allRoutes )
+      public ConnectorItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes, Connector connector ) : base( doc, uiDoc, allRoutes )
       {
+        PropertySourceType = new ConnectorPropertySource( doc, connector ) ;
       }
 
       public override void OnSelected()
       {
-        if ( ElementId != null ) {
-          _targetElements = new List<ElementId>() { ElementId } ;
-          UiDoc?.Selection.SetElementIds( _targetElements ) ;
-        }
+        if ( ElementId == null ) return ;
+        _targetElements = new List<ElementId>() { ElementId } ;
+        UiDoc?.Selection.SetElementIds( _targetElements ) ;
       }
 
       public override void OnDoubleClicked()
       {
         UiDoc?.ShowElements( _targetElements ) ;
-      }
-
-      public override bool IsCurveTypeMultiSelected( Route route )
-      {
-        return false ;
-      }
-
-      public override bool IsDiameterMultiSelected( Route route )
-      {
-        return false ;
-      }
-
-      public override bool IsViaPsMultiSelected( Route route )
-      {
-        return false ;
       }
     }
 
 
     private class SubRouteItem : FromToItem
     {
-      public Route? Route { get ; init ; }
-      public int SubRouteIndex { get ; init ; }
+      private Route? Route { get ; init ; }
+      private int SubRouteIndex { get ; init ; }
 
       private List<ElementId>? _targetElements ;
       private static BitmapImage RouteItemIcon { get ; } = new BitmapImage( new Uri( "../../resources/PickFrom-To.png", UriKind.Relative ) ) ;
       public override BitmapImage Icon => RouteItemIcon ;
 
-      public SubRouteItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes ) : base( doc, uiDoc, allRoutes )
+      public SubRouteItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes, SubRoute ownSubRoute ) : base( doc, uiDoc, allRoutes )
       {
         SubRouteIndex = 0 ;
+        Route = ownSubRoute.Route ;
+        SubRouteIndex = ownSubRoute.SubRouteIndex ;
+        PropertySourceType = new PropertySource.RoutePropertySource( Doc, new List<SubRoute>() { ownSubRoute } ) ;
       }
 
       public override void OnSelected()
       {
         _targetElements = new List<ElementId>() ;
 
-        if ( Route != null ) {
-          _targetElements = Doc.GetAllElementsOfSubRoute<Element>( Route.RouteName, SubRouteIndex ).Select( e => e.Id ).ToList() ;
-          // Select targetElements
-          if ( _targetElements != null ) {
-            UiDoc?.Selection.SetElementIds( _targetElements ) ;
-            // set SelectedRoute to SelectedFromToViewModel
-            var targetSubRoutes = new List<SubRoute> { Route.SubRoutes.ElementAt( SubRouteIndex ) } ;
-            if ( UiDoc != null ) SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, targetSubRoutes, this ) ;
-          }
-        }
+        if ( Route == null ) return ;
+        _targetElements = Doc.GetAllElementsOfSubRoute<Element>( Route.RouteName, SubRouteIndex ).Select( e => e.Id ).ToList() ;
+        // Select targetElements
+        if ( _targetElements == null ) return ;
+        UiDoc?.Selection.SetElementIds( _targetElements ) ;
+        // set SelectedRoute to SelectedFromToViewModel
+        var targetSubRoutes = new List<SubRoute> { Route.SubRoutes.ElementAt( SubRouteIndex ) } ;
+        if ( UiDoc != null ) SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, targetSubRoutes, this ) ;
       }
 
       public override void OnDoubleClicked()
       {
         UiDoc?.ShowElements( _targetElements ) ;
-      }
-
-      public override bool IsCurveTypeMultiSelected( Route route )
-      {
-        return false ;
-      }
-
-      public override bool IsDiameterMultiSelected( Route route )
-      {
-        return false ;
-      }
-
-      public override bool IsViaPsMultiSelected( Route route )
-      {
-        return false ;
       }
     }
 
@@ -432,36 +305,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       public PassPointItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes ) : base( doc, uiDoc, allRoutes )
       {
+        PropertySourceType = new PassPointPropertySource( doc ) ;
       }
 
       public override void OnSelected()
       {
         _targetElements = new List<ElementId>() ;
 
-        if ( ElementId != null ) {
-          _targetElements = new List<ElementId>() { ElementId } ;
-          UiDoc?.Selection.SetElementIds( _targetElements ) ;
-        }
+        if ( ElementId == null ) return ;
+        _targetElements = new List<ElementId>() { ElementId } ;
+        UiDoc?.Selection.SetElementIds( _targetElements ) ;
       }
 
       public override void OnDoubleClicked()
       {
         UiDoc?.ShowElements( _targetElements ) ;
-      }
-
-      public override bool IsCurveTypeMultiSelected( Route route )
-      {
-        return false ;
-      }
-
-      public override bool IsDiameterMultiSelected( Route route )
-      {
-        return false ;
-      }
-
-      public override bool IsViaPsMultiSelected( Route route )
-      {
-        return false ;
       }
     }
   }

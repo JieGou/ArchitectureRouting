@@ -17,31 +17,29 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 
     public static IReadOnlyCollection<SubRoute>? TargetSubRoutes { get ; set ; }
 
-    public static bool? IsRoot { get ; set ; }
 
     //Selecting PickInfo 
-    public static PointOnRoutePicker.PickInfo? TargetPickInfo { get ; set ; }
+    public static PointOnRoutePicker.PickInfo? TargetPickInfo { get ; private set ; }
 
     //Diameter
-    public static int DiameterIndex { get ; set ; }
-    public static int SelectedDiameterIndex { get ; set ; }
-    public static IList<double>? Diameters { get ; set ; }
+    public static int SelectedDiameterIndex { get ; private set ; }
+    private static IList<double>? Diameters { get ; set ; }
 
     //SystemType 
-    public static int SystemTypeIndex { get ; set ; }
-    public static int SelectedSystemTypeIndex { get ; set ; }
-    public static IList<MEPSystemType>? SystemTypes { get ; set ; }
+    public static int SelectedSystemTypeIndex { get ; private set ; }
+    private static IList<MEPSystemType>? SystemTypes { get ; set ; }
 
     //CurveType
-    public static int CurveTypeIndex { get ; set ; }
-    public static int SelectedCurveTypeIndex { get ; set ; }
-    public static IList<MEPCurveType>? CurveTypes { get ; set ; }
+    public static int SelectedCurveTypeIndex { get ; private set ; }
+    private static IList<MEPCurveType>? CurveTypes { get ; set ; }
 
     //Direct
     public static bool? IsDirect { get ; set ; }
 
     //Dialog
     private static SelectedFromTo? _openedDialog ;
+
+    public static PropertySource.RoutePropertySource? PropertySourceType { get ; set ; }
 
 
     static SelectedFromToViewModel()
@@ -65,9 +63,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       CurveTypes = curveTypes ;
       IsDirect = direct ;
 
-      if ( _openedDialog != null ) {
-        _openedDialog.Close() ;
-      }
+      _openedDialog?.Close() ;
 
       var dialog = new SelectedFromTo( uiDocument, diameters, diameterIndex, systemTypes, systemTypeIndex, CurveTypes, curveTypeIndex, type, direct ) ;
 
@@ -84,44 +80,10 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     public static void SetSelectedFromToInfo( UIDocument uiDoc, Document doc, IReadOnlyCollection<SubRoute>? subRoutes, FromToItem fromToItem )
     {
       UiDoc = uiDoc ;
-
       TargetRoute = subRoutes?.ElementAt( 0 ).Route ;
-      TargetSubRoutes = subRoutes ;
 
-      if ( subRoutes?.ElementAt( 0 ).Route is not { } route ) return ;
-      var routeMepSystem = new RouteMEPSystem( doc, route ) ;
-
-      //Diameter Info
-      Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;
-      double? diameter = subRoutes.ElementAt( 0 ).GetDiameter( doc ) ;
-      // if Diameter is multi selected, set null
-      if ( fromToItem.IsDiameterMultiSelected( route ) ) {
-        diameter = null ;
-      }
-
-      DiameterIndex = Diameters.FindDoubleIndex( diameter, doc ) ;
-
-      //System Type Info(PinpingSystemType in lookup)
-      var connector = subRoutes.ElementAt( 0 ).GetReferenceConnector() ;
-      SystemTypes = routeMepSystem.GetSystemTypes( doc, connector ).OrderBy( s => s.Name ).ToList() ;
-      var systemType = routeMepSystem.MEPSystemType ;
-      SystemTypeIndex = SystemTypes.ToList().FindIndex( s => s.Id == systemType?.Id ) ;
-
-      //CurveType Info
-      var curveType = routeMepSystem.CurveType ;
-      var type = curveType.GetType() ;
-      // if CurveType is multi selected, set null
-      if ( fromToItem.IsCurveTypeMultiSelected( route ) ) {
-        curveType = null ;
-      }
-
-      CurveTypes = routeMepSystem.GetCurveTypes( doc, type ).OrderBy( s => s.Name ).ToList() ;
-      CurveTypeIndex = CurveTypes.ToList().FindIndex( c => c.Id == curveType?.Id ) ;
-      //Direct Info
-      IsDirect = subRoutes.ElementAt( 0 ).IsRoutingOnPipeSpace ;
-      // if Direct is multi selected, set null
-      if ( fromToItem.IsViaPsMultiSelected( route ) ) {
-        IsDirect = null ;
+      if ( fromToItem.PropertySourceType is PropertySource.RoutePropertySource routePropertySource ) {
+        PropertySourceType = routePropertySource ;
       }
     }
 
@@ -157,9 +119,9 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     {
       IList<double> resultDiameters = new List<double>() ;
 
-      if ( UiDoc != null && CurveTypes != null && TargetRoute != null ) {
+      if ( UiDoc != null && PropertySourceType?.CurveTypes != null && TargetRoute != null ) {
         RouteMEPSystem routeMepSystem = new RouteMEPSystem( UiDoc.Document, TargetRoute ) ;
-        resultDiameters = routeMepSystem.GetNominalDiameters( CurveTypes[ curveTypeIndex ] ) ;
+        resultDiameters = routeMepSystem.GetNominalDiameters( PropertySourceType.CurveTypes[ curveTypeIndex ] ) ;
       }
 
       Diameters = resultDiameters ;
