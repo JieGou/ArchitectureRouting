@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
+using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -206,8 +207,19 @@ namespace Arent3d.Architecture.Routing.App.Forms
   /// </summary>
   public class PassPointPropertySource : PropertySource
   {
-    public PassPointPropertySource( Document doc ) : base( doc )
+    public PassPointEndIndicator PassPointEndIndicator { get ; }
+    public XYZ PassPointTransform { get ; }
+    public PassPointPropertySource( Document doc, PassPointEndIndicator passPointEndIndicator ) : base( doc )
     {
+      PassPointEndIndicator = passPointEndIndicator ;
+      if ( doc.GetElement( new ElementId( passPointEndIndicator.ElementId ) ).Location is LocationPoint locationPoint ) {
+        PassPointTransform = locationPoint.Point;
+      }
+      else {
+        PassPointTransform = new XYZ() ;
+      }
+      
+      
     }
   }
 }

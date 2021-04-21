@@ -131,7 +131,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
         // Create PassPointItem
         case PassPointEndIndicator passPointEndIndicator :
         {
-          var passPointItem = new FromToItem.PassPointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes )
+          var passPoint = passPointEndIndicator ;
+          var passPointItem = new FromToItem.PassPointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, passPoint )
           {
             ItemTypeName = "PassPoint", ElementId = new ElementId( passPointEndIndicator.ElementId ), ItemTag = "PassPoint",
           } ;
@@ -303,9 +304,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
       private static BitmapImage RouteItemIcon { get ; } = new BitmapImage( new Uri( "../../resources/InsertPassPoint.png", UriKind.Relative ) ) ;
       public override BitmapImage Icon => RouteItemIcon ;
 
-      public PassPointItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes ) : base( doc, uiDoc, allRoutes )
+      public PassPointItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes, PassPointEndIndicator passPointEndIndicator ) : base( doc, uiDoc, allRoutes )
       {
-        PropertySourceType = new PassPointPropertySource( doc ) ;
+        PropertySourceType = new PassPointPropertySource( doc, passPointEndIndicator ) ;
       }
 
       public override void OnSelected()

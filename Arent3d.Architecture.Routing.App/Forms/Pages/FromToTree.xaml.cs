@@ -176,6 +176,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         else if ( selectedFromToItem.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
           // show Connector UI
           var transform = connectorPropertySource.ConnectorTransform ;
+          SelectedFromTo.ClearDialog() ;
         }
         else {
           // don't show SelectedFromTo 
