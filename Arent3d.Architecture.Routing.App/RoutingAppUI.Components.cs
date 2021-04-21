@@ -7,7 +7,6 @@ using Arent3d.Architecture.Routing.App.Commands.PassPoint ;
 using Arent3d.Architecture.Routing.App.Commands.BranchPoint ;
 using Arent3d.Architecture.Routing.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.App.Commands.Rack ;
-using Arent3d.Architecture.Routing.App.Commands.Selecting ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -51,8 +50,6 @@ namespace Arent3d.Architecture.Routing.App
     private readonly RibbonButton _exportRacksCommandButton ;
     private readonly RibbonButton _eraseAllRacksCommandButton ;
 
-    private readonly RibbonButton _modifySelectedFromToCommandButton ;
-
     private readonly RibbonButton _monitorSelectionCommandButton ;
 
 
@@ -77,7 +74,6 @@ namespace Arent3d.Architecture.Routing.App
         _eraseAllRoutesCommandButton = routingPanel.AddButton<EraseAllRoutesCommand>() ;
 
         _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>() ;
-        _modifySelectedFromToCommandButton = routingPanel.AddButton<GetSelectedFromToInfoCommand>() ;
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
 
@@ -129,8 +125,7 @@ namespace Arent3d.Architecture.Routing.App
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
       _eraseAllRacksCommandButton.Enabled = false ;
-
-      _modifySelectedFromToCommandButton.Enabled = false ;
+      
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
@@ -165,8 +160,7 @@ namespace Arent3d.Architecture.Routing.App
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
-
-      _modifySelectedFromToCommandButton.Enabled = setupIsDone ;
+      
     }
 
     private void DockablePaneRegisters( object sender, ApplicationInitializedEventArgs e )
