@@ -2,6 +2,7 @@
 using System.Linq ;
 using System.Windows.Controls ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Windows ;
 
@@ -33,22 +34,19 @@ namespace Arent3d.Architecture.Routing.App
       return targetRibbonPanel?.Source.Items.OfType<RibbonButton>().FirstOrDefault( item => item.Id == targetItemName ) ;
     }
 
-    public static int GetPositionBeforeButton( string s )
+    public static int GetPositionAfterButton( string s )
     {
-      var items = ComponentManager.QuickAccessToolBar.Items.TakeWhile( item => item.Id != s ) ;
-
-      var position = items.Count() + 1 ;
-
-      return position ;
+      var index = ComponentManager.QuickAccessToolBar.Items.FindIndex( item => item.Id == s ) ;
+      return ( 0 <= index ? index + 1 : -1 ) ;
     }
 
     public static void PlaceButtonOnQuickAccess( int position, Autodesk.Windows.RibbonItem ribbonItem )
     {
-      if ( position < ComponentManager.QuickAccessToolBar.Items.Count ) {
-        ComponentManager.QuickAccessToolBar.InsertStandardItem( position, ribbonItem ) ;
+      if ( position < 0 ) {
+        ComponentManager.QuickAccessToolBar.AddStandardItem( ribbonItem ) ;
       }
       else {
-        ComponentManager.QuickAccessToolBar.AddStandardItem( ribbonItem ) ;
+        ComponentManager.QuickAccessToolBar.InsertStandardItem( position, ribbonItem ) ;
       }
     }
 

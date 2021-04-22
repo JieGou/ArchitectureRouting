@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.App
       }
 
       if ( selectionPanel != null && selectionButton != null ) {
-        var position = UIHelper.GetPositionBeforeButton( "ID_REVIT_FILE_PRINT" ) ;
+        var position = UIHelper.GetPositionAfterButton( "ID_REVIT_FILE_PRINT" ) ;
 
         UIHelper.PlaceButtonOnQuickAccess( position, selectionButton ) ;
         // Remove Panel
