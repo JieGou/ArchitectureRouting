@@ -17,9 +17,9 @@
 
         <key>App.Panels.Routing.Racks</key>
         <string>Pipe Spaces</string>
-            
-        <key>App.Panels.Routing.Selecting</key>
-        <string>Selected From-To</string>
+
+        <key>App.Panels.Routing.Monitor</key>
+        <string>Monitor Selection</string>
 
 
         <!-- Application UI Button Strings -->

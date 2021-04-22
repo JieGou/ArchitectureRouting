@@ -18,8 +18,8 @@
         <key>App.Panels.Routing.Racks</key>
         <string>PS</string>
         
-        <key>App.Panels.Routing.Selecting</key>
-        <string>Selected From-To</string>
+        <key>App.Panels.Routing.Monitor</key>
+        <string>Monitor Selection</string>
 
         <!-- Application UI Button Strings -->
         <key>App.Commands.BranchPoint.InsertBranchPointCommand</key>

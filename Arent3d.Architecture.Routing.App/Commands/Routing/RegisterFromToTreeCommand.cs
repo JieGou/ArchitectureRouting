@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   {
     FromToTree? _dockableWindow = null ;
     UIApplication? _uiApp = null ;
+    DockablePaneId _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
 
     /// <summary>
     /// Executes the specIfied command Data
@@ -47,17 +48,20 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         var doc = _uiApp.ActiveUIDocument.Document ;
         //Initialize TreeView
         _dockableWindow.CustomInitiator( _uiApp ) ;
-        
+
+        //Initialize ShowFromToTreeButton
+        RibbonHelper.ToggleShowFromToTreeCommandButton( _uiApp.GetDockablePane( _dpid ).IsShown() ) ;
+
         // Get Selected Routes
         var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( _uiApp.ActiveUIDocument ).EnumerateAll() ;
         var selectedConnectors = doc.CollectRoutes().SelectMany( r => r.GetAllConnectors( doc ) ).ToList() ;
-        
+
         //Get ElementIds in activeview
         ElementOwnerViewFilter elementOwnerViewFilter = new ElementOwnerViewFilter( doc.ActiveView.Id ) ;
         FilteredElementCollector collector = new FilteredElementCollector( doc, doc.ActiveView.Id ) ;
         var elementsInActiveView = collector.ToElementIds() ;
-        
-        if ( selectedRoutes.FirstOrDefault() is {} selectedRoute ) {
+
+        if ( selectedRoutes.FirstOrDefault() is { } selectedRoute ) {
           var selectedRouteName = selectedRoute.RouteName ;
           var targetElements = doc?.GetAllElementsOfRouteName<Element>( selectedRouteName ).Select( elem => elem.Id ).ToList() ;
 
@@ -68,17 +72,15 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
             }
           }
         }
-        else if ( selectedConnectors.Any( c => _uiApp.ActiveUIDocument.Selection.GetElementIds().Contains(c.Owner.Id) )  ) {
+        else if ( selectedConnectors.Any( c => _uiApp.ActiveUIDocument.Selection.GetElementIds().Contains( c.Owner.Id ) ) ) {
           var selectedElementId = _uiApp.ActiveUIDocument.Selection.GetElementIds().FirstOrDefault() ;
           FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
         }
         else {
-          FromToTreeViewModel.ClearSelection();
+          FromToTreeViewModel.ClearSelection() ;
         }
       }
     }
-    
-    
 
     // document opened event
     private void Application_DocumentOpened( object sender, Autodesk.Revit.DB.Events.DocumentOpenedEventArgs e )
@@ -87,20 +89,22 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       if ( _dockableWindow != null && _uiApp != null ) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
         FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
+        //Initialize ShowFromToTreeButton
+        RibbonHelper.ToggleShowFromToTreeCommandButton( _uiApp.GetDockablePane( _dpid ).IsShown() ) ;
       }
     }
 
     // document opened event
     private void Application_DocumentChanged( object sender, Autodesk.Revit.DB.Events.DocumentChangedEventArgs e )
     {
-      var changedElementIds = e.GetAddedElementIds().Concat( e.GetDeletedElementIds() ).Concat( e.GetModifiedElementIds() ) ; ;
-      
+      var changedElementIds = e.GetAddedElementIds().Concat( e.GetDeletedElementIds() ).Concat( e.GetModifiedElementIds() ) ;
+
       var transactions = e.GetTransactionNames() ;
-      
+
       var changedRoute = e.GetDocument().FilterStorableElements<Route>( changedElementIds ) ;
 
       // provide ExternalCommandData object to dockable page
-      if ( _dockableWindow != null && _uiApp != null && (transactions.Any( GetRoutingTransactions ) || changedRoute.Any())) {
+      if ( _dockableWindow != null && _uiApp != null && ( transactions.Any( GetRoutingTransactions ) || changedRoute.Any() ) ) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
       }
     }
@@ -128,10 +132,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       _uiApp = uiApplication ;
 
       // Use unique guid identifier for this dockable pane
-      var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
+      _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
       try {
         // register dockable pane
-        _uiApp.RegisterDockablePane( dpid, "From-To Tree", _dockableWindow ) ;
+        _uiApp.RegisterDockablePane( _dpid, "From-To Tree", _dockableWindow ) ;
         // subscribe document opend event
         _uiApp.Application.DocumentOpened += new EventHandler<DocumentOpenedEventArgs>( Application_DocumentOpened ) ;
         // subscribe view activated event
