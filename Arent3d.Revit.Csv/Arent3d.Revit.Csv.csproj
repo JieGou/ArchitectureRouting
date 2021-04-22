@@ -21,6 +21,7 @@
       </Reference>
       <Reference Include="RevitAPI">
         <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
+        <Private>false</Private>
       </Reference>
     </ItemGroup>
 

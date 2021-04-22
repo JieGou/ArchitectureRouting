@@ -70,8 +70,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         segments = segments.Concat( GetRouteSegmentsInTransaction( uiDocument ) ) ;
 
         var tokenSource = new CancellationTokenSource() ;
-        using var progress = ProgressBar.Show( tokenSource ) ;
+        using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
 
+        progress.Message = "Routing..." ;
         var task = Task.Run( () => executor.Run( segments, progress ), tokenSource.Token ) ;
         task.ConfigureAwait( false ) ;
         ThreadDispatcher.WaitWithDoEvents( task ) ;

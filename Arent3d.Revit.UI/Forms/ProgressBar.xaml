@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Revit.UI.Forms"
         mc:Ignorable="d"
-        Title="ProgressBar" Height="120" Width="320"  Unloaded="Window_OnUnloaded">
+        Title="Running..." Height="120" Width="320"  Unloaded="Window_OnUnloaded">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />

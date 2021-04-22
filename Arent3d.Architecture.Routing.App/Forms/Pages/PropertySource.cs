@@ -63,12 +63,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         //Diameter Info
         Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;
-        double? diameter = TargetSubRoutes.ElementAt( 0 ).GetDiameter( Doc ) ;
+        var diameter = TargetSubRoutes.ElementAt( 0 ).GetDiameter( Doc ) ;
+        DiameterIndex = Diameters.FindIndexByVertexTolerance( diameter, Doc ) ;
 
-
-        DiameterIndex = Diameters.FindDoubleIndex( diameter, Doc ) ;
-
-        //System Type Info(PinpingSystemType in lookup)
+        //System Type Info(PipingSystemType in lookup)
         var connector = TargetSubRoutes.ElementAt( 0 ).GetReferenceConnector() ;
         SystemTypes = routeMepSystem.GetSystemTypes( Doc, connector ).OrderBy( s => s.Name ).ToList() ;
         var systemType = routeMepSystem.MEPSystemType ;

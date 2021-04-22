@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Runtime.CompilerServices ;
+using System.Threading ;
 
 namespace Arent3d.Revit
 {
@@ -8,12 +9,14 @@ namespace Arent3d.Revit
   {
     public double PreviousValue { get ; }
     public double CurrentValue { get ; }
+    public string Message { get ; }
     public bool IsFinished { get ; }
 
-    public ProgressEventArgs( double previousValue, double currentValue, bool isFinished )
+    internal ProgressEventArgs( double previousValue, double currentValue, string message, bool isFinished )
     {
       PreviousValue = previousValue ;
       CurrentValue = currentValue ;
+      Message = message ;
       IsFinished = isFinished ;
     }
   }
@@ -27,11 +30,15 @@ namespace Arent3d.Revit
     IProgressData Reserve( double value, [CallerFilePath] string path = "", [CallerLineNumber] int lineNum = 0 ) ;
     void Finish() ;
     void Step( double value ) ;
+    string Message { get ; set ; }
+    void ThrowIfCanceled() ;
   }
 
   public class ProgressData : IProgressData
   {
     public event EventHandler<ProgressEventArgs>? Progress ;
+    private readonly CancellationToken? _cancellationToken ;
+    private string _message ;
     private ProgressData? _child = null ;
     private readonly string? _callerFilePath ;
     private readonly int _callerLineNum ;
@@ -39,12 +46,26 @@ namespace Arent3d.Revit
 
     public double Position { get ; private set ; }
 
-    public ProgressData() : this( null, 0 )
+    public string Message
+    {
+      get => _message ;
+      set
+      {
+        if ( _message == value ) return ;
+
+        _message = value ;
+        OnProgress( Position, Position, value, false ) ;
+      }
+    }
+
+    public ProgressData( string? message, CancellationToken? cancellationToken ) : this( message ?? string.Empty, cancellationToken, null, 0 )
     {
     }
 
-    private ProgressData( string? callerFilePath, int callerLineNum )
+    private ProgressData( string message, CancellationToken? cancellationToken, string? callerFilePath, int callerLineNum )
     {
+      _message = message ;
+      _cancellationToken = cancellationToken ;
       _callerFilePath = callerFilePath ;
       _callerLineNum = callerLineNum ;
       Position = 0 ;
@@ -71,15 +92,15 @@ namespace Arent3d.Revit
       var orgPos = Position ;
       var newPos = Math.Min( 1, Position + value ) ;
 
-      var data = new ProgressData( path, lineNum ) ;
+      var data = new ProgressData( Message, _cancellationToken, path, lineNum ) ;
       data.Progress += ( _, e ) =>
       {
         if ( e.IsFinished ) {
           _child = null ;
         }
         var prevPos = Position ;
-        Position =  ( 1 - e.CurrentValue ) * orgPos + e.CurrentValue * newPos  ;
-        OnProgress( prevPos, Position, false ) ;
+        Position = ( 1 - e.CurrentValue ) * orgPos + e.CurrentValue * newPos ;
+        OnProgress( prevPos, Position, Message, false ) ;
       } ;
       _child = data ;
 
@@ -93,14 +114,10 @@ namespace Arent3d.Revit
       GC.SuppressFinalize( this ) ;
       _isFinished = true ;
 
-      if ( null != _child ) {
-        _child.Finish() ;
-      }
-      else {
-        var prevPos = Position ;
-        Position = 1 ;
-        OnProgress( prevPos, Position, true ) ;
-      }
+      _child?.Finish() ;
+      var prevPos = Position ;
+      Position = 1 ;
+      OnProgress( prevPos, Position, Message, true ) ;
     }
 
     public void Step( double value )
@@ -109,12 +126,17 @@ namespace Arent3d.Revit
 
       var prevPos = Position ;
       Position = Math.Min( 1, Position + value ) ;
-      OnProgress( prevPos, Position, false ) ;
+      OnProgress( prevPos, Position, Message, false ) ;
     }
 
-    private void OnProgress( double prevPos, double nextPos, bool isFinished )
+    private void OnProgress( double prevPos, double nextPos, string message, bool isFinished )
     {
-      Progress?.Invoke( this, new ProgressEventArgs( prevPos, nextPos, isFinished ) ) ;
+      Progress?.Invoke( this, new ProgressEventArgs( prevPos, nextPos, message, isFinished ) ) ;
+    }
+
+    public void ThrowIfCanceled()
+    {
+      _cancellationToken?.ThrowIfCancellationRequested() ;
     }
   }
 
