@@ -48,9 +48,13 @@ namespace Arent3d.Architecture.Routing
     /// <param name="progressData">Progress data which is notified the status.</param>
     public void Execute( IProgressData? progressData )
     {
+      progressData?.ThrowIfCanceled() ;
+
       using ( progressData?.Reserve( 0.05 ) ) {
         ThreadDispatcher.Dispatch( OnGenerationStarted ) ;
       }
+
+      progressData?.ThrowIfCanceled() ;
 
       using ( var mainProgress = progressData?.Reserve( 0.9 ) ) {
         mainProgress.ForEach( RoutingTargets.Count, ApiForAutoRouting.Execute( StructureGraph, RoutingTargets, CollisionCheckTree ), item =>
@@ -60,12 +64,15 @@ namespace Arent3d.Architecture.Routing
 
           var wrapper = new AutoRoutingResult( result ) ;
           ThreadDispatcher.Dispatch( () => OnRoutingTargetProcessed( srcTarget, wrapper ) ) ;
+          progressData?.ThrowIfCanceled() ;
         } ) ;
       }
 
       using ( progressData?.Reserve( 1 - progressData.Position ) ) {
         ThreadDispatcher.Dispatch( OnGenerationFinished ) ;
       }
+
+      progressData?.ThrowIfCanceled() ;
     }
   }
 }

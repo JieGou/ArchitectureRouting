@@ -25,6 +25,10 @@ namespace Arent3d.Revit.UI
         transactionGroup.RollBack() ;
         return Result.Cancelled ;
       }
+      catch ( OperationCanceledException ) {
+        transactionGroup.RollBack() ;
+        return Result.Cancelled ;
+      }
       catch {
         transactionGroup.RollBack() ;
         throw ;
@@ -47,6 +51,10 @@ namespace Arent3d.Revit.UI
         return result.Item2 ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        transactionGroup.RollBack() ;
+        return onCancel ;
+      }
+      catch ( OperationCanceledException ) {
         transactionGroup.RollBack() ;
         return onCancel ;
       }
@@ -75,6 +83,10 @@ namespace Arent3d.Revit.UI
         transaction.RollBack() ;
         return Result.Cancelled ;
       }
+      catch ( OperationCanceledException ) {
+        transaction.RollBack() ;
+        return Result.Cancelled ;
+      }
       catch {
         transaction.RollBack() ;
         throw ;
@@ -97,6 +109,10 @@ namespace Arent3d.Revit.UI
         return result.Item2 ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        transaction.RollBack() ;
+        return onCancel ;
+      }
+      catch ( OperationCanceledException ) {
         transaction.RollBack() ;
         return onCancel ;
       }

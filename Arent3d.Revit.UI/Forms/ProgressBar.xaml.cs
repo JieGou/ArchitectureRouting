@@ -38,7 +38,7 @@ namespace Arent3d.Revit.UI.Forms
       InitializeComponent() ;
 
       _cancellationTokenSource = cancellationTokenSource ;
-      _progressData = new ProgressData() ;
+      _progressData = new ProgressData( Title, cancellationTokenSource?.Token ) ;
       _progressData.Progress += ProgressData_Progress ;
     }
 
@@ -54,6 +54,20 @@ namespace Arent3d.Revit.UI.Forms
       }
       else {
         this.ProgressValue = e.CurrentValue ;
+        SetTitle( e.Message ) ;
+      }
+    }
+
+    private void SetTitle( string message )
+    {
+      if ( Dispatcher.CheckAccess() ) {
+        this.Title = message ;
+      }
+      else {
+        Dispatcher.BeginInvoke( (Action) ( () =>
+        {
+          this.Title = message ;
+        } ) ) ;
       }
     }
 
