@@ -25,9 +25,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
           dp.Show() ;
         }
         else {
-          dp.Hide();
+          dp.Hide() ;
         }
-        RoutingAppUI.ToggleShowFromToTreeCommandButton(dp.IsShown());
+        // Toggle image 
+        RibbonHelper.ToggleShowFromToTreeCommandButton( dp.IsShown() ) ;
       }
       catch ( Exception e ) {
         TaskDialog.Show( "ShowFromToTreeCommand", e.Message ) ;

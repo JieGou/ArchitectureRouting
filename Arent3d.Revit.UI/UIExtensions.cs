@@ -36,6 +36,18 @@ namespace Arent3d.Revit.UI
 
       return (RibbonButton) ribbonPanel.AddItem( pushButtonData ) ;
     }
+    
+    public static ImageSource? GetImageFromName( string imageName )
+    {
+      var assemblyName = Assembly.GetCallingAssembly().GetName().Name ;
+      try {
+        var uri = new Uri( "pack://application:,,,/" + assemblyName + ";component/resources/" + imageName ) ;
+        return new BitmapImage( uri ) ;
+      }
+      catch ( Exception ) {
+        return null ;
+      }
+    }
 
     private static PushButtonData CreateButton<TButtonCommand>( string assemblyName ) where TButtonCommand : IExternalCommand
     {
