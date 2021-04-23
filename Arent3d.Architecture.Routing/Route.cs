@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using System.Diagnostics ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
@@ -28,14 +29,13 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     public string RouteName
     {
-      get
-      {
-        return this._routeName ;
-      }
+      get => this._routeName ;
       set
       {
+        var oldName = this._routeName ;
+        
         this._routeName = value ;
-        RenameAllDescendents(value);
+        RenameAllDescendents(oldName, value);
       }
     }
 
@@ -198,9 +198,21 @@ namespace Arent3d.Architecture.Routing
       return Enumerable.Empty<PassPointEndIndicator>() ;
     }
 
-    private void RenameAllDescendents( string newRouteName )
+    private void RenameAllDescendents( string oldName, string newRouteName )
     {
-      
+      if ( oldName != "" && oldName !="None" ) {
+        // replacing indicator is on developing
+        /*var childBranches = GetChildBranches() ;
+        foreach ( var route in childBranches ) {
+          var endPoint = route._subRoutes
+          .SelectMany( subRoute => subRoute.AllEndPointIndicators ).LastOrDefault( i => i.ParentBranch( Document ).Route?.RouteName == oldName ) ;
+        }*/
+        var allElements = Document.GetAllElementsOfRouteName<Element>(oldName) ;
+        foreach ( var element in allElements ) {
+          element.SetProperty( RoutingParameter.RouteName, newRouteName ) ;
+        }
+        this.Save();
+      }
     }
 
     #region Branches
