@@ -1,7 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -41,8 +41,8 @@ namespace Arent3d.Architecture.Routing
     {
       List<List<SubRoute>>? relatedSubRoutes = null ;
 
-      foreach ( var routeIndicator in subRoute.AllEndPointIndicators.OfType<RouteIndicator>() ) {
-        if ( false == _groups.TryGetValue( ( routeIndicator.RouteName, routeIndicator.SubRouteIndex ), out var list ) ) continue ;
+      foreach ( var routeEndPoint in subRoute.AllEndPoints.OfType<RouteEndPoint>() ) {
+        if ( false == _groups.TryGetValue( ( routeEndPoint.RouteName, routeEndPoint.SubRouteIndex ), out var list ) ) continue ;
 
         relatedSubRoutes ??= new List<List<SubRoute>>() ;
         relatedSubRoutes.Add( list ) ;

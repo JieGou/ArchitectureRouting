@@ -4,7 +4,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -167,14 +167,14 @@ namespace Arent3d.Architecture.Routing.App
           result.Add( route ) ;
         }
 
-        if ( segment.FromId.ParentBranch( _document ).Route is {} fromParent ) {
+        if ( segment.FromEndPoint.ParentBranch().Route is {} fromParent ) {
           parents.UnionWith( fromParent.GetAllRelatedBranches() ) ;
         }
-        if ( segment.ToId.ParentBranch( _document ).Route is {} toParent ) {
+        if ( segment.ToEndPoint.ParentBranch().Route is {} toParent ) {
           parents.UnionWith( toParent.GetAllRelatedBranches() ) ;
         }
 
-        route.RegisterSegment( segment ) ;
+        ThreadDispatcher.Dispatch( () => route.RegisterSegment( segment ) ) ;
       }
 
       result.AddRange( parents.Where( p => false == dic.ContainsKey( p.RouteName ) ) ) ;
@@ -260,7 +260,9 @@ namespace Arent3d.Architecture.Routing.App
 
       public IEnumerable<FamilyInstance> GetNeighborReducers( Document document )
       {
-        return GetNeighborReducers( document, GetEndPoints( RoutedElementFromSideConnectorIds ), true ).Concat( GetNeighborReducers( document, GetEndPoints( RoutedElementToSideConnectorIds ), false ) ) ;
+        var fromReducers = GetNeighborReducers( document, GetEndPoints( document, RoutedElementFromSideConnectorIds ), true ) ;
+        var toReducers = GetNeighborReducers( document, GetEndPoints( document, RoutedElementToSideConnectorIds ), false ) ;
+        return fromReducers.Concat( toReducers ) ;
       }
 
       public void ApplyToReducer( FamilyInstance reducer )
@@ -271,9 +273,9 @@ namespace Arent3d.Architecture.Routing.App
         reducer.SetProperty( RoutingParameter.NearestToSideEndPoints, RoutedElementToSideConnectorIds ) ;
       }
 
-      private static HashSet<(int, int)> GetEndPoints( string indicators )
+      private static HashSet<(int, int)> GetEndPoints( Document document, string connectors )
       {
-        return EndPointIndicator.ParseIndicatorList( indicators ).OfType<ConnectorIndicator>().Select( c => ( c.ElementId, c.ConnectorId ) ).ToHashSet() ;
+        return EndPointExtensions.ParseEndPoints( document, connectors ).OfType<ConnectorEndPoint>().Select( c => ( c.EquipmentId.IntegerValue, c.ConnectorIndex ) ).ToHashSet() ;
       }
 
       private IEnumerable<FamilyInstance> GetNeighborReducers( Document document, HashSet<(int, int)> endPoints, bool isFrom )

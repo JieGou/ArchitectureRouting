@@ -28,8 +28,8 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         var curveTypeList = new ObservableCollection<MEPCurveType>( routeMepSystem.GetCurveTypes( uiDocument.Document, routeMepSystem.CurveType.GetType() ).OrderBy( s => s.Name ).ToList() ) ;
         var curveType = routeMepSystem.CurveType ;
         int curveTypeIndex = curveTypeList.ToList().FindIndex( c => c.Id == curveType.Id ) ;
-        IEnumerable<string> subRouteDiameters = route.SubRoutes.Select( s => (int) Math.Round( UnitUtils.ConvertFromInternalUnits( s.GetDiameter( UiDoc.Document ), UnitTypeId.Millimeters ) ) + " mm" ) ;
-        IEnumerable<string> allPassPoints = route.GetAllPassPointEndIndicators().ToList().Select( p => p.ToString() ) ;
+        IEnumerable<string> subRouteDiameters = route.SubRoutes.Select( s => (int) Math.Round( UnitUtils.ConvertFromInternalUnits( s.GetDiameter(), UnitTypeId.Millimeters ) ) + " mm" ) ;
+        IEnumerable<string> allPassPoints = route.GetAllPassPointEndPoints().ToList().Select( p => p.ToString() ) ;
 
         fromToItemsList.Add( new FromToWindow.FromToItems()
         {

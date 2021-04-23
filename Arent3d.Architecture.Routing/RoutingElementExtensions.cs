@@ -1,7 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -41,16 +41,6 @@ namespace Arent3d.Architecture.Routing
     #endregion
 
     #region Connectors (General)
-
-    public static ConnectorIndicator GetIndicator( this Connector connector )
-    {
-      return new ConnectorIndicator( connector ) ;
-    }
-
-    public static Connector? FindConnector( this Document document, ConnectorIndicator ids )
-    {
-      return document.FindConnector( ids.ElementId, ids.ConnectorId ) ;
-    }
 
     public static Connector? FindConnector( this Document document, int elementId, int connectorId )
     {
@@ -109,11 +99,11 @@ namespace Arent3d.Architecture.Routing
 
     public static IEnumerable<Connector> GetOtherConnectorsInOwner( this Connector connector )
     {
-      var id = connector.GetIndicator() ;
+      var id = connector.Id ;
       var manager = connector.ConnectorManager ;
       if ( null == manager ) return Array.Empty<Connector>() ;
 
-      return manager.Connectors.OfType<Connector>().Where( c => c.GetIndicator() != id ) ;
+      return manager.Connectors.OfType<Connector>().Where( c => c.Id != id ) ;
     }
 
     public static string GetSystemTypeName( this Connector conn )
@@ -187,19 +177,20 @@ namespace Arent3d.Architecture.Routing
 
     public static void SetPassPointConnectors( this Element element, IReadOnlyCollection<Connector> fromConnectors, IReadOnlyCollection<Connector> toConnectors )
     {
-      element.SetProperty( RoutingParameter.PassPointNextToFromSideConnectorIds, string.Join( "|", fromConnectors.Select( c => c.GetIndicator().ToString() ) ) ) ;
-      element.SetProperty( RoutingParameter.PassPointNextToToSideConnectorIds, string.Join( "|", toConnectors.Select( c => c.GetIndicator().ToString() ) ) ) ;
+      element.SetProperty( RoutingParameter.PassPointNextToFromSideConnectorIds, string.Join( "|", fromConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
+      element.SetProperty( RoutingParameter.PassPointNextToToSideConnectorIds, string.Join( "|", toConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
     }
 
     private static readonly char[] PassPointConnectorSeparator = { '|' } ;
 
-    public static IEnumerable<ConnectorIndicator> GetPassPointConnectors( this Element element, bool isFrom )
+    public static IEnumerable<IEndPoint> GetPassPointConnectors( this Element element, bool isFrom )
     {
       var parameter = isFrom ? RoutingParameter.PassPointNextToFromSideConnectorIds : RoutingParameter.PassPointNextToToSideConnectorIds ;
-      if ( false == element.TryGetProperty( parameter, out string? str ) ) return Array.Empty<ConnectorIndicator>() ;
-      if ( string.IsNullOrEmpty( str ) ) return Array.Empty<ConnectorIndicator>() ;
+      if ( false == element.TryGetProperty( parameter, out string? str ) ) return Array.Empty<IEndPoint>() ;
+      if ( string.IsNullOrEmpty( str ) ) return Array.Empty<IEndPoint>() ;
 
-      return str!.Split( PassPointConnectorSeparator, StringSplitOptions.RemoveEmptyEntries ).Select( ConnectorIndicator.Parse ).NonNull() ;
+      var document = element.Document ;
+      return str!.Split( PassPointConnectorSeparator, StringSplitOptions.RemoveEmptyEntries ).Select( str => ConnectorEndPoint.ParseParameterString( document, str ) ).NonNull() ;
     }
 
     public static bool IsPassPoint( this Element element )
@@ -221,14 +212,74 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double radius )
+    public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius )
     {
       var symbol = document.GetFamilySymbol( RoutingFamilyType.PassPoint )! ;
       if ( false == symbol.IsActive ) symbol.Activate() ;
 
       var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural ) ;
       instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
-      instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius * 2.0 ) ;
+      if ( radius.HasValue ) {
+        instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
+      }
+
+      var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
+      var rotationAngle = Math.Atan2( direction.Y, direction.X ) ;
+
+      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
+      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
+
+      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
+      
+      return instance ;
+    }
+
+    #endregion
+
+    #region Terminate Points
+
+    public static FamilyInstance? FindTerminatePointElement( this Document document, int elementId )
+    {
+      var instance = document.GetElementById<FamilyInstance>( elementId ) ;
+      if ( null == instance ) return null ;
+
+      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.TerminatePoint )?.Id ) {
+        // Family instance is not a pass point.
+        return null ;
+      }
+
+      return instance ;
+    }
+
+    public static bool IsTerminatePoint( this Element element )
+    {
+      return element is FamilyInstance fi && fi.IsTerminatePoint() ;
+    }
+
+    public static bool IsTerminatePoint( this FamilyInstance element )
+    {
+      return element.IsRoutingFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) || element.HasParameter( RoutingParameter.RelatedTerminatePointId ) ;
+    }
+
+    public static int? GetTerminatePointId( this Element element )
+    {
+      if ( element is not FamilyInstance fi ) return null ;
+
+      if ( fi.IsRoutingFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) ) return fi.Id.IntegerValue ;
+      if ( element.TryGetProperty( RoutingParameter.RelatedTerminatePointId, out int id ) ) return id ;
+      return null ;
+    }
+
+    public static FamilyInstance AddTerminatePoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius )
+    {
+      var symbol = document.GetFamilySymbol( RoutingFamilyType.TerminatePoint )! ;
+      if ( false == symbol.IsActive ) symbol.Activate() ;
+
+      var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural ) ;
+      instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
+      if ( radius.HasValue ) {
+        instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
+      }
 
       var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
       var rotationAngle = Math.Atan2( direction.Y, direction.X ) ;
@@ -424,16 +475,16 @@ namespace Arent3d.Architecture.Routing
       return document.GetAllStorables<Route>() ;
     }
 
-    public static IEnumerable<IEndPointIndicator> GetNearestEndPointIndicators( this Element element, bool isFrom )
+    public static IEnumerable<IEndPoint> GetNearestEndPoints( this Element element, bool isFrom )
     {
       if ( false == element.TryGetProperty( isFrom ? RoutingParameter.NearestFromSideEndPoints : RoutingParameter.NearestToSideEndPoints, out string? str ) ) {
-        return Array.Empty<IEndPointIndicator>() ;
+        return Array.Empty<IEndPoint>() ;
       }
       if ( null == str ) {
-        return Array.Empty<IEndPointIndicator>() ;
+        return Array.Empty<IEndPoint>() ;
       }
 
-      return EndPointIndicator.ParseIndicatorList( str ) ;
+      return EndPointExtensions.ParseEndPoints( element.Document, str ) ;
     }
 
     #endregion

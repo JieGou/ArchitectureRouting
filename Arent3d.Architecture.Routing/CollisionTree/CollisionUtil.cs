@@ -80,8 +80,8 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 
     private static bool AreAdjacent( ConnectorSet connectors1, ConnectorSet connectors2 )
     {
-      var another = connectors2.OfType<Connector>().OfEnd().Select( c => c.GetIndicator() ).ToHashSet() ;
-      return connectors1.OfType<Connector>().SelectMany( c => c.GetConnectedConnectors().OfEnd() ).Any( c => another.Contains( c.GetIndicator() ) ) ;
+      var another = connectors2.OfType<Connector>().OfEnd().Select( EndPoints.ConnectorEndPoint.GenerateKey ).ToHashSet() ;
+      return connectors1.OfType<Connector>().SelectMany( c => c.GetConnectedConnectors().OfEnd() ).Any( c => another.Contains( EndPoints.ConnectorEndPoint.GenerateKey( c ) ) ) ;
     }
 
     private static IRouteCondition? ToCondition( this IGeometryBody body )

@@ -2,7 +2,6 @@ using System ;
 using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -15,22 +14,23 @@ namespace Arent3d.Architecture.Routing
   {
     private readonly Dictionary<int, (Connector?, Connector?, List<Connector>?)> _passPointConnectors = new() ;
 
-    public void Add( ElementId elementId, PassPointEndSide sideType, Connector connector )
+    public void Add( ElementId elementId, bool isFrom, Connector connector )
     {
       var id = elementId.IntegerValue ;
 
       if ( _passPointConnectors.TryGetValue( id, out var tuple ) ) {
-        if ( sideType == PassPointEndSide.Forward ) {
+        if ( isFrom ) {
           if ( null != tuple.Item1 ) throw new InvalidOperationException() ;
           _passPointConnectors[ id ] = ( connector, tuple.Item2, tuple.Item3 ) ;
         }
         else {
           if ( null != tuple.Item2 ) throw new InvalidOperationException() ;
           _passPointConnectors[ id ] = ( tuple.Item1, connector, tuple.Item3 ) ;
+          _passPointConnectors[ id ] = ( tuple.Item1, connector, tuple.Item3 ) ;
         }
       }
       else {
-        if ( sideType == PassPointEndSide.Forward ) {
+        if ( isFrom ) {
           _passPointConnectors.Add( id, ( connector, null, tuple.Item3 ) ) ;
         }
         else {
