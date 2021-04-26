@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
 
       // Raise the SelectionChangedEvent
       var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( uiDoc ).EnumerateAll() ;
-      var selectedConnectors = uiDoc.Document.CollectRoutes().SelectMany( r => r.GetAllConnectors( uiDoc.Document ) ).ToList() ;
+      var selectedConnectors = uiDoc.Document.CollectRoutes().SelectMany( r => r.GetAllConnectors() ).ToList() ;
       
       ElementId? selectedElementId = null ;
       // if route selected

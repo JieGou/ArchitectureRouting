@@ -53,6 +53,10 @@
     <None Update="Assets\SharedParameterFile\PassPointSharedParameters.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Remove="RouteEnd\**" />
+    <None Update="Assets\Families\Routing Terminate Point.rfa">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -61,6 +65,10 @@
 
   <ItemGroup>
     <Folder Include="Assets" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="EndPoints\PassPointBranchEndPoint.cs" />
   </ItemGroup>
 
 </Project>

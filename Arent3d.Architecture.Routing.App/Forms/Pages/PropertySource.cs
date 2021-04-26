@@ -2,7 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         //Diameter Info
         Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;
-        var diameter = TargetSubRoutes.ElementAt( 0 ).GetDiameter( Doc ) ;
+        var diameter = TargetSubRoutes.ElementAt( 0 ).GetDiameter() ;
         DiameterIndex = Diameters.FindIndexByVertexTolerance( diameter, Doc ) ;
 
         //System Type Info(PipingSystemType in lookup)
@@ -139,8 +139,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
         var diameters = new List<double>() ;
 
         foreach ( var subRoute in route.SubRoutes ) {
-          if ( ! diameters.Contains( subRoute.GetDiameter( Doc ) ) ) {
-            diameters.Add( subRoute.GetDiameter( Doc ) ) ;
+          if ( ! diameters.Contains( subRoute.GetDiameter() ) ) {
+            diameters.Add( subRoute.GetDiameter() ) ;
           }
         }
 
@@ -205,19 +205,16 @@ namespace Arent3d.Architecture.Routing.App.Forms
   /// </summary>
   public class PassPointPropertySource : PropertySource
   {
-    public PassPointEndIndicator PassPointEndIndicator { get ; }
-    public XYZ PassPointTransform { get ; }
-    public PassPointPropertySource( Document doc, PassPointEndIndicator passPointEndIndicator ) : base( doc )
+    public PassPointEndPoint PassPointEndPoint { get ; }
+    public XYZ PassPointPosition { get ; }
+    public XYZ PassPointDirection { get ; }
+
+    public PassPointPropertySource( Document doc, PassPointEndPoint passPointEndPoint ) : base( doc )
     {
-      PassPointEndIndicator = passPointEndIndicator ;
-      if ( doc.GetElement( new ElementId( passPointEndIndicator.ElementId ) ).Location is LocationPoint locationPoint ) {
-        PassPointTransform = locationPoint.Point;
-      }
-      else {
-        PassPointTransform = new XYZ() ;
-      }
-      
-      
+      PassPointEndPoint = passPointEndPoint ;
+
+      PassPointPosition = passPointEndPoint.RoutingStartPosition ;
+      PassPointDirection = passPointEndPoint.Direction ;
     }
   }
 }

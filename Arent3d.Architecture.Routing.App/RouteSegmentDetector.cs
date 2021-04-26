@@ -1,7 +1,6 @@
-using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -14,8 +13,8 @@ namespace Arent3d.Architecture.Routing.App
     public Document Document { get ; }
     public string RouteName { get ; }
     public int SubRouteIndex { get ; }
-    private readonly HashSet<IEndPointIndicator> _fromElms = new() ;
-    private readonly HashSet<IEndPointIndicator> _toElms = new() ;
+    private readonly HashSet<EndPointKey> _fromElms = new() ;
+    private readonly HashSet<EndPointKey> _toElms = new() ;
 
     /// <summary>
     /// Create a <see cref="RouteSegmentDetector"/>.
@@ -32,9 +31,9 @@ namespace Arent3d.Architecture.Routing.App
       CollectEndPoints( elementToPassThrough, false, _toElms ) ;
     }
 
-    private static void CollectEndPoints( Element element, bool isFrom, HashSet<IEndPointIndicator> foundElms )
+    private static void CollectEndPoints( Element element, bool isFrom, HashSet<EndPointKey> foundElms )
     {
-      foundElms.UnionWith( element.GetNearestEndPointIndicators( isFrom ) ) ;
+      foundElms.UnionWith( element.GetNearestEndPoints( isFrom ).Select( ep => ep.Key ) ) ;
     }
 
     /// <summary>
@@ -50,27 +49,27 @@ namespace Arent3d.Architecture.Routing.App
     /// </returns>
     public bool IsPassingThrough( RouteSegment info )
     {
-      return ContainsFromEndPoint( info.FromId ) && ContainsToEndPoint( info.ToId ) ;
+      return ContainsFromEndPoint( info.FromEndPoint ) && ContainsToEndPoint( info.ToEndPoint ) ;
     }
 
-    private bool ContainsFromEndPoint( IEndPointIndicator indicator )
+    private bool ContainsFromEndPoint( IEndPoint endPoint )
     {
-      if ( indicator is RouteIndicator routeIndicator ) {
-        if ( routeIndicator.GetSubRoute( Document ) is not { } subRoute ) return false ;
-        return subRoute.Segments.Any( seg => ContainsFromEndPoint( seg.FromId ) ) ;
+      if ( endPoint is RouteEndPoint routeEndPoint ) {
+        if ( routeEndPoint.GetSubRoute() is not { } subRoute ) return false ;
+        return subRoute.Segments.Any( seg => ContainsFromEndPoint( seg.FromEndPoint ) ) ;
       }
 
-      return _fromElms.Contains( indicator ) ;
+      return _fromElms.Contains( endPoint.Key ) ;
     }
 
-    private bool ContainsToEndPoint( IEndPointIndicator indicator )
+    private bool ContainsToEndPoint( IEndPoint endPoint )
     {
-      if ( indicator is RouteIndicator routeIndicator ) {
-        if ( routeIndicator.GetSubRoute( Document ) is not { } subRoute ) return false ;
-        return subRoute.Segments.Any( seg => ContainsToEndPoint( seg.ToId ) ) ;
+      if ( endPoint is RouteEndPoint routeEndPoint ) {
+        if ( routeEndPoint.GetSubRoute() is not { } subRoute ) return false ;
+        return subRoute.Segments.Any( seg => ContainsToEndPoint( seg.ToEndPoint ) ) ;
       }
 
-      return _toElms.Contains( indicator ) ;
+      return _toElms.Contains( endPoint.Key ) ;
     }
   }
 }

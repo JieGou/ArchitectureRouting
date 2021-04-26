@@ -1,5 +1,5 @@
 using System ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.Csv.Converters ;
 using CsvHelper ;
 using CsvHelper.Configuration ;
@@ -19,33 +19,25 @@ namespace Arent3d.Architecture.Routing.App
     [Index( 1 ), Name( "From Key" )]
     public string FromKey { get ; set ; } = string.Empty ;
 
-    [Index( 2 ), Name( "From End" ), TypeConverter( typeof( EndPointIndicatorConverter ) )]
-    public IEndPointIndicator? FromIndicator { get ; set ; }
+    [Index( 2 ), Name( "From End Type" )]
+    public string FromEndType { get ; set ; } = string.Empty ;
 
-    [Index( 3 ), Name( "To Key" )]
+    [Index( 3 ), Name( "From End Param" )]
+    public string FromEndParams { get ; set ; } = string.Empty ;
+
+    [Index( 4 ), Name( "To Key" )]
     public string ToKey { get ; set ; } = string.Empty ;
 
-    [Index( 4 ), Name( "To End" ), TypeConverter( typeof( EndPointIndicatorConverter ) )]
-    public IEndPointIndicator? ToIndicator { get ; set ; }
+    [Index( 5 ), Name( "To End Type" )]
+    public string ToEndType { get ; set ; } = string.Empty ;
 
-    [Index( 5 ), Name( "Nominal Diameter" )]
-    public double NominalDiameter { get ; set ; } = -1 ;
+    [Index( 6 ), Name( "To End Param" )]
+    public string ToEndParams { get ; set ; } = string.Empty ;
 
-    [Index( 6 ), Name( "On Pipe Space" )]
+    [Index( 7 ), Name( "Nominal Diameter" )]
+    public double? NominalDiameter { get ; set ; } = null ;
+
+    [Index( 8 ), Name( "On Pipe Space" )]
     public bool IsRoutingOnPipeSpace { get ; set ; } = false ;
-  }
-
-  internal class EndPointIndicatorConverter : ITypeConverter
-  {
-    public string ConvertToString( object? value, IWriterRow row, MemberMapData memberMapData )
-    {
-      if ( null == value ) return string.Empty ;
-      return EndPointIndicator.ToString( (IEndPointIndicator) value ) ;
-    }
-
-    public object? ConvertFromString( string text, IReaderRow row, MemberMapData memberMapData )
-    {
-      return EndPointIndicator.ParseIndicator( text ) ;
-    }
   }
 }

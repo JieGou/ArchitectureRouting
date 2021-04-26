@@ -1,7 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing
   /// </summary>
   public class AutoRoutingEndPoint : IAutoRoutingEndPoint
   {
-    public EndPointBase EndPoint { get ; }
+    public IEndPoint EndPoint { get ; }
 
     private readonly double _minimumStraightLength ;
     private readonly double _angleToleranceRadian ;
@@ -27,7 +27,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="priority">Priority (can be duplicated between end points in an <see cref="AutoRoutingTarget"/>).</param>
     /// <param name="routeMepSystem">A <see cref="RouteMEPSystem"/> object this end point belongs to.</param>
     /// <param name="edgeDiameter">Edge diameter.</param>
-    internal AutoRoutingEndPoint( EndPointBase endPoint, bool isFrom, int priority, RouteMEPSystem routeMepSystem, double edgeDiameter )
+    internal AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, int priority, RouteMEPSystem routeMepSystem, double edgeDiameter )
     {
       EndPoint = endPoint ;
       IsStart = isFrom ;
@@ -39,9 +39,9 @@ namespace Arent3d.Architecture.Routing
       PipeCondition = new RouteCondition( routeMepSystem, endPoint, edgeDiameter ) ;
     }
 
-    public Vector3d Position => EndPoint.Position + _minimumStraightLength * Direction.ForEndPointType( IsStart ) ;
+    public Vector3d Position => EndPoint.RoutingStartPosition.To3d() + _minimumStraightLength * Direction.ForEndPointType( IsStart ) ;
 
-    public Vector3d Direction => Sanitize( EndPoint.GetDirection( IsStart ) ) ;
+    public Vector3d Direction => Sanitize( EndPoint.GetRoutingDirection( IsStart ).To3d() ) ;
 
     private static readonly Vector3d[] SanitizationDirections =
     {
@@ -186,18 +186,19 @@ namespace Arent3d.Architecture.Routing
 
     private class RouteCondition : IRouteCondition
     {
+      private const string DefaultFluidPhase = "None" ;
+
       public IPipeDiameter Diameter { get ; }
       public double DiameterPipeAndInsulation => Diameter.Outside ;
       public double DiameterFlangeAndInsulation => Diameter.Outside ; // provisional
       public IPipeSpec Spec { get ; }
 
       public ProcessConstraint ProcessConstraint => ProcessConstraint.NoPocket ;
-      public string FluidPhase { get ; }
+      public string FluidPhase => DefaultFluidPhase ;
 
-      public RouteCondition( RouteMEPSystem routeMepSystem, EndPointBase endPoint, double diameter )
+      public RouteCondition( RouteMEPSystem routeMepSystem, IEndPoint endPoint, double diameter )
       {
         Diameter = diameter.DiameterValueToPipeDiameter() ;
-        FluidPhase = endPoint.OwnerRoute.FluidPhase ;
 
         Spec = new MEPSystemPipeSpec( routeMepSystem ) ;
       }

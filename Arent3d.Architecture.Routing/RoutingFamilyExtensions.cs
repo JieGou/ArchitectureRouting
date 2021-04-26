@@ -18,6 +18,10 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Routing Pass Point" )]
     [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
     PassPoint,
+
+    [NameOnRevit( "Routing Terminate Point" )]
+    [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
+    TerminatePoint,
   }
 
   public static class RoutingFamilyExtensions

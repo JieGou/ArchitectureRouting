@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Diagnostics;
 using System.Linq ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -24,7 +25,7 @@ namespace Arent3d.Architecture.Routing
     {
       _diameterTolerance = document.Application.VertexTolerance ;
       
-      var allConnectors = route.GetAllConnectors( document ).EnumerateAll() ;
+      var allConnectors = route.GetAllConnectors().EnumerateAll() ;
       MEPSystemType = GetSystemType( document, allConnectors ) ;
       //MEPSystem = CreateMEPSystem( document, connector, allConnectors ) ;
       MEPSystem = null ;
@@ -200,7 +201,7 @@ namespace Arent3d.Architecture.Routing
     {
       if ( c.MEPSystem is not {  } mepSystem ) return ;
 
-      if ( mepSystem.BaseEquipmentConnector.GetIndicator() == c.GetIndicator() ) {
+      if ( mepSystem.BaseEquipmentConnector.GetConnectorIdentifier() == c.GetConnectorIdentifier() ) {
         mepSystem.Document.Delete( mepSystem.Id ) ;
       }
       else {
