@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? segments ;
       try {
-        segments = GetRouteSegmentsBeforeTransaction( uiDocument ) ;
+        segments = GetRouteSegmentsParallelToTransaction( uiDocument ) ;
         if ( null == segments ) return Result.Cancelled ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -67,7 +67,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       {
         SetupFailureHandlingOptions( transaction, executor ) ;
 
-        segments = segments.Concat( GetRouteSegmentsInTransaction( uiDocument ) ) ;
+        segments = segments.Concat( GetRouteSegmentsInTransaction( uiDocument ).EnumerateAll().ToAsyncEnumerable() ) ;
 
         var tokenSource = new CancellationTokenSource() ;
         using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
@@ -116,10 +116,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     protected abstract string GetTransactionNameKey() ;
 
     /// <summary>
-    /// Collects route segments to be auto-routed (before transaction).
+    /// Collects route segments to be auto-routed (parallel to transaction).
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
+    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
       return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
     }
@@ -128,9 +128,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     /// Collects route segments to be auto-routed (in transaction).
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
+    protected virtual IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
-      return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
+      return Enumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
     }
 
 

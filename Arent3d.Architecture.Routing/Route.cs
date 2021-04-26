@@ -101,14 +101,16 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     /// <param name="segment">From-to segment.</param>
     /// <returns>False, if any connector id or pass point id is not found, or has any contradictions in the from-to list (i.e., one connector is registered as both from and end).</returns>
-    public bool RegisterSegment( RouteSegment segment )
+    public bool RegisterSegment( RouteSegment segment ) => RegisterSegment( segment, true ) ;
+
+    private bool RegisterSegment( RouteSegment segment, bool generateInstance )
     {
       var fromEndPoint = segment.FromEndPoint ;
       var toEndPoint = segment.ToEndPoint ;
 
-      var generatedFrom = fromEndPoint.GenerateInstance( RouteName ) ;
-      var generatedTo = toEndPoint.GenerateInstance( RouteName ) ;
-      if ( false == RegisterSegment( segment, fromEndPoint, toEndPoint ) ) {
+      var generatedFrom = generateInstance && fromEndPoint.GenerateInstance( RouteName ) ;
+      var generatedTo = generateInstance && toEndPoint.GenerateInstance( RouteName ) ;
+      if ( false == RegisterSegment( segment, fromEndPoint, toEndPoint, generateInstance ) ) {
         // cleanup
         if ( generatedFrom ) fromEndPoint.EraseInstance() ;
         if ( generatedTo ) toEndPoint.EraseInstance() ;
@@ -119,11 +121,12 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    private bool RegisterSegment( RouteSegment segment, IEndPoint fromEndPoint, IEndPoint toEndPoint )
+    private bool RegisterSegment( RouteSegment segment, IEndPoint fromEndPoint, IEndPoint toEndPoint, bool needCheckId )
     {
-      // check id.
-      if ( false == fromEndPoint.HasValidElement( true ) ) return false ;
-      if ( false == toEndPoint.HasValidElement( false ) ) return false ;
+      if ( needCheckId ) {
+        if ( false == fromEndPoint.HasValidElement( true ) ) return false ;
+        if ( false == toEndPoint.HasValidElement( false ) ) return false ;
+      }
 
       if ( fromEndPoint.IsOneSided && _subRouteMap.ContainsKey( ( fromEndPoint.Key, false ) ) ) {
         // contradiction!
@@ -323,7 +326,7 @@ namespace Arent3d.Architecture.Routing
     protected override void LoadAllFields( FieldReader reader )
     {
       RouteName = reader.GetSingle<string>( RouteNameField ) ;
-      reader.GetArray<RouteSegment>( RouteSegmentsField ).ForEach( segment => RegisterSegment( segment ) ) ;
+      reader.GetArray<RouteSegment>( RouteSegmentsField ).ForEach( segment => RegisterSegment( segment, false ) ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )

@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
     private const string Guid = "D1464970-1251-442F-8754-E59E293FBC9D" ;
     protected override string GetTransactionNameKey() => "TransactionName.Commands.PostCommands.ApplySelectedFromToChangesCommand" ;
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsBeforeTransaction( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
       if ( SelectedFromToViewModel.PropertySourceType is { } propertySource ) {
         var route = propertySource.TargetRoute ;
@@ -51,15 +51,15 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
             return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
           }
           else {
-            return base.GetRouteSegmentsInTransaction( uiDocument ) ;
+            return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
           }
         }
         else {
-          return base.GetRouteSegmentsInTransaction( uiDocument ) ;
+          return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
         }
       }
       else {
-        return base.GetRouteSegmentsInTransaction( uiDocument ) ;
+        return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
       }
     }
   }
