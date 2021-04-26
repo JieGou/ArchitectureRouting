@@ -211,14 +211,17 @@ namespace Arent3d.Architecture.Routing
     private void RenameAllDescendents( string oldName, string newRouteName )
     {
       if ( oldName != "" && oldName !="None" ) {
-        // replacing indicator is on developing
-        /*var childBranches = GetChildBranches() ;
+        var childBranches = GetChildBranches() ;
         foreach ( var route in childBranches ) {
           var endPoint = route._subRoutes
-          .SelectMany( subRoute => subRoute.AllEndPointIndicators ).LastOrDefault( i => i.ParentBranch( Document ).Route?.RouteName == oldName ) ;
-        }*/
+          .SelectMany( subRoute => subRoute.FromEndPoints.OfType<RouteEndPoint>() ).LastOrDefault( i => i.RouteName == oldName ) ;
+          // Update FromEndPoint's RouteName and save
+          endPoint?.UpdateRoute(newRouteName, endPoint.SubRouteIndex);
+          route.Save();
+        }
         var allElements = Document.GetAllElementsOfRouteName<Element>(oldName) ;
         foreach ( var element in allElements ) {
+          // Rename element's RouteName Parameter 
           element.SetProperty( RoutingParameter.RouteName, newRouteName ) ;
         }
         this.Save();
@@ -297,7 +300,7 @@ namespace Arent3d.Architecture.Routing
     /// <returns></returns>
     public bool HasParent()
     {
-      return _subRoutes.SelectMany( subRoute => subRoute.AllEndPoints ).Any( endPoint => null != endPoint.ParentBranch().Route ) ;
+      return _subRoutes.SelectMany( subRoute => subRoute.AllEndPoints.OfType<RouteEndPoint>() ).Any( endPoint => null != endPoint.ParentBranch().Route ) ;
     }
 
     private static void AddChildren( HashSet<Route> routeSet, Route root, Action<Route>? onAdd = null )
