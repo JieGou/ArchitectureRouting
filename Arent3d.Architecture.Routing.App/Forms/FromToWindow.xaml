@@ -11,8 +11,8 @@
         <local:Dialog2Buttons
             VerticalAlignment="Top"
             HorizontalAlignment="Right"
-            LeftOnClick="Dilog2Buttons_OnLeftOnClick"
-            RightOnClick="Dilog2Buttons_OnRightOnClick"
+            LeftOnClick="Dialog2Buttons_OnLeftOnClick"
+            RightOnClick="Dialog2Buttons_OnRightOnClick"
             Margin="0,5,0,5" />
 
         <DataGrid x:Name="FromToList"

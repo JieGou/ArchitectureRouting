@@ -20,6 +20,8 @@ namespace Arent3d.Architecture.Routing
     NearestToSideEndPoints,
     [ParameterGuid( "6cf2fece-a396-43e8-bede-4a2a75de5511" ), NameOnRevit( "Related Pass Point Id" )]
     RelatedPassPointId,
+    [ParameterGuid( "0e79cbf5-ac77-4fd2-be12-7969f5204a28" ), NameOnRevit( "Related Terminate Point Id" )]
+    RelatedTerminatePointId,
 
     // PassPointSharedParameters
     [ParameterGuid( "b975f161-499f-4cc6-8e11-0d7ddf25b1f4" ), NameOnRevit( "PassPoint From-side Element Id" )]

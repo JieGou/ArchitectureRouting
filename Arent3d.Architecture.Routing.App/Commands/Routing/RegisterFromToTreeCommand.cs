@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
         // Get Selected Routes
         var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( _uiApp.ActiveUIDocument ).EnumerateAll() ;
-        var selectedConnectors = doc.CollectRoutes().SelectMany( r => r.GetAllConnectors( doc ) ).ToList() ;
+        var selectedConnectors = doc.CollectRoutes().SelectMany( r => r.GetAllConnectors() ).ToList() ;
 
         //Get ElementIds in activeview
         ElementOwnerViewFilter elementOwnerViewFilter = new ElementOwnerViewFilter( doc.ActiveView.Id ) ;
