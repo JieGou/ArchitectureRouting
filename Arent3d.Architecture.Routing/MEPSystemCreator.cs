@@ -29,11 +29,11 @@ namespace Arent3d.Architecture.Routing
 
     private readonly Level _level ;
 
-    private readonly IReadOnlyDictionary<Route, RouteMEPSystem> _routeMepSystemDictionary ;
+    private readonly IReadOnlyDictionary<SubRoute, RouteMEPSystem> _routeMepSystemDictionary ;
 
     private readonly List<Connector[]> _badConnectors = new() ;
 
-    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<Route, RouteMEPSystem> routeMepSystemDictionary )
+    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
       _document = document ;
       _autoRoutingTarget = autoRoutingTarget ;
@@ -100,7 +100,7 @@ namespace Arent3d.Architecture.Routing
       if ( null == baseConnector ) throw new InvalidOperationException() ;
 
       var subRoute = _autoRoutingTarget.GetSubRoute( routeEdge ) ;
-      var routeMepSystem = _routeMepSystemDictionary[ subRoute.Route ] ;
+      var routeMepSystem = _routeMepSystemDictionary[ subRoute ] ;
 
       var element = baseConnector.Domain switch
       {

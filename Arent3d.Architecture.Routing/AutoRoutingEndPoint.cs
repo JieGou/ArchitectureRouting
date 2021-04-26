@@ -10,7 +10,7 @@ using MathLib ;
 namespace Arent3d.Architecture.Routing
 {
   /// <summary>
-  /// Wrapper class for routing-core of <see cref="EndPointBase"/>.
+  /// Wrapper class for routing-core of <see cref="IAutoRoutingEndPoint"/>.
   /// </summary>
   public class AutoRoutingEndPoint : IAutoRoutingEndPoint
   {
@@ -34,7 +34,7 @@ namespace Arent3d.Architecture.Routing
       Priority = priority ;
       Depth = priority ;
       _minimumStraightLength = routeMepSystem.GetReducerLength( endPoint.GetDiameter() ?? -1, edgeDiameter ) + EndPoint.GetMinimumStraightLength( routeMepSystem, edgeDiameter, IsStart ) ;
-      _angleToleranceRadian = routeMepSystem.CurveType.Document.Application.AngleTolerance ;
+      _angleToleranceRadian = routeMepSystem.AngleTolerance ;
 
       PipeCondition = new RouteCondition( routeMepSystem, endPoint, edgeDiameter ) ;
     }

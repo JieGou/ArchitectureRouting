@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing
 {
   public class AutoRoutingTargetGenerator
   {
-    public static IEnumerable<AutoRoutingTarget> Run( Document document, IReadOnlyCollection<Route> routes, IReadOnlyDictionary<Route, RouteMEPSystem> routeMepSystemDictionary )
+    public static IEnumerable<AutoRoutingTarget> Run( Document document, IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
       return new AutoRoutingTargetGenerator( document ).Create( routes, routeMepSystemDictionary ) ;
     }
@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing
       _document = document ;
     }
 
-    private IEnumerable<AutoRoutingTarget> Create( IReadOnlyCollection<Route> routes, IReadOnlyDictionary<Route, RouteMEPSystem> routeMepSystemDictionary )
+    private IEnumerable<AutoRoutingTarget> Create( IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
       var priorities = CollectPriorities( routes ) ;
 
@@ -67,7 +67,7 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private AutoRoutingTarget GenerateAutoRoutingTarget( IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<Route, RouteMEPSystem> routeMepSystemDictionary )
+    private AutoRoutingTarget GenerateAutoRoutingTarget( IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
       return new AutoRoutingTarget( _document, subRoutes, priorities, routeMepSystemDictionary ) ;
     }

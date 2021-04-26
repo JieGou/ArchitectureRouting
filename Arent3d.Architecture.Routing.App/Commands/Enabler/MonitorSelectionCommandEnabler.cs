@@ -22,7 +22,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
 
       // Raise the SelectionChangedEvent
       var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( uiDoc ).EnumerateAll() ;
-      var selectedConnectors = uiDoc.Document.CollectRoutes().SelectMany( r => r.GetAllConnectors() ).ToList() ;
       
       ElementId? selectedElementId = null ;
       // if route selected
@@ -35,16 +34,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
       }
       
       // if Connector selected
-      else if ( selectedConnectors.Any( c => uiDoc.Selection.GetElementIds().Contains(c.Owner.Id) )  ) {
+      else if ( uiDoc.Document.CollectRoutes().SelectMany( r => r.GetAllConnectors() ).Any( c => uiDoc.Selection.GetElementIds().Contains( c.Owner.Id ) ) ) {
         selectedElementId = uiDoc.Selection.GetElementIds().FirstOrDefault() ;
         FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
-        PreviousSelectedRouteElementId = selectedElementId ; 
+        PreviousSelectedRouteElementId = selectedElementId ;
       }
+
       else if ( PreviousSelectedRouteElementId != null ) {
         FromToTreeViewModel.ClearSelection() ;
         PreviousSelectedRouteElementId = null ;
       }
-      
 
 
       return false ;

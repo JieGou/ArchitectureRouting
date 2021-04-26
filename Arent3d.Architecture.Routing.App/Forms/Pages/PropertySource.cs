@@ -3,7 +3,9 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -58,28 +60,27 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       private void SetProperties()
       {
-        if ( TargetSubRoutes?.ElementAt( 0 ).Route is not { } route ) return ;
-        var routeMepSystem = new RouteMEPSystem( Doc, route ) ;
+        if ( TargetSubRoutes?.FirstOrDefault() is not {} subRoute ) return ;
 
+        var curveType = subRoute.GetMEPCurveType() ;
+        
         //Diameter Info
-        Diameters = routeMepSystem.GetNominalDiameters( routeMepSystem.CurveType ).ToList() ;
-        var diameter = TargetSubRoutes.ElementAt( 0 ).GetDiameter() ;
+        Diameters = (IList<double>?) curveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
+        var diameter = subRoute.GetDiameter() ;
         DiameterIndex = Diameters.FindIndexByVertexTolerance( diameter, Doc ) ;
 
         //System Type Info(PipingSystemType in lookup)
-        var connector = TargetSubRoutes.ElementAt( 0 ).GetReferenceConnector() ;
-        SystemTypes = routeMepSystem.GetSystemTypes( Doc, connector ).OrderBy( s => s.Name ).ToList() ;
-        var systemType = routeMepSystem.MEPSystemType ;
-        SystemTypeIndex = SystemTypes.ToList().FindIndex( s => s.Id == systemType?.Id ) ;
+        SystemTypes = Doc.GetSystemTypes( subRoute.Route.SystemClassification ).OrderBy( s => s.Name ).ToList() ;
+        var systemTypeId = subRoute.Route.GetMEPSystemType().GetValidId() ;
+        SystemTypeIndex = SystemTypes.FindIndex( s => s.Id == systemTypeId ) ;
 
         //CurveType Info
-        var curveType = routeMepSystem.CurveType ;
-        var type = curveType.GetType() ;
-        CurveTypes = routeMepSystem.GetCurveTypes( Doc, type ).OrderBy( s => s.Name ).ToList() ;
-        CurveTypeIndex = CurveTypes.ToList().FindIndex( c => c.Id == curveType?.Id ) ;
+        var curveTypeId = curveType.GetValidId() ;
+        CurveTypes = Doc.GetCurveTypes( curveType ).OrderBy( s => s.Name ).ToList() ;
+        CurveTypeIndex = CurveTypes.FindIndex( c => c.Id == curveTypeId ) ;
 
         //Direct Info
-        IsDirect = TargetSubRoutes.ElementAt( 0 ).IsRoutingOnPipeSpace ;
+        IsDirect = subRoute.IsRoutingOnPipeSpace ;
       }
 
       private void IsMultiSelected()
@@ -106,27 +107,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
       /// </summary>
       /// <param name="route"></param>
       /// <returns></returns>
-      private bool IsCurveTypeMultiSelected( Route route )
+      private static bool IsCurveTypeMultiSelected( Route route )
       {
-        var routeMepSystem = new RouteMEPSystem( Doc, route ) ;
-        var curveTypes = new List<MEPCurveType>() ;
-
-        foreach ( var subRoute in route.SubRoutes ) {
-          if ( ! curveTypes.Contains( routeMepSystem.CurveType ) ) {
-            curveTypes.Add( routeMepSystem.CurveType ) ;
-          }
-        }
-
-        var curveTypeResult = false ;
-        try {
-          var singleCurveType = curveTypes.SingleOrDefault() ;
-          curveTypeResult = false ;
-        }
-        catch {
-          curveTypeResult = true ;
-        }
-
-        return curveTypeResult ;
+        return ( null != route.UniqueCurveType ) ;
       }
 
       /// <summary>
@@ -134,26 +117,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
       /// </summary>
       /// <param name="route"></param>
       /// <returns></returns>
-      private bool IsDiameterMultiSelected( Route route )
+      private static bool IsDiameterMultiSelected( Route route )
       {
-        var diameters = new List<double>() ;
-
-        foreach ( var subRoute in route.SubRoutes ) {
-          if ( ! diameters.Contains( subRoute.GetDiameter() ) ) {
-            diameters.Add( subRoute.GetDiameter() ) ;
-          }
-        }
-
-        var diameterResult = false ;
-        try {
-          var singleDiameter = diameters.SingleOrDefault() ;
-          diameterResult = false ;
-        }
-        catch {
-          diameterResult = true ;
-        }
-
-        return diameterResult ;
+        return ( null != route.UniqueDiameter ) ;
       }
 
       /// <summary>
