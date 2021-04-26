@@ -28,10 +28,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
     /// Collects from-to records to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected override async IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
+    protected override IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
-      await Task.Yield() ;
-
       var segments = UiThread.RevitUiDispatcher.Invoke( () =>
       {
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Dialog.Commands.PassPoint.Insert.Pick".GetAppStringByKeyOrDefault( null ) ) ;

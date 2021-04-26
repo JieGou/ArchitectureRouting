@@ -96,7 +96,7 @@ namespace Arent3d.Architecture.Routing
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZ() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZ() ;
 
-      var baseConnector = ( routeEdge.LineInfo as AutoRoutingEndPoint )?.EndPoint.GetReferenceConnector() ;
+      var baseConnector = ( routeEdge.LineInfo as AutoRoutingEndPoint )?.EndPoint.GetReferenceConnector() ?? _autoRoutingTarget.GetSubRoute( routeEdge ).GetReferenceConnector() ;
       if ( null == baseConnector ) throw new InvalidOperationException() ;
 
       var subRoute = _autoRoutingTarget.GetSubRoute( routeEdge ) ;
