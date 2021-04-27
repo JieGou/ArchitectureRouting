@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       set { SetValue( LeftButtonProperty, value ) ; }
     }
 
-    public static readonly DependencyProperty LeftButtonProperty = DependencyProperty.Register( "LeftButtont", 
+    public static readonly DependencyProperty LeftButtonProperty = DependencyProperty.Register( "LeftButton", 
       typeof( string ), 
       typeof( Dialog2Buttons ), 
       new PropertyMetadata( "OK" ) ) ;

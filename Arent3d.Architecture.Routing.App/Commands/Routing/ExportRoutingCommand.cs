@@ -1,6 +1,7 @@
 using System.ComponentModel ;
 using System.IO ;
 using System.Linq ;
+using Arent3d.Revit;
 using Arent3d.Revit.Csv ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -10,11 +11,12 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
-  [Transaction( TransactionMode.ReadOnly )]
-  [DisplayNameKey( "App.Commands.Routing.ExportRoutingCommand", DefaultString = "Export\nFrom-To" )]
-  [Image( "resources/ExportFromTo.png" )]
+  [RevitAddin( Guid )]
+  [DisplayName( "App.Commands.Routing.ExportRoutingCommand" )]
+  [Transaction( TransactionMode.Manual )]
   public class ExportRoutingCommand : IExternalCommand
   {
+    private const string Guid = "4E3CF8F5-24DD-438C-9613-6439E09FF765";
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;

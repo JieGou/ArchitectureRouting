@@ -4,6 +4,7 @@ using System.Collections.ObjectModel ;
 using Arent3d.Architecture.Routing.RouteEnd ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB ;
+using Arent3d.Revit.UI;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
@@ -11,13 +12,14 @@ namespace Arent3d.Architecture.Routing.App.Forms
   {
     public ObservableCollection<FromToItems> FromToItemsList { get ; set ; }
 
+        public UIDocument? uiDoc;
+
     public FromToWindow( UIDocument uiDoc, ObservableCollection<FromToItems> fromToItemsList ) : base( uiDoc )
     {
       InitializeComponent() ;
-
       FromToItemsList = fromToItemsList ;
+      this.uiDoc = uiDoc;
     }
-
 
     public class FromToItems
     {
@@ -28,7 +30,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
       public string? FromType => From?.ToString().Split( ':' )[ 0 ] ;
       public string? FromId => From?.ElementId.ToString() ;
       public string? FromSubId => From?.ConnectorId.ToString() ;
-
 
       //To
       public ConnectorIndicator? To { get ; set ; }
@@ -62,12 +63,14 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Dilog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
-      TaskDialog.Show( "test", "Import" ) ;
+      uiDoc?.Application.PostCommand<Commands.Routing.FileRoutingCommand>();
+      //TaskDialog.Show( "test", "Import" ) ;
     }
 
     private void Dilog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
     {
-      TaskDialog.Show( "test", "Export" ) ;
+      uiDoc?.Application.PostCommand<Commands.Routing.ExportRoutingCommand>();
+      //TaskDialog.Show( "test", "Export" ) ;
     }
 
     private void Dialog3Buttons_OnOnOKClick( object sender, RoutedEventArgs e )

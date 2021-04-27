@@ -44,8 +44,8 @@ namespace Arent3d.Architecture.Routing.App
     private readonly RibbonButton _showFromToWindowCommandButton ;
     private readonly RibbonButton _showFromToTreeCommandButton ;
 
-    private readonly RibbonButton _fileRoutingCommandButton ;
-    private readonly RibbonButton _exportRoutingCommandButton ;
+    //private readonly RibbonButton _fileRoutingCommandButton ;
+    //private readonly RibbonButton _exportRoutingCommandButton ;
 
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
@@ -78,8 +78,8 @@ namespace Arent3d.Architecture.Routing.App
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
 
-        _fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
-        _exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
+        //_fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
+        //_exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
       }
       {
         var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
@@ -109,12 +109,12 @@ namespace Arent3d.Architecture.Routing.App
       _showRoutingViewsCommandButton.Enabled = false ;
 
       _pickRoutingCommandButton.Enabled = false ;
-      _fileRoutingCommandButton.Enabled = false ;
+      //_fileRoutingCommandButton.Enabled = false ;
       _pickAndReRouteCommandButton.Enabled = false ;
       _allReRouteCommandButton.Enabled = false ;
       _eraseSelectedRoutesCommandButton.Enabled = false ;
       _eraseAllRoutesCommandButton.Enabled = false ;
-      _exportRoutingCommandButton.Enabled = false ;
+      //_exportRoutingCommandButton.Enabled = false ;
 
       _insertPassPointCommandButton.Enabled = false ;
       _insertBranchPointCommandButton.Enabled = false ;
@@ -141,12 +141,12 @@ namespace Arent3d.Architecture.Routing.App
       _showRoutingViewsCommandButton.Enabled = setupIsDone ;
 
       _pickRoutingCommandButton.Enabled = setupIsDone ;
-      _fileRoutingCommandButton.Enabled = setupIsDone ;
+      //_fileRoutingCommandButton.Enabled = setupIsDone ;
       _pickAndReRouteCommandButton.Enabled = setupIsDone ;
       _allReRouteCommandButton.Enabled = setupIsDone ;
       _eraseSelectedRoutesCommandButton.Enabled = setupIsDone ;
       _eraseAllRoutesCommandButton.Enabled = setupIsDone ;
-      _exportRoutingCommandButton.Enabled = setupIsDone ;
+      //_exportRoutingCommandButton.Enabled = setupIsDone ;
 
       _insertPassPointCommandButton.Enabled = setupIsDone ;
       _insertBranchPointCommandButton.Enabled = setupIsDone ;

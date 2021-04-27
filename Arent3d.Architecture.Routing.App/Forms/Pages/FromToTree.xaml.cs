@@ -14,6 +14,7 @@ using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using Arent3d.Revit.UI;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
@@ -25,10 +26,35 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private SortedDictionary<string, TreeViewItem>? ItemDictionary { get ; set ; }
 
+    private bool IsLeftMouseClick { get; set; }
 
-    public FromToTree()
+    private FromToItem? selectedLeftItem { get; set; }
+
+    public bool IsConnectorVisibility { get; set; }
+
+    public bool IsRouterVisibility { get; set; }
+
+    private bool IsPassPointVisibility { get; set; }
+
+    public string CoordinatesX { get; set; }
+
+    public string CoordinatesY { get; set; }
+
+    public string CoordinatesZ { get; set; }
+
+
+
+
+        public FromToTree()
     {
-      InitializeComponent() ;
+        this.DataContext = new { IsRouterVisibility = true, IsConnectorVisibility = false};
+        IsConnectorVisibility = true;
+        IsRouterVisibility = false;
+            this.CoordinatesX = "X1";
+
+            this.CoordinatesY = "Y1";
+            this.CoordinatesZ = "Z1";
+            InitializeComponent() ;
       ItemDictionary = new SortedDictionary<string, TreeViewItem>() ;
     }
 
@@ -60,6 +86,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       AllRoutes = UiDoc.Document.CollectRoutes().ToList() ;
       // call the treeview display method
       DisplayTreeViewItem( uiApplication, AllRoutes ) ;
+      IsLeftMouseClick = false;
     }
 
     private void DisplayTreeViewItem( UIApplication uiApp, IReadOnlyCollection<Route> allRoutes )
@@ -141,18 +168,22 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       SelectedFromTo.UpdateFromToParameters( propertySource?.Diameters, propertySource?.SystemTypes, propertySource?.CurveTypes ) ;
 
+      SelectedFromTo.DiameterOrgIndex = propertySource?.DiameterIndex;
       SelectedFromTo.DiameterIndex = propertySource?.DiameterIndex ;
 
       SelectedFromTo.SystemTypeIndex = propertySource?.SystemTypeIndex ;
+      SelectedFromTo.SystemTypeOrgIndex = propertySource?.SystemTypeIndex;
 
       SelectedFromTo.CurveTypeIndex = propertySource?.CurveTypeIndex ;
+      SelectedFromTo.CurveTypeOrgIndex = propertySource?.CurveTypeIndex;
 
       if ( SelectedFromTo.CurveTypeIndex is { } index ) {
-        SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( SelectedFromTo.CurveTypes[ index ].GetType().Name ) ;
+         SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( SelectedFromTo.CurveTypes[ index ].GetType().Name ) ;
       }
 
       SelectedFromTo.CurrentDirect = propertySource?.IsDirect ;
-
+      SelectedFromTo.CurrentOrgDirect = propertySource?.IsDirect;
+    
 
       SelectedFromTo.ResetDialog() ;
     }
@@ -168,18 +199,36 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       if ( selectedItem is FromToItem selectedFromToItem ) {
         selectedFromToItem.OnSelected() ;
+        
+        if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && selectedFromToItem.ItemTag == "Route") {
 
-        if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routePropertySource ) {
+          this.DataContext = new { IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = selectedFromToItem.IsRootRoute, IsEnableCurveType = selectedFromToItem.IsRootRoute };
           // show SelectedFromTo 
           DisplaySelectedFromTo( routePropertySource ) ;
+        }
+        else if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && selectedFromToItem.ItemTypeName == "Section" ) {
+          // show Connector UI
+          this.DataContext = new { IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = false, IsEnableCurveType = true };
+          DisplaySelectedFromTo( routeSubPropertySource );
         }
         else if ( selectedFromToItem.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
           // show Connector UI
           var transform = connectorPropertySource.ConnectorTransform ;
           SelectedFromTo.ClearDialog() ;
+          this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false };
+        }
+        else if ( selectedFromToItem.PropertySourceType is PassPointPropertySource passPointPropertySource ) {
+            // show Connector UI
+            var transform = passPointPropertySource.PassPointTransform;
+            SelectedFromTo.ClearDialog();
+                    double coordinateX = UnitUtils.ConvertFromInternalUnits( transform.X, UnitTypeId.Millimeters );
+                    double coordinateY = UnitUtils.ConvertFromInternalUnits( transform.Y, UnitTypeId.Millimeters );
+                    double coordinateZ = UnitUtils.ConvertFromInternalUnits( transform.Z, UnitTypeId.Millimeters );
+                    this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = true, CoordinatesX = "X:" + (Math.Floor( coordinateX * 10 )) / 10 + " mm", CoordinatesY = "Y:" + (Math.Floor( coordinateY * 10 )) / 10 + " mm", CoordinatesZ = "Z:" + (Math.Floor( coordinateZ * 10 )) / 10 + "mm" };
         }
         else {
           // don't show SelectedFromTo 
+
           SelectedFromTo.ClearDialog() ;
         }
       }
@@ -203,7 +252,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="selectedRouteName"></param>
     public void SelectTreeViewItem( ElementId? elementId )
     {
-      var targetItem = GetTreeViewItemFromElementId( FromToTreeView.Items, elementId ) ;
+      var targetItem = GetTreeViewItemFromElementId( FromToTreeView, FromToTreeView.Items, elementId ) ;
       if ( targetItem != null ) {
         // Select in TreeView
         targetItem.IsSelected = true ;
@@ -257,12 +306,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="collection"></param>
     /// <param name="targetName"></param>
     /// <returns></returns>
-    private TreeViewItem? GetTreeViewItemFromElementId( ItemCollection collection, ElementId? elementId )
+    private TreeViewItem? GetTreeViewItemFromElementId( ItemsControl control, ItemCollection collection, ElementId? elementId )
     {
       // this method is in developing. This works only in Parent Item
       foreach ( var item in collection ) {
         if ( item is FromToItem fromToItem && fromToItem.ElementId != null ) {
-          TreeViewItem? treeViewItem = FromToTreeView.ItemContainerGenerator.ContainerFromItem( item as object ) as TreeViewItem ;
+          FromToTreeView.UpdateLayout();
+          TreeViewItem? treeViewItem = control.ItemContainerGenerator.ContainerFromItem( item as object ) as TreeViewItem ;
           // Find in current
           if ( fromToItem.ElementId.Equals( elementId ) ) {
             return treeViewItem ;
@@ -270,9 +320,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
           // Find in Childs
           if ( treeViewItem != null ) {
-            TreeViewItem? childItem = this.GetTreeViewItemFromElementId( treeViewItem.Items, elementId ) ;
+            treeViewItem.IsExpanded = true;
+            TreeViewItem? childItem = this.GetTreeViewItemFromElementId( treeViewItem, treeViewItem.Items, elementId ) ;
             if ( childItem != null ) {
-              treeViewItem.IsExpanded = true ;
               return childItem ;
             }
           }
@@ -280,6 +330,132 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       return null ;
+    }
+
+    /// <summary>
+    /// TextBlock_PreviewMouseLeftButtonDown event
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <returns></returns>
+    private void TextBlock_PreviewMouseLeftButtonDown( object sender, MouseButtonEventArgs e )
+    {
+        var selectedItem = (FromToItem) FromToTreeView.SelectedItem;
+        if ( selectedItem != null ) {
+            IsLeftMouseClick = true;
+            selectedLeftItem = selectedItem;
+        }
+    }
+
+    /// <summary>
+    /// TextBox_LostFocus event
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <returns></returns>
+    private void TextBox_LostFocus( object sender, RoutedEventArgs e )
+    {
+        System.Windows.Controls.TextBox tb = (System.Windows.Controls.TextBox) sender;
+        var selectedItem = (FromToItem) FromToTreeView.SelectedItem;
+        if ( IsExsitRouteName( tb.Text ) ) {
+            MessageBox.Show( "名前が重複しているため、他の値に変更してください。" );
+            tb.Focus();
+        }
+        else {
+            selectedItem.IsEditing = false;
+            selectedItem.ItemTypeName = tb.Text;
+            UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>();
+        }
+    }
+
+    /// <summary>
+    /// TextBlock_PreviewMouseLeftButtonUp event
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <returns></returns>
+    private void TextBlock_PreviewMouseLeftButtonUp( object sender, MouseButtonEventArgs e )
+    {
+        var selectedItem = (FromToItem) FromToTreeView.SelectedItem;
+        if ( IsLeftMouseClick && selectedItem == selectedLeftItem ) { 
+                
+            if ( selectedItem != null && selectedItem.ItemTag == "Route" ) {
+                selectedItem.IsEditing = true;
+            }
+                
+        }
+        IsLeftMouseClick = false;
+    }
+
+    /// <summary>
+    /// FromToTreeView_PreviewKeyDown event
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <returns></returns>
+    private void FromToTreeView_PreviewKeyDown( object sender, KeyEventArgs e )
+    {
+        var selectedItem = (FromToItem) FromToTreeView.SelectedItem;
+        if ( selectedItem != null && e.Key.Equals( Key.F2 ) && selectedItem.ItemTag == "Route" ) {
+            selectedItem.IsEditing = true;
+        }
+    }
+
+    /// <summary>
+    /// TextBox_KeyDown event
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <returns></returns>
+    private void TextBox_KeyDown( object sender, KeyEventArgs e )
+    {
+        var selectedItem = (FromToItem) FromToTreeView.SelectedItem;
+        System.Windows.Controls.TextBox tb = (System.Windows.Controls.TextBox) sender;
+        if ( e.Key.Equals( Key.Escape ) ) {
+            tb.Text = selectedItem.ItemTypeName;
+            selectedItem.IsEditing = false;
+                
+        }
+        else if ( e.Key.Equals( Key.Enter ) ) {
+            if( IsExsitRouteName( tb.Text ) ) {
+                MessageBox.Show( "名前が重複しているため、他の値に変更してください。" );
+                tb.Focus();
+            }
+            else { 
+                selectedItem.IsEditing = false;
+                selectedItem.ItemTypeName = tb.Text;
+                //UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>();
+            }
+        }
+    }
+
+    /// <summary>
+    /// IsExsitRouteName
+    /// </summary>
+    /// <param name="routName"></param>
+    /// <returns></returns>
+    private bool IsExsitRouteName(string routName)
+    {
+        bool result = false;
+        var selectedItem = (FromToItem) FromToTreeView.SelectedItem;
+        for ( int x = 0 ; x < FromToTreeView.Items.Count ; x++ ) {
+            var fromItem = (FromToItem) FromToTreeView.Items[x];
+            if( fromItem.ItemTypeName == routName && fromItem.ItemTag == "Route" && fromItem != selectedItem ) {
+                result = true;
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    private void root_LayoutUpdated( object sender, EventArgs e )
+    {
+        var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() );
+        var dp = UiDoc?.Application.GetDockablePane( dpid );
+        if( dp != null ) { 
+            RibbonHelper.ToggleShowFromToTreeCommandButton( dp.IsShown() );
+        }
     }
   }
 }

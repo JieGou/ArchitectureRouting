@@ -33,9 +33,9 @@
                       ItemsSource="{Binding  SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
                       DisplayMemberPath="Name"
                       SelectionChanged="SystemTypeComboBox_SelectionChanged"
-                      FontSize="20"
                       SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
-                      VerticalAlignment="Center">
+                      VerticalAlignment="Center"
+                      IsEnabled="{Binding IsEnableSystemType, ElementName=root}">
             </ComboBox>
 
             <Label x:Name="CurveTypeDomain"
@@ -50,9 +50,9 @@
                       ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
                       DisplayMemberPath="Name"
                       SelectionChanged="CurveTypeComboBox_SelectionChanged"
-                      FontSize="20"
                       SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
-                      VerticalAlignment="Bottom">
+                      VerticalAlignment="Bottom"
+                      IsEnabled="{Binding IsEnableCurveType, ElementName=root}">
             </ComboBox>
 
             <Label Content="Diameter"
@@ -65,7 +65,6 @@
                       Grid.Row="2"
                       ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
                       SelectionChanged="DiameterComboBox_SelectionChanged"
-                      FontSize="20"
                       SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
                       VerticalAlignment="Center">
             </ComboBox>
