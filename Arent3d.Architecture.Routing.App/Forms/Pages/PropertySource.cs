@@ -153,4 +153,28 @@ namespace Arent3d.Architecture.Routing.App.Forms
       PassPointDirection = passPointEndPoint.Direction ;
     }
   }
+
+  /// <summary>
+  /// PropertySource for TerminatePoint
+  /// </summary>
+  public class TerminatePointPropertySource : PropertySource
+  {
+    public TerminatePointEndPoint TerminatePointEndPoint { get ; }
+    public XYZ TerminatePointPosition { get ; }
+    public XYZ TerminatePointDirection { get ; }
+    
+    public ElementId LinkedElementId { get ; }
+    public string? LinkedElementName { get ; }
+
+    public TerminatePointPropertySource( Document doc, TerminatePointEndPoint terminatePointEndPoint ) : base( doc )
+    {
+      TerminatePointEndPoint = terminatePointEndPoint ;
+
+      TerminatePointPosition = terminatePointEndPoint.RoutingStartPosition ;
+      TerminatePointDirection = terminatePointEndPoint.Direction ;
+
+      LinkedElementId = terminatePointEndPoint.LinkedInstanceId ;
+      LinkedElementName = doc.GetElement( LinkedElementId )?.Name ;
+    }
+  }
 }

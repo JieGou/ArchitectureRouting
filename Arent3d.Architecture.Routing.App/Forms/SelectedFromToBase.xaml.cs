@@ -14,19 +14,44 @@ namespace Arent3d.Architecture.Routing.App.Forms
     //Diameter Info
     public ObservableCollection<string> Diameters { get ; set ; }
     public int? DiameterIndex { get ; set ; }
+    public int? DiameterOrgIndex { get; set; }
 
     //SystemType Info
     public ObservableCollection<MEPSystemType> SystemTypes { get ; set ; }
     public int? SystemTypeIndex { get ; set ; }
+    public int? SystemTypeOrgIndex { get; set; }
 
     //CurveType Info
     public ObservableCollection<MEPCurveType> CurveTypes { get ; set ; }
     public int? CurveTypeIndex { get ; set ; }
+    public int? CurveTypeOrgIndex { get; set; }
     public string CurveTypeLabel { get ; set ; }
 
     //Direct Info
     public bool? CurrentDirect { get ; set ; }
 
+    public bool? CurrentOrgDirect { get; set; }
+
+
+    public bool IsEnableSystemType
+    {
+        get { return (bool) GetValue( IsEnableSystemTypeProperty ); }
+        set { SetValue( IsEnableSystemTypeProperty, value ); }
+    }
+
+    public bool IsEnableCurveType
+    {
+        get { return (bool) GetValue( IsEnableCurveTypeProperty ); }
+        set { SetValue( IsEnableCurveTypeProperty, value ); }
+    }
+    public static readonly DependencyProperty IsEnableSystemTypeProperty = DependencyProperty.Register( "IsEnableSystemType",
+                                typeof( bool ),
+                                typeof( SelectedFromToBase ),
+                                new PropertyMetadata( true ) );
+    public static readonly DependencyProperty IsEnableCurveTypeProperty = DependencyProperty.Register( "IsEnableCurveType",
+                        typeof( bool ),
+                        typeof( SelectedFromToBase ),
+                        new PropertyMetadata( true ) );
     public SelectedFromToBase()
     {
       InitializeComponent() ;
@@ -152,12 +177,30 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
-      SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
+        MessageBoxResult result = MessageBox.Show( "Route情報を変更してもよろしいでしょうか。",
+                "FromToTree",
+                MessageBoxButton.YesNo );
+        if(result == MessageBoxResult.Yes ) { 
+            SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
+        }
     }
 
     private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
     {
-    }
+            if ( SystemTypeOrgIndex != null ) {
+                SystemTypeComboBox.SelectedIndex = (int) SystemTypeOrgIndex;
+            }
+
+            if ( CurveTypeOrgIndex != null ) {
+                CurveTypeComboBox.SelectedIndex = (int) CurveTypeOrgIndex;
+            }
+
+            if ( DiameterOrgIndex != null ) {
+                DiameterComboBox.SelectedIndex = (int) DiameterOrgIndex;
+            }
+
+            Direct.IsChecked = CurrentOrgDirect;
+        }
 
     private void Dialog2Buttons_Loaded( object sender, RoutedEventArgs e )
     {

@@ -2,6 +2,7 @@ using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Globalization ;
 using System.IO ;
+using Arent3d.Revit;
 using Arent3d.Revit.Csv ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -12,12 +13,14 @@ using CsvHelper ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
-  [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.FileRoutingCommand", DefaultString = "Import\nFrom-To" )]
-  [Image( "resources/ImportFromTo.png" )]
-  public class FileRoutingCommand : RoutingCommandBase
+
+    [RevitAddin( Guid )]
+    [DisplayName( "App.Commands.Routing.FileRoutingCommand" )]
+    [Transaction( TransactionMode.Manual )]
+    public class FileRoutingCommand : RoutingCommandBase
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RoutingFromFile" ;
+        private const string Guid = "96387CB6-8122-47BA-BB64-76098D7A730F";
+        protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RoutingFromFile" ;
 
     /// <summary>
     /// Collects from-to records to be auto-routed.

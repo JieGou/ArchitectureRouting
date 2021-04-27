@@ -30,6 +30,9 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 
     public static PropertySource.RoutePropertySource? PropertySourceType { get ; private set ; }
 
+    //Direct
+    public static FromToItem? FromToItem { get; set; }
+
 
     static SelectedFromToViewModel()
     {
@@ -50,6 +53,8 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       if ( fromToItem.PropertySourceType is PropertySource.RoutePropertySource routePropertySource ) {
         PropertySourceType = routePropertySource ;
       }
+
+      FromToItem = fromToItem;
     }
 
 

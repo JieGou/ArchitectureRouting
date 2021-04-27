@@ -13,6 +13,8 @@
             HorizontalAlignment="Right"
             LeftOnClick="Dialog2Buttons_OnLeftOnClick"
             RightOnClick="Dialog2Buttons_OnRightOnClick"
+            LeftButton="Import"
+            RightButton="Export"
             Margin="0,5,0,5" />
 
         <DataGrid x:Name="FromToList"
