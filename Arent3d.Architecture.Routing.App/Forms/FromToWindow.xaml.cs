@@ -31,7 +31,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
       public string? FromId => From?.Accept( EndPointFieldValues.IdGetter ) ;
       public string? FromSubId => From?.Accept( EndPointFieldValues.SubIdGetter ) ;
 
-
       //To
       public IEndPoint? To { get ; set ; }
       public string? ToType => To?.TypeName ;

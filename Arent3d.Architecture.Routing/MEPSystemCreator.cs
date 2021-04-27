@@ -1,7 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing
   {
     private readonly Document _document ;
     private readonly AutoRoutingTarget _autoRoutingTarget ;
-    private readonly RouteVertexToConnectorMapper _connectorMapper = new() ;
+    private readonly RouteVertexToConnectorMapper _connectorMapper ;
     
     /// <summary>
     /// Returns pass-point-to-connector relation manager.
@@ -29,22 +29,29 @@ namespace Arent3d.Architecture.Routing
 
     private readonly Level _level ;
 
-    private readonly IReadOnlyDictionary<Route, RouteMEPSystem> _routeMepSystemDictionary ;
+    private readonly IReadOnlyDictionary<SubRoute, RouteMEPSystem> _routeMepSystemDictionary ;
 
     private readonly List<Connector[]> _badConnectors = new() ;
 
-    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<Route, RouteMEPSystem> routeMepSystemDictionary )
+    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
       _document = document ;
       _autoRoutingTarget = autoRoutingTarget ;
       _level = GetLevel( document, autoRoutingTarget ) ;
       _routeMepSystemDictionary = routeMepSystemDictionary ;
+      _connectorMapper = new RouteVertexToConnectorMapper() ;
     }
 
     private static Level GetLevel( Document document, AutoRoutingTarget autoRoutingTarget )
     {
-      var level = autoRoutingTarget.EndPoints.Select( e => document.GetElementById<Level>( e.EndPoint.ReferenceConnector.Owner.LevelId ) ).FirstOrDefault( l => l != null && l.IsValidObject ) ;
+      var level = autoRoutingTarget.EndPoints.Select( endPoint => GetLevel( document, endPoint ) ).FirstOrDefault( l => l != null && l.IsValidObject ) ;
       return level ?? Level.Create( document, 0.0 ) ;
+    }
+    private static Level? GetLevel( Document document, AutoRoutingEndPoint endPoint )
+    {
+      if ( endPoint.EndPoint.GetReferenceConnector() is not { } connector ) return null ;
+
+      return document.GetElementById<Level>( connector.Owner.LevelId ) ;
     }
 
     public IReadOnlyCollection<Connector[]> GetBadConnectorSet() => _badConnectors ;
@@ -56,8 +63,8 @@ namespace Arent3d.Architecture.Routing
     /// <exception cref="ArgumentException"><see cref="routeVertex"/> is not generated from an end point.</exception>
     public void RegisterEndPointConnector( IRouteVertex routeVertex )
     {
-      if ( routeVertex.LineInfo.GetEndPoint() is ConnectorEndPoint cep ) {
-        _connectorMapper.Add( routeVertex, cep.RoutingConnector ) ;
+      if ( routeVertex.LineInfo.GetEndPoint() is ConnectorEndPoint cep && cep.GetConnector() is {} connector ) {
+        _connectorMapper.Add( routeVertex, connector ) ;
       }
     }
 
@@ -74,11 +81,7 @@ namespace Arent3d.Architecture.Routing
 
       switch ( routeVertex.LineInfo.GetEndPoint() ) {
         case PassPointEndPoint ep :
-          PassPointConnectorMapper.Add( ep.Element.Id, ( isFrom ? PassPointEndSide.Forward : PassPointEndSide.Reverse ), connector ) ;
-          break ;
-
-        case PassPointBranchEndPoint ep :
-          PassPointConnectorMapper.AddBranch( ep.Element.Id, connector ) ;
+          PassPointConnectorMapper.Add( ep.PassPointId, isFrom, connector ) ;
           break ;
       }
     }
@@ -94,11 +97,11 @@ namespace Arent3d.Architecture.Routing
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZ() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZ() ;
 
-      var baseConnector = ( routeEdge.LineInfo as AutoRoutingEndPoint )?.EndPoint.ReferenceConnector ;
+      var baseConnector = ( routeEdge.LineInfo as AutoRoutingEndPoint )?.EndPoint.GetReferenceConnector() ?? _autoRoutingTarget.GetSubRoute( routeEdge ).GetReferenceConnector() ;
       if ( null == baseConnector ) throw new InvalidOperationException() ;
 
       var subRoute = _autoRoutingTarget.GetSubRoute( routeEdge ) ;
-      var routeMepSystem = _routeMepSystemDictionary[ subRoute.Route ] ;
+      var routeMepSystem = _routeMepSystemDictionary[ subRoute ] ;
 
       var element = baseConnector.Domain switch
       {
@@ -115,8 +118,8 @@ namespace Arent3d.Architecture.Routing
 
       var startConnector = GetConnector( manager, startPos ) ;
       var endConnector = GetConnector( manager, endPos ) ;
-      startConnector.SetDiameter( subRoute.GetDiameter( _document ) ) ;
-      endConnector.SetDiameter( subRoute.GetDiameter( _document ) ) ;
+      startConnector.SetDiameter( subRoute.GetDiameter() ) ;
+      endConnector.SetDiameter( subRoute.GetDiameter() ) ;
 
       element.SetRoutedElementFromToConnectorIds( new[] { startConnector.Id }, new[] { endConnector.Id } ) ;
 
@@ -165,7 +168,7 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     public void ConnectAllVertices()
     {
-      foreach ( var connectors in _connectorMapper ) {
+      foreach ( var connectors in _connectorMapper.GetConnections( _document ) ) {
         ConnectConnectors( connectors ) ;
       }
     }
@@ -268,6 +271,19 @@ namespace Arent3d.Architecture.Routing
     /// </returns>
     private static (bool Success, FamilyInstance? Fitting) ConnectThreeConnectors( Document document, Connector connector1, Connector connector2, Connector connector3 )
     {
+      var z1 = connector1.CoordinateSystem.BasisZ ;
+      var z2 = connector2.CoordinateSystem.BasisZ ;
+      var z3 = connector3.CoordinateSystem.BasisZ ;
+      if ( IsOpposite( z1, z3 ) ) {
+        ( connector2, connector3 ) = ( connector3, connector2 ) ;
+      }
+      else if ( IsOpposite( z2, z3 ) ) {
+        ( connector1, connector2, connector3 ) = ( connector2, connector3, connector1 ) ;
+      }
+      else if ( false == IsOpposite( z1, z2 ) ) {
+        return ( false, null ) ;
+      }
+
       using var connectorTransaction = new SubTransaction( document ) ;
       try {
         connectorTransaction.Start() ;
@@ -310,6 +326,20 @@ namespace Arent3d.Architecture.Routing
     /// </returns>
     private static (bool Success, FamilyInstance? Fitting) ConnectFourConnectors( Document document, Connector connector1, Connector connector2, Connector connector3, Connector connector4 )
     {
+      var z1 = connector1.CoordinateSystem.BasisZ ;
+      var z2 = connector2.CoordinateSystem.BasisZ ;
+      var z3 = connector3.CoordinateSystem.BasisZ ;
+      var z4 = connector4.CoordinateSystem.BasisZ ;
+      if ( IsOpposite( z1, z3 ) ) {
+        ( connector2, connector3 ) = ( connector3, connector2 ) ;
+      }
+      else if ( IsOpposite( z1, z4 ) ) {
+        ( connector2, connector4 ) = ( connector4, connector2 ) ;
+      }
+      else if ( false == IsOpposite( z1, z2 ) || false == IsOpposite( z3, z4 ) ) {
+        return ( false, null ) ;
+      }
+
       using var connectorTransaction = new SubTransaction( document ) ;
       try {
         connectorTransaction.Start() ;
@@ -341,6 +371,11 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
+    private static bool IsOpposite( XYZ dir1, XYZ dir2 )
+    {
+      return ( dir1.DotProduct( dir2 ) < -0.999 ) ;
+    }
+
     /// <summary>
     /// Connect two connectors. Elbow is inserted if needed.
     /// </summary>
@@ -350,8 +385,8 @@ namespace Arent3d.Architecture.Routing
     {
       var connectors = new[] { connector1, connector2 } ;
       var subRouteData = GuessSubRoute( connectors ) ;
-      var fromIndicators = GetNearestEnd( connectors, true ) ;
-      var toIndicators = GetNearestEnd( connectors, false ) ;
+      var fromEndPoints = GetNearestEnd( connectors, true ) ;
+      var toEndPoints = GetNearestEnd( connectors, false ) ;
 
       var (success, fitting) = ConnectTwoConnectors( _document, connector1, connector2 ) ;
       if ( false == success ) {
@@ -361,7 +396,7 @@ namespace Arent3d.Architecture.Routing
       if ( null == fitting ) return ;
 
       if ( null != subRouteData ) {
-        MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromIndicators, toIndicators ) ;
+        MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromEndPoints, toEndPoints ) ;
       }
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
@@ -378,8 +413,8 @@ namespace Arent3d.Architecture.Routing
     {
       var connectors = new[] { connector1, connector2, connector3 } ;
       var subRouteData = GuessSubRoute( connectors ) ;
-      var fromIndicators = GetNearestEnd( connectors, true ) ;
-      var toIndicators = GetNearestEnd( connectors, false ) ;
+      var fromEndPoints = GetNearestEnd( connectors, true ) ;
+      var toEndPoints = GetNearestEnd( connectors, false ) ;
 
       var (success, fitting) = ConnectThreeConnectors( _document, connector1, connector2, connector3 ) ;
       if ( false == success ) {
@@ -390,7 +425,7 @@ namespace Arent3d.Architecture.Routing
       if ( null == fitting ) return ;
 
       if ( null != subRouteData ) {
-        MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromIndicators, toIndicators ) ;
+        MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromEndPoints, toEndPoints ) ;
       }
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
@@ -408,8 +443,8 @@ namespace Arent3d.Architecture.Routing
     {
       var connectors = new[] { connector1, connector2, connector3, connector4 } ;
       var subRouteData = GuessSubRoute( connectors ) ;
-      var fromIndicators = GetNearestEnd( connectors, true ) ;
-      var toIndicators = GetNearestEnd( connectors, false ) ;
+      var fromEndPoints = GetNearestEnd( connectors, true ) ;
+      var toEndPoints = GetNearestEnd( connectors, false ) ;
 
       var (success, fitting) = ConnectFourConnectors( _document, connector1, connector2, connector3, connector4 ) ;
       if ( false == success ) {
@@ -420,7 +455,7 @@ namespace Arent3d.Architecture.Routing
       if ( null == fitting ) return ;
 
       if ( null != subRouteData ) {
-        MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromIndicators, toIndicators ) ;
+        MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromEndPoints, toEndPoints ) ;
       }
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
@@ -521,9 +556,9 @@ namespace Arent3d.Architecture.Routing
 
 
 
-    private static IReadOnlyCollection<IEndPointIndicator> GetNearestEnd( Connector[] connectors, bool isFrom )
+    private static IReadOnlyCollection<IEndPoint> GetNearestEnd( Connector[] connectors, bool isFrom )
     {
-      return connectors.SelectMany( c => c.Owner.GetNearestEndPointIndicators( isFrom ) ).Distinct().EnumerateAll() ;
+      return connectors.SelectMany( c => c.Owner.GetNearestEndPoints( isFrom ) ).Distinct().EnumerateAll() ;
     }
 
     private static void MarkAsAutoRoutedElement( Element element, SubRoute subRoute, PassingEndPointInfo passingEndPointInfo )
@@ -531,17 +566,17 @@ namespace Arent3d.Architecture.Routing
       MarkAsAutoRoutedElement( element, subRoute.Route.RouteName, subRoute.SubRouteIndex, passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints );
     }
 
-    private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex, IEnumerable<IEndPointIndicator> nearestFrom, IEnumerable<IEndPointIndicator> nearestTo )
+    private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex, IEnumerable<IEndPoint> nearestFrom, IEnumerable<IEndPoint> nearestTo )
     {
       element.SetProperty( RoutingParameter.RouteName, routeId ) ;
       element.SetProperty( RoutingParameter.SubRouteIndex, subRouteIndex ) ;
-      element.SetProperty( RoutingParameter.NearestFromSideEndPoints, EndPointIndicator.ToString( nearestFrom ) );
-      element.SetProperty( RoutingParameter.NearestToSideEndPoints, EndPointIndicator.ToString( nearestTo ) );
+      element.SetProperty( RoutingParameter.NearestFromSideEndPoints, nearestFrom.Stringify() );
+      element.SetProperty( RoutingParameter.NearestToSideEndPoints, nearestTo.Stringify() );
     }
 
     private static void SetRoutingFromToConnectorIdsForFitting( Element element )
     {
-      var connectorSet = element.GetConnectors().Select( c => c.GetIndicator() ).ToHashSet() ;
+      var connectorSet = element.GetConnectors().Select( c => new ConnectorId( c ) ).ToHashSet() ;
 
       var fromList = new List<int>() ;
       var toList = new List<int>() ;
@@ -549,7 +584,7 @@ namespace Arent3d.Architecture.Routing
       {
         if ( false == conn.IsAnyEnd() ) return ;
 
-        foreach ( var partner in conn.GetConnectedConnectors().Where( c => connectorSet.Contains( c.GetIndicator() ) ) ) {
+        foreach ( var partner in conn.GetConnectedConnectors().Where( c => connectorSet.Contains( new ConnectorId( c ) ) ) ) {
           if ( null == partner ) return ;
           if ( partner.IsRoutingConnector( true ) ) {
             toList.Add( conn.Id ) ;

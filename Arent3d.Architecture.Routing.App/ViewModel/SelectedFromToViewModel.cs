@@ -1,4 +1,5 @@
 ﻿using System ;
+using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
@@ -84,16 +85,12 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     /// </summary>
     /// <param name="curveTypeIndex"></param>
     /// <returns></returns>
-    public static IList<double> ResetNominalDiameters( int curveTypeIndex )
+    public static IEnumerable<double> ResetNominalDiameters( int curveTypeIndex )
     {
-      IList<double> resultDiameters = new List<double>() ;
+      if ( PropertySourceType?.CurveTypes is not { } curveTypes|| null == UiDoc ) return Enumerable.Empty<double>() ;
+      if ( curveTypeIndex < 0 || curveTypes.Count <= curveTypeIndex ) return Enumerable.Empty<double>() ;
 
-      if ( UiDoc != null && PropertySourceType?.CurveTypes != null && TargetRoute != null ) {
-        RouteMEPSystem routeMepSystem = new RouteMEPSystem( UiDoc.Document, TargetRoute ) ;
-        resultDiameters = routeMepSystem.GetNominalDiameters( PropertySourceType.CurveTypes[ curveTypeIndex ] ) ;
-      }
-
-      return resultDiameters ;
+      return curveTypes[ curveTypeIndex ].GetNominalDiameters( UiDoc.Document.Application.VertexTolerance ) ;
     }
   }
 }

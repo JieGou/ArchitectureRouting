@@ -1,7 +1,8 @@
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Routing ;
+using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -40,7 +41,7 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private static IEnumerable<IEndPointIndicator> SeekEndPoints( Dictionary<IRouteEdge, PassingEndPointInfo> dic, IReadOnlyDictionary<IRouteVertex, (List<IRouteEdge> Enter, List<IRouteEdge> Exit)> linkInfo, IRouteEdge edge, bool seekFrom )
+    private static IEnumerable<KeyValuePair<EndPointKey, IEndPoint>> SeekEndPoints( Dictionary<IRouteEdge, PassingEndPointInfo> dic, IReadOnlyDictionary<IRouteVertex, (List<IRouteEdge> Enter, List<IRouteEdge> Exit)> linkInfo, IRouteEdge edge, bool seekFrom )
     {
       if ( false == dic.TryGetValue( edge, out var fromTo ) ) {
         fromTo = new PassingEndPointInfo() ;
@@ -69,37 +70,45 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private void RegisterFrom( EndPointBase? endPoint )
+    private void RegisterFrom( IEndPoint? endPoint )
     {
       if ( null != endPoint ) {
-        _fromEndPoints.Add( endPoint.EndPointIndicator ) ;
+        _fromEndPoints.Add( endPoint.Key, endPoint ) ;
       }
     }
-    private void RegisterTo( EndPointBase? endPoint )
+    private void RegisterTo( IEndPoint? endPoint )
     {
       if ( null != endPoint ) {
-        _toEndPoints.Add( endPoint.EndPointIndicator ) ;
+        _toEndPoints.Add( endPoint.Key, endPoint ) ;
       }
     }
 
-    private void RegisterFrom( IEnumerable<IEndPointIndicator> endPoints )
+    private void RegisterFrom( IEnumerable<KeyValuePair<EndPointKey, IEndPoint>> endPoints )
     {
-      _fromEndPoints.UnionWith( endPoints ) ;
+      foreach ( var (key, endPoint) in endPoints ) {
+        if ( _fromEndPoints.ContainsKey( key ) ) continue ;
+
+        _fromEndPoints.Add( key, endPoint ) ;
+      }
     }
-    private void RegisterTo( IEnumerable<IEndPointIndicator> endPoints )
+    private void RegisterTo( IEnumerable<KeyValuePair<EndPointKey, IEndPoint>> endPoints )
     {
-      _toEndPoints.UnionWith( endPoints ) ;
+      foreach ( var (key, endPoint) in endPoints ) {
+        if ( _toEndPoints.ContainsKey( key ) ) continue ;
+
+        _toEndPoints.Add( key, endPoint ) ;
+      }
     }
 
-    private readonly HashSet<IEndPointIndicator> _fromEndPoints = new() ;
+    private readonly Dictionary<EndPointKey, IEndPoint> _fromEndPoints = new() ;
 
-    private readonly HashSet<IEndPointIndicator> _toEndPoints = new() ;
+    private readonly Dictionary<EndPointKey, IEndPoint> _toEndPoints = new() ;
 
     private PassingEndPointInfo()
     {
     }
 
-    public IEnumerable<IEndPointIndicator> FromEndPoints => _fromEndPoints ;
-    public IEnumerable<IEndPointIndicator> ToEndPoints => _toEndPoints ;
+    public IEnumerable<IEndPoint> FromEndPoints => _fromEndPoints.Values ;
+    public IEnumerable<IEndPoint> ToEndPoints => _toEndPoints.Values ;
   }
 }

@@ -4,7 +4,7 @@ using System.ComponentModel ;
 using System.Linq ;
 using System.Threading ;
 using System.Threading.Tasks ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -28,10 +28,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
     /// Collects from-to records to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected override async IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
+    protected override IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
-      await Task.Yield() ;
-
       var segments = UiThread.RevitUiDispatcher.Invoke( () =>
       {
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Dialog.Commands.PassPoint.Insert.Pick".GetAppStringByKeyOrDefault( null ) ) ;
@@ -40,7 +38,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
         var elm = InsertPassPointElement( document, pickInfo ) ;
         var route = pickInfo.SubRoute.Route ;
         var routeRecords = GetRelatedBranchSegments( route ) ;
-        return routeRecords.Concat( GetNewSegmentList( pickInfo.SubRoute, pickInfo.Element, elm.Id.IntegerValue ).ToSegmentsWithName( route.RouteName ) ).EnumerateAll() ;
+        return routeRecords.Concat( GetNewSegmentList( pickInfo.SubRoute, pickInfo.Element, elm ).ToSegmentsWithName( route.RouteName ) ).EnumerateAll() ;
       } ) ;
 
       foreach ( var record in segments ) {
@@ -61,17 +59,17 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
       return document.AddPassPoint( pickInfo.Route.RouteName, pickInfo.Position, pickInfo.RouteDirection, pickInfo.Radius ) ;
     }
 
-    private static IEnumerable<RouteSegment> GetNewSegmentList( SubRoute subRoute, Element insertingElement, int passPointId )
+    private static IEnumerable<RouteSegment> GetNewSegmentList( SubRoute subRoute, Element insertingElement, Instance passPointElement )
     {
       var detector = new RouteSegmentDetector( subRoute, insertingElement ) ;
-      var passPoint = new PassPointEndIndicator( passPointId ) ;
+      var passPoint = new PassPointEndPoint( passPointElement ) ;
       foreach ( var segment in subRoute.Route.RouteSegments.EnumerateAll() ) {
         if ( detector.IsPassingThrough( segment ) ) {
           // split segment
-          var diameter = segment.GetRealNominalDiameter( subRoute.Route.Document ) ?? segment.PreferredNominalDiameter ;
+          var diameter = segment.GetRealNominalDiameter() ?? segment.PreferredNominalDiameter ;
           var isRoutingOnPipeSpace = segment.IsRoutingOnPipeSpace ;
-          yield return new RouteSegment( segment.FromId, passPoint, diameter, isRoutingOnPipeSpace ) ;
-          yield return new RouteSegment( passPoint, segment.ToId, diameter, isRoutingOnPipeSpace ) ;
+          yield return new RouteSegment( segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace ) ;
+          yield return new RouteSegment( passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace ) ;
         }
         else {
           yield return segment ;

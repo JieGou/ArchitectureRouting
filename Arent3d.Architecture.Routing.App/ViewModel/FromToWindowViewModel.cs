@@ -2,7 +2,9 @@
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
+using Arent3d.Utility ;
 using Arent3d.Architecture.Routing.App.Forms ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -21,27 +23,26 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       var fromToItemsList = new ObservableCollection<FromToWindow.FromToItems>() ;
 
       foreach ( var route in allRoutes ) {
-        RouteMEPSystem routeMepSystem = new RouteMEPSystem( UiDoc.Document, route ) ;
-        var systemTypeList = new ObservableCollection<MEPSystemType>( routeMepSystem.GetSystemTypes( uiDocument.Document, route.GetReferenceConnector() ).OrderBy( s => s.Name ).ToList() ) ;
-        var systemType = routeMepSystem.MEPSystemType ;
-        int systemTypeIndex = systemTypeList.ToList().FindIndex( s => s.Id == systemType.Id ) ;
-        var curveTypeList = new ObservableCollection<MEPCurveType>( routeMepSystem.GetCurveTypes( uiDocument.Document, routeMepSystem.CurveType.GetType() ).OrderBy( s => s.Name ).ToList() ) ;
-        var curveType = routeMepSystem.CurveType ;
-        int curveTypeIndex = curveTypeList.ToList().FindIndex( c => c.Id == curveType.Id ) ;
-        IEnumerable<string> subRouteDiameters = route.SubRoutes.Select( s => (int) Math.Round( UnitUtils.ConvertFromInternalUnits( s.GetDiameter( UiDoc.Document ), UnitTypeId.Millimeters ) ) + " mm" ) ;
-        IEnumerable<string> allPassPoints = route.GetAllPassPointEndIndicators().ToList().Select( p => p.ToString() ) ;
+        var systemTypeList = new ObservableCollection<MEPSystemType>( uiDocument.Document.GetSystemTypes( route.SystemClassification ).OrderBy( s => s.Name ).ToList() ) ;
+        var systemTypeId = route.GetMEPSystemType().GetValidId() ;
+        int systemTypeIndex = systemTypeList.FindIndex( s => s.Id == systemTypeId ) ;
+        var curveTypeList = new ObservableCollection<MEPCurveType>( uiDocument.Document.GetCurveTypes( route.UniqueCurveType ).OrderBy( s => s.Name ).ToList() ) ;
+        var curveTypeId = route.UniqueCurveType.GetValidId() ;
+        int curveTypeIndex = curveTypeList.FindIndex( c => c.Id == curveTypeId ) ;
+        IEnumerable<string> subRouteDiameters = route.SubRoutes.Select( s => (int) Math.Round( UnitUtils.ConvertFromInternalUnits( s.GetDiameter(), UnitTypeId.Millimeters ) ) + " mm" ) ;
+        IEnumerable<string> allPassPoints = route.GetAllPassPointEndPoints().ToList().Select( p => p.ToString() ) ;
 
         fromToItemsList.Add( new FromToWindow.FromToItems()
         {
           Id = route.RouteName,
           From = route.FirstFromConnector(),
           To = route.FirstToConnector(),
-          Domain = UIHelper.GetTypeLabel(curveType.GetType().Name),
+          Domain = UIHelper.GetTypeLabel( route.UniqueCurveType?.Name ?? string.Empty ),
           SystemTypes = systemTypeList,
-          SystemType = systemType,
+          SystemType = route.GetMEPSystemType(),
           SystemTypeIndex = systemTypeIndex,
           CurveTypes = curveTypeList,
-          CurveType = curveType,
+          CurveType = route.UniqueCurveType,
           CurveTypeIndex = curveTypeIndex,
           Diameters = string.Join( ",", subRouteDiameters ),
           PassPoints = string.Join( ",", allPassPoints ),

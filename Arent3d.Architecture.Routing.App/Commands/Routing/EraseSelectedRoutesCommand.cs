@@ -19,9 +19,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.EraseSelectedRoutes" ;
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
+    protected override IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
-      return GetSelectedRouteSegments( uiDocument ).EnumerateAll().ToAsyncEnumerable() ;
+      return GetSelectedRouteSegments( uiDocument ) ;
     }
 
     private static IEnumerable<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( UIDocument uiDocument )

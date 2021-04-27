@@ -1,5 +1,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -27,11 +28,11 @@ namespace Arent3d.Architecture.Routing.App
 
     public static async IAsyncEnumerable<(string RouteName, RouteSegment Segment)> ToSegmentsWithName( this IAsyncEnumerable<RouteRecord> routeRecords, Document document )
     {
-      var indDic = new EndPointIndicatorDictionaryForImport( document ) ;
+      var endPointDictionary = new EndPointDictionaryForImport( document ) ;
 
       await foreach ( var record in routeRecords ) {
-        var fromIndicator = indDic.GetIndicator( record.RouteName, record.FromKey, record.FromIndicator! ) ;
-        var toIndicator = indDic.GetIndicator( record.RouteName, record.ToKey, record.ToIndicator! ) ;
+        var fromIndicator = endPointDictionary.GetEndPoint( record.RouteName, record.FromKey,EndPointExtensions.ParseEndPoint( document, record.FromEndType, record.FromEndParams ) ) ;
+        var toIndicator = endPointDictionary.GetEndPoint( record.RouteName, record.ToKey, EndPointExtensions.ParseEndPoint( document, record.ToEndType, record.ToEndParams ) ) ;
         if ( null == fromIndicator || null == toIndicator ) continue ;
         yield return ( record.RouteName, new RouteSegment( fromIndicator, toIndicator, record.NominalDiameter, record.IsRoutingOnPipeSpace ) ) ;
       }
@@ -39,19 +40,22 @@ namespace Arent3d.Architecture.Routing.App
 
     public static IEnumerable<RouteRecord> ToRouteRecords( this IEnumerable<(string RouteName, RouteSegment Segment)> segments, Document document )
     {
-      var indDic = new EndPointIndicatorDictionaryForExport( document ) ;
+      var endPointDictionary = new EndPointDictionaryForExport( document ) ;
 
       foreach ( var (routeName, segment) in segments ) {
-        var (fromKey, fromIndicator) = indDic.GetIndicator( segment.FromId ) ;
-        var (toKey, toIndicator) = indDic.GetIndicator( segment.ToId ) ;
+        var (fromKey, fromEndPoint) = endPointDictionary.GetEndPoint( segment.FromEndPoint ) ;
+        var (toKey, toEndPoint) = endPointDictionary.GetEndPoint( segment.ToEndPoint ) ;
 
         yield return new RouteRecord
         {
           RouteName = routeName,
           FromKey = fromKey,
-          FromIndicator = fromIndicator,
+          FromEndType = fromEndPoint.TypeName,
+          FromEndParams = fromEndPoint.ParameterString,
           ToKey = toKey,
-          ToIndicator = toIndicator
+          ToEndType = toEndPoint.TypeName,
+          ToEndParams = toEndPoint.ParameterString,
+          NominalDiameter = segment.PreferredNominalDiameter,
         } ;
       }
     }

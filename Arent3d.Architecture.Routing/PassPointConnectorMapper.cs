@@ -1,8 +1,5 @@
 using System ;
-using System.Collections ;
 using System.Collections.Generic ;
-using System.Linq ;
-using Arent3d.Architecture.Routing.RouteEnd ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -11,30 +8,31 @@ namespace Arent3d.Architecture.Routing
   /// <summary>
   /// Manages relations between pass points and connectors.
   /// </summary>
-  public class PassPointConnectorMapper : IEnumerable<KeyValuePair<int, (Connector, Connector, List<Connector>?)>>
+  public class PassPointConnectorMapper
   {
-    private readonly Dictionary<int, (Connector?, Connector?, List<Connector>?)> _passPointConnectors = new() ;
+    private readonly Dictionary<int, (ConnectorId?, ConnectorId?, List<ConnectorId>?)> _passPointConnectors = new() ;
 
-    public void Add( ElementId elementId, PassPointEndSide sideType, Connector connector )
+    public void Add( ElementId elementId, bool isFrom, Connector connector )
     {
       var id = elementId.IntegerValue ;
 
       if ( _passPointConnectors.TryGetValue( id, out var tuple ) ) {
-        if ( sideType == PassPointEndSide.Forward ) {
+        if ( isFrom ) {
           if ( null != tuple.Item1 ) throw new InvalidOperationException() ;
-          _passPointConnectors[ id ] = ( connector, tuple.Item2, tuple.Item3 ) ;
+          _passPointConnectors[ id ] = ( new ConnectorId( connector ), tuple.Item2, tuple.Item3 ) ;
         }
         else {
           if ( null != tuple.Item2 ) throw new InvalidOperationException() ;
-          _passPointConnectors[ id ] = ( tuple.Item1, connector, tuple.Item3 ) ;
+          _passPointConnectors[ id ] = ( tuple.Item1, new ConnectorId( connector ), tuple.Item3 ) ;
+          _passPointConnectors[ id ] = ( tuple.Item1, new ConnectorId( connector ), tuple.Item3 ) ;
         }
       }
       else {
-        if ( sideType == PassPointEndSide.Forward ) {
-          _passPointConnectors.Add( id, ( connector, null, tuple.Item3 ) ) ;
+        if ( isFrom ) {
+          _passPointConnectors.Add( id, ( new ConnectorId( connector ), null, tuple.Item3 ) ) ;
         }
         else {
-          _passPointConnectors.Add( id, ( null, connector, tuple.Item3 ) ) ;
+          _passPointConnectors.Add( id, ( null, new ConnectorId( connector ), tuple.Item3 ) ) ;
         }
       }
     }
@@ -45,16 +43,16 @@ namespace Arent3d.Architecture.Routing
 
       if ( _passPointConnectors.TryGetValue( id, out var tuple ) ) {
         if ( null == tuple.Item3 ) {
-          tuple.Item3 = new List<Connector>() ;
+          tuple.Item3 = new List<ConnectorId>() ;
           _passPointConnectors[ id ] = tuple ;
         }
       }
       else {
-        tuple = ( null, null, new List<Connector>() ) ;
+        tuple = ( null, null, new List<ConnectorId>() ) ;
         _passPointConnectors.Add( id, tuple ) ;
       }
 
-      tuple.Item3.Add( connector ) ;
+      tuple.Item3.Add( new ConnectorId( connector ) ) ;
     }
 
     public void Merge( PassPointConnectorMapper another )
@@ -72,10 +70,10 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private static List<Connector>? MergeList( List<Connector>? list1, List<Connector>? list2 )
+    private static List<ConnectorId>? MergeList( List<ConnectorId>? list1, List<ConnectorId>? list2 )
     {
       if ( null != list1 && null != list2 ) {
-        var result = new List<Connector>() ;
+        var result = new List<ConnectorId>() ;
         result.AddRange( list1 ) ;
         result.AddRange( list2 ) ;
         return result ;
@@ -84,18 +82,14 @@ namespace Arent3d.Architecture.Routing
       return list1 ?? list2 ;
     }
 
-    public IEnumerator<KeyValuePair<int, (Connector, Connector, List<Connector>?)>> GetEnumerator()
+    public IEnumerable<(int, (Connector, Connector, IReadOnlyList<Connector>?))> GetPassPointConnections( Document document )
     {
-      foreach ( var (key, (con1, con2, others)) in _passPointConnectors ) {
-        if ( null == con1 || null == con2 ) continue ;
+      foreach ( var (key, (cid1, cid2, others)) in _passPointConnectors ) {
+        if ( cid1?.GetConnector( document ) is not { } con1 ) continue ;
+        if ( cid2?.GetConnector( document ) is not { } con2 ) continue ;
 
-        yield return new KeyValuePair<int, (Connector, Connector, List<Connector>?)>( key, ( con1, con2, others ) ) ;
+        yield return ( key, ( con1, con2, ( null == others ? null : ConnectorId.ToConnectorList( document, others ) ) ) ) ;
       }
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-      return GetEnumerator() ;
     }
   }
 }

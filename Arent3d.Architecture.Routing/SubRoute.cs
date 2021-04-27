@@ -1,6 +1,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -16,10 +16,10 @@ namespace Arent3d.Architecture.Routing
 
     private readonly List<RouteSegment> _routeSegments = new() ;
 
-    public IEnumerable<IEndPointIndicator> FromEndPointIndicators => _routeSegments.Select( s => s.FromId ).Distinct() ;
-    public IEnumerable<IEndPointIndicator> ToEndPointIndicators => _routeSegments.Select( s => s.ToId ).Distinct() ;
+    public IEnumerable<IEndPoint> FromEndPoints => _routeSegments.Select( s => s.FromEndPoint ).Distinct() ;
+    public IEnumerable<IEndPoint> ToEndPoints => _routeSegments.Select( s => s.ToEndPoint ).Distinct() ;
 
-    public IEnumerable<IEndPointIndicator> AllEndPointIndicators => FromEndPointIndicators.Concat( ToEndPointIndicators ) ;
+    public IEnumerable<IEndPoint> AllEndPoints => FromEndPoints.Concat( ToEndPoints ) ;
 
     internal SubRoute( Route route, int index )
     {
@@ -51,9 +51,19 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    public double GetDiameter( Document document )
+    public MEPCurveType GetMEPCurveType()
     {
-      return _routeSegments.Select( seg => seg.GetRealNominalDiameter( document ) ).NonNull().Append( DefaultDiameter ).FirstOrDefault() ;
+      return _routeSegments.Select( seg => seg.CurveType ).NonNull().FirstOrDefault() ?? Route.GetDefaultCurveType() ;
+    }
+
+    public void SetMEPCurveType( MEPCurveType curveType )
+    {
+      Segments.ForEach( seg => seg.CurveType = curveType ) ;
+    }
+
+    public double GetDiameter()
+    {
+      return _routeSegments.Select( seg => seg.GetRealNominalDiameter() ).NonNull().Append( DefaultDiameter ).First() ;
     }
 
     public void ChangePreferredNominalDiameter( double nominalDiameter )
@@ -74,9 +84,9 @@ namespace Arent3d.Architecture.Routing
     /// <returns>Connector.</returns>
     internal Connector? GetReferenceConnectorInSubRoute()
     {
-      var fromConnectorIndicators = _routeSegments.Select( s => s.FromId ).OfType<ConnectorIndicator>().Distinct() ;
-      var toConnectorIndicators = _routeSegments.Select( s => s.ToId ).OfType<ConnectorIndicator>().Distinct() ;
-      return fromConnectorIndicators.Concat( toConnectorIndicators ).Select( ind => ind.GetConnector( Route.Document ) ).NonNull().FirstOrDefault() ;
+      var fromConnectorEndPoints = _routeSegments.Select( s => s.FromEndPoint ).OfType<ConnectorEndPoint>().Distinct() ;
+      var toConnectorEndPoints = _routeSegments.Select( s => s.ToEndPoint ).OfType<ConnectorEndPoint>().Distinct() ;
+      return fromConnectorEndPoints.Concat( toConnectorEndPoints ).Select( ind => ind.GetConnector() ).NonNull().FirstOrDefault() ;
     }
 
     /// <summary>
@@ -86,16 +96,6 @@ namespace Arent3d.Architecture.Routing
     public Connector GetReferenceConnector()
     {
       return GetReferenceConnectorInSubRoute() ?? Route.GetReferenceConnector() ;
-    }
-    
-    public void ChangeSystemType(MEPSystemType systemType)
-    {
-      
-    }
-    
-    public void ChangeCurveType(MEPCurveType curveType)
-    {
-      
     }
   }
 }

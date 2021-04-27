@@ -2,7 +2,7 @@
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Architecture.Routing.CommandTermCaches ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -277,7 +277,7 @@ namespace Arent3d.Architecture.Routing.App
 
       private bool IsRoutableForCenter( Element elem )
       {
-        return ( elem is FamilyInstance fi ) && ( false == fi.IsPassPoint() || IsPassPointWithoutBranch( fi ) ) ;
+        return ( elem is FamilyInstance fi ) && ( false == fi.IsPassPoint() ) ;
       }
 
       protected virtual bool IsRoutableElement( Element elem )
@@ -285,7 +285,7 @@ namespace Arent3d.Architecture.Routing.App
         return elem switch
         {
           MEPCurve => true,
-          FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement() || IsPassPointWithoutBranch( fi ),
+          FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement(),
           _ => false,
         } ;
       }
@@ -295,22 +295,6 @@ namespace Arent3d.Architecture.Routing.App
         if ( fi.IsFittingElement() ) return false ;
         if ( fi.IsPassPoint() ) return false ;
         return true ;
-      }
-
-      protected virtual bool IsPassPointWithoutBranch( FamilyInstance fi )
-      {
-        if ( fi.GetPassPointId() is not { } id ) return false ;
-
-        var document = fi.Document ;
-        return ( false == RouteCache.Get( document ).Values.Any( route => route.RouteSegments.Any( ri => HasBranch( document, ri, id ) ) ) ) ;
-      }
-
-      private static bool HasBranch( Document document, RouteSegment segment, int passPointId )
-      {
-        if ( segment.FromId is PassPointBranchEndIndicator pp1 && pp1.ElementId == passPointId ) return true ;
-        if ( segment.ToId is PassPointBranchEndIndicator pp2 && pp2.ElementId == passPointId ) return true ;
-
-        return false ;
       }
 
       protected virtual bool IsTargetConnector( Connector connector )
@@ -341,11 +325,6 @@ namespace Arent3d.Architecture.Routing.App
       protected override bool IsRoutableElement( Element elem )
       {
         return base.IsRoutableElement( elem ) && _compatibleResult.IsCompatibleTo( elem ) ;
-      }
-
-      protected override bool IsPassPointWithoutBranch( FamilyInstance fi )
-      {
-        return base.IsPassPointWithoutBranch( fi ) && ( fi.GetPassPointId() is not int id || _compatibleResult.PickedElement.GetPassPointId() != id ) ;
       }
     }
   }

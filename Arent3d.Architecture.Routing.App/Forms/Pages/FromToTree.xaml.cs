@@ -11,6 +11,7 @@ using System.Windows.Media ;
 using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.App.Model ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
+using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -166,27 +167,24 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="route"></param>
     private void DisplaySelectedFromTo( PropertySource.RoutePropertySource propertySource )
     {
-      SelectedFromTo.UpdateFromToParameters( propertySource?.Diameters, propertySource?.SystemTypes, propertySource?.CurveTypes ) ;
+      SelectedFromTo.UpdateFromToParameters( propertySource.Diameters, propertySource.SystemTypes, propertySource.CurveTypes ) ;
 
-      SelectedFromTo.DiameterOrgIndex = propertySource?.DiameterIndex;
-      SelectedFromTo.DiameterIndex = propertySource?.DiameterIndex ;
+      SelectedFromTo.DiameterOrgIndex = SelectedFromTo.DiameterIndex = NegativeToNull( propertySource.DiameterIndex ) ;
 
-      SelectedFromTo.SystemTypeIndex = propertySource?.SystemTypeIndex ;
-      SelectedFromTo.SystemTypeOrgIndex = propertySource?.SystemTypeIndex;
+      SelectedFromTo.SystemTypeOrgIndex = SelectedFromTo.SystemTypeIndex = NegativeToNull( propertySource.SystemTypeIndex ) ;
 
-      SelectedFromTo.CurveTypeIndex = propertySource?.CurveTypeIndex ;
-      SelectedFromTo.CurveTypeOrgIndex = propertySource?.CurveTypeIndex;
+      SelectedFromTo.CurveTypeOrgIndex = SelectedFromTo.CurveTypeIndex = NegativeToNull( propertySource.CurveTypeIndex ) ;
 
       if ( SelectedFromTo.CurveTypeIndex is { } index ) {
          SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( SelectedFromTo.CurveTypes[ index ].GetType().Name ) ;
       }
 
-      SelectedFromTo.CurrentDirect = propertySource?.IsDirect ;
-      SelectedFromTo.CurrentOrgDirect = propertySource?.IsDirect;
-    
+      SelectedFromTo.CurrentOrgDirect =  SelectedFromTo.CurrentDirect = propertySource.IsDirect ;
 
       SelectedFromTo.ResetDialog() ;
     }
+
+    private static int? NegativeToNull( int index ) => ( index < 0 ? null : index ) ;
 
     /// <summary>
     /// event on selected FromToTreeView to select FromTo Element
@@ -218,13 +216,36 @@ namespace Arent3d.Architecture.Routing.App.Forms
           this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false };
         }
         else if ( selectedFromToItem.PropertySourceType is PassPointPropertySource passPointPropertySource ) {
-            // show Connector UI
-            var transform = passPointPropertySource.PassPointTransform;
-            SelectedFromTo.ClearDialog();
-                    double coordinateX = UnitUtils.ConvertFromInternalUnits( transform.X, UnitTypeId.Millimeters );
-                    double coordinateY = UnitUtils.ConvertFromInternalUnits( transform.Y, UnitTypeId.Millimeters );
-                    double coordinateZ = UnitUtils.ConvertFromInternalUnits( transform.Z, UnitTypeId.Millimeters );
-                    this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = true, CoordinatesX = "X:" + (Math.Floor( coordinateX * 10 )) / 10 + " mm", CoordinatesY = "Y:" + (Math.Floor( coordinateY * 10 )) / 10 + " mm", CoordinatesZ = "Z:" + (Math.Floor( coordinateZ * 10 )) / 10 + "mm" };
+          // show Connector UI
+          var (x, y, z) = passPointPropertySource.PassPointPosition ;
+          SelectedFromTo.ClearDialog() ;
+          var coordinateX = UnitUtils.ConvertFromInternalUnits( x, UnitTypeId.Millimeters ) ;
+          var coordinateY = UnitUtils.ConvertFromInternalUnits( y, UnitTypeId.Millimeters ) ;
+          var coordinateZ = UnitUtils.ConvertFromInternalUnits( z, UnitTypeId.Millimeters ) ;
+          this.DataContext = new
+          {
+            IsRouterVisibility = false,
+            IsConnectorVisibility = true,
+            CoordinatesX = "X:" + ( Math.Floor( coordinateX * 10 ) ) / 10 + " mm",
+            CoordinatesY = "Y:" + ( Math.Floor( coordinateY * 10 ) ) / 10 + " mm",
+            CoordinatesZ = "Z:" + ( Math.Floor( coordinateZ * 10 ) ) / 10 + " mm",
+          } ;
+        }
+        else if ( selectedFromToItem.PropertySourceType is TerminatePointPropertySource terminatePointPropertySource ) {
+          // show Connector UI
+          var (x, y, z) = terminatePointPropertySource.TerminatePointPosition ;
+          SelectedFromTo.ClearDialog() ;
+          var coordinateX = UnitUtils.ConvertFromInternalUnits( x, UnitTypeId.Millimeters ) ;
+          var coordinateY = UnitUtils.ConvertFromInternalUnits( y, UnitTypeId.Millimeters ) ;
+          var coordinateZ = UnitUtils.ConvertFromInternalUnits( z, UnitTypeId.Millimeters ) ;
+          this.DataContext = new
+          {
+            IsRouterVisibility = false,
+            IsConnectorVisibility = true,
+            CoordinatesX = "X:" + ( Math.Floor( coordinateX * 10 ) ) / 10 + " mm",
+            CoordinatesY = "Y:" + ( Math.Floor( coordinateY * 10 ) ) / 10 + " mm",
+            CoordinatesZ = "Z:" + ( Math.Floor( coordinateZ * 10 ) ) / 10 + " mm",
+          } ;
         }
         else {
           // don't show SelectedFromTo 
@@ -247,9 +268,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
 
     /// <summary>
-    /// SelecteViewItem from RouteName
+    /// SelecteViewItem from Element id
     /// </summary>
-    /// <param name="selectedRouteName"></param>
+    /// <param name="elementId"></param>
     public void SelectTreeViewItem( ElementId? elementId )
     {
       var targetItem = GetTreeViewItemFromElementId( FromToTreeView, FromToTreeView.Items, elementId ) ;

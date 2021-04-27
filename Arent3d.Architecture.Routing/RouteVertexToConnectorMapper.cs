@@ -1,5 +1,3 @@
-using System ;
-using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Routing ;
@@ -11,16 +9,9 @@ namespace Arent3d.Architecture.Routing
   /// <summary>
   /// Mapper class of <see cref="IRouteVertex"/> to <see cref="Connector"/>.
   /// </summary>
-  public class RouteVertexToConnectorMapper : IEnumerable<IReadOnlyList<Connector>>
+  public class RouteVertexToConnectorMapper
   {
-    private readonly Dictionary<IRouteVertex, List<Connector>> _dicMap = new() ;
-
-    /// <summary>
-    /// Create an <see cref="IRouteVertex"/>-to-<see cref="Connector"/> mapper.
-    /// </summary>
-    public RouteVertexToConnectorMapper()
-    {
-    }
+    private readonly Dictionary<IRouteVertex, List<ConnectorId>> _dicMap = new() ;
 
     /// <summary>
     /// Adds a connector for an auto routing vertex.
@@ -30,11 +21,11 @@ namespace Arent3d.Architecture.Routing
     public void Add( IRouteVertex routeVertex, Connector connector )
     {
       if ( false == _dicMap.TryGetValue( routeVertex, out var connectors ) ) {
-        connectors = new List<Connector>() ;
+        connectors = new List<ConnectorId>() ;
         _dicMap.Add( routeVertex, connectors ) ;
       }
 
-      connectors.Add( connector ) ;
+      connectors.Add( new ConnectorId( connector ) ) ;
     }
 
     /// <summary>
@@ -55,14 +46,9 @@ namespace Arent3d.Architecture.Routing
       return anotherEndDir.normalized ;
     }
 
-    public IEnumerator<IReadOnlyList<Connector>> GetEnumerator()
+    public IEnumerable<IReadOnlyList<Connector>> GetConnections( Document document )
     {
-      return _dicMap.Values.Cast<IReadOnlyList<Connector>>().GetEnumerator() ;
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-      return GetEnumerator() ;
+      return _dicMap.Values.Select( list => ConnectorId.ToConnectorList( document, list ) ) ;
     }
   }
 }
