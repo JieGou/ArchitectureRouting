@@ -96,20 +96,17 @@ namespace Arent3d.Architecture.Routing.App.Forms
           CurveTypeIndex = -1 ;
         }
 
-        // if Direct is multi selected, set null
-        if ( IsViaPsMultiSelected( route ) ) {
-          IsDirect = null ;
-        }
+        IsDirect = route.UniqueIsRoutingOnPipeSpace ;
       }
 
       /// <summary>
-      /// Get CuveType's multi selected state
+      /// Get CurveType's multi selected state
       /// </summary>
       /// <param name="route"></param>
       /// <returns></returns>
       private static bool IsCurveTypeMultiSelected( Route route )
       {
-        return ( null != route.UniqueCurveType ) ;
+        return ( null == route.UniqueCurveType ) ;
       }
 
       /// <summary>
@@ -119,34 +116,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       /// <returns></returns>
       private static bool IsDiameterMultiSelected( Route route )
       {
-        return ( null != route.UniqueDiameter ) ;
-      }
-
-      /// <summary>
-      /// Get ViaPs's multi selected state
-      /// </summary>
-      /// <param name="route"></param>
-      /// <returns></returns>
-      private bool IsViaPsMultiSelected( Route route )
-      {
-        var directs = new List<bool>() ;
-
-        foreach ( var subRoute in route.SubRoutes ) {
-          if ( ! directs.Contains( ( subRoute.IsRoutingOnPipeSpace ) ) ) {
-            directs.Add( subRoute.IsRoutingOnPipeSpace ) ;
-          }
-        }
-
-        var directResult = false ;
-        try {
-          var singleDirect = directs.SingleOrDefault() ;
-          directResult = false ;
-        }
-        catch {
-          directResult = true ;
-        }
-
-        return directResult ;
+        return ( null == route.UniqueDiameter ) ;
       }
     }
   }
