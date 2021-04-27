@@ -25,11 +25,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
       } ;
     }
 
-    public static (int, int) GetConnectorIdentifier( this Connector connector )
-    {
-      return ( connector.Owner.Id.IntegerValue, connector.Id ) ;
-    }
-
 
     private static readonly char[] EndPointSplitter = { '|' } ;
     private static readonly char[] NameParamSplitter = { ':' } ;

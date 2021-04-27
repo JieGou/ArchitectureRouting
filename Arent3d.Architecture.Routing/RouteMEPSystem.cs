@@ -190,7 +190,7 @@ namespace Arent3d.Architecture.Routing
     {
       if ( c.MEPSystem is not {  } mepSystem ) return ;
 
-      if ( mepSystem.BaseEquipmentConnector.GetConnectorIdentifier() == c.GetConnectorIdentifier() ) {
+      if ( new ConnectorId( mepSystem.BaseEquipmentConnector ) == new ConnectorId( c ) ) {
         mepSystem.Document.Delete( mepSystem.Id ) ;
       }
       else {

@@ -136,7 +136,7 @@ namespace Arent3d.Architecture.Routing
     {
       var list = new List<Connector>() ;
 
-      foreach ( var (passPointId, (conn1, conn2, others)) in _globalPassPointConnectorMapper ) {
+      foreach ( var (passPointId, (conn1, conn2, others)) in _globalPassPointConnectorMapper.GetPassPointConnections( _document ) ) {
         // pass point must have from-side and to-side connector
         if ( null == conn1 || null == conn2 ) throw new InvalidOperationException() ;
 

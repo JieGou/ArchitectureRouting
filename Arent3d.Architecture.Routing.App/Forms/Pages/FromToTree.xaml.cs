@@ -139,23 +139,25 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="route"></param>
     private void DisplaySelectedFromTo( PropertySource.RoutePropertySource propertySource )
     {
-      SelectedFromTo.UpdateFromToParameters( propertySource?.Diameters, propertySource?.SystemTypes, propertySource?.CurveTypes ) ;
+      SelectedFromTo.UpdateFromToParameters( propertySource.Diameters, propertySource.SystemTypes, propertySource.CurveTypes ) ;
 
-      SelectedFromTo.DiameterIndex = propertySource?.DiameterIndex ;
+      SelectedFromTo.DiameterIndex = NegativeToNull( propertySource.DiameterIndex ) ;
 
-      SelectedFromTo.SystemTypeIndex = propertySource?.SystemTypeIndex ;
+      SelectedFromTo.SystemTypeIndex = NegativeToNull( propertySource.SystemTypeIndex ) ;
 
-      SelectedFromTo.CurveTypeIndex = propertySource?.CurveTypeIndex ;
+      SelectedFromTo.CurveTypeIndex = NegativeToNull( propertySource.CurveTypeIndex ) ;
 
       if ( SelectedFromTo.CurveTypeIndex is { } index ) {
         SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( SelectedFromTo.CurveTypes[ index ].GetType().Name ) ;
       }
 
-      SelectedFromTo.CurrentDirect = propertySource?.IsDirect ;
+      SelectedFromTo.CurrentDirect = propertySource.IsDirect ;
 
 
       SelectedFromTo.ResetDialog() ;
     }
+
+    private static int? NegativeToNull( int index ) => ( index < 0 ? null : index ) ;
 
     /// <summary>
     /// event on selected FromToTreeView to select FromTo Element
