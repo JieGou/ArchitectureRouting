@@ -111,6 +111,9 @@
         <key>TransactionName.Commands.Routing.RerouteAll</key>
         <string>Reroute All</string>
 
+        <key>TransactionName.Commands.Routing.ReplaceFromTo</key>
+        <string>Change From-To</string>
+
         <key>TransactionName.Commands.Routing.EraseSelectedRoutes</key>
         <string>Erase Selected</string>
 
@@ -150,6 +153,15 @@
 
         <key>Dialog.Commands.Routing.PickAndReRoute.Pick</key>
         <string>Pick a from-to to reroute.</string>
+
+        <key>Dialog.Commands.Routing.ReplaceFromTo.Pick</key>
+        <string>Pick a from-to to change.</string>
+
+        <key>Dialog.Commands.Routing.ReplaceFromTo.SelectFromTo</key>
+        <string>Select which end is to be changed.</string>
+
+        <key>Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint</key>
+        <string>Select the new end point.</string>
 
         <key>Dialog.Commands.Routing.FromTo.FileName</key>
         <string>From-to list file</string>
