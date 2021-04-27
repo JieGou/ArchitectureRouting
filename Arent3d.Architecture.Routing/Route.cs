@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing
     }
 
 
-    public MEPCurveType? UniqueCurveType => SubRoutes.Select( subRoute => subRoute.GetMEPCurveType() ).Distinct().UniqueOrDefault() ;
+    public MEPCurveType? UniqueCurveType => SubRoutes.Select( subRoute => subRoute.GetMEPCurveType() ).ElementsDistinct().UniqueOrDefault() ;
     public double? UniqueDiameter => SubRoutes.Select( subRoute => subRoute.GetDiameter() ).Distinct().Select( d => (double?) d ).UniqueOrDefault() ;
 
     public bool? UniqueIsRoutingOnPipeSpace => SubRoutes.Select( subRoute => subRoute.IsRoutingOnPipeSpace ).Distinct().Select( d => (bool?) d ).UniqueOrDefault() ;

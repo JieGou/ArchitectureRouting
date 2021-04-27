@@ -218,7 +218,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       {
         _targetElements = new List<ElementId>() ;
 
-        _selectedRoute = AllRoutes?.ToList().Find( r => r.OwnerElement?.Id == ElementId ) ;
+        _selectedRoute = AllRoutes.FirstOrDefault( r => r.OwnerElement?.Id == ElementId ) ;
 
         if ( _selectedRoute == null ) return ;
         // set SelectedRoute to SelectedFromToViewModel

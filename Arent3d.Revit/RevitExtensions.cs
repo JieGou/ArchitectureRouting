@@ -52,7 +52,7 @@ namespace Arent3d.Revit
       z = xyz.Z ;
     }
 
-    public static IEnumerable<TElement> Distinct<TElement>( IEnumerable<TElement> enu ) where TElement : Element
+    public static IEnumerable<TElement> ElementsDistinct<TElement>( this IEnumerable<TElement> enu ) where TElement : Element
     {
       return enu.Distinct( ElementEqualityComparer<TElement>.Default ) ;
     }
