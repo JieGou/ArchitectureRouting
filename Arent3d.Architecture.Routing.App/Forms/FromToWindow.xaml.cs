@@ -1,7 +1,7 @@
 ﻿using System ;
 using System.Windows ;
 using System.Collections.ObjectModel ;
-using Arent3d.Architecture.Routing.RouteEnd ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Arent3d.Revit.UI;
@@ -26,16 +26,17 @@ namespace Arent3d.Architecture.Routing.App.Forms
       public string? Id { get ; set ; }
 
       //From
-      public ConnectorIndicator? From { get ; set ; }
-      public string? FromType => From?.ToString().Split( ':' )[ 0 ] ;
-      public string? FromId => From?.ElementId.ToString() ;
-      public string? FromSubId => From?.ConnectorId.ToString() ;
+      public IEndPoint? From { get ; set ; }
+      public string? FromType => From?.TypeName ;
+      public string? FromId => From?.Accept( EndPointFieldValues.IdGetter ) ;
+      public string? FromSubId => From?.Accept( EndPointFieldValues.SubIdGetter ) ;
+
 
       //To
-      public ConnectorIndicator? To { get ; set ; }
-      public string? ToType => To?.ToString().Split( ':' )[ 0 ] ;
-      public string? ToId => To?.ElementId.ToString() ;
-      public string? ToSubId => To?.ConnectorId.ToString() ;
+      public IEndPoint? To { get ; set ; }
+      public string? ToType => To?.TypeName ;
+      public string? ToId => To?.Accept( EndPointFieldValues.IdGetter ) ;
+      public string? ToSubId => To?.Accept( EndPointFieldValues.SubIdGetter ) ;
 
       //Domain
       public string? Domain { get ; set ; }
@@ -61,13 +62,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
     }
 
 
-    private void Dilog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
+    private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
       uiDoc?.Application.PostCommand<Commands.Routing.FileRoutingCommand>();
       //TaskDialog.Show( "test", "Import" ) ;
     }
 
-    private void Dilog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
+    private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
     {
       uiDoc?.Application.PostCommand<Commands.Routing.ExportRoutingCommand>();
       //TaskDialog.Show( "test", "Export" ) ;
