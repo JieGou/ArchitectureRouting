@@ -48,7 +48,7 @@ namespace Arent3d.Architecture.Routing
 
     public IEnumerable<IReadOnlyList<Connector>> GetConnections( Document document )
     {
-      return _dicMap.Values.Select(  list => ConnectorId.ToConnectorList( document, list ) ) ;
+      return _dicMap.Values.Select( list => ConnectorId.ToConnectorList( document, list ) ) ;
     }
   }
 }

@@ -25,9 +25,9 @@ namespace Arent3d.Architecture.Routing
       Id = connectorEndPoint.ConnectorIndex ;
     }
 
-    public Instance? GetOwner( Document document )
+    public Element? GetOwner( Document document )
     {
-      return document.GetElement( new ElementId( OwnerIdValue ) ) as Instance ;
+      return document.GetElement( new ElementId( OwnerIdValue ) ) ;
     }
     public Connector? GetConnector( Document document )
     {
