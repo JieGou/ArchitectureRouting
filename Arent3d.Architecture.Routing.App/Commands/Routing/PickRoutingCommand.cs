@@ -103,10 +103,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var routes = RouteCache.Get( subRoute.Route.Document ) ;
       var routEndPoint = new RouteEndPoint( subRoute ) ;
 
-      var routeMepSystem = new RouteMEPSystem( subRoute.Route.Document, subRoute.Route ) ;
-      var systemType = routeMepSystem.MEPSystemType ;
+      var systemType = subRoute.Route.GetMEPSystemType() ;
 
-      var nextIndex = GetRouteNameIndex( routes, systemType?.Name ) ;
+      var nextIndex = GetRouteNameIndex( routes, systemType.Name ) ;
       
       var name = systemType?.Name + "_" + nextIndex  ;
 

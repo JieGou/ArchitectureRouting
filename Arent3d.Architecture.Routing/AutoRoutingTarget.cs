@@ -34,15 +34,15 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     public IEnumerable<AutoRoutingEndPoint> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
 
-    public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<Route, RouteMEPSystem> routeMepSystemDictionary )
+    public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
       Routes = subRoutes.Select( subRoute => subRoute.Route ).Distinct().EnumerateAll() ;
 
       var depths = GetDepths( subRoutes ) ;
 
       var dic = new Dictionary<AutoRoutingEndPoint, SubRoute>() ;
-      _fromEndPoints = GenerateEndPointList( subRoutes, subRoute => GetFromEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute.Route ] ), dic ) ;
-      _toEndPoints = GenerateEndPointList( subRoutes, subRoute => GetToEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute.Route ] ), dic ) ;
+      _fromEndPoints = GenerateEndPointList( subRoutes, subRoute => GetFromEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute ] ), dic ) ;
+      _toEndPoints = GenerateEndPointList( subRoutes, subRoute => GetToEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute ] ), dic ) ;
       _ep2SubRoute = dic ;
       
       AutoRoutingEndPoint.ApplyDepths( _fromEndPoints, _toEndPoints ) ;

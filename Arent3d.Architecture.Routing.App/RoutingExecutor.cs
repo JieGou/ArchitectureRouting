@@ -201,8 +201,6 @@ namespace Arent3d.Architecture.Routing.App
       }
     }
 
-    private static (int, int) ToTuple( Connector conn ) => ( conn.Owner.Id.IntegerValue, conn.Id ) ;
-
     public void RunPostProcess( RoutingExecutionResult result )
     {
       if ( RoutingExecutionResultType.Success != result.Type ) return ;
@@ -273,12 +271,12 @@ namespace Arent3d.Architecture.Routing.App
         reducer.SetProperty( RoutingParameter.NearestToSideEndPoints, RoutedElementToSideConnectorIds ) ;
       }
 
-      private static HashSet<(int, int)> GetEndPoints( Document document, string connectors )
+      private static HashSet<ConnectorId> GetEndPoints( Document document, string connectors )
       {
-        return EndPointExtensions.ParseEndPoints( document, connectors ).OfType<ConnectorEndPoint>().Select( c => ( c.EquipmentId.IntegerValue, c.ConnectorIndex ) ).ToHashSet() ;
+        return EndPointExtensions.ParseEndPoints( document, connectors ).OfType<ConnectorEndPoint>().Select( c => new ConnectorId( c ) ).ToHashSet() ;
       }
 
-      private IEnumerable<FamilyInstance> GetNeighborReducers( Document document, HashSet<(int, int)> endPoints, bool isFrom )
+      private IEnumerable<FamilyInstance> GetNeighborReducers( Document document, HashSet<ConnectorId> endPoints, bool isFrom )
       {
         var doneElms = new HashSet<ElementId> { ElementId } ;
         var stack = new Stack<Connector>() ;
@@ -286,16 +284,16 @@ namespace Arent3d.Architecture.Routing.App
 
         while ( 0 < stack.Count ) {
           var connector = stack.Pop() ;
-          var connTuple = ToTuple( connector ) ;
-          if ( endPoints.Contains( connTuple ) ) continue ;
+          var connId = new ConnectorId( connector ) ;
+          if ( endPoints.Contains( connId ) ) continue ;
 
-          var owner = document.GetElement( new ElementId( connTuple.Item1 ) ) ;
+          var owner = connId.GetOwner( document ) ;
           if ( owner is not FamilyInstance nextElm ) continue ;
           if ( false == doneElms.Add( nextElm.Id ) ) continue ;
           if ( false == nextElm.IsFittingElement() ) continue ;
           if ( null != nextElm.GetRouteName() ) continue ;
 
-          var conn = owner.GetConnectorManager()?.Lookup( connTuple.Item2 ) ;
+          var conn = connId.GetConnector( owner ) ;
           if ( null == conn ) continue ;
 
           conn.GetOtherConnectorsInOwner().SelectMany( c => c.GetConnectedConnectors() ).ForEach( stack.Push ) ;

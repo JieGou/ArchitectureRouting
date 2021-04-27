@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing
   public class RouteGenerator : RouteGeneratorBase<AutoRoutingTarget>
   {
     private readonly Document _document ;
-    private readonly IReadOnlyDictionary<Route, RouteMEPSystem> _routeMEPSystems ;
+    private readonly IReadOnlyDictionary<SubRoute, RouteMEPSystem> _routeMEPSystems ;
     private readonly List<Connector[]> _badConnectors = new() ;
     private readonly PassPointConnectorMapper _globalPassPointConnectorMapper = new() ;
 
@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing
     {
       _document = document ;
 
-      _routeMEPSystems = CreateRouteMEPSystems( document, routes ) ;
+      _routeMEPSystems = ThreadDispatcher.Dispatch( () => CreateRouteMEPSystems( document, routes ) ) ;
       var targets = AutoRoutingTargetGenerator.Run( _document, routes, _routeMEPSystems ) ;
       RoutingTargets = targets.EnumerateAll() ;
       ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
@@ -35,9 +35,19 @@ namespace Arent3d.Architecture.Routing
       Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;
     }
 
-    private static IReadOnlyDictionary<Route, RouteMEPSystem> CreateRouteMEPSystems( Document document, IReadOnlyCollection<Route> routes )
+    private static IReadOnlyDictionary<SubRoute, RouteMEPSystem> CreateRouteMEPSystems( Document document, IReadOnlyCollection<Route> routes )
     {
-      return ThreadDispatcher.Dispatch( () => routes.Distinct().ToDictionary( route => route, route => new RouteMEPSystem( document, route ) ) ) ;
+      var dic = new Dictionary<SubRoute, RouteMEPSystem>() ;
+      
+      foreach ( var route in routes ) {
+        foreach ( var subRoute in route.SubRoutes ) {
+          if ( dic.ContainsKey( subRoute ) ) break ;  // same route
+
+          dic.Add( subRoute, new RouteMEPSystem( document, subRoute ) ) ;
+        }
+      }
+
+      return dic ;
     }
 
     public IReadOnlyCollection<Connector[]> GetBadConnectorSet() => _badConnectors ;
@@ -126,7 +136,7 @@ namespace Arent3d.Architecture.Routing
     {
       var list = new List<Connector>() ;
 
-      foreach ( var (passPointId, (conn1, conn2, others)) in _globalPassPointConnectorMapper ) {
+      foreach ( var (passPointId, (conn1, conn2, others)) in _globalPassPointConnectorMapper.GetPassPointConnections( _document ) ) {
         // pass point must have from-side and to-side connector
         if ( null == conn1 || null == conn2 ) throw new InvalidOperationException() ;
 

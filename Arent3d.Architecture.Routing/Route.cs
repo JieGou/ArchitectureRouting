@@ -8,6 +8,9 @@ using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
+using Autodesk.Revit.DB.Mechanical ;
+using Autodesk.Revit.DB.Plumbing ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -65,9 +68,30 @@ namespace Arent3d.Architecture.Routing
       return _subRoutes.SelectMany( subRoute => subRoute.ToEndPoints.OfType<ConnectorEndPoint>() ).FirstOrDefault() ;
     }
 
-    private Domain? _domain = null ;
+    public Domain Domain => GetMEPSystemType().GetDomain() ;
 
-    public Domain Domain => _domain ??= GetReferenceConnector().Domain ;
+    public MEPSystemClassification SystemClassification => GetMEPSystemType().SystemClassification ;
+
+    private MEPSystemType? _overriddenSystemType = null ;
+    public MEPSystemType GetMEPSystemType()
+    {
+      return _overriddenSystemType ?? RouteMEPSystem.GetSystemType( Document, GetReferenceConnector() ) ?? throw new InvalidOperationException() ;
+    }
+    public void SetMEPSystemType( MEPSystemType? systemType )
+    {
+      _overriddenSystemType = systemType ;
+    }
+    public MEPCurveType GetDefaultCurveType()
+    {
+      return RouteMEPSystem.GetMEPCurveType( Document, GetAllConnectors(), GetMEPSystemType() ) ;
+    }
+
+
+    public MEPCurveType? UniqueCurveType => SubRoutes.Select( subRoute => subRoute.GetMEPCurveType() ).ElementsDistinct().UniqueOrDefault() ;
+    public double? UniqueDiameter => SubRoutes.Select( subRoute => subRoute.GetDiameter() ).Distinct().Select( d => (double?) d ).UniqueOrDefault() ;
+
+    public bool? UniqueIsRoutingOnPipeSpace => SubRoutes.Select( subRoute => subRoute.IsRoutingOnPipeSpace ).Distinct().Select( d => (bool?) d ).UniqueOrDefault() ;
+
 
     /// <summary>
     /// for loading from storage.
@@ -93,7 +117,7 @@ namespace Arent3d.Architecture.Routing
       _subRouteMap.Clear() ;
       _routeSegments.Clear() ;
       _subRoutes.Clear() ;
-      _domain = null ;
+      _overriddenSystemType = null ;
     }
 
     /// <summary>
@@ -319,23 +343,27 @@ namespace Arent3d.Architecture.Routing
 
     private const string RouteNameField = "RouteName" ;
     private const string RouteSegmentsField = "RouteSegments" ;
+    private const string MEPSystemField = "MEPSystem" ;
 
     protected override void SetupAllFields( FieldGenerator generator )
     {
       generator.SetSingle<string>( RouteNameField ) ;
       generator.SetArray<RouteSegment>( RouteSegmentsField ) ;
+      generator.SetSingle<ElementId>( MEPSystemField );
     }
 
     protected override void LoadAllFields( FieldReader reader )
     {
       RouteName = reader.GetSingle<string>( RouteNameField ) ;
       reader.GetArray<RouteSegment>( RouteSegmentsField ).ForEach( segment => RegisterSegment( segment, false ) ) ;
+      SetMEPSystemType( Document.GetElementById<MEPSystemType>( reader.GetSingle<ElementId>( MEPSystemField ) ) ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
       writer.SetSingle( RouteNameField, RouteName ) ;
       writer.SetArray( RouteSegmentsField, _routeSegments ) ;
+      writer.SetSingle( MEPSystemField, GetMEPSystemType().GetValidId() ) ;
     }
 
     #endregion

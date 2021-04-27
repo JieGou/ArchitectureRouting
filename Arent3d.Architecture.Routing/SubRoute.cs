@@ -51,9 +51,19 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
+    public MEPCurveType GetMEPCurveType()
+    {
+      return _routeSegments.Select( seg => seg.CurveType ).NonNull().FirstOrDefault() ?? Route.GetDefaultCurveType() ;
+    }
+
+    public void SetMEPCurveType( MEPCurveType curveType )
+    {
+      Segments.ForEach( seg => seg.CurveType = curveType ) ;
+    }
+
     public double GetDiameter()
     {
-      return _routeSegments.Select( seg => seg.GetRealNominalDiameter() ).NonNull().Append( DefaultDiameter ).FirstOrDefault() ;
+      return _routeSegments.Select( seg => seg.GetRealNominalDiameter() ).NonNull().Append( DefaultDiameter ).First() ;
     }
 
     public void ChangePreferredNominalDiameter( double nominalDiameter )
@@ -86,16 +96,6 @@ namespace Arent3d.Architecture.Routing
     public Connector GetReferenceConnector()
     {
       return GetReferenceConnectorInSubRoute() ?? Route.GetReferenceConnector() ;
-    }
-    
-    public void ChangeSystemType(MEPSystemType systemType)
-    {
-      
-    }
-    
-    public void ChangeCurveType(MEPCurveType curveType)
-    {
-      
     }
   }
 }

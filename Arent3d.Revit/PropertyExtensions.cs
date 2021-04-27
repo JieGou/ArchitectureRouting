@@ -101,7 +101,7 @@ namespace Arent3d.Revit
     }
     public static void SetProperty<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum, Element? value ) where TPropertyEnum : Enum
     {
-      elm.SetProperty<TPropertyEnum>( propertyEnum, ( null != value ) ? value.Id : ElementId.InvalidElementId ) ;
+      elm.SetProperty<TPropertyEnum>( propertyEnum, value.GetValidId() ) ;
     }
 
     public static int GetPropertyInt<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum

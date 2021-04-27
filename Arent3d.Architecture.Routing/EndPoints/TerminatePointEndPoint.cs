@@ -67,7 +67,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       _document = instance.Document ;
       TerminatePointId = instance.Id ;
-      LinkedInstanceId = linkedInstance?.Id ?? ElementId.InvalidElementId ;
+      LinkedInstanceId = linkedInstance.GetValidId() ;
 
       SetPreferredParameters( instance ) ;
     }

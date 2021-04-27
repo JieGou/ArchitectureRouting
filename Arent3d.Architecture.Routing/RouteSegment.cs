@@ -9,6 +9,8 @@ namespace Arent3d.Architecture.Routing
 {
   public class RouteSegment
   {
+    public MEPCurveType? CurveType { get ; set ; }
+
     public double? PreferredNominalDiameter { get ; private set ; }
 
     public IEndPoint FromEndPoint { get ; }
@@ -56,6 +58,7 @@ namespace Arent3d.Architecture.Routing
     }
   }
 
+
   [StorableConverterOf( typeof( RouteSegment ) )]
   internal class RouteInfoConverter : StorableConverterBase<RouteSegment, string>
   {
@@ -64,18 +67,19 @@ namespace Arent3d.Architecture.Routing
     protected override RouteSegment NativeToCustom( Element storedElement, string nativeTypeValue )
     {
       var split = nativeTypeValue.Split( FieldSplitter, StringSplitOptions.RemoveEmptyEntries ) ;
-      if ( 3 != split.Length && 4 != split.Length ) throw new InvalidOperationException() ;
+      if ( 5 != split.Length ) throw new InvalidOperationException() ;
 
       var preferredDiameter = ( double.TryParse( split[ 0 ], NumberStyles.Any, CultureInfo.InvariantCulture, out var nominalDiameter ) ? (double?) nominalDiameter : null ) ;
 
       var fromId = EndPointExtensions.ParseEndPoint( storedElement.Document, split[ 1 ] ) ?? throw new InvalidOperationException() ;
       var toId = EndPointExtensions.ParseEndPoint( storedElement.Document, split[ 2 ] ) ?? throw new InvalidOperationException() ;
-      var isRoutingOnPipeSpace = ( 3 < split.Length && ParseBool( split[ 3 ], false ) ) ;
+      var isRoutingOnPipeSpace =  ParseBool( split[ 3 ] ) ;
+      var curveType = storedElement.Document.GetElementById<MEPCurveType>( ParseElementId( split[ 4 ] ) ) ;
 
-      return new RouteSegment( fromId, toId, nominalDiameter, isRoutingOnPipeSpace ) ;
+      return new RouteSegment( fromId, toId, preferredDiameter, isRoutingOnPipeSpace ) ;
     }
 
-    private static bool ParseBool( string s, bool bDefault )
+    private static bool ParseBool( string s )
     {
       return s.ToLower() switch
       {
@@ -84,8 +88,16 @@ namespace Arent3d.Architecture.Routing
         "" => false,
         "1" => true,
         "t" => true,
-        _ => bDefault,
+        _ => false,
       } ;
+    }
+
+    private static ElementId ParseElementId( string s )
+    {
+      if ( false == int.TryParse( s, out var id ) ) return ElementId.InvalidElementId ;
+      if ( ElementId.InvalidElementId.IntegerValue == id ) return ElementId.InvalidElementId ;
+
+      return new ElementId( id ) ;
     }
 
     protected override string CustomToNative( Element storedElement, RouteSegment customTypeValue )
@@ -99,6 +111,8 @@ namespace Arent3d.Architecture.Routing
       builder.Append( customTypeValue.ToEndPoint ) ;
       builder.Append( '|' ) ;
       builder.Append( customTypeValue.IsRoutingOnPipeSpace ? 'T' : 'F' ) ;
+      builder.Append( '|' ) ;
+      builder.Append( customTypeValue.CurveType.GetValidId().IntegerValue ) ;
 
       return builder.ToString() ;
     }

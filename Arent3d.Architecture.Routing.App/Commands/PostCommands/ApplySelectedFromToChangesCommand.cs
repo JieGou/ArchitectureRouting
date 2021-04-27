@@ -28,18 +28,18 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
 
         if ( diameters != null && systemTypes != null && curveTypes != null ) {
           if ( route != null && subRoutes != null ) {
+            //Change SystemType
+            route.SetMEPSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
+
             foreach ( var subRoute in subRoutes ) {
               //Change Diameter
               if ( SelectedFromToViewModel.SelectedDiameterIndex != -1 ) {
                 subRoute.ChangePreferredNominalDiameter( diameters[ SelectedFromToViewModel.SelectedDiameterIndex ] ) ;
               }
 
-              //Change SystemType
-              subRoute.ChangeSystemType( systemTypes[ SelectedFromToViewModel.SelectedSystemTypeIndex ] ) ;
-
               //Change CurveType
               if ( SelectedFromToViewModel.SelectedCurveTypeIndex != -1 ) {
-                subRoute.ChangeCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
+                subRoute.SetMEPCurveType( curveTypes[ SelectedFromToViewModel.SelectedCurveTypeIndex ] ) ;
               }
 
               //ChangeDirect
@@ -50,17 +50,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
 
             return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
           }
-          else {
-            return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
-          }
-        }
-        else {
-          return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
         }
       }
-      else {
-        return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
-      }
+
+      return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
     }
   }
 }

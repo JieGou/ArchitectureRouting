@@ -1,4 +1,6 @@
 using System ;
+using System.Collections.Generic ;
+using System.Linq ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Revit
@@ -48,6 +50,20 @@ namespace Arent3d.Revit
       x = xyz.X ;
       y = xyz.Y ;
       z = xyz.Z ;
+    }
+
+    public static IEnumerable<TElement> ElementsDistinct<TElement>( this IEnumerable<TElement> enu ) where TElement : Element
+    {
+      return enu.Distinct( ElementEqualityComparer<TElement>.Default ) ;
+    }
+    
+    public static ElementId GetValidId( this Element? element )
+    {
+      return ( null == element || false == element.IsValidObject ) ? ElementId.InvalidElementId : element.Id ;
+    }
+    public static bool IsValid( this ElementId? elementId )
+    {
+      return ( null != elementId ) && ( ElementId.InvalidElementId != elementId ) ;
     }
   }
 }
