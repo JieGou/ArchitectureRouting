@@ -473,6 +473,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     private void root_LayoutUpdated( object sender, EventArgs e )
     {
         var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() );
+        if ( ! DockablePane.PaneExists( dpid ) ) return;
         var dp = UiDoc?.Application.GetDockablePane( dpid );
         if( dp != null ) { 
             RibbonHelper.ToggleShowFromToTreeCommandButton( dp.IsShown() );
