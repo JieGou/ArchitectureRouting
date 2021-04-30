@@ -14,6 +14,7 @@ using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
+using Autodesk.Revit.UI.Events ;
 
 namespace Arent3d.Architecture.Routing.App
 {
@@ -53,7 +54,10 @@ namespace Arent3d.Architecture.Routing.App
 
     private readonly RibbonButton _monitorSelectionCommandButton ;
 
+    private readonly RegisterFromToTreeCommand _registerFromToTreeCommand;
 
+    
+    
     private RoutingAppUI( UIControlledApplication application )
     {
       var tab = application.CreateRibbonTabEx( ToDisplayName( RibbonTabNameKey ) ) ;
@@ -92,7 +96,10 @@ namespace Arent3d.Architecture.Routing.App
         _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
 
-      application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters ;
+      _registerFromToTreeCommand = new RegisterFromToTreeCommand() ;
+      _registerFromToTreeCommand.InitializeDockablePane(application);
+      
+      application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters;
       application.ControlledApplication.ApplicationInitialized += new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ) ;
 
       InitializeRibbon() ;
@@ -134,7 +141,7 @@ namespace Arent3d.Architecture.Routing.App
         InitializeRibbon() ;
         return ;
       }
-
+      
       var setupIsDone = document.RoutingSettingsAreInitialized() ;
 
       _initializeCommandButton.Enabled = ! setupIsDone ;
@@ -161,8 +168,7 @@ namespace Arent3d.Architecture.Routing.App
 
     private void DockablePaneRegisters( object sender, ApplicationInitializedEventArgs e )
     {
-      var fromToTreeRegisterCommand = new RegisterFromToTreeCommand() ;
-      fromToTreeRegisterCommand.Execute( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
+      _registerFromToTreeCommand.Execute( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
     }
   }
 }

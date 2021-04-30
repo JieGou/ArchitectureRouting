@@ -2,6 +2,7 @@
 using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit ;
@@ -46,6 +47,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       // provide ExternalCommandData object to dockable page
       if ( _dockableWindow != null && _uiApp != null ) {
         var doc = _uiApp.ActiveUIDocument.Document ;
+
         //Initialize TreeView
         _dockableWindow.CustomInitiator( _uiApp ) ;
 
@@ -126,16 +128,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
     public Result Execute( UIApplication uiApplication )
     {
-      //dockable window
-      var dock = new FromToTree() ;
-      _dockableWindow = dock ;
       _uiApp = uiApplication ;
-
-      // Use unique guid identifier for this dockable pane
-      _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
+      _dockableWindow?.CustomInitiator(uiApplication);
+      
       try {
-        // register dockable pane
-        _uiApp.RegisterDockablePane( _dpid, "From-To Tree", _dockableWindow ) ;
         // subscribe document opend event
         _uiApp.Application.DocumentOpened += new EventHandler<DocumentOpenedEventArgs>( Application_DocumentOpened ) ;
         // subscribe view activated event
@@ -149,6 +145,26 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
 
       return Result.Succeeded ;
+    }
+
+    public void InitializeDockablePane( UIControlledApplication application )
+    {
+      //dockable window
+      var dock = new FromToTree() ;
+      _dockableWindow = dock ;
+      FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
+
+      DockablePaneProviderData data = new DockablePaneProviderData();
+      data.FrameworkElement = dock as FrameworkElement;
+      data.InitialState = new DockablePaneState() ;
+      data.InitialState.DockPosition = DockPosition.Tabbed ;
+      data.InitialState.TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser;
+      
+      // Use unique guid identifier for this dockable pane
+      _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
+      
+      // register dockable pane
+      application.RegisterDockablePane( _dpid, "From-To Tree", dock as IDockablePaneProvider) ;
     }
   }
 }
