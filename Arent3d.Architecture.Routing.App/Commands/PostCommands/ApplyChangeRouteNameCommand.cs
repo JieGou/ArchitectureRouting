@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
 {
     [RevitAddin( Guid )]
-    [DisplayName( "Apply Selected From-To Changes" )]
+    [DisplayName( "Change RouteName of Route" )]
     [Transaction( TransactionMode.Manual )]
     public class ApplyChangeRouteNameCommand : IExternalCommand
     {
@@ -27,30 +27,15 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
             var uiDocument = commandData.Application.ActiveUIDocument;
             var document = uiDocument.Document;
 
-            var executor = new RoutingExecutor( document, commandData.View );
-
             try {
                 if ( SelectedFromToViewModel.PropertySourceType is { } propertySource ) {
                     Route? targetRoute = propertySource.TargetRoute;
-                    if( targetRoute != null ) { 
-                        List<ElementId> elementIds = document.GetAllElementsOfRouteName<Element>( targetRoute.RouteName ).Select( elem => elem.Id ).ToList();
-
-                        foreach(ElementId eid in elementIds ) {
-
-                            Element elem = document.GetElement( eid );
-
-                            ParameterSet parameters = elem.Parameters;
-
-                            foreach ( Parameter param in parameters ) {
-                                if ( param.Definition.Name.Equals( "Route Name" ) ) {
-                                    using ( Transaction t = new Transaction( document, "Set Parameter" ) ) {
-                                        t.Start();
-                                        param.Set( SelectedFromToViewModel.FromToItem?.ItemTypeName );
-                                        t.Commit();
-                                    }
-                                }
-                            }
-
+                    if( targetRoute != null && SelectedFromToViewModel.FromToItem != null) { 
+                        
+                        using ( Transaction t = new Transaction( document, "TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand".GetAppStringByKeyOrDefault(" Rename RouteName") ) ) {
+                            t.Start();
+                            targetRoute.RouteName =  SelectedFromToViewModel.FromToItem.ItemTypeName ;
+                            t.Commit();
                         }
                     }
                 }

@@ -124,6 +124,9 @@
 
         <key>TransactionName.Commands.ShowFromTreeCommand</key>
         <string>From-Toツリーを表示</string>
+
+        <key>TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand</key>
+        <string>RouteNameを変更</string>
         
 
         <!-- Dialogs -->

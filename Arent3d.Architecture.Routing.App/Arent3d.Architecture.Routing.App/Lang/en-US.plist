@@ -126,6 +126,9 @@
         <key>TransactionName.Commands.ShowFromTreeCommand</key>
         <string>Show From-To Tree</string>
 
+        <key>TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand</key>
+        <string>Rename RouteName</string>
+
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
@@ -160,6 +163,7 @@
 
         <key>Dialog.Commands.Routing.Dialog.Title.Error</key>
         <string>Routing Error</string>
+        
         <key>Dialog.Commands.Routing.Common.Body.Error.ExceptionOccured</key>
         <string>An unhandled exception occured.</string>
         <key>Dialog.Commands.Routing.Common.Body.Error.DeletedSomeFailedElements</key>
