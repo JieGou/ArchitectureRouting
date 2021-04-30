@@ -22,6 +22,7 @@ namespace Arent3d.Architecture.Routing
   public sealed class Route : StorableBase
   {
     private string _routeName = "None" ;
+
     /// <summary>
     /// Unique identifier name of a route.
     /// </summary>
@@ -31,9 +32,8 @@ namespace Arent3d.Architecture.Routing
       set
       {
         var oldName = this._routeName ;
-        
         this._routeName = value ;
-        RenameAllDescendents(oldName, value);
+        RenameAllDescendents( oldName, value ) ;
       }
     }
 
@@ -73,14 +73,17 @@ namespace Arent3d.Architecture.Routing
     public MEPSystemClassification SystemClassification => GetMEPSystemType().SystemClassification ;
 
     private MEPSystemType? _overriddenSystemType = null ;
+
     public MEPSystemType GetMEPSystemType()
     {
       return _overriddenSystemType ?? RouteMEPSystem.GetSystemType( Document, GetReferenceConnector() ) ?? throw new InvalidOperationException() ;
     }
+
     public void SetMEPSystemType( MEPSystemType? systemType )
     {
       _overriddenSystemType = systemType ;
     }
+
     public MEPCurveType GetDefaultCurveType()
     {
       return RouteMEPSystem.GetMEPCurveType( Document, GetAllConnectors(), GetMEPSystemType() ) ;
@@ -234,21 +237,22 @@ namespace Arent3d.Architecture.Routing
 
     private void RenameAllDescendents( string oldName, string newRouteName )
     {
-      if ( oldName != "" && oldName !="None" ) {
-        var childBranches = GetChildBranches() ;
+      if ( oldName != "" && oldName != "None" ) {
+        var childBranches = RouteCache.Get( Document ).Values.Where( r => r._subRoutes.SelectMany( subRoute => subRoute.AllEndPoints ).Any( endPoint => endPoint.ParentBranch().Route?.RouteName == oldName ) ) ;
         foreach ( var route in childBranches ) {
-          var endPoint = route._subRoutes
-          .SelectMany( subRoute => subRoute.FromEndPoints.OfType<RouteEndPoint>() ).LastOrDefault( i => i.RouteName == oldName ) ;
+          var endPoint = route._subRoutes.SelectMany( subRoute => subRoute.FromEndPoints.OfType<RouteEndPoint>() ).LastOrDefault( i => i.RouteName == oldName ) ;
           // Update FromEndPoint's RouteName and save
-          endPoint?.UpdateRoute(newRouteName, endPoint.SubRouteIndex);
-          route.Save();
+          endPoint?.UpdateRoute( newRouteName, endPoint.SubRouteIndex ) ;
+          route.Save() ;
         }
-        var allElements = Document.GetAllElementsOfRouteName<Element>(oldName) ;
+
+        var allElements = Document.GetAllElementsOfRouteName<Element>( oldName ) ;
         foreach ( var element in allElements ) {
           // Rename element's RouteName Parameter 
           element.SetProperty( RoutingParameter.RouteName, newRouteName ) ;
         }
-        this.Save();
+
+        this.Save() ;
       }
     }
 
@@ -273,10 +277,7 @@ namespace Arent3d.Architecture.Routing
 
     private void CollectRelatedBranches( HashSet<Route> routes )
     {
-      AddChildren( routes, this, r =>
-      {
-        r.GetParentBranches().ForEach( parent => parent.CollectRelatedBranches( routes ) ) ;
-      } ) ;
+      AddChildren( routes, this, r => { r.GetParentBranches().ForEach( parent => parent.CollectRelatedBranches( routes ) ) ; } ) ;
     }
 
 
@@ -308,6 +309,7 @@ namespace Arent3d.Architecture.Routing
       foreach ( var route in routes ) {
         AddChildren( routeSet, route ) ;
       }
+
       return routeSet ;
     }
 
@@ -349,7 +351,7 @@ namespace Arent3d.Architecture.Routing
     {
       generator.SetSingle<string>( RouteNameField ) ;
       generator.SetArray<RouteSegment>( RouteSegmentsField ) ;
-      generator.SetSingle<ElementId>( MEPSystemField );
+      generator.SetSingle<ElementId>( MEPSystemField ) ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
