@@ -154,12 +154,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       _dockableWindow = dock ;
       FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
 
-      DockablePaneProviderData data = new DockablePaneProviderData();
-      data.FrameworkElement = dock as FrameworkElement;
-      data.InitialState = new DockablePaneState() ;
-      data.InitialState.DockPosition = DockPosition.Tabbed ;
-      data.InitialState.TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser;
-      
+      DockablePaneProviderData data = new DockablePaneProviderData { FrameworkElement = dock as FrameworkElement, InitialState = new DockablePaneState { DockPosition = DockPosition.Tabbed, TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser } } ;
+
       // Use unique guid identifier for this dockable pane
       _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
       
