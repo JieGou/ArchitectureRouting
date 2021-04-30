@@ -130,6 +130,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       _uiApp = uiApplication ;
       _dockableWindow?.CustomInitiator(uiApplication);
+      var dp = uiApplication.GetDockablePane( _dpid ) ;
+      dp.Show();
+      
       
       try {
         // subscribe document opend event
