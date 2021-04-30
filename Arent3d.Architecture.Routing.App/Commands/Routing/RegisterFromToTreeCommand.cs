@@ -91,6 +91,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       if ( _dockableWindow != null && _uiApp != null ) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
         FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
+        var dp = _uiApp.GetDockablePane( _dpid ) ;
+        dp.Show();
         //Initialize ShowFromToTreeButton
         RibbonHelper.ToggleShowFromToTreeCommandButton( _uiApp.GetDockablePane( _dpid ).IsShown() ) ;
       }
