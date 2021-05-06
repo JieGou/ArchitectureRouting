@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing
   /// </summary>
   [Guid( "83A448F4-E120-44E0-A220-F2D3F11B6A05" )]
   [StorableVisibility( AppInfo.VendorId )]
-  public sealed class Route : StorableBase
+  public sealed class Route : StorableBase, IEquatable<Route>
   {
     private string _routeName = "None" ;
 
@@ -31,9 +31,11 @@ namespace Arent3d.Architecture.Routing
       get => this._routeName ;
       set
       {
-        var oldName = this._routeName ;
+        //var oldName = this._routeName ;
+        RenameAllDescendents( this._routeName, value ) ;
+        
         this._routeName = value ;
-        RenameAllDescendents( oldName, value ) ;
+        
       }
     }
 
@@ -238,7 +240,7 @@ namespace Arent3d.Architecture.Routing
     private void RenameAllDescendents( string oldName, string newRouteName )
     {
       if ( oldName != "" && oldName != "None" ) {
-        var childBranches = RouteCache.Get( Document ).Values.Where( r => r._subRoutes.SelectMany( subRoute => subRoute.AllEndPoints ).Any( endPoint => endPoint.ParentBranch().Route?.RouteName == oldName ) ) ;
+        var childBranches = GetChildBranches() ;
         foreach ( var route in childBranches ) {
           var endPoint = route._subRoutes.SelectMany( subRoute => subRoute.FromEndPoints.OfType<RouteEndPoint>() ).LastOrDefault( i => i.RouteName == oldName ) ;
           // Update FromEndPoint's RouteName and save
@@ -369,5 +371,32 @@ namespace Arent3d.Architecture.Routing
     }
 
     #endregion
+
+    public bool Equals( Route? other )
+    {
+      if ( ReferenceEquals( null, other ) ) return false ;
+      if ( ReferenceEquals( this, other ) ) return true ;
+      return string.Equals( _routeName, other._routeName, StringComparison.InvariantCulture ) ;
+    }
+
+    public override bool Equals( object? obj )
+    {
+      return ReferenceEquals( this, obj ) || obj is Route other && Equals( other ) ;
+    }
+
+    public override int GetHashCode()
+    {
+      return StringComparer.InvariantCulture.GetHashCode( _routeName ) ;
+    }
+
+    public static bool operator ==( Route? left, Route? right )
+    {
+      return Equals( left, right ) ;
+    }
+
+    public static bool operator !=( Route? left, Route? right )
+    {
+      return ! Equals( left, right ) ;
+    }
   }
 }
