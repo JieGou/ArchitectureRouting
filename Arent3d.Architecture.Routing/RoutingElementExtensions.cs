@@ -112,7 +112,6 @@ namespace Arent3d.Architecture.Routing
       {
         Domain.DomainPiping => conn.PipeSystemType.ToString(),
         Domain.DomainHvac => conn.DuctSystemType.ToString(),
-        Domain.DomainElectrical => conn.ElectricalSystemType.ToString(),
         Domain.DomainCableTrayConduit => conn.ElectricalSystemType.ToString(),
         _ => string.Empty,
       } ;

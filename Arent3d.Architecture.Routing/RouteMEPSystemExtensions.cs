@@ -77,13 +77,12 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Get Target SystemTypeList
     /// </summary>
-    /// <param name="rms"></param>
     /// <param name="doc"></param>
-    /// <param name="systemClassification"></param>
+    /// <param name="systemClassificationInfo"></param>
     /// <returns></returns>
-    public static IEnumerable<MEPSystemType> GetSystemTypes( this Document doc, MEPSystemClassification systemClassification )
+    public static IEnumerable<MEPSystemType> GetSystemTypes( this Document doc, MEPSystemClassificationInfo systemClassificationInfo )
     {
-      return doc.GetAllElements<MEPSystemType>().Where( s => RouteMEPSystem.IsCompatibleMEPSystemType( s, systemClassification ) ).Select( s => s ) ;
+      return doc.GetAllElements<MEPSystemType>().Where( systemClassificationInfo.IsCompatibleTo ) ;
     }
 
     /// <summary>
@@ -121,7 +120,7 @@ namespace Arent3d.Architecture.Routing
 
       AddAllSystemClassifications<PipeSystemType>( dir, Domain.DomainPiping ) ;
       AddAllSystemClassifications<DuctSystemType>( dir, Domain.DomainHvac ) ;
-      AddAllSystemClassifications<ElectricalSystemType>( dir, Domain.DomainElectrical ) ;
+      AddAllSystemClassifications<ElectricalSystemType>( dir, Domain.DomainCableTrayConduit ) ;
 
       return dir ;
     }
