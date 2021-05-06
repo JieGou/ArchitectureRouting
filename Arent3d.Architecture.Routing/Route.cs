@@ -28,11 +28,9 @@ namespace Arent3d.Architecture.Routing
       get => this._routeName ;
       set
       {
-        //var oldName = this._routeName ;
         RenameAllDescendents( this._routeName, value ) ;
         
         this._routeName = value ;
-        
       }
     }
 
@@ -167,12 +165,12 @@ namespace Arent3d.Architecture.Routing
       }
 
       if ( null != _systemClassificationInfo ) {
-        if ( fromEndPoint.GetReferenceConnector() is { } conn1 && ! _systemClassificationInfo.IsCompatibleTo( conn1 ) ) return false ;
-        if ( toEndPoint.GetReferenceConnector() is { } conn2 && ! _systemClassificationInfo.IsCompatibleTo( conn2 ) ) return false ;
+        if ( GetMEPSystemClassification( fromEndPoint ) is { } classification1 && ! _systemClassificationInfo.IsCompatibleTo( classification1 ) ) return false ;
+        if ( GetMEPSystemClassification( toEndPoint ) is { } classification2 && ! _systemClassificationInfo.IsCompatibleTo( classification2 ) ) return false ;
       }
       else {
-        var classification1 = fromEndPoint.GetReferenceConnector() is { } conn1 ? MEPSystemClassificationInfo.From( conn1 ) : null ;
-        var classification2 = fromEndPoint.GetReferenceConnector() is { } conn2 ? MEPSystemClassificationInfo.From( conn2 ) : null ;
+        var classification1 = GetMEPSystemClassification( fromEndPoint ) ;
+        var classification2 = GetMEPSystemClassification( toEndPoint ) ;
         if ( null != classification1 && null != classification2 && ! classification1.IsCompatibleTo( classification2 ) ) return false ;
         _systemClassificationInfo = classification1 ?? classification2 ;
       }
@@ -220,6 +218,15 @@ namespace Arent3d.Architecture.Routing
 
       _routeSegments.Add( segment ) ;
       return true ;
+    }
+
+    private static MEPSystemClassificationInfo? GetMEPSystemClassification( IEndPoint endPoint )
+    {
+      return endPoint switch
+      {
+        ConnectorEndPoint c => c.GetConnector() is { } conn ? MEPSystemClassificationInfo.From( conn ) : null,
+        _ => null,
+      } ;
     }
 
     /// <summary>

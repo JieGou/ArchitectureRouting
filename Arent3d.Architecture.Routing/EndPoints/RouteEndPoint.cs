@@ -33,6 +33,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public string RouteName { get ; private set ; } = null! ;
     public int SubRouteIndex { get ; private set ; }
 
+    public Route? GetRoute() => ParentBranch().Route ;
     public SubRoute? GetSubRoute() => ParentBranch().SubRoute ;
 
     public void UpdateRoute( string routeName, int subRouteIndex )
