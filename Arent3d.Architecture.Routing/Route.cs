@@ -19,9 +19,10 @@ namespace Arent3d.Architecture.Routing
   /// </summary>
   [Guid( "83A448F4-E120-44E0-A220-F2D3F11B6A05" )]
   [StorableVisibility( AppInfo.VendorId )]
-  public sealed class Route : StorableBase
+  public sealed class Route : StorableBase, IEquatable<Route>
   {
     private string _routeName = "None" ;
+
     /// <summary>
     /// Unique identifier name of a route.
     /// </summary>
@@ -30,10 +31,11 @@ namespace Arent3d.Architecture.Routing
       get => this._routeName ;
       set
       {
-        var oldName = this._routeName ;
+        //var oldName = this._routeName ;
+        RenameAllDescendents( this._routeName, value ) ;
         
         this._routeName = value ;
-        RenameAllDescendents(oldName, value);
+        
       }
     }
 
@@ -73,14 +75,17 @@ namespace Arent3d.Architecture.Routing
     public MEPSystemClassification SystemClassification => GetMEPSystemType().SystemClassification ;
 
     private MEPSystemType? _overriddenSystemType = null ;
+
     public MEPSystemType GetMEPSystemType()
     {
       return _overriddenSystemType ?? RouteMEPSystem.GetSystemType( Document, GetReferenceConnector() ) ?? throw new InvalidOperationException() ;
     }
+
     public void SetMEPSystemType( MEPSystemType? systemType )
     {
       _overriddenSystemType = systemType ;
     }
+
     public MEPCurveType GetDefaultCurveType()
     {
       return RouteMEPSystem.GetMEPCurveType( Document, GetAllConnectors(), GetMEPSystemType() ) ;
@@ -234,21 +239,22 @@ namespace Arent3d.Architecture.Routing
 
     private void RenameAllDescendents( string oldName, string newRouteName )
     {
-      if ( oldName != "" && oldName !="None" ) {
+      if ( oldName != "" && oldName != "None" ) {
         var childBranches = GetChildBranches() ;
         foreach ( var route in childBranches ) {
-          var endPoint = route._subRoutes
-          .SelectMany( subRoute => subRoute.FromEndPoints.OfType<RouteEndPoint>() ).LastOrDefault( i => i.RouteName == oldName ) ;
+          var endPoint = route._subRoutes.SelectMany( subRoute => subRoute.FromEndPoints.OfType<RouteEndPoint>() ).LastOrDefault( i => i.RouteName == oldName ) ;
           // Update FromEndPoint's RouteName and save
-          endPoint?.UpdateRoute(newRouteName, endPoint.SubRouteIndex);
-          route.Save();
+          endPoint?.UpdateRoute( newRouteName, endPoint.SubRouteIndex ) ;
+          route.Save() ;
         }
-        var allElements = Document.GetAllElementsOfRouteName<Element>(oldName) ;
+
+        var allElements = Document.GetAllElementsOfRouteName<Element>( oldName ) ;
         foreach ( var element in allElements ) {
           // Rename element's RouteName Parameter 
           element.SetProperty( RoutingParameter.RouteName, newRouteName ) ;
         }
-        this.Save();
+
+        this.Save() ;
       }
     }
 
@@ -273,10 +279,7 @@ namespace Arent3d.Architecture.Routing
 
     private void CollectRelatedBranches( HashSet<Route> routes )
     {
-      AddChildren( routes, this, r =>
-      {
-        r.GetParentBranches().ForEach( parent => parent.CollectRelatedBranches( routes ) ) ;
-      } ) ;
+      AddChildren( routes, this, r => { r.GetParentBranches().ForEach( parent => parent.CollectRelatedBranches( routes ) ) ; } ) ;
     }
 
 
@@ -308,6 +311,7 @@ namespace Arent3d.Architecture.Routing
       foreach ( var route in routes ) {
         AddChildren( routeSet, route ) ;
       }
+
       return routeSet ;
     }
 
@@ -349,7 +353,7 @@ namespace Arent3d.Architecture.Routing
     {
       generator.SetSingle<string>( RouteNameField ) ;
       generator.SetArray<RouteSegment>( RouteSegmentsField ) ;
-      generator.SetSingle<ElementId>( MEPSystemField );
+      generator.SetSingle<ElementId>( MEPSystemField ) ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
@@ -367,5 +371,32 @@ namespace Arent3d.Architecture.Routing
     }
 
     #endregion
+
+    public bool Equals( Route? other )
+    {
+      if ( ReferenceEquals( null, other ) ) return false ;
+      if ( ReferenceEquals( this, other ) ) return true ;
+      return string.Equals( _routeName, other._routeName, StringComparison.InvariantCulture ) ;
+    }
+
+    public override bool Equals( object? obj )
+    {
+      return ReferenceEquals( this, obj ) || obj is Route other && Equals( other ) ;
+    }
+
+    public override int GetHashCode()
+    {
+      return StringComparer.InvariantCulture.GetHashCode( _routeName ) ;
+    }
+
+    public static bool operator ==( Route? left, Route? right )
+    {
+      return Equals( left, right ) ;
+    }
+
+    public static bool operator !=( Route? left, Route? right )
+    {
+      return ! Equals( left, right ) ;
+    }
   }
 }
