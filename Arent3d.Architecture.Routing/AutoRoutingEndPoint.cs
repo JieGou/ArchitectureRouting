@@ -39,9 +39,9 @@ namespace Arent3d.Architecture.Routing
       PipeCondition = new RouteCondition( routeMepSystem, endPoint, edgeDiameter ) ;
     }
 
-    public Vector3d Position => EndPoint.RoutingStartPosition.To3d() + _minimumStraightLength * Direction.ForEndPointType( IsStart ) ;
+    public Vector3d Position => EndPoint.RoutingStartPosition.To3dRaw() + _minimumStraightLength * Direction.ForEndPointType( IsStart ) ;
 
-    public Vector3d Direction => Sanitize( EndPoint.GetRoutingDirection( IsStart ).To3d() ) ;
+    public Vector3d Direction => Sanitize( EndPoint.GetRoutingDirection( IsStart ).To3dRaw() ) ;
 
     private static readonly Vector3d[] SanitizationDirections =
     {

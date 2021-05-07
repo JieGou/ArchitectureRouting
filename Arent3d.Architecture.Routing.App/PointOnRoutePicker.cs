@@ -104,14 +104,14 @@ namespace Arent3d.Architecture.Routing.App
       var to = curve.GetRoutingConnectors( false ).FirstOrDefault() ;
       if ( null == to ) return ( null, null ) ;
 
-      var o = from.Origin.To3d() ;
-      var dir = to.Origin.To3d() - o ;
+      var o = from.Origin.To3dRaw() ;
+      var dir = to.Origin.To3dRaw() - o ;
       var tole = curve.Document.Application.VertexTolerance ;
       if ( dir.sqrMagnitude < tole * tole ) return ( null, null ) ;
 
       var line = new MathLib.Line( o, dir ) ;
-      var dist = line.DistanceTo( position.To3d(), 0 ) ;
-      return ( Position: dist.PointOnSelf.ToXYZ(), Direction: dir.normalized.ToXYZ() ) ;
+      var dist = line.DistanceTo( position.To3dRaw(), 0 ) ;
+      return ( Position: dist.PointOnSelf.ToXYZRaw(), Direction: dir.normalized.ToXYZRaw() ) ;
     }
 
     private static (XYZ Position, XYZ Direction) ToPositionAndDirection( Transform transform )
