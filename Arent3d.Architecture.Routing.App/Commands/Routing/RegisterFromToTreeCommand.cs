@@ -118,10 +118,11 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var routingTransactions = new List<string>
       {
         "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ),
-        "TransactionName.Commands.Routing.Common.PickRouting".GetAppStringByKeyOrDefault( "Pick\nFrom-To" ),
-        "TransactionName.Commands.Routing.Common.EraseSelectedRoutes".GetAppStringByKeyOrDefault( "Delete\nFrom-To" ),
-        "TransactionName.Commands.Routing.Common.EraseAllRoutes".GetAppStringByKeyOrDefault( "Delete\nAll From-To" ),
-        "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" )
+        "TransactionName.Commands.Routing.PickRouting".GetAppStringByKeyOrDefault( "Add From-To" ),
+        "TransactionName.Commands.Routing.EraseSelectedRoutes".GetAppStringByKeyOrDefault( "Erase Selected" ),
+        "TransactionName.Commands.Routing.EraseAllRoutes".GetAppStringByKeyOrDefault( "Erase All From-Tos" ),
+        "TransactionName.Commands.Routing.PickAndReRoute".GetAppStringByKeyOrDefault("Reroute All"),
+        "TransactionName.Commands.Routing.RerouteAll".GetAppStringByKeyOrDefault("Reroute Selected"),
       } ;
 
       return routingTransactions.Contains( t ) ;

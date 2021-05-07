@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
 {
   public class MonitorSelectionCommandEnabler : IExternalCommandAvailability
   {
-    private ElementId? PreviousSelectedRouteElementId = null ;
+    private ElementId? _previousSelectedRouteElementId = null ;
 
     public bool IsCommandAvailable( UIApplication uiApp, CategorySet selectedCategories )
     {
@@ -27,22 +27,22 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
       // if route selected
       if ( selectedRoutes.FirstOrDefault() is {} selectedRoute ) {
         selectedElementId = selectedRoute.OwnerElement?.Id ;
-        if ( selectedElementId != PreviousSelectedRouteElementId ) {
+        if ( selectedElementId != _previousSelectedRouteElementId ) {
           FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
         }
-        PreviousSelectedRouteElementId = selectedElementId ; ;
+        _previousSelectedRouteElementId = selectedElementId ; ;
       }
       
       // if Connector selected
       else if ( uiDoc.Document.CollectRoutes().SelectMany( r => r.GetAllConnectors() ).Any( c => uiDoc.Selection.GetElementIds().Contains( c.Owner.Id ) ) ) {
         selectedElementId = uiDoc.Selection.GetElementIds().FirstOrDefault() ;
         FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
-        PreviousSelectedRouteElementId = selectedElementId ;
+        _previousSelectedRouteElementId = selectedElementId ;
       }
 
-      else if ( PreviousSelectedRouteElementId != null ) {
+      else if ( _previousSelectedRouteElementId != null ) {
         FromToTreeViewModel.ClearSelection() ;
-        PreviousSelectedRouteElementId = null ;
+        _previousSelectedRouteElementId = null ;
       }
 
 
