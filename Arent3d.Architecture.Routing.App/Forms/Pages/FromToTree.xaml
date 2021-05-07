@@ -7,7 +7,7 @@
       mc:Ignorable="d"
       Title="FromToTree"
       x:Name="root"
-      Height="Auto" Width="Auto" Background="White" LayoutUpdated="root_LayoutUpdated">
+      Height="Auto" Width="Auto" Background="White" >
     <Grid Background="White" Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
