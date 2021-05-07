@@ -13,10 +13,10 @@ namespace Arent3d.Architecture.Routing
   /// </remarks>
   public static class InterconversionExtensions
   {
-    public static Vector3d To3d( this XYZ xyz ) => new( xyz.X, xyz.Y, xyz.Z ) ;
-    public static Box3d To3d( this BoundingBoxXYZ xyz ) => new( xyz.Min.To3d(), xyz.Max.To3d() ) ;
+    public static Vector3d To3dRaw( this XYZ xyz ) => new( xyz.X, xyz.Y, xyz.Z ) ;
+    public static Box3d To3dRaw( this BoundingBoxXYZ xyz ) => new( xyz.Min.To3dRaw(), xyz.Max.To3dRaw() ) ;
 
-    public static XYZ ToXYZ( this Vector3d vec ) => new( vec.x, vec.y, vec.z ) ;
+    public static XYZ ToXYZRaw( this Vector3d vec ) => new( vec.x, vec.y, vec.z ) ;
 
     public static IPipeDiameter DiameterValueToPipeDiameter( this double diameter )
     {

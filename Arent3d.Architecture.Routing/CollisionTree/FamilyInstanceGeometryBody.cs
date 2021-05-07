@@ -40,7 +40,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 
     public Box3d GetGlobalGeometryBox()
     {
-      return FamilyInstance.get_BoundingBox( _view ).To3d() ;
+      return FamilyInstance.get_BoundingBox( _view ).To3dRaw() ;
     }
 
     public IRouteCondition? GetRouteCondition()

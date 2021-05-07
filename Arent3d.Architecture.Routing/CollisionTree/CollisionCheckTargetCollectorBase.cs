@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     public bool IsTargetGeometryElement( GeometryElement gElm )
     {
       // FIXME: fake implementation
-      var (min, max) = gElm.GetBoundingBox().To3d() ;
+      var (min, max) = gElm.GetBoundingBox().To3dRaw() ;
 
       if ( min.z < 30 || 60 < max.z ) return false ;
       if ( min.x < -20 || 100 < max.x ) return false ;

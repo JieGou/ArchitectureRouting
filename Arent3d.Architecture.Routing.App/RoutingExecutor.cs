@@ -39,7 +39,7 @@ namespace Arent3d.Architecture.Routing.App
 
       racks.Clear() ;
       foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
-        var (min, max) = familyInstance.get_BoundingBox( view ).To3d() ;
+        var (min, max) = familyInstance.get_BoundingBox( view ).To3dRaw() ;
 
         racks.AddRack( new Rack.Rack { Box = new Box3d( min, max ), IsMainRack = true, BeamInterval = 5 } ) ;
       }

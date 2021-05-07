@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 
         if ( false == collector.IsTargetGeometryElement( geom ) ) continue ;
 
-        yield return ( element.Id, geom.GetBoundingBox().To3d() ) ;
+        yield return ( element.Id, geom.GetBoundingBox().To3dRaw() ) ;
       }
     }
 

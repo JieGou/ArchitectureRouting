@@ -94,8 +94,8 @@ namespace Arent3d.Architecture.Routing
     /// <returns>Newly created duct.</returns>
     public Element CreateEdgeElement( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo )
     {
-      var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZ() ;
-      var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZ() ;
+      var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZRaw() ;
+      var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZRaw() ;
 
       var baseConnector = ( routeEdge.LineInfo as AutoRoutingEndPoint )?.EndPoint.GetReferenceConnector() ?? _autoRoutingTarget.GetSubRoute( routeEdge ).GetReferenceConnector() ;
       if ( null == baseConnector ) throw new InvalidOperationException() ;
@@ -233,8 +233,8 @@ namespace Arent3d.Architecture.Routing
         return ( false, null ) ;
       }
 
-      var dir1 = connector1.CoordinateSystem.BasisZ.To3d() ;
-      var dir2 = connector2.CoordinateSystem.BasisZ.To3d() ;
+      var dir1 = connector1.CoordinateSystem.BasisZ.To3dRaw() ;
+      var dir2 = connector2.CoordinateSystem.BasisZ.To3dRaw() ;
 
       if ( 0.9 < Math.Abs( Vector3d.Dot( dir1, dir2 ) ) ) {
         // Connect directly(-1) or bad connection(+1)
@@ -536,7 +536,7 @@ namespace Arent3d.Architecture.Routing
     private static (Vector3d From, Vector3d To) GetLine( Connector connector )
     {
       var another = GetAnotherMEPCurveConnector( connector ) ?? throw new InvalidOperationException() ;
-      return ( From: connector.Origin.To3d(), To: another.Origin.To3d() ) ;
+      return ( From: connector.Origin.To3dRaw(), To: another.Origin.To3dRaw() ) ;
     }
 
     private static Connector? GetAnotherMEPCurveConnector( Connector connector )
