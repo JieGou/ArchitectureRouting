@@ -70,7 +70,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         DiameterIndex = Diameters.FindIndexByVertexTolerance( diameter, Doc ) ;
 
         //System Type Info(PipingSystemType in lookup)
-        SystemTypes = Doc.GetSystemTypes( subRoute.Route.SystemClassification ).OrderBy( s => s.Name ).ToList() ;
+        SystemTypes = Doc.GetSystemTypes( subRoute.Route.SystemClassificationInfo ).OrderBy( s => s.Name ).ToList() ;
         var systemTypeId = subRoute.Route.GetMEPSystemType().GetValidId() ;
         SystemTypeIndex = SystemTypes.FindIndex( s => s.Id == systemTypeId ) ;
 

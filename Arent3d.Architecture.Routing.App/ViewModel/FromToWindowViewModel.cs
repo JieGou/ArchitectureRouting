@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       var fromToItemsList = new ObservableCollection<FromToWindow.FromToItems>() ;
 
       foreach ( var route in allRoutes ) {
-        var systemTypeList = new ObservableCollection<MEPSystemType>( uiDocument.Document.GetSystemTypes( route.SystemClassification ).OrderBy( s => s.Name ).ToList() ) ;
+        var systemTypeList = new ObservableCollection<MEPSystemType>( uiDocument.Document.GetSystemTypes( route.SystemClassificationInfo ).OrderBy( s => s.Name ).ToList() ) ;
         var systemTypeId = route.GetMEPSystemType().GetValidId() ;
         int systemTypeIndex = systemTypeList.FindIndex( s => s.Id == systemTypeId ) ;
         var curveTypeList = new ObservableCollection<MEPCurveType>( uiDocument.Document.GetCurveTypes( route.UniqueCurveType ).OrderBy( s => s.Name ).ToList() ) ;

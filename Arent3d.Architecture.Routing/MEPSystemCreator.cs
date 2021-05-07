@@ -108,7 +108,7 @@ namespace Arent3d.Architecture.Routing
         Domain.DomainHvac => CreateDuct( startPos, endPos, routeMepSystem ),
         Domain.DomainPiping => CreatePipe( startPos, endPos, routeMepSystem ),
         Domain.DomainCableTrayConduit => CreateCableTray( startPos, endPos, routeMepSystem ),
-        Domain.DomainElectrical => throw new InvalidOperationException(), // TODO
+        Domain.DomainElectrical => throw new NotSupportedException(),
         _ => throw new InvalidOperationException(),
       } ;
 

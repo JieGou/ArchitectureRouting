@@ -8,9 +8,6 @@ using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Electrical ;
-using Autodesk.Revit.DB.Mechanical ;
-using Autodesk.Revit.DB.Plumbing ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -31,11 +28,9 @@ namespace Arent3d.Architecture.Routing
       get => this._routeName ;
       set
       {
-        //var oldName = this._routeName ;
         RenameAllDescendents( this._routeName, value ) ;
         
         this._routeName = value ;
-        
       }
     }
 
@@ -70,9 +65,10 @@ namespace Arent3d.Architecture.Routing
       return _subRoutes.SelectMany( subRoute => subRoute.ToEndPoints.OfType<ConnectorEndPoint>() ).FirstOrDefault() ;
     }
 
-    public Domain Domain => GetMEPSystemType().GetDomain() ;
+    public Domain Domain => SystemClassificationInfo.Domain ;
 
-    public MEPSystemClassification SystemClassification => GetMEPSystemType().SystemClassification ;
+    private MEPSystemClassificationInfo? _systemClassificationInfo = null ;
+    public MEPSystemClassificationInfo SystemClassificationInfo => _systemClassificationInfo ?? MEPSystemClassificationInfo.Undefined ;
 
     private MEPSystemType? _overriddenSystemType = null ;
 
@@ -122,6 +118,7 @@ namespace Arent3d.Architecture.Routing
       _subRouteMap.Clear() ;
       _routeSegments.Clear() ;
       _subRoutes.Clear() ;
+      _systemClassificationInfo = null ;
       _overriddenSystemType = null ;
     }
 
@@ -167,6 +164,17 @@ namespace Arent3d.Architecture.Routing
         return false ;
       }
 
+      if ( null != _systemClassificationInfo ) {
+        if ( GetMEPSystemClassification( fromEndPoint ) is { } classification1 && ! _systemClassificationInfo.IsCompatibleTo( classification1 ) ) return false ;
+        if ( GetMEPSystemClassification( toEndPoint ) is { } classification2 && ! _systemClassificationInfo.IsCompatibleTo( classification2 ) ) return false ;
+      }
+      else {
+        var classification1 = GetMEPSystemClassification( fromEndPoint ) ;
+        var classification2 = GetMEPSystemClassification( toEndPoint ) ;
+        if ( null != classification1 && null != classification2 && ! classification1.IsCompatibleTo( classification2 ) ) return false ;
+        _systemClassificationInfo = classification1 ?? classification2 ;
+      }
+
       if ( false == _subRouteMap.TryGetValue( ( fromEndPoint.Key, true ), out var subRoute1 ) ) subRoute1 = null ;
       if ( false == _subRouteMap.TryGetValue( ( toEndPoint.Key, false ), out var subRoute2 ) ) subRoute2 = null ;
 
@@ -210,6 +218,15 @@ namespace Arent3d.Architecture.Routing
 
       _routeSegments.Add( segment ) ;
       return true ;
+    }
+
+    private static MEPSystemClassificationInfo? GetMEPSystemClassification( IEndPoint endPoint )
+    {
+      return endPoint switch
+      {
+        ConnectorEndPoint c => c.GetConnector() is { } conn ? MEPSystemClassificationInfo.From( conn ) : null,
+        _ => null,
+      } ;
     }
 
     /// <summary>
@@ -348,12 +365,14 @@ namespace Arent3d.Architecture.Routing
     private const string RouteNameField = "RouteName" ;
     private const string RouteSegmentsField = "RouteSegments" ;
     private const string MEPSystemField = "MEPSystem" ;
+    private const string MEPSystemClassificationInfoField = "MEPSystemClassificationInfo" ;
 
     protected override void SetupAllFields( FieldGenerator generator )
     {
       generator.SetSingle<string>( RouteNameField ) ;
       generator.SetArray<RouteSegment>( RouteSegmentsField ) ;
       generator.SetSingle<ElementId>( MEPSystemField ) ;
+      generator.SetSingle<string>( MEPSystemClassificationInfoField ) ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
@@ -361,6 +380,7 @@ namespace Arent3d.Architecture.Routing
       RouteName = reader.GetSingle<string>( RouteNameField ) ;
       reader.GetArray<RouteSegment>( RouteSegmentsField ).ForEach( segment => RegisterSegment( segment, false ) ) ;
       SetMEPSystemType( Document.GetElementById<MEPSystemType>( reader.GetSingle<ElementId>( MEPSystemField ) ) ) ;
+      _systemClassificationInfo = MEPSystemClassificationInfo.Deserialize( reader.GetSingle<string>( MEPSystemClassificationInfoField ) ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
@@ -368,6 +388,7 @@ namespace Arent3d.Architecture.Routing
       writer.SetSingle( RouteNameField, RouteName ) ;
       writer.SetArray( RouteSegmentsField, _routeSegments ) ;
       writer.SetSingle( MEPSystemField, GetMEPSystemType().GetValidId() ) ;
+      writer.SetSingle( MEPSystemClassificationInfoField, SystemClassificationInfo.Serialize() ) ;
     }
 
     #endregion

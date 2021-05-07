@@ -122,39 +122,19 @@ namespace Arent3d.Architecture.Routing
 
     public static MEPSystemType? GetSystemType( Document document, Connector connector )
     {
-      var systemClassification = GetSystemClassification( connector ) ;
+      var systemClassification = GetSystemClassificationInfo( connector ) ;
 
-      return document.GetAllElements<MEPSystemType>().FirstOrDefault( type => IsCompatibleMEPSystemType( type, systemClassification ) ) ;
+      return document.GetAllElements<MEPSystemType>().FirstOrDefault( systemClassification.IsCompatibleTo ) ;
     }
 
     public static bool IsCompatibleMEPSystemType( MEPSystemType type, MEPSystemClassification systemClassification )
     {
       return ( type.SystemClassification == systemClassification ) ;
     }
-    
-    public static MEPSystemClassification GetSystemClassification( Connector connector )
-    {
-      return connector.Domain switch
-      {
-        Domain.DomainPiping => GetSystemClassification( connector.PipeSystemType ),
-        Domain.DomainHvac => GetSystemClassification( connector.DuctSystemType ),
-        Domain.DomainElectrical => GetSystemClassification( connector.ElectricalSystemType ),
-        Domain.DomainCableTrayConduit => GetSystemClassification( connector.ElectricalSystemType ),
-        _ => null,
-      } ?? throw new KeyNotFoundException() ;
-    }
-    private static MEPSystemClassification? GetSystemClassification<T>( T systemType ) where T : Enum
-    {
-      try {
-        if ( Enum.TryParse( systemType.ToString(), out MEPSystemClassification result ) ) {
-          return result ;
-        }
 
-        return null ;
-      }
-      catch {
-        return null ;
-      }
+    private static MEPSystemClassificationInfo GetSystemClassificationInfo( Connector connector )
+    {
+      return MEPSystemClassificationInfo.From( connector ) ?? throw new KeyNotFoundException() ;
     }
 
     #endregion
@@ -214,7 +194,7 @@ namespace Arent3d.Architecture.Routing
     {
       var diameterTolerance = document.Application.VertexTolerance ;
       HashSet<int>? available = null ;
-      foreach ( var connector in connectors.Where( c => IsCompatibleMEPSystemType( systemType, GetSystemClassification( c ) ) ) ) {
+      foreach ( var connector in connectors.Where( c => GetSystemClassificationInfo( c ).IsCompatibleTo( systemType ) ) ) {
         var (concreteType, isCompatibleType) = GetIsCompatibleFunc( connector, diameterTolerance ) ;
         var curveTypes = document.GetAllElements<MEPCurveType>( concreteType ).Where( isCompatibleType ).Select( e => e.Id.IntegerValue ) ;
         if ( null == available ) {
