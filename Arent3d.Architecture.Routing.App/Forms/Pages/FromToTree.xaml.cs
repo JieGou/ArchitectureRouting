@@ -75,6 +75,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       ClearSelectedItem() ;
       SelectedFromTo.ClearDialog() ;
+      this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false };
     }
 
     /// <summary>
@@ -198,7 +199,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       if ( selectedItem is FromToItem selectedFromToItem ) {
         selectedFromToItem.OnSelected() ;
-        
+        SelectedFromToViewModel.FromToItem = selectedFromToItem;
+
         if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && selectedFromToItem.ItemTag == "Route") {
 
           this.DataContext = new { IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = selectedFromToItem.IsRootRoute, IsEnableCurveType = selectedFromToItem.IsRootRoute };

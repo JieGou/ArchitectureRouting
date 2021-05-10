@@ -18,7 +18,8 @@
                 Width="60" Height="30"
                 Grid.Column="0"
                 Margin="2,0,2,0"
-                Click="Left_OnClick" />
+                Click="Left_OnClick"
+                IsEnabled="{Binding IsEnableLeftButton, ElementName=root}" />
         <Button x:Name="Right" Content="{Binding RightButton, ElementName=root}" 
                 Width="60" Height="30"
                 Grid.Column="1"
