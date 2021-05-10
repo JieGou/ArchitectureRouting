@@ -83,11 +83,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     private void Application_DocumentOpened( object sender, Autodesk.Revit.DB.Events.DocumentOpenedEventArgs e )
     {
       // provide ExternalCommandData object to dockable page
-      if ( _dockableWindow != null && _uiApp != null ) {
+      if ( _dockableWindow != null && _uiApp != null && _dp != null) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
         FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
-        var dp = _uiApp.GetDockablePane( _dpid ) ;
-        dp.Show();
+        _dp.Show();
       }
     }
 
