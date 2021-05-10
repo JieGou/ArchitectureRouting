@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
@@ -11,10 +10,8 @@ using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
-using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
-using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
@@ -28,6 +25,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     FromToTree? _dockableWindow = null ;
     UIApplication? _uiApp = null ;
     DockablePaneId _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
+    DockablePane? _dp = null ;
 
     /// <summary>
     /// Executes the specIfied command Data
@@ -50,9 +48,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
         //Initialize TreeView
         _dockableWindow.CustomInitiator( _uiApp ) ;
-
-        //Initialize ShowFromToTreeButton
-        RibbonHelper.ToggleShowFromToTreeCommandButton( _uiApp.GetDockablePane( _dpid ).IsShown() ) ;
 
         // Get Selected Routes
         var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( _uiApp.ActiveUIDocument ).EnumerateAll() ;
@@ -88,13 +83,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     private void Application_DocumentOpened( object sender, Autodesk.Revit.DB.Events.DocumentOpenedEventArgs e )
     {
       // provide ExternalCommandData object to dockable page
-      if ( _dockableWindow != null && _uiApp != null ) {
+      if ( _dockableWindow != null && _uiApp != null && _dp != null) {
         _dockableWindow.CustomInitiator( _uiApp ) ;
         FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
-        var dp = _uiApp.GetDockablePane( _dpid ) ;
-        dp.Show();
-        //Initialize ShowFromToTreeButton
-        RibbonHelper.ToggleShowFromToTreeCommandButton( _uiApp.GetDockablePane( _dpid ).IsShown() ) ;
+        _dp.Show();
       }
     }
 
@@ -133,8 +125,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       _uiApp = uiApplication ;
       _dockableWindow?.CustomInitiator(uiApplication);
-      var dp = uiApplication.GetDockablePane( _dpid ) ;
-      dp.Show();
+      _dp = uiApplication.GetDockablePane( _dpid ) ;
+      _dp.Show();
       
       
       try {
@@ -152,6 +144,19 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       return Result.Succeeded ;
     }
+    
+    /// <summary>
+    /// DockableVisibilityChanged event. Change UI Image.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="dockableFrameVisibilityChangedEventArgs"></param>
+    private void UIControlledApplication_DockableVisibilityChanged( object sender, DockableFrameVisibilityChangedEventArgs dockableFrameVisibilityChangedEventArgs )
+    {
+      if ( ! DockablePane.PaneExists( _dpid )) return;
+      if( _dp != null ) { 
+        RibbonHelper.ToggleShowFromToTreeCommandButton(dockableFrameVisibilityChangedEventArgs.DockableFrameShown );
+      }
+    }
 
     public void InitializeDockablePane( UIControlledApplication application )
     {
@@ -159,14 +164,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var dock = new FromToTree() ;
       _dockableWindow = dock ;
       FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
-
       DockablePaneProviderData data = new DockablePaneProviderData { FrameworkElement = dock as FrameworkElement, InitialState = new DockablePaneState { DockPosition = DockPosition.Tabbed, TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser } } ;
-
+      
       // Use unique guid identifier for this dockable pane
       _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
-      
       // register dockable pane
       application.RegisterDockablePane( _dpid, "From-To Tree", dock as IDockablePaneProvider) ;
+      // subscribe DockableFrameVisibilityChanged event
+      application.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>(UIControlledApplication_DockableVisibilityChanged) ;
     }
   }
 }
