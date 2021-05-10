@@ -27,8 +27,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         else {
           dp.Hide() ;
         }
-        // Toggle image 
-        RibbonHelper.ToggleShowFromToTreeCommandButton( dp.IsShown() ) ;
       }
       catch ( Exception e ) {
         TaskDialog.Show( "ShowFromToTreeCommand", e.Message ) ;

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel ;
 using System.Diagnostics ;
 using System.IO.Packaging ;
 using System.Linq ;
+using System.Threading.Tasks ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Input ;
@@ -468,16 +469,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
         }
 
         return result;
-    }
-
-    private void root_LayoutUpdated( object sender, EventArgs e )
-    {
-        var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() );
-        if ( ! DockablePane.PaneExists( dpid ) ) return;
-        var dp = UiDoc?.Application.GetDockablePane( dpid );
-        if( dp != null ) { 
-            RibbonHelper.ToggleShowFromToTreeCommandButton( dp.IsShown() );
-        }
     }
   }
 }
