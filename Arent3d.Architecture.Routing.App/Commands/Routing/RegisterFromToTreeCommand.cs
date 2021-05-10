@@ -153,9 +153,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     /// <param name="dockableFrameVisibilityChangedEventArgs"></param>
     private void UIControlledApplication_DockableVisibilityChanged( object sender, DockableFrameVisibilityChangedEventArgs dockableFrameVisibilityChangedEventArgs )
     {
-      if ( ! DockablePane.PaneExists( _dpid ) ) return;
+      if ( ! DockablePane.PaneExists( _dpid )) return;
       if( _dp != null ) { 
-        RibbonHelper.ToggleShowFromToTreeCommandButton( _dp.IsShown() );
+        RibbonHelper.ToggleShowFromToTreeCommandButton(dockableFrameVisibilityChangedEventArgs.DockableFrameShown );
       }
     }
 
@@ -166,10 +166,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       _dockableWindow = dock ;
       FromToTreeViewModel.FromToTreePanel = _dockableWindow ;
       DockablePaneProviderData data = new DockablePaneProviderData { FrameworkElement = dock as FrameworkElement, InitialState = new DockablePaneState { DockPosition = DockPosition.Tabbed, TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser } } ;
-
+      
       // Use unique guid identifier for this dockable pane
       _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
-      
       // register dockable pane
       application.RegisterDockablePane( _dpid, "From-To Tree", dock as IDockablePaneProvider) ;
       // subscribe DockableFrameVisibilityChanged event
