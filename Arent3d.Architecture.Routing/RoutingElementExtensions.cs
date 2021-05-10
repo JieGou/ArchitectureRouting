@@ -106,14 +106,15 @@ namespace Arent3d.Architecture.Routing
       return manager.Connectors.OfType<Connector>().Where( c => c.Id != id ) ;
     }
 
-    public static string GetSystemTypeName( this Connector conn )
+    public static int GetSystemType( this Connector conn )
     {
       return conn.Domain switch
       {
-        Domain.DomainPiping => conn.PipeSystemType.ToString(),
-        Domain.DomainHvac => conn.DuctSystemType.ToString(),
-        Domain.DomainCableTrayConduit => conn.ElectricalSystemType.ToString(),
-        _ => string.Empty,
+        Domain.DomainPiping => (int) conn.PipeSystemType,
+        Domain.DomainHvac => (int) conn.DuctSystemType,
+        Domain.DomainElectrical => (int) conn.ElectricalSystemType,
+        Domain.DomainCableTrayConduit => (int) MEPSystemClassification.CableTrayConduit,
+        _ => (int) MEPSystemClassification.UndefinedSystemClassification,
       } ;
     }
 
