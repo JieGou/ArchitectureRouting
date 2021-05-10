@@ -79,7 +79,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
         var name = systemType?.Name + "_" + nextIndex ;
 
-        var segment = new RouteSegment( fromEndPoint, toEndPoint, null, false ) ;
+        var segment = new RouteSegment( fromEndPoint, toEndPoint ) ;
         segment.ApplyRealNominalDiameter() ;
         routes.FindOrCreate( name ) ;
         list.Add( ( name, segment ) ) ;
@@ -111,10 +111,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       RouteSegment segment ;
       if ( anotherIndicatorIsFromSide ) {
-        segment = new RouteSegment( anotherEndPoint, routEndPoint, null, false ) ;
+        segment = new RouteSegment( anotherEndPoint, routEndPoint ) ;
       }
       else {
-        segment = new RouteSegment( routEndPoint, anotherEndPoint, null, false ) ;
+        segment = new RouteSegment( routEndPoint, anotherEndPoint ) ;
       }
 
       segment.ApplyRealNominalDiameter() ;
@@ -137,10 +137,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
         RouteSegment newSegment ;
         if ( newEndPointIndicatorIsFromSide ) {
-          newSegment = new RouteSegment( newEndPoint, segment.ToEndPoint, null, false ) ;
+          newSegment = new RouteSegment( newEndPoint, segment.ToEndPoint ) ;
         }
         else {
-          newSegment = new RouteSegment( segment.FromEndPoint, newEndPoint, null, false ) ;
+          newSegment = new RouteSegment( segment.FromEndPoint, newEndPoint ) ;
         }
 
         newSegment.ApplyRealNominalDiameter() ;
@@ -153,11 +153,11 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         RouteSegment newSegment ;
         if ( newEndPointIndicatorIsFromSide ) {
           var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( false ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-          newSegment = new RouteSegment( newEndPoint, terminateEndPoint, null, false ) ;
+          newSegment = new RouteSegment( newEndPoint, terminateEndPoint ) ;
         }
         else {
           var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( true ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-          newSegment = new RouteSegment( terminateEndPoint, newEndPoint, null, false ) ;
+          newSegment = new RouteSegment( terminateEndPoint, newEndPoint ) ;
         }
 
         newSegment.ApplyRealNominalDiameter() ;

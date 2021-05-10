@@ -180,7 +180,7 @@ namespace Arent3d.Architecture.Routing
         Priority = priority ;
         IsRoutingOnPipeRacks = ( 0 < documentData.RackCollection.RackCount ) && subRoute.IsRoutingOnPipeSpace ;
         AllowHorizontalBranches = documentData.AllowHorizontalBranches( subRoute ) ;
-        FixedBopHeight = null ;
+        FixedBopHeight = subRoute.FixedBopHeight ;
       }
 
       public bool IsRoutingOnPipeRacks { get ; }
@@ -190,11 +190,6 @@ namespace Arent3d.Architecture.Routing
 
       public bool AllowHorizontalBranches { get ; }
       public double? FixedBopHeight { get ; }
-
-      private static double GetHeight( Connector connector )
-      {
-        return connector.Origin.Z - connector.GetDiameter() * 0.5 ;
-      }
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints

@@ -1,6 +1,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -31,10 +32,13 @@ namespace Arent3d.Architecture.Routing.App
       var endPointDictionary = new EndPointDictionaryForImport( document ) ;
 
       await foreach ( var record in routeRecords ) {
-        var fromIndicator = endPointDictionary.GetEndPoint( record.RouteName, record.FromKey,EndPointExtensions.ParseEndPoint( document, record.FromEndType, record.FromEndParams ) ) ;
-        var toIndicator = endPointDictionary.GetEndPoint( record.RouteName, record.ToKey, EndPointExtensions.ParseEndPoint( document, record.ToEndType, record.ToEndParams ) ) ;
-        if ( null == fromIndicator || null == toIndicator ) continue ;
-        yield return ( record.RouteName, new RouteSegment( fromIndicator, toIndicator, record.NominalDiameter, record.IsRoutingOnPipeSpace ) ) ;
+        var fromEndPoint = endPointDictionary.GetEndPoint( record.RouteName, record.FromKey,EndPointExtensions.ParseEndPoint( document, record.FromEndType, record.FromEndParams ) ) ;
+        var toEndPoint = endPointDictionary.GetEndPoint( record.RouteName, record.ToKey, EndPointExtensions.ParseEndPoint( document, record.ToEndType, record.ToEndParams ) ) ;
+        if ( null == fromEndPoint || null == toEndPoint ) continue ;
+
+        var curveType = GetCurveType( document, record.CurveTypeName ) ;
+
+        yield return ( record.RouteName, new RouteSegment( fromEndPoint, toEndPoint, record.NominalDiameter, record.IsRoutingOnPipeSpace, record.FixedBopHeight ) { CurveType = curveType } ) ;
       }
     }
 
@@ -56,8 +60,22 @@ namespace Arent3d.Architecture.Routing.App
           ToEndType = toEndPoint.TypeName,
           ToEndParams = toEndPoint.ParameterString,
           NominalDiameter = segment.PreferredNominalDiameter,
+          CurveTypeName = GetCurveTypeName( segment.CurveType ),
+          FixedBopHeight = segment.FixedBopHeight,
         } ;
       }
+    }
+
+    private static MEPCurveType? GetCurveType( Document document, string curveTypeName )
+    {
+      return document.GetAllElements<MEPCurveType>().FirstOrDefault( ct => ct.Name == curveTypeName ) ;
+    }
+
+    private static string GetCurveTypeName( MEPCurveType? curveType )
+    {
+      if ( null == curveType ) return string.Empty ;
+
+      return curveType.Name ;
     }
   }
 }

@@ -51,6 +51,15 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
+    public double? FixedBopHeight => Segments.First().FixedBopHeight ;
+
+    public void ChangeFixedBopHeight( double? value )
+    {
+      foreach ( var seg in Segments ) {
+        seg.FixedBopHeight = value ;
+      }
+    }
+
     public MEPCurveType GetMEPCurveType()
     {
       return _routeSegments.Select( seg => seg.CurveType ).NonNull().FirstOrDefault() ?? Route.GetDefaultCurveType() ;
