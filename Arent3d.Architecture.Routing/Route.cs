@@ -28,9 +28,16 @@ namespace Arent3d.Architecture.Routing
       get => this._routeName ;
       set
       {
-        RenameAllDescendents( this._routeName, value ) ;
-        
-        this._routeName = value ;
+        var oldName = this._routeName ;
+        if ( oldName != "" && oldName != "None" ) {
+          RenameAllDescendents( oldName, value ) ;
+          
+          this._routeName = value ;
+          this.Save();
+        }
+        else {
+          this._routeName = value ;
+        }
       }
     }
 
@@ -270,8 +277,6 @@ namespace Arent3d.Architecture.Routing
           // Rename element's RouteName Parameter 
           element.SetProperty( RoutingParameter.RouteName, newRouteName ) ;
         }
-
-        this.Save() ;
       }
     }
 
