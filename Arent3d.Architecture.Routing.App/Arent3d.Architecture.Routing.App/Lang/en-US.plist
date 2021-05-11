@@ -129,11 +129,11 @@
         <key>TransactionName.Commands.ShowFromTreeCommand</key>
         <string>Show From-To Tree</string>
 
-        <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeight</key>
-        <string>Change Route Height</string>
-
         <key>TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand</key>
         <string>Rename RouteName</string>
+
+        <key>TransactionName.Commands.PostCommands.ApplyFixedBopHeightChangeCommand</key>
+        <string>Change Route Height</string>
 
 
         <!-- Dialogs -->

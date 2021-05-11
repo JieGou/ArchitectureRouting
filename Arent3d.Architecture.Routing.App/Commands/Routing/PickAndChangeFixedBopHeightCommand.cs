@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
@@ -10,23 +13,25 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "App.Commands.Routing.PickAndChangeFixedBopHeightCommand", DefaultString = "Change\nFixedBopHeight" )]
   [Image( "resources/MEP.ico" )]
-  public class PickAndChangeFixedBopHeightCommand : RoutingCommandBase
+  public class PickAndChangeFixedBopHeightCommand : IExternalCommand
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickAndChangeFixedBopHeight" ;
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
+    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      
+      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.PickAndChangeFixedBopHeight.Pick".GetAppStringByKeyOrDefault( null ) ) ;
 
-      if ( 0 < list.Count ) {
-        return Route.CollectAllDescendantBranches( list ).ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
-      }
-      else {
-        // newly select
-        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.PickAndReRoute.Pick".GetAppStringByKeyOrDefault( null ) ) ;
+      try {
 
-        return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
+        FixedBopHeightViewModel.ShowFixedBopHeightSettingDialog(uiDocument, pickInfo.Route);
+
+        return Result.Succeeded ;
       }
+      catch(Exception e) {
+        CommandUtils.DebugAlertException( e ) ;
+        return Result.Failed ;
+      }
+      
     }
-    
   }
 }
