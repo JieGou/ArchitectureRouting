@@ -18,13 +18,15 @@ namespace Arent3d.Architecture.Routing
     /// <param name="type"></param>
     /// <param name="diameterTolerance"></param>
     /// <returns></returns>
-    public static IList<double> GetNominalDiameters( this MEPCurveType type, double diameterTolerance )
+    public static List<double> GetNominalDiameters( this MEPCurveType type, double diameterTolerance )
     {
-      IList<double> resultList = new List<double>() ;
+      var resultList = new List<double>() ;
       var segment = type.GetTargetSegment() ;
       if ( segment != null ) {
         resultList = segment.GetSizes().Where( s => type.HasAnyNominalDiameter( s.NominalDiameter, diameterTolerance ) ).Select( s => s.NominalDiameter ).ToList() ;
       }
+
+      resultList.Sort() ;
 
       return resultList ;
     }
