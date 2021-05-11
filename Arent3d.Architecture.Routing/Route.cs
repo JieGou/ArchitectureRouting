@@ -82,9 +82,10 @@ namespace Arent3d.Architecture.Routing
       _overriddenSystemType = systemType ;
     }
 
+    private MEPCurveType? _defaultCurveType = null ;
     public MEPCurveType GetDefaultCurveType()
     {
-      return RouteMEPSystem.GetMEPCurveType( Document, GetAllConnectors(), GetMEPSystemType() ) ;
+      return _defaultCurveType ??= RouteMEPSystem.GetMEPCurveType( Document, GetAllConnectors(), GetMEPSystemType() ) ;
     }
 
 
@@ -120,6 +121,7 @@ namespace Arent3d.Architecture.Routing
       _subRoutes.Clear() ;
       _systemClassificationInfo = null ;
       _overriddenSystemType = null ;
+      _defaultCurveType = null ;
     }
 
     /// <summary>
