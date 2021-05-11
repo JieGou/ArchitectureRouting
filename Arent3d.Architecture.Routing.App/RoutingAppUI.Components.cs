@@ -52,6 +52,8 @@ namespace Arent3d.Architecture.Routing.App
     private readonly RibbonButton _exportRacksCommandButton ;
     private readonly RibbonButton _eraseAllRacksCommandButton ;
 
+    private readonly RibbonButton _pickAndChangeFixedBopHeightCommandButton ;
+
     private readonly RibbonButton _monitorSelectionCommandButton ;
 
     private readonly RegisterFromToTreeCommand _registerFromToTreeCommand;
@@ -82,6 +84,7 @@ namespace Arent3d.Architecture.Routing.App
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
 
+        _pickAndChangeFixedBopHeightCommandButton = routingPanel.AddButton<PickAndChangeFixedBopHeightCommand>() ;
         //_fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
         //_exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
       }
@@ -129,6 +132,7 @@ namespace Arent3d.Architecture.Routing.App
       _replaceFromToCommandButton.Enabled = false ;
       _showFromToWindowCommandButton.Enabled = false ;
       _showFromToTreeCommandButton.Enabled = false ;
+      _pickAndChangeFixedBopHeightCommandButton.Enabled = false ;
 
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
@@ -161,6 +165,8 @@ namespace Arent3d.Architecture.Routing.App
       _replaceFromToCommandButton.Enabled = setupIsDone ;
       _showFromToWindowCommandButton.Enabled = setupIsDone ;
       _showFromToTreeCommandButton.Enabled = setupIsDone ;
+      _pickAndChangeFixedBopHeightCommandButton.Enabled = setupIsDone ;
+      
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;

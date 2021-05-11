@@ -76,6 +76,9 @@
         <key>App.Commands.Routing.ShowFromTreeCommand</key>
         <string>From-To&#xA;Tree</string>
 
+        <key>App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
+        <string>Change&#xA;FixedBopHeight</string>
+
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -124,6 +127,9 @@
 
         <key>TransactionName.Commands.ShowFromTreeCommand</key>
         <string>From-Toツリーを表示</string>
+
+        <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeight</key>
+        <string>ルート高さを変更</string>
 
         <key>TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand</key>
         <string>RouteNameを変更</string>
