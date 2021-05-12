@@ -26,19 +26,21 @@ namespace Arent3d.Architecture.Routing
     public string RouteName
     {
       get => this._routeName ;
-      set
-      {
-        var oldName = this._routeName ;
-        if ( oldName != "" && oldName != "None" ) {
-          RenameAllDescendents( oldName, value ) ;
-          
-          this._routeName = value ;
-          this.Save();
-        }
-        else {
-          this._routeName = value ;
-        }
-      }
+    }
+
+    private void InitializeRouteName( string routeName )
+    {
+      this._routeName = routeName ;
+    }
+
+    public void Rename( string routeName )
+    {
+      var oldName = this._routeName ;
+     
+      RenameAllDescendents( oldName, routeName ) ;
+
+      this._routeName = routeName ;
+      this.Save() ;
     }
 
     /// <summary>
@@ -107,7 +109,8 @@ namespace Arent3d.Architecture.Routing
     /// <param name="owner">Owner element.</param>
     private Route( Element owner ) : base( owner, false )
     {
-      RouteName = string.Empty ;
+      InitializeRouteName(string.Empty);
+      //RouteName = string.Empty ;
     }
 
     /// <summary>
@@ -117,7 +120,8 @@ namespace Arent3d.Architecture.Routing
     /// <param name="routeId"></param>
     internal Route( Document document, string routeId ) : base( document, false )
     {
-      RouteName = routeId ;
+      InitializeRouteName(routeId);
+      //RouteName = routeId ;
     }
 
     public void Clear()
@@ -382,7 +386,9 @@ namespace Arent3d.Architecture.Routing
 
     protected override void LoadAllFields( FieldReader reader )
     {
-      RouteName = reader.GetSingle<string>( RouteNameField ) ;
+      //RouteName = reader.GetSingle<string>( RouteNameField ) ;
+      //Rename(reader.GetSingle<string>( RouteNameField ));
+      InitializeRouteName(reader.GetSingle<string>( RouteNameField ));
       reader.GetArray<RouteSegment>( RouteSegmentsField ).ForEach( segment => RegisterSegment( segment, false ) ) ;
       SetMEPSystemType( Document.GetElementById<MEPSystemType>( reader.GetSingle<ElementId>( MEPSystemField ) ) ) ;
       _systemClassificationInfo = MEPSystemClassificationInfo.Deserialize( reader.GetSingle<string>( MEPSystemClassificationInfoField ) ) ;
