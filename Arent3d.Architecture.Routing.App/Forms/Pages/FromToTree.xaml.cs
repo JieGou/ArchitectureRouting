@@ -379,17 +379,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <returns></returns>
     private void TextBox_LostFocus( object sender, RoutedEventArgs e )
     {
-        System.Windows.Controls.TextBox tb = (System.Windows.Controls.TextBox) sender;
-        var selectedItem = (FromToItem) FromToTreeView.SelectedItem;
-        if ( IsExsitRouteName( tb.Text ) ) {
-            MessageBox.Show( "名前が重複しているため、他の値に変更してください。" );
-            tb.Focus();
-        }
-        else {
-            selectedItem.IsEditing = false;
-            selectedItem.ItemTypeName = tb.Text;
-            UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>();
-        }
+
     }
 
     /// <summary>
@@ -441,14 +431,18 @@ namespace Arent3d.Architecture.Routing.App.Forms
                 
         }
         else if ( e.Key.Equals( Key.Enter ) ) {
-            if( IsExsitRouteName( tb.Text ) ) {
+            if ( tb.Text == "" ) {
+                tb.Text = selectedItem.ItemTypeName;
+                selectedItem.IsEditing = false;
+            }
+            else if ( IsExsitRouteName( tb.Text ) ) {
                 MessageBox.Show( "名前が重複しているため、他の値に変更してください。" );
                 tb.Focus();
             }
             else { 
                 selectedItem.IsEditing = false;
                 selectedItem.ItemTypeName = tb.Text;
-                //UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>();
+                UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>();
             }
         }
     }
@@ -471,6 +465,32 @@ namespace Arent3d.Architecture.Routing.App.Forms
         }
 
         return result;
+    }
+    /// <summary>
+    /// TextBox_PreviewLostKeyboardFocus event
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <returns></returns>
+    private void TextBox_PreviewLostKeyboardFocus( object sender, KeyboardFocusChangedEventArgs e )
+    {
+        System.Windows.Controls.TextBox tb = (System.Windows.Controls.TextBox) sender;
+        var selectedItem = (FromToItem) FromToTreeView.SelectedItem;
+
+
+        if ( tb.Text == "" ) {
+            tb.Text = selectedItem.ItemTypeName;
+            selectedItem.IsEditing = false;
+        }
+        else if ( IsExsitRouteName( tb.Text ) ) {
+            MessageBox.Show( "名前が重複しているため、他の値に変更してください。" );
+            tb.Focus();
+        }
+        else {
+            selectedItem.IsEditing = false;
+            selectedItem.ItemTypeName = tb.Text;
+            UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>();
+        }
     }
   }
 }
