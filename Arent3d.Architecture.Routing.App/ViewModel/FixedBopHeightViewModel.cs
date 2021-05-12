@@ -7,7 +7,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
   public class FixedBopHeightViewModel : ViewModelBase
   {
     public static Route? TargetRoute { get ; set ; }
-    public static int TargetHeight { get ; set ; }
+    public static double TargetHeight { get ; set ; }
     public static void ShowFixedBopHeightSettingDialog(UIDocument uiDocument, Route selectedRoute)
     {
       UiDoc = uiDocument ;
@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       OpenedDialog = dialog ;
     }
 
-    public static void ApplyFixedBopHeightChange( int selectedHeight )
+    public static void ApplyFixedBopHeightChange( double selectedHeight )
     {
       TargetHeight = selectedHeight ;
       UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyFixedBopHeightChangeCommand>();

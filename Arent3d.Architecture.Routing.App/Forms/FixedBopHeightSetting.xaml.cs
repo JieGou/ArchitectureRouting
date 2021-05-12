@@ -19,8 +19,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
-      //TaskDialog.Show( _route.RouteName, heightTextBox.Text ) ;
-      FixedBopHeightViewModel.ApplyFixedBopHeightChange(Convert.ToInt32(heightTextBox.Text) );
+      FixedBopHeightViewModel.ApplyFixedBopHeightChange(Convert.ToDouble(heightTextBox.Text) );
     }
 
     private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
