@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
         mc:Ignorable="d"
-        Title="FixedBopHeightSetting" Height="130" Width="310">
+        Title="FixedBopHeightSetting" Height="151.41" Width="315.606">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -22,7 +22,7 @@
                 
             </TextBox>
             <local:Dialog2Buttons
-                VerticalAlignment="Top"
+                VerticalAlignment="Center"
                 HorizontalAlignment="Right"
                 LeftOnClick="Dialog2Buttons_OnLeftOnClick"
                 RightOnClick="Dialog2Buttons_OnRightOnClick"
@@ -30,8 +30,9 @@
                 RightButton="Cancel"
                 Margin="0,5,0,5" />
         </StackPanel>
-       
-        
-        
+        <CheckBox Content="Sleeve" HorizontalAlignment="Left" Margin="177,58,0,-15" Grid.Row="1" VerticalAlignment="Top"/>
+
+
+
     </Grid>
 </local:WindowBase>
