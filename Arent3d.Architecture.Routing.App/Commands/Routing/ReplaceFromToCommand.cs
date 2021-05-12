@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading.Tasks ;
+using Arent3d.Architecture.Routing.App.Forms;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -46,7 +47,18 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var message = "Dialog.Commands.Routing.ReplaceFromTo.SelectFromTo".GetAppStringByKeyOrDefault( "Select which end is to be changed." ) ;
 
       var array = route.RouteSegments.SelectMany( GetReplaceableEndPoints ).ToArray() ;
-      // TODO: selection ui
+            // TODO: selection ui
+
+      var sv = new SelectEndPoint( array ) { Title = message };
+      sv.ShowDialog();
+
+      uiDocument.ClearSelection();
+      uiDocument.GetActiveUIView()?.ZoomToFit();
+
+      if ( true != sv.DialogResult )
+          return array[0];
+
+      return sv.GetSelectedEndPoint();
     }
 
     private static IEnumerable<IEndPoint> GetReplaceableEndPoints( RouteSegment segment )
