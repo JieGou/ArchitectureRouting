@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
+using Arent3d.Revit.UI ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
@@ -24,7 +25,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
     {
-      throw new System.NotImplementedException() ;
+      Close();
+    }
+
+    private void OkButton_OnClick( object sender, RoutedEventArgs e )
+    {
+      FixedBopHeightViewModel.ApplyFixedBopHeightChange(Convert.ToDouble(heightTextBox.Text) );
     }
   }
 }

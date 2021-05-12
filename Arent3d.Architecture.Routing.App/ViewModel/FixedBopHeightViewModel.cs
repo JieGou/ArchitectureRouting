@@ -17,15 +17,22 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 
       TargetRoute = selectedRoute ;
       var dialog = new FixedBopHeightSetting( UiDoc, selectedRoute ) ;
-
-      dialog.ShowDialog() ;
       OpenedDialog = dialog ;
+      dialog.ShowDialog() ;
+      
     }
 
-    public static void ApplyFixedBopHeightChange( double selectedHeight )
+    public static bool ApplyFixedBopHeightChange( double selectedHeight )
     {
+      OpenedDialog?.Close();
       TargetHeight = selectedHeight ;
-      UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyFixedBopHeightChangeCommand>();
+      if ( UiDoc != null ) {
+        UiDoc.Application.PostCommand<Commands.PostCommands.ApplyFixedBopHeightChangeCommand>();
+        return true ;
+      }
+      else {
+        return false ;
+      }
     }
   }
 }
