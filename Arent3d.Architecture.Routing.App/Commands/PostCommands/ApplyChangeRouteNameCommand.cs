@@ -34,7 +34,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
                         
                         using ( Transaction t = new Transaction( document, "TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand".GetAppStringByKeyOrDefault(" Rename RouteName") ) ) {
                             t.Start();
-                            targetRoute.RouteName =  SelectedFromToViewModel.FromToItem.ItemTypeName ;
+                            targetRoute.Rename(SelectedFromToViewModel.FromToItem.ItemTypeName);
                             t.Commit();
                         }
                     }
