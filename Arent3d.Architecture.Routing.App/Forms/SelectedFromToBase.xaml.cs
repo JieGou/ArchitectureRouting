@@ -32,6 +32,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     public bool? CurrentOrgDirect { get; set; }
 
+    public bool? IsEnableLeftBtn { get; set; }
+
 
     public bool IsEnableSystemType
     {
@@ -80,11 +82,31 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void SystemTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
+        if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
+            this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = SelectedFromToViewModel.FromToItem.IsRootRoute, IsEnableCurveType = SelectedFromToViewModel.FromToItem.IsRootRoute };
+        }
+        else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && SelectedFromToViewModel.FromToItem?.ItemTypeName == "Section" ) {
+            this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = false, IsEnableCurveType = true };
+        }
+            else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
+                this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false };
+            }
+
+            IsEnableLeftBtn = true;
     }
 
     private void CurveTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
-      if ( CurveTypeComboBox.IsDropDownOpen ) //avoid chnages in construction
+      if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
+          this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = SelectedFromToViewModel.FromToItem.IsRootRoute, IsEnableCurveType = SelectedFromToViewModel.FromToItem.IsRootRoute };
+      }
+      else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && SelectedFromToViewModel.FromToItem?.ItemTypeName == "Section" ) {
+          this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = false, IsEnableCurveType = true };
+      }
+            else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
+                this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false };
+            }
+            if ( CurveTypeComboBox.IsDropDownOpen ) //avoid chnages in construction
       {
         int selectedIndex = CurveTypeComboBox.SelectedIndex ;
 
@@ -98,6 +120,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void DiameterComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
+        if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
+            this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = SelectedFromToViewModel.FromToItem.IsRootRoute, IsEnableCurveType = SelectedFromToViewModel.FromToItem.IsRootRoute };
+        }
+        else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && SelectedFromToViewModel.FromToItem?.ItemTypeName == "Section" ) {
+            this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = false, IsEnableCurveType = true };
+        }
     }
 
     /// <summary>
@@ -151,6 +179,16 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       Direct.IsChecked = CurrentDirect ;
+
+        if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
+            this.DataContext = new { IsEnableLeftBtn = false, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = SelectedFromToViewModel.FromToItem.IsRootRoute, IsEnableCurveType = SelectedFromToViewModel.FromToItem.IsRootRoute };
+        }
+        else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && SelectedFromToViewModel.FromToItem?.ItemTypeName == "Section" ) {
+            this.DataContext = new { IsEnableLeftBtn = false, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = false, IsEnableCurveType = true };
+        }
+        else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
+            this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false };
+        }
     }
 
     public void ClearDialog()
@@ -167,22 +205,46 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Direct_OnChecked( object sender, RoutedEventArgs e )
     {
-      SelectedFromToViewModel.IsDirect = true ;
+        if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
+            this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = SelectedFromToViewModel.FromToItem.IsRootRoute, IsEnableCurveType = SelectedFromToViewModel.FromToItem.IsRootRoute };
+        }
+        else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && SelectedFromToViewModel.FromToItem?.ItemTypeName == "Section" ) {
+            this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = false, IsEnableCurveType = true };
+        }
+            else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
+                this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false };
+            }
+            SelectedFromToViewModel.IsDirect = true ;
     }
 
     private void Direct_OnUnchecked( object sender, RoutedEventArgs e )
     {
-      SelectedFromToViewModel.IsDirect = false ;
+        if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
+            this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = SelectedFromToViewModel.FromToItem.IsRootRoute, IsEnableCurveType = SelectedFromToViewModel.FromToItem.IsRootRoute };
+        }
+        else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && SelectedFromToViewModel.FromToItem?.ItemTypeName == "Section" ) {
+            this.DataContext = new { IsEnableLeftBtn = true, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = false, IsEnableCurveType = true };
+        }
+            else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
+                this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false };
+            }
+            SelectedFromToViewModel.IsDirect = false ;
     }
 
     private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
-        MessageBoxResult result = MessageBox.Show( "Route情報を変更してもよろしいでしょうか。",
+        if(SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
+            MessageBoxResult result = MessageBox.Show( "Route情報を変更してもよろしいでしょうか。",
                 "FromToTree",
                 MessageBoxButton.YesNo );
-        if(result == MessageBoxResult.Yes ) { 
-            SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
+            if ( result == MessageBoxResult.Yes ) {
+                SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect );
+            }
         }
+        else {
+            SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect );
+        }
+
     }
 
     private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
@@ -200,6 +262,15 @@ namespace Arent3d.Architecture.Routing.App.Forms
             }
 
             Direct.IsChecked = CurrentOrgDirect;
+            if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
+                this.DataContext = new { IsEnableLeftBtn = false, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = SelectedFromToViewModel.FromToItem.IsRootRoute, IsEnableCurveType = SelectedFromToViewModel.FromToItem.IsRootRoute };
+            }
+            else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && SelectedFromToViewModel.FromToItem?.ItemTypeName == "Section" ) {
+                this.DataContext = new { IsEnableLeftBtn = false, IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = false, IsEnableCurveType = true };
+            }
+            else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
+                this.DataContext = new { IsEnableLeftBtn = false,IsRouterVisibility = false, IsConnectorVisibility = false };
+            }
         }
 
     private void Dialog2Buttons_Loaded( object sender, RoutedEventArgs e )
