@@ -10,17 +10,30 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal" Width="Auto" Height="Auto">
             <Label Content="Fixed Bop Height" FontSize="20" />
         </StackPanel>
         
         <StackPanel Grid.Row="1" Orientation="Horizontal" Width="Auto" Height="Auto">
-            <TextBox Name="heightTextBox" Text="0" Margin="5,10, 10, 10"
-                       VerticalAlignment="Center" HorizontalAlignment="Right"
-                       Width="160">
-                
+            <Label Content="FL + "
+                   VerticalAlignment="Center"/>
+            <TextBox Name="HeightTextBox" Text="0" Margin="0,10, 10, 10"
+                     VerticalAlignment="Center" HorizontalAlignment="Right"
+                     HorizontalContentAlignment="Right"
+                     Width="100">
             </TextBox>
+            
+            <Label Content="mm" VerticalAlignment="Center" HorizontalAlignment="Left"
+                   Margin="-12,0,0,0"/>
+            
+            <CheckBox Content="Sleeve" VerticalAlignment="Center" HorizontalAlignment="Left" 
+                      Margin="0" Grid.Row="1" />
+        </StackPanel>
+        
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Width="Auto" Height="Auto"
+                    HorizontalAlignment="Right" Margin="0,0,3,0">
             <local:Dialog2Buttons
                 VerticalAlignment="Center"
                 HorizontalAlignment="Right"
@@ -30,9 +43,5 @@
                 RightButton="Cancel"
                 Margin="0,5,0,5" />
         </StackPanel>
-        <CheckBox Content="Sleeve" HorizontalAlignment="Left" Margin="177,58,0,-15" Grid.Row="1" VerticalAlignment="Top"/>
-
-
-
     </Grid>
 </local:WindowBase>

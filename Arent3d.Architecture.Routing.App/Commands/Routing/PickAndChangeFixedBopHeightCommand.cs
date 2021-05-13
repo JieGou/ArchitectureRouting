@@ -11,27 +11,31 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.PickAndChangeFixedBopHeightCommand", DefaultString = "Change\nFixedBopHeight" )]
+  [DisplayNameKey( "App.Commands.Routing.PickAndChangeFixedBopHeightCommand", DefaultString = "Change\nBopHeight" )]
   [Image( "resources/MEP.ico" )]
-  public class PickAndChangeFixedBopHeightCommand : IExternalCommand
+  public class PickAndChangeFixedBopHeightCommand : RoutingCommandBase
   {
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.ApplyFixedBopHeightChangeCommand" ;
+
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      
       var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.PickAndChangeFixedBopHeight.Pick".GetAppStringByKeyOrDefault( null ) ) ;
 
-      try {
-
-        FixedBopHeightViewModel.ShowFixedBopHeightSettingDialog(uiDocument, pickInfo.Route);
-
-        return Result.Succeeded ;
-      }
-      catch(Exception e) {
-        CommandUtils.DebugAlertException( e ) ;
-        return Result.Failed ;
-      }
+      FixedBopHeightViewModel.ShowFixedBopHeightSettingDialog(uiDocument, pickInfo.Route);
       
+      if ( FixedBopHeightViewModel.TargetRoute is { } targetRoute ) {
+        ApplyNewFixedBopHeight(targetRoute);
+        
+        return targetRoute.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
+      }
+      return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
+    }
+
+    private void ApplyNewFixedBopHeight( Route route )
+    {
+      foreach ( var subRoute in route.SubRoutes ) {
+        subRoute.ChangeFixedBopHeight(FixedBopHeightViewModel.TargetHeight);
+      }
     }
   }
 }
