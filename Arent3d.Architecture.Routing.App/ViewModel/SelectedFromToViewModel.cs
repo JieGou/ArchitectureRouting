@@ -27,6 +27,10 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 
     //Direct
     public static bool? IsDirect { get ; set ; }
+    
+    //FixedHeight
+    public static bool OnHeightSetting { get ; set ; }
+    public static double FixedHeight { get ; private set ; }
 
     public static PropertySource.RoutePropertySource? PropertySourceType { get ; private set ; }
 
@@ -65,13 +69,17 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     /// <param name="selectedSystemType"></param>
     /// <param name="selectedDirect"></param>
     /// <returns></returns>
-    public static bool ApplySelectedChanges( int selectedDiameter, int selectedSystemType, int selectedCurveType, bool? selectedDirect )
+    public static bool ApplySelectedChanges( int selectedDiameter, int selectedSystemType, int selectedCurveType, bool? selectedDirect, bool? heightSetting, double fixedHeight )
     {
       if ( UiDoc != null ) {
         SelectedDiameterIndex = selectedDiameter ;
         SelectedSystemTypeIndex = selectedSystemType ;
         SelectedCurveTypeIndex = selectedCurveType ;
         IsDirect = selectedDirect ;
+        if ( heightSetting is { } onHeightSetting) {
+          OnHeightSetting = onHeightSetting ;
+        }
+        FixedHeight = GetTotalHeight(fixedHeight) ;
         UiDoc.Application.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
         return true ;
       }
@@ -91,6 +99,20 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       if ( curveTypeIndex < 0 || curveTypes.Count <= curveTypeIndex ) return Enumerable.Empty<double>() ;
 
       return curveTypes[ curveTypeIndex ].GetNominalDiameters( UiDoc.Document.Application.VertexTolerance ) ;
+    }
+
+    private static double GetTotalHeight( double selectedHeight )
+    {
+      var targetHeight = 0.0 ;
+      var connector = TargetRoute?.FirstFromConnector()?.GetConnector()?.Owner ;
+      var level = connector?.Document.GetElement(connector.LevelId) as Level;
+      var floorHeight = level?.Elevation ;
+      if ( floorHeight != null && TargetRoute?.GetSubRoute(0)?.GetDiameter() is {} diameter) {
+        targetHeight = UnitUtils.ConvertToInternalUnits(selectedHeight, UnitTypeId.Millimeters  )  + (double)floorHeight - diameter/2;
+        var test = UnitUtils.ConvertFromInternalUnits( targetHeight, UnitTypeId.Millimeters ) ;
+      }
+
+      return targetHeight ;
     }
   }
 }

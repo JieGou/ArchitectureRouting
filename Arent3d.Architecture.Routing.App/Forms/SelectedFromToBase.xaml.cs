@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
 using Autodesk.Revit.DB ;
@@ -6,6 +7,8 @@ using System.Collections.ObjectModel ;
 using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
+using Autodesk.Revit.UI ;
+using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
@@ -180,8 +183,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
         MessageBoxResult result = MessageBox.Show( "Route情報を変更してもよろしいでしょうか。",
                 "FromToTree",
                 MessageBoxButton.YesNo );
-        if(result == MessageBoxResult.Yes ) { 
-            SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect ) ;
+        if(result == MessageBoxResult.Yes ) {
+          SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect, 
+            HeightSetting.IsChecked, Convert.ToDouble(HeightTextBox.Text) ) ;
         }
     }
 
@@ -204,6 +208,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Dialog2Buttons_Loaded( object sender, RoutedEventArgs e )
     {
+    }
+
+    private void Height_OnChecked( object sender, RoutedEventArgs e )
+    {
+      FL.Visibility = Visibility.Visible ;
+      HeightTextBox.Visibility = Visibility.Visible ;
+      mm.Visibility = Visibility.Visible ;
+
+    }
+
+    private void Height_OnUnchecked( object sender, RoutedEventArgs e )
+    {
+      FL.Visibility = Visibility.Hidden ;
+      HeightTextBox.Visibility = Visibility.Hidden ;
+      mm.Visibility = Visibility.Hidden ;
     }
   }
 }

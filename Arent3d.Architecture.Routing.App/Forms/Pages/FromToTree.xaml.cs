@@ -163,7 +163,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     }
 
     /// <summary>
-    /// Set SelectedFromtTo Dialog by Selected Route
+    /// Set SelectedFromtTo Dialog by Selected Route in TreeView
     /// </summary>
     /// <param name="route"></param>
     private void DisplaySelectedFromTo( PropertySource.RoutePropertySource propertySource )
@@ -181,6 +181,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       SelectedFromTo.CurrentOrgDirect =  SelectedFromTo.CurrentDirect = propertySource.IsDirect ;
+      SelectedFromTo.HeightSetting.IsChecked = false ;
 
       SelectedFromTo.ResetDialog() ;
     }

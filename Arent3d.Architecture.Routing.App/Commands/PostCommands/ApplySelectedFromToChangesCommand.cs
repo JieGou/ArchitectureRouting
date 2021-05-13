@@ -46,6 +46,11 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
               if ( SelectedFromToViewModel.IsDirect is { } isDirect ) {
                 subRoute.ChangeIsRoutingOnPipeSpace( isDirect ) ;
               }
+              
+              //Change FixedHeight
+              if ( SelectedFromToViewModel.OnHeightSetting ) {
+                subRoute.ChangeFixedBopHeight(SelectedFromToViewModel.FixedHeight);
+              }
             }
 
             return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;

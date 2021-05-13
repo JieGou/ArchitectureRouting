@@ -20,6 +20,7 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <Label Content="System Type"
@@ -51,7 +52,7 @@
                       DisplayMemberPath="Name"
                       SelectionChanged="CurveTypeComboBox_SelectionChanged"
                       SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
-                      VerticalAlignment="Bottom"
+                      VerticalAlignment="Center"
                       IsEnabled="{Binding IsEnableCurveType, ElementName=root}">
             </ComboBox>
 
@@ -84,7 +85,30 @@
                       HorizontalAlignment="Left"
                       VerticalAlignment="Center" />
 
-            <local:Dialog2Buttons Grid.Column="1" Grid.Row="4"
+            <Label Grid.Row="4" Grid.Column="0" Content="Height"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"/>
+            <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                <CheckBox x:Name="HeightSetting" Margin="0,0,0,0"
+                          Checked="Height_OnChecked"
+                          Unchecked="Height_OnUnchecked"
+                          HorizontalAlignment="Left"
+                          VerticalAlignment="Center" />
+                <Label x:Name="FL" Content="FL + " Visibility="Hidden"
+                       VerticalAlignment="Center"/>
+                <TextBox Name="HeightTextBox" 
+                         Visibility="Hidden"
+                         VerticalAlignment="Center" HorizontalAlignment="Right"
+                         HorizontalContentAlignment="Right"
+                         Width="80"
+                         >
+                </TextBox>
+                <Label x:Name="mm"  Content="mm" VerticalAlignment="Center" HorizontalAlignment="Left"
+                       Visibility="Hidden"
+                       Margin="0,0,0,0"/>
+            </StackPanel>
+            <local:Dialog2Buttons Grid.Column="1" Grid.Row="5" Margin="-2,0,0,0"
                                   LeftButton="OK"
                                   RightButton="Reset"
                                   VerticalAlignment="Center"
