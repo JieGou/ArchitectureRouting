@@ -257,6 +257,7 @@ namespace Arent3d.Architecture.Routing.App
       {
         Domain.DomainPiping => true,
         Domain.DomainHvac => true,
+        Domain.DomainCableTrayConduit => true,
         _ => false
       } ;
     }

@@ -37,14 +37,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       {
         var document = uiDocument.Document ;
         var fromPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null ) ;
-        var tempColor = SetTempColor( uiDocument, fromPickResult ) ;
+        var tempColor = uiDocument.SetTempColor( fromPickResult ) ;
         try {
           var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult ) ;
 
           return CreateNewSegmentList( document, fromPickResult, toPickResult ) ;
         }
         finally {
-          DisposeTempColor( document, tempColor ) ;
+          document.DisposeTempColor( tempColor ) ;
         }
       } ) ;
 
@@ -55,8 +55,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
-      var fromEndPoint = GetEndPoint( fromPickResult, toPickResult ) ;
-      var toEndPoint = GetEndPoint( toPickResult, fromPickResult ) ;
+      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult ) ;
+      var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
 
       if ( fromPickResult.SubRoute is { } subRoute1 ) {
         return CreateNewSegmentListForRoutePick( subRoute1, fromPickResult, toEndPoint, false ) ;
@@ -92,13 +92,13 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide )
     {
-      return CreateSubBranchRoute( subRoute, routePickResult, anotherEndPoint, anotherIndicatorIsFromSide ) ;
+      return CreateSubBranchRoute( subRoute, anotherEndPoint, anotherIndicatorIsFromSide ) ;
 
       // on adding new segment into picked route.
       //return AppendNewSegmentIntoPickedRoute( subRoute, routePickResult, anotherIndicator, anotherIndicatorIsFromSide ) ;
     }
 
-    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide )
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( SubRoute subRoute, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide )
     {
       var routes = RouteCache.Get( subRoute.Route.Document ) ;
       var routEndPoint = new RouteEndPoint( subRoute ) ;
@@ -107,7 +107,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       var nextIndex = GetRouteNameIndex( routes, systemType.Name ) ;
       
-      var name = systemType?.Name + "_" + nextIndex  ;
+      var name = systemType.Name + "_" + nextIndex  ;
 
       RouteSegment segment ;
       if ( anotherIndicatorIsFromSide ) {
@@ -163,52 +163,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
         newSegment.ApplyRealNominalDiameter() ;
 
         return ( subRoute.Route.RouteName, newSegment ) ;
-      }
-    }
-
-    private static IDisposable SetTempColor( UIDocument uiDocument, ConnectorPicker.IPickResult pickResult )
-    {
-      var tempColor = new TempColor( uiDocument.ActiveView, new Color( 0, 0, 255 ) ) ;
-      uiDocument.Document.Transaction( "TransactionName.Commands.Routing.Common.ChangeColor".GetAppStringByKeyOrDefault( null ), t =>
-      {
-        tempColor.AddRange( pickResult.GetAllRelatedElements() ) ;
-        return Result.Succeeded ;
-      } ) ;
-      return tempColor ;
-    }
-
-    private static void DisposeTempColor( Document document, IDisposable tempColor )
-    {
-      document.Transaction( "TransactionName.Commands.Routing.Common.RevertColor".GetAppStringByKeyOrDefault( null ), t =>
-      {
-        tempColor.Dispose() ;
-        return Result.Succeeded ;
-      } ) ;
-    }
-
-    private static IEndPoint GetEndPoint( ConnectorPicker.IPickResult pickResult, ConnectorPicker.IPickResult anotherResult )
-    {
-      if ( pickResult.PickedConnector is { } connector ) return new ConnectorEndPoint( connector ) ;
-
-      var element = pickResult.PickedElement ;
-      var pos = pickResult.GetOrigin() ;
-      var anotherPos = anotherResult.GetOrigin() ;
-      var dir = GetPreferredDirection( pos, anotherPos ) ;
-      var preferredRadius = ( pickResult.PickedConnector ?? anotherResult.PickedConnector )?.Radius ;
-
-      return new TerminatePointEndPoint( element.Document, ElementId.InvalidElementId, pos, dir, preferredRadius, element.Id ) ;
-    }
-
-    private static XYZ GetPreferredDirection( XYZ pos, XYZ anotherPos )
-    {
-      var dir = anotherPos - pos ;
-
-      double x = Math.Abs( dir.X ), y = Math.Abs( dir.Y ) ;
-      if ( x < y ) {
-        return ( 0 <= dir.Y ) ? XYZ.BasisY : -XYZ.BasisY ;
-      }
-      else {
-        return ( 0 <= dir.X ) ? XYZ.BasisX : -XYZ.BasisX ;
       }
     }
 
