@@ -132,7 +132,7 @@
         <key>TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand</key>
         <string>Rename RouteName</string>
 
-        <key>TransactionName.Commands.PostCommands.ApplyFixedBopHeightChangeCommand</key>
+        <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change Route Height</string>
 
 
