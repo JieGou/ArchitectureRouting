@@ -67,7 +67,7 @@ namespace Arent3d.Architecture.Routing
 
 
   [StorableConverterOf( typeof( RouteSegment ) )]
-  internal class RouteInfoConverter : StorableConverterBase<RouteSegment, string>
+  internal class RouteSegmentConverter : StorableConverterBase<RouteSegment, string>
   {
     private static readonly char[] FieldSplitter = { '|' } ;
     
@@ -82,7 +82,7 @@ namespace Arent3d.Architecture.Routing
       var isRoutingOnPipeSpace = ParseBool( split[ 3 ] ) ;
       var curveType = storedElement.Document.GetElementById<MEPCurveType>( ParseElementId( split[ 4 ] ) ) ;
 
-      var fixedBopHeight = ( 6 <= split.Length ? ParseNullableDouble( split[ 0 ] ) : null ) ;
+      var fixedBopHeight = ( 6 <= split.Length ? ParseNullableDouble( split[ 5 ] ) : null ) ;
 
       return new RouteSegment( fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight )
       {
