@@ -34,6 +34,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public bool? CurrentDirect { get ; set ; }
 
     public bool? CurrentOrgDirect { get; set; }
+    
+    //HeightSetting
+    public bool? CurrentHeightSetting { get ; set ; }
+    public bool? CurrentOrgHeightSetting { get ; set ; }
+    
+    public string FixedHeight { get ; set ; }
+    public string? FixedOrgHeight { get ; set ; }
 
 
     public bool IsEnableSystemType
@@ -64,6 +71,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       CurveTypeIndex = 0 ;
       CurveTypeLabel = "Type" ;
       CurrentDirect = false ;
+      CurrentHeightSetting = false ;
+      FixedHeight = "" ;
       Diameters = new ObservableCollection<string>() ;
       SystemTypes = new ObservableCollection<MEPSystemType>() ;
       CurveTypes = new ObservableCollection<MEPCurveType>() ;
@@ -154,6 +163,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       Direct.IsChecked = CurrentDirect ;
+
+      HeightSetting.IsChecked = CurrentHeightSetting ;
+      HeightTextBox.Text = FixedHeight ;
     }
 
     public void ClearDialog()
@@ -166,6 +178,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       Diameters.Clear() ;
       SystemTypes.Clear() ;
       CurveTypes.Clear() ;
+      HeightSetting.IsChecked = false ;
+      HeightTextBox.Text = "" ;
     }
 
     private void Direct_OnChecked( object sender, RoutedEventArgs e )
@@ -204,7 +218,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
             }
 
             Direct.IsChecked = CurrentOrgDirect;
-        }
+            HeightSetting.IsChecked = CurrentOrgHeightSetting ;
+            HeightTextBox.Text = FixedOrgHeight ;
+    }
 
     private void Dialog2Buttons_Loaded( object sender, RoutedEventArgs e )
     {

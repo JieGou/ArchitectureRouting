@@ -101,15 +101,29 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       return curveTypes[ curveTypeIndex ].GetNominalDiameters( UiDoc.Document.Application.VertexTolerance ) ;
     }
 
+    public static double GetHeightFromFloor( double totalHeight )
+    {
+      var fromFloorHeight = 0.0 ;
+      if ( GetFloorHeight() is { } floorHeight && TargetRoute?.GetSubRoute(0) is {} subRoute) {
+        fromFloorHeight = totalHeight - floorHeight + subRoute.GetDiameter()/2 ;
+      }
+
+      return fromFloorHeight ;
+    }
+
+    private static double? GetFloorHeight()
+    {
+      var connector = TargetRoute?.FirstFromConnector()?.GetConnector()?.Owner ;
+      var level = connector?.Document.GetElement(connector.LevelId) as Level;
+      
+      return level?.Elevation ;
+    }
     private static double GetTotalHeight( double selectedHeight )
     {
       var targetHeight = 0.0 ;
-      var connector = TargetRoute?.FirstFromConnector()?.GetConnector()?.Owner ;
-      var level = connector?.Document.GetElement(connector.LevelId) as Level;
-      var floorHeight = level?.Elevation ;
+      var floorHeight = GetFloorHeight();
       if ( floorHeight != null && TargetRoute?.GetSubRoute(0)?.GetDiameter() is {} diameter) {
         targetHeight = UnitUtils.ConvertToInternalUnits(selectedHeight, UnitTypeId.Millimeters  )  + (double)floorHeight - diameter/2;
-        var test = UnitUtils.ConvertFromInternalUnits( targetHeight, UnitTypeId.Millimeters ) ;
       }
 
       return targetHeight ;

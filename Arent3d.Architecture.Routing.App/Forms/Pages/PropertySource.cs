@@ -47,6 +47,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       //Direct
       public bool? IsDirect { get ; set ; }
+      
+      //HeightSetting
+      public bool? OnHeightSetting { get ; set ; }
+      public double? FixedHeight { get ; set ; }
 
       public RoutePropertySource( Document doc, IReadOnlyCollection<SubRoute> subRoutes ) : base( doc )
       {
@@ -81,6 +85,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         //Direct Info
         IsDirect = subRoute.IsRoutingOnPipeSpace ;
+        
+        //Height Info
+        OnHeightSetting = (subRoute.FixedBopHeight != null)  ;
+        FixedHeight = subRoute.FixedBopHeight ;
       }
 
       private void IsMultiSelected()
@@ -97,6 +105,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         }
 
         IsDirect = route.UniqueIsRoutingOnPipeSpace ;
+        
       }
 
       /// <summary>

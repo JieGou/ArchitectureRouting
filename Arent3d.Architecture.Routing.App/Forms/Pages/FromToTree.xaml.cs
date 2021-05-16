@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Diagnostics ;
+using System.Globalization ;
 using System.IO.Packaging ;
 using System.Linq ;
 using System.Threading.Tasks ;
@@ -181,7 +182,15 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       SelectedFromTo.CurrentOrgDirect =  SelectedFromTo.CurrentDirect = propertySource.IsDirect ;
-      SelectedFromTo.HeightSetting.IsChecked = false ;
+      SelectedFromTo.CurrentOrgHeightSetting = SelectedFromTo.CurrentHeightSetting = propertySource.OnHeightSetting ;
+
+      if ( propertySource.FixedHeight is { } fixedHeight ) {
+        SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = UnitUtils.ConvertFromInternalUnits
+          (SelectedFromToViewModel.GetHeightFromFloor(fixedHeight), UnitTypeId.Millimeters).ToString( CultureInfo.InvariantCulture ) ;
+      }
+      else {
+        SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = "" ;
+      }
 
       SelectedFromTo.ResetDialog() ;
     }
