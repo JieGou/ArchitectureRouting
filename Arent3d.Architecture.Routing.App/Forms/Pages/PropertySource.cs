@@ -105,7 +105,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
         }
 
         IsDirect = route.UniqueIsRoutingOnPipeSpace ;
-        
+
+        if ( IsHeightSettingMultiSelected( route ) ) {
+          OnHeightSetting = null ;
+        }
+
       }
 
       /// <summary>
@@ -126,6 +130,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
       private static bool IsDiameterMultiSelected( Route route )
       {
         return ( null == route.UniqueDiameter ) ;
+      }
+
+      private static bool IsHeightSettingMultiSelected( Route route )
+      {
+        var allNull = true ;
+        foreach ( var subRoute in route.SubRoutes ) {
+          allNull = (subRoute.FixedBopHeight == null) ;
+        }
+
+        if ( allNull ) {
+          return false ;
+        }
+        else {
+          return ( null == route.UniqueFixedBopHeight ) ;
+        }
       }
     }
   }

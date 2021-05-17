@@ -199,7 +199,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
                 MessageBoxButton.YesNo );
         if(result == MessageBoxResult.Yes ) {
           SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect, 
-            HeightSetting.IsChecked, Convert.ToDouble(HeightTextBox.Text) ) ;
+            HeightSetting.IsChecked, HeightTextBox.Text ) ;
         }
     }
 
@@ -228,17 +228,27 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Height_OnChecked( object sender, RoutedEventArgs e )
     {
-      FL.Visibility = Visibility.Visible ;
-      HeightTextBox.Visibility = Visibility.Visible ;
-      mm.Visibility = Visibility.Visible ;
+      SetHeightTextVisibility( true ) ;
 
     }
 
     private void Height_OnUnchecked( object sender, RoutedEventArgs e )
     {
-      FL.Visibility = Visibility.Hidden ;
-      HeightTextBox.Visibility = Visibility.Hidden ;
-      mm.Visibility = Visibility.Hidden ;
+      SetHeightTextVisibility( false ) ;
+    }
+
+    public void SetHeightTextVisibility(bool visibility)
+    {
+      if ( visibility ) {
+        FL.Visibility = Visibility.Visible ;
+        HeightTextBox.Visibility = Visibility.Visible ;
+        mm.Visibility = Visibility.Visible ;
+      }
+      else {
+        FL.Visibility = Visibility.Hidden ;
+        HeightTextBox.Visibility = Visibility.Hidden ;
+        mm.Visibility = Visibility.Hidden ;
+      }
     }
   }
 }
