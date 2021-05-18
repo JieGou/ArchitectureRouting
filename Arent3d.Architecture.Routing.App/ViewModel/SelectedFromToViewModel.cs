@@ -29,8 +29,8 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     public static bool? IsDirect { get ; set ; }
     
     //FixedHeight
-    public static bool OnHeightSetting { get ; set ; }
-    public static double FixedHeight { get ; private set ; }
+    public static bool? OnHeightSetting { get ; set ; }
+    public static double? FixedHeight { get ; private set ; }
     
     public static AvoidType AvoidType { get ; private set ; }
 
@@ -78,12 +78,17 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         SelectedSystemTypeIndex = selectedSystemType ;
         SelectedCurveTypeIndex = selectedCurveType ;
         IsDirect = selectedDirect ;
-        if ( heightSetting is { } onHeightSetting) {
-          OnHeightSetting = onHeightSetting ;
+
+        OnHeightSetting = heightSetting ;
+        if ( OnHeightSetting is true) {
+          if ( fixedHeight is { } selectedFixedHeight && fixedHeight != "" ) {
+            FixedHeight = GetTotalHeight( Convert.ToDouble( selectedFixedHeight ) ) ;
+          }
         }
-        if ( fixedHeight is { } selectedFixedHeight && fixedHeight != "") {
-          FixedHeight = GetTotalHeight(Convert.ToDouble(selectedFixedHeight)) ;
+        else {
+          FixedHeight = null ;
         }
+
         AvoidType = avoidType ;
         
         UiDoc.Application.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;

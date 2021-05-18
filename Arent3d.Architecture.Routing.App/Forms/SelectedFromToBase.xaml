@@ -112,7 +112,7 @@
                        Margin="0,0,0,0"/>
             </StackPanel>
             
-            <Label Content="Via PS"
+            <Label Content="Avoid Type"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Grid.Column="0"
@@ -122,7 +122,7 @@
                       Grid.Column="1"
                       Grid.Row="5"
                       ItemsSource="{Binding AvoidTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
-                      SelectedValuePath="key" DisplayMemberPath="Value"
+                      DisplayMemberPath="Value"
                       SelectionChanged="AvoidTypeComboBox_OnSelectionChanged"
                       VerticalAlignment="Center">
             </ComboBox>

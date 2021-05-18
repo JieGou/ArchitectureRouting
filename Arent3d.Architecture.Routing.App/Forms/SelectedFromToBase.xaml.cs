@@ -175,9 +175,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       HeightSetting.IsChecked = CurrentHeightSetting ;
       HeightTextBox.Text = FixedHeight ;
-
-      var selectedItem = new KeyValuePair<AvoidType, string>(AvoidTypeKey, AvoidTypes[AvoidTypeKey]) ;
-      AvoidTypeComboBox.SelectedItem = selectedItem ;
+      
+      AvoidTypeComboBox.SelectedItem = GetAvoidTypeKeyValuePair(AvoidTypeKey) ;
     }
 
     public void ClearDialog()
@@ -192,6 +191,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       CurveTypes.Clear() ;
       HeightSetting.IsChecked = false ;
       HeightTextBox.Text = "" ;
+      AvoidTypeComboBox.SelectedItem = null ;
     }
 
     private void Direct_OnChecked( object sender, RoutedEventArgs e )
@@ -231,7 +231,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       HeightSetting.IsChecked = CurrentOrgHeightSetting ;
       HeightTextBox.Text = FixedOrgHeight ;
 
-      AvoidTypeComboBox.SelectedValue = AvoidTypeOrgKey ;
+      AvoidTypeComboBox.SelectedItem = GetAvoidTypeKeyValuePair(AvoidTypeOrgKey) ;
     }
 
     private void Dialog2Buttons_Loaded( object sender, RoutedEventArgs e )
@@ -269,6 +269,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
         var selectedItemDict = (KeyValuePair<AvoidType,string>) AvoidTypeComboBox.SelectedItem ;
         AvoidTypeKey = selectedItemDict.Key ;
       }
+    }
+
+    private KeyValuePair<AvoidType, string> GetAvoidTypeKeyValuePair(AvoidType avoidTypeKey)
+    {
+      return new KeyValuePair<AvoidType, string>(avoidTypeKey, AvoidTypes[avoidTypeKey]) ;
     }
   }
 }
