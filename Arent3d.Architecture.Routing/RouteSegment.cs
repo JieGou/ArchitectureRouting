@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    public RouteSegment( IEndPoint fromEndPoint, IEndPoint toEndPoint ) : this( fromEndPoint, toEndPoint, null, false, null, AvoidType.AvoidAbove )
+    public RouteSegment( IEndPoint fromEndPoint, IEndPoint toEndPoint ) : this( fromEndPoint, toEndPoint, null, false, null, AvoidType.Whichever )
     {
     }
 
