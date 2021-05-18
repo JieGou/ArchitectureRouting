@@ -48,9 +48,12 @@ namespace Arent3d.Architecture.Routing.App.Commands.PostCommands
               }
               
               //Change FixedHeight
-              if ( SelectedFromToViewModel.OnHeightSetting ) {
+              if ( SelectedFromToViewModel.OnHeightSetting is {} onHeightSetting) {
                 subRoute.ChangeFixedBopHeight(SelectedFromToViewModel.FixedHeight);
               }
+
+              //Change AvoidType
+              subRoute.ChangeAvoidType(SelectedFromToViewModel.AvoidType);
             }
 
             return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;

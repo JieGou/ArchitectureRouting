@@ -51,6 +51,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       //HeightSetting
       public bool? OnHeightSetting { get ; set ; }
       public double? FixedHeight { get ; set ; }
+      
+      public AvoidType AvoidType { get ; set ; }
 
       public RoutePropertySource( Document doc, IReadOnlyCollection<SubRoute> subRoutes ) : base( doc )
       {
@@ -89,6 +91,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
         //Height Info
         OnHeightSetting = (subRoute.FixedBopHeight != null)  ;
         FixedHeight = subRoute.FixedBopHeight ;
+        
+        //AvoidType Info
+        AvoidType = subRoute.AvoidType ;
       }
 
       private void IsMultiSelected()

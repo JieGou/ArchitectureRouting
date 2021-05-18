@@ -8,6 +8,7 @@ using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Autodesk.Revit.UI ;
+using Arent3d.Revit.I18n ;
 using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
@@ -17,51 +18,59 @@ namespace Arent3d.Architecture.Routing.App.Forms
     //Diameter Info
     public ObservableCollection<string> Diameters { get ; set ; }
     public int? DiameterIndex { get ; set ; }
-    public int? DiameterOrgIndex { get; set; }
+    public int? DiameterOrgIndex { get ; set ; }
 
     //SystemType Info
     public ObservableCollection<MEPSystemType> SystemTypes { get ; set ; }
     public int? SystemTypeIndex { get ; set ; }
-    public int? SystemTypeOrgIndex { get; set; }
+    public int? SystemTypeOrgIndex { get ; set ; }
 
     //CurveType Info
     public ObservableCollection<MEPCurveType> CurveTypes { get ; set ; }
     public int? CurveTypeIndex { get ; set ; }
-    public int? CurveTypeOrgIndex { get; set; }
+    public int? CurveTypeOrgIndex { get ; set ; }
     public string CurveTypeLabel { get ; set ; }
 
     //Direct Info
     public bool? CurrentDirect { get ; set ; }
 
-    public bool? CurrentOrgDirect { get; set; }
-    
+    public bool? CurrentOrgDirect { get ; set ; }
+
     //HeightSetting
     public bool? CurrentHeightSetting { get ; set ; }
     public bool? CurrentOrgHeightSetting { get ; set ; }
-    
+
     public string FixedHeight { get ; set ; }
     public string? FixedOrgHeight { get ; set ; }
+
+    //AvoidType
+    public AvoidType AvoidTypeKey { get ; set ; }
+    public AvoidType AvoidTypeOrgKey { get ; set ; }
+
+    public Dictionary<AvoidType, string> AvoidTypes { get ; } = new Dictionary<AvoidType, string>
+    {
+      [ AvoidType.Whichever ] = "Dialog.Forms.SelectedFromToBase.ProcessConstraints.None".GetAppStringByKeyOrDefault( "Whichever" ), 
+      [ AvoidType.NoAvoid] = "Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoPocket".GetAppStringByKeyOrDefault( "Don't avoid From-To" ), 
+      [ AvoidType.AvoidAbove ] = "Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoDrainPocket".GetAppStringByKeyOrDefault( "Avoid on From-To" ),
+      [ AvoidType.AvoidBelow ] = "Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket".GetAppStringByKeyOrDefault( "Avoid below From-To" ),
+    } ;
 
 
     public bool IsEnableSystemType
     {
-        get { return (bool) GetValue( IsEnableSystemTypeProperty ); }
-        set { SetValue( IsEnableSystemTypeProperty, value ); }
+      get { return (bool) GetValue( IsEnableSystemTypeProperty ) ; }
+      set { SetValue( IsEnableSystemTypeProperty, value ) ; }
     }
 
     public bool IsEnableCurveType
     {
-        get { return (bool) GetValue( IsEnableCurveTypeProperty ); }
-        set { SetValue( IsEnableCurveTypeProperty, value ); }
+      get { return (bool) GetValue( IsEnableCurveTypeProperty ) ; }
+      set { SetValue( IsEnableCurveTypeProperty, value ) ; }
     }
-    public static readonly DependencyProperty IsEnableSystemTypeProperty = DependencyProperty.Register( "IsEnableSystemType",
-                                typeof( bool ),
-                                typeof( SelectedFromToBase ),
-                                new PropertyMetadata( true ) );
-    public static readonly DependencyProperty IsEnableCurveTypeProperty = DependencyProperty.Register( "IsEnableCurveType",
-                        typeof( bool ),
-                        typeof( SelectedFromToBase ),
-                        new PropertyMetadata( true ) );
+
+    public static readonly DependencyProperty IsEnableSystemTypeProperty = DependencyProperty.Register( "IsEnableSystemType", typeof( bool ), typeof( SelectedFromToBase ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty IsEnableCurveTypeProperty = DependencyProperty.Register( "IsEnableCurveType", typeof( bool ), typeof( SelectedFromToBase ), new PropertyMetadata( true ) ) ;
+
     public SelectedFromToBase()
     {
       InitializeComponent() ;
@@ -166,6 +175,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       HeightSetting.IsChecked = CurrentHeightSetting ;
       HeightTextBox.Text = FixedHeight ;
+
+      var selectedItem = new KeyValuePair<AvoidType, string>(AvoidTypeKey, AvoidTypes[AvoidTypeKey]) ;
+      AvoidTypeComboBox.SelectedItem = selectedItem ;
     }
 
     public void ClearDialog()
@@ -194,32 +206,32 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
-        MessageBoxResult result = MessageBox.Show( "Route情報を変更してもよろしいでしょうか。",
-                "FromToTree",
-                MessageBoxButton.YesNo );
-        if(result == MessageBoxResult.Yes ) {
-          SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect, 
-            HeightSetting.IsChecked, HeightTextBox.Text ) ;
-        }
+      MessageBoxResult result = MessageBox.Show( "Route情報を変更してもよろしいでしょうか。", "FromToTree", MessageBoxButton.YesNo ) ;
+      if ( result == MessageBoxResult.Yes ) {
+        SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex,
+          CurrentDirect, HeightSetting.IsChecked, HeightTextBox.Text, AvoidTypeKey ) ;
+      }
     }
 
     private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
     {
-            if ( SystemTypeOrgIndex != null ) {
-                SystemTypeComboBox.SelectedIndex = (int) SystemTypeOrgIndex;
-            }
+      if ( SystemTypeOrgIndex != null ) {
+        SystemTypeComboBox.SelectedIndex = (int) SystemTypeOrgIndex ;
+      }
 
-            if ( CurveTypeOrgIndex != null ) {
-                CurveTypeComboBox.SelectedIndex = (int) CurveTypeOrgIndex;
-            }
+      if ( CurveTypeOrgIndex != null ) {
+        CurveTypeComboBox.SelectedIndex = (int) CurveTypeOrgIndex ;
+      }
 
-            if ( DiameterOrgIndex != null ) {
-                DiameterComboBox.SelectedIndex = (int) DiameterOrgIndex;
-            }
+      if ( DiameterOrgIndex != null ) {
+        DiameterComboBox.SelectedIndex = (int) DiameterOrgIndex ;
+      }
 
-            Direct.IsChecked = CurrentOrgDirect;
-            HeightSetting.IsChecked = CurrentOrgHeightSetting ;
-            HeightTextBox.Text = FixedOrgHeight ;
+      Direct.IsChecked = CurrentOrgDirect ;
+      HeightSetting.IsChecked = CurrentOrgHeightSetting ;
+      HeightTextBox.Text = FixedOrgHeight ;
+
+      AvoidTypeComboBox.SelectedValue = AvoidTypeOrgKey ;
     }
 
     private void Dialog2Buttons_Loaded( object sender, RoutedEventArgs e )
@@ -229,7 +241,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
     private void Height_OnChecked( object sender, RoutedEventArgs e )
     {
       SetHeightTextVisibility( true ) ;
-
     }
 
     private void Height_OnUnchecked( object sender, RoutedEventArgs e )
@@ -237,7 +248,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       SetHeightTextVisibility( false ) ;
     }
 
-    public void SetHeightTextVisibility(bool visibility)
+    public void SetHeightTextVisibility( bool visibility )
     {
       if ( visibility ) {
         FL.Visibility = Visibility.Visible ;
@@ -248,6 +259,15 @@ namespace Arent3d.Architecture.Routing.App.Forms
         FL.Visibility = Visibility.Hidden ;
         HeightTextBox.Visibility = Visibility.Hidden ;
         mm.Visibility = Visibility.Hidden ;
+      }
+    }
+
+    private void AvoidTypeComboBox_OnSelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      if ( AvoidTypeComboBox.SelectedItem is {} selectedItem ) 
+      {
+        var selectedItemDict = (KeyValuePair<AvoidType,string>) AvoidTypeComboBox.SelectedItem ;
+        AvoidTypeKey = selectedItemDict.Key ;
       }
     }
   }

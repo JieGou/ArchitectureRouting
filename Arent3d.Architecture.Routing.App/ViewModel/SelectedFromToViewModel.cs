@@ -31,6 +31,8 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     //FixedHeight
     public static bool OnHeightSetting { get ; set ; }
     public static double FixedHeight { get ; private set ; }
+    
+    public static AvoidType AvoidType { get ; private set ; }
 
     public static PropertySource.RoutePropertySource? PropertySourceType { get ; private set ; }
 
@@ -69,7 +71,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     /// <param name="selectedSystemType"></param>
     /// <param name="selectedDirect"></param>
     /// <returns></returns>
-    public static bool ApplySelectedChanges( int selectedDiameter, int selectedSystemType, int selectedCurveType, bool? selectedDirect, bool? heightSetting, string fixedHeight )
+    public static bool ApplySelectedChanges( int selectedDiameter, int selectedSystemType, int selectedCurveType, bool? selectedDirect, bool? heightSetting, string fixedHeight, AvoidType avoidType )
     {
       if ( UiDoc != null ) {
         SelectedDiameterIndex = selectedDiameter ;
@@ -82,6 +84,8 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         if ( fixedHeight is { } selectedFixedHeight && fixedHeight != "") {
           FixedHeight = GetTotalHeight(Convert.ToDouble(selectedFixedHeight)) ;
         }
+        AvoidType = avoidType ;
+        
         UiDoc.Application.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
         return true ;
       }

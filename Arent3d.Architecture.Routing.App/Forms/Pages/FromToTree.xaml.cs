@@ -195,6 +195,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
         SelectedFromTo.SetHeightTextVisibility( false ) ;
       }
 
+      SelectedFromTo.AvoidTypeOrgKey = SelectedFromTo.AvoidTypeKey = propertySource.AvoidType ;
+
       SelectedFromTo.ResetDialog() ;
     }
 

@@ -21,6 +21,7 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <Label Content="System Type"
@@ -110,7 +111,23 @@
                        Visibility="Hidden"
                        Margin="0,0,0,0"/>
             </StackPanel>
-            <local:Dialog2Buttons Grid.Column="1" Grid.Row="5" Margin="-2,0,0,0"
+            
+            <Label Content="Via PS"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Grid.Column="0"
+                   Grid.Row="5" />
+            
+            <ComboBox x:Name="AvoidTypeComboBox"
+                      Grid.Column="1"
+                      Grid.Row="5"
+                      ItemsSource="{Binding AvoidTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                      SelectedValuePath="key" DisplayMemberPath="Value"
+                      SelectionChanged="AvoidTypeComboBox_OnSelectionChanged"
+                      VerticalAlignment="Center">
+            </ComboBox>
+            
+            <local:Dialog2Buttons Grid.Column="1" Grid.Row="6" Margin="-2,0,0,0"
                                   LeftButton="OK"
                                   RightButton="Reset"
                                   VerticalAlignment="Center"
