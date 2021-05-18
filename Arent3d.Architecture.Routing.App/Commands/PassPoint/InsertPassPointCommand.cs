@@ -70,8 +70,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
           var isRoutingOnPipeSpace = segment.IsRoutingOnPipeSpace ;
           var fixeBopHeight = segment.FixedBopHeight ;
           var curveType = segment.CurveType ;
-          yield return new RouteSegment( segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight ) { CurveType = curveType } ;
-          yield return new RouteSegment( passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight ) { CurveType = curveType } ;
+          var avoidType = segment.AvoidType ;
+          yield return new RouteSegment( segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) { CurveType = curveType } ;
+          yield return new RouteSegment( passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) { CurveType = curveType } ;
         }
         else {
           yield return segment ;

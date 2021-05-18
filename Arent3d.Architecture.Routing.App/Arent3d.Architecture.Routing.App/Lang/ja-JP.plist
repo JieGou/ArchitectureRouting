@@ -168,6 +168,15 @@
         <key>Dialog.Commands.Routing.Common.Body.Error.FittingCannotBeInserted</key>
         <string>以下のコネクタに対し、継手要素が挿入できませんでした：&#xA;&#xA;{0}</string>
 
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.None</key>
+        <string>どちらでもよい</string>
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoPocket</key>
+        <string>よけない</string>
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoDrainPocket</key>
+        <string>上に避ける</string>
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket</key>
+        <string>下に避ける</string>
+
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

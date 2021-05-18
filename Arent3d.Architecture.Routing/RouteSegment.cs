@@ -3,6 +3,7 @@ using System.Globalization ;
 using System.Text ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
+using Arent3d.Routing.Conditions ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
@@ -14,6 +15,8 @@ namespace Arent3d.Architecture.Routing
     public double? PreferredNominalDiameter { get ; private set ; }
     
     public double? FixedBopHeight { get ; set ; }
+    
+    public AvoidType AvoidType { get ; set ; }
 
     public IEndPoint FromEndPoint { get ; }
     public IEndPoint ToEndPoint { get ; }
@@ -51,15 +54,16 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    public RouteSegment( IEndPoint fromEndPoint, IEndPoint toEndPoint ) : this( fromEndPoint, toEndPoint, null, false, null )
+    public RouteSegment( IEndPoint fromEndPoint, IEndPoint toEndPoint ) : this( fromEndPoint, toEndPoint, null, false, null, AvoidType.AvoidAbove )
     {
     }
 
-    public RouteSegment( IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight )
+    public RouteSegment( IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
     {
       PreferredNominalDiameter = ( 0 < preferredNominalDiameter ? preferredNominalDiameter : null ) ;
       IsRoutingOnPipeSpace = isRoutingOnPipeSpace ;
       FixedBopHeight = fixedBopHeight ;
+      AvoidType = avoidType ;
       FromEndPoint = fromEndPoint ;
       ToEndPoint = toEndPoint ;
     }
@@ -74,7 +78,7 @@ namespace Arent3d.Architecture.Routing
     protected override RouteSegment NativeToCustom( Element storedElement, string nativeTypeValue )
     {
       var split = nativeTypeValue.Split( FieldSplitter, StringSplitOptions.RemoveEmptyEntries ) ;
-      if ( split.Length < 5 ) throw new InvalidOperationException() ;
+      if ( split.Length < 6 ) throw new InvalidOperationException() ;
 
       var preferredDiameter = ParseNullableDouble( split[ 0 ] ) ;
       var fromId = EndPointExtensions.ParseEndPoint( storedElement.Document, split[ 1 ] ) ?? throw new InvalidOperationException() ;
@@ -84,7 +88,9 @@ namespace Arent3d.Architecture.Routing
 
       var fixedBopHeight = ( 6 <= split.Length ? ParseNullableDouble( split[ 5 ] ) : null ) ;
 
-      return new RouteSegment( fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight )
+      var avoidType = (AvoidType) Convert.ToInt32(split[ 6 ])   ;
+
+      return new RouteSegment( fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType )
       {
         CurveType = curveType,
       } ;
@@ -131,6 +137,8 @@ namespace Arent3d.Architecture.Routing
       builder.Append( customTypeValue.CurveType.GetValidId().IntegerValue ) ;
       builder.Append( '|' ) ;
       builder.Append( customTypeValue.FixedBopHeight?.ToString( CultureInfo.InvariantCulture ) ?? "---" ) ;
+      builder.Append( '|' ) ;
+      builder.Append( (int)customTypeValue.AvoidType ) ;
 
       return builder.ToString() ;
     }

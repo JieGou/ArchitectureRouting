@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.App
 
         var curveType = GetCurveType( document, record.CurveTypeName ) ;
 
-        yield return ( record.RouteName, new RouteSegment( fromEndPoint, toEndPoint, record.NominalDiameter, record.IsRoutingOnPipeSpace, record.FixedBopHeight ) { CurveType = curveType } ) ;
+        yield return ( record.RouteName, new RouteSegment( fromEndPoint, toEndPoint, record.NominalDiameter, record.IsRoutingOnPipeSpace, record.FixedBopHeight, record.AvoidType) { CurveType = curveType } ) ;
       }
     }
 
@@ -62,6 +62,7 @@ namespace Arent3d.Architecture.Routing.App
           NominalDiameter = segment.PreferredNominalDiameter,
           CurveTypeName = GetCurveTypeName( segment.CurveType ),
           FixedBopHeight = segment.FixedBopHeight,
+          AvoidType = segment.AvoidType,
         } ;
       }
     }

@@ -177,6 +177,15 @@
         <key>Dialog.Commands.Routing.Common.Body.Error.FittingCannotBeInserted</key>
         <string>Some fitting elements could not be inserted on the following connectors:&#xA;&#xA;{0}</string>
 
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.None</key>
+        <string>Whichever</string>
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoPocket</key>
+        <string>Don't avoid From-To</string>
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoDrainPocket</key>
+        <string>Avoid on From-To</string>
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket</key>
+        <string>Avoid below From-To</string>
+
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

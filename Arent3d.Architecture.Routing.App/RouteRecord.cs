@@ -45,5 +45,8 @@ namespace Arent3d.Architecture.Routing.App
 
     [Index( 10 ), Name( "Preferred Height" )]
     public double? FixedBopHeight { get ; set ; } = null ;
+
+    [Index( 11 ), Name( "Preferred AvoidType" )]
+    public AvoidType AvoidType { get ; set ; } = Routing.AvoidType.Whichever ;
   }
 }
