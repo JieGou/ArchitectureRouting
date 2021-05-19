@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.App.Model ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -128,41 +129,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       return null ;
     }
+    
 
     /// <summary>
-    /// set headerstackpanel to treeviewitem
-    /// </summary>
-    /// <param name="treeViewItem"></param>
-    /// <param name="routeName"></param>
-    private void SetHeaderStackPanel( TreeViewItem treeViewItem, string routeName )
-    {
-      BitmapImage bmi = new BitmapImage() ;
-
-      switch ( treeViewItem.Tag ) {
-        case "Route" :
-          bmi = new BitmapImage( new Uri( "../../resources/MEP.ico", UriKind.Relative ) ) ;
-          break ;
-        case "Connector" :
-          bmi = new BitmapImage( new Uri( "../../resources/InsertBranchPoint.png", UriKind.Relative ) ) ;
-          break ;
-      }
-
-      // create stackpanel
-      StackPanel sp = new StackPanel() ;
-      sp.Orientation = Orientation.Horizontal ;
-      Image img = new Image() ;
-      img.Source = bmi ;
-      img.Height = 15 ;
-      img.Width = 15 ;
-      sp.Children.Add( img ) ;
-      TextBlock tb = new TextBlock() ;
-      tb.Text = routeName ;
-      sp.Children.Add( tb ) ;
-      treeViewItem.Header = sp ;
-    }
-
-    /// <summary>
-    /// Set SelectedFromtTo Dialog by Selected Route in TreeView
+    /// Set SelectedFromtTo Dialog by Selected Route in Selecting TreeView
     /// </summary>
     /// <param name="route"></param>
     private void DisplaySelectedFromTo( PropertySource.RoutePropertySource propertySource )
@@ -185,10 +155,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
       if ( propertySource.OnHeightSetting != null ) {
         SelectedFromTo.SetHeightTextVisibility( (bool) propertySource.OnHeightSetting ) ;
         if ( propertySource.FixedHeight is { } fixedHeight ) {
-          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = UnitUtils.ConvertFromInternalUnits( SelectedFromToViewModel.GetHeightFromFloor( fixedHeight ), UnitTypeId.Millimeters ).ToString( "F2" ) ;
+          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = UnitUtils.ConvertFromInternalUnits( SelectedFromToViewModel.GetHeightFromFloor( fixedHeight ), UnitTypeId.Millimeters );
         }
         else {
-          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = "" ;
+          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = 0.0 ;
         }
       }
       else {
@@ -294,10 +264,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
         targetItem.IsSelected = true ;
         // Scorll to Item
         targetItem.BringIntoView() ;
-        // this code is in developing
-        /*if ( targetItem.Tag.ToString() == "Connector" ) {
-          SelectedFromTo.ClearDialog() ;
-        }*/
       }
     }
 
@@ -394,7 +360,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       System.Windows.Controls.TextBox tb = (System.Windows.Controls.TextBox) sender ;
       var selectedItem = (FromToItem) FromToTreeView.SelectedItem ;
       if ( IsExsitRouteName( tb.Text ) ) {
-        MessageBox.Show( "名前が重複しているため、他の値に変更してください。" ) ;
+        MessageBox.Show( "Dialog.Forms.FromToTree.Rename".GetAppStringByKeyOrDefault("Since the name is duplicated, please change it to another name.") ) ;
         tb.Focus() ;
       }
       else {
@@ -452,13 +418,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
       else if ( e.Key.Equals( Key.Enter ) ) {
         if ( IsExsitRouteName( tb.Text ) ) {
-          MessageBox.Show( "名前が重複しているため、他の値に変更してください。" ) ;
+          MessageBox.Show( "Dialog.Forms.FromToTree.Rename".GetAppStringByKeyOrDefault("Since the name is duplicated, please change it to another name.") ) ;
           tb.Focus() ;
         }
         else {
           selectedItem.IsEditing = false ;
           selectedItem.ItemTypeName = tb.Text ;
-          //UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>();
         }
       }
     }
