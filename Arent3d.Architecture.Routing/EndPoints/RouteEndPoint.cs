@@ -23,6 +23,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public string TypeName => Type ;
     public EndPointKey Key => new EndPointKey( TypeName, ParameterString ) ;
 
+    public bool IsReplaceable => true ;
+
     public bool IsOneSided => false ;
 
     private readonly Document _document ;

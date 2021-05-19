@@ -127,7 +127,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       return null ;
     }
-    
+
 
     /// <summary>
     /// Set SelectedFromtTo Dialog by Selected Route in Selecting TreeView
@@ -153,7 +153,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       if ( propertySource.OnHeightSetting != null ) {
         SelectedFromTo.SetHeightTextVisibility( (bool) propertySource.OnHeightSetting ) ;
         if ( propertySource.FixedHeight is { } fixedHeight ) {
-          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = UnitUtils.ConvertFromInternalUnits( SelectedFromToViewModel.GetHeightFromFloor( fixedHeight ), UnitTypeId.Millimeters );
+          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = UnitUtils.ConvertFromInternalUnits( SelectedFromToViewModel.GetHeightFromFloor( fixedHeight ), UnitTypeId.Millimeters ) ;
         }
         else {
           SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = 0.0 ;
@@ -181,6 +181,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       if ( selectedItem is FromToItem selectedFromToItem ) {
         selectedFromToItem.OnSelected() ;
+        SelectedFromToViewModel.FromToItem = selectedFromToItem ;
 
         if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && selectedFromToItem.ItemTag == "Route" ) {
           this.DataContext = new { IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = selectedFromToItem.IsRootRoute, IsEnableCurveType = selectedFromToItem.IsRootRoute } ;
@@ -271,7 +272,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     private void ClearSelectedItem()
     {
       if ( FromToTreeView.SelectedItem is TreeViewItem selectedItem ) {
-        selectedItem.IsSelected = false;
+        selectedItem.IsSelected = false ;
       }
     }
 
@@ -355,17 +356,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <returns></returns>
     private void TextBox_LostFocus( object sender, RoutedEventArgs e )
     {
-      System.Windows.Controls.TextBox tb = (System.Windows.Controls.TextBox) sender ;
-      var selectedItem = (FromToItem) FromToTreeView.SelectedItem ;
-      if ( IsExsitRouteName( tb.Text ) ) {
-        MessageBox.Show( "Dialog.Forms.FromToTree.Rename".GetAppStringByKeyOrDefault("Since the name is duplicated, please change it to another name.") ) ;
-        tb.Focus() ;
-      }
-      else {
-        selectedItem.IsEditing = false ;
-        selectedItem.ItemTypeName = tb.Text ;
-        UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
-      }
     }
 
     /// <summary>
@@ -415,13 +405,18 @@ namespace Arent3d.Architecture.Routing.App.Forms
         selectedItem.IsEditing = false ;
       }
       else if ( e.Key.Equals( Key.Enter ) ) {
-        if ( IsExsitRouteName( tb.Text ) ) {
-          MessageBox.Show( "Dialog.Forms.FromToTree.Rename".GetAppStringByKeyOrDefault("Since the name is duplicated, please change it to another name.") ) ;
+        if ( tb.Text == "" ) {
+          tb.Text = selectedItem.ItemTypeName ;
+          selectedItem.IsEditing = false ;
+        }
+        else if ( IsExsitRouteName( tb.Text ) ) {
+          MessageBox.Show( "Dialog.Forms.FromToTree.Rename".GetAppStringByKeyOrDefault( "Since the name is duplicated, please change it to another name." ) ) ;
           tb.Focus() ;
         }
         else {
           selectedItem.IsEditing = false ;
           selectedItem.ItemTypeName = tb.Text ;
+          UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
         }
       }
     }
@@ -434,6 +429,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     private bool IsExsitRouteName( string routName )
     {
       bool result = false ;
+
       var selectedItem = (FromToItem) FromToTreeView.SelectedItem ;
       for ( int x = 0 ; x < FromToTreeView.Items.Count ; x++ ) {
         var fromItem = (FromToItem) FromToTreeView.Items[ x ] ;
@@ -444,6 +440,33 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       return result ;
+    }
+
+    /// <summary>
+    /// TextBox_PreviewLostKeyboardFocus event
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <returns></returns>
+    private void TextBox_PreviewLostKeyboardFocus( object sender, KeyboardFocusChangedEventArgs e )
+    {
+      System.Windows.Controls.TextBox tb = (System.Windows.Controls.TextBox) sender ;
+      var selectedItem = (FromToItem) FromToTreeView.SelectedItem ;
+
+
+      if ( tb.Text == "" ) {
+        tb.Text = selectedItem.ItemTypeName ;
+        selectedItem.IsEditing = false ;
+      }
+      else if ( IsExsitRouteName( tb.Text ) ) {
+        MessageBox.Show( "Dialog.Forms.FromToTree.Rename".GetAppStringByKeyOrDefault( "Since the name is duplicated, please change it to another name." ) ) ;
+        tb.Focus() ;
+      }
+      else {
+        selectedItem.IsEditing = false ;
+        selectedItem.ItemTypeName = tb.Text ;
+        UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
+      }
     }
   }
 }

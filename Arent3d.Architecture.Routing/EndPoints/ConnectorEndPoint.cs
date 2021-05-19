@@ -32,6 +32,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public EndPointKey Key => GenerateKey( EquipmentId, ConnectorIndex ) ;
 
+    public bool IsReplaceable => true ;
+
     public bool IsOneSided => true ;
 
     private readonly Document _document ;

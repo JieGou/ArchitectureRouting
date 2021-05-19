@@ -1,6 +1,7 @@
 ﻿using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using System ;
+using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.ComponentModel ;
 using System.Runtime.CompilerServices ;
@@ -26,10 +27,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       _firstConnector = firstConnector ;
 
       if ( element is FamilyInstance familyInstance ) {
-        var familyInstanceTransform = familyInstance.GetTotalTransform() ;
-        var familyDocument = familyInstance.Document.EditFamily( familyInstance.Symbol.Family ) ;
-        foreach ( var conn in familyDocument.GetAllElements<ConnectorElement>().Where( IsTargetConnectorElement ) ) {
-          ConnectorList.Add( new ConnectorInfoClass( familyInstance, familyInstanceTransform, conn, _firstConnector ) ) ;
+        foreach ( var (conn, connElm) in GetConnectorAndConnectorElementPair( familyInstance ) ) {
+          ConnectorList.Add( new ConnectorInfoClass( familyInstance, connElm, conn, _firstConnector ) ) ;
         }
       }
       else if ( element is MEPCurve curve ) {
@@ -44,27 +43,126 @@ namespace Arent3d.Architecture.Routing.App.Forms
       this.Top += 10 ;
     }
 
-    private static bool IsTargetConnectorElement( ConnectorElement el )
+    private IEnumerable<(Connector, ConnectorElement)> GetConnectorAndConnectorElementPair( FamilyInstance familyInstance )
     {
-      return el.Domain switch
+      var familyInstanceTransform = familyInstance.GetTotalTransform() ;
+      using var familyDocument = familyInstance.Document.EditFamily( familyInstance.Symbol.Family ) ;
+
+      var connectors = familyInstance.GetConnectors().Where( IsTargetConnector ) ;
+      var connectorElements = familyDocument.GetAllElements<ConnectorElement>().Where( IsTargetConnectorElement ) ;
+      var seeker = new NearestConnectorPairSeeker( connectors, connectorElements, familyInstanceTransform ) ;
+
+      while ( true ) {
+        var (connector, connectorElement) = seeker.Pop() ;
+        if ( null == connector || null == connectorElement ) break ;
+
+        yield return ( connector, connectorElement ) ;
+      }
+    }
+
+    private static bool IsTargetConnectorElement( ConnectorElement connElm ) => IsTargetDomain( connElm.Domain ) ;
+
+    private static bool IsTargetConnector( Connector conn ) => conn.IsAnyEnd() && IsTargetDomain( conn.Domain ) ;
+
+    private static bool IsTargetDomain( Domain domain ) 
+    {
+      return domain switch
       {
         Domain.DomainPiping => true,
         Domain.DomainHvac => true,
+        Domain.DomainCableTrayConduit => true,
         _ => false
       } ;
     }
 
-    private static bool IsTargetConnector( Connector el )
+    private class NearestConnectorPairSeeker
     {
-      if ( false == el.IsAnyEnd() ) return false ;
-
-      return el.Domain switch
+      private readonly List<Connector> _connectors ;
+      private readonly List<ConnectorElement> _connectorElements ;
+      private readonly List<DistanceInfo> _distances = new() ;
+      
+      public NearestConnectorPairSeeker( IEnumerable<Connector> connectors, IEnumerable<ConnectorElement> connectorElements, Transform familyInstanceTransform )
       {
-        Domain.DomainPiping => true,
-        Domain.DomainHvac => true,
-        _ => false
-      } ;
+        _connectors = connectors.ToList() ;
+        _connectorElements = connectorElements.ToList() ;
+
+        foreach ( var connectorElement in _connectorElements ) {
+          var domain = connectorElement.Domain ;
+          var systemClassification = (int) connectorElement.SystemClassification ;
+          var origin = familyInstanceTransform.OfPoint( connectorElement.Origin ) ;
+          var dirZ = familyInstanceTransform.OfVector( connectorElement.CoordinateSystem.BasisZ ) ;
+          var dirX = familyInstanceTransform.OfVector( connectorElement.CoordinateSystem.BasisX ) ;
+          foreach ( var connector in _connectors.Where( c => domain == c.Domain ) ) {
+            if ( domain != Domain.DomainCableTrayConduit && connector.GetSystemType() != systemClassification ) continue ;
+
+            var distance = connector.Origin.DistanceTo( origin ) ;
+            var angleZ = connector.CoordinateSystem.BasisZ.AngleTo( dirZ ) ;
+            var angleX = connector.CoordinateSystem.BasisX.AngleTo( dirX ) ;
+            _distances.Add( new DistanceInfo( connector, connectorElement, distance, angleZ, angleX ) ) ;
+          }
+        }
+
+        _distances.Sort( DistanceInfo.Compare ) ;
+      }
+
+      public (Connector?, ConnectorElement?) Pop()
+      {
+        if ( 0 == _distances.Count ) return ( null, null ) ;
+
+        var first = _distances[ 0 ] ;
+        var (conn, connElm) = ( first.Connector, first.ConnectorElement ) ;
+        _distances.RemoveAll( d => d.IsConnector( conn ) || d.IsConnectorElement( connElm ) ) ;
+
+        return ( conn, connElm ) ;
+      }
+
+      private class DistanceInfo
+      {
+        public Connector Connector { get ; }
+        public ConnectorElement ConnectorElement { get ; }
+        private double Distance { get ; }
+        private double DirectionalDistance { get ; }
+        
+        public DistanceInfo( Connector connector, ConnectorElement connectorElement, double distance, double angleZ, double angleX )
+        {
+          Connector = connector ;
+          ConnectorElement = connectorElement ;
+          Distance = distance ;
+          DirectionalDistance = angleZ + angleX ;
+        }
+
+        public bool IsConnector( Connector conn )
+        {
+          return ( conn.Owner.Id == Connector.Owner.Id && conn.Id == Connector.Id ) ;
+        }
+
+        public bool IsConnectorElement( ConnectorElement connElm )
+        {
+          return ( connElm.Id == ConnectorElement.Id ) ;
+        }
+
+        public static int Compare( DistanceInfo x, DistanceInfo y )
+        {
+          var dist = x.Distance.CompareTo( y.Distance ) ;
+          if ( 0 != dist ) return dist ;
+
+          var dir = x.DirectionalDistance.CompareTo( y.DirectionalDistance ) ;
+          if ( 0 != dir ) return dir ;
+
+          var elm = x.ConnectorElement.Id.IntegerValue.CompareTo( y.ConnectorElement.Id.IntegerValue ) ;
+          if ( 0 != elm ) return elm ;
+
+          var connElm = x.Connector.Owner.Id.IntegerValue.CompareTo( y.Connector.Owner.Id.IntegerValue ) ;
+          if ( 0 != connElm ) return connElm ;
+
+          var conn = x.Connector.Id.CompareTo( y.Connector.Id ) ;
+          if ( 0 != conn ) return conn ;
+
+          return 0 ;
+        }
+      }
     }
+
 
     public class ConnectorInfoClass : INotifyPropertyChanged
     {
@@ -88,7 +186,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       private Element Element { get ; }
 
-      private XYZ? ConnectorPosition { get ; }
       private Connector? Connector { get ; }
       private ConnectorElement? ConnectorElement { get ; }
 
@@ -101,29 +198,31 @@ namespace Arent3d.Architecture.Routing.App.Forms
         Element = element ;
         Connector = null ;
         ConnectorElement = null ;
-        ConnectorPosition = null ;
 
         IsEnabled = true ;
       }
 
-      public ConnectorInfoClass( FamilyInstance familyInstance, Transform familyInstanceTransform, ConnectorElement connectorElement, Connector? firstElement )
+      public ConnectorInfoClass( FamilyInstance familyInstance, ConnectorElement? connectorElement, Connector connector, Connector? firstConnector )
       {
         Element = familyInstance ;
-        Connector = null ;
+        Connector = connector ;
         ConnectorElement = connectorElement ;
-        ConnectorPosition = familyInstanceTransform.OfPoint( connectorElement.Origin ) ;
 
-        IsEnabled = ( null == firstElement ) || ( HasCompatibleType( firstElement ) && firstElement.HasSameShape( ConnectorElement ) ) ;
+        IsEnabled = ( null != connectorElement ) && ( false == connector.IsConnected ) && ( ( null == firstConnector ) || ( HasCompatibleType( connector, firstConnector ) && firstConnector.HasSameShape( connectorElement ) ) ) ;
       }
 
-      public ConnectorInfoClass( Connector connector, Connector? firstElement )
+      public ConnectorInfoClass( Connector connector, Connector? firstConnector )
       {
         Element = connector.Owner ;
         Connector = connector ;
         ConnectorElement = null ;
-        ConnectorPosition = connector.Origin ;
 
-        IsEnabled = ( false == connector.IsConnected ) && ( ( null == firstElement ) || ( HasCompatibleType( firstElement ) && firstElement.HasSameShape( connector ) ) ) ;
+        IsEnabled = ( false == connector.IsConnected ) && ( ( null == firstConnector ) || ( HasCompatibleType( connector, firstConnector ) && firstConnector.HasSameShape( connector ) ) ) ;
+      }
+
+      private static bool HasCompatibleType( Connector connector1, Connector connector2 )
+      {
+        return ( connector1.Domain == connector2.Domain ) && ( connector1.GetSystemType() == connector2.GetSystemType() ) ;
       }
 
       private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )
@@ -150,32 +249,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         if ( null != Connector ) return Connector ;
 
-        if ( null == ConnectorElement ) return null ;
-        return Element.GetConnectors().FirstOrDefault( IsMatch ) ;
-      }
-
-      private bool IsMatch( Connector connector )
-      {
-        return HasCompatibleType( connector ) && HasSamePosition( connector ) ;
-      }
-
-      private bool HasCompatibleType( Connector connector )
-      {
-        if ( false == connector.IsAnyEnd() ) return false ;
-        if ( null == ConnectorElement ) return true ;
-
-        if ( connector.Domain != ConnectorElement.Domain ) return false ;
-
-        if ( ConnectorElement.SystemClassification != MEPSystemClassification.Global ) {
-          if ( connector.GetSystemTypeName() != ConnectorElement.SystemClassification.ToString() ) return false ;
-        }
-
-        return true ;
-      }
-
-      private bool HasSamePosition( Connector connector )
-      {
-        return connector.Origin.IsAlmostEqualTo( ConnectorPosition ) ;
+        return null ;
       }
     }
 

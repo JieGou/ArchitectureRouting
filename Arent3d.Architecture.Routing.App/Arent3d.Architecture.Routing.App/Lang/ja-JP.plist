@@ -113,6 +113,9 @@
         <key>TransactionName.Commands.Routing.RerouteAll</key>
         <string>全て再ルーティング</string>
 
+        <key>TransactionName.Commands.Routing.ReplaceFromTo</key>
+        <string>From-Toの再接続</string>
+
         <key>TransactionName.Commands.Routing.EraseSelectedRoutes</key>
         <string>選択From-Toを削除</string>
 
@@ -146,8 +149,17 @@
         <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
         <string>From-Toの終点を選択してください。</string>
 
-        <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
+        <key>Dialog.Commands.Routing.PickAndReRoute.Pick</key>
         <string>再ルーティングしたいFrom-Toを選択してください。</string>
+
+        <key>Dialog.Commands.Routing.ReplaceFromTo.Pick</key>
+        <string>始終点を変更したいFrom-Toを選択してください。</string>
+
+        <key>Dialog.Commands.Routing.ReplaceFromTo.SelectFromTo</key>
+        <string>変更したい始終点を選択してください。</string>
+
+        <key>Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint</key>
+        <string>新しい始終点を選択してください。</string>
 
         <key>Dialog.Commands.Routing.FromTo.FileName</key>
         <string>From-Toリスト ファイル</string>

@@ -102,6 +102,7 @@
                        VerticalAlignment="Center" />
                 <control:NumericUpDown x:Name="HeightNud"
                                        Value="{Binding FixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                                       ValueChanged="HeightNud_OnValueChanged"
                                        Visibility="Hidden"
                                        VerticalAlignment="Center" HorizontalAlignment="Right"
                                        HorizontalContentAlignment="Right"
@@ -134,7 +135,8 @@
                                   VerticalAlignment="Center"
                                   HorizontalAlignment="Right"
                                   LeftOnClick="Dialog2Buttons_OnLeftOnClick"
-                                  RightOnClick="Dialog2Buttons_OnRightOnClick" Loaded="Dialog2Buttons_Loaded" />
+                                  RightOnClick="Dialog2Buttons_OnRightOnClick" Loaded="Dialog2Buttons_Loaded" 
+                                  IsEnableLeftButton="{Binding IsEnableLeftBtn}"/>
         </Grid>
     </Border>
 </UserControl>

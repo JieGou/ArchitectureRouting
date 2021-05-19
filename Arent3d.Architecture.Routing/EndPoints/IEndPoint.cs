@@ -16,6 +16,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
     EndPointKey Key { get ; }
 
     /// <summary>
+    /// Returns whether end point can be replaced into the other one.
+    /// </summary>
+    bool IsReplaceable { get ; }
+
+    /// <summary>
     /// Returns whether this end point can have only one MEPCurve from this end point.
     /// </summary>
     bool IsOneSided { get ; }

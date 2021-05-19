@@ -18,8 +18,8 @@ namespace Arent3d.Architecture.Routing
     
     public AvoidType AvoidType { get ; set ; }
 
-    public IEndPoint FromEndPoint { get ; }
-    public IEndPoint ToEndPoint { get ; }
+    public IEndPoint FromEndPoint { get ; private set ; }
+    public IEndPoint ToEndPoint { get ; private set ; }
     public bool IsRoutingOnPipeSpace { get ; internal set ; } = false ;
 
     public double? GetRealNominalDiameter()
@@ -66,6 +66,19 @@ namespace Arent3d.Architecture.Routing
       AvoidType = avoidType ;
       FromEndPoint = fromEndPoint ;
       ToEndPoint = toEndPoint ;
+    }
+
+    public void ReplaceEndPoint( IEndPoint oldEndPoint, IEndPoint newEndPoint )
+    {
+      if ( false == oldEndPoint.IsReplaceable ) throw new InvalidOperationException() ;
+
+      if ( FromEndPoint == oldEndPoint ) {
+        FromEndPoint = newEndPoint ;
+      }
+
+      if ( ToEndPoint == oldEndPoint ) {
+        ToEndPoint = oldEndPoint ;
+      }
     }
   }
 

@@ -18,6 +18,17 @@ namespace Arent3d.Architecture.Routing.App.Forms
       typeof( Dialog2Buttons ), 
       new PropertyMetadata( "OK" ) ) ;
 
+    public string IsEnableLeftButton
+        {
+        get { return (string) GetValue( IsEnableLeftButtonProperty ); }
+        set { SetValue( IsEnableLeftButtonProperty, value ); }
+    }
+
+    public static readonly DependencyProperty IsEnableLeftButtonProperty = DependencyProperty.Register( "IsEnableLeftButton",
+        typeof( bool ),
+        typeof( Dialog2Buttons ),
+        new PropertyMetadata( true ) );
+
     public string RightButton
     {
       get { return (string) GetValue( RightButtonProperty ) ; }

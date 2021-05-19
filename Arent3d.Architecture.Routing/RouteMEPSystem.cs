@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
 
@@ -127,11 +128,6 @@ namespace Arent3d.Architecture.Routing
       return document.GetAllElements<MEPSystemType>().FirstOrDefault( systemClassification.IsCompatibleTo ) ;
     }
 
-    public static bool IsCompatibleMEPSystemType( MEPSystemType type, MEPSystemClassification systemClassification )
-    {
-      return ( type.SystemClassification == systemClassification ) ;
-    }
-
     private static MEPSystemClassificationInfo GetSystemClassificationInfo( Connector connector )
     {
       return MEPSystemClassificationInfo.From( connector ) ?? throw new KeyNotFoundException() ;
@@ -147,6 +143,7 @@ namespace Arent3d.Architecture.Routing
       {
         Domain.DomainHvac => CreateMechanicalMEPSystem( document, baseConnector, allConnectors ),
         Domain.DomainPiping => CreatePipingMEPSystem( document, baseConnector, allConnectors ),
+        Domain.DomainCableTrayConduit => null,
         _ => null,
       } ;
     }
@@ -189,63 +186,144 @@ namespace Arent3d.Architecture.Routing
     #endregion
 
     #region Get MEPCurveType
-    
+
     public static MEPCurveType GetMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType systemType )
     {
+      return GetBestForAllMEPCurveType( document, connectors, systemType )
+             ?? throw new InvalidOperationException( $"Available {nameof( MEPCurveType )} is not found." ) ;
+    }
+    private static MEPCurveType? GetBestForAllMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType systemType )
+    {
       var diameterTolerance = document.Application.VertexTolerance ;
-      HashSet<int>? available = null ;
+      Dictionary<int, CompatibilityPriority>? available = null ;
       foreach ( var connector in connectors.Where( c => GetSystemClassificationInfo( c ).IsCompatibleTo( systemType ) ) ) {
-        var (concreteType, isCompatibleType) = GetIsCompatibleFunc( connector, diameterTolerance ) ;
-        var curveTypes = document.GetAllElements<MEPCurveType>( concreteType ).Where( isCompatibleType ).Select( e => e.Id.IntegerValue ) ;
+        var (concreteType, getCompatibilityPriority) = GetCompatibilityPriorityFunc( connector, diameterTolerance ) ;
+        var curveTypes = document.GetAllElements<MEPCurveType>( concreteType ) ;
         if ( null == available ) {
-          available = curveTypes.ToHashSet() ;
+          available = new Dictionary<int, CompatibilityPriority>() ;
+          foreach ( var curveType in curveTypes ) {
+            if ( getCompatibilityPriority( curveType ) is not { } priority ) continue ;
+            available.Add( curveType.Id.IntegerValue, priority ) ;
+          }
         }
         else {
-          available.IntersectWith( curveTypes ) ;
+          var intersected = new HashSet<int>() ;
+          foreach ( var curveType in curveTypes ) {
+            if ( getCompatibilityPriority( curveType ) is not { } priority ) continue ;
+
+            var id = curveType.Id.IntegerValue ;
+            if ( false == available.TryGetValue( id, out var oldPriority ) ) continue ;
+
+            if ( priority.IsLessCompatibleThan( oldPriority ) ) {
+              available[ id ] = priority ;
+            }
+
+            intersected.Add( id ) ;
+          }
+
+          foreach ( var id in available.Keys.Where( id => false == intersected.Contains( id ) ).EnumerateAll() ) {
+            available.Remove( id ) ;
+          }
         }
 
-        if ( 0 == available.Count ) throw new InvalidOperationException( $"Available {nameof( MEPCurveType )} is not found." ) ;
+        if ( 0 == available.Count ) return null ;
       }
-      if ( null == available ) throw new InvalidOperationException( $"Available {nameof( MEPCurveType )} is not found." ) ;
+      if ( null == available ) return null ;
 
-      return document.GetElementById<MEPCurveType>( available.First() )! ;
+      var curveTypeId = ElementId.InvalidElementId.IntegerValue ;
+      CompatibilityPriority? bestPriority = null ;
+
+      foreach ( var (id, priority) in available ) {
+        if ( null == bestPriority || bestPriority.IsLessCompatibleThan( priority ) ) {
+          bestPriority = priority ;
+          curveTypeId = id ;
+        }
+        else if ( false == priority.IsLessCompatibleThan( bestPriority ) ) {
+          // on same value, smaller curve type id is used.
+          if ( curveTypeId > id ) {
+            curveTypeId = id ;
+          }
+        }
+      }
+
+      return document.GetElementById<MEPCurveType>( curveTypeId ) ;
     }
 
-    private static (Type, Func<MEPCurveType, bool>) GetIsCompatibleFunc( Connector connector, double diameterTolerance )
+    private static (Type, Func<MEPCurveType, CompatibilityPriority?>) GetCompatibilityPriorityFunc( Connector connector, double diameterTolerance )
     {
       return connector.Domain switch
       {
-        Domain.DomainHvac => ( typeof( DuctType ), type => IsCompatibleDuctType( type, connector, diameterTolerance ) ),
-        Domain.DomainPiping => ( typeof( PipeType ), type => IsCompatiblePipeType( type, connector, diameterTolerance ) ),
-        _ => ( typeof( MEPCurveType ), type => HasCompatibleShape( type, connector, diameterTolerance ) ),
+        Domain.DomainHvac => ( typeof( DuctType ), type => GetDuctCompatibilityPriority( type, connector, diameterTolerance ) ),
+        Domain.DomainPiping => ( typeof( PipeType ), type => GetPipeCompatibilityPriority( type, connector, diameterTolerance ) ),
+        Domain.DomainCableTrayConduit => ( typeof( ConduitType ), type => GetConduitCompatibilityPriority( type, connector, diameterTolerance ) ),
+        _ => ( typeof( MEPCurveType ), _ => null ),
       } ;
     }
 
-    private static bool IsCompatibleDuctType( MEPCurveType type, Connector connector, double diameterTolerance )
+    private static CompatibilityPriority? GetDuctCompatibilityPriority( MEPCurveType type, Connector connector, double diameterTolerance )
     {
-      if ( false == HasCompatibleShape( type, connector, diameterTolerance ) ) return false ;
-      if ( type is not DuctType dt ) return false ;
+      if ( type is not DuctType dt ) return null ;
 
-      return true ;
+      return GetShapeCompatibilityPriority( type, connector, diameterTolerance ) ;
     }
 
-    private static bool IsCompatiblePipeType( MEPCurveType type, Connector connector, double diameterTolerance )
+    private static CompatibilityPriority? GetPipeCompatibilityPriority( MEPCurveType type, Connector connector, double diameterTolerance )
     {
-      if ( false == HasCompatibleShape( type, connector, diameterTolerance ) ) return false ;
-      if ( type is not PipeType pt ) return false ;
+      if ( type is not PipeType pt ) return null ;
 
-      return true ;
+      return GetShapeCompatibilityPriority( type, connector, diameterTolerance ) ;
     }
 
-    private static bool HasCompatibleShape( MEPCurveType type, Connector connector, double diameterTolerance )
+    private static CompatibilityPriority? GetConduitCompatibilityPriority( MEPCurveType type, Connector connector, double diameterTolerance )
     {
-      if ( type.Shape != connector.Shape ) return false ;
+      if ( type is not ConduitType ct ) return null ;
+
+      return GetShapeCompatibilityPriority( type, connector, diameterTolerance ) ;
+    }
+
+    private static CompatibilityPriority? GetShapeCompatibilityPriority( MEPCurveType type, Connector connector, double diameterTolerance )
+    {
+      var priorityType = ( type.Shape == connector.Shape ) ? CompatibilityPriorityType.SameShape : CompatibilityPriorityType.DifferentShape ;
 
       var nominalDiameter = connector.GetDiameter() ;
-      if ( false == type.HasAnyNominalDiameter( nominalDiameter, diameterTolerance ) ) return false ;
-      // TODO: other parameters
+      if ( type.HasAnyNominalDiameter( nominalDiameter, diameterTolerance ) ) return new CompatibilityPriority( priorityType, 0 ) ;
 
-      return true ;
+      var list = type.GetNominalDiameters( diameterTolerance ) ;
+      if ( 0 == list.Count ) return null ;
+
+      int index = list.BinarySearch( nominalDiameter ) ;
+      if ( index < 0 ) index = ~index ;
+
+      var diff1 = ( index == 0 ) ? double.MaxValue : nominalDiameter - list[ index - 1 ] ;
+      var diff2 = ( index == list.Count ) ? double.MaxValue : list[ index ] - nominalDiameter ;
+
+      return new CompatibilityPriority( priorityType, Math.Min( diff1, diff2 ) ) ;
+    }
+
+    private enum CompatibilityPriorityType
+    {
+      DifferentShape,
+      SameShape,
+    }
+
+    private class CompatibilityPriority
+    {
+      private readonly CompatibilityPriorityType _priorityType ;
+      private readonly double _diffValue ;
+      
+      public CompatibilityPriority( CompatibilityPriorityType priorityType, double diffValue )
+      {
+        _priorityType = priorityType ;
+        _diffValue = diffValue ;
+      }
+
+      public bool IsLessCompatibleThan( CompatibilityPriority another )
+      {
+        var type = ( (int) _priorityType ) - ( (int) another._priorityType ) ;
+        if ( 0 != type ) return ( type < 0 ) ;
+
+        return ( _diffValue > another._diffValue ) ;
+      }
     }
 
     #endregion

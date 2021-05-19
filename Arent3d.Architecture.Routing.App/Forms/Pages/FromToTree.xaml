@@ -42,7 +42,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <TextBox Name="secondTextBox" Text="{Binding ItemTypeName}" LostFocus="TextBox_LostFocus" KeyDown="TextBox_KeyDown">
+                        <TextBox Name="secondTextBox" Text="{Binding ItemTypeName}" KeyDown="TextBox_KeyDown" PreviewLostKeyboardFocus="TextBox_PreviewLostKeyboardFocus">
                             <TextBox.Style>
                                 <Style TargetType="TextBox">
                                     <Setter Property="Visibility" Value="Collapsed"/>
