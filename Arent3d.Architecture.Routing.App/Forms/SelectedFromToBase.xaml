@@ -106,7 +106,7 @@
                                        VerticalAlignment="Center" HorizontalAlignment="Right"
                                        HorizontalContentAlignment="Right"
                                        Increment="100"
-                                       MaxValue="10000000000" MinValue="-10000000000" 
+                                       MaxValue="10000000000" MinValue="0" 
                                        Width="80" />
                 <Label x:Name="mm" Content="mm" VerticalAlignment="Center" HorizontalAlignment="Left"
                        Visibility="Hidden"
