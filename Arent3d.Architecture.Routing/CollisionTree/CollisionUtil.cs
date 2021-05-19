@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 {
   public static class CollisionUtil 
   {
-    private static IEnumerable<IGeometryBody> Intersects( this ITree tree, IGeometryBody target)
+    private static IEnumerable<IGeometryBody> Intersects( this ITree tree, IGeometryBody target )
     {
       var elements = tree.BoxIntersects( target ) ;
       return 
@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
         .Where( intersect => Arent3d.CollisionLib.GeometryUtil.Intersect( intersect, target ).Any() ) ; //詳細判定
     }
     
-    private static IEnumerable<(IGeometryBody iGeometryBody, IGeometry iGeometry)> IntersectsInDetailToRack ( this ITree tree, IGeometryBody target)
+    private static IEnumerable<(IGeometryBody iGeometryBody, IGeometry iGeometry)> IntersectsInDetailToRack ( this ITree tree, IGeometryBody target )
     {
       var elements = tree.BoxIntersects( target ) ;
       var tuples = GetBodies( elements )
@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     }
     
     public static IEnumerable<(IGeometryBody target,IGeometryBody intersect)> IntersectsContinuousBlock( 
-      this ITree tree, IReadOnlyCollection<IGeometryBody> continuousTargets)
+      this ITree tree, IReadOnlyCollection<IGeometryBody> continuousTargets )
     {
       var result = 
         from target in continuousTargets 
@@ -48,12 +48,12 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     }
 
     public static IEnumerable<(IGeometryBody body, IRouteCondition? cond, bool isStructure)>
-      GetIntersectAndRoutingCondition( this ITree tree, IGeometryBody target)
+      GetIntersectAndRoutingCondition( this ITree tree, IGeometryBody target )
     {
       return tree.Intersects( target ).Select( intersect => ( intersect, intersect.ToCondition(), intersect.IsStructure() ) ) ;
     }
     
-    public static IEnumerable<(IGeometry body, IRouteCondition? cond )> GetIntersectsInDetailToRack( this ITree tree, IGeometryBody target)
+    public static IEnumerable<(IGeometry body, IRouteCondition? cond )> GetIntersectsInDetailToRack( this ITree tree, IGeometryBody target )
     {
       foreach ( var pair in tree.IntersectsInDetailToRack( target ) ) {
         yield return ( pair.iGeometry, pair.iGeometryBody.ToCondition() ) ;
@@ -118,9 +118,12 @@ namespace Arent3d.Architecture.Routing.CollisionTree
             continue ;
         }
       }
-      
     }
     
+    public static GeometryElement? GetGeometryElement( this Element element )
+    {
+      return element.get_Geometry( new Options { DetailLevel = ViewDetailLevel.Fine, ComputeReferences = false, IncludeNonVisibleObjects = false } ) ;
+    }
   }
 }
 

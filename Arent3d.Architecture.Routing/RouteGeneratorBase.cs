@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// When overridden in a derived class, returns an collision check tree.
     /// </summary>
-    protected abstract ICollisionCheck CollisionCheckTree { get ; }
+    protected abstract CollisionTree.CollisionTree CollisionCheckTree { get ; }
 
     /// <summary>
     /// When overridden in a derived class, returns a structure graph.

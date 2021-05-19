@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     /// <summary>
-    /// Executes the specIfied command Data
+    /// Executes the specified command Data
     /// </summary>
     /// <param name="commandData"></param>
     /// <param name="message"></param>

@@ -168,30 +168,29 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Connect all connectors related to each route vertex.
     /// </summary>
-    public void ConnectAllVertices()
+    public IEnumerable<Element> ConnectAllVertices()
     {
+      var result = new List<Element>() ;
       foreach ( var connectors in _connectorMapper.GetConnections( _document ) ) {
-        ConnectConnectors( connectors ) ;
+        if ( ConnectConnectors( connectors ) is { } fitting ) result.Add( fitting ) ;
       }
+      return result ;
     }
 
     /// <summary>
     /// Connect all connectors.
     /// </summary>
     /// <param name="connectors">Connectors to be connected</param>
-    private void ConnectConnectors( IReadOnlyList<Connector> connectors )
+    private Element? ConnectConnectors( IReadOnlyList<Connector> connectors )
     {
       switch ( connectors.Count ) {
-        case 1 : return ;
+        case 1 : return null ;
         case 2 :
-          ConnectTwoConnectors( connectors[ 0 ], connectors[ 1 ] ) ;
-          break ;
+          return ConnectTwoConnectors( connectors[ 0 ], connectors[ 1 ] ) ;
         case 3 :
-          ConnectThreeConnectors( connectors[ 0 ], connectors[ 1 ], connectors[ 2 ] ) ;
-          break ;
+          return ConnectThreeConnectors( connectors[ 0 ], connectors[ 1 ], connectors[ 2 ] ) ;
         case 4 :
-          ConnectFourConnectors( connectors[ 0 ], connectors[ 1 ], connectors[ 2 ], connectors[ 3 ] ) ;
-          break ;
+          return ConnectFourConnectors( connectors[ 0 ], connectors[ 1 ], connectors[ 2 ], connectors[ 3 ] ) ;
         default : throw new InvalidOperationException() ;
       }
     }
@@ -383,7 +382,7 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     /// <param name="connector1"></param>
     /// <param name="connector2"></param>
-    private void ConnectTwoConnectors( Connector connector1, Connector connector2 )
+    private Element? ConnectTwoConnectors( Connector connector1, Connector connector2 )
     {
       var connectors = new[] { connector1, connector2 } ;
       var subRouteData = GuessSubRoute( connectors ) ;
@@ -393,10 +392,10 @@ namespace Arent3d.Architecture.Routing
       var (success, fitting) = ConnectTwoConnectors( _document, connector1, connector2 ) ;
       if ( false == success ) {
         AddBadConnectorSet( connector1, connector2 ) ;
-        return ;
+        return null ;
       }
 
-      if ( null == fitting ) return ;
+      if ( null == fitting ) return null ;
 
       if ( null != subRouteData ) {
         MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromEndPoints, toEndPoints ) ;
@@ -404,6 +403,8 @@ namespace Arent3d.Architecture.Routing
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
       EraseZeroLengthMEPCurves( fitting ) ;
+
+      return fitting ;
     }
 
     /// <summary>
@@ -412,7 +413,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="connector1"></param>
     /// <param name="connector2"></param>
     /// <param name="connector3"></param>
-    private void ConnectThreeConnectors( Connector connector1, Connector connector2, Connector connector3 )
+    private Element? ConnectThreeConnectors( Connector connector1, Connector connector2, Connector connector3 )
     {
       var connectors = new[] { connector1, connector2, connector3 } ;
       var subRouteData = GuessSubRoute( connectors ) ;
@@ -422,10 +423,10 @@ namespace Arent3d.Architecture.Routing
       var (success, fitting) = ConnectThreeConnectors( _document, connector1, connector2, connector3 ) ;
       if ( false == success ) {
         AddBadConnectorSet( connector1, connector2, connector3 ) ;
-        return ;
+        return null ;
       }
 
-      if ( null == fitting ) return ;
+      if ( null == fitting ) return null ;
 
       if ( null != subRouteData ) {
         MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromEndPoints, toEndPoints ) ;
@@ -433,6 +434,7 @@ namespace Arent3d.Architecture.Routing
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
       EraseZeroLengthMEPCurves( fitting ) ;
+      return fitting ;
     }
 
     /// <summary>
@@ -442,7 +444,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="connector2"></param>
     /// <param name="connector3"></param>
     /// <param name="connector4"></param>
-    private void ConnectFourConnectors( Connector connector1, Connector connector2, Connector connector3, Connector connector4 )
+    private Element? ConnectFourConnectors( Connector connector1, Connector connector2, Connector connector3, Connector connector4 )
     {
       var connectors = new[] { connector1, connector2, connector3, connector4 } ;
       var subRouteData = GuessSubRoute( connectors ) ;
@@ -452,10 +454,10 @@ namespace Arent3d.Architecture.Routing
       var (success, fitting) = ConnectFourConnectors( _document, connector1, connector2, connector3, connector4 ) ;
       if ( false == success ) {
         AddBadConnectorSet( connector1, connector2, connector3 ) ;
-        return ;
+        return null ;
       }
 
-      if ( null == fitting ) return ;
+      if ( null == fitting ) return null ;
 
       if ( null != subRouteData ) {
         MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromEndPoints, toEndPoints ) ;
@@ -463,6 +465,7 @@ namespace Arent3d.Architecture.Routing
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
       EraseZeroLengthMEPCurves( fitting ) ;
+      return fitting ;
     }
 
     private static (string RouteName, int SubRouteIndex)? GuessSubRoute( params Connector[] connectors )

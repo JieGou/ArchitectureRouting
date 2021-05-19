@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing
 
     protected override IReadOnlyCollection<AutoRoutingTarget> RoutingTargets { get ; }
 
-    protected override ICollisionCheck CollisionCheckTree { get ; }
+    protected override CollisionTree.CollisionTree CollisionCheckTree { get ; }
 
     protected override IStructureGraph StructureGraph { get ; }
 
@@ -99,7 +99,7 @@ namespace Arent3d.Architecture.Routing
       RoutingTargets.DumpRoutingTargets( GetTargetsLogFileName( _document ), CollisionCheckTree ) ;
 #endif
 
-      // TODO
+      // TODO, if needed
     }
 
     protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, AutoRoutingResult result )
@@ -108,23 +108,29 @@ namespace Arent3d.Architecture.Routing
       result.DebugExport( GetResultLogFileName( _document, routingTarget ) ) ;
 #endif
 
-      var ductCreator = new MEPSystemCreator( _document, routingTarget, _routeMEPSystems ) ;
+      var mepSystemCreator = new MEPSystemCreator( _document, routingTarget, _routeMEPSystems ) ;
 
       foreach ( var routeVertex in result.RouteVertices ) {
         if ( routeVertex is not TerminalPoint ) continue ;
 
-        ductCreator.RegisterEndPointConnector( routeVertex ) ;
+        mepSystemCreator.RegisterEndPointConnector( routeVertex ) ;
       }
 
+      var newElements = new List<Element>() ;
       foreach ( var routeEdge in result.RouteEdges ) {
-        ductCreator.CreateEdgeElement( routeEdge, result.GetPassingEndPoints( routeEdge ), routingTarget.Domain ) ;
+        var elm = mepSystemCreator.CreateEdgeElement( routeEdge, result.GetPassingEndPoints( routeEdge ), routingTarget.Domain ) ;
+        newElements.Add( elm ) ;
       }
 
-      ductCreator.ConnectAllVertices() ;
+      newElements.AddRange( mepSystemCreator.ConnectAllVertices() ) ;
 
-      _globalPassPointConnectorMapper.Merge( ductCreator.PassPointConnectorMapper ) ;
+      _document.Regenerate() ;
 
-      RegisterBadConnectors( ductCreator.GetBadConnectorSet() ) ;
+      CollisionCheckTree.AddElements( newElements ) ;
+
+      _globalPassPointConnectorMapper.Merge( mepSystemCreator.PassPointConnectorMapper ) ;
+
+      RegisterBadConnectors( mepSystemCreator.GetBadConnectorSet() ) ;
     }
 
     private void RegisterBadConnectors( IEnumerable<Connector[]> badConnectorSet )

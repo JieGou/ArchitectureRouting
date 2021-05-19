@@ -4,6 +4,7 @@ using System.Linq ;
 using Arent3d.CollisionLib ;
 using Arent3d.GeometryLib ;
 using Arent3d.Routing ;
+using Arent3d.Utility ;
 #if DUMP_LOGS
 using Arent3d.Utility ;
 #endif
@@ -14,7 +15,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 {
   public class CollisionTree : ICollisionCheck
   {
-    private readonly ITree _treeBody ;
+    private ITree _treeBody ;
 
 #if DUMP_LOGS
     public IReadOnlyCollection<(ElementId ElementId, Box3d Box)> TreeElementBoxes { get ; } 
@@ -39,7 +40,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     private static IEnumerable<(ElementId ElementId, Box3d Box)> CollectTreeElementBoxes( ICollisionCheckTargetCollector collector )
     {
       foreach ( var element in collector.GetCollisionCheckTargets() ) {
-        var geom = element.get_Geometry( new Options { DetailLevel = ViewDetailLevel.Coarse, ComputeReferences = false, IncludeNonVisibleObjects = false } ) ;
+        var geom = element.GetGeometryElement() ;
         if ( null == geom ) continue ;
 
         if ( false == collector.IsTargetGeometryElement( geom ) ) continue ;
@@ -91,5 +92,12 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     }
 
     private static IGeometryBody GetGeometryBodyBox( Box3d box ) => new CollisionBox( box ) ;
+
+    public void AddElements( IEnumerable<Element> elements )
+    {
+      var geometryElements = elements.Select( elm => elm.GetGeometryElement() ).NonNull() ;
+      var treeElements = geometryElements.Select( geom => new TreeElement( new BoxGeometryBody( geom.GetBoundingBox().To3dRaw() ) ) ) ;
+      _treeBody = TreeFactory.AddElementsOnTree( ref _treeBody, out _, treeElements ) ;
+    }
   }
 }
