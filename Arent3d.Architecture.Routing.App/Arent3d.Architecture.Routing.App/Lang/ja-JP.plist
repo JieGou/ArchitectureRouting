@@ -168,6 +168,12 @@
         <key>Dialog.Commands.Routing.Common.Body.Error.FittingCannotBeInserted</key>
         <string>以下のコネクタに対し、継手要素が挿入できませんでした：&#xA;&#xA;{0}</string>
 
+        <key>Dialog.Forms.SelectedFromToBase.ChangeFromTo</key>
+        <string>From-To情報を変更しますか？&#xA;変更する場合、自動的に再ルーティングが行われます。</string>
+
+        <key>Dialog.Forms.FromToTree.Rename</key>
+        <string>名称が重複しているため、他の名称に変更してください。</string>
+
         <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.None</key>
         <string>どちらでもよい</string>
         <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoPocket</key>

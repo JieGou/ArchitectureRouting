@@ -177,6 +177,13 @@
         <key>Dialog.Commands.Routing.Common.Body.Error.FittingCannotBeInserted</key>
         <string>Some fitting elements could not be inserted on the following connectors:&#xA;&#xA;{0}</string>
 
+        <key>Dialog.Forms.SelectedFromToBase.ChangeFromTo</key>
+        <string>Do you want to change the From-To information?&#xA;If you change it, it will be automatically re-routed.</string>
+
+        <key>Dialog.Forms.FromToTree.Rename</key>
+        <string>Since the name is duplicated, please change it to another name.</string>
+
+
         <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.None</key>
         <string>Whichever</string>
         <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoPocket</key>
