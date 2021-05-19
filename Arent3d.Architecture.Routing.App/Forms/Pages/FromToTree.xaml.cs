@@ -49,11 +49,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     public FromToTree()
     {
-      this.DataContext = new { IsRouterVisibility = true, IsConnectorVisibility = false } ;
-      IsConnectorVisibility = true ;
-      IsRouterVisibility = false ;
+      this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
       this.CoordinatesX = "X1" ;
-
       this.CoordinatesY = "Y1" ;
       this.CoordinatesZ = "Z1" ;
       InitializeComponent() ;
@@ -75,6 +72,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       ClearSelectedItem() ;
       SelectedFromTo.ClearDialog() ;
+      this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
     }
 
     /// <summary>
@@ -268,12 +266,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
     }
 
     /// <summary>
-    /// Clear selection it treeview
+    /// Clear selection in treeview
     /// </summary>
     private void ClearSelectedItem()
     {
       if ( FromToTreeView.SelectedItem is TreeViewItem selectedItem ) {
-        selectedItem.IsSelected = false ;
+        selectedItem.IsSelected = false;
       }
     }
 
