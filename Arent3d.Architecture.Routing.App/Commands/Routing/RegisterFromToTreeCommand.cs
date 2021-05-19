@@ -124,9 +124,12 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     public Result Execute( UIApplication uiApplication )
     {
       _uiApp = uiApplication ;
-      _dockableWindow?.CustomInitiator(uiApplication);
-      _dp = uiApplication.GetDockablePane( _dpid ) ;
-      _dp.Show();
+      //Initialize FromToTreeView when open directly rvt file
+      if ( _uiApp.ActiveUIDocument != null ) {
+        _dockableWindow?.CustomInitiator(uiApplication);
+        _dp = uiApplication.GetDockablePane( _dpid ) ;
+        _dp.Show();
+      }
       
       
       try {
