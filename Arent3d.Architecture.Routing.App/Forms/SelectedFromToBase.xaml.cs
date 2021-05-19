@@ -9,6 +9,7 @@ using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Autodesk.Revit.UI ;
 using Arent3d.Revit.I18n ;
+using static ControlLib.NumericUpDown ;
 using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
@@ -40,8 +41,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public bool? CurrentHeightSetting { get ; set ; }
     public bool? CurrentOrgHeightSetting { get ; set ; }
 
-    public string FixedHeight { get ; set ; }
-    public string? FixedOrgHeight { get ; set ; }
+    public double FixedHeight { get ; set ; }
+    public double FixedOrgHeight { get ; set ; }
 
     //AvoidType
     public AvoidType AvoidTypeKey { get ; set ; }
@@ -81,7 +82,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       CurveTypeLabel = "Type" ;
       CurrentDirect = false ;
       CurrentHeightSetting = false ;
-      FixedHeight = "" ;
+      FixedHeight = 0.0 ;
       Diameters = new ObservableCollection<string>() ;
       SystemTypes = new ObservableCollection<MEPSystemType>() ;
       CurveTypes = new ObservableCollection<MEPCurveType>() ;
@@ -174,7 +175,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       Direct.IsChecked = CurrentDirect ;
 
       HeightSetting.IsChecked = CurrentHeightSetting ;
-      HeightTextBox.Text = FixedHeight ;
+      HeightNud.Value = FixedHeight ;
       
       AvoidTypeComboBox.SelectedItem = GetAvoidTypeKeyValuePair(AvoidTypeKey) ;
     }
@@ -190,7 +191,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       SystemTypes.Clear() ;
       CurveTypes.Clear() ;
       HeightSetting.IsChecked = false ;
-      HeightTextBox.Text = "" ;
+      HeightNud.Value = 0.0 ;
       AvoidTypeComboBox.SelectedItem = null ;
     }
 
@@ -206,10 +207,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
-      MessageBoxResult result = MessageBox.Show( "Route情報を変更してもよろしいでしょうか。", "FromToTree", MessageBoxButton.YesNo ) ;
+      MessageBoxResult result = MessageBox.Show( "Dialog.Forms.SelectedFromToBase.ChangeFromTo".GetAppStringByKeyOrDefault( "Do you want to change the From-To information?&#xA;If you change it, it will be automatically re-routed." ), "", MessageBoxButton.YesNo ) ;
       if ( result == MessageBoxResult.Yes ) {
         SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex,
-          CurrentDirect, HeightSetting.IsChecked, HeightTextBox.Text, AvoidTypeKey ) ;
+          CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey ) ;
       }
     }
 
@@ -229,7 +230,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       Direct.IsChecked = CurrentOrgDirect ;
       HeightSetting.IsChecked = CurrentOrgHeightSetting ;
-      HeightTextBox.Text = FixedOrgHeight ;
+      HeightNud.Value = FixedOrgHeight ;
 
       AvoidTypeComboBox.SelectedItem = GetAvoidTypeKeyValuePair(AvoidTypeOrgKey) ;
     }
@@ -252,12 +253,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       if ( visibility ) {
         FL.Visibility = Visibility.Visible ;
-        HeightTextBox.Visibility = Visibility.Visible ;
+        HeightNud.Visibility = Visibility.Visible ;
         mm.Visibility = Visibility.Visible ;
       }
       else {
         FL.Visibility = Visibility.Hidden ;
-        HeightTextBox.Visibility = Visibility.Hidden ;
+        HeightNud.Visibility = Visibility.Hidden ;
         mm.Visibility = Visibility.Hidden ;
       }
     }
