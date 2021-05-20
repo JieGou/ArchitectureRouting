@@ -68,8 +68,11 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
           // split segment
           var diameter = segment.GetRealNominalDiameter() ?? segment.PreferredNominalDiameter ;
           var isRoutingOnPipeSpace = segment.IsRoutingOnPipeSpace ;
-          yield return new RouteSegment( segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace ) ;
-          yield return new RouteSegment( passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace ) ;
+          var fixeBopHeight = segment.FixedBopHeight ;
+          var curveType = segment.CurveType ;
+          var avoidType = segment.AvoidType ;
+          yield return new RouteSegment( segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) { CurveType = curveType } ;
+          yield return new RouteSegment( passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) { CurveType = curveType } ;
         }
         else {
           yield return segment ;

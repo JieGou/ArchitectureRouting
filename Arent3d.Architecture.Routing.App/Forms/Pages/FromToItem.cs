@@ -94,7 +94,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       AllRoutes = allRoutes ;
       Doc = doc ;
       UiDoc = uiDoc ;
-            IsRootRoute = false;
+      IsRootRoute = false;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

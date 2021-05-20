@@ -39,5 +39,14 @@ namespace Arent3d.Architecture.Routing.App
 
     [Index( 8 ), Name( "On Pipe Space" )]
     public bool IsRoutingOnPipeSpace { get ; set ; } = false ;
+
+    [Index( 9 ), Name( "Preferred Curve Type Name" )]
+    public string CurveTypeName { get ; set ; } = string.Empty ;
+
+    [Index( 10 ), Name( "Preferred Height" )]
+    public double? FixedBopHeight { get ; set ; } = null ;
+
+    [Index( 11 ), Name( "Preferred AvoidType" )]
+    public AvoidType AvoidType { get ; set ; } = Routing.AvoidType.Whichever ;
   }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -48,6 +49,24 @@ namespace Arent3d.Architecture.Routing
     {
       foreach ( var seg in Segments ) {
         seg.IsRoutingOnPipeSpace = value ;
+      }
+    }
+
+    public double? FixedBopHeight => Segments.First().FixedBopHeight ;
+
+    public void ChangeFixedBopHeight( double? value )
+    {
+      foreach ( var seg in Segments ) {
+        seg.FixedBopHeight = value ;
+      }
+    }
+
+    public AvoidType AvoidType => Segments.First().AvoidType ;
+
+    public void ChangeAvoidType( AvoidType avoidType )
+    {
+      foreach ( var seg in Segments ) {
+        seg.AvoidType = avoidType ;
       }
     }
 

@@ -27,7 +27,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="priority">Priority (can be duplicated between end points in an <see cref="AutoRoutingTarget"/>).</param>
     /// <param name="routeMepSystem">A <see cref="RouteMEPSystem"/> object this end point belongs to.</param>
     /// <param name="edgeDiameter">Edge diameter.</param>
-    internal AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, int priority, RouteMEPSystem routeMepSystem, double edgeDiameter )
+    internal AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, int priority, RouteMEPSystem routeMepSystem, double edgeDiameter, ProcessConstraint avoidType )
     {
       EndPoint = endPoint ;
       IsStart = isFrom ;
@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing
       _minimumStraightLength = routeMepSystem.GetReducerLength( endPoint.GetDiameter() ?? -1, edgeDiameter ) + EndPoint.GetMinimumStraightLength( routeMepSystem, edgeDiameter, IsStart ) ;
       _angleToleranceRadian = routeMepSystem.AngleTolerance ;
 
-      PipeCondition = new RouteCondition( routeMepSystem, endPoint, edgeDiameter ) ;
+      PipeCondition = new RouteCondition( routeMepSystem, endPoint, edgeDiameter, avoidType ) ;
     }
 
     public Vector3d Position => EndPoint.RoutingStartPosition.To3dRaw() + _minimumStraightLength * Direction.ForEndPointType( IsStart ) ;
@@ -192,15 +192,16 @@ namespace Arent3d.Architecture.Routing
       public double DiameterPipeAndInsulation => Diameter.Outside ;
       public double DiameterFlangeAndInsulation => Diameter.Outside ; // provisional
       public IPipeSpec Spec { get ; }
-
-      public ProcessConstraint ProcessConstraint => ProcessConstraint.NoPocket ;
+      public ProcessConstraint ProcessConstraint { get ; private set; }
       public string FluidPhase => DefaultFluidPhase ;
 
-      public RouteCondition( RouteMEPSystem routeMepSystem, IEndPoint endPoint, double diameter )
+      public RouteCondition( RouteMEPSystem routeMepSystem, IEndPoint endPoint, double diameter, ProcessConstraint avoidType )
       {
         Diameter = diameter.DiameterValueToPipeDiameter() ;
 
         Spec = new MEPSystemPipeSpec( routeMepSystem ) ;
+
+        ProcessConstraint = avoidType ;
       }
     }
   }

@@ -81,7 +81,7 @@ namespace Arent3d.Architecture.Routing.App
         _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>() ;
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
-
+        
         //_fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
         //_exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
       }
@@ -161,6 +161,7 @@ namespace Arent3d.Architecture.Routing.App
       _replaceFromToCommandButton.Enabled = setupIsDone ;
       _showFromToWindowCommandButton.Enabled = setupIsDone ;
       _showFromToTreeCommandButton.Enabled = setupIsDone ;
+
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;

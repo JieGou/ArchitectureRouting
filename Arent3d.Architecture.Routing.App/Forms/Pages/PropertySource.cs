@@ -47,6 +47,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       //Direct
       public bool? IsDirect { get ; set ; }
+      
+      //HeightSetting
+      public bool? OnHeightSetting { get ; set ; }
+      public double? FixedHeight { get ; set ; }
+      
+      public AvoidType AvoidType { get ; set ; }
 
       public RoutePropertySource( Document doc, IReadOnlyCollection<SubRoute> subRoutes ) : base( doc )
       {
@@ -81,6 +87,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         //Direct Info
         IsDirect = subRoute.IsRoutingOnPipeSpace ;
+        
+        //Height Info
+        OnHeightSetting = (subRoute.FixedBopHeight != null)  ;
+        FixedHeight = subRoute.FixedBopHeight ;
+        
+        //AvoidType Info
+        AvoidType = subRoute.AvoidType ;
       }
 
       private void IsMultiSelected()
@@ -97,6 +110,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
         }
 
         IsDirect = route.UniqueIsRoutingOnPipeSpace ;
+
+        if ( IsHeightSettingMultiSelected( route ) ) {
+          OnHeightSetting = null ;
+        }
+
       }
 
       /// <summary>
@@ -117,6 +135,21 @@ namespace Arent3d.Architecture.Routing.App.Forms
       private static bool IsDiameterMultiSelected( Route route )
       {
         return ( null == route.UniqueDiameter ) ;
+      }
+
+      private static bool IsHeightSettingMultiSelected( Route route )
+      {
+        var allNull = true ;
+        foreach ( var subRoute in route.SubRoutes ) {
+          allNull = (subRoute.FixedBopHeight == null) ;
+        }
+
+        if ( allNull ) {
+          return false ;
+        }
+        else {
+          return ( null == route.UniqueFixedBopHeight ) ;
+        }
       }
     }
   }

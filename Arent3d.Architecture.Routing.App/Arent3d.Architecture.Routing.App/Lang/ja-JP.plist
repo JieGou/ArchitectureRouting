@@ -76,6 +76,9 @@
         <key>App.Commands.Routing.ShowFromTreeCommand</key>
         <string>From-To&#xA;Tree</string>
 
+        <key>App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
+        <string>Change&#xA;FixedBopHeight</string>
+
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -130,6 +133,9 @@
 
         <key>TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand</key>
         <string>RouteNameを変更</string>
+
+        <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
+        <string>Route高さを変更</string>
         
 
         <!-- Dialogs -->
@@ -173,6 +179,21 @@
         <string>ルーティング時、一部の要素が作成できませんでした。&#xA;通過点を指定することでエラーのない形状を作成できます。</string>
         <key>Dialog.Commands.Routing.Common.Body.Error.FittingCannotBeInserted</key>
         <string>以下のコネクタに対し、継手要素が挿入できませんでした：&#xA;&#xA;{0}</string>
+
+        <key>Dialog.Forms.SelectedFromToBase.ChangeFromTo</key>
+        <string>From-To情報を変更しますか？&#xA;変更する場合、自動的に再ルーティングが行われます。</string>
+
+        <key>Dialog.Forms.FromToTree.Rename</key>
+        <string>名称が重複しているため、他の名称に変更してください。</string>
+
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.None</key>
+        <string>どちらでもよい</string>
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoPocket</key>
+        <string>よけない</string>
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoDrainPocket</key>
+        <string>上に避ける</string>
+        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket</key>
+        <string>下に避ける</string>
 
 
         <!-- Parameter Names -->

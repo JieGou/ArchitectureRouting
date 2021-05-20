@@ -118,13 +118,13 @@ namespace Arent3d.Architecture.Routing
     {
       var edgeDiameter = subRoute.GetDiameter() ;
       var endPoints = subRoute.FromEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth, routeMepSystem, edgeDiameter ) ) ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth, routeMepSystem, edgeDiameter, ( ProcessConstraint) subRoute.AvoidType) ) ;
     }
     private static IEnumerable<AutoRoutingEndPoint> GetToEndPoints( SubRoute subRoute, int depth, RouteMEPSystem routeMepSystem )
     {
       var edgeDiameter = subRoute.GetDiameter() ;
       var endPoints = subRoute.ToEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, routeMepSystem, edgeDiameter ) ) ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, routeMepSystem, edgeDiameter, ( ProcessConstraint) subRoute.AvoidType ) ) ;
     }
 
     private static bool IsRoutingTargetEnd( IEndPoint ep )
@@ -180,7 +180,7 @@ namespace Arent3d.Architecture.Routing
         Priority = priority ;
         IsRoutingOnPipeRacks = ( 0 < documentData.RackCollection.RackCount ) && subRoute.IsRoutingOnPipeSpace ;
         AllowHorizontalBranches = documentData.AllowHorizontalBranches( subRoute ) ;
-        FixedBopHeight = null ;
+        FixedBopHeight = subRoute.FixedBopHeight ;
       }
 
       public bool IsRoutingOnPipeRacks { get ; }
@@ -190,11 +190,6 @@ namespace Arent3d.Architecture.Routing
 
       public bool AllowHorizontalBranches { get ; }
       public double? FixedBopHeight { get ; }
-
-      private static double GetHeight( Connector connector )
-      {
-        return connector.Origin.Z - connector.GetDiameter() * 0.5 ;
-      }
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints
