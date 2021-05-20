@@ -149,14 +149,24 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       SelectedFromTo.CurrentOrgDirect = SelectedFromTo.CurrentDirect = propertySource.IsDirect ;
 
+      if ( propertySource.Diameters is {} diameters ) {
+        var diameter = diameters[ propertySource.DiameterIndex ] ;
+        SelectedFromTo.CurrentMinValue = Math.Round( UnitUtils.ConvertFromInternalUnits( diameter/2 , UnitTypeId.Millimeters ), 2, MidpointRounding.AwayFromZero ) ;
+        SelectedFromTo.CurrentMaxValue = Math.Round( UnitUtils.ConvertFromInternalUnits( SelectedFromToViewModel.GetUpLevelHeightFromLevel() - diameter/2 , UnitTypeId.Millimeters ), 2, MidpointRounding.AwayFromZero ) ; 
+      }
+      
+
       SelectedFromTo.CurrentOrgHeightSetting = SelectedFromTo.CurrentHeightSetting = propertySource.OnHeightSetting ;
       if ( propertySource.OnHeightSetting != null ) {
         SelectedFromTo.SetHeightTextVisibility( (bool) propertySource.OnHeightSetting ) ;
         if ( propertySource.FixedHeight is { } fixedHeight ) {
-          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = UnitUtils.ConvertFromInternalUnits( SelectedFromToViewModel.GetHeightFromFloor( fixedHeight ), UnitTypeId.Millimeters ) ;
+          var test = SelectedFromToViewModel.GetRouteHeightFromFloor( fixedHeight ) ;
+          var heightValue = UnitUtils.ConvertFromInternalUnits( SelectedFromToViewModel.GetRouteHeightFromFloor( fixedHeight ), UnitTypeId.Millimeters ) ;
+          var round = Math.Round( heightValue, 2, MidpointRounding.AwayFromZero ) ; 
+          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = round ;
         }
         else {
-          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = 0.0 ;
+          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = SelectedFromTo.CurrentMinValue ;
         }
       }
       else {

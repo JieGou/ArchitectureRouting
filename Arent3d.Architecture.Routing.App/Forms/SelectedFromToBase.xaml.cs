@@ -9,6 +9,7 @@ using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Autodesk.Revit.UI ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility ;
 using ControlLib ;
 using static ControlLib.NumericUpDown ;
 using Visibility = System.Windows.Visibility ;
@@ -44,6 +45,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     public double FixedHeight { get ; set ; }
     public double FixedOrgHeight { get ; set ; }
+    
+    public double CurrentMaxValue { get ; set ; }
+    public double CurrentMinValue { get ; set ; }
 
     //AvoidType
     public AvoidType AvoidTypeKey { get ; set ; }
@@ -83,6 +87,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       CurrentDirect = false ;
       CurrentHeightSetting = false ;
       FixedHeight = 0.0 ;
+      CurrentMaxValue = 4000 ;
+      CurrentMinValue = 0 ;
       Diameters = new ObservableCollection<string>() ;
       SystemTypes = new ObservableCollection<MEPSystemType>() ;
       CurveTypes = new ObservableCollection<MEPCurveType>() ;
@@ -189,6 +195,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
           IsEnableCurveType = true
         } ;
       }
+
+      
+      
+      //HeightNud.MinValue = DiameterComboBox.SelectedValue. ;
     }
 
     /// <summary>
@@ -243,7 +253,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       Direct.IsChecked = CurrentDirect ;
 
+      HeightNud.MaxValue = CurrentMaxValue ;
+      HeightNud.MinValue = CurrentMinValue ;
       HeightSetting.IsChecked = CurrentHeightSetting ;
+      HeightNud.ClearValue(ValueProperty);
       HeightNud.Value = FixedHeight ;
 
       AvoidTypeComboBox.SelectedItem = GetAvoidTypeKeyValuePair( AvoidTypeKey ) ;
@@ -283,7 +296,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       SystemTypes.Clear() ;
       CurveTypes.Clear() ;
       HeightSetting.IsChecked = false ;
-      HeightNud.Value = 0.0 ;
+      HeightNud.Value = 0 ;
       AvoidTypeComboBox.SelectedItem = null ;
     }
 

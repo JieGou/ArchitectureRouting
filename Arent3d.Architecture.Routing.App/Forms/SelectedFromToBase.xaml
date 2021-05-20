@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:control="clr-namespace:ControlLib;assembly=NumericUpDown"
              xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
+             xmlns:controlLib="clr-namespace:ControlLib;assembly=NumericUpDown"
              mc:Ignorable="d"
              x:Name="root"
              Background="White"
@@ -100,14 +100,16 @@
                           VerticalAlignment="Center" />
                 <Label x:Name="FL" Content="FL + " Visibility="Hidden"
                        VerticalAlignment="Center" />
-                <control:NumericUpDown x:Name="HeightNud"
+                
+                <controlLib:NumericUpDown x:Name="HeightNud"
                                        Value="{Binding FixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
                                        ValueChanged="HeightNud_OnValueChanged"
                                        Visibility="Hidden"
                                        VerticalAlignment="Center" HorizontalAlignment="Right"
                                        HorizontalContentAlignment="Right"
                                        Increment="100"
-                                       MaxValue="10000000000" MinValue="0" 
+                                       MaxValue="{Binding CurrentMaxValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
+                                       MinValue="{Binding CurrentMinValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
                                        Width="80" />
                 <Label x:Name="mm" Content="mm" VerticalAlignment="Center" HorizontalAlignment="Left"
                        Visibility="Hidden"
@@ -135,8 +137,8 @@
                                   VerticalAlignment="Center"
                                   HorizontalAlignment="Right"
                                   LeftOnClick="Dialog2Buttons_OnLeftOnClick"
-                                  RightOnClick="Dialog2Buttons_OnRightOnClick" Loaded="Dialog2Buttons_Loaded" 
-                                  IsEnableLeftButton="{Binding IsEnableLeftBtn}"/>
+                                  RightOnClick="Dialog2Buttons_OnRightOnClick" Loaded="Dialog2Buttons_Loaded"
+                                  IsEnableLeftButton="{Binding IsEnableLeftBtn}" />
         </Grid>
     </Border>
 </UserControl>
