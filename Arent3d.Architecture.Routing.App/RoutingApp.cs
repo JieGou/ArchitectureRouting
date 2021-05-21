@@ -2,6 +2,7 @@ using System.ComponentModel ;
 using System.Reflection ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App
@@ -30,6 +31,11 @@ namespace Arent3d.Architecture.Routing.App
     protected override void OnDocumentListenFinished( Document document )
     {
       DocumentMapper.Unregister( document ) ;
+    }
+
+    protected override void OnDocumentChanged( Document document, DocumentChangedEventArgs e )
+    {
+      // TODO: listen changed events
     }
   }
 }
