@@ -22,6 +22,14 @@ namespace Arent3d.Revit.UI
       return Path.Combine( dirPath, assemblyName, "Lang" ) ;
     }
 
+    protected virtual void RegisterEvents( UIControlledApplication application )
+    {
+    }
+
+    protected virtual void UnregisterEvents( UIControlledApplication application )
+    {
+    }
+
     protected abstract void OnDocumentListenStarted( Document document ) ;
 
     protected abstract void OnDocumentListenFinished( Document document ) ;
@@ -47,11 +55,15 @@ namespace Arent3d.Revit.UI
       DocumentListener.ListeningDocumentChanged += DocumentListener_ListeningDocumentChanged ;
       DocumentListener.RegisterEvents( application.ControlledApplication ) ;
 
+      RegisterEvents( application ) ;
+      
       return Result.Succeeded ;
     }
 
     public Result OnShutdown( UIControlledApplication application )
     {
+      UnregisterEvents( application ) ;
+
       DocumentListener.DocumentListeningStarted -= DocumentListener_DocumentListeningStarted ;
       DocumentListener.DocumentListeningFinished -= DocumentListener_DocumentListeningFinished ;
       DocumentListener.ListeningDocumentChanged -= DocumentListener_ListeningDocumentChanged ;
