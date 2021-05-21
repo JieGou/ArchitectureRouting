@@ -26,6 +26,10 @@ namespace Arent3d.Revit.UI
 
     protected abstract void OnDocumentListenFinished( Document document ) ;
 
+    protected virtual void OnDocumentChanged( Document document, DocumentChangedEventArgs e )
+    {
+    }
+
     private IAppUIBase? _ui ;
 
     public Result OnStartup( UIControlledApplication application )
@@ -75,7 +79,9 @@ namespace Arent3d.Revit.UI
 
     private void DocumentListener_ListeningDocumentChanged( object sender, DocumentChangedEventArgs e )
     {
-      _ui?.UpdateUI( e.GetDocument(), AppUIUpdateType.Change ) ;
+      var document = e.GetDocument() ;
+      OnDocumentChanged( document, e ) ;
+      _ui?.UpdateUI( document, AppUIUpdateType.Change ) ;
     }
   }
 }
