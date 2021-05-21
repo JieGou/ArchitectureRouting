@@ -1,8 +1,10 @@
+using System ;
 using System.IO ;
 using System.Reflection ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
+using Autodesk.Revit.UI.Events ;
 
 namespace Arent3d.Revit.UI
 {
@@ -55,6 +57,8 @@ namespace Arent3d.Revit.UI
       DocumentListener.ListeningDocumentChanged += DocumentListener_ListeningDocumentChanged ;
       DocumentListener.RegisterEvents( application.ControlledApplication ) ;
 
+      application.ViewActivated += Application_ViewActivated ;
+
       RegisterEvents( application ) ;
       
       return Result.Succeeded ;
@@ -63,6 +67,8 @@ namespace Arent3d.Revit.UI
     public Result OnShutdown( UIControlledApplication application )
     {
       UnregisterEvents( application ) ;
+
+      application.ViewActivated -= Application_ViewActivated ;
 
       DocumentListener.DocumentListeningStarted -= DocumentListener_DocumentListeningStarted ;
       DocumentListener.DocumentListeningFinished -= DocumentListener_DocumentListeningFinished ;
@@ -73,6 +79,11 @@ namespace Arent3d.Revit.UI
       _ui = null ;
 
       return Result.Succeeded ;
+    }
+
+    private void Application_ViewActivated( object sender, ViewActivatedEventArgs e )
+    {
+      _ui?.UpdateUI( e.Document, AppUIUpdateType.ViewChange ) ;
     }
 
     private void DocumentListener_DocumentListeningStarted( object sender, DocumentEventArgs e )

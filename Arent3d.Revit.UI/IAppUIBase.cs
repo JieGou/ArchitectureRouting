@@ -8,6 +8,7 @@ namespace Arent3d.Revit.UI
     Start,
     Finish,
     Change,
+    ViewChange,
   }
 
   public interface IAppUIBase : IDisposable
