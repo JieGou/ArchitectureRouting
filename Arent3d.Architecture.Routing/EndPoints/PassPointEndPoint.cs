@@ -48,8 +48,9 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public string ParameterString => $"{PassPointId.IntegerValue}/{GetDiameter()?.ToString() ?? "---"}/{RoutingStartPosition.X}/{RoutingStartPosition.Y}/{RoutingStartPosition.Z}/{Direction.X}/{Direction.Y}/{Direction.Z}" ;
 
     private XYZ PreferredPosition { get ; set ; } = XYZ.Zero ;
+
     //public XYZ RoutingStartPosition => GetPassPoint()?.GetTotalTransform().Origin ?? PreferredPosition ;
-    public XYZ RoutingStartPosition =>  GetPreferredStartPosition() ;
+    public XYZ RoutingStartPosition => GetPreferredStartPosition() ;
     private XYZ PreferredDirection { get ; set ; } = XYZ.Zero ;
     public XYZ Direction => GetPassPoint()?.GetTotalTransform().BasisX ?? PreferredDirection ;
     private double? PreferredRadius { get ; set ; } = 0 ;
@@ -78,29 +79,29 @@ namespace Arent3d.Architecture.Routing.EndPoints
       var passPoint = GetPassPoint() ;
       var originalStartPosition = passPoint?.GetTotalTransform().Origin ?? PreferredPosition ;
       var startPosition = originalStartPosition ;
-      
-      if ( passPoint is {} passP && passP.GetRouteName() is {} routeName) {
+
+      if ( passPoint is { } passP && passP.GetRouteName() is { } routeName ) {
         var route = RouteCache.Get( passP.Document )[ routeName ] ;
         var passpointKey = this.Key ;
         var segments = GetRelatedSegments( route, passpointKey ) ;
         var targetSegment = segments?.Where( s => s.FixedBopHeight != null ).FirstOrDefault( h => ! Equals( h.FixedBopHeight, passPoint.GetTotalTransform().Origin.Z ) ) ;
         var targetHeight = targetSegment?.FixedBopHeight ;
         var targetDiameter = targetSegment?.PreferredNominalDiameter ;
-        
-        if ( targetHeight is {} fixedBopHeight && passP.GetTotalTransform().Origin.Z is {} originZ) {
-          var difference = Math.Abs(fixedBopHeight - originZ ) ;
+
+        if ( targetHeight is { } fixedBopHeight && passP.GetTotalTransform().Origin.Z is { } originZ ) {
+          var difference = Math.Abs( fixedBopHeight - originZ ) ;
           if ( difference < targetDiameter ) {
-            startPosition = new XYZ(originalStartPosition.X, originalStartPosition.Y, fixedBopHeight)  ;
+            startPosition = new XYZ( originalStartPosition.X, originalStartPosition.Y, fixedBopHeight ) ;
           }
         }
       }
-      
-      return startPosition  ;
+
+      return startPosition ;
     }
 
     private IEnumerable<RouteSegment>? GetRelatedSegments( Route? route, EndPointKey? pointKey )
     {
-      return route?.RouteSegments.Where( s => s.FromEndPoint.Key == pointKey || s.ToEndPoint.Key ==  pointKey );
+      return route?.RouteSegments.Where( s => s.FromEndPoint.Key == pointKey || s.ToEndPoint.Key == pointKey ) ;
     }
 
     public PassPointEndPoint( Instance instance )
