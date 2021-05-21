@@ -23,6 +23,15 @@ namespace Arent3d.Architecture.Routing.App
     {
       return RoutingAppUI.Create( application ) ;
     }
+
+    protected override void RegisterEvents( UIControlledApplication application )
+    {
+    }
+
+    protected override void UnregisterEvents( UIControlledApplication application )
+    {
+    }
+
     protected override void OnDocumentListenStarted( Document document )
     {
       DocumentMapper.Register( document ) ;
