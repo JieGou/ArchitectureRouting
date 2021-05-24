@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arent3d.RevitAddinUtil", "Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj", "{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "make_addin", "make_addin\make_addin.csproj", "{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arent3d.Architecture.Routing.App", "Arent3d.Architecture.Routing.App\Arent3d.Architecture.Routing.App.csproj", "{7C2209B4-5B23-4603-A1DA-30188A398230}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arent3d.Architecture.Routing", "Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj", "{9F640371-E034-4C24-A6FE-C8B710E55ED1}"
@@ -27,30 +23,6 @@ Global
 		Release 2022|x64 = Release 2022|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Debug 2020|x64.ActiveCfg = Debug 2020|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Debug 2020|x64.Build.0 = Debug 2020|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Debug 2021|x64.ActiveCfg = Debug 2021|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Debug 2021|x64.Build.0 = Debug 2021|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Debug 2022|x64.ActiveCfg = Debug 2022|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Debug 2022|x64.Build.0 = Debug 2022|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Release 2021|x64.ActiveCfg = Release 2021|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Release 2021|x64.Build.0 = Release 2021|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Release 2020|x64.ActiveCfg = Release 2020|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Release 2020|x64.Build.0 = Release 2020|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Release 2022|x64.ActiveCfg = Release 2022|x64
-		{8BCB4E0E-2A61-43A4-A467-8D2EAF8A0C9B}.Release 2022|x64.Build.0 = Release 2022|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Debug 2020|x64.ActiveCfg = Debug 2020|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Debug 2020|x64.Build.0 = Debug 2020|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Debug 2021|x64.ActiveCfg = Debug 2021|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Debug 2021|x64.Build.0 = Debug 2021|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Debug 2022|x64.ActiveCfg = Debug 2022|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Debug 2022|x64.Build.0 = Debug 2022|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Release 2021|x64.ActiveCfg = Release 2021|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Release 2021|x64.Build.0 = Release 2021|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Release 2020|x64.ActiveCfg = Release 2020|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Release 2020|x64.Build.0 = Release 2020|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Release 2022|x64.ActiveCfg = Release 2022|x64
-		{4A8A6562-C6E0-4F17-A095-BC58D5DE18B1}.Release 2022|x64.Build.0 = Release 2022|x64
 		{7C2209B4-5B23-4603-A1DA-30188A398230}.Debug 2020|x64.ActiveCfg = Debug 2020|x64
 		{7C2209B4-5B23-4603-A1DA-30188A398230}.Debug 2020|x64.Build.0 = Debug 2020|x64
 		{7C2209B4-5B23-4603-A1DA-30188A398230}.Debug 2021|x64.ActiveCfg = Debug 2021|x64

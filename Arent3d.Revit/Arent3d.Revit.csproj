@@ -85,8 +85,4 @@
         </Reference>
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj" />
-    </ItemGroup>
-
 </Project>
