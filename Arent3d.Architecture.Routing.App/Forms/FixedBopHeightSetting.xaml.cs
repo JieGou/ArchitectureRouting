@@ -2,7 +2,7 @@
 using System.Globalization ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
-using Arent3d.Revit.UI ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -18,14 +18,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
       InitializeComponent() ;
       this.UiDoc = uiDoc ;
       _route = selectedRoute ;
-      //
-      if(_route.FirstFromConnector()?.GetConnector() is {} connector)
-      {
-        var level = connector.Owner.Document.GetElement(connector.Owner.LevelId) as Level;
-        var floorHeight = level?.Elevation ;
-        var heightFromFl = connector.Origin.Z - floorHeight ;
-        if ( heightFromFl != null ) {
-          HeightTextBox.Text = UnitUtils.ConvertFromInternalUnits( (double)heightFromFl, UnitTypeId.Millimeters).ToString( CultureInfo.InvariantCulture );
+
+      if ( _route.FirstFromConnector()?.GetConnector() is { } connector ) {
+        if ( connector.Owner.Document.GetElementById<Level>( connector.Owner.LevelId ) is {} level ) {
+          var heightFromFl = connector.Origin.Z - level.Elevation ;
+          HeightTextBox.Text = heightFromFl.RevitUnitsToMillimeters().ToString( CultureInfo.InvariantCulture ) ;
         }
       }
       else {

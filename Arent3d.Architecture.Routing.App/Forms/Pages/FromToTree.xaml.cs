@@ -149,19 +149,17 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       SelectedFromTo.CurrentOrgDirect = SelectedFromTo.CurrentDirect = propertySource.IsDirect ;
 
-      if ( propertySource.Diameters is {} diameters ) {
+      if ( propertySource.Diameters is { } diameters ) {
         var diameter = diameters[ propertySource.DiameterIndex ] ;
-        SelectedFromTo.CurrentMinValue = Math.Round( UnitUtils.ConvertFromInternalUnits( diameter/2 , UnitTypeId.Millimeters ), 2, MidpointRounding.AwayFromZero ) ;
-        SelectedFromTo.CurrentMaxValue = Math.Round( UnitUtils.ConvertFromInternalUnits( SelectedFromToViewModel.GetUpLevelHeightFromLevel() - diameter/2 , UnitTypeId.Millimeters ), 2, MidpointRounding.AwayFromZero ) ; 
+        SelectedFromTo.CurrentMinValue = Math.Round( ( diameter / 2 ).RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero ) ;
+        SelectedFromTo.CurrentMaxValue = Math.Round( ( SelectedFromToViewModel.GetUpLevelHeightFromLevel() - diameter / 2 ).RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero ) ;
       }
-      
 
       SelectedFromTo.CurrentOrgHeightSetting = SelectedFromTo.CurrentHeightSetting = propertySource.OnHeightSetting ;
       if ( propertySource.OnHeightSetting != null ) {
         SelectedFromTo.SetHeightTextVisibility( (bool) propertySource.OnHeightSetting ) ;
         if ( propertySource.FixedHeight is { } fixedHeight ) {
-          var test = SelectedFromToViewModel.GetRouteHeightFromFloor( fixedHeight ) ;
-          var heightValue = UnitUtils.ConvertFromInternalUnits( SelectedFromToViewModel.GetRouteHeightFromFloor( fixedHeight ), UnitTypeId.Millimeters ) ;
+          var heightValue = SelectedFromToViewModel.GetRouteHeightFromFloor( fixedHeight ).RevitUnitsToMillimeters() ;
           var round = Math.Round( heightValue, 2, MidpointRounding.AwayFromZero ) ; 
           SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = round ;
         }
@@ -213,9 +211,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
           // show Connector UI
           var (x, y, z) = passPointPropertySource.PassPointPosition ;
           SelectedFromTo.ClearDialog() ;
-          var coordinateX = UnitUtils.ConvertFromInternalUnits( x, UnitTypeId.Millimeters ) ;
-          var coordinateY = UnitUtils.ConvertFromInternalUnits( y, UnitTypeId.Millimeters ) ;
-          var coordinateZ = UnitUtils.ConvertFromInternalUnits( z, UnitTypeId.Millimeters ) ;
+          var coordinateX = x.RevitUnitsToMillimeters() ;
+          var coordinateY = y.RevitUnitsToMillimeters() ;
+          var coordinateZ = z.RevitUnitsToMillimeters() ;
           this.DataContext = new
           {
             IsRouterVisibility = false,
@@ -229,9 +227,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
           // show Connector UI
           var (x, y, z) = terminatePointPropertySource.TerminatePointPosition ;
           SelectedFromTo.ClearDialog() ;
-          var coordinateX = UnitUtils.ConvertFromInternalUnits( x, UnitTypeId.Millimeters ) ;
-          var coordinateY = UnitUtils.ConvertFromInternalUnits( y, UnitTypeId.Millimeters ) ;
-          var coordinateZ = UnitUtils.ConvertFromInternalUnits( z, UnitTypeId.Millimeters ) ;
+          var coordinateX = x.RevitUnitsToMillimeters() ;
+          var coordinateY = y.RevitUnitsToMillimeters() ;
+          var coordinateZ = z.RevitUnitsToMillimeters() ;
           this.DataContext = new
           {
             IsRouterVisibility = false,
@@ -271,7 +269,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       if ( targetItem != null ) {
         // Select in TreeView
         targetItem.IsSelected = true ;
-        // Scorll to Item
+        // Scroll to Item
         targetItem.BringIntoView() ;
       }
     }
@@ -300,7 +298,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
           return item ;
         }
 
-        // Find in Childs
+        // Find in Children
         TreeViewItem? childItem = this.GetTreeViewItemFromName( item.Items, targetName ) ;
         if ( childItem != null ) {
           item.IsExpanded = true ;
@@ -314,8 +312,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <summary>
     /// Get TreeViewItemObject from elementId
     /// </summary>
+    /// <param name="control"></param>
     /// <param name="collection"></param>
-    /// <param name="targetName"></param>
+    /// <param name="elementId"></param>
     /// <returns></returns>
     private TreeViewItem? GetTreeViewItemFromElementId( ItemsControl control, ItemCollection collection, ElementId? elementId )
     {
@@ -323,13 +322,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
       foreach ( var item in collection ) {
         if ( item is FromToItem fromToItem && fromToItem.ElementId != null ) {
           FromToTreeView.UpdateLayout() ;
-          TreeViewItem? treeViewItem = control.ItemContainerGenerator.ContainerFromItem( item as object ) as TreeViewItem ;
+          TreeViewItem? treeViewItem = control.ItemContainerGenerator.ContainerFromItem( item ) as TreeViewItem ;
           // Find in current
           if ( fromToItem.ElementId.Equals( elementId ) ) {
             return treeViewItem ;
           }
 
-          // Find in Childs
+          // Find in Children
           if ( treeViewItem != null ) {
             treeViewItem.IsExpanded = true ;
             TreeViewItem? childItem = this.GetTreeViewItemFromElementId( treeViewItem, treeViewItem.Items, elementId ) ;
@@ -419,7 +418,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
           tb.Text = selectedItem.ItemTypeName ;
           selectedItem.IsEditing = false ;
         }
-        else if ( IsExsitRouteName( tb.Text ) ) {
+        else if ( ExistsRouteName( tb.Text ) ) {
           MessageBox.Show( "Dialog.Forms.FromToTree.Rename".GetAppStringByKeyOrDefault( "Since the name is duplicated, please change it to another name." ) ) ;
           tb.Focus() ;
         }
@@ -432,11 +431,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
     }
 
     /// <summary>
-    /// IsExsitRouteName
+    /// Check if route exists.
     /// </summary>
     /// <param name="routName"></param>
     /// <returns></returns>
-    private bool IsExsitRouteName( string routName )
+    private bool ExistsRouteName( string routName )
     {
       bool result = false ;
 
@@ -468,7 +467,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
         tb.Text = selectedItem.ItemTypeName ;
         selectedItem.IsEditing = false ;
       }
-      else if ( IsExsitRouteName( tb.Text ) ) {
+      else if ( ExistsRouteName( tb.Text ) ) {
         MessageBox.Show( "Dialog.Forms.FromToTree.Rename".GetAppStringByKeyOrDefault( "Since the name is duplicated, please change it to another name." ) ) ;
         tb.Focus() ;
       }

@@ -143,7 +143,6 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 
     public static double GetUpLevelHeightFromLevel()
     {
-      var test = UnitUtils.ConvertFromInternalUnits( GetHeightFromLevel( GetUpLevelTotalHeight() ), UnitTypeId.Millimeters ) ;
       return GetHeightFromLevel(GetUpLevelTotalHeight()) ;
     }
     
@@ -164,17 +163,15 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     {
       return GetConnectorLevel()?.Elevation ;
     }
+
     private static double GetTotalHeight( double? selectedHeight )
     {
       var targetHeight = 0.0 ;
-      var floorHeight = GetFloorHeight();
-      if ( floorHeight != null && TargetRoute?.GetSubRoute(0)?.GetDiameter() is {} diameter && selectedHeight is{} selected) {
-        targetHeight = UnitUtils.ConvertToInternalUnits(selected, UnitTypeId.Millimeters  )  + (double)floorHeight - diameter/2;
+      if ( GetFloorHeight() is { } floorHeight && TargetRoute?.GetSubRoute( 0 )?.GetDiameter() is { } diameter && selectedHeight is { } selected ) {
+        targetHeight = selected.MillimetersToRevitUnits() + floorHeight - diameter / 2 ;
       }
 
       return targetHeight ;
     }
-    
-    
   }
 }
