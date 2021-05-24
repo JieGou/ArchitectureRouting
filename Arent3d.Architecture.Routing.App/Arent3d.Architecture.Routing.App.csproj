@@ -47,7 +47,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <OutputPath>bin\$(ConfigMode)\(RevitVersion)\</OutputPath>
+    <OutputPath>bin\$(ConfigMode)\$(RevitVersion)\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(ConfigMode)' == 'DEBUG' ">
     <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
