@@ -88,12 +88,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         foreach ( var connectorElement in _connectorElements ) {
           var domain = connectorElement.Domain ;
-          var systemClassification = (int) connectorElement.SystemClassification ;
+          var systemClassification = connectorElement.SystemClassification ;
           var origin = familyInstanceTransform.OfPoint( connectorElement.Origin ) ;
           var dirZ = familyInstanceTransform.OfVector( connectorElement.CoordinateSystem.BasisZ ) ;
           var dirX = familyInstanceTransform.OfVector( connectorElement.CoordinateSystem.BasisX ) ;
           foreach ( var connector in _connectors.Where( c => domain == c.Domain ) ) {
-            if ( domain != Domain.DomainCableTrayConduit && connector.GetSystemType() != systemClassification ) continue ;
+            if ( domain != Domain.DomainCableTrayConduit && HasCompatibleSystemType( systemClassification, connector ) ) continue ;
 
             var distance = connector.Origin.DistanceTo( origin ) ;
             var angleZ = connector.CoordinateSystem.BasisZ.AngleTo( dirZ ) ;
@@ -103,6 +103,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
         }
 
         _distances.Sort( DistanceInfo.Compare ) ;
+      }
+
+      private static bool HasCompatibleSystemType( MEPSystemClassification systemClassification, Connector connector )
+      {
+        if ( systemClassification == MEPSystemClassification.Global || systemClassification == MEPSystemClassification.Fitting ) return true ;
+        return ( (int) systemClassification == (int) connector.GetSystemType() ) ;
       }
 
       public (Connector?, ConnectorElement?) Pop()
