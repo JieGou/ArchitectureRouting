@@ -93,7 +93,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
           var dirZ = familyInstanceTransform.OfVector( connectorElement.CoordinateSystem.BasisZ ) ;
           var dirX = familyInstanceTransform.OfVector( connectorElement.CoordinateSystem.BasisX ) ;
           foreach ( var connector in _connectors.Where( c => domain == c.Domain ) ) {
-            if ( domain != Domain.DomainCableTrayConduit && HasCompatibleSystemType( systemClassification, connector ) ) continue ;
+            if ( domain != Domain.DomainCableTrayConduit && false == HasCompatibleSystemType( systemClassification, connector ) ) continue ;
 
             var distance = connector.Origin.DistanceTo( origin ) ;
             var angleZ = connector.CoordinateSystem.BasisZ.AngleTo( dirZ ) ;
