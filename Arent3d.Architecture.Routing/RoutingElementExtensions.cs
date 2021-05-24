@@ -151,11 +151,26 @@ namespace Arent3d.Architecture.Routing
 
     private static bool HasSameRoundShape( IConnector conn1, IConnector conn2 )
     {
-      return MathComparisonUtils.IsAlmostEqual( conn1.Radius, conn2.Radius ) ;
+      var document = GetDocument( conn1 ) ?? GetDocument( conn2 ) ?? throw new InvalidOperationException() ;
+      var tole = document.Application.VertexTolerance ;
+      return Math.Abs( conn1.Radius - conn2.Radius ) < tole ;
     }
+
     private static bool HasSameRectangularShape( IConnector conn1, IConnector conn2 )
     {
-      return MathComparisonUtils.IsAlmostEqual( conn1.Width, conn2.Width ) && MathComparisonUtils.IsAlmostEqual( conn1.Height, conn2.Height ) ;
+      var document = GetDocument( conn1 ) ?? GetDocument( conn2 ) ?? throw new InvalidOperationException() ;
+      var tole = document.Application.VertexTolerance ;
+      return Math.Abs( conn1.Width - conn2.Width ) < tole && Math.Abs( conn1.Height - conn2.Height ) < tole ;
+    }
+
+    private static Document? GetDocument( IConnector conn )
+    {
+      return conn switch
+      {
+        Connector c => c.Owner?.Document,
+        Element ce => ce.Document,
+        _ => null,
+      } ;
     }
 
     #endregion

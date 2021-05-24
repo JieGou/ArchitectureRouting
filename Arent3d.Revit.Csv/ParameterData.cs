@@ -1,4 +1,5 @@
 using System ;
+using System.Globalization ;
 using System.Linq.Expressions ;
 using System.Reflection ;
 using Autodesk.Revit.DB ;
@@ -66,11 +67,11 @@ namespace Arent3d.Revit.Csv
         var param = familyInstance.ParametersMap.get_Item( parameterName ) ;
         if ( _unitDic!.Match( ValueString ) is not { } tuple ) return false ;
 
-        if ( null == tuple.Unit ) {
-          param.Set( tuple.Value ) ;
+        if ( tuple.Unit is {} unitType ) {
+          param.Set( UnitUtils.ConvertFromInternalUnits( tuple.Value, unitType ) ) ;
         }
         else {
-          param.Set( UnitUtils.ConvertToInternalUnits( tuple.Value, param.GetUnitTypeId() ) ) ;
+          param.Set( tuple.Value ) ;
         }
 
         return true ;
@@ -86,11 +87,11 @@ namespace Arent3d.Revit.Csv
       else {
         if ( _unitDic!.Match( ValueString ) is not { } tuple ) return false ;
 
-        if ( null == tuple.Unit ) {
-          param.Set( tuple.Value ) ;
+        if ( tuple.Unit is {} unitType ) {
+          param.Set( UnitUtils.ConvertToInternalUnits( tuple.Value, unitType ) ) ;
         }
         else {
-          param.Set( UnitUtils.ConvertToInternalUnits( tuple.Value, param.GetUnitTypeId() ) ) ;
+          param.Set( tuple.Value ) ;
         }
 
         return true ;
@@ -108,7 +109,11 @@ namespace Arent3d.Revit.Csv
     {
       if ( StorageType.Double != parameter.StorageType ) throw new ArgumentException() ;
 
+#if REVIT2019 || REVIT2020
+      ValueString = parameter.AsDouble().ToString( CultureInfo.InvariantCulture ) ;
+#else
       ValueString = _unitDic!.GetValueWithUnit( parameter.AsDouble(), parameter.GetUnitTypeId() ) ;
+#endif
     }
 
     internal void SetValueString( string str )

@@ -4,18 +4,33 @@ using CsvHelper ;
 using CsvHelper.Configuration ;
 using CsvHelper.TypeConversion ;
 
+#if REVIT2019 || REVIT2020
+using DisplayUnitTypeProxy = Autodesk.Revit.DB.DisplayUnitType ;
+#else
+using DisplayUnitTypeProxy = Autodesk.Revit.DB.ForgeTypeId ;
+#endif
+
 namespace Arent3d.Revit.Csv.Converters
 {
   public class LengthUnitConverter : ITypeConverter
   {
-    private static readonly UnitDictionary UnitDic = new UnitDictionary( new Dictionary<string, ForgeTypeId>
+    private static readonly UnitDictionary UnitDic = new UnitDictionary( new Dictionary<string, DisplayUnitTypeProxy>
     {
+#if REVIT2019 || REVIT2020
+      { "in", DisplayUnitType.DUT_DECIMAL_INCHES },
+      { "ft", DisplayUnitType.DUT_DECIMAL_FEET },
+      { "mm", DisplayUnitType.DUT_MILLIMETERS },
+      { "cm", DisplayUnitType.DUT_CENTIMETERS },
+      { "dm", DisplayUnitType.DUT_DECIMETERS },
+      { "m", DisplayUnitType.DUT_METERS },
+#else
       { "in", UnitTypeId.Inches },
       { "ft", UnitTypeId.Feet },
       { "mm", UnitTypeId.Millimeters },
       { "cm", UnitTypeId.Centimeters },
       { "dm", UnitTypeId.Decimeters },
       { "m", UnitTypeId.Meters },
+#endif
     } ) ;
 
     public string ConvertToString( object value, IWriterRow row, MemberMapData memberMapData )
@@ -27,18 +42,26 @@ namespace Arent3d.Revit.Csv.Converters
     {
       if ( UnitDic.Match( text ) is not { } tuple ) return double.NaN ;
 
-      if ( null == tuple.Unit ) return tuple.Value ;
+      if ( tuple.Unit is not {} unitType ) return tuple.Value ;
 
-      return UnitUtils.ConvertToInternalUnits( tuple.Value, tuple.Unit ) ;
+      return UnitUtils.ConvertToInternalUnits( tuple.Value, unitType ) ;
     }
 
-    private static ForgeTypeId GetUsedUnit( DisplayUnit displayUnit )
+    private static DisplayUnitTypeProxy GetUsedUnit( DisplayUnit displayUnit )
     {
+#if REVIT2019 || REVIT2020
+      return displayUnit switch
+      {
+        DisplayUnit.METRIC => DisplayUnitType.DUT_METERS,
+        _ => DisplayUnitType.DUT_DECIMAL_FEET,
+      } ;
+#else
       return displayUnit switch
       {
         DisplayUnit.METRIC => UnitTypeId.Meters,
         _ => UnitTypeId.Feet,
       } ;
+#endif
     }
   }
 }
