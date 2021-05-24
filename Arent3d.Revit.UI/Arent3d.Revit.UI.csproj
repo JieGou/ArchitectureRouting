@@ -73,6 +73,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Reference Include="Arent3d.RevitAddinUtil">
+            <HintPath>..\Libraries\$(TargetFramework)\Arent3d.RevitAddinUtil.dll</HintPath>
+        </Reference>
         <Reference Include="RevitAPI">
             <HintPath>C:\Program Files\Autodesk\Revit $(RevitVersion)\RevitAPI.dll</HintPath>
             <Private>False</Private>

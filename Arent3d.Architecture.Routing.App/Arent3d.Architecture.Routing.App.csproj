@@ -84,10 +84,12 @@
     <ProjectReference Include="..\Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj" />
     <ProjectReference Include="..\Arent3d.Revit.Csv\Arent3d.Revit.Csv.csproj" />
     <ProjectReference Include="..\Arent3d.Revit.UI\Arent3d.Revit.UI.csproj" />
-    <ProjectReference Include="..\Arent3d.RevitAddinUtil\Arent3d.RevitAddinUtil.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Arent3d.RevitAddinUtil">
+      <HintPath>..\Libraries\$(TargetFramework)\Arent3d.RevitAddinUtil.dll</HintPath>
+    </Reference>
     <Reference Include="Arent3d.Math">
       <HintPath>..\Libraries\$(TargetFramework)\Arent3d.Math.dll</HintPath>
     </Reference>
