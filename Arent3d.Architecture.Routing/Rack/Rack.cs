@@ -10,10 +10,14 @@ namespace Arent3d.Architecture.Routing.Rack
     private Box3d _box = Box3d.Null ;
     private Box2d _exactBox = Box2d.Null ;
     private Box2d _looseBox = Box2d.Null ;
-    
-    public Rack()
+
+    public Rack( Box3d volumeBox, double beamInterval, double sideBeamWidth, double sideBeamHeight )
     {
       Layers = new ILayerProperty[] { new LayerProperty( this ) } ;
+      Box = volumeBox ;
+      BeamInterval = beamInterval ;
+      SideBeamWidth = sideBeamWidth ;
+      SideBeamHeightLength = sideBeamHeight ;
     }
 
     public IEnumerable<ILayerProperty> Layers { get ; }
@@ -23,12 +27,15 @@ namespace Arent3d.Architecture.Routing.Rack
 
     public Vector3d Center => _box.Center ;
     public Vector3d Size => _box.Size ;
-    public double BeamInterval { get ; set ; }
+    public double BeamInterval { get ; }
+    public double MinimumRouteLength => BeamInterval * 0.5 ;
+    public double SideBeamHeightLength { get ; }
+    public double SideBeamWidth { get ; }
 
     public Box3d Box
     {
       get => _box ;
-      set
+      private set
       {
         _box = value ;
         _exactBox = CalcExactBox( value ) ;
@@ -49,7 +56,9 @@ namespace Arent3d.Architecture.Routing.Rack
       public Vector3d Center => _rack.Center ;
       public Vector3d Size => _rack.Size ;
       public double ConnectionHeight => Center.z - Size.z * 0.5 ;
-      public double BeamInterval => _rack.BeamInterval ;
+      public double MinimumRouteLength => _rack.MinimumRouteLength ;
+      public double SideBeamHeightLength => _rack.SideBeamHeightLength ;
+      public double SideBeamWidth => _rack.SideBeamWidth ;
       public bool IsXDirection => IsXDirectionBox( _rack._box ) ;
       public bool IsReverseDir => false ;
       public IEnumerable<IPipingProperty> PipingProperties { get ; }

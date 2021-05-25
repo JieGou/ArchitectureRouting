@@ -35,13 +35,16 @@ namespace Arent3d.Architecture.Routing.App
 
     private static void CollectRacks( Document document, View view )
     {
+      const double beamInterval = 6.0 ; // TODO
+      const double sideBeamWidth = 0.2 ; // TODO
+      const double sideBeamHeight = 0.2 ; // TODO
       var racks = DocumentMapper.Get( document ).RackCollection ;
 
       racks.Clear() ;
       foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
         var (min, max) = familyInstance.get_BoundingBox( view ).To3dRaw() ;
 
-        racks.AddRack( new Rack.Rack { Box = new Box3d( min, max ), IsMainRack = true, BeamInterval = 5 } ) ;
+        racks.AddRack( new Rack.Rack( new Box3d( min, max ), beamInterval, sideBeamWidth, sideBeamHeight ){ IsMainRack = true } ) ;
       }
 
       racks.CreateLinkages() ;
