@@ -59,7 +59,7 @@ namespace Arent3d.Architecture.Routing
 
     public static IEnumerable<RoutingPreferenceRule> GetRules( this RoutingPreferenceManager rpm, RoutingPreferenceRuleGroupType groupType )
     {
-      var count = rpm.GetNumberOfRules( RoutingPreferenceRuleGroupType.MechanicalJoints ) ;
+      var count = rpm.GetNumberOfRules( RoutingPreferenceRuleGroupType.Segments ) ;
       for ( var i = 0 ; i < count ; ++i ) {
         yield return rpm.GetRule( groupType, i ) ;
       }
