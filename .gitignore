@@ -16,3 +16,7 @@ bin/
 obj/
 *.user
 launchSettings.json
+
+# data
+/data
+*.rvt

@@ -1,5 +1,7 @@
 using System ;
+using System.Collections.Generic ;
 using System.IO ;
+using System.Linq ;
 using System.Reflection ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
@@ -10,6 +12,8 @@ namespace Arent3d.Revit.UI
 {
   public abstract class ExternalApplicationBase : IExternalApplication
   {
+    private readonly List<UpdaterId> _updaterIds = new() ;
+    
     protected abstract IAppUIBase? CreateAppUI( UIControlledApplication application ) ;
 
     protected abstract string GetLanguageDirectoryPath() ;
@@ -44,6 +48,8 @@ namespace Arent3d.Revit.UI
 
     public Result OnStartup( UIControlledApplication application )
     {
+      var addInId = application.ActiveAddInId ;
+
       ThreadDispatcher.UiDispatcher = UiThread.RevitUiDispatcher ;
 
       I18n.LanguageConverter.SetApplicationLanguage( application.ControlledApplication.Language ) ;
@@ -60,12 +66,21 @@ namespace Arent3d.Revit.UI
       application.ViewActivated += Application_ViewActivated ;
 
       RegisterEvents( application ) ;
-      
+
+      foreach ( var listener in GetUpdateListeners() ) {
+        if ( RegisterListener( addInId, listener ) is { } updaterId ) {
+          _updaterIds.Add( updaterId ) ;
+        }
+      }
+
       return Result.Succeeded ;
     }
 
     public Result OnShutdown( UIControlledApplication application )
     {
+      _updaterIds.ForEach( UpdaterRegistry.UnregisterUpdater ) ;
+      _updaterIds.Clear() ;
+
       UnregisterEvents( application ) ;
 
       application.ViewActivated -= Application_ViewActivated ;
@@ -79,6 +94,16 @@ namespace Arent3d.Revit.UI
       _ui = null ;
 
       return Result.Succeeded ;
+    }
+
+    protected virtual IEnumerable<IDocumentUpdateListener> GetUpdateListeners() => Enumerable.Empty<IDocumentUpdateListener>() ;
+
+    private static UpdaterId? RegisterListener( AddInId addInId, IDocumentUpdateListener listener )
+    {
+      var updater = new DocumentUpdaterByListener( addInId, listener ) ;
+      if ( false == updater.Register() ) return null ;
+      
+      return updater.GetUpdaterId() ;
     }
 
     private void Application_ViewActivated( object sender, ViewActivatedEventArgs e )
