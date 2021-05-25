@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
         var curveTypeList = new ObservableCollection<MEPCurveType>( uiDocument.Document.GetCurveTypes( route.UniqueCurveType ).OrderBy( s => s.Name ).ToList() ) ;
         var curveTypeId = route.UniqueCurveType.GetValidId() ;
         int curveTypeIndex = curveTypeList.FindIndex( c => c.Id == curveTypeId ) ;
-        IEnumerable<string> subRouteDiameters = route.SubRoutes.Select( s => (int) Math.Round( UnitUtils.ConvertFromInternalUnits( s.GetDiameter(), UnitTypeId.Millimeters ) ) + " mm" ) ;
+        IEnumerable<string> subRouteDiameters = route.SubRoutes.Select( s => (int) Math.Round( s.GetDiameter().RevitUnitsToMillimeters() ) + " mm" ) ;
         IEnumerable<string> allPassPoints = route.GetAllPassPointEndPoints().ToList().Select( p => p.ToString() ) ;
 
         fromToItemsList.Add( new FromToWindow.FromToItems()

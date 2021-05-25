@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
     <PropertyGroup>
-        <TargetFramework>net48</TargetFramework>
+        <Configurations>Debug 2020;Debug 2021;Debug 2022;Release 2021;Release 2020;Release 2022</Configurations>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <LangVersion>9</LangVersion>
         <UseWPF>true</UseWPF>
@@ -11,18 +11,79 @@
         <Authors>Arent Inc.</Authors>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug 2019' ">
+        <ConfigMode>Debug</ConfigMode>
+        <RevitVersion>2019</RevitVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug 2020' ">
+        <ConfigMode>Debug</ConfigMode>
+        <RevitVersion>2020</RevitVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug 2021' ">
+        <ConfigMode>Debug</ConfigMode>
+        <RevitVersion>2021</RevitVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug 2022' ">
+        <ConfigMode>Debug</ConfigMode>
+        <RevitVersion>2022</RevitVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release 2019' ">
+        <ConfigMode>Release</ConfigMode>
+        <RevitVersion>2019</RevitVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release 2020' ">
+        <ConfigMode>Release</ConfigMode>
+        <RevitVersion>2020</RevitVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release 2021' ">
+        <ConfigMode>Release</ConfigMode>
+        <RevitVersion>2021</RevitVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release 2022' ">
+        <ConfigMode>Release</ConfigMode>
+        <RevitVersion>2022</RevitVersion>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <OutputPath>bin\$(ConfigMode)\$(RevitVersion)\</OutputPath>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(ConfigMode)' == 'DEBUG' ">
+        <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(ConfigMode)' == 'Release' ">
+        <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(RevitVersion)' == '2019' ">
+        <TargetFramework>net47</TargetFramework>
+        <DefineConstants>$(DefineConstants);REVIT2019</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(RevitVersion)' == '2020' ">
+        <TargetFramework>net472</TargetFramework>
+        <DefineConstants>$(DefineConstants);REVIT2020</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(RevitVersion)' == '2021' ">
+        <TargetFramework>net48</TargetFramework>
+        <DefineConstants>$(DefineConstants);REVIT2021</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(RevitVersion)' == '2022' ">
+        <TargetFramework>net48</TargetFramework>
+        <DefineConstants>$(DefineConstants);REVIT2022</DefineConstants>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="CsvHelper" Version="19.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="Arent3d.Utility">
-        <HintPath>..\Libraries\Arent3d.Utility.dll</HintPath>
-      </Reference>
-      <Reference Include="RevitAPI">
-        <HintPath>C:\Program Files\Autodesk\Revit 2021\RevitAPI.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
+        <Reference Include="Arent3d.Utility">
+            <HintPath>..\Libraries\$(TargetFramework)\Arent3d.Utility.dll</HintPath>
+        </Reference>
+        <Reference Include="RevitAPI">
+            <HintPath>C:\Program Files\Autodesk\Revit $(RevitVersion)\RevitAPI.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
     </ItemGroup>
 
 </Project>

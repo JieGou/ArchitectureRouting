@@ -46,10 +46,5 @@ namespace Arent3d.Architecture.Routing.App.Commands
         _ => $"({pos.X.RevitUnitsToFeet()}, {pos.Y.RevitUnitsToFeet()}, {pos.Z.RevitUnitsToFeet()})",
       } ;
     }
-
-    private static double RevitUnitsToFeet( this double units )
-    {
-      return UnitUtils.ConvertFromInternalUnits( units, UnitTypeId.Feet ) ;
-    }
   }
 }

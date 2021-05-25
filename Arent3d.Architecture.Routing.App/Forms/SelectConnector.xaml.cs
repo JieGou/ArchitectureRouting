@@ -239,10 +239,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
       public override string ToString()
       {
         if ( null != ConnectorElement ) {
-          return $"{ConnectorElement.Name} - {UnitUtils.ConvertFromInternalUnits( ConnectorElement.Radius, UnitTypeId.Millimeters ) * 2} - {ConnectorElement.get_Parameter( BuiltInParameter.RBS_PIPE_FLOW_DIRECTION_PARAM )?.AsValueString()}" ;
+          return $"{ConnectorElement.Name} - φ {ConnectorElement.Radius.RevitUnitsToMillimeters() * 2} mm - {ConnectorElement.get_Parameter( BuiltInParameter.RBS_PIPE_FLOW_DIRECTION_PARAM )?.AsValueString()}" ;
         }
         else if ( null != Connector ) {
-          return $"{Connector.Id} - {UnitUtils.ConvertFromInternalUnits( Connector.Radius, UnitTypeId.Millimeters ) * 2} - {Connector.Direction}" ;
+          return $"{Connector.Id} - φ {Connector.Radius.RevitUnitsToMillimeters() * 2} mm - {Connector.Direction}" ;
         }
         else {
           return "Origin of this element" ;
