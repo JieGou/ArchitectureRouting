@@ -148,8 +148,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
       }
 
       SelectedFromTo.CurrentOrgDirect = SelectedFromTo.CurrentDirect = propertySource.IsDirect ;
-
-      if ( propertySource.Diameters is { } diameters ) {
+      
+      if ( propertySource.Diameters is {} diameters && propertySource.DiameterIndex != -1) {
         var diameter = diameters[ propertySource.DiameterIndex ] ;
         SelectedFromTo.CurrentMinValue = Math.Round( ( diameter / 2 ).RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero ) ;
         SelectedFromTo.CurrentMaxValue = Math.Round( ( SelectedFromToViewModel.GetUpLevelHeightFromLevel() - diameter / 2 ).RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero ) ;

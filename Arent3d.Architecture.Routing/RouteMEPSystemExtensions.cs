@@ -25,6 +25,13 @@ namespace Arent3d.Architecture.Routing
       if ( segment != null ) {
         resultList = segment.GetSizes().Where( s => type.HasAnyNominalDiameter( s.NominalDiameter, diameterTolerance ) ).Select( s => s.NominalDiameter ).ToList() ;
       }
+      //Get duct sizes
+      else if(type.GetType() == typeof(DuctType)){
+        var ductSizeSettings = DuctSizeSettings.GetDuctSizeSettings(type.Document) ;
+        //Currently, only round shapes are acquired
+        var roundSizes = ductSizeSettings[ DuctShape.Round ].Where(s => s.UsedInSizeLists).Select(s => s.NominalDiameter) ;
+        resultList = roundSizes.ToList() ;
+      }
 
       resultList.Sort() ;
 

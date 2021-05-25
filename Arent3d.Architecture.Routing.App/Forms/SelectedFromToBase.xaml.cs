@@ -88,7 +88,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       CurrentDirect = false ;
       CurrentHeightSetting = false ;
       FixedHeight = 0.0 ;
-      CurrentMaxValue = 4000 ;
+      CurrentMaxValue = 10000 ;
       CurrentMinValue = 0 ;
       Diameters = new ObservableCollection<string>() ;
       SystemTypes = new ObservableCollection<MEPSystemType>() ;

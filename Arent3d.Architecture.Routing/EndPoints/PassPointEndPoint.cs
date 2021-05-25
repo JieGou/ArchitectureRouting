@@ -48,8 +48,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public string ParameterString => $"{PassPointId.IntegerValue}/{GetDiameter()?.ToString() ?? "---"}/{RoutingStartPosition.X}/{RoutingStartPosition.Y}/{RoutingStartPosition.Z}/{Direction.X}/{Direction.Y}/{Direction.Z}" ;
 
     private XYZ PreferredPosition { get ; set ; } = XYZ.Zero ;
-
-    //public XYZ RoutingStartPosition => GetPassPoint()?.GetTotalTransform().Origin ?? PreferredPosition ;
+    
     public XYZ RoutingStartPosition => GetPreferredStartPosition() ;
     private XYZ PreferredDirection { get ; set ; } = XYZ.Zero ;
     public XYZ Direction => GetPassPoint()?.GetTotalTransform().BasisX ?? PreferredDirection ;
@@ -88,10 +87,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
         var targetHeight = targetSegment?.FixedBopHeight ;
         var targetDiameter = targetSegment?.PreferredNominalDiameter ;
 
-        if ( targetHeight is { } fixedBopHeight && passP.GetTotalTransform().Origin.Z is { } originZ ) {
-          var difference = Math.Abs( fixedBopHeight - originZ ) ;
+        if ( targetHeight is { } fixedBopHeight && targetDiameter is {} diameter &&  passP.GetTotalTransform().Origin.Z is { } originZ ) {
+          var fixedCenterHeight = fixedBopHeight + diameter/2 ;
+          var difference = Math.Abs( fixedCenterHeight - originZ ) ;
           if ( difference < targetDiameter ) {
-            startPosition = new XYZ( originalStartPosition.X, originalStartPosition.Y, fixedBopHeight ) ;
+            startPosition = new XYZ( originalStartPosition.X, originalStartPosition.Y, fixedCenterHeight ) ;
           }
         }
       }
