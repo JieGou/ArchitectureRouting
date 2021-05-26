@@ -17,6 +17,6 @@ obj/
 *.user
 launchSettings.json
 
-# data
-/data
+# test data
+data/
 *.rvt

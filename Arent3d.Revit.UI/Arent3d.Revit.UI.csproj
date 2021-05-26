@@ -73,6 +73,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Reference Include="Arent3d.Utility">
+            <HintPath>..\Libraries\$(TargetFramework)\Arent3d.Utility.dll</HintPath>
+        </Reference>
         <Reference Include="Arent3d.RevitAddinUtil">
             <HintPath>..\Libraries\$(TargetFramework)\Arent3d.RevitAddinUtil.dll</HintPath>
         </Reference>
