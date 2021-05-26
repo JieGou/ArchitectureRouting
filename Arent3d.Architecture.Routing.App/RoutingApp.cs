@@ -1,5 +1,8 @@
+using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Reflection ;
+using Arent3d.Architecture.Routing.App.Updater ;
+using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
@@ -45,6 +48,11 @@ namespace Arent3d.Architecture.Routing.App
     protected override void OnDocumentChanged( Document document, DocumentChangedEventArgs e )
     {
       // TODO: listen changed events
+    }
+    
+    protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()
+    {
+      yield return new LocationUpdater() ;
     }
   }
 }
