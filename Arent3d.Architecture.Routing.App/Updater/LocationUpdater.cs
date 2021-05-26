@@ -12,10 +12,11 @@ namespace Arent3d.Architecture.Routing.App.Updater
     public string Description { get ; }
     public ChangePriority ChangePriority { get ; }
     public DocumentUpdateListenType ListenType { get ; }
+
     public ElementFilter GetElementFilter()
-    { 
+    {
       //Please change this method to filter the target families
-      ElementFilter filter = new ElementCategoryFilter(BuiltInCategory.OST_MechanicalEquipment ) ;
+      ElementFilter filter = new ElementCategoryFilter( BuiltInCategory.OST_MechanicalEquipment ) ;
       return filter ;
     }
 
@@ -24,13 +25,13 @@ namespace Arent3d.Architecture.Routing.App.Updater
       throw new System.NotImplementedException() ;
     }
 
-    public LocationUpdater(  )
+    public LocationUpdater()
     {
       Name = this.ToString() ;
       Description = "Update location " ;
       ListenType = DocumentUpdateListenType.Any ;
     }
-    
+
 
     public void Execute( UpdaterData data )
     {
