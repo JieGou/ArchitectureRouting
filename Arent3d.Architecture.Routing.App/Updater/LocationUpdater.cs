@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.App.Updater
     public ElementFilter GetElementFilter()
     { 
       //Please change this method to filter the target families
-      ElementFilter filter = new ElementClassFilter( typeof(Wall));
+      ElementFilter filter = new ElementCategoryFilter(BuiltInCategory.OST_MechanicalEquipment ) ;
       return filter ;
     }
 
