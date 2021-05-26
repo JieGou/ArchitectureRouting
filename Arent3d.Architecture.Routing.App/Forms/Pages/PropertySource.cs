@@ -18,6 +18,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
   {
     private Document Doc { get ; set ; }
 
+    
+    //For experimental state
+    private bool _isExperimental = true ;
+
     protected PropertySource( Document doc )
     {
       Doc = doc ;
@@ -82,7 +86,13 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
         //CurveType Info
         var curveTypeId = curveType.GetValidId() ;
-        CurveTypes = Doc.GetCurveTypes( curveType ).OrderBy( s => s.Name ).ToList() ;
+        // _isExperimental is true while we treat only round shape
+        if ( _isExperimental ) {
+          CurveTypes = Doc.GetCurveTypes( curveType ).Where(c => c.Shape == ConnectorProfileType.Round).OrderBy( s => s.Name ).ToList() ;
+        }
+        else {
+          CurveTypes = Doc.GetCurveTypes( curveType ).OrderBy( s => s.Name ).ToList() ;
+        }
         CurveTypeIndex = CurveTypes.FindIndex( c => c.Id == curveTypeId ) ;
 
         //Direct Info
