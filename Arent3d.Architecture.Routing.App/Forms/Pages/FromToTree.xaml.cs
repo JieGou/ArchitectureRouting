@@ -136,27 +136,28 @@ namespace Arent3d.Architecture.Routing.App.Forms
     private void DisplaySelectedFromTo( PropertySource.RoutePropertySource propertySource )
     {
       SelectedFromTo.UpdateFromToParameters( propertySource.Diameters, propertySource.SystemTypes, propertySource.CurveTypes ) ;
+      
+      SelectedFromTo.DiameterOrg = SelectedFromTo.Diameter = propertySource?.Diameter ;
 
-      SelectedFromTo.DiameterOrgIndex = SelectedFromTo.DiameterIndex = NegativeToNull( propertySource.DiameterIndex ) ;
+      SelectedFromTo.SystemTypeOrg = SelectedFromTo.SystemType = propertySource?.SystemType ;
 
-      SelectedFromTo.SystemTypeOrgIndex = SelectedFromTo.SystemTypeIndex = NegativeToNull( propertySource.SystemTypeIndex ) ;
-
-      SelectedFromTo.CurveTypeOrgIndex = SelectedFromTo.CurveTypeIndex = NegativeToNull( propertySource.CurveTypeIndex ) ;
-
-      if ( SelectedFromTo.CurveTypeIndex is { } index ) {
-        SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( SelectedFromTo.CurveTypes[ index ].GetType().Name ) ;
+      SelectedFromTo.CurveTypeOrg = SelectedFromTo.CurveType = propertySource?.CurveType ;
+      
+      
+      if ( SelectedFromTo.CurveType is { } curveType ) {
+        SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( curveType.GetType().Name ) ;
       }
 
-      SelectedFromTo.CurrentOrgDirect = SelectedFromTo.CurrentDirect = propertySource.IsDirect ;
-      
-      if ( propertySource.Diameters is {} diameters && propertySource.DiameterIndex != -1) {
-        var diameter = diameters[ propertySource.DiameterIndex ] ;
+      SelectedFromTo.CurrentOrgDirect = SelectedFromTo.CurrentDirect = propertySource?.IsDirect ;
+
+      // Set min, max value
+      if ( propertySource?.Diameter is { } diameter ) {
         SelectedFromTo.CurrentMinValue = Math.Round( ( diameter / 2 ).RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero ) ;
         SelectedFromTo.CurrentMaxValue = Math.Round( ( SelectedFromToViewModel.GetUpLevelHeightFromLevel() - diameter / 2 ).RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero ) ;
       }
 
-      SelectedFromTo.CurrentOrgHeightSetting = SelectedFromTo.CurrentHeightSetting = propertySource.OnHeightSetting ;
-      if ( propertySource.OnHeightSetting != null ) {
+      SelectedFromTo.CurrentOrgHeightSetting = SelectedFromTo.CurrentHeightSetting = propertySource?.OnHeightSetting ;
+      if ( propertySource?.OnHeightSetting != null ) {
         SelectedFromTo.SetHeightTextVisibility( (bool) propertySource.OnHeightSetting ) ;
         if ( propertySource.FixedHeight is { } fixedHeight ) {
           var heightValue = SelectedFromToViewModel.GetRouteHeightFromFloor( fixedHeight ).RevitUnitsToMillimeters() ;
@@ -171,12 +172,14 @@ namespace Arent3d.Architecture.Routing.App.Forms
         SelectedFromTo.SetHeightTextVisibility( false ) ;
       }
 
-      SelectedFromTo.AvoidTypeOrgKey = SelectedFromTo.AvoidTypeKey = propertySource.AvoidType ;
+      if ( propertySource?.AvoidType is { } avoidType ) {
+        SelectedFromTo.AvoidTypeOrgKey = SelectedFromTo.AvoidTypeKey = avoidType ;
+      }
 
       SelectedFromTo.ResetDialog() ;
     }
 
-    private static int? NegativeToNull( int index ) => ( index < 0 ? null : index ) ;
+    private static int? NegativeToNull( int? index ) => ( index < 0 ? null : index ) ;
 
     /// <summary>
     /// event on selected FromToTreeView to select FromTo Element

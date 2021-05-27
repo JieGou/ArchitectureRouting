@@ -18,13 +18,14 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     public static Route? TargetRoute { get ; set ; }
 
     //Diameter
-    public static int SelectedDiameterIndex { get ; private set ; }
+    public static double SelectedDiameter { get ; private set ; }
+    public static IList<double>? Diameters { get ; private set ; }
 
     //SystemType 
-    public static int SelectedSystemTypeIndex { get ; private set ; }
+    public static MEPSystemType? SelectedSystemType { get ; private set ; }
 
     //CurveType
-    public static int SelectedCurveTypeIndex { get ; private set ; }
+    public static MEPCurveType? SelectedCurveType { get ; private set ; }
 
     //Direct
     public static bool? IsDirect { get ; set ; }
@@ -72,12 +73,12 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     /// <param name="selectedSystemType"></param>
     /// <param name="selectedDirect"></param>
     /// <returns></returns>
-    public static bool ApplySelectedChanges( int selectedDiameter, int selectedSystemType, int selectedCurveType, bool? selectedDirect, bool? heightSetting, double? fixedHeight, AvoidType avoidType )
+    public static bool ApplySelectedChanges( double selectedDiameter, MEPSystemType selectedSystemType, MEPCurveType selectedCurveType, bool? selectedDirect, bool? heightSetting, double? fixedHeight, AvoidType avoidType )
     {
       if ( UiDoc != null ) {
-        SelectedDiameterIndex = selectedDiameter ;
-        SelectedSystemTypeIndex = selectedSystemType ;
-        SelectedCurveTypeIndex = selectedCurveType ;
+        SelectedDiameter = selectedDiameter.MillimetersToRevitUnits() ;
+        SelectedSystemType = selectedSystemType ;
+        SelectedCurveType = selectedCurveType ;
         IsDirect = selectedDirect ;
 
         OnHeightSetting = heightSetting ;
@@ -110,7 +111,10 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       if ( PropertySourceType?.CurveTypes is not { } curveTypes|| null == UiDoc ) return Enumerable.Empty<double>() ;
       if ( curveTypeIndex < 0 || curveTypes.Count <= curveTypeIndex ) return Enumerable.Empty<double>() ;
 
-      return curveTypes[ curveTypeIndex ].GetNominalDiameters( UiDoc.Document.Application.VertexTolerance ) ;
+      //Reset diameter list in PropertySourceType
+      Diameters = curveTypes[ curveTypeIndex ].GetNominalDiameters( UiDoc.Document.Application.VertexTolerance ) ;
+
+      return Diameters ;
     }
 
     public static double GetRouteHeightFromFloor( double totalHeight )

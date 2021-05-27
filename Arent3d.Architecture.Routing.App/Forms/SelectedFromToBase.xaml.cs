@@ -4,6 +4,7 @@ using System.Linq ;
 using System.Windows ;
 using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
+using System.Configuration ;
 using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
@@ -20,19 +21,19 @@ namespace Arent3d.Architecture.Routing.App.Forms
   public partial class SelectedFromToBase : UserControl
   {
     //Diameter Info
-    public ObservableCollection<string> Diameters { get ; set ; }
-    public int? DiameterIndex { get ; set ; }
-    public int? DiameterOrgIndex { get ; set ; }
+    public ObservableCollection<double> Diameters { get ; private set ; }
+    public double? Diameter { get ; set ; }
+    public double? DiameterOrg { get ; set ; }
 
     //SystemType Info
-    public ObservableCollection<MEPSystemType> SystemTypes { get ; set ; }
-    public int? SystemTypeIndex { get ; set ; }
-    public int? SystemTypeOrgIndex { get ; set ; }
+    public ObservableCollection<MEPSystemType> SystemTypes { get ; }
+    public MEPSystemType? SystemType { get ; set ; }
+    public MEPSystemType? SystemTypeOrg { get ; set ; }
 
     //CurveType Info
-    public ObservableCollection<MEPCurveType> CurveTypes { get ; set ; }
-    public int? CurveTypeIndex { get ; set ; }
-    public int? CurveTypeOrgIndex { get ; set ; }
+    public ObservableCollection<MEPCurveType> CurveTypes { get ; }
+    public MEPCurveType? CurveType { get ; set ; }
+    public MEPCurveType? CurveTypeOrg { get ; set ; }
     public string CurveTypeLabel { get ; set ; }
 
     //Direct Info
@@ -81,16 +82,16 @@ namespace Arent3d.Architecture.Routing.App.Forms
     {
       InitializeComponent() ;
 
-      DiameterIndex = 0 ;
-      SystemTypeIndex = 0 ;
-      CurveTypeIndex = 0 ;
+      Diameter = null ;
+      SystemType = null ;
+      CurveType = null ;
       CurveTypeLabel = "Type" ;
       CurrentDirect = false ;
       CurrentHeightSetting = false ;
       FixedHeight = 0.0 ;
       CurrentMaxValue = 10000 ;
       CurrentMinValue = 0 ;
-      Diameters = new ObservableCollection<string>() ;
+      Diameters = new ObservableCollection<double>() ;
       SystemTypes = new ObservableCollection<MEPSystemType>() ;
       CurveTypes = new ObservableCollection<MEPCurveType>() ;
     }
@@ -166,10 +167,23 @@ namespace Arent3d.Architecture.Routing.App.Forms
       {
         int selectedIndex = CurveTypeComboBox.SelectedIndex ;
 
-        Diameters = new ObservableCollection<string>( SelectedFromToViewModel.ResetNominalDiameters( selectedIndex ).Select( d => d.RevitUnitsToMillimeters() + " mm" ) ) ;
+
+        var currentDiameter = 0.0 ;
+        if (DiameterComboBox.SelectedIndex != -1) {
+          currentDiameter = Diameters[DiameterComboBox.SelectedIndex].MillimetersToRevitUnits() ;
+        }
+        var newDiameters = SelectedFromToViewModel.ResetNominalDiameters( selectedIndex ) ;
+        var enumerable = newDiameters.ToList() ;
+        
+        Diameters = new ObservableCollection<double>( enumerable.Select( d => Math.Round(d.RevitUnitsToMillimeters() , 2, MidpointRounding.AwayFromZero ) ) ) ;
         DiameterComboBox.ItemsSource = Diameters ;
 
-        DiameterComboBox.SelectedIndex = Diameters.Count - 1 ;
+        if ( currentDiameter != 0.0 ) {
+          DiameterComboBox.SelectedIndex = UIHelper.FindClosestIndex( enumerable.ToList(), (double)  currentDiameter ) ;
+        }
+        else {
+          DiameterComboBox.SelectedIndex = -1 ;
+        }
       }
     }
 
@@ -216,7 +230,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       if ( diameters != null ) {
         foreach ( var d in diameters ) {
-          Diameters.Add( d.RevitUnitsToMillimeters() + " mm" ) ;
+          Diameters.Add(   Math.Round(d.RevitUnitsToMillimeters() , 2, MidpointRounding.AwayFromZero ) ) ;
         }
       }
 
@@ -236,20 +250,20 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public void ResetDialog()
     {
       SystemTypeComboBox.ItemsSource = SystemTypes ;
-      if ( SystemTypeIndex != null ) {
-        SystemTypeComboBox.SelectedIndex = (int) SystemTypeIndex ;
+      if ( SystemType is {} systemType ) {
+        SystemTypeComboBox.SelectedIndex = SystemTypes.FindIndex(s => s.Name == systemType.Name) ;
       }
 
       CurveTypeComboBox.ItemsSource = CurveTypes ;
-      if ( CurveTypeIndex != null ) {
-        CurveTypeComboBox.SelectedIndex = (int) CurveTypeIndex ;
+      if ( CurveType is {} curveType ) {
+        CurveTypeComboBox.SelectedIndex = CurveTypes.FindIndex(c => c.Name == curveType.Name) ;
       }
 
       CurveTypeDomain.Content = CurveTypeLabel ;
 
       DiameterComboBox.ItemsSource = Diameters ;
-      if ( DiameterIndex != null ) {
-        DiameterComboBox.SelectedIndex = (int) DiameterIndex ;
+      if ( Diameter is {} diameter ) {
+        DiameterComboBox.SelectedIndex = Diameters.FindIndex( d => d == Math.Round(diameter.RevitUnitsToMillimeters() , 2, MidpointRounding.AwayFromZero )) ;
       }
 
       Direct.IsChecked = CurrentDirect ;
@@ -288,9 +302,9 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     public void ClearDialog()
     {
-      DiameterIndex = 0 ;
-      SystemTypeIndex = 0 ;
-      CurveTypeIndex = 0 ;
+      Diameter = null ;
+      SystemType = null ;
+      CurveType = null ;
       CurveTypeLabel = "Type" ;
       Direct.IsChecked = false ;
       Diameters.Clear() ;
@@ -364,26 +378,26 @@ namespace Arent3d.Architecture.Routing.App.Forms
       if ( SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
         MessageBoxResult result = MessageBox.Show( "Dialog.Forms.SelectedFromToBase.ChangeFromTo".GetAppStringByKeyOrDefault( "Do you want to change the From-To information?&#xA;If you change it, it will be automatically re-routed." ), "", MessageBoxButton.YesNo ) ;
         if ( result == MessageBoxResult.Yes ) {
-          SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey ) ;
+          SelectedFromToViewModel.ApplySelectedChanges( Diameters[DiameterComboBox.SelectedIndex], SystemTypes[SystemTypeComboBox.SelectedIndex], CurveTypes[CurveTypeComboBox.SelectedIndex] , CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey ) ;
         }
       }
       else {
-        SelectedFromToViewModel.ApplySelectedChanges( DiameterComboBox.SelectedIndex, SystemTypeComboBox.SelectedIndex, CurveTypeComboBox.SelectedIndex, CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey ) ;
+        SelectedFromToViewModel.ApplySelectedChanges( Diameters[DiameterComboBox.SelectedIndex], SystemTypes[SystemTypeComboBox.SelectedIndex], CurveTypes[CurveTypeComboBox.SelectedIndex], CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey ) ;
       }
     }
 
     private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
     {
-      if ( SystemTypeOrgIndex != null ) {
-        SystemTypeComboBox.SelectedIndex = (int) SystemTypeOrgIndex ;
+      if ( SystemTypeOrg is {} systemTypeOrg ) {
+        SystemTypeComboBox.SelectedIndex = SystemTypes.FindIndex(s => s.Name == systemTypeOrg.Name) ;
       }
 
-      if ( CurveTypeOrgIndex != null ) {
-        CurveTypeComboBox.SelectedIndex = (int) CurveTypeOrgIndex ;
+      if ( CurveTypeOrg is {} curveTypeOrg ) {
+        CurveTypeComboBox.SelectedIndex = CurveTypes.FindIndex(c => c.Name == curveTypeOrg.Name) ;
       }
 
-      if ( DiameterOrgIndex != null ) {
-        DiameterComboBox.SelectedIndex = (int) DiameterOrgIndex ;
+      if ( DiameterOrg is {} diameterOrg ) {
+        DiameterComboBox.SelectedIndex = Diameters.FindIndex(d => d == Math.Round(diameterOrg.RevitUnitsToMillimeters() , 2, MidpointRounding.AwayFromZero )) ;
       }
 
       Direct.IsChecked = CurrentOrgDirect ;
