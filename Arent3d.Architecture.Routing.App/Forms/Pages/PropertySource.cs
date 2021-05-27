@@ -39,11 +39,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
       //Diameter
       public int DiameterIndex { get ; private set ; }
-      public IList<double>? Diameters { get ; private set ; }
+      public IList<double>? Diameters { get ; set ; }
 
       //SystemType 
       public int SystemTypeIndex { get ; private set ; }
-      public IList<MEPSystemType>? SystemTypes { get ; private set ; }
+      public IList<MEPSystemType>? SystemTypes { get ; set ; }
 
       //CurveType
       public int CurveTypeIndex { get ; private set ; }

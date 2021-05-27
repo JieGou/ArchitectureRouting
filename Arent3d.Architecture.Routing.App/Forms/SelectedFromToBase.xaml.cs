@@ -166,10 +166,19 @@ namespace Arent3d.Architecture.Routing.App.Forms
       {
         int selectedIndex = CurveTypeComboBox.SelectedIndex ;
 
-        Diameters = new ObservableCollection<string>( SelectedFromToViewModel.ResetNominalDiameters( selectedIndex ).Select( d => d.RevitUnitsToMillimeters() + " mm" ) ) ;
+        var currentDiameter = SelectedFromToViewModel.PropertySourceType?.Diameters?[ DiameterComboBox.SelectedIndex ] ;
+        var newDiameters = SelectedFromToViewModel.ResetNominalDiameters( selectedIndex ) ;
+        var enumerable = newDiameters.ToList() ;
+        
+        Diameters = new ObservableCollection<string>( enumerable.Select( d => d.RevitUnitsToMillimeters() + " mm" ) ) ;
         DiameterComboBox.ItemsSource = Diameters ;
 
-        DiameterComboBox.SelectedIndex = Diameters.Count - 1 ;
+        if ( currentDiameter != null ) {
+          DiameterComboBox.SelectedIndex = UIHelper.FindClosestIndex( enumerable.ToList(), (double) currentDiameter ) ;
+        }
+        else {
+          DiameterComboBox.SelectedIndex = Diameters.Count - 1 ;
+        }
       }
     }
 

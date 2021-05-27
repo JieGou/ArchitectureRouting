@@ -23,8 +23,6 @@ namespace Arent3d.Architecture.Routing
       var resultList = new List<double>() ;
       var segment = type.GetTargetSegment() ;
 
-      var test = segment?.GetSizes() ;
-
       var diameterList = type switch
       {
         DuctType => DuctSizeSettings.GetDuctSizeSettings(type.Document)[ DuctShape.Round ].Where(s => s.UsedInSizeLists && s.UsedInSizing).Select(s => s.NominalDiameter).ToList(),

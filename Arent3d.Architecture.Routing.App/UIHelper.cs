@@ -1,4 +1,5 @@
 ﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows.Controls ;
 using Arent3d.Revit.I18n ;
@@ -62,6 +63,12 @@ namespace Arent3d.Architecture.Routing.App
       }
 
       ribbonTab.IsVisible = false ;
+    }
+
+    public static int FindClosestIndex( List<double> list, double value )
+    {
+      var closest = list.OrderBy(item => Math.Abs(value - item)).First();
+      return list.IndexOf(closest);
     }
   }
 }

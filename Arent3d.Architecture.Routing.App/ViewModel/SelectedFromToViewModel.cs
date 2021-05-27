@@ -110,7 +110,10 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
       if ( PropertySourceType?.CurveTypes is not { } curveTypes|| null == UiDoc ) return Enumerable.Empty<double>() ;
       if ( curveTypeIndex < 0 || curveTypes.Count <= curveTypeIndex ) return Enumerable.Empty<double>() ;
 
-      return curveTypes[ curveTypeIndex ].GetNominalDiameters( UiDoc.Document.Application.VertexTolerance ) ;
+      //Reset diameter list in PropertySourceType
+      PropertySourceType.Diameters = curveTypes[ curveTypeIndex ].GetNominalDiameters( UiDoc.Document.Application.VertexTolerance ) ;
+
+      return PropertySourceType.Diameters ;
     }
 
     public static double GetRouteHeightFromFloor( double totalHeight )
