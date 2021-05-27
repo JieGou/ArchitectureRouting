@@ -36,6 +36,10 @@ namespace Arent3d.Revit.UI
     {
     }
 
+    protected virtual void OnApplicationViewChanged( Document document, ViewActivatedEventArgs e )
+    {
+    }
+
     protected abstract void OnDocumentListenStarted( Document document ) ;
 
     protected abstract void OnDocumentListenFinished( Document document ) ;
@@ -108,6 +112,8 @@ namespace Arent3d.Revit.UI
 
     private void Application_ViewActivated( object sender, ViewActivatedEventArgs e )
     {
+      OnApplicationViewChanged( e.Document, e ) ;
+
       _ui?.UpdateUI( e.Document, AppUIUpdateType.ViewChange ) ;
     }
 
