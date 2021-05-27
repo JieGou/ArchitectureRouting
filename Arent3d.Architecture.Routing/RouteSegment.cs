@@ -3,13 +3,14 @@ using System.Globalization ;
 using System.Text ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
-using Arent3d.Routing.Conditions ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
 {
   public class RouteSegment
   {
+    public MEPSystemClassificationInfo SystemClassificationInfo { get ; set ; }
+    public MEPSystemType? SystemType { get ; set ; }
     public MEPCurveType? CurveType { get ; set ; }
 
     public double? PreferredNominalDiameter { get ; private set ; }
@@ -54,12 +55,22 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    public RouteSegment( IEndPoint fromEndPoint, IEndPoint toEndPoint ) : this( fromEndPoint, toEndPoint, null, false, null, AvoidType.Whichever )
+    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint )
+      : this( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, null, false, null, AvoidType.Whichever )
     {
     }
 
-    public RouteSegment( IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
+    public static RouteSegment Restore( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
     {
+      return new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, preferredNominalDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
+    }
+
+    private RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
+    {
+      SystemClassificationInfo = classificationInfo ;
+      SystemType = systemType ;
+      CurveType = curveType ;
+
       PreferredNominalDiameter = ( 0 < preferredNominalDiameter ? preferredNominalDiameter : null ) ;
       IsRoutingOnPipeSpace = isRoutingOnPipeSpace ;
       FixedBopHeight = fixedBopHeight ;
@@ -87,11 +98,11 @@ namespace Arent3d.Architecture.Routing
   internal class RouteSegmentConverter : StorableConverterBase<RouteSegment, string>
   {
     private static readonly char[] FieldSplitter = { '|' } ;
-    
+
     protected override RouteSegment NativeToCustom( Element storedElement, string nativeTypeValue )
     {
       var split = nativeTypeValue.Split( FieldSplitter, StringSplitOptions.RemoveEmptyEntries ) ;
-      if ( split.Length < 6 ) throw new InvalidOperationException() ;
+      if ( 9 != split.Length ) throw new InvalidOperationException() ;
 
       var preferredDiameter = ParseNullableDouble( split[ 0 ] ) ;
       var fromId = EndPointExtensions.ParseEndPoint( storedElement.Document, split[ 1 ] ) ?? throw new InvalidOperationException() ;
@@ -99,14 +110,13 @@ namespace Arent3d.Architecture.Routing
       var isRoutingOnPipeSpace = ParseBool( split[ 3 ] ) ;
       var curveType = storedElement.Document.GetElementById<MEPCurveType>( ParseElementId( split[ 4 ] ) ) ;
 
-      var fixedBopHeight = ( 6 <= split.Length ? ParseNullableDouble( split[ 5 ] ) : null ) ;
+      var fixedBopHeight = ParseNullableDouble( split[ 5 ] ) ;
 
-      var avoidType = (AvoidType) Convert.ToInt32(split[ 6 ])   ;
+      if ( false == Enum.TryParse( split[ 6 ], out AvoidType avoidType ) ) throw new InvalidOperationException() ;
+      var classificationInfo = MEPSystemClassificationInfo.Deserialize( split[ 7 ] ) ?? throw new InvalidOperationException() ;
+      var systemType = storedElement.Document.GetElementById<MEPSystemType>( ParseElementId( split[ 8 ] ) ) ;
 
-      return new RouteSegment( fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType )
-      {
-        CurveType = curveType,
-      } ;
+      return RouteSegment.Restore( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
     }
 
     private static double? ParseNullableDouble( string s )
@@ -151,7 +161,11 @@ namespace Arent3d.Architecture.Routing
       builder.Append( '|' ) ;
       builder.Append( customTypeValue.FixedBopHeight?.ToString( CultureInfo.InvariantCulture ) ?? "---" ) ;
       builder.Append( '|' ) ;
-      builder.Append( (int)customTypeValue.AvoidType ) ;
+      builder.Append( customTypeValue.AvoidType.ToString() ) ;
+      builder.Append( '|' ) ;
+      builder.Append( customTypeValue.SystemClassificationInfo.Serialize() ) ;
+      builder.Append( '|' ) ;
+      builder.Append( customTypeValue.SystemType.GetValidId().IntegerValue ) ;
 
       return builder.ToString() ;
     }

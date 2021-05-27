@@ -31,6 +31,8 @@ namespace Arent3d.Architecture.Routing
 
     public abstract Domain Domain { get ; }
 
+    public abstract Type? GetCurveTypeClass() ;
+
     public abstract bool IsCompatibleTo( MEPSystemType type ) ;
 
     public abstract bool IsCompatibleTo( MEPSystemClassificationInfo another ) ;
@@ -84,6 +86,7 @@ namespace Arent3d.Architecture.Routing
       public PipeSystemClassificationInfo( PipeSystemType systemType ) => _systemType = systemType ;
 
       public override Domain Domain => Domain.DomainPiping ;
+      public override Type? GetCurveTypeClass() => typeof( PipeType ) ;
 
       public override bool IsCompatibleTo( MEPSystemType type ) => (int) type.SystemClassification == (int) _systemType ;
 
@@ -105,6 +108,7 @@ namespace Arent3d.Architecture.Routing
       private readonly DuctSystemType _systemType ;
 
       public override Domain Domain => Domain.DomainHvac ;
+      public override Type? GetCurveTypeClass() => typeof( DuctType ) ;
 
       public DuctSystemClassificationInfo( DuctSystemType systemType ) => _systemType = systemType ;
 
@@ -129,6 +133,7 @@ namespace Arent3d.Architecture.Routing
       public ElectricalSystemClassificationInfo( ElectricalSystemType systemType ) => _systemType = systemType ;
 
       public override Domain Domain => Domain.DomainElectrical ;
+      public override Type? GetCurveTypeClass() => null ;
 
       public override bool IsCompatibleTo( MEPSystemType type ) => (int) type.SystemClassification == (int) _systemType ;
 
@@ -147,6 +152,7 @@ namespace Arent3d.Architecture.Routing
     private class CableTrayConduitSystemClassificationInfo : MEPSystemClassificationInfo
     {
       public override Domain Domain => Domain.DomainCableTrayConduit ;
+      public override Type? GetCurveTypeClass() => typeof( ConduitType ) ;
 
       public override bool IsCompatibleTo( MEPSystemType type ) => false ;
 
@@ -160,6 +166,7 @@ namespace Arent3d.Architecture.Routing
     private class UndefinedSystemClassificationInfo : MEPSystemClassificationInfo
     {
       public override Domain Domain => Domain.DomainUndefined ;
+      public override Type? GetCurveTypeClass() => null ;
 
       public override bool IsCompatibleTo( MEPSystemType type ) => type.SystemClassification == MEPSystemClassification.UndefinedSystemClassification ;
 
