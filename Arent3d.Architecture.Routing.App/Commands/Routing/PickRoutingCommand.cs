@@ -26,7 +26,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     /// Collects from-to records to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>?
+      GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
       return ReadRouteRecordsByPick( uiDocument ).EnumerateAll().ToAsyncEnumerable() ;
     }
@@ -36,10 +37,12 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var segments = UiThread.RevitUiDispatcher.Invoke( () =>
       {
         var document = uiDocument.Document ;
-        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null ) ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument,
+          "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null ) ;
         var tempColor = uiDocument.SetTempColor( fromPickResult ) ;
         try {
-          var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult ) ;
+          var toPickResult = ConnectorPicker.GetConnector( uiDocument,
+            "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult ) ;
 
           return CreateNewSegmentList( document, fromPickResult, toPickResult ) ;
         }
@@ -53,13 +56,14 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       }
     }
 
-    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList(
+      Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
       var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult ) ;
       var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
 
       if ( fromPickResult.SubRoute is { } subRoute1 ) {
-        return CreateNewSegmentListForRoutePick( subRoute1, fromPickResult, toEndPoint, false ) ;
+        return CreateNewSegmentListForRoutePick( subRoute1, fromPickResult, toEndPoint, false ) ; 
       }
 
       if ( toPickResult.SubRoute is { } subRoute2 ) {
@@ -72,14 +76,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
 
       var connector = fromEndPoint.GetReferenceConnector() ?? toEndPoint.GetReferenceConnector() ;
 
-      if ( connector != null ) {
+      if ( connector != null && MEPSystemClassificationInfo.From( connector ) is { } classificationInfo ) {
         var systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
+        if ( systemType is null ) return list ;
+        var curveType = RouteMEPSystem.GetMEPCurveType( document, new[] { connector }, systemType ) ;
 
         var nextIndex = GetRouteNameIndex( routes, systemType?.Name ) ;
 
         var name = systemType?.Name + "_" + nextIndex ;
 
-        var segment = new RouteSegment( fromEndPoint, toEndPoint ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint ) ;
         segment.ApplyRealNominalDiameter() ;
         routes.FindOrCreate( name ) ;
         list.Add( ( name, segment ) ) ;
@@ -90,7 +96,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       return list ;
     }
 
-    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide )
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick(
+      SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPoint anotherEndPoint,
+      bool anotherIndicatorIsFromSide )
     {
       return CreateSubBranchRoute( subRoute, anotherEndPoint, anotherIndicatorIsFromSide ) ;
 
@@ -98,49 +106,62 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       //return AppendNewSegmentIntoPickedRoute( subRoute, routePickResult, anotherIndicator, anotherIndicatorIsFromSide ) ;
     }
 
-    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( SubRoute subRoute, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide )
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute(
+      SubRoute subRoute, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide )
     {
       var routes = RouteCache.Get( subRoute.Route.Document ) ;
       var routEndPoint = new RouteEndPoint( subRoute ) ;
 
       var systemType = subRoute.Route.GetMEPSystemType() ;
 
+      var curveType = subRoute.Route.GetDefaultCurveType() ;
+
+      var classificationInfo = subRoute.Route.GetSystemClassificationInfo() ;
+
       var nextIndex = GetRouteNameIndex( routes, systemType.Name ) ;
-      
-      var name = systemType.Name + "_" + nextIndex  ;
+
+      var name = systemType.Name + "_" + nextIndex ;
 
       RouteSegment segment ;
       if ( anotherIndicatorIsFromSide ) {
-        segment = new RouteSegment( anotherEndPoint, routEndPoint ) ;
+        segment = new RouteSegment( classificationInfo, systemType, curveType, anotherEndPoint, routEndPoint ) ;
       }
       else {
-        segment = new RouteSegment( routEndPoint, anotherEndPoint ) ;
+        
+        segment = new RouteSegment( classificationInfo, systemType, curveType, routEndPoint, anotherEndPoint ) ;
       }
+
 
       segment.ApplyRealNominalDiameter() ;
 
       return new[] { ( name, segment ) } ;
     }
 
-    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide )
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute(
+      SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPoint anotherEndPoint,
+      bool anotherIndicatorIsFromSide )
     {
       var segments = subRoute.Route.ToSegmentsWithNameList() ;
       segments.Add( CreateNewSegment( subRoute, routePickResult, anotherEndPoint, anotherIndicatorIsFromSide ) ) ;
       return segments ;
     }
 
-    private static (string RouteName, RouteSegment Segment) CreateNewSegment( SubRoute subRoute, ConnectorPicker.IPickResult pickResult, IEndPoint newEndPoint, bool newEndPointIndicatorIsFromSide )
+    private static (string RouteName, RouteSegment Segment) CreateNewSegment( SubRoute subRoute,
+      ConnectorPicker.IPickResult pickResult, IEndPoint newEndPoint, bool newEndPointIndicatorIsFromSide )
     {
       var detector = new RouteSegmentDetector( subRoute, pickResult.PickedElement ) ;
+      var classificationInfo = subRoute.Route.GetSystemClassificationInfo() ;
+      var systemType = subRoute.Route.GetMEPSystemType() ;
+      var curveType = subRoute.Route.GetDefaultCurveType() ;
       foreach ( var segment in subRoute.Route.RouteSegments.EnumerateAll() ) {
         if ( false == detector.IsPassingThrough( segment ) ) continue ;
 
         RouteSegment newSegment ;
         if ( newEndPointIndicatorIsFromSide ) {
-          newSegment = new RouteSegment( newEndPoint, segment.ToEndPoint ) ;
+          newSegment = new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, segment.ToEndPoint ) ;
         }
         else {
-          newSegment = new RouteSegment( segment.FromEndPoint, newEndPoint ) ;
+          newSegment = new RouteSegment( classificationInfo, systemType, curveType, segment.FromEndPoint, newEndPoint ) ;
         }
 
         newSegment.ApplyRealNominalDiameter() ;
@@ -152,12 +173,16 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       {
         RouteSegment newSegment ;
         if ( newEndPointIndicatorIsFromSide ) {
-          var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( false ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-          newSegment = new RouteSegment( newEndPoint, terminateEndPoint ) ;
+          var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document,
+            ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( false ),
+            newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
+          newSegment = new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, terminateEndPoint ) ;
         }
         else {
-          var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( true ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-          newSegment = new RouteSegment( terminateEndPoint, newEndPoint ) ;
+          var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document,
+            ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( true ),
+            newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
+          newSegment = new RouteSegment( classificationInfo, systemType, curveType,terminateEndPoint, newEndPoint ) ;
         }
 
         newSegment.ApplyRealNominalDiameter() ;
@@ -171,7 +196,8 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
       var regex = new Regex( pattern ) ;
 
-      var lastIndex = routes.Keys.Select( k => regex.Match(k) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
+      var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success )
+        .Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
 
       return lastIndex + 1 ;
     }
