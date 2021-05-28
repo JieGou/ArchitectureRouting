@@ -68,21 +68,17 @@ namespace Arent3d.Architecture.Routing.App.Forms
           CurveType = subRoute.GetMEPCurveType() ;
 
           //Diameter Info
-          Diameters = (IList<double>?) CurveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ??
-                      Array.Empty<double>() ;
+          Diameters = (IList<double>?) CurveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
           Diameter = subRoute.GetDiameter() ;
 
           //System Type Info(PipingSystemType in lookup)
-          SystemTypes = Doc.GetSystemTypes( subRoute.Route.SystemClassificationInfo ).OrderBy( s => s.Name ).ToList() ;
+          SystemTypes = Doc.GetSystemTypes( subRoute.Route.GetSystemClassificationInfo() ).OrderBy( s => s.Name ).ToList() ;
           SystemType = subRoute.Route.GetMEPSystemType() ;
 
           //CurveType Info
           var curveTypeId = CurveType.GetValidId() ;
           // _isExperimental is true while we treat only round shape
-          CurveTypes = _isExperimental
-            ? Doc.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name )
-              .ToList()
-            : Doc.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
+          CurveTypes = _isExperimental ? Doc.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : Doc.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
 
 
           //Direct Info
@@ -94,10 +90,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
           //AvoidType Info
           AvoidType = subRoute.AvoidType ;
-        }
-
-        if ( TargetSubRoutes is { Count: > 1 } ) {
-          IsMultiSelected() ;
         }
       }
 

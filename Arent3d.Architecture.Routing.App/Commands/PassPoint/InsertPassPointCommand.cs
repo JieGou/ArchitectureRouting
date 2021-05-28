@@ -69,10 +69,9 @@ namespace Arent3d.Architecture.Routing.App.Commands.PassPoint
           var diameter = segment.GetRealNominalDiameter() ?? segment.PreferredNominalDiameter ;
           var isRoutingOnPipeSpace = segment.IsRoutingOnPipeSpace ;
           var fixeBopHeight = segment.FixedBopHeight ;
-          var curveType = segment.CurveType ;
           var avoidType = segment.AvoidType ;
-          yield return new RouteSegment( segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) { CurveType = curveType } ;
-          yield return new RouteSegment( passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) { CurveType = curveType } ;
+          yield return RouteSegment.Restore( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) ;
+          yield return RouteSegment.Restore( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) ;
         }
         else {
           yield return segment ;

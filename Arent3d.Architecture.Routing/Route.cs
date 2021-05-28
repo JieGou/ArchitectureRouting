@@ -66,21 +66,31 @@ namespace Arent3d.Architecture.Routing
       return _subRoutes.SelectMany( subRoute => subRoute.ToEndPoints.OfType<ConnectorEndPoint>() ).FirstOrDefault() ;
     }
 
-    public Domain Domain => SystemClassificationInfo.Domain ;
+    public Domain Domain => GetSystemClassificationInfo().Domain ;
 
-    private MEPSystemClassificationInfo? _systemClassificationInfo = null ;
-    public MEPSystemClassificationInfo SystemClassificationInfo => _systemClassificationInfo ?? MEPSystemClassificationInfo.Undefined ;
 
-    private MEPSystemType? _overriddenSystemType = null ;
+    public MEPSystemClassificationInfo GetSystemClassificationInfo()
+    {
+      return _routeSegments.Select( seg => seg.SystemClassificationInfo ).NonNull().FirstOrDefault() ?? MEPSystemClassificationInfo.Undefined ;
+    }
+    public void SetSystemClassificationInfo( MEPSystemClassificationInfo classificationInfo )
+    {
+      RouteSegments.ForEach( segment => segment.SystemClassificationInfo = classificationInfo ) ;
+    }
 
     public MEPSystemType GetMEPSystemType()
     {
-      return _overriddenSystemType ?? RouteMEPSystem.GetSystemType( Document, GetReferenceConnector() ) ?? throw new InvalidOperationException() ;
+      return _routeSegments.Select( seg => seg.SystemType ).NonNull().FirstOrDefault() ?? GetDefaultSystemType() ;
     }
-
     public void SetMEPSystemType( MEPSystemType? systemType )
     {
-      _overriddenSystemType = systemType ;
+      RouteSegments.ForEach( segment => segment.SystemType = systemType ) ;
+    }
+
+    private MEPSystemType? _defaultSystemType = null ;
+    public MEPSystemType GetDefaultSystemType()
+    {
+      return _defaultSystemType ??= Document.GetAllElements<MEPSystemType>().Where( GetSystemClassificationInfo().IsCompatibleTo ).FirstOrDefault() ?? throw new InvalidOperationException() ;
     }
 
     private MEPCurveType? _defaultCurveType = null ;
@@ -121,8 +131,7 @@ namespace Arent3d.Architecture.Routing
       _subRouteMap.Clear() ;
       _routeSegments.Clear() ;
       _subRoutes.Clear() ;
-      _systemClassificationInfo = null ;
-      _overriddenSystemType = null ;
+      _defaultSystemType = null ;
       _defaultCurveType = null ;
     }
 
@@ -168,16 +177,16 @@ namespace Arent3d.Architecture.Routing
         return false ;
       }
 
-      if ( null != _systemClassificationInfo ) {
-        if ( GetMEPSystemClassification( fromEndPoint ) is { } classification1 && ! _systemClassificationInfo.IsCompatibleTo( classification1 ) ) return false ;
-        if ( GetMEPSystemClassification( toEndPoint ) is { } classification2 && ! _systemClassificationInfo.IsCompatibleTo( classification2 ) ) return false ;
+      var classificationInfo = GetSystemClassificationInfo() ;
+      if ( classificationInfo.Domain == Domain.DomainUndefined ) {
+        classificationInfo = segment.SystemClassificationInfo ;
       }
       else {
-        var classification1 = GetMEPSystemClassification( fromEndPoint ) ;
-        var classification2 = GetMEPSystemClassification( toEndPoint ) ;
-        if ( null != classification1 && null != classification2 && ! classification1.IsCompatibleTo( classification2 ) ) return false ;
-        _systemClassificationInfo = classification1 ?? classification2 ;
+        if ( classificationInfo.IsCompatibleTo( segment.SystemClassificationInfo ) ) return false ;
       }
+
+      if ( GetMEPSystemClassification( fromEndPoint ) is { } classification1 && ! classificationInfo.IsCompatibleTo( classification1 ) ) return false ;
+      if ( GetMEPSystemClassification( toEndPoint ) is { } classification2 && ! classificationInfo.IsCompatibleTo( classification2 ) ) return false ;
 
       if ( false == _subRouteMap.TryGetValue( ( fromEndPoint.Key, true ), out var subRoute1 ) ) subRoute1 = null ;
       if ( false == _subRouteMap.TryGetValue( ( toEndPoint.Key, false ), out var subRoute2 ) ) subRoute2 = null ;
@@ -366,31 +375,23 @@ namespace Arent3d.Architecture.Routing
 
     private const string RouteNameField = "RouteName" ;
     private const string RouteSegmentsField = "RouteSegments" ;
-    private const string MEPSystemField = "MEPSystem" ;
-    private const string MEPSystemClassificationInfoField = "MEPSystemClassificationInfo" ;
 
     protected override void SetupAllFields( FieldGenerator generator )
     {
       generator.SetSingle<string>( RouteNameField ) ;
       generator.SetArray<RouteSegment>( RouteSegmentsField ) ;
-      generator.SetSingle<ElementId>( MEPSystemField ) ;
-      generator.SetSingle<string>( MEPSystemClassificationInfoField ) ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
     {
       _routeName = reader.GetSingle<string>( RouteNameField ) ;
       reader.GetArray<RouteSegment>( RouteSegmentsField ).ForEach( segment => RegisterSegment( segment, false ) ) ;
-      SetMEPSystemType( Document.GetElementById<MEPSystemType>( reader.GetSingle<ElementId>( MEPSystemField ) ) ) ;
-      _systemClassificationInfo = MEPSystemClassificationInfo.Deserialize( reader.GetSingle<string>( MEPSystemClassificationInfoField ) ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
       writer.SetSingle( RouteNameField, RouteName ) ;
       writer.SetArray( RouteSegmentsField, _routeSegments ) ;
-      writer.SetSingle( MEPSystemField, GetMEPSystemType().GetValidId() ) ;
-      writer.SetSingle( MEPSystemClassificationInfoField, SystemClassificationInfo.Serialize() ) ;
     }
 
     #endregion

@@ -1,10 +1,5 @@
-using System ;
-using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Revit.Csv.Converters ;
-using CsvHelper ;
-using CsvHelper.Configuration ;
+using Autodesk.Revit.DB ;
 using CsvHelper.Configuration.Attributes ;
-using CsvHelper.TypeConversion ;
 
 namespace Arent3d.Architecture.Routing.App
 {
@@ -47,6 +42,12 @@ namespace Arent3d.Architecture.Routing.App
     public double? FixedBopHeight { get ; set ; } = null ;
 
     [Index( 11 ), Name( "Preferred AvoidType" )]
-    public AvoidType AvoidType { get ; set ; } = Routing.AvoidType.Whichever ;
+    public AvoidType AvoidType { get ; set ; } = AvoidType.Whichever ;
+
+    [Index( 12 ), Name( "MEP System Classification" )]
+    public string SystemClassification { get ; set ; } = string.Empty ;
+
+    [Index( 13 ), Name( "MEP System Type Name" )]
+    public string SystemTypeName { get ; set ; } = string.Empty ;
   }
 }
