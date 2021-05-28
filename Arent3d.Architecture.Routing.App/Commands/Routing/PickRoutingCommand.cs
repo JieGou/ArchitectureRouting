@@ -58,44 +58,44 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult ) ;
       var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
 
-      MEPSystemClassificationInfo? ClassificationInfo ;
-      MEPSystemType? SystemType ;
-      MEPCurveType? CurveType ;
+      MEPSystemClassificationInfo? classificationInfo ;
+      MEPSystemType? systemType ;
+      MEPCurveType? curveType ;
 
       var list = new List<(string RouteName, RouteSegment Segment)>() ;
       var connector = fromEndPoint.GetReferenceConnector() ?? toEndPoint.GetReferenceConnector() ;
 
       if ( fromPickResult.SubRoute is { } subRoute1 ) {
         //Set property from Dialog
-        ClassificationInfo = subRoute1.Route.GetSystemClassificationInfo() ;
-        SystemType = subRoute1.Route.GetMEPSystemType() ;
-        CurveType = subRoute1.Route.GetDefaultCurveType() ;
-        if ( ClassificationInfo is null || CurveType is null ) return list ;
-        return CreateNewSegmentListForRoutePick( subRoute1, fromPickResult, toEndPoint, false, ClassificationInfo, SystemType, CurveType ) ;
+        classificationInfo = subRoute1.Route.GetSystemClassificationInfo() ;
+        systemType = subRoute1.Route.GetMEPSystemType() ;
+        curveType = subRoute1.Route.GetDefaultCurveType() ;
+        if ( classificationInfo is null || curveType is null ) return list ;
+        return CreateNewSegmentListForRoutePick( subRoute1, fromPickResult, toEndPoint, false, classificationInfo, systemType, curveType ) ;
       }
 
       if ( toPickResult.SubRoute is { } subRoute2 ) {
         //Set property from Dialog
-        ClassificationInfo = subRoute2.Route.GetSystemClassificationInfo() ;
-        SystemType = subRoute2.Route.GetMEPSystemType() ;
-        CurveType = subRoute2.Route.GetDefaultCurveType() ;
-        if ( ClassificationInfo is null || CurveType is null ) return list ;
-        return CreateNewSegmentListForRoutePick( subRoute2, toPickResult, fromEndPoint, true, ClassificationInfo, SystemType, CurveType ) ;
+        classificationInfo = subRoute2.Route.GetSystemClassificationInfo() ;
+        systemType = subRoute2.Route.GetMEPSystemType() ;
+        curveType = subRoute2.Route.GetDefaultCurveType() ;
+        if ( classificationInfo is null || curveType is null ) return list ;
+        return CreateNewSegmentListForRoutePick( subRoute2, toPickResult, fromEndPoint, true, classificationInfo, systemType, curveType ) ;
       }
       var routes = RouteCache.Get( document ) ;
       
       if ( connector != null  ) {
         //Set property from Dialog
-        ClassificationInfo = MEPSystemClassificationInfo.From( connector ) ;
-        SystemType = RouteMEPSystem.GetSystemType( document, connector ) ;
-        if ( ClassificationInfo is null || SystemType is null ) return list ;
-        CurveType = RouteMEPSystem.GetMEPCurveType( document, new[] { connector }, SystemType ) ;
+        classificationInfo = MEPSystemClassificationInfo.From( connector ) ;
+        systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
+        if ( classificationInfo is null || systemType is null ) return list ;
+        curveType = RouteMEPSystem.GetMEPCurveType( document, new[] { connector }, systemType ) ;
 
-        var nextIndex = GetRouteNameIndex( routes, SystemType?.Name ) ;
+        var nextIndex = GetRouteNameIndex( routes, systemType?.Name ) ;
 
-        var name = SystemType?.Name + "_" + nextIndex ;
+        var name = systemType?.Name + "_" + nextIndex ;
 
-        var segment = new RouteSegment( ClassificationInfo, SystemType, CurveType, fromEndPoint, toEndPoint ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint ) ;
         segment.ApplyRealNominalDiameter() ;
         routes.FindOrCreate( name ) ;
         list.Add( ( name, segment ) ) ;
