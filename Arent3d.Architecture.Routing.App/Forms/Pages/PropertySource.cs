@@ -16,7 +16,11 @@ namespace Arent3d.Architecture.Routing.App.Forms
   /// </summary>
   public abstract class PropertySource
   {
-    private Document Doc { get ; set ; }
+    private Document Doc { get ; }
+
+
+    //For experimental state
+    private bool _isExperimental = true ;
 
     protected PropertySource( Document doc )
     {
@@ -30,70 +34,67 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public class RoutePropertySource : PropertySource
     {
       //Route
-      public Route? TargetRoute { get ; private init ; }
+      public Route? TargetRoute { get ; }
       public readonly IReadOnlyCollection<SubRoute>? TargetSubRoutes ;
 
       //Diameter
-      public int DiameterIndex { get ; private set ; }
-      public IList<double>? Diameters { get ; private set ; }
+      public double? Diameter { get ; private set ; }
+      public IList<double>? Diameters { get ; }
 
       //SystemType 
-      public int SystemTypeIndex { get ; private set ; }
-      public IList<MEPSystemType>? SystemTypes { get ; private set ; }
+      public MEPSystemType? SystemType { get ; }
+      public IList<MEPSystemType>? SystemTypes { get ; }
 
       //CurveType
-      public int CurveTypeIndex { get ; private set ; }
-      public IList<MEPCurveType>? CurveTypes { get ; private set ; }
+      public MEPCurveType? CurveType { get ; private set ; }
+      public IList<MEPCurveType>? CurveTypes { get ; }
 
       //Direct
-      public bool? IsDirect { get ; set ; }
-      
+      public bool? IsDirect { get ; private set ; }
+
       //HeightSetting
-      public bool? OnHeightSetting { get ; set ; }
-      public double? FixedHeight { get ; set ; }
-      
-      public AvoidType AvoidType { get ; set ; }
+      public bool? OnHeightSetting { get ; private set ; }
+      public double? FixedHeight { get ; }
+
+      public AvoidType AvoidType { get ; }
 
       public RoutePropertySource( Document doc, IReadOnlyCollection<SubRoute> subRoutes ) : base( doc )
       {
         TargetSubRoutes = subRoutes ;
         TargetRoute = subRoutes.ElementAt( 0 ).Route ;
-        SetProperties() ;
-        if ( TargetSubRoutes.Count > 1 ) {
-          IsMultiSelected() ;
+
+        //Set properties
+        if ( TargetSubRoutes?.FirstOrDefault() is { } subRoute ) {
+          CurveType = subRoute.GetMEPCurveType() ;
+
+          //Diameter Info
+          Diameters = (IList<double>?) CurveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ??
+                      Array.Empty<double>() ;
+          Diameter = subRoute.GetDiameter() ;
+
+          //System Type Info(PipingSystemType in lookup)
+          SystemTypes = Doc.GetSystemTypes( subRoute.Route.GetSystemClassificationInfo() ).OrderBy( s => s.Name ).ToList() ;
+          SystemType = subRoute.Route.GetMEPSystemType() ;
+
+          //CurveType Info
+          var curveTypeId = CurveType.GetValidId() ;
+          // _isExperimental is true while we treat only round shape
+          CurveTypes = _isExperimental
+            ? Doc.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name )
+              .ToList()
+            : Doc.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
+
+
+          //Direct Info
+          IsDirect = subRoute.IsRoutingOnPipeSpace ;
+
+          //Height Info
+          OnHeightSetting = ( subRoute.FixedBopHeight != null ) ;
+          FixedHeight = subRoute.FixedBopHeight ;
+
+          //AvoidType Info
+          AvoidType = subRoute.AvoidType ;
         }
-      }
-
-      private void SetProperties()
-      {
-        if ( TargetSubRoutes?.FirstOrDefault() is not {} subRoute ) return ;
-
-        var curveType = subRoute.GetMEPCurveType() ;
-        
-        //Diameter Info
-        Diameters = (IList<double>?) curveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
-        var diameter = subRoute.GetDiameter() ;
-        DiameterIndex = Diameters.FindIndexByVertexTolerance( diameter, Doc ) ;
-
-        //System Type Info(PipingSystemType in lookup)
-        SystemTypes = Doc.GetSystemTypes( subRoute.Route.GetSystemClassificationInfo() ).OrderBy( s => s.Name ).ToList() ;
-        var systemTypeId = subRoute.Route.GetMEPSystemType().GetValidId() ;
-        SystemTypeIndex = SystemTypes.FindIndex( s => s.Id == systemTypeId ) ;
-
-        //CurveType Info
-        var curveTypeId = curveType.GetValidId() ;
-        CurveTypes = Doc.GetCurveTypes( curveType ).OrderBy( s => s.Name ).ToList() ;
-        CurveTypeIndex = CurveTypes.FindIndex( c => c.Id == curveTypeId ) ;
-
-        //Direct Info
-        IsDirect = subRoute.IsRoutingOnPipeSpace ;
-        
-        //Height Info
-        OnHeightSetting = (subRoute.FixedBopHeight != null)  ;
-        FixedHeight = subRoute.FixedBopHeight ;
-        
-        //AvoidType Info
-        AvoidType = subRoute.AvoidType ;
       }
 
       private void IsMultiSelected()
@@ -101,12 +102,12 @@ namespace Arent3d.Architecture.Routing.App.Forms
         if ( TargetSubRoutes?.ElementAt( 0 ).Route is not { } route ) return ;
         // if Diameter is multi selected, set null
         if ( IsDiameterMultiSelected( route ) ) {
-          DiameterIndex = -1 ;
+          Diameter = null ;
         }
 
         // if CurveType is multi selected, set null
         if ( IsCurveTypeMultiSelected( route ) ) {
-          CurveTypeIndex = -1 ;
+          CurveType = null ;
         }
 
         IsDirect = route.UniqueIsRoutingOnPipeSpace ;
@@ -114,7 +115,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
         if ( IsHeightSettingMultiSelected( route ) ) {
           OnHeightSetting = null ;
         }
-
       }
 
       /// <summary>
@@ -141,7 +141,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
       {
         var allNull = true ;
         foreach ( var subRoute in route.SubRoutes ) {
-          allNull = (subRoute.FixedBopHeight == null) ;
+          allNull = ( subRoute.FixedBopHeight == null ) ;
         }
 
         if ( allNull ) {
@@ -195,7 +195,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     public TerminatePointEndPoint TerminatePointEndPoint { get ; }
     public XYZ TerminatePointPosition { get ; }
     public XYZ TerminatePointDirection { get ; }
-    
+
     public ElementId LinkedElementId { get ; }
     public string? LinkedElementName { get ; }
 

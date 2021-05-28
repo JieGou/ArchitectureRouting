@@ -22,17 +22,17 @@ namespace Arent3d.Architecture.Routing
     {
       var resultList = new List<double>() ;
       var segment = type.GetTargetSegment() ;
-      if ( segment != null ) {
-        resultList = segment.GetSizes().Where( s => type.HasAnyNominalDiameter( s.NominalDiameter, diameterTolerance ) ).Select( s => s.NominalDiameter ).ToList() ;
-      }
-      //Get duct sizes
-      else if(type.GetType() == typeof(DuctType)){
-        var ductSizeSettings = DuctSizeSettings.GetDuctSizeSettings(type.Document) ;
-        //Currently, only round shapes are acquired
-        var roundSizes = ductSizeSettings[ DuctShape.Round ].Where(s => s.UsedInSizeLists).Select(s => s.NominalDiameter) ;
-        resultList = roundSizes.ToList() ;
-      }
 
+      var diameterList = type switch
+      {
+        DuctType => DuctSizeSettings.GetDuctSizeSettings(type.Document)[ DuctShape.Round ].Where(s => s.UsedInSizeLists && s.UsedInSizing).Select(s => s.NominalDiameter).ToList(),
+        PipeType => segment?.GetSizes().Where( s => s.UsedInSizeLists && s.UsedInSizing && type.HasAnyNominalDiameter( s.NominalDiameter, diameterTolerance ) ).Select( s => s.NominalDiameter ).ToList(),
+        _ => throw new ArgumentOutOfRangeException( nameof( type ) ),
+      } ;
+
+      if ( diameterList is {} dList ) {
+        resultList = dList ;
+      }
       resultList.Sort() ;
 
       return resultList ;
