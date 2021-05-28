@@ -22,10 +22,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickRouting" ;
 
-    private static MEPSystemClassificationInfo? ClassificationInfo { get ; set ; }
-    private static MEPSystemType? SystemType { get ; set ; }
-    private static MEPCurveType? CurveType { get ; set ; }
-
     /// <summary>
     /// Collects from-to records to be auto-routed.
     /// </summary>
@@ -61,6 +57,10 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult ) ;
       var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
+
+      MEPSystemClassificationInfo? ClassificationInfo ;
+      MEPSystemType? SystemType ;
+      MEPCurveType? CurveType ;
 
       var list = new List<(string RouteName, RouteSegment Segment)>() ;
       var connector = fromEndPoint.GetReferenceConnector() ?? toEndPoint.GetReferenceConnector() ;
