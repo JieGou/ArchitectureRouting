@@ -3,6 +3,7 @@ using System.Globalization ;
 using System.Text ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
@@ -95,79 +96,38 @@ namespace Arent3d.Architecture.Routing
 
 
   [StorableConverterOf( typeof( RouteSegment ) )]
-  internal class RouteSegmentConverter : StorableConverterBase<RouteSegment, string>
+  internal class RouteSegmentConverter : StorableConverterBase<RouteSegment>
   {
-    private static readonly char[] FieldSplitter = { '|' } ;
-
-    protected override RouteSegment NativeToCustom( Element storedElement, string nativeTypeValue )
+    protected override RouteSegment Parse( Element storedElement, Parser parser )
     {
-      var split = nativeTypeValue.Split( FieldSplitter, StringSplitOptions.RemoveEmptyEntries ) ;
-      if ( 9 != split.Length ) throw new InvalidOperationException() ;
-
-      var preferredDiameter = ParseNullableDouble( split[ 0 ] ) ;
-      var fromId = EndPointExtensions.ParseEndPoint( storedElement.Document, split[ 1 ] ) ?? throw new InvalidOperationException() ;
-      var toId = EndPointExtensions.ParseEndPoint( storedElement.Document, split[ 2 ] ) ?? throw new InvalidOperationException() ;
-      var isRoutingOnPipeSpace = ParseBool( split[ 3 ] ) ;
-      var curveType = storedElement.Document.GetElementById<MEPCurveType>( ParseElementId( split[ 4 ] ) ) ;
-
-      var fixedBopHeight = ParseNullableDouble( split[ 5 ] ) ;
-
-      if ( false == Enum.TryParse( split[ 6 ], out AvoidType avoidType ) ) throw new InvalidOperationException() ;
-      var classificationInfo = MEPSystemClassificationInfo.Deserialize( split[ 7 ] ) ?? throw new InvalidOperationException() ;
-      var systemType = storedElement.Document.GetElementById<MEPSystemType>( ParseElementId( split[ 8 ] ) ) ;
+      var preferredDiameter = parser.GetDouble( 0 ) ;
+      var fromId = EndPointExtensions.ParseEndPoint( storedElement.Document, parser.GetString( 1 ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      var toId = EndPointExtensions.ParseEndPoint( storedElement.Document, parser.GetString( 2 ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      var isRoutingOnPipeSpace = parser.GetBool( 3 ) ?? throw new InvalidOperationException() ;
+      var curveType = parser.GetElement<MEPCurveType>( 4, storedElement.Document ) ?? throw new InvalidOperationException() ;
+      var fixedBopHeight = parser.GetDouble( 5 ) ;
+      var avoidType = parser.GetEnum<AvoidType>( 6 ) ?? throw new InvalidOperationException() ;
+      var classificationInfo = MEPSystemClassificationInfo.Deserialize( parser.GetString( 7 ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      var systemType = parser.GetElement<MEPSystemType>( 8, storedElement.Document ) ?? throw new InvalidOperationException() ;
 
       return RouteSegment.Restore( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
     }
 
-    private static double? ParseNullableDouble( string s )
+    protected override Stringifier Stringify( Element storedElement, RouteSegment customTypeValue )
     {
-      return ( double.TryParse( s, NumberStyles.Any, CultureInfo.InvariantCulture, out var nominalDiameter ) ? nominalDiameter : null ) ;
-    }
+      var stringifier = new Stringifier() ;
 
-    private static bool ParseBool( string s )
-    {
-      return s.ToLower() switch
-      {
-        "0" => false,
-        "f" => false,
-        "" => false,
-        "1" => true,
-        "t" => true,
-        _ => false,
-      } ;
-    }
+      stringifier.Add( customTypeValue.PreferredNominalDiameter ) ;
+      stringifier.Add( customTypeValue.FromEndPoint.ToString() ) ;
+      stringifier.Add( customTypeValue.ToEndPoint.ToString() ) ;
+      stringifier.Add( customTypeValue.IsRoutingOnPipeSpace ) ;
+      stringifier.Add( customTypeValue.CurveType ) ;
+      stringifier.Add( customTypeValue.FixedBopHeight ) ;
+      stringifier.Add( customTypeValue.AvoidType ) ;
+      stringifier.Add( customTypeValue.SystemClassificationInfo.Serialize() ) ;
+      stringifier.Add( customTypeValue.SystemType ) ;
 
-    private static ElementId ParseElementId( string s )
-    {
-      if ( false == int.TryParse( s, out var id ) ) return ElementId.InvalidElementId ;
-      if ( ElementId.InvalidElementId.IntegerValue == id ) return ElementId.InvalidElementId ;
-
-      return new ElementId( id ) ;
-    }
-
-    protected override string CustomToNative( Element storedElement, RouteSegment customTypeValue )
-    {
-      var builder = new StringBuilder() ;
-
-      builder.Append( customTypeValue.PreferredNominalDiameter?.ToString( CultureInfo.InvariantCulture ) ?? "---" ) ;
-      builder.Append( '|' ) ;
-      builder.Append( customTypeValue.FromEndPoint ) ;
-      builder.Append( '|' ) ;
-      builder.Append( customTypeValue.ToEndPoint ) ;
-      builder.Append( '|' ) ;
-      builder.Append( customTypeValue.IsRoutingOnPipeSpace ? 'T' : 'F' ) ;
-      builder.Append( '|' ) ;
-      builder.Append( customTypeValue.CurveType.GetValidId().IntegerValue ) ;
-      builder.Append( '|' ) ;
-      builder.Append( customTypeValue.FixedBopHeight?.ToString( CultureInfo.InvariantCulture ) ?? "---" ) ;
-      builder.Append( '|' ) ;
-      builder.Append( customTypeValue.AvoidType.ToString() ) ;
-      builder.Append( '|' ) ;
-      builder.Append( customTypeValue.SystemClassificationInfo.Serialize() ) ;
-      builder.Append( '|' ) ;
-      builder.Append( customTypeValue.SystemType.GetValidId().IntegerValue ) ;
-
-      return builder.ToString() ;
+      return stringifier ;
     }
   }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Linq.Expressions ;
 using System.Reflection ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using MathLib ;
@@ -25,6 +26,14 @@ namespace Arent3d.Revit
 
     protected abstract TCustomTypeValue NativeToCustom( Element storedElement, TNativeTypeValue nativeTypeValue ) ;
     protected abstract TNativeTypeValue CustomToNative( Element storedElement, TCustomTypeValue customTypeValue ) ;
+  }
+
+  public abstract class StorableConverterBase<TCustomTypeValue> : StorableConverterBase<TCustomTypeValue, string>
+  {
+    protected sealed override TCustomTypeValue NativeToCustom( Element storedElement, string nativeTypeValue ) => Parse( storedElement, new Parser( nativeTypeValue ) ) ;
+    protected sealed override string CustomToNative( Element storedElement, TCustomTypeValue customTypeValue ) => Stringify( storedElement, customTypeValue ).ToString() ;
+    protected abstract TCustomTypeValue Parse( Element storedElement, Parser parser ) ;
+    protected abstract Stringifier Stringify( Element storedElement, TCustomTypeValue customTypeValue ) ;
   }
 
   public static class StorableConverter
