@@ -5,6 +5,7 @@ using System.Linq ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -155,7 +156,7 @@ namespace Arent3d.Architecture.Routing.App
     /// <returns>Routing objects</returns>
     private async Task<IReadOnlyCollection<Route>> ConvertToRoutes( IAsyncEnumerable<(string RouteName, RouteSegment Segment)> fromToList )
     {
-      var oldRoutes = ThreadDispatcher.Dispatch( () => CommandTermCaches.RouteCache.Get( _document ) ) ;
+      var oldRoutes = ThreadDispatcher.Dispatch( () => RouteCache.Get( _document ) ) ;
 
       var dic = new Dictionary<string, Route>() ;
       var result = new List<Route>() ;

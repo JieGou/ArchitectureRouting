@@ -1,5 +1,6 @@
 using System ;
 using System.Text.RegularExpressions ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
@@ -67,7 +68,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public (Route? Route, SubRoute? SubRoute) ParentBranch()
     {
-      if ( false == CommandTermCaches.RouteCache.Get( _document ).TryGetValue( RouteName, out var route ) ) return ( null, null ) ;
+      if ( false == RouteCache.Get( _document ).TryGetValue( RouteName, out var route ) ) return ( null, null ) ;
 
       return ( route, route.GetSubRoute( SubRouteIndex ) ) ;
     }

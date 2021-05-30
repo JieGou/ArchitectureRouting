@@ -51,14 +51,14 @@ namespace Arent3d.Revit
     {
       if ( Schema.Lookup( typeof( TStorableBase ).GUID ) is not { } schema ) yield break ;
 
-      foreach ( var element in document.GetAllElements<Element>().Where( new ExtensibleStorageFilter( typeof( TStorableBase ).GUID ) ) ) {
+      foreach ( var element in document.GetAllElements<DataStorage>().Where( new ExtensibleStorageFilter( typeof( TStorableBase ).GUID ) ) ) {
         var entity = element.GetEntity( schema ) ;
         if ( null == entity || false == entity.IsValidObject || false == entity.IsValid() ) continue ;
 
         yield return CreateFromEntity<TStorableBase>( entity, element ) ;
       }
     }
-    public static TStorableBase? GetStorable<TStorableBase>( this Element element ) where TStorableBase : StorableBase
+    public static TStorableBase? GetStorable<TStorableBase>( this DataStorage element ) where TStorableBase : StorableBase
     {
       if ( Schema.Lookup( typeof( TStorableBase ).GUID ) is not { } schema ) return null ;
 
@@ -66,6 +66,13 @@ namespace Arent3d.Revit
       if ( null == entity || false == entity.IsValidObject || false == entity.IsValid() ) return null ;
 
       return CreateFromEntity<TStorableBase>( entity, element ) ;
+    }
+    public static bool HasStorable<TStorableBase>( this DataStorage element ) where TStorableBase : StorableBase
+    {
+      if ( Schema.Lookup( typeof( TStorableBase ).GUID ) is not { } schema ) return false ;
+
+      var entity = element.GetEntity( schema ) ;
+      return ( null != entity ) && entity.IsValidObject && entity.IsValid() ;
     }
 
     internal static void SaveStorable( this Element element, StorableBase storable )
@@ -92,7 +99,7 @@ namespace Arent3d.Revit
       return entity ;
     }
 
-    private static TStorableBase CreateFromEntity<TStorableBase>( Entity entity, Element ownerElement ) where TStorableBase : StorableBase
+    private static TStorableBase CreateFromEntity<TStorableBase>( Entity entity, DataStorage ownerElement ) where TStorableBase : StorableBase
     {
       var storable = StorableBase.CreateFromEntity<TStorableBase>( ownerElement ) ;
       storable.LoadAllFields( new FieldReader( ownerElement, entity ) ) ;
