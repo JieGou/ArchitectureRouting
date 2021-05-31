@@ -184,7 +184,7 @@ namespace Arent3d.Architecture.Routing
         classificationInfo = segment.SystemClassificationInfo ;
       }
       else {
-        if ( classificationInfo.IsCompatibleTo( segment.SystemClassificationInfo ) ) return false ;
+        if ( false == classificationInfo.IsCompatibleTo( segment.SystemClassificationInfo ) ) return false ;
       }
 
       if ( GetMEPSystemClassification( fromEndPoint ) is { } classification1 && ! classificationInfo.IsCompatibleTo( classification1 ) ) return false ;
