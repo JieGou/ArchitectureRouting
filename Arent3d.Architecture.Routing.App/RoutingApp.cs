@@ -40,7 +40,7 @@ namespace Arent3d.Architecture.Routing.App
     protected override void OnDocumentListenStarted( Document document )
     {
       DocumentMapper.Register( document ) ;
-      FromToTreeManager.Instance.Application_DocumentOpened() ;
+      FromToTreeManager.Instance.OnDocumentOpened() ;
     }
 
     protected override void OnDocumentListenFinished( Document document )
@@ -50,12 +50,12 @@ namespace Arent3d.Architecture.Routing.App
 
     protected override void OnDocumentChanged( Document document, DocumentChangedEventArgs e )
     {
-      FromToTreeManager.Instance.Application_DocumentChanged( e ) ;
+      FromToTreeManager.Instance.OnDocumentChanged( e ) ;
     }
 
     protected override void OnApplicationViewChanged( Document document, ViewActivatedEventArgs e )
     {
-      FromToTreeManager.Instance.Application_ViewActivated( e ) ;
+      FromToTreeManager.Instance.OnViewActivated( e ) ;
     }
 
     protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()

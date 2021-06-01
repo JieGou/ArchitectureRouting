@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.App.Manager
     }
 
     // view activated event
-    public void Application_ViewActivated( ViewActivatedEventArgs e )
+    public void OnViewActivated( ViewActivatedEventArgs e )
     {
       // provide ExternalCommandData object to dockable page
       if ( FromToTreeView == null || UiApp == null ) return ;
@@ -32,7 +32,6 @@ namespace Arent3d.Architecture.Routing.App.Manager
 
       //Initialize TreeView
       FromToTreeView.CustomInitiator( UiApp ) ;
-
       SetSelectionInViewToFromToTree( doc ) ;
     }
 
@@ -45,6 +44,7 @@ namespace Arent3d.Architecture.Routing.App.Manager
     private void SetSelectionInViewToFromToTree( Document doc )
     {
       if ( UiApp == null ) return ;
+    
       //Get ElementIds in activeview
       FilteredElementCollector collector = new FilteredElementCollector( doc, doc.ActiveView.Id ) ;
       var elementsInActiveView = collector.ToElementIds() ;
@@ -74,7 +74,7 @@ namespace Arent3d.Architecture.Routing.App.Manager
     }
 
     // document opened event
-    public void Application_DocumentOpened()
+    public void OnDocumentOpened()
     {
       // provide ExternalCommandData object to dockable page
       if ( FromToTreeView == null || UiApp == null || Dockable == null ) return ;
@@ -84,7 +84,7 @@ namespace Arent3d.Architecture.Routing.App.Manager
     }
 
     // document opened event
-    public void Application_DocumentChanged( Autodesk.Revit.DB.Events.DocumentChangedEventArgs e )
+    public void OnDocumentChanged( Autodesk.Revit.DB.Events.DocumentChangedEventArgs e )
     {
       var changedElementIds = e.GetAddedElementIds().Concat( e.GetDeletedElementIds() ).Concat( e.GetModifiedElementIds() ) ;
 
