@@ -1,12 +1,14 @@
 using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Reflection ;
+using Arent3d.Architecture.Routing.App.Manager ;
 using Arent3d.Architecture.Routing.App.Updater ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
+using Autodesk.Revit.UI.Events ;
 
 namespace Arent3d.Architecture.Routing.App
 {
@@ -38,6 +40,7 @@ namespace Arent3d.Architecture.Routing.App
     protected override void OnDocumentListenStarted( Document document )
     {
       DocumentMapper.Register( document ) ;
+      FromToTreeManager.Instance.Application_DocumentOpened() ;
     }
 
     protected override void OnDocumentListenFinished( Document document )
@@ -47,9 +50,14 @@ namespace Arent3d.Architecture.Routing.App
 
     protected override void OnDocumentChanged( Document document, DocumentChangedEventArgs e )
     {
-      // TODO: listen changed events
+      FromToTreeManager.Instance.Application_DocumentChanged( e ) ;
     }
-    
+
+    protected override void OnApplicationViewChanged( Document document, ViewActivatedEventArgs e )
+    {
+      FromToTreeManager.Instance.Application_ViewActivated( e ) ;
+    }
+
     protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()
     {
       yield return new LocationUpdater() ;
