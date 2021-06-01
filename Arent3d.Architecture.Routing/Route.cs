@@ -2,12 +2,13 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
-using Arent3d.Architecture.Routing.CommandTermCaches ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing
 {
@@ -24,6 +25,7 @@ namespace Arent3d.Architecture.Routing
     /// Unique identifier name of a route.
     /// </summary>
     public string RouteName => this._routeName ;
+    public override string Name => RouteName ;
 
     public void Rename( string routeName )
     {
@@ -111,7 +113,7 @@ namespace Arent3d.Architecture.Routing
     /// for loading from storage.
     /// </summary>
     /// <param name="owner">Owner element.</param>
-    private Route( Element owner ) : base( owner, false )
+    private Route( DataStorage owner ) : base( owner, false )
     {
       _routeName = string.Empty ;
     }
@@ -182,7 +184,7 @@ namespace Arent3d.Architecture.Routing
         classificationInfo = segment.SystemClassificationInfo ;
       }
       else {
-        if ( classificationInfo.IsCompatibleTo( segment.SystemClassificationInfo ) ) return false ;
+        if ( false == classificationInfo.IsCompatibleTo( segment.SystemClassificationInfo ) ) return false ;
       }
 
       if ( GetMEPSystemClassification( fromEndPoint ) is { } classification1 && ! classificationInfo.IsCompatibleTo( classification1 ) ) return false ;

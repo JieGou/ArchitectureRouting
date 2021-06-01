@@ -13,11 +13,13 @@ namespace Arent3d.Revit
   {
     public Document Document { get ; }
 
-    public Element? OwnerElement { get ; set ; }
-    
+    public DataStorage? OwnerElement { get ; set ; }
+
+    public abstract string Name { get ; }
+
     internal bool SubStorable { get ; }
 
-    protected StorableBase( Element owner, bool subStorable )
+    protected StorableBase( DataStorage owner, bool subStorable )
     {
       Document = owner.Document ;
       OwnerElement = owner ;
@@ -49,7 +51,7 @@ namespace Arent3d.Revit
     protected internal abstract void SaveAllFields( FieldWriter writer ) ;
     protected internal abstract void SetupAllFields( FieldGenerator generator ) ;
 
-    internal static TStorableBase CreateFromEntity<TStorableBase>( Element ownerElement ) where TStorableBase : StorableBase
+    internal static TStorableBase CreateFromEntity<TStorableBase>( DataStorage ownerElement ) where TStorableBase : StorableBase
     {
       return StorableInstantiator<TStorableBase>.Instantiate( ownerElement ) ;
     }
@@ -57,14 +59,14 @@ namespace Arent3d.Revit
 
   internal static class StorableInstantiator<TStorableBase> where TStorableBase : StorableBase
   {
-    private static readonly Func<Element, TStorableBase> _instantiator = CreateInstantiator() ;
+    private static readonly Func<DataStorage, TStorableBase> _instantiator = CreateInstantiator() ;
 
-    public static TStorableBase Instantiate( Element ownerElement )
+    public static TStorableBase Instantiate( DataStorage ownerElement )
     {
       return _instantiator( ownerElement ) ;
     }
   
-    private static Func<Element, TStorableBase> CreateInstantiator()
+    private static Func<DataStorage, TStorableBase> CreateInstantiator()
     {
       ConstructorInfo? noArgs = null ;
       ConstructorInfo? oneArg = null ;
@@ -73,7 +75,7 @@ namespace Arent3d.Revit
         if ( 0 == @params.Length ) {
           noArgs = ctor ;
         }
-        else if ( 1 == @params.Length && @params[ 0 ].ParameterType.IsAssignableFrom( typeof( Element ) ) ) {
+        else if ( 1 == @params.Length && @params[ 0 ].ParameterType.IsAssignableFrom( typeof( DataStorage ) ) ) {
           oneArg = ctor ;
         }
       }
@@ -88,17 +90,17 @@ namespace Arent3d.Revit
       throw new InvalidOperationException( $"{typeof( TStorableBase ).FullName} has no constructor with 0 args nor with one element arg." ) ;
     }
 
-    private static Func<Element, TStorableBase> CreateInstantiatorWithElement( ConstructorInfo oneArg )
+    private static Func<DataStorage, TStorableBase> CreateInstantiatorWithElement( ConstructorInfo oneArg )
     {
-      var param = Expression.Parameter( typeof( Element ) ) ;
+      var param = Expression.Parameter( typeof( DataStorage ) ) ;
       var expression = Expression.New( oneArg, Expression.Convert( param, oneArg.GetParameters()[ 0 ].ParameterType ) ) ;
-      return Expression.Lambda<Func<Element, TStorableBase>>( expression, param ).Compile() ;
+      return Expression.Lambda<Func<DataStorage, TStorableBase>>( expression, param ).Compile() ;
     }
 
-    private static Func<Element, TStorableBase> CreateInstantiatorWithNoArgs( ConstructorInfo noArgs )
+    private static Func<DataStorage, TStorableBase> CreateInstantiatorWithNoArgs( ConstructorInfo noArgs )
     {
-      var param = Expression.Parameter( typeof( Element ) ) ;
-      return Expression.Lambda<Func<Element, TStorableBase>>( Expression.New( noArgs ), param ).Compile() ;
+      var param = Expression.Parameter( typeof( DataStorage ) ) ;
+      return Expression.Lambda<Func<DataStorage, TStorableBase>>( Expression.New( noArgs ), param ).Compile() ;
     }
   }
 }

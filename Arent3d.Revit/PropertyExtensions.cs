@@ -95,13 +95,16 @@ namespace Arent3d.Revit
       if ( StorageType.ElementId == parameter.StorageType ) {
         parameter.Set( value ) ;
       }
+      else if ( StorageType.Integer == parameter.StorageType ) {
+        parameter.Set( value.IntegerValue ) ;
+      }
       else {
         throw new InvalidOperationException() ;
       }
     }
     public static void SetProperty<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum, Element? value ) where TPropertyEnum : Enum
     {
-      elm.SetProperty<TPropertyEnum>( propertyEnum, value.GetValidId() ) ;
+      elm.SetProperty( propertyEnum, value.GetValidId() ) ;
     }
 
     public static int GetPropertyInt<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum
@@ -142,12 +145,17 @@ namespace Arent3d.Revit
       return parameter.StorageType switch
       {
         StorageType.ElementId => parameter.AsElementId(),
+        StorageType.Integer => new ElementId( parameter.AsInteger() ),
         _ => throw new InvalidOperationException(),
       } ;
     }
     public static Element? GetPropertyElement<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum
     {
       return elm.Document.GetElement( elm.GetPropertyElementId( propertyEnum ) ) ;
+    }
+    public static TElement? GetPropertyElement<TElement, TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum ) where TElement : Element where TPropertyEnum : Enum
+    {
+      return elm.GetPropertyElement( propertyEnum ) as TElement ;
     }
 
     public static bool TryGetProperty<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum, out int value ) where TPropertyEnum : Enum
@@ -213,16 +221,20 @@ namespace Arent3d.Revit
           value = parameter.AsElementId() ;
           return true ;
 
+        case StorageType.Integer :
+          value = new ElementId( parameter.AsInteger() ) ;
+          return true ;
+
         default :
           return false ;
       }
     }
-    public static bool TryGetProperty<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum, out Element? value ) where TPropertyEnum : Enum
+    public static bool TryGetProperty<TElement, TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum, out TElement? value ) where TElement : Element where TPropertyEnum : Enum
     {
       value = default ;
       if ( false == elm.TryGetProperty( propertyEnum, out ElementId elmId ) ) return false ;
 
-      value = elm.Document.GetElement( elmId ) ;
+      value = elm.Document.GetElementById<TElement>( elmId ) ;
       return true ;
     }
 
@@ -238,7 +250,7 @@ namespace Arent3d.Revit
       return ( elm.get_Parameter( guid )?.StorageType == type ) ;
     }
 
-    private static Parameter? GetParameter<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum
+    public static Parameter? GetParameter<TPropertyEnum>( this Element elm, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum
     {
       if ( false == PropertyDefinitions<TPropertyEnum>.AllParameterGuids.TryGetValue( propertyEnum, out var guid ) ) return null ;
       return elm.get_Parameter( guid ) ;
