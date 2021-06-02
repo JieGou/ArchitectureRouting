@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing
     public MEPSystem? MEPSystem { get ; }
     public MEPCurveType CurveType { get ; }
     
-    public double ShortCurveTolerance { get ; init ; }
+    private double ShortCurveTolerance { get ; }
 
     public RouteMEPSystem( Document document, SubRoute subRoute )
     {
@@ -80,7 +80,6 @@ namespace Arent3d.Architecture.Routing
 
     public double GetWeldMinDistance( double diameter )
     {
-      //return 1.0 / 120 ;  // 1/10 inches.
       return ShortCurveTolerance ;
     }
 
