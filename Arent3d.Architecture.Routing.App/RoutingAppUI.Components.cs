@@ -97,7 +97,7 @@ namespace Arent3d.Architecture.Routing.App
       }
 
       _registerFromToTreeCommand = new RegisterFromToTreeCommand() ;
-      _registerFromToTreeCommand.InitializeDockablePane(application);
+      _registerFromToTreeCommand.CreateFromToTreeUiManager(application);
       
       application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters;
       application.ControlledApplication.ApplicationInitialized += new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ) ;

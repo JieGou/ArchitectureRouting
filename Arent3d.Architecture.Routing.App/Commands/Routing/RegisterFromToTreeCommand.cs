@@ -23,11 +23,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Regeneration( RegenerationOption.Manual )]
   public class RegisterFromToTreeCommand : IExternalCommand
   {
-    FromToTree? _dockableWindow = null ;
-    UIApplication? _uiApp = null ;
-    DockablePaneId _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
-    DockablePane? _dp = null ;
-
     /// <summary>
     /// Executes the specIfied command Data
     /// </summary>
@@ -42,42 +37,23 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     
     public Result Execute( UIApplication uiApplication )
     {
-      _uiApp =  FromToTreeManager.Instance.UiApp = uiApplication ;
+      FromToTreeManager.Instance.UiApp = uiApplication ;
       //Initialize FromToTreeView when open directly rvt file
-      if ( _uiApp.ActiveUIDocument != null ) {
-        _dockableWindow?.CustomInitiator(uiApplication);
-        _dp = FromToTreeManager.Instance.Dockable = uiApplication.GetDockablePane( _dpid ) ;
-        _dp.Show();
+      if ( FromToTreeManager.Instance.UiApp.ActiveUIDocument != null ) {
+        FromToTreeManager.Instance.FromToTreeUiManager?.FromToTreeView.CustomInitiator(uiApplication);
+        FromToTreeManager.Instance.Dockable = uiApplication.GetDockablePane( FromToTreeManager.Instance.FromToTreeUiManager?.DpId ) ;
+        FromToTreeManager.Instance.Dockable.Show();
       }
 
       return Result.Succeeded ;
     }
-    
-    /// <summary>
-    /// DockableVisibilityChanged event. Change UI Image.
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="dockableFrameVisibilityChangedEventArgs"></param>
-    private void UIControlledApplication_DockableVisibilityChanged( object sender, DockableFrameVisibilityChangedEventArgs dockableFrameVisibilityChangedEventArgs )
-    {
-      if ( ! DockablePane.PaneExists( _dpid )) return;
-      if( _dp != null ) { 
-        RibbonHelper.ToggleShowFromToTreeCommandButton(dockableFrameVisibilityChangedEventArgs.DockableFrameShown );
-      }
-    }
 
-    public void InitializeDockablePane( UIControlledApplication application )
+    public void CreateFromToTreeUiManager( UIControlledApplication application )
     {
-      //dockable window
-      _dockableWindow = FromToTreeManager.Instance.FromToTreeView = FromToTreeViewModel.FromToTreePanel = new FromToTree() ; ;
-      DockablePaneProviderData data = new DockablePaneProviderData { FrameworkElement = _dockableWindow as FrameworkElement, InitialState = new DockablePaneState { DockPosition = DockPosition.Tabbed, TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser } } ;
-      
-      // Use unique guid identifier for this dockable pane
-      _dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
-      // register dockable pane
-      application.RegisterDockablePane( _dpid, "From-To Tree", _dockableWindow as IDockablePaneProvider) ;
+      var fromToTreeUiManager = new FromToTreeUiManager( application ) ;
+      FromToTreeManager.Instance.FromToTreeUiManager = fromToTreeUiManager ;
       // subscribe DockableFrameVisibilityChanged event
-      application.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>(UIControlledApplication_DockableVisibilityChanged) ;
+      application.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>(FromToTreeManager.Instance.UIControlledApplication_DockableVisibilityChanged) ;
     }
   }
 }
