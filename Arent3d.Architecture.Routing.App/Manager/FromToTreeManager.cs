@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
@@ -14,10 +15,10 @@ namespace Arent3d.Architecture.Routing.App.Manager
   public class FromToTreeManager
   {
     public static FromToTreeManager Instance { get ; } = new FromToTreeManager() ;
-
-    public FromToTree? FromToTreeView = null ;
+    
     public UIApplication? UiApp = null ;
     public DockablePane? Dockable = null ;
+    public FromToTreeUiManager? FromToTreeUiManager = null ;
 
     private FromToTreeManager()
     {
@@ -27,11 +28,11 @@ namespace Arent3d.Architecture.Routing.App.Manager
     public void OnViewActivated( ViewActivatedEventArgs e )
     {
       // provide ExternalCommandData object to dockable page
-      if ( FromToTreeView == null || UiApp == null ) return ;
+      if ( FromToTreeUiManager?.FromToTreeView == null || UiApp == null ) return ;
       var doc = UiApp.ActiveUIDocument.Document ;
 
       //Initialize TreeView
-      FromToTreeView.CustomInitiator( UiApp ) ;
+      FromToTreeUiManager?.FromToTreeView.CustomInitiator( UiApp ) ;
       SetSelectionInViewToFromToTree( doc ) ;
     }
 
@@ -77,9 +78,9 @@ namespace Arent3d.Architecture.Routing.App.Manager
     public void OnDocumentOpened()
     {
       // provide ExternalCommandData object to dockable page
-      if ( FromToTreeView == null || UiApp == null || Dockable == null ) return ;
-      FromToTreeView.CustomInitiator( UiApp ) ;
-      FromToTreeViewModel.FromToTreePanel = FromToTreeView ;
+      if (FromToTreeUiManager?.FromToTreeView == null || UiApp == null || Dockable == null ) return ;
+      FromToTreeUiManager?.FromToTreeView.CustomInitiator( UiApp ) ;
+      FromToTreeViewModel.FromToTreePanel = FromToTreeUiManager?.FromToTreeView ;
       Dockable.Show() ;
     }
 
@@ -93,8 +94,8 @@ namespace Arent3d.Architecture.Routing.App.Manager
       var changedRoute = e.GetDocument().FilterStorableElements<Route>( changedElementIds ) ;
 
       // provide ExternalCommandData object to dockable page
-      if ( FromToTreeView != null && UiApp != null && ( transactions.Any( GetRoutingTransactions ) || changedRoute.Any() ) ) {
-        FromToTreeView.CustomInitiator( UiApp ) ;
+      if ( FromToTreeUiManager?.FromToTreeView != null && UiApp != null && ( transactions.Any( GetRoutingTransactions ) || changedRoute.Any() ) ) {
+        FromToTreeUiManager?.FromToTreeView.CustomInitiator( UiApp ) ;
       }
     }
 
@@ -111,6 +112,22 @@ namespace Arent3d.Architecture.Routing.App.Manager
       } ;
 
       return routingTransactions.Contains( t ) ;
+    }
+    
+    /// <summary>
+    /// DockableVisibilityChanged event. Change UI Image.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="dockableFrameVisibilityChangedEventArgs"></param>
+    public void UIControlledApplication_DockableVisibilityChanged( object sender, DockableFrameVisibilityChangedEventArgs dockableFrameVisibilityChangedEventArgs )
+    {
+      if ( FromToTreeUiManager is { } fromToTreeUiManager ) {
+        if ( ! DockablePane.PaneExists( fromToTreeUiManager.DpId )) return;
+        if( Dockable != null ) { 
+          RibbonHelper.ToggleShowFromToTreeCommandButton(dockableFrameVisibilityChangedEventArgs.DockableFrameShown );
+        }
+      }
+      
     }
   }
 }
