@@ -26,21 +26,15 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
       ElementId? selectedElementId = null ;
 
 
-      // bool iSelectMuliteElement = false;
-      List<string> routeNameLst = new List<string>() ;
-      ICollection<ElementId> elementIds = uiDoc.Selection.GetElementIds() ;
+      var routeNameLst = new List<string>() ;
+      var elementIds = uiDoc.Selection.GetElementIds() ;
 
       foreach ( ElementId eid in elementIds ) {
-        Element elem = uiDoc.Document.GetElement( eid ) ;
-
-        ParameterSet parameters = elem.Parameters ;
-
-        foreach ( Parameter param in parameters ) {
-          if ( param.Definition.Name.Equals( "Route Name" ) ) {
-            if ( routeNameLst.Contains( param.AsString() ) == false ) {
-              routeNameLst.Add( param.AsString() ) ;
-            }
-          }
+        var elem = uiDoc.Document.GetElement( eid ) ;
+        var routeName = elem.GetRouteName() ;
+        if ( routeName is null ) continue ;
+        if ( routeNameLst.Contains( routeName ) == false ) {
+          routeNameLst.Add( routeName ) ;
         }
       }
 
@@ -57,7 +51,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
         }
 
         _previousSelectedRouteElementId = selectedElementId ;
-        ;
       }
 
       // if Connector selected
