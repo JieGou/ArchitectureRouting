@@ -1,6 +1,8 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Reflection ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Revit
@@ -24,6 +26,29 @@ namespace Arent3d.Revit
       using var it = bindings.ForwardIterator() ;
       while ( it.MoveNext() ) {
         yield return it.Key ;
+      }
+    }
+
+    public static void LoadAllAllParametersFromFile<TEnum>( this Document document, string filePath ) where TEnum : Enum
+    {
+      var dic = new Dictionary<Guid, IReadOnlyCollection<BuiltInCategoriesAttribute>>() ;
+      foreach ( var fieldInfo in typeof( TEnum ).GetFields() ) {
+        if ( fieldInfo.GetCustomAttribute<ParameterGuidAttribute>() is not { } parameterGuid ) continue ;
+
+        dic.Add( parameterGuid.Guid, fieldInfo.GetCustomAttributes<BuiltInCategoriesAttribute>().EnumerateAll() ) ;
+      }
+
+      var bindingMap = document.ParameterBindings ;
+      foreach ( var definition in SharedParameterReader.GetSharedParameters( document.Application, filePath ).OfType<ExternalDefinition>() ) {
+        if ( false == dic.TryGetValue( definition.GUID, out var builtInCategoriesList ) ) continue ;
+        if ( bindingMap.Contains( definition ) ) continue ;
+
+        foreach ( var builtInCategories in builtInCategoriesList ) {
+          var parameterGroup = builtInCategories.ParameterGroup ;
+          foreach ( var binding in builtInCategories.GetBindings( document ) ) {
+            bindingMap.Insert( definition, binding, parameterGroup ) ;
+          }
+        }
       }
     }
 
