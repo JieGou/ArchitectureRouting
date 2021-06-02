@@ -23,6 +23,12 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Regeneration( RegenerationOption.Manual )]
   public class RegisterFromToTreeCommand : IExternalCommand
   {
+    public RegisterFromToTreeCommand(UIControlledApplication application)
+    {
+      CreateFromToTreeUiManager(application);
+    }
+    
+    
     /// <summary>
     /// Executes the specIfied command Data
     /// </summary>
