@@ -16,9 +16,9 @@ After developing it, push into `origin/<yourname>/<featurename>` and create a pu
 1. For JetBrains Rider:
 	1. Create `.run` directory into the solution folder.
 	1. Copy `Revit.run.xml-sample` as `.run/Revit.run.xml`.
-	1. Change `EXE_PATH` and `WORKING_DIRECTORY` into your Revit 2021 path if needed.
-	1. Change `PROGRAM_PARAMETERS` into the test `*.rvt` path.
-	1. Open Rides's Preferences and select `Build, Execution, Deployment > Toolset and Build` page, check `Invoke Pre- and Post- build event targets for skipped project`, and save.  
+	1. Change `EXE_PATH` and `WORKING_DIRECTORY` into your Revit 2021 path in `.run/Revit.run.xml` if needed.
+	1. Change `PROGRAM_PARAMETERS` into the test `*.rvt` path in `.run/Revit.run.xml`.
+	1. Open Rides's `Preferences(mac) or Settings(Windows)` and select `Build, Execution, Deployment > Toolset and Build` page, check `Invoke Pre- and Post- build event targets for skipped project`, and save.  
 		Otherwise, break points in the projects does not work.
 
 ### Language and framework versions

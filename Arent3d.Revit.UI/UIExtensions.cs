@@ -14,15 +14,36 @@ namespace Arent3d.Revit.UI
       return new RibbonTabEx( app, tabName ) ;
     }
 
+    /// <summary>
+    /// Add PushButton. When class <see cref="TCommand"/> implements <see cref="IExternalCommandAvailability"/>, it will set into <see cref="PushButtonData"/>'s <see cref="PushButtonData.AvailabilityClassName"/> property.
+    /// </summary>
+    /// <param name="ribbonPanel"></param>
+    /// <typeparam name="TCommand"></typeparam>
+    /// <returns></returns>
     public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel ) where TCommand : IExternalCommand
     {
-      var assemblyName = Assembly.GetCallingAssembly().GetName().Name ;
+      if ( typeof( TCommand ).HasInterface<IExternalCommandAvailability>() ) {
+        return ribbonPanel.AddButton<TCommand>( typeof( TCommand ).FullName ) ;
+      }
 
+      var assemblyName = Assembly.GetCallingAssembly().GetName().Name ;
       return (RibbonButton) ribbonPanel.AddItem( CreateButton<TCommand>( assemblyName ) ) ;
     }
 
     /// <summary>
-    /// Add PushButton with AvailabilityClassName
+    /// Add PushButton with AvailabilityClassName.
+    /// </summary>
+    /// <param name="ribbonPanel"></param>
+    /// <typeparam name="TCommand"></typeparam>
+    /// <typeparam name="TCommandAvailability"></typeparam>
+    /// <returns></returns>
+    public static RibbonButton AddButton<TCommand, TCommandAvailability>( this RibbonPanel ribbonPanel ) where TCommand : IExternalCommand where TCommandAvailability : IExternalCommandAvailability
+    {
+      return ribbonPanel.AddButton<TCommand>( typeof( TCommandAvailability ).FullName ) ;
+    }
+
+    /// <summary>
+    /// Add PushButton with <see cref="PushButtonData"/>'s <see cref="PushButtonData.AvailabilityClassName"/> property.
     /// </summary>
     /// <param name="ribbonPanel"></param>
     /// <param name="availabilityClassName"></param>
