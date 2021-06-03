@@ -190,7 +190,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="e"></param>
     private void FromToTreeView_OnSelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
     {
-      if ( ! IsLeftMouseClick ) return ;
+      if ( FromToTreeView.SelectedItem == null ) return ;
       var selectedItem = FromToTreeView.SelectedItem ;
       
       if ( selectedItem is FromToItem selectedFromToItem ) {
@@ -285,7 +285,8 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// </summary>
     private void ClearSelectedItem()
     {
-      if ( FromToTreeView.ItemContainerGenerator.ContainerFromItem( FromToTreeView.SelectedItem ) is TreeViewItem selectedItem) {
+      var selectedFromToItem = FromToTreeView.SelectedItem as FromToItem ;
+      if ( GetTreeViewItemFromElementId( FromToTreeView, FromToTreeView.Items,  selectedFromToItem?.ElementId) is TreeViewItem selectedItem) {
         selectedItem.IsSelected = false ;
       }
     }
