@@ -1,14 +1,17 @@
-﻿using System.Windows ;
+﻿using System ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.App.Forms ;
 using Autodesk.Revit.UI ;
+using Autodesk.Revit.UI.Events ;
 
 namespace Arent3d.Architecture.Routing.App.Manager
 {
   public class FromToTreeUiManager
   {
+    private UIControlledApplication UiControlledApplication { get ; }
     public FromToTree FromToTreeView { get ; }
-    public UIControlledApplication UiControlledApplication { get ; }
     public DockablePaneId DpId { get ; }
+    public DockablePane? Dockable{ get ; set ; }
     
 
     public FromToTreeUiManager(UIControlledApplication uiControlledApplication)
@@ -17,6 +20,13 @@ namespace Arent3d.Architecture.Routing.App.Manager
       UiControlledApplication = uiControlledApplication ;
       DpId = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
       InitializeDockablePane();
+      // subscribe DockableFrameVisibilityChanged event
+      uiControlledApplication.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>(UIControlledApplication_DockableVisibilityChanged) ;
+    }
+
+    public void ShowDockablePane()
+    {
+      Dockable?.Show();
     }
 
     private void InitializeDockablePane()
@@ -24,6 +34,19 @@ namespace Arent3d.Architecture.Routing.App.Manager
       DockablePaneProviderData data = new DockablePaneProviderData { FrameworkElement = FromToTreeView as FrameworkElement, InitialState = new DockablePaneState { DockPosition = DockPosition.Tabbed, TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser } } ;
       // register dockable pane
       UiControlledApplication.RegisterDockablePane( DpId, "From-To Tree", FromToTreeView as IDockablePaneProvider) ;
+    }
+    
+    /// <summary>
+    /// DockableVisibilityChanged event. Change UI Image.
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="dockableFrameVisibilityChangedEventArgs"></param>
+    private void UIControlledApplication_DockableVisibilityChanged( object sender, DockableFrameVisibilityChangedEventArgs dockableFrameVisibilityChangedEventArgs )
+    {
+      if ( ! DockablePane.PaneExists( DpId )) return;
+        if( Dockable != null ) { 
+          RibbonHelper.ToggleShowFromToTreeCommandButton(dockableFrameVisibilityChangedEventArgs.DockableFrameShown );
+        }
     }
   }
 }
