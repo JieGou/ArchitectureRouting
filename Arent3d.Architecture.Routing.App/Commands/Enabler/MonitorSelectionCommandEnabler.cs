@@ -22,44 +22,37 @@ namespace Arent3d.Architecture.Routing.App.Commands.Enabler
 
       // Raise the SelectionChangedEvent
       var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( uiDoc ).EnumerateAll() ;
-      
+
       ElementId? selectedElementId = null ;
 
 
-      // bool iSelectMuliteElement = false;
-      List<string> routeNameLst = new List<string>();
-      ICollection<ElementId> elementIds = uiDoc.Selection.GetElementIds();
+      var routeNameLst = new List<string>() ;
+      var elementIds = uiDoc.Selection.GetElementIds() ;
 
-        foreach ( ElementId eid in elementIds ) {
-
-            Element elem = uiDoc.Document.GetElement( eid );
-
-            ParameterSet parameters = elem.Parameters;
-
-            foreach ( Parameter param in parameters ) {
-                if ( param.Definition.Name.Equals( "Route Name" ) ) {
-                    if( routeNameLst.Contains( param.AsString() ) == false ) {
-                        routeNameLst.Add( param.AsString() );
-                    }
-                }
-            }
-
+      foreach ( ElementId eid in elementIds ) {
+        var elem = uiDoc.Document.GetElement( eid ) ;
+        var routeName = elem.GetRouteName() ;
+        if ( routeName is null ) continue ;
+        if ( routeNameLst.Contains( routeName ) == false ) {
+          routeNameLst.Add( routeName ) ;
         }
+      }
 
-        if( routeNameLst.Count > 1 ) {
-                FromToTreeViewModel.ClearSelection();
-                _previousSelectedRouteElementId = null;
-         }
+      if ( routeNameLst.Count > 1 ) {
+        FromToTreeViewModel.ClearSelection() ;
+        _previousSelectedRouteElementId = null ;
+      }
 
       // if route selected
-      if ( selectedRoutes.FirstOrDefault() is {} selectedRoute ) {
+      if ( selectedRoutes.FirstOrDefault() is { } selectedRoute ) {
         selectedElementId = selectedRoute.OwnerElement?.Id ;
         if ( selectedElementId != _previousSelectedRouteElementId ) {
           FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
         }
-        _previousSelectedRouteElementId = selectedElementId ; ;
+
+        _previousSelectedRouteElementId = selectedElementId ;
       }
-      
+
       // if Connector selected
       else if ( uiDoc.Document.CollectRoutes().SelectMany( r => r.GetAllConnectors() ).Any( c => uiDoc.Selection.GetElementIds().Contains( c.Owner.Id ) ) ) {
         selectedElementId = uiDoc.Selection.GetElementIds().FirstOrDefault() ;
