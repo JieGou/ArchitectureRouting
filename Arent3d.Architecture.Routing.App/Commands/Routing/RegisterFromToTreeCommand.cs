@@ -23,12 +23,12 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
   [Regeneration( RegenerationOption.Manual )]
   public class RegisterFromToTreeCommand : IExternalCommand
   {
-    public RegisterFromToTreeCommand(UIControlledApplication application)
+    public RegisterFromToTreeCommand( UIControlledApplication application )
     {
-      CreateFromToTreeUiManager(application);
+      CreateFromToTreeUiManager( application ) ;
     }
-    
-    
+
+
     /// <summary>
     /// Executes the specIfied command Data
     /// </summary>
@@ -40,26 +40,24 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     {
       return Execute( commandData.Application ) ;
     }
-    
+
     public Result Execute( UIApplication uiApplication )
     {
       FromToTreeManager.Instance.UiApp = uiApplication ;
       //Initialize FromToTreeView when open directly rvt file
-      if ( FromToTreeManager.Instance.UiApp.ActiveUIDocument != null ) {
-        FromToTreeManager.Instance.FromToTreeUiManager?.FromToTreeView.CustomInitiator(uiApplication);
-        FromToTreeManager.Instance.Dockable = uiApplication.GetDockablePane( FromToTreeManager.Instance.FromToTreeUiManager?.DpId ) ;
-        FromToTreeManager.Instance.Dockable.Show();
+      if ( FromToTreeManager.Instance.FromToTreeUiManager is { } fromToTreeUiManager && FromToTreeManager.Instance.UiApp.ActiveUIDocument != null ) {
+        fromToTreeUiManager.FromToTreeView.CustomInitiator( uiApplication ) ;
+        fromToTreeUiManager.Dockable = uiApplication.GetDockablePane( fromToTreeUiManager.DpId ) ;
+        fromToTreeUiManager.ShowDockablePane() ;
       }
 
       return Result.Succeeded ;
     }
 
-    public void CreateFromToTreeUiManager( UIControlledApplication application )
+    private void CreateFromToTreeUiManager( UIControlledApplication application )
     {
       var fromToTreeUiManager = new FromToTreeUiManager( application ) ;
       FromToTreeManager.Instance.FromToTreeUiManager = fromToTreeUiManager ;
-      // subscribe DockableFrameVisibilityChanged event
-      application.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>(FromToTreeManager.Instance.UIControlledApplication_DockableVisibilityChanged) ;
     }
   }
 }
