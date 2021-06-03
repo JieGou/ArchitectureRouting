@@ -91,6 +91,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
           //AvoidType Info
           AvoidType = subRoute.AvoidType ;
         }
+
+        if ( TargetSubRoutes?.Count > 1 ) {
+          IsMultiSelected();
+        }
       }
 
       private void IsMultiSelected()
