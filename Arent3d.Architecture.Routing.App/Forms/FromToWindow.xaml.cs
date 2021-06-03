@@ -8,7 +8,7 @@ using Arent3d.Revit.UI;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
-  public partial class FromToWindow : WindowBase
+  public partial class FromToWindow : RevitDialog
   {
     public ObservableCollection<FromToItems> FromToItemsList { get ; set ; }
 

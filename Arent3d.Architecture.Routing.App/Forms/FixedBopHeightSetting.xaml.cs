@@ -3,12 +3,13 @@ using System.Globalization ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit ;
+using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.App.Forms
 {
-  public partial class FixedBopHeightSetting : WindowBase
+  public partial class FixedBopHeightSetting : RevitDialog
   {
     public UIDocument? UiDoc;
     private Route _route ;

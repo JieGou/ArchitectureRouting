@@ -1,12 +1,13 @@
-﻿<local:WindowBase x:Class="Arent3d.Architecture.Routing.App.Forms.FromToWindow"
-                       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                       xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
-                       xmlns:app="clr-namespace:Arent3d.Architecture.Routing.App"
-                       mc:Ignorable="d"
-                       Title="FromToWindow" Height="450" Width="700">
+﻿<ui:RevitDialog x:Class="Arent3d.Architecture.Routing.App.Forms.FromToWindow"
+                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                   xmlns:local="clr-namespace:Arent3d.Architecture.Routing.App.Forms"
+                   xmlns:app="clr-namespace:Arent3d.Architecture.Routing.App"
+                   xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
+                   mc:Ignorable="d"
+                   Title="FromToWindow" Height="450" Width="700">
     <Grid>
         <local:Dialog2Buttons
             VerticalAlignment="Top"
@@ -68,4 +69,4 @@
             Margin="0,0,0,5" />
 
     </Grid>
-</local:WindowBase>
+</ui:RevitDialog>
