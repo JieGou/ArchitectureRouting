@@ -21,6 +21,24 @@ namespace Arent3d.Architecture.Routing
       } ;
     }
 
+    public static MEPSystemClassificationInfo? From( MEPSystemType systemType )
+    {
+      return systemType switch
+      {
+        MechanicalSystemType mechanicalSystemType => From( mechanicalSystemType ),
+        PipingSystemType pipingSystemType => From( pipingSystemType ),
+        _ => throw new ArgumentOutOfRangeException( nameof( systemType ) )
+      } ;
+    }
+    public static MEPSystemClassificationInfo? From( MechanicalSystemType systemType )
+    {
+      return Create( (DuctSystemType) systemType.SystemClassification ) ;
+    }
+    public static MEPSystemClassificationInfo? From( PipingSystemType systemType )
+    {
+      return Create( (PipeSystemType) systemType.SystemClassification ) ;
+    }
+
     private static MEPSystemClassificationInfo Create( PipeSystemType systemType ) => new PipeSystemClassificationInfo( systemType ) ;
     private static MEPSystemClassificationInfo Create( DuctSystemType systemType ) => new DuctSystemClassificationInfo( systemType ) ;
     private static MEPSystemClassificationInfo Create( ElectricalSystemType systemType ) => new ElectricalSystemClassificationInfo( systemType ) ;
