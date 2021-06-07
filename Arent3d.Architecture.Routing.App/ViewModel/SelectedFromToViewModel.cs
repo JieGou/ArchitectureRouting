@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
 {
   static class SelectedFromToViewModel
   {
-    private static UIDocument? UiDoc { get ; set ; }
+    public static UIDocument? UiDoc { get ; set ; }
 
     //Route
     public static Route? TargetRoute { get ; set ; }
@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing.App.ViewModel
     
     public static AvoidType AvoidType { get ; private set ; }
 
-    public static PropertySource.RoutePropertySource? PropertySourceType { get ; private set ; }
+    public static PropertySource.RoutePropertySource? PropertySourceType { get ; set ; }
 
     //Direct
     public static FromToItem? FromToItem { get; set; }

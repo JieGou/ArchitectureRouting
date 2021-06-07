@@ -91,13 +91,47 @@ namespace Arent3d.Architecture.Routing.App.Forms
           //AvoidType Info
           AvoidType = subRoute.AvoidType ;
         }
-
-        if ( TargetSubRoutes?.Count > 1 ) {
-          IsMultiSelected();
-        }
       }
+        public RoutePropertySource( Document doc ) : base( doc )
+        {
+                //Diameter Info
+                CurveType =  Doc.GetAllElements<MEPCurveType>().First();
+                //Diameters = (IList<double>?) CurveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>();
+                //Diameter = Diameters[0];
 
-      private void IsMultiSelected()
+                //System Type Info(PipingSystemType in lookup)
+                SystemTypes = Doc.GetAllElements<MEPSystemType>().OrderBy( s => s.Name ).ToList();
+                SystemType = SystemTypes[0];
+
+                //CurveType Info
+                var curveTypeId = CurveType.GetValidId();
+                // _isExperimental is true while we treat only round shape
+                CurveTypes = Doc.GetAllElements<MEPCurveType>().ToList();
+
+                //AvoidType Info
+                AvoidType = AvoidType.Whichever;
+            }
+        public RoutePropertySource( Document doc, MEPSystemClassificationInfo classificationInfo, MEPSystemType systemType, MEPCurveType curveType) : base( doc )
+        {
+                //Diameter Info
+                CurveType = curveType;
+                Diameters = (IList<double>?) curveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>();
+                //Diameter = subRoute.GetDiameter();
+
+                //System Type Info(PipingSystemType in lookup)
+                SystemTypes = Doc.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList();
+                SystemType = systemType;
+
+                //CurveType Info
+                var curveTypeId = CurveType.GetValidId();
+                // _isExperimental is true while we treat only round shape
+                CurveTypes = _isExperimental ? Doc.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : Doc.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList();
+
+                //AvoidType Info
+                AvoidType = AvoidType.Whichever;
+        }
+
+        private void IsMultiSelected()
       {
         if ( TargetSubRoutes?.ElementAt( 0 ).Route is not { } route ) return ;
         // if Diameter is multi selected, set null

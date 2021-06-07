@@ -56,17 +56,12 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint )
-      : this( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, null, false, null, AvoidType.Whichever )
-    {
-    }
-
     public static RouteSegment Restore( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
     {
       return new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, preferredNominalDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
     }
 
-    private RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
+    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
     {
       SystemClassificationInfo = classificationInfo ;
       SystemType = systemType ;

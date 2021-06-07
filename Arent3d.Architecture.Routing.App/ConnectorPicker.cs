@@ -8,6 +8,8 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Arent3d.Revit.UI ;
+using Autodesk.Revit.DB.Architecture;
+using Arent3d.Utility;
 
 namespace Arent3d.Architecture.Routing.App
 {
@@ -39,7 +41,12 @@ namespace Arent3d.Architecture.Routing.App
         if ( PassPointPickResult.Create( element ) is { } ppResult ) return ppResult ;
         if ( SubRoutePickResult.Create( element ) is { } srResult ) return srResult ;
 
-        var (result, connector) = FindConnector( uiDocument, element, message, firstPick?.PickedConnector ) ;
+        Connector? conn = firstPick?.PickedConnector;
+        if(firstPick?.SubRoute != null ) {
+            conn = firstPick?.SubRoute.GetReferenceConnector();
+        }
+
+        var (result, connector) = FindConnector( uiDocument, element, message, conn ) ;
         if ( false == result ) continue ;
 
         if ( null != connector ) {
@@ -49,7 +56,33 @@ namespace Arent3d.Architecture.Routing.App
         return new OriginPickResult( element ) ;
       }
     }
-    
+
+    public static Connector? GetInOutConnector( UIDocument uiDocument, Element eleConn, string message, IPickResult? firstPick )
+    {
+        var document = uiDocument.Document;
+
+        var pickedObject = uiDocument?.Selection.PickObject( ObjectType.Element, FamilyInstanceWithInOutConnectorFilter.Instance, message );
+
+        var element = document?.GetElement( pickedObject?.ElementId );
+        if ( null == element )
+            return null;
+        int connId = element.GetPropertyInt( RoutingParameter.RelatedTerminatePointId );
+
+
+        Connector? connResult = null;
+
+        eleConn.GetConnectors().ForEach( conn =>
+        {
+            if ( connId == conn.Id) { 
+                connResult = conn;
+                return;
+            }
+
+        } );
+
+        return connResult;
+    }
+
     #region PickResults
 
     private class ConnectorPickResult : IPickResult
@@ -192,6 +225,7 @@ namespace Arent3d.Architecture.Routing.App
       {
         MEPCurve curve => GetCenter( curve ),
         Instance instance => instance.GetTotalTransform().Origin,
+        Room room => ((LocationPoint)room.Location).Point,
         _ => throw new System.InvalidOperationException(),
       } ;
     }
@@ -223,7 +257,7 @@ namespace Arent3d.Architecture.Routing.App
         return GetEndOfRouting( element, ( null == firstConnector ) ) ;
       }
       else {
-        return SelectFromDialog( uiDocument, element, message, firstConnector ) ;
+        return CreateConnectorInOutFamily( uiDocument, element, message, firstConnector ) ;
       }
     }
 
@@ -234,6 +268,17 @@ namespace Arent3d.Architecture.Routing.App
 
       var connector = element.Document.CollectRoutingEndPointConnectors( routeName, fromConnector ).FirstOrDefault() ;
       return ( ( null != connector ), connector ) ;
+    }
+    private static (bool Result, Connector? Connector) CreateConnectorInOutFamily( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
+    {
+        uiDocument.SetSelection( element );
+
+        var sv = new CreateConnector( uiDocument, element, firstConnector );
+
+        uiDocument.ClearSelection();
+        uiDocument.GetActiveUIView()?.ZoomToFit();
+
+        return (true, sv.GetPickedConnector());
     }
 
     private static (bool Result, Connector? Connector) SelectFromDialog( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
@@ -268,7 +313,7 @@ namespace Arent3d.Architecture.Routing.App
 
       public bool AllowElement( Element elem )
       {
-        return IsRoutableForConnector( elem ) || IsRoutableForCenter( elem ) ;
+        return IsRoutableForConnector( elem ) || IsRoutableForCenter( elem ) || IsRoutableFoRomm( elem );
       }
 
       private bool IsRoutableForConnector( Element elem )
@@ -279,6 +324,11 @@ namespace Arent3d.Architecture.Routing.App
       private bool IsRoutableForCenter( Element elem )
       {
         return ( elem is FamilyInstance fi ) && ( false == fi.IsPassPoint() ) ;
+      }
+
+      private bool IsRoutableFoRomm( Element elem )
+      {
+          return (elem is Room);
       }
 
       protected virtual bool IsRoutableElement( Element elem )
@@ -307,6 +357,51 @@ namespace Arent3d.Architecture.Routing.App
       {
         return false ;
       }
+    }
+
+    private class FamilyInstanceWithInOutConnectorFilter : ISelectionFilter
+    {
+        public static ISelectionFilter Instance { get; } = new FamilyInstanceWithInOutConnectorFilter();
+
+        public bool AllowElement( Element elem )
+        {
+            return IsRoutableForCenter( elem ) ;
+        }
+
+
+        private bool IsRoutableForCenter( Element elem )
+        {
+            return (elem is FamilyInstance fi) && (true == fi.IsConnectorPoint());
+        }
+
+        protected virtual bool IsRoutableElement( Element elem )
+        {
+            return elem switch
+            {
+                MEPCurve => true,
+                FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement(),
+                _ => false,
+            };
+        }
+
+        private static bool IsEquipment( FamilyInstance fi )
+        {
+            if ( fi.IsFittingElement() )
+                return false;
+            if ( fi.IsPassPoint() )
+                return false;
+            return true;
+        }
+
+        protected virtual bool IsTargetConnector( Connector connector )
+        {
+            return IsPickTargetConnector( connector );
+        }
+
+        public bool AllowReference( Reference reference, XYZ position )
+        {
+            return false;
+        }
     }
 
     private class FamilyInstanceCompatibleToTargetConnectorFilter : FamilyInstanceWithConnectorFilter

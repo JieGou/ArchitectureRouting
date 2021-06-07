@@ -22,6 +22,23 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Routing Terminate Point" )]
     [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
     TerminatePoint,
+
+    [NameOnRevit( "Routing Corn Point" )]
+    [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
+    CornPoint,
+
+    [NameOnRevit( "Routing Connector Point" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    ConnectorPoint,
+
+    [NameOnRevit( "Routing Connector In Point" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    ConnectorInPoint,
+
+    [NameOnRevit( "Routing Connector Out Point" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    ConnectorOutPoint,
+
   }
 
   public static class RoutingFamilyExtensions

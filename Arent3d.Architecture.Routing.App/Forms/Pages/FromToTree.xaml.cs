@@ -11,7 +11,6 @@ using System.Windows.Controls ;
 using System.Windows.Input ;
 using System.Windows.Media ;
 using System.Windows.Media.Imaging ;
-using Arent3d.Architecture.Routing.App.Manager ;
 using Arent3d.Architecture.Routing.App.Model ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit ;
@@ -92,7 +91,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
     private void DisplayTreeViewItem( UIApplication uiApp, IReadOnlyCollection<Route> allRoutes )
     {
-      ClearSelection();
       var fromToVm = new FromToTreeViewModel() ;
 
       fromToVm.FromToModel = new FromToModel( uiApp ) ;
@@ -190,7 +188,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// <param name="e"></param>
     private void FromToTreeView_OnSelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
     {
-      if ( FromToTreeView.SelectedItem == null ) return ;
       var selectedItem = FromToTreeView.SelectedItem ;
       
       if ( selectedItem is FromToItem selectedFromToItem ) {
@@ -285,8 +282,7 @@ namespace Arent3d.Architecture.Routing.App.Forms
     /// </summary>
     private void ClearSelectedItem()
     {
-      var selectedFromToItem = FromToTreeView.SelectedItem as FromToItem ;
-      if ( GetTreeViewItemFromElementId( FromToTreeView, FromToTreeView.Items,  selectedFromToItem?.ElementId) is TreeViewItem selectedItem) {
+      if ( FromToTreeView.SelectedItem is TreeViewItem selectedItem ) {
         selectedItem.IsSelected = false ;
       }
     }

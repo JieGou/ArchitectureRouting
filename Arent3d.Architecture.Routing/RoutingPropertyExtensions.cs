@@ -30,6 +30,9 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "0e79cbf5-ac77-4fd2-be12-7969f5204a28" ), NameOnRevit( "Related Terminate Point Id" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.PassPointBuiltInCategorySet ) )]
     RelatedTerminatePointId,
+    [ParameterGuid( "3285f3e8-1838-4eba-a676-1a2af4708e7a" ), NameOnRevit( "Route Connector Relation Ids" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.PassPointBuiltInCategorySet ) )]
+    RouteConnectorReleationIds,
 
     // PassPointSharedParameters
     [ParameterGuid( "b975f161-499f-4cc6-8e11-0d7ddf25b1f4" ), NameOnRevit( "PassPoint From-side Element Id" )]
@@ -37,8 +40,15 @@ namespace Arent3d.Architecture.Routing
     PassPointNextToFromSideConnectorIds,
 
     [ParameterGuid( "7af4819d-3aec-4235-9f81-e6d3d0ca9ca2" ), NameOnRevit( "PassPoint To-side Element Id" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.PassPointBuiltInCategorySet ) )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RoutingElementBuiltInCategorySet ) )]
     PassPointNextToToSideConnectorIds,
+  }
+
+  public enum RoutingFamilyLinkedParameter
+  {
+      [ParameterGuid( "3285f3e8-1838-4eba-a676-1a2af4708e7a" ), NameOnRevit( "Route Connector Relation Ids" )]
+        [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RoutingElementBuiltInCategorySet ) )]
+        RouteConnectorReleationIds,
   }
 
   public static class RoutingPropertyExtensions
@@ -66,10 +76,19 @@ namespace Arent3d.Architecture.Routing
     {
       BuiltInCategory.OST_MechanicalEquipment,
     } ;
+    internal static readonly BuiltInCategory[] RoutingElementBuiltInCategorySet =
+    {
+      BuiltInCategory.OST_MechanicalEquipment,
+    };
 
     public static bool AllRoutingParametersAreRegistered( this Document document )
     {
       return document.AllParametersAreRegistered<RoutingParameter>() ;
+    }
+
+    public static bool AllRoutingFamilyParametersAreRegistered( this Document document )
+    {
+      return document.AllParametersAreRegistered<RoutingFamilyLinkedParameter>();
     }
 
     public static void MakeCertainAllRoutingParameters( this Document document )

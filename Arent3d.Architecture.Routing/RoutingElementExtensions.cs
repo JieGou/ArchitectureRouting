@@ -218,6 +218,11 @@ namespace Arent3d.Architecture.Routing
       return element.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) || element.HasParameter( RoutingParameter.RelatedPassPointId ) ;
     }
 
+    public static bool IsConnectorPoint( this FamilyInstance element )
+    {
+        return element.IsRoutingFamilyInstanceOf( RoutingFamilyType.ConnectorInPoint ) || element.IsRoutingFamilyInstanceOf( RoutingFamilyType.ConnectorOutPoint ) ||
+                element.IsRoutingFamilyInstanceOf( RoutingFamilyType.ConnectorPoint ) || element.IsRoutingFamilyInstanceOf( RoutingFamilyType.TerminatePoint );
+    }
     public static int? GetPassPointId( this Element element )
     {
       if ( element is not FamilyInstance fi ) return null ;
@@ -247,6 +252,87 @@ namespace Arent3d.Architecture.Routing
       instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
       
       return instance ;
+    }
+
+    public static FamilyInstance AddConnectorFamily( this Document document, Connector conn, string routeName, string? typeName, XYZ position, XYZ direction, double? radius )
+    {
+        var symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorPoint )!;
+        if ( typeName == "イン" ) {
+            symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorInPoint )!;
+        }
+        else if( typeName == "アウト"  ) {
+            symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorOutPoint )!;
+        }
+        if ( false == symbol.IsActive )
+            symbol.Activate();
+
+        var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural );
+        instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 );
+        int id = conn.Id;
+
+        instance.SetProperty( RoutingParameter.RelatedTerminatePointId, id );
+        //instance.LookupParameter( "Route Connector Relation Ids" ).Set( id );
+
+
+        var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) );
+            Color colorIn = new Autodesk.Revit.DB.Color( (byte) 255, (byte) 0, (byte) 0 );
+            Color colorOut = new Autodesk.Revit.DB.Color( (byte) 0, (byte) 0, (byte) 255 );
+            OverrideGraphicSettings ogsIn = new OverrideGraphicSettings();
+            OverrideGraphicSettings ogsOut = new OverrideGraphicSettings();
+            ogsIn.SetProjectionLineColor( colorIn );
+            ogsOut.SetProjectionLineColor( colorOut );
+
+            //ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle );
+        if ( typeName == "アウト") {
+            document.ActiveView.SetElementOverrides( instance.Id, ogsIn );
+            if ( conn.CoordinateSystem.BasisX.Y > 0 ) { 
+                var rotationAngle = Math.Atan2( -direction.Y, direction.X );
+                
+                ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle );
+            }
+            else {
+                var rotationAngle = Math.Atan2( direction.Y, direction.X );
+                ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle );
+            }
+        } else if (typeName == "イン") {
+            document.ActiveView.SetElementOverrides( instance.Id, ogsOut );
+            if ( conn.CoordinateSystem.BasisX.Y > 0 ) {
+                var rotationAngle = Math.Atan2( direction.Y, direction.X );
+                ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle );
+            }
+            else {
+                var rotationAngle = Math.Atan2( -direction.Y, direction.X );
+                ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle );
+            }
+        }
+        instance.SetProperty( RoutingParameter.RouteName, routeName );
+            //instance.rotate()
+
+        return instance;
+    }
+
+    public static FamilyInstance AddRackGuid( this Document document,  XYZ position )
+    {
+        var symbol = document.GetFamilySymbol( RoutingFamilyType.RackGuide )!;
+        if ( false == symbol.IsActive )
+            symbol.Activate();
+
+        var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural );
+
+        return instance;
+    }
+
+    public static FamilyInstance AddCornPoint( this Document document, string routeName, XYZ position)
+    {
+        var symbol = document.GetFamilySymbol( RoutingFamilyType.CornPoint )!;
+        if ( false == symbol.IsActive )
+            symbol.Activate();
+
+        var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural );
+
+        instance.SetProperty( RoutingParameter.RouteName, routeName );
+
+        return instance;
     }
 
     #endregion

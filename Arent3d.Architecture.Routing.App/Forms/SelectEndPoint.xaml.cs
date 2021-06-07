@@ -34,62 +34,61 @@ namespace Arent3d.Architecture.Routing.App.Forms
       this.Top += 10 ;
     }
 
-        public class EndPointInfoClass : INotifyPropertyChanged
+    public class EndPointInfoClass : INotifyPropertyChanged
+    {
+
+        private bool _isSelected = false;
+
+        public bool IsSelected
         {
-
-            private bool _isSelected = false;
-
-            public bool IsSelected
+            get => _isSelected;
+            set
             {
-                get => _isSelected;
-                set
-                {
-
-                    _isSelected = value;
-                    NotifyPropertyChanged();
-                }
-            }
-
-            public event PropertyChangedEventHandler? PropertyChanged;
-
-            //private Element Element { get ; }
-
-            private XYZ? ConnectorPosition { get; }
-            private IEndPoint? Pointer { get; }
-
-            public EndPointInfoClass( IEndPoint point )
-            {
-                Pointer = point;
-                ConnectorPosition = point.RoutingStartPosition;
-
-            }
-
-            private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )
-            {
-                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
-            }
-
-            public IEndPoint? GetEndPoint()
-            {
-                if ( false == IsSelected )
-                    return null;
-
-                if ( null != Pointer )
-                    return Pointer;
-
-                return null;
-            }
-            public override string ToString()
-            {
-                if ( null != Pointer ) {
-                    return $"{Pointer.TypeName} - {ConnectorPosition?.X}, {ConnectorPosition?.Y}, {ConnectorPosition?.Z}";
-                }
-                else {
-                    return "";
-                }
-
+                _isSelected = value;
+                NotifyPropertyChanged();
             }
         }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        //private Element Element { get ; }
+
+        private XYZ? ConnectorPosition { get; }
+        private IEndPoint? Pointer { get; }
+
+        public EndPointInfoClass( IEndPoint point )
+        {
+            Pointer = point;
+            ConnectorPosition = point.RoutingStartPosition;
+
+        }
+
+        private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )
+        {
+            PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
+        }
+
+        public IEndPoint? GetEndPoint()
+        {
+            if ( false == IsSelected )
+                return null;
+
+            if ( null != Pointer )
+                return Pointer;
+
+            return null;
+        }
+        public override string ToString()
+        {
+            if ( null != Pointer ) {
+                return $"{Pointer.TypeName} - {ConnectorPosition?.X}, {ConnectorPosition?.Y}, {ConnectorPosition?.Z}";
+            }
+            else {
+                return "";
+            }
+
+        }
+    }
 
     private void Button_Click( object sender, RoutedEventArgs e )
     {
