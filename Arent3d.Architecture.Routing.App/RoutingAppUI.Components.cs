@@ -98,9 +98,8 @@ namespace Arent3d.Architecture.Routing.App
         _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
 
-      _registerFromToTreeCommand = new RegisterFromToTreeCommand() ;
-      _registerFromToTreeCommand.InitializeDockablePane(application);
-      
+      _registerFromToTreeCommand = new RegisterFromToTreeCommand(application) ;
+
       application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters;
       application.ControlledApplication.ApplicationInitialized += new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ) ;
 
