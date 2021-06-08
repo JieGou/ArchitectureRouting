@@ -34,17 +34,17 @@ namespace Arent3d.Architecture.Routing.App
                 foreach ( var (conn, connElm) in GetConnectorAndConnectorElementPair( familyInstance ) ) {
 
                     ConnectorInfoClass cic = new ConnectorInfoClass( familyInstance, connElm, conn, _firstConnector );
-                    string? strType = "";
+                    int? directionType = 0;
                     using ( Transaction tr = new Transaction( element.Document ) ) {
                         tr.Start( "Create Connector Point" );
-                        if ( null != connElm ) {
-                            strType = connElm.get_Parameter( BuiltInParameter.RBS_PIPE_FLOW_DIRECTION_PARAM )?.AsValueString();
+                        if ( null != connElm ) { 
+                            directionType = connElm.get_Parameter( BuiltInParameter.RBS_PIPE_FLOW_DIRECTION_PARAM )?.AsInteger();
                         }
                         else if ( null != conn ) {
-                            strType = conn.Direction.ToString();
+                            directionType =(int)conn.Direction;
                         }
                         if ( cic.IsEnabled ) {
-                            FamilyInstance instance = element.Document.AddConnectorFamily( conn!, connElm?.GetRouteName()!,  strType,  (conn?.Origin)!, (connElm?.Direction)!, conn?.Radius );
+                            FamilyInstance instance = element.Document.AddConnectorFamily( conn!, connElm?.GetRouteName()!,  directionType,  (conn?.Origin)!, (connElm?.Direction)!, conn?.Radius );
                             instances.Add( instance );
                         }
                         tr.Commit();

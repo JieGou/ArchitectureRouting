@@ -21,8 +21,10 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     /// <param name="document"></param>
     /// <returns>True if all families and parameters are loaded.</returns>
-    public static bool RoutingSettingsAreInitialized( this Document document )
+    public static bool  RoutingSettingsAreInitialized( this Document document )
     {
+      var family = document.AllRoutingFamiliesAreLoaded() ;
+      var param = document.AllRoutingParametersAreRegistered() ;
       return document.AllRoutingFamiliesAreLoaded() && document.AllRoutingParametersAreRegistered() ;
     }
 
@@ -254,13 +256,13 @@ namespace Arent3d.Architecture.Routing
       return instance ;
     }
 
-    public static FamilyInstance AddConnectorFamily( this Document document, Connector conn, string routeName, string? typeName, XYZ position, XYZ direction, double? radius )
+    public static FamilyInstance AddConnectorFamily( this Document document, Connector conn, string routeName, int? directionTypeInt, XYZ position, XYZ direction, double? radius )
     {
         var symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorPoint )!;
-        if ( typeName == "イン" ) {
+        if ( directionTypeInt == 1 ) {  //In
             symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorInPoint )!;
         }
-        else if( typeName == "アウト"  ) {
+        else if( directionTypeInt == 2  ) {  //Out
             symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorOutPoint )!;
         }
         if ( false == symbol.IsActive )
@@ -270,8 +272,8 @@ namespace Arent3d.Architecture.Routing
         instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 );
         int id = conn.Id;
 
-        instance.SetProperty( RoutingParameter.RelatedTerminatePointId, id );
-        //instance.LookupParameter( "Route Connector Relation Ids" ).Set( id );
+        //instance.SetProperty( RoutingParameter.RelatedTerminatePointId, id );
+        instance.SetProperty( RoutingFamilyLinkedParameter.RouteConnectorRelationIds, id);
 
 
         var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) );
@@ -283,7 +285,7 @@ namespace Arent3d.Architecture.Routing
             ogsOut.SetProjectionLineColor( colorOut );
 
             //ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle );
-        if ( typeName == "アウト") {
+        if ( directionTypeInt == 2) {  //Out
             document.ActiveView.SetElementOverrides( instance.Id, ogsIn );
             if ( conn.CoordinateSystem.BasisX.Y > 0 ) { 
                 var rotationAngle = Math.Atan2( -direction.Y, direction.X );
@@ -294,7 +296,7 @@ namespace Arent3d.Architecture.Routing
                 var rotationAngle = Math.Atan2( direction.Y, direction.X );
                 ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle );
             }
-        } else if (typeName == "イン") {
+        } else if (directionTypeInt == 1) {  //In
             document.ActiveView.SetElementOverrides( instance.Id, ogsOut );
             if ( conn.CoordinateSystem.BasisX.Y > 0 ) {
                 var rotationAngle = Math.Atan2( direction.Y, direction.X );
