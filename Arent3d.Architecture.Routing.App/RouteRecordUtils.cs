@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.App
           if ( null != curveType ) continue ;
         }
 
-        yield return ( record.RouteName, RouteSegment.Restore( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, record.NominalDiameter, record.IsRoutingOnPipeSpace, record.FixedBopHeight, record.AvoidType) ) ;
+        yield return ( record.RouteName, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, record.NominalDiameter, record.IsRoutingOnPipeSpace, record.FixedBopHeight, record.AvoidType) ) ;
       }
     }
 
