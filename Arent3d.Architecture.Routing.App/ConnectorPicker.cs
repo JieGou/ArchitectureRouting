@@ -8,8 +8,8 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Arent3d.Revit.UI ;
-using Autodesk.Revit.DB.Architecture;
-using Arent3d.Utility;
+using Autodesk.Revit.DB.Architecture ;
+using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.App
 {
@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.App
       bool IsCompatibleTo( Connector connector ) ;
       bool IsCompatibleTo( Element element ) ;
     }
-    
+
     public static IPickResult GetConnector( UIDocument uiDocument, string message, IPickResult? firstPick )
     {
       var document = uiDocument.Document ;
@@ -41,9 +41,9 @@ namespace Arent3d.Architecture.Routing.App
         if ( PassPointPickResult.Create( element ) is { } ppResult ) return ppResult ;
         if ( SubRoutePickResult.Create( element ) is { } srResult ) return srResult ;
 
-        Connector? conn = firstPick?.PickedConnector;
-        if(firstPick?.SubRoute != null ) {
-            conn = firstPick?.SubRoute.GetReferenceConnector();
+        Connector? conn = firstPick?.PickedConnector ;
+        if ( firstPick?.SubRoute != null ) {
+          conn = firstPick?.SubRoute.GetReferenceConnector() ;
         }
 
         var (result, connector) = FindConnector( uiDocument, element, message, conn ) ;
@@ -59,28 +59,28 @@ namespace Arent3d.Architecture.Routing.App
 
     public static Connector? GetInOutConnector( UIDocument uiDocument, Element eleConn, string message, IPickResult? firstPick )
     {
-        var document = uiDocument.Document;
+      var document = uiDocument.Document ;
 
-        var pickedObject = uiDocument?.Selection.PickObject( ObjectType.Element, FamilyInstanceWithInOutConnectorFilter.Instance, message );
+      var pickedObject = uiDocument?.Selection.PickObject( ObjectType.Element, FamilyInstanceWithInOutConnectorFilter.Instance, message ) ;
 
-        var element = document?.GetElement( pickedObject?.ElementId );
-        if ( null == element )
-            return null;
-        int connId = element.GetPropertyInt( RoutingParameter.RelatedTerminatePointId );
+      var element = document?.GetElement( pickedObject?.ElementId ) ;
+      if ( null == element )
+        return null ;
+      
+      var connId = element.GetPropertyInt( RoutingFamilyLinkedParameter.RouteConnectorRelationIds ) ;
 
 
-        Connector? connResult = null;
+      Connector? connResult = null ;
 
-        eleConn.GetConnectors().ForEach( conn =>
-        {
-            if ( connId == conn.Id) { 
-                connResult = conn;
-                return;
-            }
+      eleConn.GetConnectors().ForEach( conn =>
+      {
+        if ( connId == conn.Id ) {
+          connResult = conn ;
+          return ;
+        }
+      } ) ;
 
-        } );
-
-        return connResult;
+      return connResult ;
     }
 
     #region PickResults
@@ -123,7 +123,7 @@ namespace Arent3d.Architecture.Routing.App
       public Connector? PickedConnector => null ;
 
       public XYZ GetOrigin() => GetCenter( _pickedElement ) ;
-      
+
       private SubRoutePickResult( Element element, SubRoute subRoute )
       {
         _pickedElement = element ;
@@ -143,7 +143,7 @@ namespace Arent3d.Architecture.Routing.App
         var subRouteIndex = element.GetSubRouteIndex() ;
         if ( null == subRouteIndex ) return null ;
 
-        if ( false ==  RouteCache.Get( element.Document ) .TryGetValue( routeName, out var route ) ) return null ;
+        if ( false == RouteCache.Get( element.Document ).TryGetValue( routeName, out var route ) ) return null ;
         if ( route.GetSubRoute( subRouteIndex.Value ) is not { } subRoute ) return null ;
 
         return new SubRoutePickResult( element, subRoute ) ;
@@ -225,7 +225,7 @@ namespace Arent3d.Architecture.Routing.App
       {
         MEPCurve curve => GetCenter( curve ),
         Instance instance => instance.GetTotalTransform().Origin,
-        Room room => ((LocationPoint)room.Location).Point,
+        Room room => ( (LocationPoint) room.Location ).Point,
         _ => throw new System.InvalidOperationException(),
       } ;
     }
@@ -269,16 +269,17 @@ namespace Arent3d.Architecture.Routing.App
       var connector = element.Document.CollectRoutingEndPointConnectors( routeName, fromConnector ).FirstOrDefault() ;
       return ( ( null != connector ), connector ) ;
     }
+
     private static (bool Result, Connector? Connector) CreateConnectorInOutFamily( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
     {
-        uiDocument.SetSelection( element );
+      uiDocument.SetSelection( element ) ;
 
-        var sv = new CreateConnector( uiDocument, element, firstConnector );
+      var sv = new CreateConnector( uiDocument, element, firstConnector ) ;
 
-        uiDocument.ClearSelection();
-        uiDocument.GetActiveUIView()?.ZoomToFit();
+      uiDocument.ClearSelection() ;
+      uiDocument.GetActiveUIView()?.ZoomToFit() ;
 
-        return (true, sv.GetPickedConnector());
+      return ( true, sv.GetPickedConnector() ) ;
     }
 
     private static (bool Result, Connector? Connector) SelectFromDialog( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
@@ -313,7 +314,7 @@ namespace Arent3d.Architecture.Routing.App
 
       public bool AllowElement( Element elem )
       {
-        return IsRoutableForConnector( elem ) || IsRoutableForCenter( elem ) || IsRoutableFoRomm( elem );
+        return IsRoutableForConnector( elem ) || IsRoutableForCenter( elem ) || IsRoutableFoRomm( elem ) ;
       }
 
       private bool IsRoutableForConnector( Element elem )
@@ -328,7 +329,7 @@ namespace Arent3d.Architecture.Routing.App
 
       private bool IsRoutableFoRomm( Element elem )
       {
-          return (elem is Room);
+        return ( elem is Room ) ;
       }
 
       protected virtual bool IsRoutableElement( Element elem )
@@ -361,47 +362,47 @@ namespace Arent3d.Architecture.Routing.App
 
     private class FamilyInstanceWithInOutConnectorFilter : ISelectionFilter
     {
-        public static ISelectionFilter Instance { get; } = new FamilyInstanceWithInOutConnectorFilter();
+      public static ISelectionFilter Instance { get ; } = new FamilyInstanceWithInOutConnectorFilter() ;
 
-        public bool AllowElement( Element elem )
+      public bool AllowElement( Element elem )
+      {
+        return IsRoutableForCenter( elem ) ;
+      }
+
+
+      private bool IsRoutableForCenter( Element elem )
+      {
+        return ( elem is FamilyInstance fi ) && ( true == fi.IsConnectorPoint() ) ;
+      }
+
+      protected virtual bool IsRoutableElement( Element elem )
+      {
+        return elem switch
         {
-            return IsRoutableForCenter( elem ) ;
-        }
+          MEPCurve => true,
+          FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement(),
+          _ => false,
+        } ;
+      }
 
+      private static bool IsEquipment( FamilyInstance fi )
+      {
+        if ( fi.IsFittingElement() )
+          return false ;
+        if ( fi.IsPassPoint() )
+          return false ;
+        return true ;
+      }
 
-        private bool IsRoutableForCenter( Element elem )
-        {
-            return (elem is FamilyInstance fi) && (true == fi.IsConnectorPoint());
-        }
+      protected virtual bool IsTargetConnector( Connector connector )
+      {
+        return IsPickTargetConnector( connector ) ;
+      }
 
-        protected virtual bool IsRoutableElement( Element elem )
-        {
-            return elem switch
-            {
-                MEPCurve => true,
-                FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement(),
-                _ => false,
-            };
-        }
-
-        private static bool IsEquipment( FamilyInstance fi )
-        {
-            if ( fi.IsFittingElement() )
-                return false;
-            if ( fi.IsPassPoint() )
-                return false;
-            return true;
-        }
-
-        protected virtual bool IsTargetConnector( Connector connector )
-        {
-            return IsPickTargetConnector( connector );
-        }
-
-        public bool AllowReference( Reference reference, XYZ position )
-        {
-            return false;
-        }
+      public bool AllowReference( Reference reference, XYZ position )
+      {
+        return false ;
+      }
     }
 
     private class FamilyInstanceCompatibleToTargetConnectorFilter : FamilyInstanceWithConnectorFilter
