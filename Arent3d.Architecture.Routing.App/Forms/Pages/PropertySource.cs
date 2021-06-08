@@ -90,6 +90,10 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
           //AvoidType Info
           AvoidType = subRoute.AvoidType ;
+          
+          if ( TargetSubRoutes?.Count > 1 ) {
+            IsMultiSelected();
+          }
         }
       }
         public RoutePropertySource( Document doc ) : base( doc )
@@ -105,7 +109,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
 
                 //CurveType Info
                 var curveTypeId = CurveType.GetValidId();
-                // _isExperimental is true while we treat only round shape
                 CurveTypes = Doc.GetAllElements<MEPCurveType>().ToList();
 
                 //AvoidType Info
@@ -116,7 +119,6 @@ namespace Arent3d.Architecture.Routing.App.Forms
                 //Diameter Info
                 CurveType = curveType;
                 Diameters = (IList<double>?) curveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>();
-                //Diameter = subRoute.GetDiameter();
 
                 //System Type Info(PipingSystemType in lookup)
                 SystemTypes = Doc.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList();
