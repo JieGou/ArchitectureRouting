@@ -56,17 +56,7 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint )
-      : this( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, null, false, null, AvoidType.Whichever )
-    {
-    }
-
-    public static RouteSegment Restore( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
-    {
-      return new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, preferredNominalDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
-    }
-
-    private RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
+    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType )
     {
       SystemClassificationInfo = classificationInfo ;
       SystemType = systemType ;
@@ -110,7 +100,7 @@ namespace Arent3d.Architecture.Routing
       var classificationInfo = MEPSystemClassificationInfo.Deserialize( parser.GetString( 7 ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
       var systemType = parser.GetElement<MEPSystemType>( 8, storedElement.Document ) ?? throw new InvalidOperationException() ;
 
-      return RouteSegment.Restore( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
+      return new RouteSegment( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
     }
 
     protected override Stringifier Stringify( Element storedElement, RouteSegment customTypeValue )

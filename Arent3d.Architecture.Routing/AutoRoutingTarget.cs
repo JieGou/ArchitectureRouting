@@ -34,9 +34,12 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     public IEnumerable<AutoRoutingEndPoint> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
 
+    public Domain Domain { get; }
+
     public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
       Routes = subRoutes.Select( subRoute => subRoute.Route ).Distinct().EnumerateAll() ;
+      Domain = Routes.Select( route => (Domain?) route.Domain ).UniqueOrDefault() ?? throw new InvalidOperationException();
 
       var depths = GetDepths( subRoutes ) ;
 

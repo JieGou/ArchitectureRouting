@@ -28,7 +28,6 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       CreateFromToTreeUiManager( application ) ;
     }
 
-
     /// <summary>
     /// Executes the specIfied command Data
     /// </summary>
@@ -41,9 +40,12 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
       return Execute( commandData.Application ) ;
     }
 
+    // view activated event
+
     public Result Execute( UIApplication uiApplication )
     {
       FromToTreeManager.Instance.UiApp = uiApplication ;
+
       //Initialize FromToTreeView when open directly rvt file
       if ( FromToTreeManager.Instance.FromToTreeUiManager is { } fromToTreeUiManager && FromToTreeManager.Instance.UiApp.ActiveUIDocument != null ) {
         fromToTreeUiManager.FromToTreeView.CustomInitiator( uiApplication ) ;
@@ -57,6 +59,7 @@ namespace Arent3d.Architecture.Routing.App.Commands.Routing
     private void CreateFromToTreeUiManager( UIControlledApplication application )
     {
       var fromToTreeUiManager = new FromToTreeUiManager( application ) ;
+
       FromToTreeManager.Instance.FromToTreeUiManager = fromToTreeUiManager ;
     }
   }

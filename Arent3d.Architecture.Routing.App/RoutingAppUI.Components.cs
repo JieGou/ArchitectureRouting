@@ -51,6 +51,7 @@ namespace Arent3d.Architecture.Routing.App
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
     private readonly RibbonButton _eraseAllRacksCommandButton ;
+    private readonly RibbonButton _rackGuidCommanddButton;
 
     private readonly RibbonButton _monitorSelectionCommandButton ;
 
@@ -90,6 +91,7 @@ namespace Arent3d.Architecture.Routing.App
         _importRacksCommandButton = rackPanel.AddButton<ImportRacksCommand>() ;
         _exportRacksCommandButton = rackPanel.AddButton<ExportRacksCommand>() ;
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
+        _rackGuidCommanddButton = rackPanel.AddButton<RackGuidCommand>();
       }
       {
         var monitorPanel = tab.CreateRibbonPanel( MonitorPanel.Key, ToDisplayName( MonitorPanel.TitleKey ) ) ;
@@ -132,6 +134,7 @@ namespace Arent3d.Architecture.Routing.App
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
       _eraseAllRacksCommandButton.Enabled = false ;
+      _rackGuidCommanddButton.Enabled = false;
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
@@ -164,6 +167,7 @@ namespace Arent3d.Architecture.Routing.App
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
+      _rackGuidCommanddButton.Enabled = setupIsDone;
     }
 
     private void DockablePaneRegisters( object sender, ApplicationInitializedEventArgs e )

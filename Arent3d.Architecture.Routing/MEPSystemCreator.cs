@@ -92,18 +92,15 @@ namespace Arent3d.Architecture.Routing
     /// <param name="routeEdge">A route edge.</param>
     /// <param name="passingEndPointInfo">Nearest from & to end points.</param>
     /// <returns>Newly created duct.</returns>
-    public Element CreateEdgeElement( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo )
+    public Element CreateEdgeElement( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo, Domain domain )
     {
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZRaw() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZRaw() ;
 
-      var baseConnector = ( routeEdge.LineInfo as AutoRoutingEndPoint )?.EndPoint.GetReferenceConnector() ?? _autoRoutingTarget.GetSubRoute( routeEdge ).GetReferenceConnector() ;
-      if ( null == baseConnector ) throw new InvalidOperationException() ;
-
       var subRoute = _autoRoutingTarget.GetSubRoute( routeEdge ) ;
       var routeMepSystem = _routeMepSystemDictionary[ subRoute ] ;
 
-      var element = baseConnector.Domain switch
+      var element = domain switch
       {
         Domain.DomainHvac => CreateDuct( startPos, endPos, routeMepSystem ),
         Domain.DomainPiping => CreatePipe( startPos, endPos, routeMepSystem ),

@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.App
 
     protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()
     {
-      yield return new LocationUpdater() ;
+      yield return new RoutingUpdateListener() ;
     }
   }
 }

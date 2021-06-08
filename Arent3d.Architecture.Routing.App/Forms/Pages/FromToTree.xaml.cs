@@ -1,22 +1,15 @@
 ﻿using System ;
 using System.Collections.Generic ;
-using System.Collections.ObjectModel ;
-using System.Diagnostics ;
-using System.Globalization ;
-using System.IO.Packaging ;
 using System.Linq ;
-using System.Threading.Tasks ;
+
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Input ;
-using System.Windows.Media ;
-using System.Windows.Media.Imaging ;
-using Arent3d.Architecture.Routing.App.Manager ;
+using Arent3d.Architecture.Routing.App.Manager;
 using Arent3d.Architecture.Routing.App.Model ;
 using Arent3d.Architecture.Routing.App.ViewModel ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Arent3d.Revit.UI ;
