@@ -10,7 +10,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
-  static class SelectedFromToViewModel
+  public static class SelectedFromToViewModel
   {
     public static UIDocument? UiDoc { get ; set ; }
 
