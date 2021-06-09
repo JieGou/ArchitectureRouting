@@ -5,10 +5,10 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.ShowFrom_ToWindowCommand", DefaultString = "From-To\nWindow" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Routing.ShowFrom_ToWindowCommand", DefaultString = "From-To\nWindow" )]
   [Image( "resources/From-ToWindow.png" )]
   public class ShowFrom_ToWindowCommand : IExternalCommand
   {

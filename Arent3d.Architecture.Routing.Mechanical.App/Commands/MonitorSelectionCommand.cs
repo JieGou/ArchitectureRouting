@@ -3,7 +3,7 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "MonitorSelection" )]

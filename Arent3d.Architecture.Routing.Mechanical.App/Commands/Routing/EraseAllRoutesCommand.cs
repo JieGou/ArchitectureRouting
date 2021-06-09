@@ -1,6 +1,7 @@
 using System ;
 using System.ComponentModel ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -8,10 +9,10 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.EraseAllRoutesCommand", DefaultString = "Delete\nAll From-To" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Routing.EraseAllRoutesCommand", DefaultString = "Delete\nAll From-To" )]
   [Image( "resources/DeleteAllFrom-To.png" )]
   public class EraseAllRoutesCommand : IExternalCommand
   {

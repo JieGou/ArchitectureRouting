@@ -1,31 +1,28 @@
 using System ;
-using System.Collections.Generic ;
-using System.Windows ;
-using Arent3d.Architecture.Routing.AppBase.Commands ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
-using Arent3d.Architecture.Routing.AppBase.Commands.PassPoint ;
-using Arent3d.Architecture.Routing.AppBase.Commands.BranchPoint ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Rack ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
+using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.Mechanical.App.Commands ;
+using Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization ;
+using Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint ;
+using Arent3d.Architecture.Routing.Mechanical.App.Commands.BranchPoint ;
+using Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing ;
+using Arent3d.Architecture.Routing.Mechanical.App.Commands.Rack ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
-using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
-using Autodesk.Revit.UI.Events ;
 
-namespace Arent3d.Architecture.Routing.AppBase
+namespace Arent3d.Architecture.Routing.Mechanical.App
 {
   partial class RoutingAppUI
   {
-    private const string RibbonTabNameKey = "App.Routing.TabName" ;
+    private const string RibbonTabNameKey = "Mechanical.App.Routing.TabName"  ;
 
-    private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init", TitleKey: "App.Panels.Routing.Initialize" ) ;
-    private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", TitleKey: "App.Panels.Routing.Routing" ) ;
-    private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "App.Panels.Routing.Racks" ) ;
-    private static readonly (string Key, string TitleKey) MonitorPanel = ( Key: "arent3d.architecture.routing.monitor", TitleKey: "App.Panels.Routing.Monitor" ) ;
+    private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init", TitleKey: "Mechanical.App.Panels.Routing.Initialize" ) ;
+    private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", TitleKey: "Mechanical.App.Panels.Routing.Routing" ) ;
+    private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "Mechanical.App.Panels.Routing.Racks" ) ;
+    private static readonly (string Key, string TitleKey) MonitorPanel = ( Key: "arent3d.architecture.routing.monitor", TitleKey: "Mechanical.App.Panels.Routing.Monitor" ) ;
 
     private readonly RibbonButton _initializeCommandButton ;
     private readonly RibbonButton _showRoutingViewsCommandButton ;
@@ -44,9 +41,6 @@ namespace Arent3d.Architecture.Routing.AppBase
     private readonly RibbonButton _replaceFromToCommandButton ; //just show dialog
     private readonly RibbonButton _showFromToWindowCommandButton ;
     private readonly RibbonButton _showFromToTreeCommandButton ;
-
-    //private readonly RibbonButton _fileRoutingCommandButton ;
-    //private readonly RibbonButton _exportRoutingCommandButton ;
 
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
@@ -83,8 +77,6 @@ namespace Arent3d.Architecture.Routing.AppBase
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
         
-        //_fileRoutingCommandButton = routingPanel.AddButton<FileRoutingCommand>() ;
-        //_exportRoutingCommandButton = routingPanel.AddButton<ExportRoutingCommand>() ;
       }
       {
         var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
@@ -95,7 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
       {
         var monitorPanel = tab.CreateRibbonPanel( MonitorPanel.Key, ToDisplayName( MonitorPanel.TitleKey ) ) ;
-        _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.AppBase.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
+        _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.Mechanical.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
 
       _registerFromToTreeCommand = new RegisterFromToTreeCommand(application) ;

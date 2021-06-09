@@ -1,16 +1,16 @@
 using System ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
-using Arent3d.Architecture.Routing;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Initialization.InitializeCommand", DefaultString = "Initialize" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Initialization.InitializeCommand", DefaultString = "Initialize" )]
   [Image( "resources/Initialize.png", ImageType = ImageType.Large )]
   public class InitializeCommand : IExternalCommand
   {

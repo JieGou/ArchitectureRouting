@@ -11,7 +11,7 @@ using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
 
-namespace Arent3d.Architecture.Routing.AppBase
+namespace Arent3d.Architecture.Routing.Mechanical.App
 {
   /// <summary>
   /// Entry point of auto routing application. This class calls UI initializers.

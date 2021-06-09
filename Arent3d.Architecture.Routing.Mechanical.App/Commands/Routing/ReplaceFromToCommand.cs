@@ -2,6 +2,8 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading.Tasks ;
+using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.I18n ;
@@ -10,10 +12,10 @@ using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.ReplaceFromToCommand", DefaultString = "Replace\nFrom-To" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Routing.ReplaceFromToCommand", DefaultString = "Replace\nFrom-To" )]
   [Image( "resources/ReplaceFromTo.png" )]
   public class ReplaceFromToCommand : RoutingCommandBase
   {

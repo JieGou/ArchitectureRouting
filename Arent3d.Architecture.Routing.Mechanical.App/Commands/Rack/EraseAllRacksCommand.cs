@@ -1,15 +1,16 @@
 using System ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Rack
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Rack
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Rack.EraseAllRacksCommand", DefaultString = "Delete\nAll PS" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Rack.EraseAllRacksCommand", DefaultString = "Delete\nAll PS" )]
   [Image( "resources/DeleteAllPS.png" )]
   public class EraseAllRacksCommand : IExternalCommand
   {

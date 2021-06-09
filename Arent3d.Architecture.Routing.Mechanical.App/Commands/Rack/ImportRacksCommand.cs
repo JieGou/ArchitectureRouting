@@ -3,6 +3,8 @@ using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.IO ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Revit ;
 using Arent3d.Revit.Csv ;
 using Arent3d.Revit.I18n ;
@@ -13,10 +15,10 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Rack
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Rack
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Rack.ImportRacksCommand", DefaultString = "Import\nPS" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Rack.ImportRacksCommand", DefaultString = "Import\nPS" )]
   [Image( "resources/ImportPS.png" )]
   public class ImportRacksCommand : IExternalCommand
   {

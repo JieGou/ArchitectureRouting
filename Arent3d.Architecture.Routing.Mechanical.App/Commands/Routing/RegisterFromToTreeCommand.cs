@@ -14,7 +14,7 @@ using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   /// <summary>
   /// Register FromToTree

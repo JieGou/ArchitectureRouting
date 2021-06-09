@@ -1,4 +1,5 @@
 using System ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -7,10 +8,10 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Initialization.ShowRoutingViewsCommand", DefaultString = "Plans" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Initialization.ShowRoutingViewsCommand", DefaultString = "Plans" )]
   [Image( "resources/Plans.png", ImageType = ImageType.Large )]
   public class ShowRoutingViewsCommand : IExternalCommand
   {

@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       RibbonTab? selectionTab = null ;
       RibbonPanel? selectionPanel = null ;
       RibbonItem? selectionButton = null ;
-      string? targetTabName = "App.Routing.TabName".GetAppStringByKey() ;
+      string? targetTabName = "Mechanical.App.Routing.TabName".GetAppStringByKey() ;
 
 
       selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
@@ -28,10 +28,10 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
       else {
         foreach ( var panel in selectionTab.Panels ) {
-          if ( panel.Source.Title == "App.Panels.Routing.Monitor".GetAppStringByKeyOrDefault("Monitor Selection") ) {
+          if ( panel.Source.Title == "Mechanical.App.Panels.Routing.Monitor".GetAppStringByKeyOrDefault("Monitor Selection") ) {
             selectionPanel = panel ;
             foreach ( var item in panel.Source.Items ) {
-              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.monitor%arent3d.architecture.routing.app_base.commands.monitor_selection_command" ) {
+              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.monitor%arent3d.architecture.routing.mechanical.app.commands.monitor_selection_command" ) {
                 selectionButton = item ;
                 break ;
               }

@@ -114,6 +114,12 @@
       <None Update="Arent3d.Architecture.Routing.AppBase\Lang\ja-JP.plist">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <None Update="Arent3d.Architecture.Routing.Mechanical.App\Lang\en-US.plist">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Arent3d.Architecture.Routing.Mechanical.App\Lang\ja-JP.plist">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -135,10 +141,6 @@
       <Resource Include="resources\Plans.png" />
       <Resource Include="resources\ReplaceFromTo.png" />
       <Resource Include="resources\RerouteAll.png" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Commands\Enabler" />
     </ItemGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">

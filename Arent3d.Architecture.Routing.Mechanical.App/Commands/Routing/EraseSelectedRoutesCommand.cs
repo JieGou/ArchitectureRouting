@@ -2,6 +2,8 @@ using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Linq ;
 using System.Threading.Tasks ;
+using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
@@ -10,10 +12,10 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.Exceptions ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.EraseSelectedRoutesCommand", DefaultString = "Delete\nFrom-To" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Routing.EraseSelectedRoutesCommand", DefaultString = "Delete\nFrom-To" )]
   [Image( "resources/DeleteFrom-To.png" )]
   public class EraseSelectedRoutesCommand : RoutingCommandBase
   {

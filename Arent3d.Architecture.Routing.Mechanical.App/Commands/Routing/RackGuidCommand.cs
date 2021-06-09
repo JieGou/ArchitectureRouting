@@ -12,10 +12,10 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
     [Transaction( TransactionMode.Manual )]
-    [DisplayNameKey( "App.Commands.Routing.RackGuidCommand", DefaultString = "Rack Guid\nPS" )]
+    [DisplayNameKey( "Mechanical.App.Commands.Routing.RackGuidCommand", DefaultString = "Rack Guid\nPS" )]
     [Image( "resources/PickFrom-To.png" )]
     public class RackGuidCommand : IExternalCommand
     {

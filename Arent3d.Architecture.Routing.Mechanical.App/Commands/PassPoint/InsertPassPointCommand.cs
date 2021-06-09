@@ -1,26 +1,22 @@
-using System ;
 using System.Collections.Generic ;
-using System.ComponentModel ;
 using System.Linq ;
-using System.Threading ;
-using System.Threading.Tasks ;
+using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
-using Arent3d.Revit.UI.Forms ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.PassPoint.InsertPassPointCommand", DefaultString = "Insert\nPass Point" )]
+  [DisplayNameKey( "Mechanical.App.Commands.PassPoint.InsertPassPointCommand", DefaultString = "Insert\nPass Point" )]
   [Image( "resources/InsertPassPoint.png", ImageType = ImageType.Large )]
-  public class InsertPassPointCommand : Routing.RoutingCommandBase
+  public class InsertPassPointCommand : RoutingCommandBase
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.PassPoint.Insert" ;
 
