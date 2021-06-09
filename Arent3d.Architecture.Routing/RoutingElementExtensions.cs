@@ -256,13 +256,13 @@ namespace Arent3d.Architecture.Routing
       return instance ;
     }
 
-    public static FamilyInstance AddConnectorFamily( this Document document, Connector conn, string routeName, int? directionTypeInt, XYZ position, XYZ direction, double? radius )
+    public static FamilyInstance AddConnectorFamily( this Document document, Connector conn, string routeName, FlowDirectionType directionType, XYZ position, XYZ direction, double? radius )
     {
         var symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorPoint )!;
-        if ( directionTypeInt == 1 ) {  //In
+        if ( directionType == FlowDirectionType.In ) {  //In
             symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorInPoint )!;
         }
-        else if( directionTypeInt == 2  ) {  //Out
+        else if( directionType == FlowDirectionType.Out  ) {  //Out
             symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorOutPoint )!;
         }
         if ( false == symbol.IsActive )
@@ -271,8 +271,7 @@ namespace Arent3d.Architecture.Routing
         var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural );
         instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 );
         int id = conn.Id;
-
-        //instance.SetProperty( RoutingParameter.RelatedTerminatePointId, id );
+        
         instance.SetProperty( RoutingFamilyLinkedParameter.RouteConnectorRelationIds, id);
 
 
@@ -283,9 +282,8 @@ namespace Arent3d.Architecture.Routing
             OverrideGraphicSettings ogsOut = new OverrideGraphicSettings();
             ogsIn.SetProjectionLineColor( colorIn );
             ogsOut.SetProjectionLineColor( colorOut );
-
-            //ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle );
-        if ( directionTypeInt == 2) {  //Out
+            
+        if ( directionType == FlowDirectionType.Out) {  //Out
             document.ActiveView.SetElementOverrides( instance.Id, ogsIn );
             if ( conn.CoordinateSystem.BasisX.Y > 0 ) { 
                 var rotationAngle = Math.Atan2( -direction.Y, direction.X );
@@ -296,7 +294,7 @@ namespace Arent3d.Architecture.Routing
                 var rotationAngle = Math.Atan2( direction.Y, direction.X );
                 ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle );
             }
-        } else if (directionTypeInt == 1) {  //In
+        } else if (directionType == FlowDirectionType.In) {  //In
             document.ActiveView.SetElementOverrides( instance.Id, ogsOut );
             if ( conn.CoordinateSystem.BasisX.Y > 0 ) {
                 var rotationAngle = Math.Atan2( direction.Y, direction.X );
@@ -308,7 +306,6 @@ namespace Arent3d.Architecture.Routing
             }
         }
         instance.SetProperty( RoutingParameter.RouteName, routeName );
-            //instance.rotate()
 
         return instance;
     }

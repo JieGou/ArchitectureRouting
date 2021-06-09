@@ -34,21 +34,22 @@ namespace Arent3d.Architecture.Routing.AppBase
                 foreach ( var (conn, connElm) in GetConnectorAndConnectorElementPair( familyInstance ) ) {
 
                     ConnectorInfoClass cic = new ConnectorInfoClass( familyInstance, connElm, conn, _firstConnector );
-                    int? directionType = 0;
-                    using ( Transaction tr = new Transaction( element.Document ) ) {
-                        tr.Start( "Create Connector Point" );
-                        if ( null != connElm ) { 
-                            directionType = connElm.get_Parameter( BuiltInParameter.RBS_PIPE_FLOW_DIRECTION_PARAM )?.AsInteger();
+                    var directionType = FlowDirectionType.Bidirectional;
+                    using Transaction tr = new Transaction( element.Document ) ;
+                    tr.Start( "Create Connector Point" );
+                    if ( connElm is {} connectorElement) {
+                        if ( connectorElement.get_Parameter( BuiltInParameter.RBS_PIPE_FLOW_DIRECTION_PARAM ) is { } flowDirectionType ) {
+                            directionType = (FlowDirectionType)flowDirectionType.AsInteger();
                         }
-                        else if ( null != conn ) {
-                            directionType =(int)conn.Direction;
-                        }
-                        if ( cic.IsEnabled ) {
-                            FamilyInstance instance = element.Document.AddConnectorFamily( conn!, connElm?.GetRouteName()!,  directionType,  (conn?.Origin)!, (connElm?.Direction)!, conn?.Radius );
-                            instances.Add( instance );
-                        }
-                        tr.Commit();
                     }
+                    else if ( null != conn ) {
+                        directionType =conn.Direction;
+                    }
+                    if ( cic.IsEnabled ) {
+                        FamilyInstance instance = element.Document.AddConnectorFamily( conn!, connElm?.GetRouteName()!,  directionType,  (conn?.Origin)!, (connElm?.Direction)!, conn?.Radius );
+                        instances.Add( instance );
+                    }
+                    tr.Commit();
                 }
             }
 
