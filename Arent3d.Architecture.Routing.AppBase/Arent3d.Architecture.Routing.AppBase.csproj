@@ -114,41 +114,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="resources\MEP.ico" />
-    <Resource Include="resources\MEP.ico" />
-    <None Remove="resources\Initialize-16.bmp" />
-    <Resource Include="resources\Initialize-16.bmp" />
-    <None Remove="resources\Initialize-32.bmp" />
-    <Resource Include="resources\Initialize-32.bmp" />
-    <None Remove="resources\Initialize.png" />
-    <Resource Include="resources\Initialize.png" />
-    <None Remove="resources\Plans.png" />
-    <Resource Include="resources\Plans.png" />
-    <None Remove="resources\RerouteAll.png" />
-    <Resource Include="resources\RerouteAll.png" />
-    <None Remove="resources\InsertPassPoint.png" />
-    <Resource Include="resources\InsertPassPoint.png" />
-    <None Remove="resources\InsertBranchPoint.png" />
-    <Resource Include="resources\InsertBranchPoint.png" />
-    <None Remove="resources\DeleteFrom-To.png" />
-    <Resource Include="resources\DeleteFrom-To.png" />
-    <None Remove="resources\DeleteAllFrom-To.png" />
-    <Resource Include="resources\DeleteAllFrom-To.png" />
-    <None Remove="resources\ReplaceFromTo.png" />
-    <Resource Include="resources\ReplaceFromTo.png" />
-    <None Remove="resources\From-ToWindow.png" />
-    <Resource Include="resources\From-ToWindow.png" />
-    <None Remove="resources\ImportFromTo.png" />
-    <Resource Include="resources\ImportFromTo.png" />
-    <None Remove="resources\ExportFromTo.png" />
-    <Resource Include="resources\ExportFromTo.png" />
-    <None Remove="resources\ImportPS.png" />
-    <Resource Include="resources\ImportPS.png" />
-    <None Remove="resources\ExportPS.png" />
-    <Resource Include="resources\ExportPS.png" />
-    <None Remove="resources\DeleteAllPS.png" />
-    <Resource Include="resources\DeleteAllPS.png" />
-    
     <None Remove="resources\Arent-Generic Models-Box.rfa" />
     <None Update="Arent3d.Architecture.Routing.AppBase\Lang\en-US.plist">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -156,19 +121,36 @@
     <None Update="Arent3d.Architecture.Routing.AppBase\Lang\ja-JP.plist">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Remove="resources\PickFrom-To.png" />
-    <Resource Include="resources\PickFrom-To.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="RoutingAppUI.Components.cs">
-      <DependentUpon>RoutingAppUI.cs</DependentUpon>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.0" />
     <PackageReference Include="NumericUpDown" Version="3.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Commands\Enabler" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="resources\DeleteAllFrom-To.png" />
+    <Resource Include="resources\DeleteAllPS.png" />
+    <Resource Include="resources\DeleteFrom-To.png" />
+    <Resource Include="resources\ExportFromTo.png" />
+    <Resource Include="resources\ExportPS.png" />
+    <Resource Include="resources\From-ToWindow.png" />
+    <Resource Include="resources\ImportFromTo.png" />
+    <Resource Include="resources\ImportPS.png" />
+    <Resource Include="resources\Initialize-16.bmp" />
+    <Resource Include="resources\Initialize-32.bmp" />
+    <Resource Include="resources\Initialize.png" />
+    <Resource Include="resources\InsertBranchPoint.png" />
+    <Resource Include="resources\InsertPassPoint.png" />
+    <Resource Include="resources\MEP.ico" />
+    <Resource Include="resources\PickFrom-To.png" />
+    <Resource Include="resources\Plans.png" />
+    <Resource Include="resources\ReplaceFromTo.png" />
+    <Resource Include="resources\RerouteAll.png" />
   </ItemGroup>
 
 </Project>
