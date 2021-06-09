@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase
           if ( panel.Source.Title == "App.Panels.Routing.Monitor".GetAppStringByKeyOrDefault("Monitor Selection") ) {
             selectionPanel = panel ;
             foreach ( var item in panel.Source.Items ) {
-              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.monitor%arent3d.architecture.routing.appbase.commands.monitor_selection_command" ) {
+              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.monitor%arent3d.architecture.routing.app_base.commands.monitor_selection_command" ) {
                 selectionButton = item ;
                 break ;
               }
