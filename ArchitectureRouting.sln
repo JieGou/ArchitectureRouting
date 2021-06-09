@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arent3d.Architecture.Routing.App", "Arent3d.Architecture.Routing.App\Arent3d.Architecture.Routing.App.csproj", "{7C2209B4-5B23-4603-A1DA-30188A398230}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arent3d.Architecture.Routing.AppBase", "Arent3d.Architecture.Routing.AppBase\Arent3d.Architecture.Routing.AppBase.csproj", "{7C2209B4-5B23-4603-A1DA-30188A398230}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arent3d.Architecture.Routing", "Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj", "{9F640371-E034-4C24-A6FE-C8B710E55ED1}"
 EndProject
