@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Revit", "Arent3d.Re
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Revit.Csv", "Arent3d.Revit.Csv\Arent3d.Revit.Csv.csproj", "{F8409477-D6AD-415F-820C-84107C6B6049}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Architecture.Rouing.Mechanical.App", "Arent3d.Architecture.Routing.Mechanical.App\Arent3d.Architecture.Rouing.Mechanical.App.csproj", "{968D275F-4792-4A50-A5A9-86E7C65EBE97}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Architecture.Routing.Mechanical.App", "Arent3d.Architecture.Routing.Mechanical.App\Arent3d.Architecture.Routing.Mechanical.App.csproj", "{968D275F-4792-4A50-A5A9-86E7C65EBE97}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

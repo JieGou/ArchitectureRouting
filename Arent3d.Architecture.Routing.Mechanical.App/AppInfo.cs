@@ -3,6 +3,6 @@
   public class AppInfo
   {
     public const string ApplicationName = "Mechanical Routing Assist" ;
-    public const string ApplicationGuid = "{7048789B-CAB1-459D-9D01-0C608C2C5BCD}" ;
+    public const string ApplicationGuid = "{EA1148A5-3C05-4A58-99E8-736354C11906}" ;
   }
 }
