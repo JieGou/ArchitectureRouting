@@ -4,7 +4,7 @@
     <dict>
         <!-- Application UI Strings -->
         <key>Mechanical.App.Routing.TabName</key>
-        <string>Routing Assist</string>
+        <string>Mechanical Routing Assist</string>
 
         <key>Mechanical.App.Panels.Routing.Initialize</key>
         <string>Setup</string>

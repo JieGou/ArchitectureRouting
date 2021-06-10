@@ -4,7 +4,7 @@
 
         <!-- Application UI Strings -->
         <key>Mechanical.App.Routing.TabName</key>
-        <string>自動ルーティング</string>
+        <string>設備ルートアシスト</string>
         
         <key>Mechanical.App.Panels.Routing.Initialize</key>
         <string>Setup</string>
@@ -49,7 +49,7 @@
         <key>Mechanical.App.Commands.Routing.EraseAllRoutesCommand</key>
         <string>Delete&#xA;All From-To</string>
 
-        <key>App.Commands.Routing.EraseSelectedRoutesCommand</key>
+        <key>Mechanical.App.Commands.Routing.EraseSelectedRoutesCommand</key>
         <string>Delete&#xA;From-To</string>
 
         <key>Mechanical.App.Commands.Routing.ExportRoutingCommand</key>
