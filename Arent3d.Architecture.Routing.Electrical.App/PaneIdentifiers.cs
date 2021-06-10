@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arent3d.Architecture.Routing.AppBase
+namespace Arent3d.Architecture.Routing.Electrical.App
 {
   /// <summary>
   /// FromToTree dockable pane identifier
