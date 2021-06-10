@@ -5,7 +5,7 @@ using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.App.Manager
+namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
   public class FromToTreeUiManager
   {
@@ -15,11 +15,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Manager
     public DockablePane? Dockable{ get ; set ; }
     
 
-    public FromToTreeUiManager(UIControlledApplication uiControlledApplication)
+    public FromToTreeUiManager(UIControlledApplication uiControlledApplication, Guid dpId)
     {
       FromToTreeView = new FromToTree() ;
       UiControlledApplication = uiControlledApplication ;
-      DpId = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
+      DpId = new DockablePaneId( dpId ) ;
       InitializeDockablePane();
       // subscribe DockableFrameVisibilityChanged event
       uiControlledApplication.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>(UIControlledApplication_DockableVisibilityChanged) ;

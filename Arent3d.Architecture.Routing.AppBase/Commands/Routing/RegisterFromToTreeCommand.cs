@@ -1,20 +1,11 @@
 ﻿using System ;
-using System.Collections.Generic ;
-using System.Linq ;
-using System.Windows ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.Electrical.App.Manager ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
-using Arent3d.Utility ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
-using Autodesk.Revit.UI.Events ;
 
-namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
+
+namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   /// <summary>
   /// Register FromToTree
@@ -23,9 +14,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Regeneration( RegenerationOption.Manual )]
   public class RegisterFromToTreeCommand : IExternalCommand
   {
-    public RegisterFromToTreeCommand( UIControlledApplication application )
+    public RegisterFromToTreeCommand( UIControlledApplication application, Guid dpId )
     {
-      CreateFromToTreeUiManager( application ) ;
+      CreateFromToTreeUiManager( application, dpId ) ;
     }
 
     /// <summary>
@@ -56,9 +47,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return Result.Succeeded ;
     }
 
-    private void CreateFromToTreeUiManager( UIControlledApplication application )
+    private void CreateFromToTreeUiManager( UIControlledApplication application, Guid dpId )
     {
-      var fromToTreeUiManager = new FromToTreeUiManager( application ) ;
+      var fromToTreeUiManager = new FromToTreeUiManager( application, dpId ) ;
 
       FromToTreeManager.Instance.FromToTreeUiManager = fromToTreeUiManager ;
     }

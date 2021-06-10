@@ -1,6 +1,7 @@
 using System ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint ;
@@ -51,6 +52,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
     private readonly RegisterFromToTreeCommand _registerFromToTreeCommand;
 
+    private readonly Guid _dpid = new Guid( "6D3D42B6-981A-4A55-A0BF-2C99D7C0D500" ) ;
     
     
     private RoutingAppUI( UIControlledApplication application )
@@ -90,7 +92,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.Mechanical.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
 
-      _registerFromToTreeCommand = new RegisterFromToTreeCommand(application) ;
+      _registerFromToTreeCommand = new RegisterFromToTreeCommand(application, _dpid) ;
 
       application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters;
       application.ControlledApplication.ApplicationInitialized += new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ) ;

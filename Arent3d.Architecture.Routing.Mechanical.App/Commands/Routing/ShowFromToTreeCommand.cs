@@ -1,5 +1,6 @@
 ﻿using System ;
 using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -20,7 +21,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       _uiDocument = commandData.Application.ActiveUIDocument ;
 
       try {
-        var dpid = new DockablePaneId( PaneIdentifiers.GetFromToTreePaneIdentifier() ) ;
+        var dpid = FromToTreeManager.Instance.FromToTreeUiManager?.DpId ;
         var dp = _uiDocument.Application.GetDockablePane( dpid ) ;
         if ( ! dp.IsShown() ) {
           dp.Show() ;
