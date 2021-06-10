@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Revit.Csv", "Arent3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Architecture.Routing.Mechanical.App", "Arent3d.Architecture.Routing.Mechanical.App\Arent3d.Architecture.Routing.Mechanical.App.csproj", "{968D275F-4792-4A50-A5A9-86E7C65EBE97}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arent3d.Architecture.Routing.Electrical.App", "Arent3d.Architecture.Routing.Electrical.App\Arent3d.Architecture.Routing.Electrical.App.csproj", "{F26B4185-76D5-4201-BB2C-42E34F3F00D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug 2020|x64 = Debug 2020|x64
@@ -97,6 +99,18 @@ Global
 		{968D275F-4792-4A50-A5A9-86E7C65EBE97}.Release 2020|x64.Build.0 = Release 2020|x64
 		{968D275F-4792-4A50-A5A9-86E7C65EBE97}.Release 2022|x64.ActiveCfg = Release 2022|x64
 		{968D275F-4792-4A50-A5A9-86E7C65EBE97}.Release 2022|x64.Build.0 = Release 2022|x64
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Debug 2020|x64.ActiveCfg = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Debug 2020|x64.Build.0 = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Debug 2022|x64.ActiveCfg = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Debug 2022|x64.Build.0 = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Release 2021|x64.ActiveCfg = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Release 2021|x64.Build.0 = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Release 2020|x64.ActiveCfg = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Release 2020|x64.Build.0 = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Release 2022|x64.ActiveCfg = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Release 2022|x64.Build.0 = Debug|Any CPU
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Debug 2021|x64.ActiveCfg = Debug 2021|x64
+		{F26B4185-76D5-4201-BB2C-42E34F3F00D7}.Debug 2021|x64.Build.0 = Debug 2021|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
