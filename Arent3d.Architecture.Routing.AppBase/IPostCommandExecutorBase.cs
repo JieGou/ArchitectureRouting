@@ -8,7 +8,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     ApplySelectedFromtToChangesCommand,
   }
   
-  public interface IPostCommandBase
+  public interface IPostCommandExecutorBase
   {
     void ApplyPostCommand(UIApplication app,PostCommandType postCommandType) ;
   }
