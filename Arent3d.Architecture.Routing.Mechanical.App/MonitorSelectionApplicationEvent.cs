@@ -1,16 +1,10 @@
-﻿using System.Collections.Generic ;
-using System.Diagnostics ;
-using System.Linq ;
-using System.Windows.Controls.Ribbon ;
+﻿using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit.I18n ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB.Events ;
-using Autodesk.Revit.DB ;
 using Autodesk.Windows ;
 using RibbonTab = Autodesk.Windows.RibbonTab ;
-using TaskDialog = Autodesk.Revit.UI.TaskDialog ;
 
-namespace Arent3d.Architecture.Routing.AppBase
+namespace Arent3d.Architecture.Routing.Mechanical.App
 {
   internal static class MonitorSelectionApplicationEvent
   {
