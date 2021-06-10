@@ -12,10 +12,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     {
       switch ( postCommandType ) {
         case PostCommandType.ChangeRouteNameCommand :
-          app.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
+          //app.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
           break;
         case PostCommandType.ApplySelectedFromtToChangesCommand :
-          app.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
+          //app.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
           break;
       }
     }

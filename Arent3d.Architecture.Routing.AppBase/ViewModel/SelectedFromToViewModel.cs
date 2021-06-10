@@ -93,7 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         AvoidType = avoidType ;
         
-        UiDoc.Application.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
+        //UiDoc.Application.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
         return true ;
       }
       else {

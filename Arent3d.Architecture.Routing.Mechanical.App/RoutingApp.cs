@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
   /// <summary>
   /// Entry point of auto routing application. This class calls UI initializers.
   /// </summary>
-  [Revit.RevitAddin( AppInfo.ApplicationGuid )]
+  [RevitAddin( AppInfo.ApplicationGuid )]
   [DisplayName( AppInfo.ApplicationName )]
   public class RoutingApp : ExternalApplicationBase
   {

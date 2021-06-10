@@ -129,10 +129,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Commands\Enabler" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Resource Include="resources\DeleteAllFrom-To.png" />
     <Resource Include="resources\DeleteAllPS.png" />
     <Resource Include="resources\DeleteFrom-To.png" />

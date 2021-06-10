@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       }
       {
         var monitorPanel = tab.CreateRibbonPanel( MonitorPanel.Key, ToDisplayName( MonitorPanel.TitleKey ) ) ;
-        _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.Mechanical.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
+        _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.Electrical.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
 
       _registerFromToTreeCommand = new RegisterFromToTreeCommand(application, _dpid) ;

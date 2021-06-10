@@ -4,7 +4,7 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Input ;
-using Arent3d.Architecture.Routing.AppBase.Manager;
+//using Arent3d.Architecture.Routing.AppBase.Manager;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
@@ -424,7 +424,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         else {
           selectedItem.IsEditing = false ;
           selectedItem.ItemTypeName = tb.Text ;
-          UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
+          //UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
         }
       }
     }
@@ -473,7 +473,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       else {
         selectedItem.IsEditing = false ;
         selectedItem.ItemTypeName = tb.Text ;
-        UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
+        //UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
       }
     }
   }

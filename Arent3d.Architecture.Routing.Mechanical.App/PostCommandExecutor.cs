@@ -6,7 +6,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App
 {
-  public class PostCommandExecutor : IPostCommandBase
+  public class PostCommandExecutor : IPostCommandExecutorBase
   {
     public void ApplyPostCommand( UIApplication app, PostCommandType postCommandType )
     {
