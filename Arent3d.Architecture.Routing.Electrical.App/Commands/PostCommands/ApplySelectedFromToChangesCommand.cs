@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.PostCommands
   [RevitAddin( Guid )]
   [DisplayName( "Apply Selected Electrical From-To Changes" )]
   [Transaction( TransactionMode.Manual )]
-  public class ApplySelectedFromToChangesCommand : ApplySelectedFromToChangesCommandBase, IExternalCommand
+  public class ApplySelectedFromToChangesCommand : ApplySelectedFromToChangesCommandBase
   {
     private const string Guid = "C21F26D7-B7DD-4612-9341-3B69A9C53664" ;
   }

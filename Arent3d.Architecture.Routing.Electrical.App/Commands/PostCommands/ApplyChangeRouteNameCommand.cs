@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.PostCommands
     [RevitAddin( Guid )]
     [DisplayName( "Change RouteName of Electrical Route" )]
     [Transaction( TransactionMode.Manual )]
-    public class ApplyChangeRouteNameCommand : ApplyChangeRouteNameCommandBase, IExternalCommand
+    public class ApplyChangeRouteNameCommand : ApplyChangeRouteNameCommandBase
     { 
         private const string Guid = "1FCA462D-60E7-4293-8B55-47D1CBF49792";
     }
