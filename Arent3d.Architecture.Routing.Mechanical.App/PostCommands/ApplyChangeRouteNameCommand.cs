@@ -1,18 +1,12 @@
 ﻿using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using Arent3d.Revit;
 using Arent3d.Revit.I18n;
-using Arent3d.Revit.UI;
-using Arent3d.Revit.UI.Forms;
-using Arent3d.Utility;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI ;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
 {
@@ -21,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
     [Transaction( TransactionMode.Manual )]
     public class ApplyChangeRouteNameCommand : IExternalCommand
     {
-        private const string Guid = "CB41CB80-18CF-494F-AA17-C18512246770";
+        private const string Guid = "5E16E5C4-0244-4259-B788-52D84C1E954F";
         public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
         {
             var uiDocument = commandData.Application.ActiveUIDocument;

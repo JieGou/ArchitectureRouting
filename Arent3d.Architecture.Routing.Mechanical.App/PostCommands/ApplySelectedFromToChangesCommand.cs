@@ -14,13 +14,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
   [Transaction( TransactionMode.Manual )]
   public class ApplySelectedFromToChangesCommand : Routing.RoutingCommandBase
   {
-    private const string Guid = "1F8C08ED-F2DB-43B7-947A-C5072B2DA743" ;
+    private const string Guid = "1ED7E7D1-57F0-45EB-BDB7-29762A3F0963" ;
 
-    protected override string GetTransactionNameKey() =>
-      "TransactionName.Commands.PostCommands.ApplySelectedFromToChangesCommand" ;
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.PostCommands.ApplySelectedFromToChangesCommand" ;
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>?
-      GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
       if ( SelectedFromToViewModel.PropertySourceType is { } propertySource ) {
         var route = propertySource.TargetRoute ;
