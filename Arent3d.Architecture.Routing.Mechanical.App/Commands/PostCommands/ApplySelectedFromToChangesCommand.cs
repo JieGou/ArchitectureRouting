@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.ComponentModel ;
+using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
@@ -7,12 +9,12 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.UI ;
 
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
+namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.PostCommands
 {
   [RevitAddin( Guid )]
   [DisplayName( "Apply Selected From-To Changes" )]
   [Transaction( TransactionMode.Manual )]
-  public class ApplySelectedFromToChangesCommand : Routing.RoutingCommandBase
+  public class ApplySelectedFromToChangesCommand : RoutingCommandBase
   {
     private const string Guid = "1ED7E7D1-57F0-45EB-BDB7-29762A3F0963" ;
 
