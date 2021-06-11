@@ -15,7 +15,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     protected RegisterFromToTreeCommandBase( UIControlledApplication application, Guid dpId, IPostCommandExecutorBase postCommandExecutor )
     {
-      CreateFromToTreeUiManager( application, dpId, postCommandExecutor ) ;
     }
 
     /// <summary>
