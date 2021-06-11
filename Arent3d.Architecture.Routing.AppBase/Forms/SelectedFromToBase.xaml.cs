@@ -7,6 +7,8 @@ using System.Collections.ObjectModel ;
 using System.Configuration ;
 using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
+using System.Windows.Media ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
 using Autodesk.Revit.UI ;
@@ -55,6 +57,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public AvoidType AvoidTypeKey { get ; set ; }
     public AvoidType AvoidTypeOrgKey { get ; set ; }
 
+    public FromToTree? ParentFromToTree { get ; set ; }
+    
+
     public Dictionary<AvoidType, string> AvoidTypes { get ; } = new Dictionary<AvoidType, string>
     {
       [ AvoidType.Whichever ] = "Dialog.Forms.SelectedFromToBase.ProcessConstraints.None".GetAppStringByKeyOrDefault( "Whichever" ), [ AvoidType.NoAvoid ] = "Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoPocket".GetAppStringByKeyOrDefault( "Don't avoid From-To" ), [ AvoidType.AvoidAbove ] = "Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoDrainPocket".GetAppStringByKeyOrDefault( "Avoid on From-To" ), [ AvoidType.AvoidBelow ] = "Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket".GetAppStringByKeyOrDefault( "Avoid below From-To" ),
@@ -77,11 +82,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public static readonly DependencyProperty IsEnableSystemTypeProperty = DependencyProperty.Register( "IsEnableSystemType", typeof( bool ), typeof( SelectedFromToBase ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty IsEnableCurveTypeProperty = DependencyProperty.Register( "IsEnableCurveType", typeof( bool ), typeof( SelectedFromToBase ), new PropertyMetadata( true ) ) ;
-
+    
+    
     public SelectedFromToBase()
     {
       InitializeComponent() ;
-
+      
       Diameter = null ;
       SystemType = null ;
       CurveType = null ;
@@ -95,7 +101,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SystemTypes = new ObservableCollection<MEPSystemType>() ;
       CurveTypes = new ObservableCollection<MEPCurveType>() ;
     }
-
+    
     /// <summary>
     /// Get LableName from CurveType
     /// </summary>
@@ -378,11 +384,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
         MessageBoxResult result = MessageBox.Show( "Dialog.Forms.SelectedFromToBase.ChangeFromTo".GetAppStringByKeyOrDefault( "Do you want to change the From-To information?&#xA;If you change it, it will be automatically re-routed." ), "", MessageBoxButton.YesNo ) ;
         if ( result == MessageBoxResult.Yes ) {
-          SelectedFromToViewModel.ApplySelectedChanges( Diameters[DiameterComboBox.SelectedIndex], SystemTypes[SystemTypeComboBox.SelectedIndex], CurveTypes[CurveTypeComboBox.SelectedIndex] , CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey ) ;
+          SelectedFromToViewModel.ApplySelectedChanges( Diameters[DiameterComboBox.SelectedIndex], SystemTypes[SystemTypeComboBox.SelectedIndex], CurveTypes[CurveTypeComboBox.SelectedIndex] , CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey, ParentFromToTree?.PostCommandExecutor ) ;
         }
       }
       else {
-        SelectedFromToViewModel.ApplySelectedChanges( Diameters[DiameterComboBox.SelectedIndex], SystemTypes[SystemTypeComboBox.SelectedIndex], CurveTypes[CurveTypeComboBox.SelectedIndex], CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey ) ;
+        SelectedFromToViewModel.ApplySelectedChanges( Diameters[DiameterComboBox.SelectedIndex], SystemTypes[SystemTypeComboBox.SelectedIndex], CurveTypes[CurveTypeComboBox.SelectedIndex], CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey, ParentFromToTree?.PostCommandExecutor ) ;
       }
     }
 

@@ -4,6 +4,7 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Input ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 //using Arent3d.Architecture.Routing.AppBase.Manager;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -21,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static UIDocument? UiDoc { get ; set ; }
     private static IReadOnlyCollection<Route>? AllRoutes { get ; set ; }
 
-    private SortedDictionary<string, TreeViewItem>? ItemDictionary { get ; set ; }
+    private SortedDictionary<string, TreeViewItem>? ItemDictionary { get ; }
 
     private bool IsLeftMouseClick { get ; set ; }
 
@@ -33,14 +34,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private bool IsPassPointVisibility { get ; set ; }
 
-    public string CoordinatesX { get ; set ; }
+    public string CoordinatesX { get ; }
 
-    public string CoordinatesY { get ; set ; }
+    public string CoordinatesY { get ;  }
 
-    public string CoordinatesZ { get ; set ; }
+    public string CoordinatesZ { get ;  }
+    
+    public IPostCommandExecutorBase PostCommandExecutor { get ; }
+    
 
-
-    public FromToTree()
+    public FromToTree(IPostCommandExecutorBase postCommandExecutor)
     {
       this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
       this.CoordinatesX = "X1" ;
@@ -48,6 +51,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.CoordinatesZ = "Z1" ;
       InitializeComponent() ;
       ItemDictionary = new SortedDictionary<string, TreeViewItem>() ;
+      PostCommandExecutor = postCommandExecutor ;
+      SelectedFromTo.ParentFromToTree = this ;
     }
 
 
@@ -93,6 +98,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       FromToTreeView.DataContext = fromToVm ;
 
       FromToTreeView.ItemsSource = fromToVm.FromToItems ;
+      
+      
     }
 
 
@@ -424,7 +431,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         else {
           selectedItem.IsEditing = false ;
           selectedItem.ItemTypeName = tb.Text ;
-          //UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
+          if ( SelectedFromToViewModel.UiApp is { } app ) {
+            PostCommandExecutor.ChangeRouteNameCommand(app);
+          }
         }
       }
     }
@@ -473,7 +482,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       else {
         selectedItem.IsEditing = false ;
         selectedItem.ItemTypeName = tb.Text ;
-        //UiDoc?.Application.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
+        if ( SelectedFromToViewModel.UiApp is { } app ) {
+          PostCommandExecutor.ChangeRouteNameCommand(app);
+        }
       }
     }
   }

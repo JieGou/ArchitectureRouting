@@ -3,6 +3,7 @@ using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
@@ -40,6 +41,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     //Direct
     public static FromToItem? FromToItem { get; set; }
+    
+    public static UIApplication? UiApp { get ; set ; }
 
 
     static SelectedFromToViewModel()
@@ -73,7 +76,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     /// <param name="selectedSystemType"></param>
     /// <param name="selectedDirect"></param>
     /// <returns></returns>
-    public static bool ApplySelectedChanges( double selectedDiameter, MEPSystemType selectedSystemType, MEPCurveType selectedCurveType, bool? selectedDirect, bool? heightSetting, double? fixedHeight, AvoidType avoidType )
+    public static bool ApplySelectedChanges( double selectedDiameter, MEPSystemType selectedSystemType, MEPCurveType selectedCurveType, bool? selectedDirect, bool? heightSetting, double? fixedHeight, AvoidType avoidType, IPostCommandExecutorBase? postCommandExecutor )
     {
       if ( UiDoc != null ) {
         SelectedDiameter = selectedDiameter.MillimetersToRevitUnits() ;
@@ -93,7 +96,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         AvoidType = avoidType ;
         
-        //UiDoc.Application.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
+        if ( UiApp is { } app ) {
+          postCommandExecutor?.ApplySelectedFromToChangesCommand(app);
+        }
         return true ;
       }
       else {
