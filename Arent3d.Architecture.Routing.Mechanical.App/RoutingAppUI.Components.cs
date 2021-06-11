@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
     private readonly RibbonButton _eraseAllRacksCommandButton ;
-    private readonly RibbonButton _rackGuidCommanddButton;
+    private readonly RibbonButton _rackGuidCommandButton;
 
     private readonly RibbonButton _monitorSelectionCommandButton ;
 
@@ -85,14 +85,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         _importRacksCommandButton = rackPanel.AddButton<ImportRacksCommand>() ;
         _exportRacksCommandButton = rackPanel.AddButton<ExportRacksCommand>() ;
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
-        _rackGuidCommanddButton = rackPanel.AddButton<RackGuidCommand>();
+        _rackGuidCommandButton = rackPanel.AddButton<RackGuidCommand>();
       }
       {
         var monitorPanel = tab.CreateRibbonPanel( MonitorPanel.Key, ToDisplayName( MonitorPanel.TitleKey ) ) ;
         _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.Mechanical.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
 
-      _registerFromToTreeCommand = new RegisterFromToTreeCommand(application, _dpid) ;
+      _registerFromToTreeCommand = new RegisterFromToTreeCommand(application, _dpid, new PostCommandExecutor()) ;
 
       application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters;
       application.ControlledApplication.ApplicationInitialized += new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ) ;
@@ -128,7 +128,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
       _eraseAllRacksCommandButton.Enabled = false ;
-      _rackGuidCommanddButton.Enabled = false;
+      _rackGuidCommandButton.Enabled = false;
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
@@ -161,12 +161,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
-      _rackGuidCommanddButton.Enabled = setupIsDone;
+      _rackGuidCommandButton.Enabled = setupIsDone;
     }
 
     private void DockablePaneRegisters( object sender, ApplicationInitializedEventArgs e )
     {
-      _registerFromToTreeCommand.Execute( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
+      _registerFromToTreeCommand.Initialize( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
     }
   }
 }

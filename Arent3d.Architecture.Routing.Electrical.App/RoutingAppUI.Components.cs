@@ -90,7 +90,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.Electrical.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
 
-      _registerFromToTreeCommand = new RegisterFromToTreeCommand(application, _dpid) ;
+      _registerFromToTreeCommand = new RegisterFromToTreeCommand(application, _dpid, new PostCommandExecutor()) ;
 
       application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters;
       application.ControlledApplication.ApplicationInitialized += new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ) ;
@@ -164,7 +164,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
     private void DockablePaneRegisters( object sender, ApplicationInitializedEventArgs e )
     {
-      _registerFromToTreeCommand.Execute( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
+      _registerFromToTreeCommand.Initialize( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
     }
   }
 }

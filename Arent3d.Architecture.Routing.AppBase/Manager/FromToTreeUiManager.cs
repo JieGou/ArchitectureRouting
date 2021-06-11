@@ -14,12 +14,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public DockablePaneId DpId { get ; }
     public DockablePane? Dockable{ get ; set ; }
     
+    public IPostCommandExecutorBase PostCommandExecutor { get ; }
+    
 
-    public FromToTreeUiManager(UIControlledApplication uiControlledApplication, Guid dpId)
+    public FromToTreeUiManager(UIControlledApplication uiControlledApplication, Guid dpId, IPostCommandExecutorBase postCommandExecutor)
     {
       FromToTreeView = new FromToTree() ;
       UiControlledApplication = uiControlledApplication ;
       DpId = new DockablePaneId( dpId ) ;
+      PostCommandExecutor = postCommandExecutor ;
       InitializeDockablePane();
       // subscribe DockableFrameVisibilityChanged event
       uiControlledApplication.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>(UIControlledApplication_DockableVisibilityChanged) ;
@@ -34,7 +37,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     {
       DockablePaneProviderData data = new DockablePaneProviderData { FrameworkElement = FromToTreeView as FrameworkElement, InitialState = new DockablePaneState { DockPosition = DockPosition.Tabbed, TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser } } ;
       // register dockable pane
-      UiControlledApplication.RegisterDockablePane( DpId, "From-To Tree", FromToTreeView as IDockablePaneProvider) ;
+      if ( !DockablePane.PaneIsRegistered(DpId)){
+        UiControlledApplication.RegisterDockablePane( DpId, "From-To Tree", FromToTreeView as IDockablePaneProvider) ;
+      }
     }
     
     /// <summary>

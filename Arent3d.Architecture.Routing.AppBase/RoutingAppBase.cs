@@ -1,7 +1,6 @@
 using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Reflection ;
-using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Revit ;
@@ -11,20 +10,13 @@ using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
 
-namespace Arent3d.Architecture.Routing.Electrical.App
+namespace Arent3d.Architecture.Routing.AppBase
 {
   /// <summary>
   /// Entry point of auto routing application. This class calls UI initializers.
   /// </summary>
-  [RevitAddin( AppInfo.ApplicationGuid )]
-  [DisplayName( AppInfo.ApplicationName )]
-  internal class RoutingApp : RoutingAppBase
+  public abstract class RoutingAppBase : ExternalApplicationBase
   {
-    private static FromToTreeManager? _fromToTreeManager = null ;
-
-    public static FromToTreeManager FromToTreeManager => _fromToTreeManager ??= new FromToTreeManager() ;
-      
-    
     protected override string GetLanguageDirectoryPath()
     {
       return GetDefaultLanguageDirectoryPath( Assembly.GetExecutingAssembly() ) ;
@@ -32,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
     protected override IAppUIBase? CreateAppUI( UIControlledApplication application )
     {
-      return RoutingAppUI.Create( application ) ;
+      return null ;
     }
 
     protected override void RegisterEvents( UIControlledApplication application )
@@ -46,7 +38,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     protected override void OnDocumentListenStarted( Document document )
     {
       DocumentMapper.Register( document ) ;
-      FromToTreeManager.OnDocumentOpened() ;
     }
 
     protected override void OnDocumentListenFinished( Document document )
@@ -56,18 +47,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
     protected override void OnDocumentChanged( Document document, DocumentChangedEventArgs e )
     {
-      FromToTreeManager.OnDocumentChanged( e ) ;
     }
 
     protected override void OnApplicationViewChanged( Document document, ViewActivatedEventArgs e )
     {
-      FromToTreeManager.OnViewActivated( e ) ;
     }
 
     protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()
     {
       yield return new RoutingUpdateListener() ;
     }
-    
   }
 }
