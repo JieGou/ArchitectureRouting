@@ -7,9 +7,6 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.EraseSelectedRoutesCommand", DefaultString = "Delete\nFrom-To" )]
-  [Image( "resources/DeleteFrom-To.png" )]
   public abstract class EraseSelectedRoutesCommandBase : RoutingCommandBase
   {
     protected override IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )

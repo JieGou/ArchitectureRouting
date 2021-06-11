@@ -13,9 +13,6 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
 {
-  [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.PassPoint.InsertPassPointCommand", DefaultString = "Insert\nPass Point" )]
-  [Image( "resources/InsertPassPoint.png", ImageType = ImageType.Large )]
   public abstract class InsertPassPointCommandBase : RoutingCommandBase
   {
 

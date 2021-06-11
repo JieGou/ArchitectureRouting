@@ -8,10 +8,6 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  [Transaction( TransactionMode.Manual )]
-  [Regeneration( RegenerationOption.Manual )]
-  [DisplayNameKey( "App.Commands.Routing.ShowFromTreeCommand", DefaultString = "From-To\nTree" )]
-  [Image( "resources/MEP.ico" )]
   public abstract class ShowFromToTreeCommandBase : IExternalCommand
   {
     protected UIDocument? _uiDocument = null ;

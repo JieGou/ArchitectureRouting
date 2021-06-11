@@ -11,9 +11,6 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  [RevitAddin( Guid )]
-  [DisplayName( "App.Commands.Routing.ExportRoutingCommand" )]
-  [Transaction( TransactionMode.Manual )]
   public class ExportRoutingCommand : IExternalCommand
   {
     private const string Guid = "3CA15302-6558-4470-A389-11957BF3AC90";

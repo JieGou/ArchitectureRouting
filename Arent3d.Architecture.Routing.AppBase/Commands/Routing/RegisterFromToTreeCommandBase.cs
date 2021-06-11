@@ -9,8 +9,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   /// <summary>
   /// Register FromToTree
   /// </summary>
-  [Transaction( TransactionMode.Manual )]
-  [Regeneration( RegenerationOption.Manual )]
   public abstract class RegisterFromToTreeCommandBase : IExternalCommand
   {
     protected RegisterFromToTreeCommandBase( UIControlledApplication application, Guid dpId, IPostCommandExecutorBase postCommandExecutor )

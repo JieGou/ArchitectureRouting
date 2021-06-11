@@ -9,9 +9,6 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Initialization.InitializeCommand", DefaultString = "Initialize" )]
-  [Image( "resources/Initialize.png", ImageType = ImageType.Large )]
   public abstract class InitializeCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )

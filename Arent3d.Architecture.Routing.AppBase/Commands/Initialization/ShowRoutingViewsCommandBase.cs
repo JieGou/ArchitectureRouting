@@ -10,9 +10,6 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Initialization.ShowRoutingViewsCommand", DefaultString = "Plans" )]
-  [Image( "resources/Plans.png", ImageType = ImageType.Large )]
   public abstract class ShowRoutingViewsCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )

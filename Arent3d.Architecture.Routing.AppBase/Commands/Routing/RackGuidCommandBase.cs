@@ -5,9 +5,6 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-    [Transaction( TransactionMode.Manual )]
-    [DisplayNameKey( "App.Commands.Routing.RackGuidCommand", DefaultString = "Rack Guid\nPS" )]
-    [Image( "resources/PickFrom-To.png" )]
     public abstract class RackGuidCommandBase : IExternalCommand
     {
         // protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RackGuid";

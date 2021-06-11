@@ -13,11 +13,7 @@ using CsvHelper ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-
-    [RevitAddin( Guid )]
-    [DisplayName( "App.Commands.Routing.FileRoutingCommand" )]
-    [Transaction( TransactionMode.Manual )]
-    public class FileRoutingCommand : RoutingCommandBase
+  public class FileRoutingCommand : RoutingCommandBase
   {
         private const string Guid = "214A8983-B8B6-4B49-BFA2-2CE278779DB4";
         protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RoutingFromFile" ;

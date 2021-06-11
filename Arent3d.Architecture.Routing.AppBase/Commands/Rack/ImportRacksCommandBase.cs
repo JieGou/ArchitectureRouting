@@ -17,9 +17,6 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Rack
 {
-  [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Rack.ImportRacksCommand", DefaultString = "Import\nPS" )]
-  [Image( "resources/ImportPS.png" )]
   public abstract class ImportRacksCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )

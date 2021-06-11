@@ -14,9 +14,6 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Rack
 {
-  [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "App.Commands.Rack.ExportRacksCommand", DefaultString = "Export\nPS" )]
-  [Image( "resources/ExportPS.png" )]
   public abstract class ExportRacksCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
