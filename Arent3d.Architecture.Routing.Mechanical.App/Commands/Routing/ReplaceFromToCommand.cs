@@ -9,5 +9,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Image( "resources/ReplaceFromTo.png" )]
   public class ReplaceFromToCommand : ReplaceFromToCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.ReplaceFromTo" ;
   }
 }

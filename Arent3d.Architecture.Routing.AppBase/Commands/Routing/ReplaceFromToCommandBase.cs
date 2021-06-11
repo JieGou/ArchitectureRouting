@@ -16,8 +16,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   [Image( "resources/ReplaceFromTo.png" )]
   public abstract class ReplaceFromToCommandBase : RoutingCommandBase
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.ReplaceFromTo" ;
-
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
       var route = GetReplacingRoute( uiDocument ) ;

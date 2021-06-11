@@ -9,5 +9,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/MEP.ico" )]
   public class PickAndReRouteCommand : PickAndReRouteCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickAndReRoute" ;
   }
 }

@@ -9,5 +9,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/DeleteFrom-To.png" )]
   public class EraseSelectedRoutesCommand : EraseSelectedRoutesCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.EraseSelectedRoutes" ;
   }
 }

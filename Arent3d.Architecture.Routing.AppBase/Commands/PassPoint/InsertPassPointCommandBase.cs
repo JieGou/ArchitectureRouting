@@ -18,7 +18,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
   [Image( "resources/InsertPassPoint.png", ImageType = ImageType.Large )]
   public abstract class InsertPassPointCommandBase : RoutingCommandBase
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.PassPoint.Insert" ;
 
     /// <summary>
     /// Collects from-to records to be auto-routed.

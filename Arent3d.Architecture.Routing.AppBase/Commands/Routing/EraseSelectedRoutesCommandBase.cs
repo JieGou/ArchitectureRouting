@@ -12,8 +12,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   [Image( "resources/DeleteFrom-To.png" )]
   public abstract class EraseSelectedRoutesCommandBase : RoutingCommandBase
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.EraseSelectedRoutes" ;
-
     protected override IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
       return GetSelectedRouteSegments( uiDocument ) ;

@@ -9,5 +9,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Image( "resources/RerouteAll.png" )]
   public class AllReRouteCommand : AllReRouteCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RerouteAll" ;
   }
 }

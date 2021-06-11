@@ -10,5 +10,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint
   [Image( "resources/InsertPassPoint.png", ImageType = ImageType.Large )]
   public class InsertPassPointCommand : InsertPassPointCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.PassPoint.Insert" ;
   }
 }

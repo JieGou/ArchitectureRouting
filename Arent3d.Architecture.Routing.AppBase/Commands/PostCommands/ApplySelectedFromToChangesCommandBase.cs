@@ -9,7 +9,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
 {
   public abstract class ApplySelectedFromToChangesCommandBase : RoutingCommandBase
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.PostCommands.ApplySelectedFromToChangesCommand" ;
 
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
