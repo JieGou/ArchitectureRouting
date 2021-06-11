@@ -128,25 +128,4 @@
     <PackageReference Include="NumericUpDown" Version="3.0.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Resource Include="resources\DeleteAllFrom-To.png" />
-    <Resource Include="resources\DeleteAllPS.png" />
-    <Resource Include="resources\DeleteFrom-To.png" />
-    <Resource Include="resources\ExportFromTo.png" />
-    <Resource Include="resources\ExportPS.png" />
-    <Resource Include="resources\From-ToWindow.png" />
-    <Resource Include="resources\ImportFromTo.png" />
-    <Resource Include="resources\ImportPS.png" />
-    <Resource Include="resources\Initialize-16.bmp" />
-    <Resource Include="resources\Initialize-32.bmp" />
-    <Resource Include="resources\Initialize.png" />
-    <Resource Include="resources\InsertBranchPoint.png" />
-    <Resource Include="resources\InsertPassPoint.png" />
-    <Resource Include="resources\MEP.ico" />
-    <Resource Include="resources\PickFrom-To.png" />
-    <Resource Include="resources\Plans.png" />
-    <Resource Include="resources\ReplaceFromTo.png" />
-    <Resource Include="resources\RerouteAll.png" />
-  </ItemGroup>
-
 </Project>
