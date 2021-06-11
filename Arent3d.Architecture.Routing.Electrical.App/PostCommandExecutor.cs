@@ -1,6 +1,4 @@
-﻿using System ;
-using System.Runtime.Remoting.Messaging ;
-using Arent3d.Architecture.Routing.AppBase ;
+﻿using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit.UI;
 using Autodesk.Revit.UI ;
 
@@ -8,16 +6,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 {
   public class PostCommandExecutor : IPostCommandExecutorBase
   {
-    public void ApplyPostCommand( UIApplication app, PostCommandType postCommandType )
-    {
-      switch ( postCommandType ) {
-        case PostCommandType.ChangeRouteNameCommand :
-          //app.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
-          break;
-        case PostCommandType.ApplySelectedFromtToChangesCommand :
-          //app.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
-          break;
-      }
+    public void ChangeRouteNameCommand(UIApplication? app)
+    { 
+      app?.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
     }
+
+    public void ApplySelectedFromToChangesCommand(UIApplication? app)
+    {
+      app?.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
+    }
+
   }
 }
