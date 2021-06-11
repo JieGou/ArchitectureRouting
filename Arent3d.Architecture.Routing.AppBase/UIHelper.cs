@@ -1,7 +1,9 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Windows ;
 using System.Windows.Controls ;
+using System.Windows.Media ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -69,6 +71,20 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       var closest = list.OrderBy(item => Math.Abs(value - item)).First();
       return list.IndexOf(closest);
+    }
+    
+    public static T? FindAncestor<T>(this DependencyObject depObj)
+      where T : DependencyObject
+    {
+      while (depObj != null)
+      {
+        if (depObj is T target)
+        {
+          return target;
+        }
+        depObj = VisualTreeHelper.GetParent(depObj);
+      }
+      return null;
     }
   }
 }
