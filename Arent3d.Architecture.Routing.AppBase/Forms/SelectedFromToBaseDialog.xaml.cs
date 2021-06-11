@@ -113,7 +113,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         private void SystemTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
         {
-            var test2 = SystemTypeComboBox.SelectedIndex ;
             if ( SystemType is { } systemType && SystemTypeComboBox.SelectedItem == null ) {
                 SystemTypeComboBox.SelectedIndex = SystemTypes.FindIndex( s => s.Name == systemType.Name );
             }

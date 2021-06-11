@@ -2,6 +2,7 @@
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -39,6 +40,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     {
       var fromToManager = RoutingApp.FromToTreeManager ;
       fromToManager.UiApp = uiApplication ;
+      SelectedFromToViewModel.UiApp = uiApplication ;
 
       //Initialize FromToTreeView when open directly rvt file
       if ( fromToManager.FromToTreeUiManager is { } fromToTreeUiManager && fromToManager.UiApp.ActiveUIDocument != null ) {
@@ -55,7 +57,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var fromToTreeUiManager = new FromToTreeUiManager( application, dpId, postCommandExecutor ) ;
       
       RoutingApp.FromToTreeManager.FromToTreeUiManager = fromToTreeUiManager ;
-      var test = RoutingApp.FromToTreeManager ;
     }
   }
 }

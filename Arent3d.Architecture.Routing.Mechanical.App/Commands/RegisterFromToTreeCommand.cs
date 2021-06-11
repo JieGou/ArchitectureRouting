@@ -55,7 +55,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var fromToTreeUiManager = new FromToTreeUiManager( application, dpId, postCommandExecutor ) ;
       
       RoutingApp.FromToTreeManager.FromToTreeUiManager = fromToTreeUiManager ;
-      var test = RoutingApp.FromToTreeManager ;
     }
   }
 }
