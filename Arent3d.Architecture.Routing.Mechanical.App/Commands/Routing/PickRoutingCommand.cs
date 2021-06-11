@@ -9,5 +9,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Image( "resources/PickFrom-To.png" )]
   public class PickRoutingCommand : PickRoutingCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickRouting" ;
   }
 }

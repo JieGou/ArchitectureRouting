@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   [Image( "resources/PickFrom-To.png" )]
   public abstract class PickRoutingCommandBase : RoutingCommandBase
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickRouting" ;
+    
 
     /// <summary>
     /// Collects from-to records to be auto-routed.
