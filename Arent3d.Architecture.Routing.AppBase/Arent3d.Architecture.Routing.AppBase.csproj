@@ -128,4 +128,11 @@
     <PackageReference Include="NumericUpDown" Version="3.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="resources\InsertBranchPoint.png" />
+    <Resource Include="resources\InsertPassPoint.png" />
+    <Resource Include="resources\MEP.ico" />
+    <Resource Include="resources\PickFrom-To.png" />
+  </ItemGroup>
+
 </Project>
