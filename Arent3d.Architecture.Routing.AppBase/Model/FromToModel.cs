@@ -4,6 +4,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Model
@@ -27,9 +28,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
     /// return Hierarchical FromToData for TreeView
     /// </summary>
     /// <returns></returns>
-    public IReadOnlyCollection<FromToItem> GetFromtToData()
+    public IReadOnlyCollection<FromToItem> GetFromtToData(AddInType addInType)
     {
-      var allRoutes = UiDoc.Document.CollectRoutes().ToList() ;
+      var allRoutes = UiDoc.Document.CollectRoutes(addInType).ToList() ;
 
       var fromToItems = FromToItem.CreateRouteFromToItems( Doc, UiDoc, allRoutes ) ;
 

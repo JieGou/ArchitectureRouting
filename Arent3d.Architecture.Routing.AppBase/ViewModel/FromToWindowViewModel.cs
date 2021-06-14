@@ -12,10 +12,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class FromToWindowViewModel : ViewModelBase
   {
-    public static void ShowFromToWindow( UIDocument uiDocument )
+    public static void ShowFromToWindow( UIDocument uiDocument, AddInType addInType )
     {
       UiDoc = uiDocument ;
-      var allRoutes = uiDocument.Document.CollectRoutes() ;
+      var allRoutes = uiDocument.Document.CollectRoutes(addInType) ;
       if ( OpenedDialog != null ) {
         OpenedDialog.Close() ;
       }

@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       //Initialize FromToTreeView when open directly rvt file
       if ( fromToManager.FromToTreeUiManager is { } fromToTreeUiManager && fromToManager.UiApp.ActiveUIDocument != null ) {
-        fromToTreeUiManager.FromToTreeView.CustomInitiator( uiApplication ) ;
+        fromToTreeUiManager.FromToTreeView.CustomInitiator( uiApplication, AddInType.Electrical ) ;
         fromToTreeUiManager.Dockable = uiApplication.GetDockablePane( fromToTreeUiManager.DpId ) ;
         fromToTreeUiManager.ShowDockablePane() ;
       }

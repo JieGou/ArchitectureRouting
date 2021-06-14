@@ -11,6 +11,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Enabler
   {
     private ElementId? _previousSelectedRouteElementId = null ;
 
+    protected abstract AddInType GetAddInType() ;
+
     public bool IsCommandAvailable( UIApplication uiApp, CategorySet selectedCategories )
     {
       var uiDoc = uiApp.ActiveUIDocument ;
@@ -55,7 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Enabler
       }
 
       // if Connector selected
-      else if ( uiDoc.Document.CollectRoutes().SelectMany( r => r.GetAllConnectors() ).Any( c => uiDoc.Selection.GetElementIds().Contains( c.Owner.Id ) ) ) {
+      else if ( uiDoc.Document.CollectRoutes(GetAddInType()).SelectMany( r => r.GetAllConnectors() ).Any( c => uiDoc.Selection.GetElementIds().Contains( c.Owner.Id ) ) ) {
         selectedElementId = uiDoc.Selection.GetElementIds().FirstOrDefault() ;
         FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
         _previousSelectedRouteElementId = selectedElementId ;

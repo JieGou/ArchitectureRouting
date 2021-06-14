@@ -570,9 +570,16 @@ namespace Arent3d.Architecture.Routing
       return value.Split( '|' ).Any( s => int.TryParse( s, out var id ) && id == targetId ) ;
     }
 
-    public static IEnumerable<Route> CollectRoutes( this Document document )
+    public static IEnumerable<Route> CollectRoutes( this Document document, AddInType addInType )
     {
-      return document.GetAllStorables<Route>() ;
+      return addInType switch
+      {
+        AddInType.Electrical => document.GetAllStorables<Route>().Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Electrical ),
+        AddInType.Mechanical => document.GetAllStorables<Route>().Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Mechanical ),
+        AddInType.Undefined => document.GetAllStorables<Route>().Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Undefined ),
+        _ => document.GetAllStorables<Route>().Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Undefined )
+      } ;
+
     }
 
     public static IEnumerable<IEndPoint> GetNearestEndPoints( this Element element, bool isFrom )

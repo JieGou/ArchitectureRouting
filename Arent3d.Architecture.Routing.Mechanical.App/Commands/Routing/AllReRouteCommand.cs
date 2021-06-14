@@ -10,5 +10,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   public class AllReRouteCommand : AllReRouteCommandBase
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RerouteAll" ;
+    protected override AddInType GetAddInType()
+    {
+      return AddInType.Mechanical;
+    }
   }
 }

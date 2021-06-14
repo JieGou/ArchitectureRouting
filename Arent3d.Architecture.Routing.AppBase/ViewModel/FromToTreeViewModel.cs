@@ -23,9 +23,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     /// <summary>
     /// set FromToItems to create TreeView
     /// </summary>
-    public void SetFromToItems()
+    public void SetFromToItems(AddInType addInType)
     {
-      FromToItems = FromToModel?.GetFromtToData() ;
+      FromToItems = FromToModel?.GetFromtToData(addInType) ;
     }
 
     public static void GetSelectedElementId( ElementId? elementId )

@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
     protected override void OnDocumentListenStarted( Document document )
     {
       DocumentMapper.Register( document ) ;
-      FromToTreeManager.OnDocumentOpened() ;
+      FromToTreeManager.OnDocumentOpened(AddInType.Mechanical) ;
     }
 
     protected override void OnDocumentListenFinished( Document document )
@@ -54,12 +54,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
     protected override void OnDocumentChanged( Document document, DocumentChangedEventArgs e )
     {
-      FromToTreeManager.OnDocumentChanged( e ) ;
+      FromToTreeManager.OnDocumentChanged( e, AddInType.Mechanical ) ;
     }
 
     protected override void OnApplicationViewChanged( Document document, ViewActivatedEventArgs e )
     {
-      FromToTreeManager.OnViewActivated( e ) ;
+      FromToTreeManager.OnViewActivated( e, AddInType.Mechanical ) ;
     }
 
     protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()

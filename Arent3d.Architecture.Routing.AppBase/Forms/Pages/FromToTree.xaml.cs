@@ -77,23 +77,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// initialize page
     /// </summary>
     /// <param name="uiApplication"></param>
-    public void CustomInitiator( UIApplication uiApplication )
+    public void CustomInitiator( UIApplication uiApplication, AddInType addInType )
     {
       Doc = uiApplication.ActiveUIDocument.Document ;
       UiDoc = uiApplication.ActiveUIDocument ;
-      AllRoutes = UiDoc.Document.CollectRoutes().ToList() ;
+      AllRoutes = UiDoc.Document.CollectRoutes(addInType).ToList() ;
       // call the treeview display method
-      DisplayTreeViewItem( uiApplication, AllRoutes ) ;
+      DisplayTreeViewItem( uiApplication, addInType ) ;
       IsLeftMouseClick = false ;
     }
 
-    private void DisplayTreeViewItem( UIApplication uiApp, IReadOnlyCollection<Route> allRoutes )
+    private void DisplayTreeViewItem( UIApplication uiApp, AddInType addInType )
     {
       ClearSelection();
       var fromToVm = new FromToTreeViewModel() ;
 
       fromToVm.FromToModel = new FromToModel( uiApp ) ;
-      fromToVm.SetFromToItems() ;
+      fromToVm.SetFromToItems(addInType) ;
 
       FromToTreeView.DataContext = fromToVm ;
 
