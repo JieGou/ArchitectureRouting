@@ -17,9 +17,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public IPostCommandExecutorBase PostCommandExecutor { get ; }
     
 
-    public FromToTreeUiManager(UIControlledApplication uiControlledApplication, Guid dpId, IPostCommandExecutorBase postCommandExecutor)
+    public FromToTreeUiManager(UIControlledApplication uiControlledApplication, Guid dpId, string fromToTreeTitle, IPostCommandExecutorBase postCommandExecutor)
     {
-      FromToTreeView = new FromToTree(postCommandExecutor) ;
+      FromToTreeView = new FromToTree(fromToTreeTitle, postCommandExecutor) ;
       UiControlledApplication = uiControlledApplication ;
       DpId = new DockablePaneId( dpId ) ;
       PostCommandExecutor = postCommandExecutor ;

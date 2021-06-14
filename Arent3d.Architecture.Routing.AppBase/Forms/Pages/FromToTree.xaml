@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Orientation="Horizontal" Width="Auto" Height="Auto">
-            <Label Content="From-To View" FontSize="20" />
+            <Label Content="{Binding TitleLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" FontSize="20" />
         </StackPanel>
 
 
