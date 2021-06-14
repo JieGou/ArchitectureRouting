@@ -54,6 +54,8 @@ namespace Arent3d.Architecture.Routing
     public abstract bool IsCompatibleTo( MEPSystemType type ) ;
 
     public abstract bool IsCompatibleTo( MEPSystemClassificationInfo another ) ;
+    
+    public abstract AddInType AddInType { get ; }
 
     public bool IsCompatibleTo( Connector connector )
     {
@@ -110,11 +112,14 @@ namespace Arent3d.Architecture.Routing
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is PipeSystemClassificationInfo ps && _systemType == ps._systemType ;
 
+      public override AddInType AddInType => AddInType.Mechanical ;
+
       protected override bool HasCompatibleSystemType( Connector connector ) => connector.PipeSystemType == _systemType ;
 
 
       protected override string TypeName => PipeTypeName ;
       protected override string ValueName => _systemType.ToString() ;
+      
       public static PipeSystemClassificationInfo? DeserializeImpl( string s )
       {
         if ( false == Enum.TryParse( s, out PipeSystemType systemType ) ) return null ;
@@ -133,6 +138,8 @@ namespace Arent3d.Architecture.Routing
       public override bool IsCompatibleTo( MEPSystemType type ) => (int) type.SystemClassification == (int) _systemType ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is DuctSystemClassificationInfo ds && _systemType == ds._systemType ;
+      
+      public override AddInType AddInType => AddInType.Mechanical ;
 
       protected override bool HasCompatibleSystemType( Connector connector ) => connector.DuctSystemType == _systemType ;
 
@@ -157,6 +164,8 @@ namespace Arent3d.Architecture.Routing
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is ElectricalSystemClassificationInfo es && _systemType == es._systemType ;
 
+      public override AddInType AddInType => AddInType.Electrical ;
+      
       protected override bool HasCompatibleSystemType( Connector connector ) => connector.ElectricalSystemType == _systemType ;
 
       protected override string TypeName => ElectricalTypeName ;
@@ -178,6 +187,8 @@ namespace Arent3d.Architecture.Routing
 
       protected override bool HasCompatibleSystemType( Connector connector ) => true ;
 
+      public override AddInType AddInType => AddInType.Electrical ;
+      
       protected override string TypeName => CableTrayConduitTypeName ;
       protected override string ValueName => string.Empty ;
     }
@@ -191,6 +202,8 @@ namespace Arent3d.Architecture.Routing
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => false ;
 
       protected override bool HasCompatibleSystemType( Connector connector ) => false ;
+      
+      public override AddInType AddInType => AddInType.Undefined ;
 
       protected override string TypeName => throw new NotSupportedException() ;
       protected override string ValueName => throw new NotSupportedException() ;

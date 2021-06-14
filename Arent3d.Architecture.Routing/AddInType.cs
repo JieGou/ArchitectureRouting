@@ -3,6 +3,7 @@
   public enum AddInType
     {
       Electrical,
-      Mechanical
+      Mechanical,
+      Undefined
     }
   }
