@@ -40,7 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public string CoordinatesZ { get ;  }
     
-    public string TitleLabel { get ; init ; }
+    public string TitleLabel { get ; }
     
     public IPostCommandExecutorBase PostCommandExecutor { get ; }
     
