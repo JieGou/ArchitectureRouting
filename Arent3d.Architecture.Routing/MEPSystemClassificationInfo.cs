@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing
 
     public abstract Type? GetCurveTypeClass() ;
 
-    public abstract bool IsCompatibleTo( MEPSystemType type ) ;
+    public abstract bool IsCompatibleTo( MEPSystemType? type ) ;
 
     public abstract bool IsCompatibleTo( MEPSystemClassificationInfo another ) ;
     
@@ -62,6 +62,32 @@ namespace Arent3d.Architecture.Routing
       return ( connector.Domain == Domain ) && HasCompatibleSystemType( connector ) ;
     }
 
+    public bool HasSystemType()
+    {
+      return Domain switch
+      {
+        Domain.DomainUndefined => false,
+        Domain.DomainHvac => true,
+        Domain.DomainElectrical => true,
+        Domain.DomainPiping => true,
+        Domain.DomainCableTrayConduit => false,
+        _ => throw new ArgumentOutOfRangeException()
+      } ;
+    }
+
+    public bool HasStandardType()
+    {
+      return Domain switch
+      {
+        Domain.DomainUndefined => false,
+        Domain.DomainHvac => false,
+        Domain.DomainElectrical => false,
+        Domain.DomainPiping => false,
+        Domain.DomainCableTrayConduit => true,
+        _ => throw new ArgumentOutOfRangeException()
+      } ;
+    }
+    
     protected abstract bool HasCompatibleSystemType( Connector connector ) ;
 
     #region Serialize
@@ -108,7 +134,7 @@ namespace Arent3d.Architecture.Routing
       public override Domain Domain => Domain.DomainPiping ;
       public override Type? GetCurveTypeClass() => typeof( PipeType ) ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => (int) type.SystemClassification == (int) _systemType ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => type != null && (int) type.SystemClassification == (int) _systemType ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is PipeSystemClassificationInfo ps && _systemType == ps._systemType ;
 
@@ -135,7 +161,7 @@ namespace Arent3d.Architecture.Routing
 
       public DuctSystemClassificationInfo( DuctSystemType systemType ) => _systemType = systemType ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => (int) type.SystemClassification == (int) _systemType ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => type != null && (int) type.SystemClassification == (int) _systemType ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is DuctSystemClassificationInfo ds && _systemType == ds._systemType ;
       
@@ -160,7 +186,7 @@ namespace Arent3d.Architecture.Routing
       public override Domain Domain => Domain.DomainElectrical ;
       public override Type? GetCurveTypeClass() => null ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => (int) type.SystemClassification == (int) _systemType ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => type != null && (int) type.SystemClassification == (int) _systemType ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is ElectricalSystemClassificationInfo es && _systemType == es._systemType ;
 
@@ -181,11 +207,11 @@ namespace Arent3d.Architecture.Routing
       public override Domain Domain => Domain.DomainCableTrayConduit ;
       public override Type? GetCurveTypeClass() => typeof( ConduitType ) ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => false ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => false ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is CableTrayConduitSystemClassificationInfo ;
 
-      protected override bool HasCompatibleSystemType( Connector connector ) => true ;
+      protected override bool HasCompatibleSystemType( Connector connector ) => false ;
 
       public override AddInType AddInType => AddInType.Electrical ;
       
@@ -197,7 +223,7 @@ namespace Arent3d.Architecture.Routing
       public override Domain Domain => Domain.DomainUndefined ;
       public override Type? GetCurveTypeClass() => null ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => type.SystemClassification == MEPSystemClassification.UndefinedSystemClassification ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => type != null && type.SystemClassification == MEPSystemClassification.UndefinedSystemClassification ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => false ;
 
