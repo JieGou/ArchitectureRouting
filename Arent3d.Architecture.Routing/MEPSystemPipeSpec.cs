@@ -41,6 +41,6 @@ namespace Arent3d.Architecture.Routing
       return _sys.GetWeldMinDistance( diameter.Outside ) ;
     }
 
-    public string Name => _sys.MEPSystemType.Name ;
+    public string? Name => _sys.MEPSystemType?.Name ;
   }
 }
