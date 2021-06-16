@@ -98,7 +98,10 @@ namespace Arent3d.Architecture.Routing
       var fixedBopHeight = parser.GetDouble( 5 ) ;
       var avoidType = parser.GetEnum<AvoidType>( 6 ) ?? throw new InvalidOperationException() ;
       var classificationInfo = MEPSystemClassificationInfo.Deserialize( parser.GetString( 7 ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
-      var systemType = parser.GetElement<MEPSystemType>( 8, storedElement.Document ) ?? throw new InvalidOperationException() ;
+      MEPSystemType? systemType = null ;
+      if ( classificationInfo.HasSystemType() ) {
+        systemType = parser.GetElement<MEPSystemType>( 8, storedElement.Document ) ?? throw new InvalidOperationException() ;
+      }
 
       return new RouteSegment( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
     }
