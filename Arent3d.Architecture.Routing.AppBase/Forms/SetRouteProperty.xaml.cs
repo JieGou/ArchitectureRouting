@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             InitializeComponent();
         }
 
-        public void UpdateFromToParameters( IList<double>? diameters, IList<MEPSystemType>? systemTypes, IList<MEPCurveType>? curveTypes, MEPSystemType systemType, MEPCurveType curveType, double? diameter )
+        public void UpdateFromToParameters( IList<double>? diameters, IList<MEPSystemType>? systemTypes, IList<MEPCurveType>? curveTypes, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter )
         {
             SelectedFromToBaseDialog.UpdateFromToParameters( diameters, systemTypes, curveTypes );
 
@@ -57,8 +57,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         {
         }
 
-        public MEPSystemType GetSelectSystemType(  )
+        public MEPSystemType? GetSelectSystemType(  )
         {
+            if ( SelectedFromToBaseDialog.SystemTypeComboBox.SelectedIndex == -1 ) return null;
             return SelectedFromToBaseDialog.SystemTypes[ SelectedFromToBaseDialog.SystemTypeComboBox.SelectedIndex ];
         }
 

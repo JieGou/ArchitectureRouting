@@ -17,9 +17,10 @@ namespace Arent3d.Architecture.Routing
     public double DiameterTolerance { get ; }
     public double AngleTolerance { get ; }
 
-    public MEPSystemType MEPSystemType { get ; }
+    public MEPSystemType? MEPSystemType { get ; }
     public MEPSystem? MEPSystem { get ; }
     public MEPCurveType CurveType { get ; }
+    
 
     public RouteMEPSystem( Document document, SubRoute subRoute )
     {
@@ -124,7 +125,7 @@ namespace Arent3d.Architecture.Routing
     public static MEPSystemType? GetSystemType( Document document, Connector connector )
     {
       var systemClassification = GetSystemClassificationInfo( connector ) ;
-
+      
       return document.GetAllElements<MEPSystemType>().FirstOrDefault( systemClassification.IsCompatibleTo ) ;
     }
 
@@ -187,12 +188,12 @@ namespace Arent3d.Architecture.Routing
 
     #region Get MEPCurveType
 
-    public static MEPCurveType GetMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType systemType )
+    public static MEPCurveType GetMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType? systemType )
     {
       return GetBestForAllMEPCurveType( document, connectors, systemType )
              ?? throw new InvalidOperationException( $"Available {nameof( MEPCurveType )} is not found." ) ;
     }
-    private static MEPCurveType? GetBestForAllMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType systemType )
+    private static MEPCurveType? GetBestForAllMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType? systemType )
     {
       var diameterTolerance = document.Application.VertexTolerance ;
       Dictionary<int, CompatibilityPriority>? available = null ;

@@ -80,19 +80,25 @@ namespace Arent3d.Architecture.Routing
       RouteSegments.ForEach( segment => segment.SystemClassificationInfo = classificationInfo ) ;
     }
 
-    public MEPSystemType GetMEPSystemType()
+    public MEPSystemType? GetMEPSystemType()
     {
       return _routeSegments.Select( seg => seg.SystemType ).NonNull().FirstOrDefault() ?? GetDefaultSystemType() ;
     }
+
     public void SetMEPSystemType( MEPSystemType? systemType )
     {
       RouteSegments.ForEach( segment => segment.SystemType = systemType ) ;
     }
 
     private MEPSystemType? _defaultSystemType = null ;
-    public MEPSystemType GetDefaultSystemType()
+
+    private MEPSystemType? GetDefaultSystemType()
     {
-      return _defaultSystemType ??= Document.GetAllElements<MEPSystemType>().Where( GetSystemClassificationInfo().IsCompatibleTo ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      if ( GetSystemClassificationInfo().HasStandardType() ) {
+        return _defaultSystemType ??= Document.GetAllElements<MEPSystemType>().Where( GetSystemClassificationInfo().IsCompatibleTo ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      }
+      return null ;
+      
     }
 
     private MEPCurveType? _defaultCurveType = null ;
