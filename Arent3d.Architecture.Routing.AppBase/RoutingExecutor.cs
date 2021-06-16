@@ -114,6 +114,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         Domain.DomainHvac => true,
         Domain.DomainPiping => true,
+        Domain.DomainCableTrayConduit => true,
+        Domain.DomainElectrical => true,
         _ => false,
       } ;
     }
@@ -145,6 +147,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         Domain.DomainHvac => new HVacCollisionCheckTargetCollector( _document, routesInType ),
         Domain.DomainPiping => new PipingCollisionCheckTargetCollector( _document, routesInType ),
+        Domain.DomainCableTrayConduit => new CableTrayConduitCollisionCheckTargetCollector(_document, routesInType), //for testing
         _ => throw new InvalidOperationException(),
       } ;
     }
