@@ -104,7 +104,7 @@ namespace Arent3d.Architecture.Routing
       {
         Domain.DomainHvac => CreateDuct( startPos, endPos, routeMepSystem ),
         Domain.DomainPiping => CreatePipe( startPos, endPos, routeMepSystem ),
-        Domain.DomainCableTrayConduit => CreateCableTray( startPos, endPos, routeMepSystem ),
+        Domain.DomainCableTrayConduit => CreateCableTrayConduit( startPos, endPos, routeMepSystem ),
         Domain.DomainElectrical => throw new NotSupportedException(),
         _ => throw new InvalidOperationException(),
       } ;
@@ -131,7 +131,7 @@ namespace Arent3d.Architecture.Routing
 
     private MEPCurve CreateDuct( XYZ startPos, XYZ endPos, RouteMEPSystem routeMepSystem )
     {
-      var duct = Duct.Create( _document, routeMepSystem.MEPSystemType.Id, routeMepSystem.CurveType.Id, _level.Id, startPos, endPos ) ;
+      var duct = Duct.Create( _document, routeMepSystem.MEPSystemType?.Id, routeMepSystem.CurveType.Id, _level.Id, startPos, endPos ) ;
       if ( null != routeMepSystem.MEPSystem ) {
         duct.SetSystemType( routeMepSystem.MEPSystem.Id ) ;
       }
@@ -139,15 +139,15 @@ namespace Arent3d.Architecture.Routing
     }
     private MEPCurve CreatePipe( XYZ startPos, XYZ endPos, RouteMEPSystem routeMepSystem )
     {
-      var pipe = Pipe.Create( _document, routeMepSystem.MEPSystemType.Id, routeMepSystem.CurveType.Id, _level.Id, startPos, endPos ) ;
+      var pipe = Pipe.Create( _document, routeMepSystem.MEPSystemType?.Id, routeMepSystem.CurveType.Id, _level.Id, startPos, endPos ) ;
       if ( null != routeMepSystem.MEPSystem ) {
         pipe.SetSystemType( routeMepSystem.MEPSystem.Id ) ;
       }
       return pipe ;
     }
-    private MEPCurve CreateCableTray( XYZ startPos, XYZ endPos, RouteMEPSystem routeMepSystem )
+    private MEPCurve CreateCableTrayConduit( XYZ startPos, XYZ endPos, RouteMEPSystem routeMepSystem )
     {
-      return CableTray.Create( _document, routeMepSystem.CurveType.Id, startPos, endPos, _level.Id ) ;
+      return Conduit.Create( _document, routeMepSystem.CurveType.Id, startPos, endPos, _level.Id ) ;
     }
 
     private static Connector GetConnector( ConnectorManager connectorManager, XYZ position )
