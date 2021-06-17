@@ -22,9 +22,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickRouting" ;
 
-    protected override ConnectorPicker.IPickResult GetAddInTargetConnector( UIDocument uiDocument, string message, ConnectorPicker.IPickResult? firstPick )
+    protected override AddInType GetAddInType()
     {
-      return ConnectorPicker.GetConnector( uiDocument, message, firstPick, AddInType.Electrical ) ;
+      return AddInType.Electrical ;
     }
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )

@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class ReplaceFromToCommandBase : RoutingCommandBase
   {
+    protected abstract AddInType GetAddInType() ;
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
       var route = GetReplacingRoute( uiDocument ) ;
@@ -64,12 +65,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private IEndPoint PickNewEndPoint( UIDocument uiDocument, Route route, IEndPoint endPoint )
     {
       var fromPickResult = PickCommandUtil.PickResultFromAnother( route, endPoint ) ;
-      var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), fromPickResult ) ;
+      var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), fromPickResult, AddInType.Electrical ) ;//Implement after
       
       return PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
     }
 
-    private static Route GetReplacingRoute( UIDocument uiDocument )
+    private  Route GetReplacingRoute( UIDocument uiDocument )
     {
       return GetReplacingRouteFromCurrentSelection( uiDocument ) ?? PickReplacingRoute( uiDocument ) ;
     }
@@ -79,9 +80,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).UniqueOrDefault() ;
     }
 
-    private static Route PickReplacingRoute( UIDocument uiDocument )
+    private  Route PickReplacingRoute( UIDocument uiDocument )
     {
-      return PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.ReplaceFromTo.Pick".GetAppStringByKeyOrDefault( null ) ).Route ;
+      return PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.ReplaceFromTo.Pick".GetAppStringByKeyOrDefault( null ), GetAddInType() ).Route ;
     }
   }
 }

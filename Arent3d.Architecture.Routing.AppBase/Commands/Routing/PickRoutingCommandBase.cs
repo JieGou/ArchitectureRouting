@@ -18,6 +18,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PickRoutingCommandBase : RoutingCommandBase
   {
+    protected abstract AddInType GetAddInType() ;
+    
     /// <summary>
     /// Collects from-to records to be auto-routed.
     /// </summary>
@@ -32,10 +34,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var segments = UiThread.RevitUiDispatcher.Invoke( () =>
       {
         var document = uiDocument.Document ;
-        var fromPickResult = GetAddInTargetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null ) ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null,GetAddInType() ) ;
         var tempColor = uiDocument.SetTempColor( fromPickResult ) ;
         try {
-          var toPickResult = GetAddInTargetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult ) ;
+          var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
 
           return CreateNewSegmentList( document, fromPickResult, toPickResult ) ;
         }
@@ -46,9 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return segments ;
     }
-
-    protected abstract ConnectorPicker.IPickResult GetAddInTargetConnector( UIDocument uiDocument, string message, ConnectorPicker.IPickResult? firstPick ) ;
-
+    
     protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult ) ;
 
 
