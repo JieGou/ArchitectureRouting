@@ -1,10 +1,13 @@
 #if REVIT2019 || REVIT2020
+using System ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Revit
 {
   public class DisplayUnitType
   {
+    public static Type NativeType => typeof( Autodesk.Revit.DB.DisplayUnitType ) ;
+
     private readonly Autodesk.Revit.DB.DisplayUnitType _value ;
     private DisplayUnitType( Autodesk.Revit.DB.DisplayUnitType value ) => _value = value ;
 

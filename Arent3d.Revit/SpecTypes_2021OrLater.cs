@@ -1,4 +1,5 @@
 #if !(REVIT2019 || REVIT2020)
+using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Autodesk.Revit.DB ;
@@ -7,6 +8,8 @@ namespace Arent3d.Revit
 {
   public class SpecType
   {
+    public static Type NativeType => typeof( ForgeTypeId ) ;
+
     private readonly ForgeTypeId _value ;
     private SpecType( ForgeTypeId value ) => _value = value ;
 

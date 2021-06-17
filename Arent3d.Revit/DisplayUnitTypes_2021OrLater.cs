@@ -1,10 +1,13 @@
 #if ! (REVIT2019 || REVIT2020)
+using System ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Revit
 {
   public class DisplayUnitType
   {
+    public static Type NativeType => typeof( ForgeTypeId ) ;
+
     private readonly ForgeTypeId _value ;
     private DisplayUnitType( ForgeTypeId value ) => _value = value ;
 

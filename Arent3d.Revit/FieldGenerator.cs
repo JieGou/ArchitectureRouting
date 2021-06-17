@@ -1,5 +1,6 @@
 using System ;
 using System.Reflection ;
+using Arent3d.Revit.EntityFields ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 
@@ -87,11 +88,9 @@ namespace Arent3d.Revit
 
     public void SetMap<TKeyType, TValueType>( string fieldName, SpecType specType )
     {
-      if ( typeof( bool ) != typeof( TKeyType ) && typeof( byte ) != typeof( TKeyType ) && typeof( short ) != typeof( TKeyType ) && typeof( long ) != typeof( TKeyType ) && typeof( Guid ) != typeof( TKeyType ) && typeof( string ) != typeof( TKeyType ) && typeof( ElementId ) != typeof( TKeyType ) ) {
-        throw new InvalidOperationException( $"Type {typeof( TKeyType ).FullName} cannot be a key." ) ;
-      }
-
       var keyConverter = typeof( TKeyType ).GetStorableConverter() ?? throw new InvalidOperationException( $"Type {typeof( TKeyType ).FullName} is not acceptable." ) ;
+      if ( false == NativeFieldTypes.IsAcceptableForKey( keyConverter.GetNativeType() ) ) throw new InvalidOperationException( $"Type {typeof( TKeyType ).FullName} cannot be a key." ) ;
+
       var valueConverter = typeof( TValueType ).GetStorableConverter() ?? throw new InvalidOperationException( $"Type {typeof( TValueType ).FullName} is not acceptable." ) ;
       
       var field = _builder.AddMapField( fieldName, keyConverter.GetNativeType(), valueConverter.GetNativeType() ) ;
