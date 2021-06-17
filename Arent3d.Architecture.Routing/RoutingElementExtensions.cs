@@ -444,6 +444,14 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_FlexPipeCurves,
 
       BuiltInCategory.OST_MechanicalEquipment,  // pass point
+      
+      //Electrical
+      BuiltInCategory.OST_Conduit,
+      BuiltInCategory.OST_ConduitFitting,
+      BuiltInCategory.OST_ConduitRun,
+      BuiltInCategory.OST_CableTray,
+      BuiltInCategory.OST_ElectricalEquipment,
+      BuiltInCategory.OST_ElectricalFixtures
     } ;
 
     public static IEnumerable<TElement> GetAllElementsOfRoute<TElement>( this Document document ) where TElement : Element
