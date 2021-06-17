@@ -59,6 +59,7 @@ namespace Arent3d.Architecture.Routing
   {
     internal static readonly BuiltInCategory[] RoutingBuiltInCategorySet =
     {
+      //Mechanical
       BuiltInCategory.OST_DuctTerminal,
       BuiltInCategory.OST_DuctAccessory, 
       BuiltInCategory.OST_DuctFitting, 
@@ -75,6 +76,13 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_PipeCurves, 
       BuiltInCategory.OST_PlumbingFixtures, 
       BuiltInCategory.OST_Sprinklers,
+      //Electrical
+      BuiltInCategory.OST_Conduit,
+      BuiltInCategory.OST_ConduitFitting,
+      BuiltInCategory.OST_ConduitRun,
+      BuiltInCategory.OST_CableTray,
+      BuiltInCategory.OST_ElectricalEquipment,
+      BuiltInCategory.OST_ElectricalFixtures
     } ;
 
     internal static readonly BuiltInCategory[] PassPointBuiltInCategorySet = { BuiltInCategory.OST_MechanicalEquipment} ;
