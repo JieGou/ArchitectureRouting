@@ -94,7 +94,7 @@ namespace Arent3d.Architecture.Routing
 
     private MEPSystemType? GetDefaultSystemType()
     {
-      if ( GetSystemClassificationInfo().HasStandardType() ) {
+      if ( GetSystemClassificationInfo().HasSystemType() ) {
         return _defaultSystemType ??= Document.GetAllElements<MEPSystemType>().Where( GetSystemClassificationInfo().IsCompatibleTo ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       }
       return null ;
