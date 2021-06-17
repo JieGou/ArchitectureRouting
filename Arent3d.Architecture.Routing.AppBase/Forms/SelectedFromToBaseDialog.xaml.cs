@@ -245,12 +245,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 }
             }
 
+            SystemTypeComboBox.IsEnabled = false ;
             if ( systemTypes != null ) {
                 foreach ( var s in systemTypes ) {
                     SystemTypes.Add( s );
                 }
+                SystemTypeComboBox.IsEnabled = true ;
             }
-
+            
             if ( curveTypes != null ) {
                 foreach ( var c in curveTypes ) {
                     CurveTypes.Add( c );
