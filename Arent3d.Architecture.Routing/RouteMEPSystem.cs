@@ -288,7 +288,7 @@ namespace Arent3d.Architecture.Routing
 
       var nominalDiameter = connector.GetDiameter() ;
       
-      if ( type.GetType() != typeof( ConduitType ) ) {
+      if ( type is not ConduitType )  {
         if ( type.HasAnyNominalDiameter( nominalDiameter, diameterTolerance ) ) return new CompatibilityPriority( priorityType, 0 ) ;
       }
 

@@ -9,6 +9,7 @@ using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
@@ -18,6 +19,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   public class PickRoutingCommand : PickRoutingCommandBase
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickRouting" ;
+    protected override ConnectorPicker.IPickResult GetAddInTargetConnector( UIDocument uiDocument, string message, ConnectorPicker.IPickResult? firstPick )
+    {
+      return ConnectorPicker.GetConnector( uiDocument, message, firstPick, AddInType.Mechanical ) ;
+    }
+
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
       var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult ) ;
@@ -37,7 +43,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         systemType = subRoute1.Route.GetMEPSystemType() ;
         curveType = subRoute1.Route.GetDefaultCurveType() ;
         dblDiameter = subRoute1.GetDiameter() ;
-        //if ( classificationInfo is null || curveType is null ) return list ;
         var sv = SetDialog( document, classificationInfo, systemType, curveType, dblDiameter ) ;
         if ( false != sv.DialogResult ) {
           return CreateNewSegmentListForRoutePick( subRoute1, fromPickResult, toEndPoint, false, classificationInfo, sv ) ;
@@ -53,7 +58,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         systemType = subRoute2.Route.GetMEPSystemType() ;
         curveType = subRoute2.Route.GetDefaultCurveType() ;
         dblDiameter = subRoute2.GetDiameter() ;
-        //if ( classificationInfo is null || curveType is null ) return list ;
+ 
         var sv = SetDialog( document, classificationInfo, systemType, curveType, dblDiameter ) ;
         if ( false != sv.DialogResult ) {
           return CreateNewSegmentListForRoutePick( subRoute2, toPickResult, fromEndPoint, true, classificationInfo, sv ) ;

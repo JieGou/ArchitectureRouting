@@ -32,10 +32,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var segments = UiThread.RevitUiDispatcher.Invoke( () =>
       {
         var document = uiDocument.Document ;
-        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null ) ;
+        var fromPickResult = GetAddInTargetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null ) ;
         var tempColor = uiDocument.SetTempColor( fromPickResult ) ;
         try {
-          var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult ) ;
+          var toPickResult = GetAddInTargetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult ) ;
 
           return CreateNewSegmentList( document, fromPickResult, toPickResult ) ;
         }
@@ -47,117 +47,118 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return segments ;
     }
 
+    protected abstract ConnectorPicker.IPickResult GetAddInTargetConnector( UIDocument uiDocument, string message, ConnectorPicker.IPickResult? firstPick ) ;
+
     protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult ) ;
 
 
     protected static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide, MEPSystemClassificationInfo classificationInfo, SetRouteProperty setRouteProperty )
-      {
-        return CreateSubBranchRoute( subRoute, anotherEndPoint, anotherIndicatorIsFromSide, classificationInfo, setRouteProperty ) ;
+    {
+      return CreateSubBranchRoute( subRoute, anotherEndPoint, anotherIndicatorIsFromSide, classificationInfo, setRouteProperty ) ;
 
-        // on adding new segment into picked route.
-        //return AppendNewSegmentIntoPickedRoute( subRoute, routePickResult, anotherIndicator, anotherIndicatorIsFromSide ) ;
+      // on adding new segment into picked route.
+      //return AppendNewSegmentIntoPickedRoute( subRoute, routePickResult, anotherIndicator, anotherIndicatorIsFromSide ) ;
+    }
+
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( SubRoute subRoute, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide, MEPSystemClassificationInfo classificationInfo, SetRouteProperty setRouteProperty )
+    {
+      var routes = RouteCache.Get( subRoute.Route.Document ) ;
+      var routEndPoint = new RouteEndPoint( subRoute ) ;
+
+      var systemType = setRouteProperty.GetSelectSystemType() ;
+      var nextIndex = GetRouteNameIndex( routes, systemType?.Name ) ;
+
+      var name = systemType?.Name + "_" + nextIndex ;
+
+      var isDirect = false ;
+      if ( setRouteProperty.GetCurrentDirect() is { } currentDirect ) {
+        isDirect = currentDirect ;
       }
 
-      private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( SubRoute subRoute, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide, MEPSystemClassificationInfo classificationInfo, SetRouteProperty setRouteProperty )
-      {
-        var routes = RouteCache.Get( subRoute.Route.Document ) ;
-        var routEndPoint = new RouteEndPoint( subRoute ) ;
+      double? targetFixedBopHeight = setRouteProperty.GetFixedHeight() ;
+      if ( targetFixedBopHeight is { } fixedBopHeight ) {
+        targetFixedBopHeight = fixedBopHeight.MillimetersToRevitUnits() ;
+      }
 
-        var systemType = setRouteProperty.GetSelectSystemType() ;
-        var nextIndex = GetRouteNameIndex( routes, systemType?.Name ) ;
+      RouteSegment segment ;
+      if ( anotherIndicatorIsFromSide ) {
+        segment = new RouteSegment( classificationInfo, systemType, setRouteProperty.GetSelectCurveType(), anotherEndPoint, routEndPoint, setRouteProperty.GetSelectDiameter().MillimetersToRevitUnits(), isDirect, targetFixedBopHeight, setRouteProperty.GetAvoidTypeKey() ) ;
+      }
+      else {
+        segment = new RouteSegment( classificationInfo, systemType, setRouteProperty.GetSelectCurveType(), routEndPoint, anotherEndPoint, setRouteProperty.GetSelectDiameter().MillimetersToRevitUnits(), isDirect, targetFixedBopHeight, setRouteProperty.GetAvoidTypeKey() ) ;
+      }
 
-        var name = systemType?.Name + "_" + nextIndex ;
 
-        var isDirect = false ;
-        if ( setRouteProperty.GetCurrentDirect() is { } currentDirect ) {
-          isDirect = currentDirect ;
-        }
+      return new[] { ( name, segment ) } ;
+    }
 
-        double? targetFixedBopHeight = setRouteProperty.GetFixedHeight() ;
-        if ( targetFixedBopHeight is { } fixedBopHeight ) {
-          targetFixedBopHeight = fixedBopHeight.MillimetersToRevitUnits() ;
-        }
+    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide )
+    {
+      var segments = subRoute.Route.ToSegmentsWithNameList() ;
+      segments.Add( CreateNewSegment( subRoute, routePickResult, anotherEndPoint, anotherIndicatorIsFromSide ) ) ;
+      return segments ;
+    }
 
-        RouteSegment segment ;
-        if ( anotherIndicatorIsFromSide ) {
-          segment = new RouteSegment( classificationInfo, systemType, setRouteProperty.GetSelectCurveType(), anotherEndPoint, routEndPoint, setRouteProperty.GetSelectDiameter().MillimetersToRevitUnits(), isDirect, targetFixedBopHeight, setRouteProperty.GetAvoidTypeKey() ) ;
+    private static (string RouteName, RouteSegment Segment) CreateNewSegment( SubRoute subRoute, ConnectorPicker.IPickResult pickResult, IEndPoint newEndPoint, bool newEndPointIndicatorIsFromSide )
+    {
+      var detector = new RouteSegmentDetector( subRoute, pickResult.PickedElement ) ;
+      var classificationInfo = subRoute.Route.GetSystemClassificationInfo() ;
+      var systemType = subRoute.Route.GetMEPSystemType() ;
+      var curveType = subRoute.Route.GetDefaultCurveType() ;
+      foreach ( var segment in subRoute.Route.RouteSegments.EnumerateAll() ) {
+        if ( false == detector.IsPassingThrough( segment ) ) continue ;
+
+        RouteSegment newSegment ;
+        if ( newEndPointIndicatorIsFromSide ) {
+          newSegment = new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, segment.ToEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
         }
         else {
-          segment = new RouteSegment( classificationInfo, systemType, setRouteProperty.GetSelectCurveType(), routEndPoint, anotherEndPoint, setRouteProperty.GetSelectDiameter().MillimetersToRevitUnits(), isDirect, targetFixedBopHeight, setRouteProperty.GetAvoidTypeKey() ) ;
+          newSegment = new RouteSegment( classificationInfo, systemType, curveType, segment.FromEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
         }
 
+        newSegment.ApplyRealNominalDiameter() ;
 
-        return new[] { ( name, segment ) } ;
+        return ( subRoute.Route.RouteName, newSegment ) ;
       }
 
-      private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( SubRoute subRoute, ConnectorPicker.IPickResult routePickResult, IEndPoint anotherEndPoint, bool anotherIndicatorIsFromSide )
+      // fall through: add terminate end point.
       {
-        var segments = subRoute.Route.ToSegmentsWithNameList() ;
-        segments.Add( CreateNewSegment( subRoute, routePickResult, anotherEndPoint, anotherIndicatorIsFromSide ) ) ;
-        return segments ;
-      }
-
-      private static (string RouteName, RouteSegment Segment) CreateNewSegment( SubRoute subRoute, ConnectorPicker.IPickResult pickResult, IEndPoint newEndPoint, bool newEndPointIndicatorIsFromSide )
-      {
-        var detector = new RouteSegmentDetector( subRoute, pickResult.PickedElement ) ;
-        var classificationInfo = subRoute.Route.GetSystemClassificationInfo() ;
-        var systemType = subRoute.Route.GetMEPSystemType() ;
-        var curveType = subRoute.Route.GetDefaultCurveType() ;
-        foreach ( var segment in subRoute.Route.RouteSegments.EnumerateAll() ) {
-          if ( false == detector.IsPassingThrough( segment ) ) continue ;
-
-          RouteSegment newSegment ;
-          if ( newEndPointIndicatorIsFromSide ) {
-            newSegment = new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, segment.ToEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
-          }
-          else {
-            newSegment = new RouteSegment( classificationInfo, systemType, curveType, segment.FromEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
-          }
-
-          newSegment.ApplyRealNominalDiameter() ;
-
-          return ( subRoute.Route.RouteName, newSegment ) ;
+        RouteSegment newSegment ;
+        if ( newEndPointIndicatorIsFromSide ) {
+          var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( false ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
+          newSegment = new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, terminateEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
+        }
+        else {
+          var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( true ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
+          newSegment = new RouteSegment( classificationInfo, systemType, curveType, terminateEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
         }
 
-        // fall through: add terminate end point.
-        {
-          RouteSegment newSegment ;
-          if ( newEndPointIndicatorIsFromSide ) {
-            var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( false ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-            newSegment = new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, terminateEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
-          }
-          else {
-            var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( true ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-            newSegment = new RouteSegment( classificationInfo, systemType, curveType, terminateEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
-          }
+        newSegment.ApplyRealNominalDiameter() ;
 
-          newSegment.ApplyRealNominalDiameter() ;
-
-          return ( subRoute.Route.RouteName, newSegment ) ;
-        }
+        return ( subRoute.Route.RouteName, newSegment ) ;
       }
+    }
 
-      protected static int GetRouteNameIndex( RouteCache routes, string? targetName )
-      {
-        string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
-        var regex = new Regex( pattern ) ;
+    protected static int GetRouteNameIndex( RouteCache routes, string? targetName )
+    {
+      string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
+      var regex = new Regex( pattern ) ;
 
-        var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
+      var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
 
-        return lastIndex + 1 ;
-      }
+      return lastIndex + 1 ;
+    }
 
-      protected static SetRouteProperty SetDialog( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, double? dbDiameter )
-      {
-        SetRouteProperty sv = new SetRouteProperty() ;
-        PropertySource.RoutePropertySource PropertySourceType = new PropertySource.RoutePropertySource( document, classificationInfo, systemType, curveType ) ;
-        SelectedFromToViewModel.PropertySourceType = PropertySourceType ;
-        sv.UpdateFromToParameters( PropertySourceType.Diameters, PropertySourceType.SystemTypes, PropertySourceType.CurveTypes , systemType, curveType, dbDiameter ) ;
+    protected static SetRouteProperty SetDialog( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, double? dbDiameter )
+    {
+      SetRouteProperty sv = new SetRouteProperty() ;
+      PropertySource.RoutePropertySource PropertySourceType = new PropertySource.RoutePropertySource( document, classificationInfo, systemType, curveType ) ;
+      SelectedFromToViewModel.PropertySourceType = PropertySourceType ;
+      sv.UpdateFromToParameters( PropertySourceType.Diameters, PropertySourceType.SystemTypes, PropertySourceType.CurveTypes, systemType, curveType, dbDiameter ) ;
 
-        sv.ShowDialog() ;
+      sv.ShowDialog() ;
 
-        return sv ;
-      }
-    
+      return sv ;
     }
   }
+}
