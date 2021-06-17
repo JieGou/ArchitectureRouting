@@ -268,6 +268,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             CurveTypeComboBox.ItemsSource = CurveTypes;
             if ( CurveType is { } curveType ) {
                 CurveTypeComboBox.SelectedIndex = CurveTypes.FindIndex( c => c.Name == curveType.Name );
+                CurveTypeLabel = UIHelper.GetTypeLabel(curveType.GetType().Name) ;
             }
 
             CurveTypeDomain.Content = CurveTypeLabel;
@@ -276,7 +277,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             if ( Diameter is { } diameter ) {
                 DiameterComboBox.SelectedIndex = Diameters.FindIndex( d => d == Math.Round( diameter.RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero ) );
             }
-
+            
             Direct.IsChecked = CurrentDirect;
 
             HeightNud.MaxValue = CurrentMaxValue;

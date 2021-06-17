@@ -144,6 +144,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         else {
           //Diameter Info
           CurveType = curveType ;
+          Diameters = (IList<double>?) curveType?.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
 
           //Standard Type Info
           StandardTypes = doc.GetStandardTypes().ToList() ;
@@ -152,7 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           //CurveType Info
           var curveTypeId = CurveType.GetValidId() ;
           // _isExperimental is true while we treat only round shape
-          CurveTypes = doc.GetAllElements<MEPCurveType>().Where(c => c.GetType() == typeof( ConduitType )).ToList(); ;
+          CurveTypes = doc.GetAllElements<MEPCurveType>().Where(c => c.GetType() == typeof( ConduitType )).OrderBy(c => c.Name).ToList(); ;
 
           //AvoidType Info
           AvoidType = AvoidType.Whichever ;
