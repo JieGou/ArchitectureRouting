@@ -15,8 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class FileRoutingCommand : RoutingCommandBase
   {
-        private const string Guid = "214A8983-B8B6-4B49-BFA2-2CE278779DB4";
-        protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RoutingFromFile" ;
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RoutingFromFile" ;
 
     /// <summary>
     /// Collects from-to records to be auto-routed.
