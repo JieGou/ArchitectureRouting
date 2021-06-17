@@ -287,7 +287,10 @@ namespace Arent3d.Architecture.Routing
       var priorityType = ( type.Shape == connector.Shape ) ? CompatibilityPriorityType.SameShape : CompatibilityPriorityType.DifferentShape ;
 
       var nominalDiameter = connector.GetDiameter() ;
-      if ( type.HasAnyNominalDiameter( nominalDiameter, diameterTolerance ) ) return new CompatibilityPriority( priorityType, 0 ) ;
+      
+      if ( type.GetType() != typeof( ConduitType ) ) {
+        if ( type.HasAnyNominalDiameter( nominalDiameter, diameterTolerance ) ) return new CompatibilityPriority( priorityType, 0 ) ;
+      }
 
       var list = type.GetNominalDiameters( diameterTolerance ) ;
       if ( 0 == list.Count ) return null ;
