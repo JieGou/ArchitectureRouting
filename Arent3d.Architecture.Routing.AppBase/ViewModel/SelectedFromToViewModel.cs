@@ -76,7 +76,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     /// <param name="selectedSystemType"></param>
     /// <param name="selectedDirect"></param>
     /// <returns></returns>
-    public static bool ApplySelectedChanges( double selectedDiameter, MEPSystemType selectedSystemType, MEPCurveType selectedCurveType, bool? selectedDirect, bool? heightSetting, double? fixedHeight, AvoidType avoidType, IPostCommandExecutorBase? postCommandExecutor )
+    public static bool ApplySelectedChanges( double selectedDiameter, MEPSystemType? selectedSystemType, MEPCurveType selectedCurveType, bool? selectedDirect, bool? heightSetting, double? fixedHeight, AvoidType avoidType, IPostCommandExecutorBase? postCommandExecutor )
     {
       if ( UiDoc != null ) {
         SelectedDiameter = selectedDiameter.MillimetersToRevitUnits() ;

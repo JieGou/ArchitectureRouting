@@ -383,10 +383,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
+      MEPSystemType? systemType = null ;
+      if ( SystemTypes.Any() ) {
+        systemType = SystemTypes[ SystemTypeComboBox.SelectedIndex ] ;
+      }
       if ( SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
         MessageBoxResult result = MessageBox.Show( "Dialog.Forms.SelectedFromToBase.ChangeFromTo".GetAppStringByKeyOrDefault( "Do you want to change the From-To information?&#xA;If you change it, it will be automatically re-routed." ), "", MessageBoxButton.YesNo ) ;
         if ( result == MessageBoxResult.Yes ) {
-          SelectedFromToViewModel.ApplySelectedChanges( Diameters[DiameterComboBox.SelectedIndex], SystemTypes[SystemTypeComboBox.SelectedIndex], CurveTypes[CurveTypeComboBox.SelectedIndex] , CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey, ParentFromToTree?.PostCommandExecutor ) ;
+          SelectedFromToViewModel.ApplySelectedChanges( Diameters[DiameterComboBox.SelectedIndex], systemType, CurveTypes[CurveTypeComboBox.SelectedIndex] , CurrentDirect, HeightSetting.IsChecked, HeightNud.Value, AvoidTypeKey, ParentFromToTree?.PostCommandExecutor ) ;
         }
       }
       else {
