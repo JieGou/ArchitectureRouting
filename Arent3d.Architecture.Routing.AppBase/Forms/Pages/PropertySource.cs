@@ -161,25 +161,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         
       }
 
-      public RoutePropertySource( Document doc, MEPSystemClassificationInfo classificationInfo, MEPCurveType? curveType ) : base( doc )
-      {
-        //Diameter Info
-        CurveType = curveType ;
-        Diameters = (IList<double>?) curveType?.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
-
-        //System Type Info(PipingSystemType in lookup)
-        SystemTypes = Doc.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList() ;
-        //SystemType = systemType;
-
-        //CurveType Info
-        var curveTypeId = CurveType.GetValidId() ;
-        // _isExperimental is true while we treat only round shape
-        CurveTypes = _isExperimental ? Doc.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : Doc.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
-
-        //AvoidType Info
-        AvoidType = AvoidType.Whichever ;
-      }
-
       private void IsMultiSelected()
       {
         if ( TargetSubRoutes?.ElementAt( 0 ).Route is not { } route ) return ;

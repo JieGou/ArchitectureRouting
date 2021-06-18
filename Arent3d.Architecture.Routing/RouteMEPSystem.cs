@@ -197,7 +197,11 @@ namespace Arent3d.Architecture.Routing
     {
       var diameterTolerance = document.Application.VertexTolerance ;
       Dictionary<int, CompatibilityPriority>? available = null ;
-      foreach ( var connector in connectors.Where( c => GetSystemClassificationInfo( c ).IsCompatibleTo( systemType ) ) ) {
+      var targetConnectors = connectors.Where( c => GetSystemClassificationInfo( c ).IsCompatibleTo( systemType ) ) ;
+      if ( systemType == null ) {
+        targetConnectors =  connectors.Where( c => !GetSystemClassificationInfo( c ).IsCompatibleTo( systemType ) ) ;
+      }
+      foreach ( var connector in targetConnectors ) {
         var (concreteType, getCompatibilityPriority) = GetCompatibilityPriorityFunc( connector, diameterTolerance ) ;
         var curveTypes = document.GetAllElements<MEPCurveType>( concreteType ) ;
         if ( null == available ) {

@@ -241,7 +241,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       SystemTypeComboBox.IsEnabled = false ;
-      if ( systemTypes != null ) {
+      if ( systemTypes != null && systemTypes.Any() ) {
         foreach ( var s in systemTypes ) {
           SystemTypes.Add( s ) ;
         }

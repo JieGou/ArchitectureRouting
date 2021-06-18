@@ -79,7 +79,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         curveType = RouteMEPSystem.GetMEPCurveType( document, new[] { connector }, null ) ;
 
         var curveTypes = document.GetAllElements<MEPCurveType>().Where( c => c is ConduitType ).ToList() ;
-        var standards = curveTypes.Select( c => c.get_Parameter( BuiltInParameter.CONDUIT_STANDARD_TYPE_PARAM ).AsValueString() ) ;
+        systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
 
         if ( fromEndPoint.GetDiameter() is { } d1 ) {
           dblDiameter = d1 ;
@@ -88,7 +88,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           dblDiameter = d2 ;
         }
 
-        var sv = SetDialog( document, classificationInfo, null, curveType, dblDiameter ) ;
+        var sv = SetDialog( document, classificationInfo, systemType, curveType, dblDiameter ) ;
 
         if ( false != sv.DialogResult ) {
           systemType = sv.GetSelectSystemType() ;

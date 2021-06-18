@@ -207,7 +207,7 @@ namespace Arent3d.Architecture.Routing
       public override Domain Domain => Domain.DomainCableTrayConduit ;
       public override Type? GetCurveTypeClass() => typeof( ConduitType ) ;
 
-      public override bool IsCompatibleTo( MEPSystemType? type ) => true ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => false ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is CableTrayConduitSystemClassificationInfo ;
 
