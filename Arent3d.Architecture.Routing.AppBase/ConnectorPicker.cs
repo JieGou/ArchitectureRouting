@@ -327,9 +327,6 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       public bool AllowElement( Element elem )
       {
-        var t1 = IsRoutableForConnector( elem ) ;
-        var t2 = IsRoutableForCenter( elem ) ;
-        var t3 = IsRoutableFoRomm( elem ) ;
         return IsRoutableForConnector( elem ) || IsRoutableForCenter( elem ) || IsRoutableFoRomm( elem ) ;
       }
 
