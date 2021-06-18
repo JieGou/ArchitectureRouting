@@ -3,6 +3,7 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -54,7 +55,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     protected override void CreateFromToTreeUiManager( UIControlledApplication application, Guid dpId, IPostCommandExecutorBase postCommandExecutor )
     {
-      var fromToTreeUiManager = new FromToTreeUiManager( application, dpId,"Electrical From-To View",  postCommandExecutor ) ;
+      var fromToTreeUiManager = new FromToTreeUiManager( application, dpId,"Electrical From-To View",  postCommandExecutor, new FromToItemsUi() ) ;
       
       RoutingApp.FromToTreeManager.FromToTreeUiManager = fromToTreeUiManager ;
     }

@@ -44,8 +44,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     public IPostCommandExecutorBase PostCommandExecutor { get ; }
     
+    public FromToItemsUiBase FromToItemsUi { get ; }
+    
 
-    public FromToTree( string titleLabel, IPostCommandExecutorBase postCommandExecutor)
+    public FromToTree( string titleLabel, IPostCommandExecutorBase postCommandExecutor, FromToItemsUiBase fromToItemsUi)
     {
       this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
       this.CoordinatesX = "X1" ;
@@ -55,6 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ItemDictionary = new SortedDictionary<string, TreeViewItem>() ;
       TitleLabel = titleLabel ;
       PostCommandExecutor = postCommandExecutor ;
+      FromToItemsUi = fromToItemsUi ;
       SelectedFromTo.ParentFromToTree = this ;
     }
 
@@ -96,7 +99,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var fromToVm = new FromToTreeViewModel() ;
 
       fromToVm.FromToModel = new FromToModel( uiApp ) ;
-      fromToVm.SetFromToItems(addInType) ;
+      fromToVm.SetFromToItems(addInType,  FromToItemsUi) ;
 
       FromToTreeView.DataContext = fromToVm ;
 

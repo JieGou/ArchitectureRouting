@@ -1,5 +1,6 @@
 ﻿using System ;
 using System.Windows ;
+using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Autodesk.Revit.UI ;
@@ -13,13 +14,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public FromToTree FromToTreeView { get ; }
     public DockablePaneId DpId { get ; }
     public DockablePane? Dockable{ get ; set ; }
+
+    public BitmapImage? RouteItemIcon { get ; } = null ;
+    private IPostCommandExecutorBase PostCommandExecutor { get ; }
     
-    public IPostCommandExecutorBase PostCommandExecutor { get ; }
     
 
-    public FromToTreeUiManager(UIControlledApplication uiControlledApplication, Guid dpId, string fromToTreeTitle, IPostCommandExecutorBase postCommandExecutor)
+    public FromToTreeUiManager(UIControlledApplication uiControlledApplication, Guid dpId, string fromToTreeTitle, IPostCommandExecutorBase postCommandExecutor, FromToItemsUiBase fromToItemsUi)
     {
-      FromToTreeView = new FromToTree(fromToTreeTitle, postCommandExecutor) ;
+      FromToTreeView = new FromToTree(fromToTreeTitle, postCommandExecutor, fromToItemsUi) ;
       UiControlledApplication = uiControlledApplication ;
       DpId = new DockablePaneId( dpId ) ;
       PostCommandExecutor = postCommandExecutor ;
