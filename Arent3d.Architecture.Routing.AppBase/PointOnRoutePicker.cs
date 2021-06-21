@@ -12,6 +12,8 @@ namespace Arent3d.Architecture.Routing.AppBase
 {
   public static class PointOnRoutePicker
   {
+    private static AddInType? AddInType { get ; set ; }
+
     public class PickInfo
     {
       public Element Element { get ; }
@@ -64,18 +66,20 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
 
-    public static PickInfo PickRoute( UIDocument uiDocument, bool mepCurveOnly, string message, string? firstRouteId = null )
+    public static PickInfo PickRoute( UIDocument uiDocument, bool mepCurveOnly, string message, AddInType addInType, string? firstRouteId = null )
     {
       var document = uiDocument.Document ;
 
       var dic = RouteCache.Get( document ) ;
+      AddInType = addInType ;
       var filter = new RouteFilter( dic, mepCurveOnly, ( null == firstRouteId ) ? null : elm => ( firstRouteId == elm.GetRouteName() ) ) ;
+
 
       while ( true ) {
         var pickedObject = uiDocument.Selection.PickObject( ObjectType.PointOnElement, filter, message ) ;
 
         var elm = document.GetElement( pickedObject.ElementId ) ;
-        if ( elm?.GetRouteName() is not {} routeName ) continue ;
+        if ( elm?.GetRouteName() is not { } routeName ) continue ;
         if ( false == dic.TryGetValue( routeName, out var route ) ) continue ;
 
         var subRoute = route.GetSubRoute( elm.GetSubRouteIndex() ?? -1 ) ;
@@ -138,6 +142,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         if ( _mepCurveOnly && elem is not MEPCurve ) return false ;
 
+        if ( false == elem.GetConnectors().Any( IsPickTargetConnector ) ) return false ;
+
         var routeName = elem.GetRouteName() ;
         if ( null == routeName ) return false ;
         if ( false == _allRoutes.ContainsKey( routeName ) ) return false ;
@@ -148,6 +154,27 @@ namespace Arent3d.Architecture.Routing.AppBase
       public bool AllowReference( Reference reference, XYZ position )
       {
         return true ;
+      }
+
+      private static bool IsPickTargetConnector( Connector connector )
+      {
+        if ( AddInType == Routing.AddInType.Mechanical ) {
+          return connector.IsAnyEnd() && connector.Domain switch
+          {
+            Domain.DomainPiping => true,
+            Domain.DomainHvac => true,
+            Domain.DomainCableTrayConduit => false,
+            _ => false
+          } ;
+        }
+
+        return connector.IsAnyEnd() && connector.Domain switch
+        {
+          Domain.DomainPiping => false,
+          Domain.DomainHvac => false,
+          Domain.DomainCableTrayConduit => true,
+          _ => false
+        } ;
       }
     }
   }

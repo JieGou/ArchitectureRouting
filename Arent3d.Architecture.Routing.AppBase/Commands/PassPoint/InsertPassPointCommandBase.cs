@@ -15,6 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
 {
   public abstract class InsertPassPointCommandBase : RoutingCommandBase
   {
+    protected abstract AddInType GetAddInType() ;
 
     /// <summary>
     /// Collects from-to records to be auto-routed.
@@ -24,7 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
     {
       var segments = UiThread.RevitUiDispatcher.Invoke( () =>
       {
-        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Dialog.Commands.PassPoint.Insert.Pick".GetAppStringByKeyOrDefault( null ) ) ;
+        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Dialog.Commands.PassPoint.Insert.Pick".GetAppStringByKeyOrDefault( null ), GetAddInType() ) ;
 
         var document = uiDocument.Document ;
         var elm = InsertPassPointElement( document, pickInfo ) ;

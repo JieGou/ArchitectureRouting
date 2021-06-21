@@ -26,11 +26,15 @@ namespace Arent3d.Architecture.Routing.AppBase
       bool IsCompatibleTo( Element element ) ;
     }
 
-    public static IPickResult GetConnector( UIDocument uiDocument, string message, IPickResult? firstPick )
+    private static AddInType? AddInType { get ; set ; }
+
+    public static IPickResult GetConnector( UIDocument uiDocument, string message, IPickResult? firstPick, AddInType addInType )
     {
       var document = uiDocument.Document ;
 
-      var filter = ( null == firstPick ) ? FamilyInstanceWithConnectorFilter.Instance : new FamilyInstanceCompatibleToTargetConnectorFilter( firstPick ) ;
+      AddInType = addInType ;
+      var filter = ( null == firstPick ) ? FamilyInstanceWithConnectorFilter.Instance : new FamilyInstanceCompatibleToTargetConnectorFilter( firstPick, addInType ) ;
+
 
       while ( true ) {
         var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, filter, message ) ;
@@ -66,7 +70,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       var element = document?.GetElement( pickedObject?.ElementId ) ;
       if ( null == element )
         return null ;
-      
+
       var connId = element.GetPropertyInt( RoutingFamilyLinkedParameter.RouteConnectorRelationIds ) ;
 
 
@@ -299,10 +303,20 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private static bool IsPickTargetConnector( Connector connector )
     {
+      if ( AddInType == Routing.AddInType.Mechanical ) {
+        return connector.IsAnyEnd() && connector.Domain switch
+        {
+          Domain.DomainPiping => true,
+          Domain.DomainHvac => true,
+          Domain.DomainCableTrayConduit => false,
+          _ => false
+        } ;
+      }
+
       return connector.IsAnyEnd() && connector.Domain switch
       {
-        Domain.DomainPiping => true,
-        Domain.DomainHvac => true,
+        Domain.DomainPiping => false,
+        Domain.DomainHvac => false,
         Domain.DomainCableTrayConduit => true,
         _ => false
       } ;
@@ -409,7 +423,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       private readonly IPickResult _compatibleResult ;
 
-      public FamilyInstanceCompatibleToTargetConnectorFilter( IPickResult compatibleResult )
+      public FamilyInstanceCompatibleToTargetConnectorFilter( IPickResult compatibleResult, AddInType addInType )
       {
         _compatibleResult = compatibleResult ;
       }

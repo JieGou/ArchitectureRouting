@@ -10,5 +10,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   public class PickAndReRouteCommand : PickAndReRouteCommandBase
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickAndReRoute" ;
+
+    protected override AddInType GetAddInType()
+    {
+      return AddInType.Mechanical ;
+    }
   }
 }

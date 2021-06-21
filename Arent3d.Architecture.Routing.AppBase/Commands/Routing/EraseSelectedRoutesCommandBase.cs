@@ -9,12 +9,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class EraseSelectedRoutesCommandBase : RoutingCommandBase
   {
+    protected abstract AddInType GetAddInType() ;
+
     protected override IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
       return GetSelectedRouteSegments( uiDocument ) ;
     }
 
-    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( UIDocument uiDocument )
+    private IEnumerable<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( UIDocument uiDocument )
     {
       // use lazy evaluation because GetRouteSegments()'s call time is not in the transaction.
       var document = uiDocument.Document ;
@@ -34,12 +36,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
+    private IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
     {
       var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
       if ( 0 < list.Count ) return list ;
 
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to delete." ) ;
+      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to delete.", GetAddInType() ) ;
       return new[] { pickInfo.Route } ;
     }
   }

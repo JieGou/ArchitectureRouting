@@ -4,5 +4,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Enabler
 {
   public class MonitorSelectionCommandEnabler : MonitorSelectionCommandEnablerBase
   {
+    protected override AddInType GetAddInType()
+    {
+      return AddInType.Mechanical ;
+    }
   }
 }

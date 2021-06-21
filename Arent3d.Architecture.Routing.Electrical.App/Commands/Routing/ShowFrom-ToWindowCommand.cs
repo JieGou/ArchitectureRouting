@@ -10,5 +10,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/From-ToWindow.png" )]
   public class ShowFrom_ToWindowCommand : ShowFrom_ToWindowCommandBase
   {
+    protected override AddInType GetAddInType()
+    {
+      return AddInType.Electrical ;
+    }
   }
 }

@@ -15,7 +15,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
   public class FromToTreeManager
   {
-
     public UIApplication? UiApp = null ;
     public FromToTreeUiManager? FromToTreeUiManager = null ;
 
@@ -24,16 +23,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     // view activated event
-    public void OnViewActivated( ViewActivatedEventArgs e )
+    public void OnViewActivated( ViewActivatedEventArgs e, AddInType addInType )
     {
       // provide ExternalCommandData object to dockable page
       if ( FromToTreeUiManager?.FromToTreeView == null || UiApp == null ) return ;
       var doc = UiApp.ActiveUIDocument.Document ;
 
       //Initialize TreeView
-      FromToTreeUiManager?.FromToTreeView.ClearSelection();
-      FromToTreeUiManager?.FromToTreeView.CustomInitiator( UiApp ) ;
-      SetSelectionInViewToFromToTree( doc ) ;
+      FromToTreeUiManager?.FromToTreeView.ClearSelection() ;
+      FromToTreeUiManager?.FromToTreeView.CustomInitiator( UiApp, addInType ) ;
+      SetSelectionInViewToFromToTree( doc, addInType ) ;
     }
 
     /// <summary>
@@ -42,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     /// <param name="doc"></param>
     /// <param name="selectedRoutes"></param>
     /// <param name="selectedConnectors"></param>
-    private void SetSelectionInViewToFromToTree( Document doc )
+    private void SetSelectionInViewToFromToTree( Document doc, AddInType addInType )
     {
       if ( UiApp == null ) return ;
 
@@ -52,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       // Get Selected Routes
       var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( UiApp.ActiveUIDocument ) ;
-      var connectorsInView = doc.CollectRoutes().SelectMany( r => r.GetAllConnectors() ).Where( c => elementsInActiveView.Contains( c.Owner.Id ) ) ;
+      var connectorsInView = doc.CollectRoutes( addInType ).SelectMany( r => r.GetAllConnectors() ).Where( c => elementsInActiveView.Contains( c.Owner.Id ) ) ;
 
 
       if ( selectedRoutes.FirstOrDefault() is { } selectedRoute ) {
@@ -75,23 +74,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     // document opened event
-    public void OnDocumentOpened()
+    public void OnDocumentOpened( AddInType addInType )
     {
       // provide ExternalCommandData object to dockable page
       if ( FromToTreeUiManager is { } fromToTreeUiManager && UiApp != null ) {
-        fromToTreeUiManager.FromToTreeView.CustomInitiator( UiApp ) ;
+        fromToTreeUiManager.FromToTreeView.CustomInitiator( UiApp, addInType ) ;
         FromToTreeViewModel.FromToTreePanel = FromToTreeUiManager?.FromToTreeView ;
         if ( fromToTreeUiManager.Dockable == null ) {
           fromToTreeUiManager.Dockable = UiApp.GetDockablePane( fromToTreeUiManager.DpId ) ;
         }
+
         fromToTreeUiManager.ShowDockablePane() ;
       }
-      
     }
 
     // document opened event
-    public void OnDocumentChanged( Autodesk.Revit.DB.Events.DocumentChangedEventArgs e )
+    public void OnDocumentChanged( Autodesk.Revit.DB.Events.DocumentChangedEventArgs e, AddInType addInType )
     {
+      if ( FromToTreeUiManager?.FromToTreeView is not { } fromToTreeView || UiApp == null ) return ;
       var changedElementIds = e.GetAddedElementIds().Concat( e.GetDeletedElementIds() ).Concat( e.GetModifiedElementIds() ) ;
 
       var transactions = e.GetTransactionNames() ;
@@ -99,8 +99,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var changedRoute = e.GetDocument().FilterStorableElements<Route>( changedElementIds ) ;
 
       // provide ExternalCommandData object to dockable page
-      if ( FromToTreeUiManager?.FromToTreeView != null && UiApp != null && ( transactions.Any( GetRoutingTransactions ) || changedRoute.Any() ) ) {
-        FromToTreeUiManager?.FromToTreeView.CustomInitiator( UiApp ) ;
+      if ( ( transactions.Any( GetRoutingTransactions ) || changedRoute.Any() ) ) {
+        fromToTreeView.CustomInitiator( UiApp, addInType ) ;
       }
     }
 

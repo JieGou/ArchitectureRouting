@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
         var (min, max) = familyInstance.get_BoundingBox( view ).To3dRaw() ;
 
-        racks.AddRack( new Rack.Rack( new Box3d( min, max ), beamInterval, sideBeamWidth, sideBeamHeight ){ IsMainRack = true } ) ;
+        racks.AddRack( new Rack.Rack( new Box3d( min, max ), beamInterval, sideBeamWidth, sideBeamHeight ) { IsMainRack = true } ) ;
       }
 
       racks.CreateLinkages() ;
@@ -114,6 +114,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         Domain.DomainHvac => true,
         Domain.DomainPiping => true,
+        Domain.DomainCableTrayConduit => true,
+        Domain.DomainElectrical => true,
         _ => false,
       } ;
     }
@@ -145,6 +147,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         Domain.DomainHvac => new HVacCollisionCheckTargetCollector( _document, routesInType ),
         Domain.DomainPiping => new PipingCollisionCheckTargetCollector( _document, routesInType ),
+        Domain.DomainCableTrayConduit => new CableTrayConduitCollisionCheckTargetCollector( _document, routesInType ), //for testing
         _ => throw new InvalidOperationException(),
       } ;
     }
@@ -171,10 +174,11 @@ namespace Arent3d.Architecture.Routing.AppBase
           result.Add( route ) ;
         }
 
-        if ( segment.FromEndPoint.ParentBranch().Route is {} fromParent ) {
+        if ( segment.FromEndPoint.ParentBranch().Route is { } fromParent ) {
           parents.UnionWith( fromParent.GetAllRelatedBranches() ) ;
         }
-        if ( segment.ToEndPoint.ParentBranch().Route is {} toParent ) {
+
+        if ( segment.ToEndPoint.ParentBranch().Route is { } toParent ) {
           parents.UnionWith( toParent.GetAllRelatedBranches() ) ;
         }
 
@@ -182,7 +186,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
       result.AddRange( parents.Where( p => false == dic.ContainsKey( p.RouteName ) ) ) ;
-      
+
       return result ;
     }
 

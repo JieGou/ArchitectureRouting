@@ -40,10 +40,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public string CoordinatesZ { get ;  }
     
+    public string TitleLabel { get ; }
+    
     public IPostCommandExecutorBase PostCommandExecutor { get ; }
     
+    public FromToItemsUiBase FromToItemsUi { get ; }
+    
 
-    public FromToTree(IPostCommandExecutorBase postCommandExecutor)
+    public FromToTree( string titleLabel, IPostCommandExecutorBase postCommandExecutor, FromToItemsUiBase fromToItemsUi)
     {
       this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
       this.CoordinatesX = "X1" ;
@@ -51,7 +55,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.CoordinatesZ = "Z1" ;
       InitializeComponent() ;
       ItemDictionary = new SortedDictionary<string, TreeViewItem>() ;
+      TitleLabel = titleLabel ;
       PostCommandExecutor = postCommandExecutor ;
+      FromToItemsUi = fromToItemsUi ;
       SelectedFromTo.ParentFromToTree = this ;
     }
 
@@ -77,23 +83,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// initialize page
     /// </summary>
     /// <param name="uiApplication"></param>
-    public void CustomInitiator( UIApplication uiApplication )
+    public void CustomInitiator( UIApplication uiApplication, AddInType addInType )
     {
       Doc = uiApplication.ActiveUIDocument.Document ;
       UiDoc = uiApplication.ActiveUIDocument ;
-      AllRoutes = UiDoc.Document.CollectRoutes().ToList() ;
+      AllRoutes = UiDoc.Document.CollectRoutes(addInType).ToList() ;
       // call the treeview display method
-      DisplayTreeViewItem( uiApplication, AllRoutes ) ;
+      DisplayTreeViewItem( uiApplication, addInType ) ;
       IsLeftMouseClick = false ;
     }
 
-    private void DisplayTreeViewItem( UIApplication uiApp, IReadOnlyCollection<Route> allRoutes )
+    private void DisplayTreeViewItem( UIApplication uiApp, AddInType addInType )
     {
       ClearSelection();
       var fromToVm = new FromToTreeViewModel() ;
 
       fromToVm.FromToModel = new FromToModel( uiApp ) ;
-      fromToVm.SetFromToItems() ;
+      fromToVm.SetFromToItems(addInType,  FromToItemsUi) ;
 
       FromToTreeView.DataContext = fromToVm ;
 

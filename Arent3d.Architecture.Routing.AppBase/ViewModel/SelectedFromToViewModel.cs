@@ -30,18 +30,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     //Direct
     public static bool? IsDirect { get ; set ; }
-    
+
     //FixedHeight
     public static bool? OnHeightSetting { get ; set ; }
     public static double? FixedHeight { get ; private set ; }
-    
+
     public static AvoidType AvoidType { get ; private set ; }
 
     public static PropertySource.RoutePropertySource? PropertySourceType { get ; set ; }
 
     //Direct
-    public static FromToItem? FromToItem { get; set; }
-    
+    public static FromToItem? FromToItem { get ; set ; }
+
     public static UIApplication? UiApp { get ; set ; }
 
 
@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         PropertySourceType = routePropertySource ;
       }
 
-      FromToItem = fromToItem;
+      FromToItem = fromToItem ;
     }
 
 
@@ -76,7 +76,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     /// <param name="selectedSystemType"></param>
     /// <param name="selectedDirect"></param>
     /// <returns></returns>
-    public static bool ApplySelectedChanges( double selectedDiameter, MEPSystemType selectedSystemType, MEPCurveType selectedCurveType, bool? selectedDirect, bool? heightSetting, double? fixedHeight, AvoidType avoidType, IPostCommandExecutorBase? postCommandExecutor )
+    public static bool ApplySelectedChanges( double selectedDiameter, MEPSystemType? selectedSystemType, MEPCurveType selectedCurveType, bool? selectedDirect, bool? heightSetting, double? fixedHeight, AvoidType avoidType, IPostCommandExecutorBase? postCommandExecutor )
     {
       if ( UiDoc != null ) {
         SelectedDiameter = selectedDiameter.MillimetersToRevitUnits() ;
@@ -85,8 +85,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         IsDirect = selectedDirect ;
 
         OnHeightSetting = heightSetting ;
-        if ( OnHeightSetting is true) {
-          if ( fixedHeight is { } selectedFixedHeight) {
+        if ( OnHeightSetting is true ) {
+          if ( fixedHeight is { } selectedFixedHeight ) {
             FixedHeight = GetTotalHeight( fixedHeight ) ;
           }
         }
@@ -95,10 +95,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         AvoidType = avoidType ;
-        
+
         if ( UiApp is { } app ) {
-          postCommandExecutor?.ApplySelectedFromToChangesCommand(app);
+          postCommandExecutor?.ApplySelectedFromToChangesCommand( app ) ;
         }
+
         return true ;
       }
       else {
@@ -113,7 +114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     /// <returns></returns>
     public static IEnumerable<double> ResetNominalDiameters( int curveTypeIndex )
     {
-      if ( PropertySourceType?.CurveTypes is not { } curveTypes|| null == UiDoc ) return Enumerable.Empty<double>() ;
+      if ( PropertySourceType?.CurveTypes is not { } curveTypes || null == UiDoc ) return Enumerable.Empty<double>() ;
       if ( curveTypeIndex < 0 || curveTypes.Count <= curveTypeIndex ) return Enumerable.Empty<double>() ;
 
       //Reset diameter list in PropertySourceType
@@ -125,18 +126,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public static double GetRouteHeightFromFloor( double totalHeight )
     {
       var fromFloorHeight = 0.0 ;
-      if ( GetFloorHeight() is { } floorHeight && TargetRoute?.GetSubRoute(0) is {} subRoute) {
-        fromFloorHeight = totalHeight - floorHeight + subRoute.GetDiameter()/2 ;
+      if ( GetFloorHeight() is { } floorHeight && TargetRoute?.GetSubRoute( 0 ) is { } subRoute ) {
+        fromFloorHeight = totalHeight - floorHeight + subRoute.GetDiameter() / 2 ;
       }
 
       return fromFloorHeight ;
     }
-    
+
     public static double GetHeightFromLevel( double totalHeight )
     {
       var fromFloorHeight = 0.0 ;
-      if ( GetFloorHeight() is { } floorHeight && TargetRoute?.GetSubRoute(0) is {} subRoute) {
-        fromFloorHeight = totalHeight - floorHeight;
+      if ( GetFloorHeight() is { } floorHeight && TargetRoute?.GetSubRoute( 0 ) is { } subRoute ) {
+        fromFloorHeight = totalHeight - floorHeight ;
       }
 
       return fromFloorHeight ;
@@ -146,16 +147,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       var level = GetConnectorLevel() ;
       var levels = GetAllFloors( TargetRoute?.Document ) ;
-      if ( level == null || levels == null ) return 0.0;
+      if ( level == null || levels == null ) return 0.0 ;
       return levels.First( l => l.Elevation > level.Elevation ).Elevation ;
     }
 
     public static double GetUpLevelHeightFromLevel()
     {
-      return GetHeightFromLevel(GetUpLevelTotalHeight()) ;
+      return GetHeightFromLevel( GetUpLevelTotalHeight() ) ;
     }
-    
-    public static IOrderedEnumerable<Level>? GetAllFloors(Document? doc)
+
+    public static IOrderedEnumerable<Level>? GetAllFloors( Document? doc )
     {
       return doc?.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ) ;
     }
@@ -164,10 +165,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private static Level? GetConnectorLevel()
     {
       var connector = TargetRoute?.FirstFromConnector()?.GetConnector()?.Owner ;
-      var level = connector?.Document.GetElement(connector.LevelId) as Level;
+      var level = connector?.Document.GetElement( connector.LevelId ) as Level ;
 
       return level ;
     }
+
     private static double? GetFloorHeight()
     {
       return GetConnectorLevel()?.Elevation ;
