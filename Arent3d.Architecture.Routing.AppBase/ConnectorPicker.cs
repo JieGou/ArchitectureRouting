@@ -337,7 +337,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       private bool IsRoutableForCenter( Element elem )
       {
-        return ( elem is FamilyInstance fi ) && ( false == fi.IsPassPoint() ) && (elem.GetConnectors().Any( IsTargetConnector )) ;
+        return ( elem is FamilyInstance fi ) && ( false == fi.IsPassPoint() ) ;
       }
 
       private bool IsRoutableFoRomm( Element elem )
