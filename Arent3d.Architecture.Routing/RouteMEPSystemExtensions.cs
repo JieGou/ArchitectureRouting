@@ -23,21 +23,22 @@ namespace Arent3d.Architecture.Routing
     {
       var resultList = new List<double>() ;
       Segment? segment = null ;
-      if ( type.GetType() != typeof(ConduitType) ) {
+      if ( type.GetType() != typeof( ConduitType ) ) {
         segment = type.GetTargetSegment() ;
       }
-      
+
       var diameterList = type switch
       {
-        DuctType => DuctSizeSettings.GetDuctSizeSettings(type.Document)[ DuctShape.Round ].Where(s => s.UsedInSizeLists && s.UsedInSizing).Select(s => s.NominalDiameter).ToList(),
+        DuctType => DuctSizeSettings.GetDuctSizeSettings( type.Document )[ DuctShape.Round ].Where( s => s.UsedInSizeLists && s.UsedInSizing ).Select( s => s.NominalDiameter ).ToList(),
         PipeType => segment?.GetSizes().Where( s => s.UsedInSizeLists && s.UsedInSizing && type.HasAnyNominalDiameter( s.NominalDiameter, diameterTolerance ) ).Select( s => s.NominalDiameter ).ToList(),
-        ConduitType => ConduitSizeSettings.GetConduitSizeSettings( type.Document ).Where( c => c.Key == type.get_Parameter( BuiltInParameter.CONDUIT_STANDARD_TYPE_PARAM ).AsValueString() ).Select(c => c.Value).FirstOrDefault().Select(c => c.NominalDiameter).ToList(),
+        ConduitType => ConduitSizeSettings.GetConduitSizeSettings( type.Document ).Where( c => c.Key == type.get_Parameter( BuiltInParameter.CONDUIT_STANDARD_TYPE_PARAM ).AsValueString() ).Select( c => c.Value ).FirstOrDefault().Select( c => c.NominalDiameter ).ToList(),
         _ => throw new ArgumentOutOfRangeException( nameof( type ) ),
-      } ; 
+      } ;
 
-      if ( diameterList is {} dList ) {
+      if ( diameterList is { } dList ) {
         resultList = dList ;
       }
+
       resultList.Sort() ;
 
       return resultList ;
@@ -108,7 +109,7 @@ namespace Arent3d.Architecture.Routing
     {
       return ConduitSizeSettings.GetConduitSizeSettings( doc ).Select( c => c.Key ) ;
     }
-    
+
 
     /// <summary>
     /// Get compatible curve types.

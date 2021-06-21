@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase
   public static class PointOnRoutePicker
   {
     private static AddInType? AddInType { get ; set ; }
+
     public class PickInfo
     {
       public Element Element { get ; }
@@ -70,15 +71,15 @@ namespace Arent3d.Architecture.Routing.AppBase
       var document = uiDocument.Document ;
 
       var dic = RouteCache.Get( document ) ;
-      AddInType = addInType ; 
+      AddInType = addInType ;
       var filter = new RouteFilter( dic, mepCurveOnly, ( null == firstRouteId ) ? null : elm => ( firstRouteId == elm.GetRouteName() ) ) ;
-      
-      
+
+
       while ( true ) {
         var pickedObject = uiDocument.Selection.PickObject( ObjectType.PointOnElement, filter, message ) ;
 
         var elm = document.GetElement( pickedObject.ElementId ) ;
-        if ( elm?.GetRouteName() is not {} routeName ) continue ;
+        if ( elm?.GetRouteName() is not { } routeName ) continue ;
         if ( false == dic.TryGetValue( routeName, out var route ) ) continue ;
 
         var subRoute = route.GetSubRoute( elm.GetSubRouteIndex() ?? -1 ) ;
@@ -140,13 +141,13 @@ namespace Arent3d.Architecture.Routing.AppBase
       public bool AllowElement( Element elem )
       {
         if ( _mepCurveOnly && elem is not MEPCurve ) return false ;
-        
+
         if ( false == elem.GetConnectors().Any( IsPickTargetConnector ) ) return false ;
 
-          var routeName = elem.GetRouteName() ;
+        var routeName = elem.GetRouteName() ;
         if ( null == routeName ) return false ;
         if ( false == _allRoutes.ContainsKey( routeName ) ) return false ;
-        
+
         return ( null == _predicate ) || _predicate( elem ) ;
       }
 
@@ -154,10 +155,10 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         return true ;
       }
-      
+
       private static bool IsPickTargetConnector( Connector connector )
       {
-        if ( AddInType ==  Routing.AddInType.Mechanical)  {
+        if ( AddInType == Routing.AddInType.Mechanical ) {
           return connector.IsAnyEnd() && connector.Domain switch
           {
             Domain.DomainPiping => true,
@@ -166,6 +167,7 @@ namespace Arent3d.Architecture.Routing.AppBase
             _ => false
           } ;
         }
+
         return connector.IsAnyEnd() && connector.Domain switch
         {
           Domain.DomainPiping => false,

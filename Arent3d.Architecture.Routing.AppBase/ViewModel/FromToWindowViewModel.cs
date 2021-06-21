@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public static void ShowFromToWindow( UIDocument uiDocument, AddInType addInType )
     {
       UiDoc = uiDocument ;
-      var allRoutes = uiDocument.Document.CollectRoutes(addInType) ;
+      var allRoutes = uiDocument.Document.CollectRoutes( addInType ) ;
       if ( OpenedDialog != null ) {
         OpenedDialog.Close() ;
       }

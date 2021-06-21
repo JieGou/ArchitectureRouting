@@ -3,7 +3,7 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.CollisionTree
 {
-  public class CableTrayConduitCollisionCheckTargetCollector: CollisionCheckTargetCollectorBase
+  public class CableTrayConduitCollisionCheckTargetCollector : CollisionCheckTargetCollectorBase
   {
     public CableTrayConduitCollisionCheckTargetCollector( Document document, IReadOnlyCollection<Route> routes ) : base( document )
     {

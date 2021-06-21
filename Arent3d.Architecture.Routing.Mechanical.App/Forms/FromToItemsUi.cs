@@ -11,11 +11,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Forms
     {
       FromToTreeIcons = new Dictionary<string, BitmapImage>()
       {
-        {"RouteItem", new BitmapImage(new Uri( "../resources/From-ToWindow.png", UriKind.Relative ))},
-        {"ConnectorItem", new BitmapImage(new Uri( "../resources/ImportFromTo.png", UriKind.Relative ))},
-        {"SubRouteItem", new BitmapImage(new Uri( "../resources/ImportPS.png", UriKind.Relative ))},
-        {"PassPointItem", new BitmapImage(new Uri( "../resources/InsertBranchPoint.png", UriKind.Relative ))},
-        {"TerminatePointItem", new BitmapImage(new Uri( "../resources/MEP.ico", UriKind.Relative ))}
+        { "RouteItem", new BitmapImage( new Uri( "../resources/From-ToWindow.png", UriKind.Relative ) ) },
+        { "ConnectorItem", new BitmapImage( new Uri( "../resources/ImportFromTo.png", UriKind.Relative ) ) },
+        { "SubRouteItem", new BitmapImage( new Uri( "../resources/ImportPS.png", UriKind.Relative ) ) },
+        { "PassPointItem", new BitmapImage( new Uri( "../resources/InsertBranchPoint.png", UriKind.Relative ) ) },
+        { "TerminatePointItem", new BitmapImage( new Uri( "../resources/MEP.ico", UriKind.Relative ) ) }
       } ;
     }
   }

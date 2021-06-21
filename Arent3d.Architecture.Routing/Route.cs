@@ -25,12 +25,13 @@ namespace Arent3d.Architecture.Routing
     /// Unique identifier name of a route.
     /// </summary>
     public string RouteName => this._routeName ;
+
     public override string Name => RouteName ;
 
     public void Rename( string routeName )
     {
       var oldName = this._routeName ;
-     
+
       RenameAllDescendents( oldName, routeName ) ;
 
       this._routeName = routeName ;
@@ -75,6 +76,7 @@ namespace Arent3d.Architecture.Routing
     {
       return _routeSegments.Select( seg => seg.SystemClassificationInfo ).NonNull().FirstOrDefault() ?? MEPSystemClassificationInfo.Undefined ;
     }
+
     public void SetSystemClassificationInfo( MEPSystemClassificationInfo classificationInfo )
     {
       RouteSegments.ForEach( segment => segment.SystemClassificationInfo = classificationInfo ) ;
@@ -97,11 +99,12 @@ namespace Arent3d.Architecture.Routing
       if ( GetSystemClassificationInfo().HasSystemType() ) {
         return _defaultSystemType ??= Document.GetAllElements<MEPSystemType>().Where( GetSystemClassificationInfo().IsCompatibleTo ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       }
+
       return null ;
-      
     }
 
     private MEPCurveType? _defaultCurveType = null ;
+
     public MEPCurveType GetDefaultCurveType()
     {
       return _defaultCurveType ??= RouteMEPSystem.GetMEPCurveType( Document, GetAllConnectors(), GetMEPSystemType() ) ;
@@ -114,7 +117,7 @@ namespace Arent3d.Architecture.Routing
     public bool? UniqueIsRoutingOnPipeSpace => SubRoutes.Select( subRoute => subRoute.IsRoutingOnPipeSpace ).Distinct().Select( d => (bool?) d ).UniqueOrDefault() ;
 
     public double? UniqueFixedBopHeight => SubRoutes.Select( ( subRoute => subRoute.FixedBopHeight ) ).Distinct().UniqueOrDefault() ;
-    
+
     /// <summary>
     /// for loading from storage.
     /// </summary>

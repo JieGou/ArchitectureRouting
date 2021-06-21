@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading.Tasks ;
-using Arent3d.Architecture.Routing.AppBase.Forms;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -14,6 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class ReplaceFromToCommandBase : RoutingCommandBase
   {
     protected abstract AddInType GetAddInType() ;
+
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
       var route = GetReplacingRoute( uiDocument ) ;
@@ -27,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static async IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetReplacedEndPoints( Route route, IEndPoint oldEndPoint, IEndPoint newEndPoint )
     {
       await Task.Yield() ;
-      
+
       oldEndPoint.EraseInstance() ;
       newEndPoint.GenerateInstance( route.RouteName ) ;
 
@@ -42,18 +43,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var message = "Dialog.Commands.Routing.ReplaceFromTo.SelectFromTo".GetAppStringByKeyOrDefault( "Select which end is to be changed." ) ;
 
       var array = route.RouteSegments.SelectMany( GetReplaceableEndPoints ).ToArray() ;
-            // TODO: selection ui
+      // TODO: selection ui
 
-      var sv = new SelectEndPoint( array ) { Title = message };
-      sv.ShowDialog();
+      var sv = new SelectEndPoint( array ) { Title = message } ;
+      sv.ShowDialog() ;
 
-      uiDocument.ClearSelection();
-      uiDocument.GetActiveUIView()?.ZoomToFit();
+      uiDocument.ClearSelection() ;
+      uiDocument.GetActiveUIView()?.ZoomToFit() ;
 
       if ( true != sv.DialogResult )
-          return array[0];
+        return array[ 0 ] ;
 
-      return sv.GetSelectedEndPoint();
+      return sv.GetSelectedEndPoint() ;
     }
 
     private static IEnumerable<IEndPoint> GetReplaceableEndPoints( RouteSegment segment )
@@ -65,12 +66,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private IEndPoint PickNewEndPoint( UIDocument uiDocument, Route route, IEndPoint endPoint )
     {
       var fromPickResult = PickCommandUtil.PickResultFromAnother( route, endPoint ) ;
-      var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), fromPickResult, AddInType.Electrical ) ;//Implement after
-      
+      var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), fromPickResult, AddInType.Electrical ) ; //Implement after
+
       return PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
     }
 
-    private  Route GetReplacingRoute( UIDocument uiDocument )
+    private Route GetReplacingRoute( UIDocument uiDocument )
     {
       return GetReplacingRouteFromCurrentSelection( uiDocument ) ?? PickReplacingRoute( uiDocument ) ;
     }
@@ -80,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).UniqueOrDefault() ;
     }
 
-    private  Route PickReplacingRoute( UIDocument uiDocument )
+    private Route PickReplacingRoute( UIDocument uiDocument )
     {
       return PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.ReplaceFromTo.Pick".GetAppStringByKeyOrDefault( null ), GetAddInType() ).Route ;
     }

@@ -23,8 +23,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     private static FromToTreeManager? _fromToTreeManager = null ;
 
     public static FromToTreeManager FromToTreeManager => _fromToTreeManager ??= new FromToTreeManager() ;
-      
-    
+
+
     protected override string GetLanguageDirectoryPath()
     {
       return GetDefaultLanguageDirectoryPath( Assembly.GetExecutingAssembly() ) ;
@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     protected override void OnDocumentListenStarted( Document document )
     {
       DocumentMapper.Register( document ) ;
-      FromToTreeManager.OnDocumentOpened(AddInType.Electrical) ;
+      FromToTreeManager.OnDocumentOpened( AddInType.Electrical ) ;
     }
 
     protected override void OnDocumentListenFinished( Document document )
@@ -68,6 +68,5 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     {
       yield return new RoutingUpdateListener() ;
     }
-    
   }
 }

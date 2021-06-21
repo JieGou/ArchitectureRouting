@@ -15,7 +15,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
   public class FromToTreeManager
   {
-
     public UIApplication? UiApp = null ;
     public FromToTreeUiManager? FromToTreeUiManager = null ;
 
@@ -31,7 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var doc = UiApp.ActiveUIDocument.Document ;
 
       //Initialize TreeView
-      FromToTreeUiManager?.FromToTreeView.ClearSelection();
+      FromToTreeUiManager?.FromToTreeView.ClearSelection() ;
       FromToTreeUiManager?.FromToTreeView.CustomInitiator( UiApp, addInType ) ;
       SetSelectionInViewToFromToTree( doc, addInType ) ;
     }
@@ -52,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
       // Get Selected Routes
       var selectedRoutes = PointOnRoutePicker.PickedRoutesFromSelections( UiApp.ActiveUIDocument ) ;
-      var connectorsInView = doc.CollectRoutes(addInType).SelectMany( r => r.GetAllConnectors() ).Where( c => elementsInActiveView.Contains( c.Owner.Id ) ) ;
+      var connectorsInView = doc.CollectRoutes( addInType ).SelectMany( r => r.GetAllConnectors() ).Where( c => elementsInActiveView.Contains( c.Owner.Id ) ) ;
 
 
       if ( selectedRoutes.FirstOrDefault() is { } selectedRoute ) {
@@ -75,7 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     // document opened event
-    public void OnDocumentOpened(AddInType addInType)
+    public void OnDocumentOpened( AddInType addInType )
     {
       // provide ExternalCommandData object to dockable page
       if ( FromToTreeUiManager is { } fromToTreeUiManager && UiApp != null ) {
@@ -84,15 +83,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( fromToTreeUiManager.Dockable == null ) {
           fromToTreeUiManager.Dockable = UiApp.GetDockablePane( fromToTreeUiManager.DpId ) ;
         }
+
         fromToTreeUiManager.ShowDockablePane() ;
       }
-      
     }
 
     // document opened event
     public void OnDocumentChanged( Autodesk.Revit.DB.Events.DocumentChangedEventArgs e, AddInType addInType )
     {
-      if ( FromToTreeUiManager?.FromToTreeView is not {} fromToTreeView || UiApp == null) return;
+      if ( FromToTreeUiManager?.FromToTreeView is not { } fromToTreeView || UiApp == null ) return ;
       var changedElementIds = e.GetAddedElementIds().Concat( e.GetDeletedElementIds() ).Concat( e.GetModifiedElementIds() ) ;
 
       var transactions = e.GetTransactionNames() ;

@@ -58,9 +58,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       public double? FixedHeight { get ; }
 
       public AvoidType AvoidType { get ; }
-      
+
       public string? StandardType { get ; }
-      
+
       public IList<string>? StandardTypes { get ; }
 
       public RoutePropertySource( Document doc, IReadOnlyCollection<SubRoute> subRoutes ) : base( doc )
@@ -148,17 +148,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
           //Standard Type Info
           StandardTypes = doc.GetStandardTypes().ToList() ;
-          StandardType = StandardTypes[0] ;
+          StandardType = StandardTypes[ 0 ] ;
 
           //CurveType Info
           var curveTypeId = CurveType.GetValidId() ;
           // _isExperimental is true while we treat only round shape
-          CurveTypes = doc.GetAllElements<MEPCurveType>().Where(c => c.GetType() == typeof( ConduitType )).OrderBy(c => c.Name).ToList(); ;
+          CurveTypes = doc.GetAllElements<MEPCurveType>().Where( c => c.GetType() == typeof( ConduitType ) ).OrderBy( c => c.Name ).ToList() ;
+          ;
 
           //AvoidType Info
           AvoidType = AvoidType.Whichever ;
         }
-        
       }
 
       private void IsMultiSelected()

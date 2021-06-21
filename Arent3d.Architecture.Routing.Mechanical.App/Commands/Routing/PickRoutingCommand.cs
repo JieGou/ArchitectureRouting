@@ -59,7 +59,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         systemType = subRoute2.Route.GetMEPSystemType() ;
         curveType = subRoute2.Route.GetDefaultCurveType() ;
         dblDiameter = subRoute2.GetDiameter() ;
- 
+
         var sv = SetDialog( document, classificationInfo, systemType, curveType, dblDiameter ) ;
         if ( false != sv.DialogResult ) {
           return CreateNewSegmentListForRoutePick( subRoute2, toPickResult, fromEndPoint, true, classificationInfo, sv ) ;
@@ -114,6 +114,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
             return list ;
           }
+
           return null ;
         }
       }
@@ -149,8 +150,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
           return list ;
         }
+
         return null ;
       }
+
       return null ;
     }
   }

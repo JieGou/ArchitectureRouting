@@ -1,7 +1,7 @@
 ﻿using System ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Routing;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Autodesk.Revit.Attributes ;
@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Regeneration( RegenerationOption.Manual )]
   public class RegisterFromToTreeCommand : RegisterFromToTreeCommandBase
   {
-    protected internal RegisterFromToTreeCommand( UIControlledApplication application, Guid dpId, IPostCommandExecutorBase postCommandExecutor ) : base(application, dpId, postCommandExecutor)
+    protected internal RegisterFromToTreeCommand( UIControlledApplication application, Guid dpId, IPostCommandExecutorBase postCommandExecutor ) : base( application, dpId, postCommandExecutor )
     {
       CreateFromToTreeUiManager( application, dpId, postCommandExecutor ) ;
     }
@@ -51,12 +51,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
 
       return Result.Succeeded ;
-    } 
+    }
 
     protected override void CreateFromToTreeUiManager( UIControlledApplication application, Guid dpId, IPostCommandExecutorBase postCommandExecutor )
     {
-      var fromToTreeUiManager = new FromToTreeUiManager( application, dpId,"Electrical From-To View",  postCommandExecutor, new FromToItemsUi() ) ;
-      
+      var fromToTreeUiManager = new FromToTreeUiManager( application, dpId, "Electrical From-To View", postCommandExecutor, new FromToItemsUi() ) ;
+
       RoutingApp.FromToTreeManager.FromToTreeUiManager = fromToTreeUiManager ;
     }
   }

@@ -2,7 +2,7 @@ using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Globalization ;
 using System.IO ;
-using Arent3d.Revit;
+using Arent3d.Revit ;
 using Arent3d.Revit.Csv ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -40,10 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static string? OpenFromToCsv()
     {
-      using var dlg = new FileOpenDialog( $"{"Dialog.Commands.Routing.FromTo.FileName".GetAppStringByKeyOrDefault( null )} (*.csv)|*.csv" )
-      {
-        Title = "Dialog.Commands.Routing.FromTo.Title.Import".GetAppStringByKeyOrDefault( null )
-      } ;
+      using var dlg = new FileOpenDialog( $"{"Dialog.Commands.Routing.FromTo.FileName".GetAppStringByKeyOrDefault( null )} (*.csv)|*.csv" ) { Title = "Dialog.Commands.Routing.FromTo.Title.Import".GetAppStringByKeyOrDefault( null ) } ;
 
       if ( ItemSelectionDialogResult.Confirmed != dlg.Show() ) return null ;
 

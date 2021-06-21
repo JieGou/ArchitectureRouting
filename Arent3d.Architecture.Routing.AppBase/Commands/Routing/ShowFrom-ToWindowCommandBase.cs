@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       _uiDocument = commandData.Application.ActiveUIDocument ;
       try {
-        FromToWindowViewModel.ShowFromToWindow( _uiDocument,GetAddInType()  ) ;
+        FromToWindowViewModel.ShowFromToWindow( _uiDocument, GetAddInType() ) ;
       }
       catch ( Exception e ) {
         TaskDialog.Show( "ShowFrom_ToWindowCommand", e.Message ) ;

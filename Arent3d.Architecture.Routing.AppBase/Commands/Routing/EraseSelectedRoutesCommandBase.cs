@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class EraseSelectedRoutesCommandBase : RoutingCommandBase
   {
     protected abstract AddInType GetAddInType() ;
-    
+
     protected override IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
     {
       return GetSelectedRouteSegments( uiDocument ) ;

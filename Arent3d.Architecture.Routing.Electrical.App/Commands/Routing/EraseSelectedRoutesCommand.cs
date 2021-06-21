@@ -10,9 +10,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   public class EraseSelectedRoutesCommand : EraseSelectedRoutesCommandBase
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.EraseSelectedRoutes" ;
+
     protected override AddInType GetAddInType()
     {
-      return AddInType.Electrical;
+      return AddInType.Electrical ;
     }
   }
 }

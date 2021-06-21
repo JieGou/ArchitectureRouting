@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing
     {
       _sys = routeMepSystem ;
     }
-    
+
     public double GetLongElbowSize( IPipeDiameter diameter )
     {
       return _sys.Get90ElbowSize( diameter.Outside ) ;

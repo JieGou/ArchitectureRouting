@@ -6,7 +6,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Enabler
   {
     protected override AddInType GetAddInType()
     {
-      return AddInType.Mechanical;
+      return AddInType.Mechanical ;
     }
   }
 }

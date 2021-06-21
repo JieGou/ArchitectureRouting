@@ -7,7 +7,7 @@
       mc:Ignorable="d"
       Title="FromToTree"
       x:Name="root"
-      Height="Auto" Width="Auto" Background="White" >
+      Height="Auto" Width="Auto" Background="White">
     <Grid Background="White" Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -23,20 +23,20 @@
         <TreeView Name="FromToTreeView" Width="Auto" Height="100" Grid.Row="1"
                   BorderBrush="LightGray" BorderThickness="1"
                   SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"
-                  MouseDoubleClick="FromToTreeView_OnMouseDoubleClick"  PreviewKeyDown="FromToTreeView_PreviewKeyDown" >
+                  MouseDoubleClick="FromToTreeView_OnMouseDoubleClick" PreviewKeyDown="FromToTreeView_PreviewKeyDown">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="local:FromToItem" ItemsSource="{Binding Children}">
 
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="{Binding Icon}" Height="16" Width="16"/>
+                        <Image Source="{Binding Icon}" Height="16" Width="16" />
                         <TextBlock Text="{Binding ItemTypeName}" Foreground="{Binding Path=TextColor}" PreviewMouseLeftButtonDown="TextBlock_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="TextBlock_PreviewMouseLeftButtonUp">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
 
-                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Setter Property="Visibility" Value="Visible" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsEditing}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Setter Property="Visibility" Value="Collapsed" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -45,11 +45,11 @@
                         <TextBox Name="secondTextBox" Text="{Binding ItemTypeName}" KeyDown="TextBox_KeyDown" PreviewLostKeyboardFocus="TextBox_PreviewLostKeyboardFocus">
                             <TextBox.Style>
                                 <Style TargetType="TextBox">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Setter Property="Visibility" Value="Collapsed" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsEditing}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <Setter Property="FocusManager.FocusedElement" Value="{Binding ElementName=secondTextBox}"/>
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Setter Property="FocusManager.FocusedElement" Value="{Binding ElementName=secondTextBox}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -66,30 +66,30 @@
             <local:SelectedFromToBase.Style>
                 <Style TargetType="local:SelectedFromToBase">
                     <!--TargetTypeをUserControlにしても変わらない-->
-                    <Setter Property="Visibility" Value="Hidden"/>
+                    <Setter Property="Visibility" Value="Hidden" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsRouterVisibility}" Value="True">
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Setter Property="IsEnableSystemType" Value="{Binding IsEnableSystemType}"/>
-                            <Setter Property="IsEnableCurveType" Value="{Binding IsEnableCurveType}"/>
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Setter Property="IsEnableSystemType" Value="{Binding IsEnableSystemType}" />
+                            <Setter Property="IsEnableCurveType" Value="{Binding IsEnableCurveType}" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </local:SelectedFromToBase.Style>
         </local:SelectedFromToBase>
 
-        <local:PassPointInfo  Grid.Row="3" Width="Auto">
+        <local:PassPointInfo Grid.Row="3" Width="Auto">
             <local:PassPointInfo.Style>
                 <Style TargetType="local:PassPointInfo">
                     <!--TargetTypeをUserControlにしても変わらない-->
-                    <Setter Property="Visibility" Value="Hidden"/>
-                    
+                    <Setter Property="Visibility" Value="Hidden" />
+
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsConnectorVisibility}" Value="True">
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Setter Property="XPoint" Value="{Binding CoordinatesX}"/>
-                            <Setter Property="YPoint" Value="{Binding CoordinatesY}"/>
-                            <Setter Property="ZPoint" Value="{Binding CoordinatesZ}"/>
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Setter Property="XPoint" Value="{Binding CoordinatesX}" />
+                            <Setter Property="YPoint" Value="{Binding CoordinatesY}" />
+                            <Setter Property="ZPoint" Value="{Binding CoordinatesZ}" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>

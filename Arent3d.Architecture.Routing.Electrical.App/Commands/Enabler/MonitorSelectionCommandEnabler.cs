@@ -6,7 +6,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Enabler
   {
     protected override AddInType GetAddInType()
     {
-      return AddInType.Electrical;
+      return AddInType.Electrical ;
     }
   }
 }

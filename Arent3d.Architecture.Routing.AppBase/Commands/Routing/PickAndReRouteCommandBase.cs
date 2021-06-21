@@ -10,6 +10,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class PickAndReRouteCommandBase : RoutingCommandBase
   {
     protected abstract AddInType GetAddInType() ;
+
     protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
     {
       var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;

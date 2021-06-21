@@ -15,9 +15,9 @@ namespace Arent3d.Architecture.Routing
     public MEPCurveType? CurveType { get ; set ; }
 
     public double? PreferredNominalDiameter { get ; private set ; }
-    
+
     public double? FixedBopHeight { get ; set ; }
-    
+
     public AvoidType AvoidType { get ; set ; }
 
     public IEndPoint FromEndPoint { get ; private set ; }
@@ -36,6 +36,7 @@ namespace Arent3d.Architecture.Routing
       if ( FromEndPoint.GetDiameter() is { } d1 ) {
         return d1 ;
       }
+
       if ( ToEndPoint.GetDiameter() is { } d2 ) {
         return d2 ;
       }
@@ -50,7 +51,7 @@ namespace Arent3d.Architecture.Routing
 
     public bool ApplyRealNominalDiameter()
     {
-      if ( GetRealNominalDiameterFromEndPoints() is not {} d ) return false ;
+      if ( GetRealNominalDiameterFromEndPoints() is not { } d ) return false ;
 
       PreferredNominalDiameter = d ;
       return true ;

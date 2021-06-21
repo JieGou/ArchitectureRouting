@@ -28,9 +28,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
     /// return Hierarchical FromToData for TreeView
     /// </summary>
     /// <returns></returns>
-    public IReadOnlyCollection<FromToItem> GetFromtToData(AddInType addInType, FromToItemsUiBase fromToItemsUiBase)
+    public IReadOnlyCollection<FromToItem> GetFromToData( AddInType addInType, FromToItemsUiBase fromToItemsUiBase )
     {
-      var allRoutes = UiDoc.Document.CollectRoutes(addInType).ToList() ;
+      var allRoutes = UiDoc.Document.CollectRoutes( addInType ).ToList() ;
 
       var fromToItems = FromToItem.CreateRouteFromToItems( Doc, UiDoc, allRoutes, fromToItemsUiBase ) ;
 

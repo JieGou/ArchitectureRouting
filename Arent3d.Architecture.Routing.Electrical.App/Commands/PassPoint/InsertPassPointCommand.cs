@@ -11,9 +11,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint
   public class InsertPassPointCommand : InsertPassPointCommandBase
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.PassPoint.Insert" ;
+
     protected override AddInType GetAddInType()
     {
-      return AddInType.Electrical;
+      return AddInType.Electrical ;
     }
   }
 }
