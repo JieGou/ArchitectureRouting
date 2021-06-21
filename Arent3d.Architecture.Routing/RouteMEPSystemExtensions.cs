@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing
     {
       var resultList = new List<double>() ;
       Segment? segment = null ;
-      if ( type is ConduitType ) {
+      if ( type is not ConduitType ) {
         segment = type.GetTargetSegment() ;
       }
 
