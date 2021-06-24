@@ -22,12 +22,24 @@ namespace Arent3d.Revit.UI
     /// <returns></returns>
     public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel ) where TCommand : IExternalCommand
     {
-      if ( typeof( TCommand ).HasInterface<IExternalCommandAvailability>() ) {
-        return ribbonPanel.AddButton<TCommand>( typeof( TCommand ).FullName ) ;
-      }
+      return AddButton<TCommand>( ribbonPanel, Assembly.GetCallingAssembly() ) ;
+    }
 
-      var assemblyName = Assembly.GetCallingAssembly().GetName().Name ;
-      return (RibbonButton) ribbonPanel.AddItem( CreateButton<TCommand>( assemblyName ) ) ;
+    /// <summary>
+    /// Add PushButton. When class <see cref="TCommand"/> implements <see cref="IExternalCommandAvailability"/>, it will set into <see cref="PushButtonData"/>'s <see cref="PushButtonData.AvailabilityClassName"/> property.
+    /// </summary>
+    /// <param name="ribbonPanel"></param>
+    /// <param name="resourceAssembly">An assembly which contains image resources.</param>
+    /// <typeparam name="TCommand"></typeparam>
+    /// <returns></returns>
+    public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel, Assembly resourceAssembly ) where TCommand : IExternalCommand
+    {
+      if ( typeof( TCommand ).HasInterface<IExternalCommandAvailability>() ) {
+        return ribbonPanel.AddButtonImpl<TCommand>( typeof( TCommand ).FullName, resourceAssembly ) ;
+      }
+      else {
+        return ribbonPanel.AddButtonImpl<TCommand>( null, resourceAssembly ) ;
+      }
     }
 
     /// <summary>
@@ -39,7 +51,20 @@ namespace Arent3d.Revit.UI
     /// <returns></returns>
     public static RibbonButton AddButton<TCommand, TCommandAvailability>( this RibbonPanel ribbonPanel ) where TCommand : IExternalCommand where TCommandAvailability : IExternalCommandAvailability
     {
-      return ribbonPanel.AddButton<TCommand>( typeof( TCommandAvailability ).FullName ) ;
+      return ribbonPanel.AddButton<TCommand, TCommandAvailability>( Assembly.GetCallingAssembly() ) ;
+    }
+
+    /// <summary>
+    /// Add PushButton with AvailabilityClassName.
+    /// </summary>
+    /// <param name="ribbonPanel"></param>
+    /// <param name="resourceAssembly">An assembly which contains image resources.</param>
+    /// <typeparam name="TCommand"></typeparam>
+    /// <typeparam name="TCommandAvailability"></typeparam>
+    /// <returns></returns>
+    public static RibbonButton AddButton<TCommand, TCommandAvailability>( this RibbonPanel ribbonPanel, Assembly resourceAssembly ) where TCommand : IExternalCommand where TCommandAvailability : IExternalCommandAvailability
+    {
+      return ribbonPanel.AddButtonImpl<TCommand>( typeof( TCommandAvailability ).FullName, resourceAssembly ) ;
     }
 
     /// <summary>
@@ -51,26 +76,36 @@ namespace Arent3d.Revit.UI
     /// <returns></returns>
     public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel, string availabilityClassName ) where TCommand : IExternalCommand
     {
-      var assemblyName = Assembly.GetCallingAssembly().GetName().Name ;
-      var pushButtonData = CreateButton<TCommand>( assemblyName ) ;
-      pushButtonData.AvailabilityClassName = availabilityClassName ;
+      return ribbonPanel.AddButton<TCommand>( availabilityClassName, Assembly.GetCallingAssembly() ) ;
+    }
+
+    /// <summary>
+    /// Add PushButton with <see cref="PushButtonData"/>'s <see cref="PushButtonData.AvailabilityClassName"/> property.
+    /// </summary>
+    /// <param name="ribbonPanel"></param>
+    /// <param name="resourceAssembly">An assembly which contains image resources.</param>
+    /// <param name="availabilityClassName"></param>
+    /// <typeparam name="TCommand"></typeparam>
+    /// <returns></returns>
+    public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel, string availabilityClassName, Assembly resourceAssembly ) where TCommand : IExternalCommand
+    {
+      return ribbonPanel.AddButtonImpl<TCommand>( availabilityClassName, resourceAssembly ) ;
+    }
+
+    private static RibbonButton AddButtonImpl<TCommand>( this RibbonPanel ribbonPanel, string? availabilityClassName, Assembly resourceAssembly ) where TCommand : IExternalCommand
+    {
+      var pushButtonData = CreateButton<TCommand>( resourceAssembly ) ;
+      if ( null != availabilityClassName ) {
+        pushButtonData.AvailabilityClassName = availabilityClassName ;
+      }
 
       return (RibbonButton) ribbonPanel.AddItem( pushButtonData ) ;
     }
-    
-    public static ImageSource? GetImageFromName( string imageName )
-    {
-      var assemblyName = Assembly.GetCallingAssembly().GetName().Name ;
-      try {
-        var uri = new Uri( "pack://application:,,,/" + assemblyName + ";component/resources/" + imageName ) ;
-        return new BitmapImage( uri ) ;
-      }
-      catch ( Exception ) {
-        return null ;
-      }
-    }
 
-    private static PushButtonData CreateButton<TButtonCommand>( string assemblyName ) where TButtonCommand : IExternalCommand
+    public static ImageSource? GetImageFromName( string imageName ) => GetImageFromName( Assembly.GetCallingAssembly(), "resources/" + imageName ) ;
+    public static ImageSource? GetImageFromName( Assembly assembly, string imageName ) => ToImageSource( assembly, "resources/" + imageName ) ;
+
+    private static PushButtonData CreateButton<TButtonCommand>( Assembly assembly ) where TButtonCommand : IExternalCommand
     {
       var commandClass = typeof( TButtonCommand ) ;
 
@@ -83,13 +118,13 @@ namespace Arent3d.Revit.UI
       foreach ( var attr in commandClass.GetCustomAttributes<ImageAttribute>() ) {
         switch ( attr.ImageType ) {
           case ImageType.Normal :
-            buttonData.Image = ToImageSource( assemblyName, attr ) ;
+            buttonData.Image = ToImageSource( assembly, attr ) ;
             break ;
           case ImageType.Large :
-            buttonData.LargeImage = ToImageSource( assemblyName, attr ) ;
+            buttonData.LargeImage = ToImageSource( assembly, attr ) ;
             break ;
           case ImageType.Tooltip :
-            buttonData.ToolTipImage = ToImageSource( assemblyName, attr ) ;
+            buttonData.ToolTipImage = ToImageSource( assembly, attr ) ;
             break ;
           default : break ;
         }
@@ -107,10 +142,12 @@ namespace Arent3d.Revit.UI
       return commandClass.GetCustomAttribute<DisplayNameKeyAttribute>()?.GetApplicationString() ?? commandClass.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? commandClass.Name.SeparateByWords() ;
     }
 
-    private static ImageSource? ToImageSource( string assemblyName, ImageAttribute attr )
+    private static ImageSource? ToImageSource( Assembly assembly, ImageAttribute attr ) => ToImageSource( assembly, attr.ResourceName ) ;
+
+    private static ImageSource? ToImageSource( Assembly assembly, string resourcePath )
     {
       try {
-        var uri = new Uri( "pack://application:,,,/" + assemblyName + ";component/" + attr.ResourceName ) ;
+        var uri = new Uri( "pack://application:,,,/" + assembly.GetName().Name + ";component/" + resourcePath ) ;
         return new BitmapImage( uri ) ;
       }
       catch ( Exception ) {

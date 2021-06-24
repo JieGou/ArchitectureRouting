@@ -73,7 +73,7 @@ namespace Arent3d.Architecture.Routing
       var list = document.GetAllElementsOfRoute<Element>().Where( e => e.GetRouteName() is { } routeName && hashSet.Contains( routeName ) ) ;
       if ( false == eraseRouteStoragesAndPassPoints ) {
         // do not erase pass points
-        list = list.Where( p => false == ( p is FamilyInstance fi && ( fi.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) || fi.IsRoutingFamilyInstanceOf( RoutingFamilyType.TerminatePoint )) ) );
+        list = list.Where( p => false == ( p is FamilyInstance fi && ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint )) ) );
       }
 
       document.Delete( list.SelectMany( SelectAllRelatedElements ).Select( elm => elm.Id ).Distinct().ToArray() ) ;

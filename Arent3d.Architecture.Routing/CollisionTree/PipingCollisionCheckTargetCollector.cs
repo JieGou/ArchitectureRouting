@@ -1,4 +1,5 @@
 using System.Collections.Generic ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.CollisionTree
@@ -14,7 +15,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
       if ( elm is not FamilyInstance fi ) return true ;
 
       // Racks are not collision targets.
-      return fi.IsRoutingFamilyInstanceExcept( RoutingFamilyType.PassPoint, RoutingFamilyType.RackGuide ) ;
+      return fi.IsFamilyInstanceExcept( RoutingFamilyType.PassPoint, RoutingFamilyType.RackGuide ) ;
     }
   }
 }

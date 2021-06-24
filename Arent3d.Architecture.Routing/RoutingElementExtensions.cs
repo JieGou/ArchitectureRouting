@@ -217,19 +217,19 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsPassPoint( this FamilyInstance element )
     {
-      return element.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) || element.HasParameter( RoutingParameter.RelatedPassPointId ) ;
+      return element.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || element.HasParameter( RoutingParameter.RelatedPassPointId ) ;
     }
 
     public static bool IsConnectorPoint( this FamilyInstance element )
     {
-      return element.IsRoutingFamilyInstanceOf( RoutingFamilyType.ConnectorInPoint ) || element.IsRoutingFamilyInstanceOf( RoutingFamilyType.ConnectorOutPoint ) || element.IsRoutingFamilyInstanceOf( RoutingFamilyType.ConnectorPoint ) || element.IsRoutingFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) ;
+      return element.IsFamilyInstanceOfAny( RoutingFamilyType.ConnectorInPoint, RoutingFamilyType.ConnectorOutPoint, RoutingFamilyType.ConnectorPoint, RoutingFamilyType.TerminatePoint ) ;
     }
 
     public static int? GetPassPointId( this Element element )
     {
       if ( element is not FamilyInstance fi ) return null ;
 
-      if ( fi.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) return fi.Id.IntegerValue ;
+      if ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) return fi.Id.IntegerValue ;
       if ( element.TryGetProperty( RoutingParameter.RelatedPassPointId, out int id ) ) return id ;
       return null ;
     }
@@ -365,14 +365,14 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsTerminatePoint( this FamilyInstance element )
     {
-      return element.IsRoutingFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) || element.HasParameter( RoutingParameter.RelatedTerminatePointId ) ;
+      return element.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) || element.HasParameter( RoutingParameter.RelatedTerminatePointId ) ;
     }
 
     public static int? GetTerminatePointId( this Element element )
     {
       if ( element is not FamilyInstance fi ) return null ;
 
-      if ( fi.IsRoutingFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) ) return fi.Id.IntegerValue ;
+      if ( fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) ) return fi.Id.IntegerValue ;
       if ( element.TryGetProperty( RoutingParameter.RelatedTerminatePointId, out int id ) ) return id ;
       return null ;
     }
@@ -493,12 +493,12 @@ namespace Arent3d.Architecture.Routing
 
       var elm = document.GetElementById<FamilyInstance>( passPointId ) ;
       if ( null == elm ) yield break ;
-      if ( elm.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) yield return elm ;
+      if ( elm.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) yield return elm ;
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
       foreach ( var e in document.GetAllElements<Element>().OfCategory( RoutingBuiltInCategories ).OfNotElementType().Where( filter ).OfType<FamilyInstance>() ) {
-        if ( e.IsRoutingFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) continue ;
+        if ( e.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) continue ;
         if ( e.TryGetProperty( RoutingParameter.RelatedPassPointId, out int id ) && id == passPointId ) yield return e ;
       }
     }
