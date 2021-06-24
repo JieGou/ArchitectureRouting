@@ -93,17 +93,13 @@ namespace Arent3d.Architecture.Routing
 
     public static bool AllRoutingParametersAreRegistered( this Document document )
     {
-      return document.AllParametersAreRegistered<RoutingParameter>() ;
-    }
-
-    public static bool AllRoutingFamilyParametersAreRegistered( this Document document )
-    {
-      return document.AllParametersAreRegistered<RoutingFamilyLinkedParameter>() ;
+      return document.AllParametersAreRegistered<RoutingParameter>() && document.AllParametersAreRegistered<RoutingFamilyLinkedParameter>() ;
     }
 
     public static void MakeCertainAllRoutingParameters( this Document document )
     {
       document.LoadAllAllParametersFromFile<RoutingParameter>( AssetManager.GetRoutingSharedParameterPath() ) ;
+      document.LoadAllAllParametersFromFile<RoutingParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
       document.LoadAllAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() );
     }
   }
