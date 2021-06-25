@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Autodesk.Revit.DB ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.DB.Plumbing ;
@@ -21,18 +22,23 @@ namespace Arent3d.Architecture.Routing
     public static List<double> GetNominalDiameters( this MEPCurveType type, double diameterTolerance )
     {
       var resultList = new List<double>() ;
-      var segment = type.GetTargetSegment() ;
+      Segment? segment = null ;
+      if ( type is not ConduitType ) {
+        segment = type.GetTargetSegment() ;
+      }
 
       var diameterList = type switch
       {
-        DuctType => DuctSizeSettings.GetDuctSizeSettings(type.Document)[ DuctShape.Round ].Where(s => s.UsedInSizeLists && s.UsedInSizing).Select(s => s.NominalDiameter).ToList(),
+        DuctType => DuctSizeSettings.GetDuctSizeSettings( type.Document )[ DuctShape.Round ].Where( s => s.UsedInSizeLists && s.UsedInSizing ).Select( s => s.NominalDiameter ).ToList(),
         PipeType => segment?.GetSizes().Where( s => s.UsedInSizeLists && s.UsedInSizing && type.HasAnyNominalDiameter( s.NominalDiameter, diameterTolerance ) ).Select( s => s.NominalDiameter ).ToList(),
+        ConduitType => ConduitSizeSettings.GetConduitSizeSettings( type.Document ).Where( c => c.Key == type.get_Parameter( BuiltInParameter.CONDUIT_STANDARD_TYPE_PARAM ).AsValueString() ).Select( c => c.Value ).FirstOrDefault().Select( c => c.NominalDiameter ).ToList(),
         _ => throw new ArgumentOutOfRangeException( nameof( type ) ),
       } ;
 
-      if ( diameterList is {} dList ) {
+      if ( diameterList is { } dList ) {
         resultList = dList ;
       }
+
       resultList.Sort() ;
 
       return resultList ;
@@ -93,6 +99,17 @@ namespace Arent3d.Architecture.Routing
     {
       return doc.GetAllElements<MEPSystemType>().Where( systemClassificationInfo.IsCompatibleTo ) ;
     }
+
+    /// <summary>
+    /// Get Conduit StandardTypeList in project
+    /// </summary>
+    /// <param name="doc"></param>
+    /// <returns></returns>
+    public static IEnumerable<string> GetStandardTypes( this Document doc )
+    {
+      return ConduitSizeSettings.GetConduitSizeSettings( doc ).Select( c => c.Key ) ;
+    }
+
 
     /// <summary>
     /// Get compatible curve types.

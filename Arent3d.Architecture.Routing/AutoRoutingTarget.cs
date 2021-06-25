@@ -11,12 +11,12 @@ using MathLib ;
 namespace Arent3d.Architecture.Routing
 {
   public class AutoRoutingTarget : IAutoRoutingTarget
-  { 
+  {
     /// <summary>
     /// All routes an <see cref="AutoRoutingTarget"/> is related to.
     /// </summary>
     public IReadOnlyCollection<Route> Routes { get ; }
-    
+
     /// <summary>
     /// Routing end points which fluid flows from.
     /// </summary>
@@ -34,9 +34,13 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     public IEnumerable<AutoRoutingEndPoint> EndPoints => _fromEndPoints.Concat( _toEndPoints ) ;
 
+    public Domain Domain { get ; }
+
     public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
       Routes = subRoutes.Select( subRoute => subRoute.Route ).Distinct().EnumerateAll() ;
+
+      Domain = Routes.Select( route => (Domain?) route.Domain ).FirstOrDefault() ?? throw new InvalidOperationException() ;
 
       var depths = GetDepths( subRoutes ) ;
 
@@ -44,7 +48,7 @@ namespace Arent3d.Architecture.Routing
       _fromEndPoints = GenerateEndPointList( subRoutes, subRoute => GetFromEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute ] ), dic ) ;
       _toEndPoints = GenerateEndPointList( subRoutes, subRoute => GetToEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute ] ), dic ) ;
       _ep2SubRoute = dic ;
-      
+
       AutoRoutingEndPoint.ApplyDepths( _fromEndPoints, _toEndPoints ) ;
 
       var firstSubRoute = subRoutes.First() ;
@@ -68,13 +72,13 @@ namespace Arent3d.Architecture.Routing
             newDepthList.Add( subRoute ) ;
           }
         }
-        
+
         foreach ( var subRoute in newDepthList ) {
           result.Add( subRoute, newDepth ) ;
 
           parentInfo.Remove( subRoute ) ;
         }
-        
+
         foreach ( var (_, parents) in parentInfo ) {
           parents.RemoveAll( newDepthList.Contains ) ;
         }
@@ -118,13 +122,14 @@ namespace Arent3d.Architecture.Routing
     {
       var edgeDiameter = subRoute.GetDiameter() ;
       var endPoints = subRoute.FromEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth, routeMepSystem, edgeDiameter, ( ProcessConstraint) subRoute.AvoidType) ) ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth, routeMepSystem, edgeDiameter, (ProcessConstraint) subRoute.AvoidType ) ) ;
     }
+
     private static IEnumerable<AutoRoutingEndPoint> GetToEndPoints( SubRoute subRoute, int depth, RouteMEPSystem routeMepSystem )
     {
       var edgeDiameter = subRoute.GetDiameter() ;
       var endPoints = subRoute.ToEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, routeMepSystem, edgeDiameter, ( ProcessConstraint) subRoute.AvoidType ) ) ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, routeMepSystem, edgeDiameter, (ProcessConstraint) subRoute.AvoidType ) ) ;
     }
 
     private static bool IsRoutingTargetEnd( IEndPoint ep )

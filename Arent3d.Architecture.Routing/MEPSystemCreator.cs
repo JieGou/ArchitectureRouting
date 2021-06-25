@@ -21,11 +21,11 @@ namespace Arent3d.Architecture.Routing
     private readonly Document _document ;
     private readonly AutoRoutingTarget _autoRoutingTarget ;
     private readonly RouteVertexToConnectorMapper _connectorMapper ;
-    
+
     /// <summary>
     /// Returns pass-point-to-connector relation manager.
     /// </summary>
-    public PassPointConnectorMapper PassPointConnectorMapper { get ; }= new() ;
+    public PassPointConnectorMapper PassPointConnectorMapper { get ; } = new() ;
 
     private readonly Level _level ;
 
@@ -47,6 +47,7 @@ namespace Arent3d.Architecture.Routing
       var level = autoRoutingTarget.EndPoints.Select( endPoint => GetLevel( document, endPoint ) ).FirstOrDefault( l => l != null && l.IsValidObject ) ;
       return level ?? Level.Create( document, 0.0 ) ;
     }
+
     private static Level? GetLevel( Document document, AutoRoutingEndPoint endPoint )
     {
       if ( endPoint.EndPoint.GetReferenceConnector() is not { } connector ) return null ;
@@ -63,7 +64,7 @@ namespace Arent3d.Architecture.Routing
     /// <exception cref="ArgumentException"><see cref="routeVertex"/> is not generated from an end point.</exception>
     public void RegisterEndPointConnector( IRouteVertex routeVertex )
     {
-      if ( routeVertex.LineInfo.GetEndPoint() is ConnectorEndPoint cep && cep.GetConnector() is {} connector ) {
+      if ( routeVertex.LineInfo.GetEndPoint() is ConnectorEndPoint cep && cep.GetConnector() is { } connector ) {
         _connectorMapper.Add( routeVertex, connector ) ;
       }
     }
@@ -92,22 +93,19 @@ namespace Arent3d.Architecture.Routing
     /// <param name="routeEdge">A route edge.</param>
     /// <param name="passingEndPointInfo">Nearest from & to end points.</param>
     /// <returns>Newly created duct.</returns>
-    public Element CreateEdgeElement( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo )
+    public Element CreateEdgeElement( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo, Domain domain )
     {
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZRaw() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZRaw() ;
 
-      var baseConnector = ( routeEdge.LineInfo as AutoRoutingEndPoint )?.EndPoint.GetReferenceConnector() ?? _autoRoutingTarget.GetSubRoute( routeEdge ).GetReferenceConnector() ;
-      if ( null == baseConnector ) throw new InvalidOperationException() ;
-
       var subRoute = _autoRoutingTarget.GetSubRoute( routeEdge ) ;
       var routeMepSystem = _routeMepSystemDictionary[ subRoute ] ;
 
-      var element = baseConnector.Domain switch
+      var element = domain switch
       {
         Domain.DomainHvac => CreateDuct( startPos, endPos, routeMepSystem ),
         Domain.DomainPiping => CreatePipe( startPos, endPos, routeMepSystem ),
-        Domain.DomainCableTrayConduit => CreateCableTray( startPos, endPos, routeMepSystem ),
+        Domain.DomainCableTrayConduit => CreateCableTrayConduit( startPos, endPos, routeMepSystem ),
         Domain.DomainElectrical => throw new NotSupportedException(),
         _ => throw new InvalidOperationException(),
       } ;
@@ -134,23 +132,27 @@ namespace Arent3d.Architecture.Routing
 
     private MEPCurve CreateDuct( XYZ startPos, XYZ endPos, RouteMEPSystem routeMepSystem )
     {
-      var duct = Duct.Create( _document, routeMepSystem.MEPSystemType.Id, routeMepSystem.CurveType.Id, _level.Id, startPos, endPos ) ;
+      var duct = Duct.Create( _document, routeMepSystem.MEPSystemType?.Id, routeMepSystem.CurveType.Id, _level.Id, startPos, endPos ) ;
       if ( null != routeMepSystem.MEPSystem ) {
         duct.SetSystemType( routeMepSystem.MEPSystem.Id ) ;
       }
+
       return duct ;
     }
+
     private MEPCurve CreatePipe( XYZ startPos, XYZ endPos, RouteMEPSystem routeMepSystem )
     {
-      var pipe = Pipe.Create( _document, routeMepSystem.MEPSystemType.Id, routeMepSystem.CurveType.Id, _level.Id, startPos, endPos ) ;
+      var pipe = Pipe.Create( _document, routeMepSystem.MEPSystemType?.Id, routeMepSystem.CurveType.Id, _level.Id, startPos, endPos ) ;
       if ( null != routeMepSystem.MEPSystem ) {
         pipe.SetSystemType( routeMepSystem.MEPSystem.Id ) ;
       }
+
       return pipe ;
     }
-    private MEPCurve CreateCableTray( XYZ startPos, XYZ endPos, RouteMEPSystem routeMepSystem )
+
+    private MEPCurve CreateCableTrayConduit( XYZ startPos, XYZ endPos, RouteMEPSystem routeMepSystem )
     {
-      return CableTray.Create( _document, routeMepSystem.CurveType.Id, startPos, endPos, _level.Id ) ;
+      return Conduit.Create( _document, routeMepSystem.CurveType.Id, startPos, endPos, _level.Id ) ;
     }
 
     private static Connector GetConnector( ConnectorManager connectorManager, XYZ position )
@@ -393,6 +395,7 @@ namespace Arent3d.Architecture.Routing
         AddBadConnectorSet( connector1, connector2 ) ;
         return ;
       }
+
       if ( null == fitting ) return ;
 
       if ( null != subRouteData ) {
@@ -555,7 +558,6 @@ namespace Arent3d.Architecture.Routing
     }
 
 
-
     private static IReadOnlyCollection<IEndPoint> GetNearestEnd( Connector[] connectors, bool isFrom )
     {
       return connectors.SelectMany( c => c.Owner.GetNearestEndPoints( isFrom ) ).Distinct().EnumerateAll() ;
@@ -563,15 +565,15 @@ namespace Arent3d.Architecture.Routing
 
     private static void MarkAsAutoRoutedElement( Element element, SubRoute subRoute, PassingEndPointInfo passingEndPointInfo )
     {
-      MarkAsAutoRoutedElement( element, subRoute.Route.RouteName, subRoute.SubRouteIndex, passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints );
+      MarkAsAutoRoutedElement( element, subRoute.Route.RouteName, subRoute.SubRouteIndex, passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints ) ;
     }
 
     private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex, IEnumerable<IEndPoint> nearestFrom, IEnumerable<IEndPoint> nearestTo )
     {
       element.SetProperty( RoutingParameter.RouteName, routeId ) ;
       element.SetProperty( RoutingParameter.SubRouteIndex, subRouteIndex ) ;
-      element.SetProperty( RoutingParameter.NearestFromSideEndPoints, nearestFrom.Stringify() );
-      element.SetProperty( RoutingParameter.NearestToSideEndPoints, nearestTo.Stringify() );
+      element.SetProperty( RoutingParameter.NearestFromSideEndPoints, nearestFrom.Stringify() ) ;
+      element.SetProperty( RoutingParameter.NearestToSideEndPoints, nearestTo.Stringify() ) ;
     }
 
     private static void SetRoutingFromToConnectorIdsForFitting( Element element )
@@ -590,6 +592,7 @@ namespace Arent3d.Architecture.Routing
             toList.Add( conn.Id ) ;
             return ;
           }
+
           if ( partner.IsRoutingConnector( false ) ) {
             fromList.Add( conn.Id ) ;
             return ;

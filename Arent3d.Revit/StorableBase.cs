@@ -1,4 +1,5 @@
 using System ;
+using System.Collections.Generic ;
 using System.Linq.Expressions ;
 using System.Reflection ;
 using Autodesk.Revit.DB ;
@@ -19,18 +20,21 @@ namespace Arent3d.Revit
 
     internal bool SubStorable { get ; }
 
-    protected StorableBase( DataStorage owner, bool subStorable )
+    protected StorableBase( DataStorage owner, bool subStorable ) : this( owner.Document, owner, subStorable )
     {
-      Document = owner.Document ;
-      OwnerElement = owner ;
-      SubStorable = subStorable ;
     }
 
-    protected StorableBase( Document document, bool subStorable )
+    protected StorableBase( Document document, bool subStorable ) : this( document, null, subStorable )
+    {
+    }
+
+    private StorableBase( Document document, DataStorage? ownerElement, bool subStorable )
     {
       Document = document ;
-      OwnerElement = null ;
+      OwnerElement = ownerElement ;
       SubStorable = subStorable ;
+
+      StorageExtensions.RegisterAssembly( GetType().Assembly ) ;
     }
 
     public void Save()
@@ -54,6 +58,21 @@ namespace Arent3d.Revit
     internal static TStorableBase CreateFromEntity<TStorableBase>( DataStorage ownerElement ) where TStorableBase : StorableBase
     {
       return StorableInstantiator<TStorableBase>.Instantiate( ownerElement ) ;
+    }
+
+    private static readonly Dictionary<Type, Func<DataStorage, StorableBase>> _instantiators = new() ;
+    internal static StorableBase CreateFromEntity( Type storableType, DataStorage ownerElement )
+    {
+      if ( _instantiators.TryGetValue( storableType, out var func ) ) return func( ownerElement ) ;
+
+      var concreteType = typeof( StorableInstantiator<> ).MakeGenericType( storableType ) ;
+      var method = concreteType.GetMethod( "Instantiate" ) ?? throw new InvalidOperationException() ;
+
+      var param = Expression.Parameter( typeof( DataStorage ), "ownerElement" ) ;
+      func = Expression.Lambda<Func<DataStorage, StorableBase>>( Expression.Call( method, param ), param ).Compile() ;
+      _instantiators.Add( storableType, func ) ;
+
+      return func( ownerElement ) ;
     }
   }
 

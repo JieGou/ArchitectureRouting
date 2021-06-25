@@ -17,11 +17,12 @@ namespace Arent3d.Architecture.Routing
     public double DiameterTolerance { get ; }
     public double AngleTolerance { get ; }
 
-    public MEPSystemType MEPSystemType { get ; }
+    public MEPSystemType? MEPSystemType { get ; }
     public MEPSystem? MEPSystem { get ; }
     public MEPCurveType CurveType { get ; }
     
     private double ShortCurveTolerance { get ; }
+
 
     public RouteMEPSystem( Document document, SubRoute subRoute )
     {
@@ -37,22 +38,25 @@ namespace Arent3d.Architecture.Routing
     }
 
     private SizeTable<double>? _90ElbowSize ;
+
     public double Get90ElbowSize( double diameter )
     {
-      return ( _90ElbowSize ??= new( Calculate90ElbowSize ) ).Get( diameter ) ;
+      return ( _90ElbowSize ??= new(Calculate90ElbowSize) ).Get( diameter ) ;
     }
 
     private SizeTable<double>? _45ElbowSize ;
+
     public double Get45ElbowSize( double diameter )
     {
-      return ( _45ElbowSize ??= new( Calculate45ElbowSize ) ).Get( diameter ) ;
+      return ( _45ElbowSize ??= new(Calculate45ElbowSize) ).Get( diameter ) ;
     }
 
     private SizeTable<(double, double)>? _teeHeaderLength ;
+
     public double GetTeeHeaderLength( double headerDiameter, double branchDiameter )
     {
       if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
-        return ( _teeHeaderLength ??= new( CalculateTeeHeaderLength ) ).Get( ( headerDiameter, branchDiameter ) ) ;
+        return ( _teeHeaderLength ??= new(CalculateTeeHeaderLength) ).Get( ( headerDiameter, branchDiameter ) ) ;
       }
       else {
         return branchDiameter * 0.5 ; // provisional
@@ -60,10 +64,11 @@ namespace Arent3d.Architecture.Routing
     }
 
     private SizeTable<(double, double)>? _teeBranchLength ;
+
     public double GetTeeBranchLength( double headerDiameter, double branchDiameter )
     {
       if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
-        return ( _teeBranchLength ??= new( CalculateTeeBranchLength ) ).Get( ( headerDiameter, branchDiameter ) ) ;
+        return ( _teeBranchLength ??= new(CalculateTeeBranchLength) ).Get( ( headerDiameter, branchDiameter ) ) ;
       }
       else {
         return headerDiameter * 0.5 ; // provisional
@@ -71,11 +76,12 @@ namespace Arent3d.Architecture.Routing
     }
 
     private SizeTable<(double, double)>? _reducerLength ;
+
     public double GetReducerLength( double diameter1, double diameter2 )
     {
       if ( diameter1 <= 0 || diameter2 <= 0 || Math.Abs( diameter1 - diameter2 ) < DiameterTolerance ) return 0 ;
 
-      return ( _reducerLength ??= new( CalculateReducerLength ) ).Get( ( diameter1, diameter2 ) ) ;
+      return ( _reducerLength ??= new(CalculateReducerLength) ).Get( ( diameter1, diameter2 ) ) ;
     }
 
     public double GetWeldMinDistance( double diameter )
@@ -87,10 +93,12 @@ namespace Arent3d.Architecture.Routing
     {
       return diameter * 1.5 ; // provisional
     }
+
     private double Calculate45ElbowSize( double diameter )
     {
       return diameter * 1.5 ; // provisional
     }
+
     private double CalculateTeeHeaderLength( (double, double) value )
     {
       var (headerDiameter, branchDiameter) = value ;
@@ -101,6 +109,7 @@ namespace Arent3d.Architecture.Routing
         return headerDiameter * 0.5 + branchDiameter * 0.5 ; // provisional
       }
     }
+
     private double CalculateTeeBranchLength( (double, double) value )
     {
       var (headerDiameter, branchDiameter) = value ;
@@ -158,6 +167,7 @@ namespace Arent3d.Architecture.Routing
       SetMEPSystemParameters( system, connector ) ;
       return system ;
     }
+
     private static MEPSystem CreatePipingMEPSystem( Document document, Connector connector, IReadOnlyCollection<Connector> allConnectors )
     {
       allConnectors.ForEach( EraseOldMEPSystem ) ;
@@ -168,7 +178,7 @@ namespace Arent3d.Architecture.Routing
 
     private static void EraseOldMEPSystem( Connector c )
     {
-      if ( c.MEPSystem is not {  } mepSystem ) return ;
+      if ( c.MEPSystem is not { } mepSystem ) return ;
 
       if ( new ConnectorId( mepSystem.BaseEquipmentConnector ) == new ConnectorId( c ) ) {
         mepSystem.Document.Delete( mepSystem.Id ) ;
@@ -190,12 +200,12 @@ namespace Arent3d.Architecture.Routing
 
     #region Get MEPCurveType
 
-    public static MEPCurveType GetMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType systemType )
+    public static MEPCurveType GetMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType? systemType )
     {
-      return GetBestForAllMEPCurveType( document, connectors, systemType )
-             ?? throw new InvalidOperationException( $"Available {nameof( MEPCurveType )} is not found." ) ;
+      return GetBestForAllMEPCurveType( document, connectors, systemType ) ?? throw new InvalidOperationException( $"Available {nameof( MEPCurveType )} is not found." ) ;
     }
-    private static MEPCurveType? GetBestForAllMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType systemType )
+
+    private static MEPCurveType? GetBestForAllMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType? systemType )
     {
       var diameterTolerance = document.Application.VertexTolerance ;
       Dictionary<int, CompatibilityPriority>? available = null ;
@@ -231,6 +241,7 @@ namespace Arent3d.Architecture.Routing
 
         if ( 0 == available.Count ) return null ;
       }
+
       if ( null == available ) return null ;
 
       var curveTypeId = ElementId.InvalidElementId.IntegerValue ;
@@ -289,7 +300,10 @@ namespace Arent3d.Architecture.Routing
       var priorityType = ( type.Shape == connector.Shape ) ? CompatibilityPriorityType.SameShape : CompatibilityPriorityType.DifferentShape ;
 
       var nominalDiameter = connector.GetDiameter() ;
-      if ( type.HasAnyNominalDiameter( nominalDiameter, diameterTolerance ) ) return new CompatibilityPriority( priorityType, 0 ) ;
+
+      if ( type is not ConduitType ) {
+        if ( type.HasAnyNominalDiameter( nominalDiameter, diameterTolerance ) ) return new CompatibilityPriority( priorityType, 0 ) ;
+      }
 
       var list = type.GetNominalDiameters( diameterTolerance ) ;
       if ( 0 == list.Count ) return null ;
@@ -313,7 +327,7 @@ namespace Arent3d.Architecture.Routing
     {
       private readonly CompatibilityPriorityType _priorityType ;
       private readonly double _diffValue ;
-      
+
       public CompatibilityPriority( CompatibilityPriorityType priorityType, double diffValue )
       {
         _priorityType = priorityType ;

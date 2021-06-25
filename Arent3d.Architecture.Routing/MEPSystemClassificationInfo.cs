@@ -21,6 +21,26 @@ namespace Arent3d.Architecture.Routing
       } ;
     }
 
+    public static MEPSystemClassificationInfo? From( MEPSystemType systemType )
+    {
+      return systemType switch
+      {
+        MechanicalSystemType mechanicalSystemType => From( mechanicalSystemType ),
+        PipingSystemType pipingSystemType => From( pipingSystemType ),
+        _ => throw new ArgumentOutOfRangeException( nameof( systemType ) )
+      } ;
+    }
+
+    public static MEPSystemClassificationInfo? From( MechanicalSystemType systemType )
+    {
+      return Create( (DuctSystemType) systemType.SystemClassification ) ;
+    }
+
+    public static MEPSystemClassificationInfo? From( PipingSystemType systemType )
+    {
+      return Create( (PipeSystemType) systemType.SystemClassification ) ;
+    }
+
     private static MEPSystemClassificationInfo Create( PipeSystemType systemType ) => new PipeSystemClassificationInfo( systemType ) ;
     private static MEPSystemClassificationInfo Create( DuctSystemType systemType ) => new DuctSystemClassificationInfo( systemType ) ;
     private static MEPSystemClassificationInfo Create( ElectricalSystemType systemType ) => new ElectricalSystemClassificationInfo( systemType ) ;
@@ -33,13 +53,41 @@ namespace Arent3d.Architecture.Routing
 
     public abstract Type? GetCurveTypeClass() ;
 
-    public abstract bool IsCompatibleTo( MEPSystemType type ) ;
+    public abstract bool IsCompatibleTo( MEPSystemType? type ) ;
 
     public abstract bool IsCompatibleTo( MEPSystemClassificationInfo another ) ;
+
+    public abstract AddInType AddInType { get ; }
 
     public bool IsCompatibleTo( Connector connector )
     {
       return ( connector.Domain == Domain ) && HasCompatibleSystemType( connector ) ;
+    }
+
+    public bool HasSystemType()
+    {
+      return Domain switch
+      {
+        Domain.DomainUndefined => false,
+        Domain.DomainHvac => true,
+        Domain.DomainElectrical => true,
+        Domain.DomainPiping => true,
+        Domain.DomainCableTrayConduit => false,
+        _ => throw new ArgumentOutOfRangeException()
+      } ;
+    }
+
+    public bool HasStandardType()
+    {
+      return Domain switch
+      {
+        Domain.DomainUndefined => false,
+        Domain.DomainHvac => false,
+        Domain.DomainElectrical => false,
+        Domain.DomainPiping => false,
+        Domain.DomainCableTrayConduit => true,
+        _ => throw new ArgumentOutOfRangeException()
+      } ;
     }
 
     protected abstract bool HasCompatibleSystemType( Connector connector ) ;
@@ -72,7 +120,7 @@ namespace Arent3d.Architecture.Routing
     {
       return $"{TypeName}:{ValueName}" ;
     }
-    
+
     protected abstract string TypeName { get ; }
     protected abstract string ValueName { get ; }
 
@@ -88,21 +136,25 @@ namespace Arent3d.Architecture.Routing
       public override Domain Domain => Domain.DomainPiping ;
       public override Type? GetCurveTypeClass() => typeof( PipeType ) ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => (int) type.SystemClassification == (int) _systemType ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => type != null && (int) type.SystemClassification == (int) _systemType ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is PipeSystemClassificationInfo ps && _systemType == ps._systemType ;
+
+      public override AddInType AddInType => AddInType.Mechanical ;
 
       protected override bool HasCompatibleSystemType( Connector connector ) => connector.PipeSystemType == _systemType ;
 
 
       protected override string TypeName => PipeTypeName ;
       protected override string ValueName => _systemType.ToString() ;
+
       public static PipeSystemClassificationInfo? DeserializeImpl( string s )
       {
         if ( false == Enum.TryParse( s, out PipeSystemType systemType ) ) return null ;
         return new PipeSystemClassificationInfo( systemType ) ;
       }
     }
+
     private class DuctSystemClassificationInfo : MEPSystemClassificationInfo
     {
       private readonly DuctSystemType _systemType ;
@@ -112,20 +164,24 @@ namespace Arent3d.Architecture.Routing
 
       public DuctSystemClassificationInfo( DuctSystemType systemType ) => _systemType = systemType ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => (int) type.SystemClassification == (int) _systemType ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => type != null && (int) type.SystemClassification == (int) _systemType ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is DuctSystemClassificationInfo ds && _systemType == ds._systemType ;
+
+      public override AddInType AddInType => AddInType.Mechanical ;
 
       protected override bool HasCompatibleSystemType( Connector connector ) => connector.DuctSystemType == _systemType ;
 
       protected override string TypeName => DuctTypeName ;
       protected override string ValueName => _systemType.ToString() ;
+
       public static DuctSystemClassificationInfo? DeserializeImpl( string s )
       {
         if ( false == Enum.TryParse( s, out DuctSystemType systemType ) ) return null ;
         return new DuctSystemClassificationInfo( systemType ) ;
       }
     }
+
     private class ElectricalSystemClassificationInfo : MEPSystemClassificationInfo
     {
       private readonly ElectricalSystemType _systemType ;
@@ -135,44 +191,53 @@ namespace Arent3d.Architecture.Routing
       public override Domain Domain => Domain.DomainElectrical ;
       public override Type? GetCurveTypeClass() => null ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => (int) type.SystemClassification == (int) _systemType ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => type != null && (int) type.SystemClassification == (int) _systemType ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is ElectricalSystemClassificationInfo es && _systemType == es._systemType ;
+
+      public override AddInType AddInType => AddInType.Electrical ;
 
       protected override bool HasCompatibleSystemType( Connector connector ) => connector.ElectricalSystemType == _systemType ;
 
       protected override string TypeName => ElectricalTypeName ;
       protected override string ValueName => _systemType.ToString() ;
+
       public static ElectricalSystemClassificationInfo? DeserializeImpl( string s )
       {
         if ( false == Enum.TryParse( s, out ElectricalSystemType systemType ) ) return null ;
         return new ElectricalSystemClassificationInfo( systemType ) ;
       }
     }
+
     private class CableTrayConduitSystemClassificationInfo : MEPSystemClassificationInfo
     {
       public override Domain Domain => Domain.DomainCableTrayConduit ;
       public override Type? GetCurveTypeClass() => typeof( ConduitType ) ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => false ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => type == null ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => another is CableTrayConduitSystemClassificationInfo ;
 
-      protected override bool HasCompatibleSystemType( Connector connector ) => true ;
+      protected override bool HasCompatibleSystemType( Connector connector ) => false ;
+
+      public override AddInType AddInType => AddInType.Electrical ;
 
       protected override string TypeName => CableTrayConduitTypeName ;
       protected override string ValueName => string.Empty ;
     }
+
     private class UndefinedSystemClassificationInfo : MEPSystemClassificationInfo
     {
       public override Domain Domain => Domain.DomainUndefined ;
       public override Type? GetCurveTypeClass() => null ;
 
-      public override bool IsCompatibleTo( MEPSystemType type ) => type.SystemClassification == MEPSystemClassification.UndefinedSystemClassification ;
+      public override bool IsCompatibleTo( MEPSystemType? type ) => type != null && type.SystemClassification == MEPSystemClassification.UndefinedSystemClassification ;
 
       public override bool IsCompatibleTo( MEPSystemClassificationInfo another ) => false ;
 
       protected override bool HasCompatibleSystemType( Connector connector ) => false ;
+
+      public override AddInType AddInType => AddInType.Undefined ;
 
       protected override string TypeName => throw new NotSupportedException() ;
       protected override string ValueName => throw new NotSupportedException() ;
