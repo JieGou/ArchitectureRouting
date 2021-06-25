@@ -20,6 +20,8 @@ namespace Arent3d.Architecture.Routing
     public MEPSystemType? MEPSystemType { get ; }
     public MEPSystem? MEPSystem { get ; }
     public MEPCurveType CurveType { get ; }
+    
+    private double ShortCurveTolerance { get ; }
 
 
     public RouteMEPSystem( Document document, SubRoute subRoute )
@@ -32,6 +34,7 @@ namespace Arent3d.Architecture.Routing
       MEPSystem = null ;
 
       CurveType = subRoute.GetMEPCurveType() ?? throw new InvalidOperationException() ;
+      ShortCurveTolerance = document.Application.ShortCurveTolerance ;
     }
 
     private SizeTable<double>? _90ElbowSize ;
@@ -83,7 +86,7 @@ namespace Arent3d.Architecture.Routing
 
     public double GetWeldMinDistance( double diameter )
     {
-      return 1.0 / 120 ; // 1/10 inches.
+      return ShortCurveTolerance ;
     }
 
     private double Calculate90ElbowSize( double diameter )
