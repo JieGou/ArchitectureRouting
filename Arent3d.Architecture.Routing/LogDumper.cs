@@ -253,7 +253,7 @@ namespace Arent3d.Architecture.Routing
       public bool IsStart { get ; set ; }
       public int Depth { get ; set ; }
       public RoutingPointType PointType { get ; set ; }
-      public IStructureInfo? LinkedRack => null ;
+      public ILayerStack? LinkedRack => null ;
     }
     private static IAutoRoutingEndPoint ReadEndPoint( XmlReader reader )
     {

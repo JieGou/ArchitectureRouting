@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing.Rack
   public class RackCollection : IStructureGraph
   {
     private readonly HashSet<Rack> _racks = new() ;
-    private readonly HashSet<(IStructureInfo, IStructureInfo)> _links = new() ;
+    private readonly HashSet<(ILayerStack, ILayerStack)> _links = new() ;
 
     public bool AddRack( Rack rack )
     {
@@ -30,14 +30,14 @@ namespace Arent3d.Architecture.Routing.Rack
     {
       if ( ! _racks.Contains( rack1 ) || ! _racks.Contains( rack2 ) ) return false ;
 
-      if ( _links.Contains( ( (IStructureInfo) rack2, (IStructureInfo) rack1 ) ) ) return false ;
+      if ( _links.Contains( ( (ILayerStack) rack2, (ILayerStack) rack1 ) ) ) return false ;
 
-      return _links.Add( ( (IStructureInfo) rack1, (IStructureInfo) rack2 ) ) ;
+      return _links.Add( ( (ILayerStack) rack1, (ILayerStack) rack2 ) ) ;
     }
 
     public bool RemoveLink( Rack rack1, Rack rack2 )
     {
-      return _links.Remove( ( (IStructureInfo) rack2, (IStructureInfo) rack1 ) ) || _links.Remove( ( (IStructureInfo) rack1, (IStructureInfo) rack2 ) ) ;
+      return _links.Remove( ( (ILayerStack) rack2, (ILayerStack) rack1 ) ) || _links.Remove( ( (ILayerStack) rack1, (ILayerStack) rack2 ) ) ;
     }
 
     public void Clear()
@@ -49,9 +49,9 @@ namespace Arent3d.Architecture.Routing.Rack
     public int RackCount => _racks.Count ;
     public int LinkCount => _links.Count ;
     
-    public IEnumerable<IStructureInfo> Nodes => _racks ;
+    public IEnumerable<ILayerStack> Nodes => _racks ;
 
-    public IEnumerable<(IStructureInfo, IStructureInfo)> Edges => _links ;
+    public IEnumerable<(ILayerStack, ILayerStack)> Edges => _links ;
     
     public void CreateLinkages()
     {
@@ -60,9 +60,9 @@ namespace Arent3d.Architecture.Routing.Rack
       _links.UnionWith( FindLinkages( _racks ) ) ;
     }
 
-    private static IList<(IStructureInfo, IStructureInfo)> FindLinkages( IReadOnlyCollection<Rack> racks )
+    private static IList<(ILayerStack, ILayerStack)> FindLinkages( IReadOnlyCollection<Rack> racks )
     {
-      if ( racks.Count == 0 || racks.Count == 1 ) return Array.Empty<(IStructureInfo, IStructureInfo)>() ;
+      if ( racks.Count == 0 || racks.Count == 1 ) return Array.Empty<(ILayerStack, ILayerStack)>() ;
 
       var mainPairs = new Dictionary<Rack, IList<Rack>>() ;
       var auxPairs = new Dictionary<Rack, IList<Rack>>() ;
@@ -98,7 +98,7 @@ namespace Arent3d.Architecture.Routing.Rack
         }
       }
 
-      return mainPairs.SelectMany( item => item.Value.Select( r => ( (IStructureInfo) item.Key, (IStructureInfo) r ) ) ).ToList() ;
+      return mainPairs.SelectMany( item => item.Value.Select( r => ( (ILayerStack) item.Key, (ILayerStack) r ) ) ).ToList() ;
     }
 
     private static void Add( IDictionary<Rack, IList<Rack>> pairs, Rack rack1, Rack rack2 )

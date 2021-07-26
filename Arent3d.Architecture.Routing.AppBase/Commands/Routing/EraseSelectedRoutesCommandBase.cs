@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var allRoutes = Route.GetAllRelatedBranches( selectedRoutes ) ;
         allRoutes.ExceptWith( selectedRoutes ) ;
-        RouteGenerator.EraseRoutes( document, selectedRoutes.Select( route => route.RouteName ), true ) ;
+        RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), true ) ;
         return allRoutes ;
       } ) ;
 

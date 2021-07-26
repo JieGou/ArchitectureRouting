@@ -25,6 +25,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
     private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "Mechanical.App.Panels.Routing.Racks" ) ;
     private static readonly (string Key, string TitleKey) MonitorPanel = ( Key: "arent3d.architecture.routing.monitor", TitleKey: "Mechanical.App.Panels.Routing.Monitor" ) ;
 
+    private readonly RibbonTabEx _routingTab ;
+    
     private readonly RibbonButton _initializeCommandButton ;
     private readonly RibbonButton _showRoutingViewsCommandButton ;
 
@@ -57,14 +59,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
     
     private RoutingAppUI( UIControlledApplication application )
     {
-      var tab = application.CreateRibbonTabEx( ToDisplayName( RibbonTabNameKey ) ) ;
+      _routingTab = application.CreateRibbonTabEx( ToDisplayName( RibbonTabNameKey ) ) ;
       {
-        var initPanel = tab.CreateRibbonPanel( InitPanel.Key, ToDisplayName( InitPanel.TitleKey ) ) ;
+        var initPanel = _routingTab.CreateRibbonPanel( InitPanel.Key, ToDisplayName( InitPanel.TitleKey ) ) ;
         _initializeCommandButton = initPanel.AddButton<InitializeCommand>() ;
         _showRoutingViewsCommandButton = initPanel.AddButton<ShowRoutingViewsCommand>() ;
       }
       {
-        var routingPanel = tab.CreateRibbonPanel( RoutingPanel.Key, ToDisplayName( RoutingPanel.TitleKey ) ) ;
+        var routingPanel = _routingTab.CreateRibbonPanel( RoutingPanel.Key, ToDisplayName( RoutingPanel.TitleKey ) ) ;
         _pickRoutingCommandButton = routingPanel.AddButton<PickRoutingCommand>() ;
         _pickAndReRouteCommandButton = routingPanel.AddButton<PickAndReRouteCommand>() ;
         _allReRouteCommandButton = routingPanel.AddButton<AllReRouteCommand>() ;
@@ -81,21 +83,21 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         
       }
       {
-        var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
+        var rackPanel = _routingTab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
         _importRacksCommandButton = rackPanel.AddButton<ImportRacksCommand>() ;
         _exportRacksCommandButton = rackPanel.AddButton<ExportRacksCommand>() ;
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
         _rackGuidCommandButton = rackPanel.AddButton<RackGuidCommand>();
       }
       {
-        var monitorPanel = tab.CreateRibbonPanel( MonitorPanel.Key, ToDisplayName( MonitorPanel.TitleKey ) ) ;
+        var monitorPanel = _routingTab.CreateRibbonPanel( MonitorPanel.Key, ToDisplayName( MonitorPanel.TitleKey ) ) ;
         _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.Mechanical.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
 
       _registerFromToTreeCommand = new RegisterFromToTreeCommand(application, _dpid, new PostCommandExecutor()) ;
 
       application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters;
-      application.ControlledApplication.ApplicationInitialized += new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ) ;
+      application.ControlledApplication.ApplicationInitialized += MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ;
 
       InitializeRibbon() ;
     }
@@ -131,8 +133,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
       _rackGuidCommandButton.Enabled = false;
     }
 
-    public partial void UpdateUI( Document document, AppUIUpdateType updateType )
+    protected override partial void UpdateUIForFamilyDocument( Document document, AppUIUpdateType updateType )
     {
+      _routingTab.Visible = false ;
+    }
+
+    protected override partial void UpdateUIForNormalDocument( Document document, AppUIUpdateType updateType )
+    {
+      _routingTab.Visible = true ;
+      
       if ( updateType == AppUIUpdateType.Finish ) {
         InitializeRibbon() ;
         return ;

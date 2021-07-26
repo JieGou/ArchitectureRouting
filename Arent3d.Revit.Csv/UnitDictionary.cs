@@ -27,7 +27,7 @@ namespace Arent3d.Revit.Csv
       unitList.AddRange( _dic.Keys ) ;
       unitList.Sort( LengthSorter ) ;
 
-      return $@"^\s*([+-]?(?:\s*\d[\d\s]*(?:[.,][\d\s]*)?|(?:[.,]\s*\d[\d\s]*))(?:e\s*[+-]?\s*\d[\d\s]*)?)\s*({string.Join( "|", unitList.Select( Regex.Escape ) )})\s*$" ;
+      return $@"^\s*([+-]?(?:\s*\d[\d\s]*(?:[.,][\d\s]*)?|(?:[.,]\s*\d[\d\s]*))(?:e\s*[+-]?\s*\d[\d\s]*)?)\s*({string.Join( "|", unitList.ConvertAll( Regex.Escape ) )})\s*$" ;
     }
 
     private static int LengthSorter( string x, string y )

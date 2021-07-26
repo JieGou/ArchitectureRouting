@@ -5,7 +5,7 @@ using MathLib ;
 
 namespace Arent3d.Architecture.Routing.Rack
 {
-  public class Rack : IStructureInfo
+  public class Rack : ILayerStack
   {
     private Box3d _box = Box3d.Null ;
     private Box2d _exactBox = Box2d.Null ;
@@ -13,14 +13,14 @@ namespace Arent3d.Architecture.Routing.Rack
 
     public Rack( Box3d volumeBox, double beamInterval, double sideBeamWidth, double sideBeamHeight )
     {
-      Layers = new ILayerProperty[] { new LayerProperty( this ) } ;
+      LayerGroups = new ILayerGroup[] { new LayerGroup( this ) } ;
       Box = volumeBox ;
       BeamInterval = beamInterval ;
       SideBeamWidth = sideBeamWidth ;
       SideBeamHeightLength = sideBeamHeight ;
     }
 
-    public IEnumerable<ILayerProperty> Layers { get ; }
+    public IEnumerable<ILayerGroup> LayerGroups { get ; }
     public bool IsPipeRack { get ; } = true ;
     public bool IsMainRack { get ; set ; }
     public string Name { get ; set ; } = string.Empty ;
@@ -43,6 +43,16 @@ namespace Arent3d.Architecture.Routing.Rack
       }
     }
 
+    private class LayerGroup : ILayerGroup
+    {
+      public LayerGroup( Rack rack )
+      {
+        Layers = new ILayerProperty[] { new LayerProperty( rack ) } ;
+      }
+
+      public IEnumerable<ILayerProperty> Layers { get ; }
+    }
+    
     private class LayerProperty : ILayerProperty
     {
       private readonly Rack _rack ;

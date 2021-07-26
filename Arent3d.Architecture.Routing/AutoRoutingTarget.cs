@@ -194,7 +194,7 @@ namespace Arent3d.Architecture.Routing
       public LoopType LoopType => LoopType.Non ;
 
       public bool AllowHorizontalBranches { get ; }
-      public double? FixedBopHeight { get ; }
+      public double? FixedBopHeight { get ; set ; }
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints

@@ -8,30 +8,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
   /// <summary>
   /// Registers UI components of auto routing application.
   /// </summary>
-  public partial class RoutingAppUI : IAppUIBase
+  public partial class RoutingAppUI : AppUIBase
   {
     public static RoutingAppUI Create( UIControlledApplication application )
     {
       return new RoutingAppUI( application ) ;
     }
 
-    public partial void UpdateUI( Document document, AppUIUpdateType updateType ) ;
-
-    ~RoutingAppUI()
-    {
-      ReleaseUnmanagedResources() ;
-    }
-
-    public void Dispose()
-    {
-      GC.SuppressFinalize( this ) ;
-
-      ReleaseUnmanagedResources() ;
-    }
-
-    private void ReleaseUnmanagedResources()
-    {
-      // Nothing to do.
-    }
+    protected override partial void UpdateUIForFamilyDocument( Document document, AppUIUpdateType updateType ) ;
+    protected override partial void UpdateUIForNormalDocument( Document document, AppUIUpdateType updateType ) ;
   }
 }

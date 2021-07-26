@@ -79,6 +79,9 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     public int Depth { get ; private set ; }
 
+    public bool AllowHorizontalBranches => true ;
+    public bool AllowThroughBatteryLimit => false ;
+
     /// <summary>
     /// Returns this end point's floating type. Now it always returns <see cref="RoutingPointType.OtherNozzle"/> (i.e. non-floated).
     /// </summary>
@@ -87,7 +90,7 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Not used now. Always returns null.
     /// </summary>
-    public IStructureInfo? LinkedRack => null ;
+    public ILayerStack? LinkedRack => null ;
 
     /// <summary>
     /// Apply depths from priorities in an <see cref="AutoRoutingTarget"/>.
