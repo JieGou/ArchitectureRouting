@@ -22,7 +22,7 @@ namespace Arent3d.Revit.UI
     /// <returns></returns>
     public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel ) where TCommand : IExternalCommand
     {
-      return AddButton<TCommand>( ribbonPanel, Assembly.GetCallingAssembly() ) ;
+      return ribbonPanel.AddButton<TCommand>( Assembly.GetCallingAssembly() ) ;
     }
 
     /// <summary>
@@ -34,11 +34,13 @@ namespace Arent3d.Revit.UI
     /// <returns></returns>
     public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel, Assembly resourceAssembly ) where TCommand : IExternalCommand
     {
-      if ( typeof( TCommand ).HasInterface<IExternalCommandAvailability>() ) {
-        return ribbonPanel.AddButtonImpl<TCommand>( typeof( TCommand ).FullName, resourceAssembly ) ;
+      var commandClass = typeof( TCommand ) ;
+
+      if ( commandClass.HasInterface<IExternalCommandAvailability>() ) {
+        return ribbonPanel.AddButtonImpl( commandClass, commandClass.FullName, resourceAssembly ) ;
       }
       else {
-        return ribbonPanel.AddButtonImpl<TCommand>( null, resourceAssembly ) ;
+        return ribbonPanel.AddButtonImpl( commandClass, null, resourceAssembly ) ;
       }
     }
 
@@ -64,7 +66,7 @@ namespace Arent3d.Revit.UI
     /// <returns></returns>
     public static RibbonButton AddButton<TCommand, TCommandAvailability>( this RibbonPanel ribbonPanel, Assembly resourceAssembly ) where TCommand : IExternalCommand where TCommandAvailability : IExternalCommandAvailability
     {
-      return ribbonPanel.AddButtonImpl<TCommand>( typeof( TCommandAvailability ).FullName, resourceAssembly ) ;
+      return ribbonPanel.AddButtonImpl( typeof( TCommand ), typeof( TCommandAvailability ).FullName, resourceAssembly ) ;
     }
 
     /// <summary>
@@ -76,7 +78,7 @@ namespace Arent3d.Revit.UI
     /// <returns></returns>
     public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel, string availabilityClassName ) where TCommand : IExternalCommand
     {
-      return ribbonPanel.AddButton<TCommand>( availabilityClassName, Assembly.GetCallingAssembly() ) ;
+      return ribbonPanel.AddButtonImpl( typeof( TCommand ), availabilityClassName, Assembly.GetCallingAssembly() ) ;
     }
 
     /// <summary>
@@ -89,12 +91,12 @@ namespace Arent3d.Revit.UI
     /// <returns></returns>
     public static RibbonButton AddButton<TCommand>( this RibbonPanel ribbonPanel, string availabilityClassName, Assembly resourceAssembly ) where TCommand : IExternalCommand
     {
-      return ribbonPanel.AddButtonImpl<TCommand>( availabilityClassName, resourceAssembly ) ;
+      return ribbonPanel.AddButtonImpl( typeof( TCommand ), availabilityClassName, resourceAssembly ) ;
     }
 
-    private static RibbonButton AddButtonImpl<TCommand>( this RibbonPanel ribbonPanel, string? availabilityClassName, Assembly resourceAssembly ) where TCommand : IExternalCommand
+    internal static RibbonButton AddButtonImpl( this RibbonPanel ribbonPanel, Type commandClass, string? availabilityClassName, Assembly resourceAssembly )
     {
-      var pushButtonData = CreateButton<TCommand>( resourceAssembly ) ;
+      var pushButtonData = CreateButton( commandClass, resourceAssembly ) ;
       if ( null != availabilityClassName ) {
         pushButtonData.AvailabilityClassName = availabilityClassName ;
       }
@@ -105,10 +107,9 @@ namespace Arent3d.Revit.UI
     public static ImageSource? GetImageFromName( string imageName ) => GetImageFromName( Assembly.GetCallingAssembly(), "resources/" + imageName ) ;
     public static ImageSource? GetImageFromName( Assembly assembly, string imageName ) => ToImageSource( assembly, "resources/" + imageName ) ;
 
-    private static PushButtonData CreateButton<TButtonCommand>( Assembly assembly ) where TButtonCommand : IExternalCommand
-    {
-      var commandClass = typeof( TButtonCommand ) ;
 
+    private static PushButtonData CreateButton( Type commandClass, Assembly assembly )
+    {
       var name = commandClass.FullName!.ToSnakeCase() ;
       var text = GetDisplayName( commandClass ) ;
       var description = commandClass.GetCustomAttribute<DescriptionAttribute>()?.Description ;
