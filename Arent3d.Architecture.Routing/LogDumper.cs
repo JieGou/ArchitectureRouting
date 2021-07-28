@@ -90,7 +90,8 @@ namespace Arent3d.Architecture.Routing
       writer.WriteElementString( "Depth", ep.Depth.ToString() ) ;
       writer.WriteVector( "Position", ep.Position ) ;
       writer.WriteVector( "Direction", ep.Direction ) ;
-      writer.WriteElementString( "PointType", ep.PointType.ToString() ) ;
+      writer.WriteElementString( "AllowHorizontalBranches", ep.AllowHorizontalBranches.ToString() ) ;
+      writer.WriteElementString( "AllowThroughBatteryLimit", ep.AllowThroughBatteryLimit.ToString() ) ;
       writer.WritePipeCondition( "PipeCondition", ep.PipeCondition ) ;
     }
 
