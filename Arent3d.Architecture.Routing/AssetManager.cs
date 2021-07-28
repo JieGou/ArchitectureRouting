@@ -5,7 +5,13 @@ namespace Arent3d.Architecture.Routing
 {
   public static class AssetManager
   {
-    private const string FamilyFolderName = "Families" ;
+#if REVIT2020
+    private const string FamilyFolderName = @"Families\2020" ;
+#elif REVIT2021
+    private const string FamilyFolderName = @"Families\2021" ;
+#elif REVIT2022
+    private const string FamilyFolderName = @"Families\2022" ;
+#endif
     private const string SettingFolderName = "SharedParameterFile" ;
 
     private const string RoutingSharedParameterFileName = "RoutingSharedParameters.txt" ;
