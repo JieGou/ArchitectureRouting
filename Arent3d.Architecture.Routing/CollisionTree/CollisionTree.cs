@@ -5,9 +5,6 @@ using Arent3d.CollisionLib ;
 using Arent3d.GeometryLib ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
-#if DUMP_LOGS
-using Arent3d.Utility ;
-#endif
 using Autodesk.Revit.DB ;
 using MathLib ;
 
@@ -23,12 +20,12 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     public CollisionTree( ICollisionCheckTargetCollector collector )
     {
       TreeElementBoxes = CollectTreeElementBoxes( collector ).ToList() ;
-      _treeBody = CreateTree( TreeElementBoxes.Select( box => new TreeElement( new BoxGeometryBody( box.Box ) ) ) ) ;
+      _treeBody = CreateTree( TreeElementBoxes.ConvertAll( box => new TreeElement( new BoxGeometryBody( box.Box ) ) ) ) ;
     }
 #else
     public CollisionTree( ICollisionCheckTargetCollector collector )
     {
-      _treeBody = CreateTree( CollectTreeElementBoxes( collector ).Select( tuple => new TreeElement( new BoxGeometryBody( tuple.Box ) ) ).ToList() ) ;
+      _treeBody = CreateTree( CollectTreeElementBoxes( collector ).Select( tuple => new TreeElement( new BoxGeometryBody( tuple.Box ) ) ).EnumerateAll() ) ;
     }
 #endif
 

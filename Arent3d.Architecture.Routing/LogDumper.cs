@@ -254,6 +254,8 @@ namespace Arent3d.Architecture.Routing
       public int Depth { get ; set ; }
       public RoutingPointType PointType { get ; set ; }
       public ILayerStack? LinkedRack => null ;
+      public bool AllowHorizontalBranches { get ; set ; }
+      public bool AllowThroughBatteryLimit { get ; set ; }
     }
     private static IAutoRoutingEndPoint ReadEndPoint( XmlReader reader )
     {
@@ -264,6 +266,8 @@ namespace Arent3d.Architecture.Routing
       ep.Position = ReadVector( reader, "Position" ) ;
       ep.Direction = ReadVector( reader, "Direction" ) ;
       ep.PointType = ReadEnum<RoutingPointType>( reader, "PointType" ) ;
+      ep.AllowHorizontalBranches = ReadBool( reader, "AllowHorizontalBranches" ) ;
+      ep.AllowThroughBatteryLimit = ReadBool( reader, "AllowThroughBatteryLimit" ) ;
 
       reader.ReadStartElement( "PipeCondition" ) ;
       ep.PipeCondition = ReadPipeCondition( reader ) ;
@@ -311,7 +315,7 @@ namespace Arent3d.Architecture.Routing
 
       public DumpedCollisionTree( IReadOnlyCollection<Box3d> boxes )
       {
-        _treeBody = CreateTreeByFactory( boxes.Select( ToTreeElement ) ) ;
+        _treeBody = CreateTreeByFactory( boxes.ConvertAll( ToTreeElement ) ) ;
       }
 
       private static TreeElement ToTreeElement( Box3d box )
