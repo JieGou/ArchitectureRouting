@@ -73,20 +73,23 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Architecture.Routing.Core">
-      <HintPath>..\Libraries\$(TargetFramework)\Architecture.Routing.Core.dll</HintPath>
+    <Reference Include="Architecture.Routing.Core, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Architecture.Routing.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Arent3d.Collision">
-      <HintPath>..\Libraries\$(TargetFramework)\Arent3d.Collision.dll</HintPath>
+    <Reference Include="Arent3d.Collision, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Collision.dll</HintPath>
     </Reference>
-    <Reference Include="Arent3d.Geometry">
-      <HintPath>..\Libraries\$(TargetFramework)\Arent3d.Geometry.dll</HintPath>
+    <Reference Include="Arent3d.Geometry, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Geometry.dll</HintPath>
     </Reference>
-    <Reference Include="Arent3d.Math">
-      <HintPath>..\Libraries\$(TargetFramework)\Arent3d.Math.dll</HintPath>
+    <Reference Include="Arent3d.Math, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Math.dll</HintPath>
     </Reference>
-    <Reference Include="Arent3d.Utility">
-      <HintPath>..\Libraries\$(TargetFramework)\Arent3d.Utility.dll</HintPath>
+    <Reference Include="Arent3d.Revit, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Revit.dll</HintPath>
+    </Reference>
+    <Reference Include="Arent3d.Utility, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Utility.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="RevitAPI">
@@ -130,10 +133,6 @@
     <None Update="Assets\SharedParameterFile\RoutingElementSharedParameters.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Arent3d.Revit\Arent3d.Revit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

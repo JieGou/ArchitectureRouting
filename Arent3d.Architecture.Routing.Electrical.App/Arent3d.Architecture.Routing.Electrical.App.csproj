@@ -77,19 +77,26 @@
     <ItemGroup>
         <ProjectReference Include="..\Arent3d.Architecture.Routing.AppBase\Arent3d.Architecture.Routing.AppBase.csproj" />
         <ProjectReference Include="..\Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj" />
-        <ProjectReference Include="..\Arent3d.Revit.Csv\Arent3d.Revit.Csv.csproj" />
-        <ProjectReference Include="..\Arent3d.Revit.UI\Arent3d.Revit.UI.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="Arent3d.RevitAddinUtil">
-            <HintPath>..\Libraries\$(TargetFramework)\Arent3d.RevitAddinUtil.dll</HintPath>
+        <Reference Include="Arent3d.RevitAddinUtil, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.RevitAddinUtil.dll</HintPath>
         </Reference>
-        <Reference Include="Arent3d.Math">
-            <HintPath>..\Libraries\$(TargetFramework)\Arent3d.Math.dll</HintPath>
+        <Reference Include="Arent3d.Math, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Math.dll</HintPath>
         </Reference>
-        <Reference Include="Arent3d.Utility">
-            <HintPath>..\Libraries\$(TargetFramework)\Arent3d.Utility.dll</HintPath>
+        <Reference Include="Arent3d.Utility, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Utility.dll</HintPath>
+        </Reference>
+        <Reference Include="Arent3d.Revit, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Revit.dll</HintPath>
+        </Reference>
+        <Reference Include="Arent3d.Revit.Csv, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Revit.Csv.dll</HintPath>
+        </Reference>
+        <Reference Include="Arent3d.Revit.UI, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Revit.UI.dll</HintPath>
         </Reference>
         <Reference Include="PresentationCore" />
         <Reference Include="PresentationFramework" />
@@ -142,10 +149,8 @@
         <DependentUpon>RoutingAppUI.cs</DependentUpon>
       </Compile>
     </ItemGroup>
-    
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Exec Command="&quot;$(SolutionDir)Libraries\$(TargetFramework)\make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\$(RevitVersion)\&quot;&#xD;&#xA;" />
+        <Exec Command="&quot;$(SolutionDir)lib\$(RevitVersion)\$(TargetFramework)\make_addin&quot; &quot;$(TargetPath)&quot;&#xD;&#xA;&#xD;&#xA;copy &quot;$(TargetDir)*.addin&quot; &quot;%25ProgramData%25\Autodesk\Revit\Addins\$(RevitVersion)\&quot;&#xD;&#xA;" />
     </Target>
-   
 </Project>
