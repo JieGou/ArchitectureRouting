@@ -2,6 +2,8 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators.MEPCurveGenerators ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -17,11 +19,16 @@ namespace Arent3d.Architecture.Routing
     public double DiameterTolerance { get ; }
     public double AngleTolerance { get ; }
 
+    public Document Document => CurveType.Document ;
+
     public MEPSystemType? MEPSystemType { get ; }
     public MEPSystem? MEPSystem { get ; }
     public MEPCurveType CurveType { get ; }
     
     private double ShortCurveTolerance { get ; }
+
+    private IMEPCurveGenerator? _fittingGenerator = null ;
+    private IMEPCurveGenerator FittingGenerator => _fittingGenerator ??= MEPCurveGenerator.Create( MEPSystemType, CurveType ) ; 
 
 
     public RouteMEPSystem( Document document, SubRoute subRoute )
@@ -37,51 +44,55 @@ namespace Arent3d.Architecture.Routing
       ShortCurveTolerance = document.Application.ShortCurveTolerance ;
     }
 
-    private SizeTable<double>? _90ElbowSize ;
+    private SizeTable<double, double>? _90ElbowSize ;
 
     public double Get90ElbowSize( double diameter )
     {
-      return ( _90ElbowSize ??= new(Calculate90ElbowSize) ).Get( diameter ) ;
+      return ( _90ElbowSize ??= new SizeTable<double, double>( Calculate90ElbowSize ) ).Get( diameter ) ;
     }
 
-    private SizeTable<double>? _45ElbowSize ;
+    private SizeTable<double, double>? _45ElbowSize ;
 
     public double Get45ElbowSize( double diameter )
     {
-      return ( _45ElbowSize ??= new(Calculate45ElbowSize) ).Get( diameter ) ;
+      return ( _45ElbowSize ??= new SizeTable<double, double>( Calculate45ElbowSize ) ).Get( diameter ) ;
     }
 
-    private SizeTable<(double, double)>? _teeHeaderLength ;
+    private SizeTable<(double HeaderDiameter, double BranchDiameter), (double HeaderLength, double BranchLength)>? _teeSizeLength ;
 
     public double GetTeeHeaderLength( double headerDiameter, double branchDiameter )
     {
       if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
-        return ( _teeHeaderLength ??= new(CalculateTeeHeaderLength) ).Get( ( headerDiameter, branchDiameter ) ) ;
+        return ( _teeSizeLength ??= new SizeTable<(double HeaderDiameter, double BranchDiameter), (double HeaderLength, double BranchLength)>( CalculateTeeLengths ) ).Get( ( headerDiameter, branchDiameter ) ).HeaderLength ;
       }
       else {
         return branchDiameter * 0.5 ; // provisional
       }
     }
 
-    private SizeTable<(double, double)>? _teeBranchLength ;
-
     public double GetTeeBranchLength( double headerDiameter, double branchDiameter )
     {
       if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
-        return ( _teeBranchLength ??= new(CalculateTeeBranchLength) ).Get( ( headerDiameter, branchDiameter ) ) ;
+        return ( _teeSizeLength ??= new SizeTable<(double HeaderDiameter, double BranchDiameter), (double HeaderLength, double BranchLength)>( CalculateTeeLengths ) ).Get( ( headerDiameter, branchDiameter ) ).BranchLength ;
       }
       else {
         return headerDiameter * 0.5 ; // provisional
       }
     }
 
-    private SizeTable<(double, double)>? _reducerLength ;
+    private SizeTable<(double, double), double>? _reducerLength ;
 
     public double GetReducerLength( double diameter1, double diameter2 )
     {
       if ( diameter1 <= 0 || diameter2 <= 0 || Math.Abs( diameter1 - diameter2 ) < DiameterTolerance ) return 0 ;
 
-      return ( _reducerLength ??= new(CalculateReducerLength) ).Get( ( diameter1, diameter2 ) ) ;
+      if ( diameter1 > diameter2 ) {
+        var tmp = diameter1 ;
+        diameter1 = diameter2 ;
+        diameter2 = tmp ;
+      }
+
+      return ( _reducerLength ??= new SizeTable<(double, double), double>( CalculateReducerLength ) ).Get( ( diameter1, diameter2 ) ) ;
     }
 
     public double GetWeldMinDistance( double diameter )
@@ -91,43 +102,38 @@ namespace Arent3d.Architecture.Routing
 
     private double Calculate90ElbowSize( double diameter )
     {
-      return diameter * 1.5 ; // provisional
+      return ThreadDispatcher.Dispatch( () =>
+      {
+        var calculator = new ElbowSizeCalculator( Document, FittingGenerator, diameter ) ;
+        return calculator.ElbowSize ;
+      } ) ;
     }
 
     private double Calculate45ElbowSize( double diameter )
     {
-      return diameter * 1.5 ; // provisional
+      return ThreadDispatcher.Dispatch( () =>
+      {
+        var calculator = new ElbowSizeCalculator( Document, FittingGenerator, diameter ) ;
+        return calculator.ElbowSize ;
+      } ) ;
     }
 
-    private double CalculateTeeHeaderLength( (double, double) value )
+    private (double Header, double Branch) CalculateTeeLengths( ( double HeaderDiameter, double BranchDiameter) value )
     {
-      var (headerDiameter, branchDiameter) = value ;
-      if ( headerDiameter < branchDiameter ) {
-        return headerDiameter * 1.0 ; // provisional
-      }
-      else {
-        return headerDiameter * 0.5 + branchDiameter * 0.5 ; // provisional
-      }
+      return ThreadDispatcher.Dispatch( () =>
+      {
+        var calculator = new TeeSizeCalculator( Document, FittingGenerator, value.HeaderDiameter, value.BranchDiameter ) ;
+        return ( calculator.HeaderSize, calculator.BranchSize ) ;
+      } ) ;
     }
 
-    private double CalculateTeeBranchLength( (double, double) value )
+    private double CalculateReducerLength( (double, double) value )
     {
-      var (headerDiameter, branchDiameter) = value ;
-      if ( headerDiameter < branchDiameter ) {
-        return headerDiameter * 1.0 + GetReducerLength( headerDiameter, branchDiameter ) ; // provisional
-      }
-      else {
-        return headerDiameter * 0.5 + branchDiameter * 0.5 ; // provisional
-      }
-    }
-
-    public double CalculateReducerLength( (double, double) value )
-    {
-      var (diameter1, diameter2) = value ;
-
-      // TODO: find reducer size
-
-      return 0 ;
+      return ThreadDispatcher.Dispatch( () =>
+      {
+        var calculator = new ReducerSizeCalculator( Document, FittingGenerator, value.Item1, value.Item2 ) ;
+        return calculator.Size1 + calculator.Size2 ;
+      } ) ;
     }
 
 
