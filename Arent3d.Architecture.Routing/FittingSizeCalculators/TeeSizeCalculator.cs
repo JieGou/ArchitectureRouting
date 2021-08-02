@@ -7,7 +7,7 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
 {
   internal class TeeSizeCalculator : SizeCalculatorBase
   {
-    public TeeSizeCalculator( Document document, IMEPCurveGenerator fittingGenerator, double diameter1, double diameter2 ) : base( document, fittingGenerator, GetStraightLineLength( diameter1, diameter2 ) )
+    public TeeSizeCalculator( Document document, IMEPCurveGenerator mepCurveGenerator, double diameter1, double diameter2 ) : base( document, mepCurveGenerator, GetStraightLineLength( diameter1, diameter2 ) )
     {
     }
 

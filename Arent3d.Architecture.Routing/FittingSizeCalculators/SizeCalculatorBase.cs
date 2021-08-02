@@ -13,10 +13,10 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
     private IMEPCurveGenerator FittingGenerator { get ; }
     protected IReadOnlyList<XYZ>? ConnectorPositions { get ; }
 
-    protected SizeCalculatorBase( Document document, IMEPCurveGenerator fittingGenerator, double straitLineLength )
+    protected SizeCalculatorBase( Document document, IMEPCurveGenerator mepCurveGenerator, double straitLineLength )
     {
       Document = document ;
-      FittingGenerator = fittingGenerator ;
+      FittingGenerator = mepCurveGenerator ;
 
       using var transaction = new SubTransaction( Document ) ;
       try {

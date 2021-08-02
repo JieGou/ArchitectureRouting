@@ -7,7 +7,7 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
 {
   internal class ElbowSizeCalculator : SizeCalculatorBase
   {
-    public ElbowSizeCalculator( Document document, IMEPCurveGenerator fittingGenerator, double diameter ) : base( document, fittingGenerator, GetStraightLineLength( diameter ) )
+    public ElbowSizeCalculator( Document document, IMEPCurveGenerator mepCurveGenerator, double diameter ) : base( document, mepCurveGenerator, GetStraightLineLength( diameter ) )
     {
     }
 

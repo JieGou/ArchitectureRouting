@@ -1,7 +1,6 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators.MEPCurveGenerators ;
 using Arent3d.Revit ;
@@ -27,8 +26,8 @@ namespace Arent3d.Architecture.Routing
     
     private double ShortCurveTolerance { get ; }
 
-    private IMEPCurveGenerator? _fittingGenerator = null ;
-    private IMEPCurveGenerator FittingGenerator => _fittingGenerator ??= MEPCurveGenerator.Create( MEPSystemType, CurveType ) ; 
+    private IMEPCurveGenerator? _mepCurveGenerator = null ;
+    private IMEPCurveGenerator MEPCurveGenerator => _mepCurveGenerator ??= FittingSizeCalculators.MEPCurveGenerators.MEPCurveGenerator.Create( MEPSystemType, CurveType ) ; 
 
 
     public RouteMEPSystem( Document document, SubRoute subRoute )
@@ -104,7 +103,7 @@ namespace Arent3d.Architecture.Routing
     {
       return ThreadDispatcher.Dispatch( () =>
       {
-        var calculator = new ElbowSizeCalculator( Document, FittingGenerator, diameter ) ;
+        var calculator = new ElbowSizeCalculator( Document, MEPCurveGenerator, diameter ) ;
         return calculator.ElbowSize ;
       } ) ;
     }
@@ -113,7 +112,7 @@ namespace Arent3d.Architecture.Routing
     {
       return ThreadDispatcher.Dispatch( () =>
       {
-        var calculator = new ElbowSizeCalculator( Document, FittingGenerator, diameter ) ;
+        var calculator = new ElbowSizeCalculator( Document, MEPCurveGenerator, diameter ) ;
         return calculator.ElbowSize ;
       } ) ;
     }
@@ -122,7 +121,7 @@ namespace Arent3d.Architecture.Routing
     {
       return ThreadDispatcher.Dispatch( () =>
       {
-        var calculator = new TeeSizeCalculator( Document, FittingGenerator, value.HeaderDiameter, value.BranchDiameter ) ;
+        var calculator = new TeeSizeCalculator( Document, MEPCurveGenerator, value.HeaderDiameter, value.BranchDiameter ) ;
         return ( calculator.HeaderSize, calculator.BranchSize ) ;
       } ) ;
     }
@@ -131,7 +130,7 @@ namespace Arent3d.Architecture.Routing
     {
       return ThreadDispatcher.Dispatch( () =>
       {
-        var calculator = new ReducerSizeCalculator( Document, FittingGenerator, value.Item1, value.Item2 ) ;
+        var calculator = new ReducerSizeCalculator( Document, MEPCurveGenerator, value.Item1, value.Item2 ) ;
         return calculator.Size1 + calculator.Size2 ;
       } ) ;
     }
