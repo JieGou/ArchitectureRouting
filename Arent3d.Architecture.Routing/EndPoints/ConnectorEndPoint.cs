@@ -1,4 +1,3 @@
-using System ;
 using System.Text.RegularExpressions ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -72,7 +71,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public double? GetDiameter() => GetConnector()?.GetDiameter() ;
 
-    public double GetMinimumStraightLength( RouteMEPSystem routeMepSystem, double edgeDiameter, bool isFrom ) => 0 ;
+    public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
     public (Route? Route, SubRoute? SubRoute) ParentBranch() => ( null, null ) ;
 

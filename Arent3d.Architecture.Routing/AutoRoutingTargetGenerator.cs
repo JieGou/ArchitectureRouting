@@ -2,7 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Routing ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -10,18 +10,20 @@ namespace Arent3d.Architecture.Routing
 {
   public class AutoRoutingTargetGenerator
   {
-    public static IEnumerable<AutoRoutingTarget> Run( Document document, IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
+    public static IEnumerable<AutoRoutingTarget> Run( Document document, IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary, IFittingSizeCalculator fittingSizeCalculator )
     {
-      return new AutoRoutingTargetGenerator( document ).Create( routes, routeMepSystemDictionary ) ;
+      return new AutoRoutingTargetGenerator( document, fittingSizeCalculator ).Create( routes, routeMepSystemDictionary ) ;
     }
 
 
     private readonly Document _document ;
+    private readonly IFittingSizeCalculator _fittingSizeCalculator ;
     private readonly Dictionary<(string, int), List<SubRoute>> _groups = new() ;
 
-    private AutoRoutingTargetGenerator( Document document )
+    private AutoRoutingTargetGenerator( Document document, IFittingSizeCalculator fittingSizeCalculator )
     {
       _document = document ;
+      _fittingSizeCalculator = fittingSizeCalculator ;
     }
 
     private IEnumerable<AutoRoutingTarget> Create( IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
@@ -69,7 +71,7 @@ namespace Arent3d.Architecture.Routing
 
     private AutoRoutingTarget GenerateAutoRoutingTarget( IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
-      return new AutoRoutingTarget( _document, subRoutes, priorities, routeMepSystemDictionary ) ;
+      return new AutoRoutingTarget( _document, subRoutes, priorities, routeMepSystemDictionary, _fittingSizeCalculator ) ;
     }
 
     private static IReadOnlyDictionary<Route, int> CollectPriorities( IReadOnlyCollection<Route> routes )

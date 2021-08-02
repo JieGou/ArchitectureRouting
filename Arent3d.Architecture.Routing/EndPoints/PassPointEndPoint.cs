@@ -1,7 +1,6 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Media ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -131,7 +130,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public double? GetDiameter() => GetPassPoint()?.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() ?? PreferredRadius * 2 ;
 
-    public double GetMinimumStraightLength( RouteMEPSystem routeMepSystem, double edgeDiameter, bool isFrom ) => 0 ;
+    public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
     public (Route? Route, SubRoute? SubRoute) ParentBranch() => ( null, null ) ;
 

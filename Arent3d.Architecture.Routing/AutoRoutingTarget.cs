@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
@@ -36,7 +37,7 @@ namespace Arent3d.Architecture.Routing
 
     public Domain Domain { get ; }
 
-    public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
+    public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary, IFittingSizeCalculator fittingSizeCalculator )
     {
       Routes = subRoutes.Select( subRoute => subRoute.Route ).Distinct().EnumerateAll() ;
 
@@ -45,8 +46,8 @@ namespace Arent3d.Architecture.Routing
       var depths = GetDepths( subRoutes ) ;
 
       var dic = new Dictionary<AutoRoutingEndPoint, SubRoute>() ;
-      _fromEndPoints = GenerateEndPointList( subRoutes, subRoute => GetFromEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute ] ), dic ) ;
-      _toEndPoints = GenerateEndPointList( subRoutes, subRoute => GetToEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute ] ), dic ) ;
+      _fromEndPoints = GenerateEndPointList( subRoutes, subRoute => GetFromEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute ], fittingSizeCalculator ), dic ) ;
+      _toEndPoints = GenerateEndPointList( subRoutes, subRoute => GetToEndPoints( subRoute, depths[ subRoute ], routeMepSystemDictionary[ subRoute ], fittingSizeCalculator ), dic ) ;
       _ep2SubRoute = dic ;
 
       AutoRoutingEndPoint.ApplyDepths( _fromEndPoints, _toEndPoints ) ;
@@ -118,18 +119,22 @@ namespace Arent3d.Architecture.Routing
       return subRouteAndParents ;
     }
 
-    private static IEnumerable<AutoRoutingEndPoint> GetFromEndPoints( SubRoute subRoute, int depth, RouteMEPSystem routeMepSystem )
+    private static IEnumerable<AutoRoutingEndPoint> GetFromEndPoints( SubRoute subRoute, int depth, RouteMEPSystem routeMepSystem, IFittingSizeCalculator fittingSizeCalculator )
     {
       var edgeDiameter = subRoute.GetDiameter() ;
       var endPoints = subRoute.FromEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth, routeMepSystem, edgeDiameter, (ProcessConstraint) subRoute.AvoidType ) ) ;
+      var spec = new MEPSystemPipeSpec( routeMepSystem, fittingSizeCalculator ) ;
+      var routeCondition = new MEPSystemRouteCondition( spec, edgeDiameter, subRoute.AvoidType ) ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth,edgeDiameter, routeCondition ) ) ;
     }
 
-    private static IEnumerable<AutoRoutingEndPoint> GetToEndPoints( SubRoute subRoute, int depth, RouteMEPSystem routeMepSystem )
+    private static IEnumerable<AutoRoutingEndPoint> GetToEndPoints( SubRoute subRoute, int depth, RouteMEPSystem routeMepSystem, IFittingSizeCalculator fittingSizeCalculator )
     {
       var edgeDiameter = subRoute.GetDiameter() ;
       var endPoints = subRoute.ToEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, routeMepSystem, edgeDiameter, (ProcessConstraint) subRoute.AvoidType ) ) ;
+      var spec = new MEPSystemPipeSpec( routeMepSystem, fittingSizeCalculator ) ;
+      var routeCondition = new MEPSystemRouteCondition( spec, edgeDiameter, subRoute.AvoidType ) ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, edgeDiameter, routeCondition ) ) ;
     }
 
     private static bool IsRoutingTargetEnd( IEndPoint ep )

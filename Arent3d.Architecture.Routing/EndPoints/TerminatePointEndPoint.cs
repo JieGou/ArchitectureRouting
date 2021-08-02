@@ -1,6 +1,5 @@
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using System.Collections.Generic;
 
 namespace Arent3d.Architecture.Routing.EndPoints
 {
@@ -95,7 +94,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public double? GetDiameter() => GetTerminatePoint()?.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() ?? PreferredRadius * 2 ;
 
-    public double GetMinimumStraightLength( RouteMEPSystem routeMepSystem, double edgeDiameter, bool isFrom ) => 0 ;
+    public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
     public (Route? Route, SubRoute? SubRoute) ParentBranch() => ( null, null ) ;
 

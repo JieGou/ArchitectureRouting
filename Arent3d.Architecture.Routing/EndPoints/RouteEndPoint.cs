@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public double? GetDiameter() => null ;
 
-    public double GetMinimumStraightLength( RouteMEPSystem routeMepSystem, double edgeDiameter, bool isFrom ) => 0 ;
+    public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
     public (Route? Route, SubRoute? SubRoute) ParentBranch()
     {

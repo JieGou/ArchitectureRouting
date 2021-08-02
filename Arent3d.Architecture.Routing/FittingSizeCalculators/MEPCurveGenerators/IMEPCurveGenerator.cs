@@ -6,8 +6,9 @@ using Autodesk.Revit.DB.Plumbing ;
 
 namespace Arent3d.Architecture.Routing.FittingSizeCalculators.MEPCurveGenerators
 {
-  internal interface IMEPCurveGenerator
+  public interface IMEPCurveGenerator
   {
+    Document Document { get ; }
     ElementId MEPSystemTypeId { get ; }
     ElementId MEPCurveTypeId { get ; }
 

@@ -1,4 +1,3 @@
-using System.Collections.Generic ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
@@ -62,7 +61,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     /// <summary>
     /// Returns the required minimum straight length.
     /// </summary>
-    double GetMinimumStraightLength( RouteMEPSystem routeMepSystem, double edgeDiameter, bool isFrom ) ;
+    double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) ;
 
     /// <summary>
     /// Gets a parent route when the end point is dependent to it.

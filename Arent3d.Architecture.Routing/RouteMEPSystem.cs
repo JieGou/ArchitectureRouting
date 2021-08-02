@@ -1,7 +1,6 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators.MEPCurveGenerators ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
@@ -17,124 +16,29 @@ namespace Arent3d.Architecture.Routing
   {
     public double DiameterTolerance { get ; }
     public double AngleTolerance { get ; }
+    public double ShortCurveTolerance { get ; }
 
-    public Document Document => CurveType.Document ;
+    public Document Document { get ; }
 
     public MEPSystemType? MEPSystemType { get ; }
     public MEPSystem? MEPSystem { get ; }
     public MEPCurveType CurveType { get ; }
-    
-    private double ShortCurveTolerance { get ; }
-
-    private IMEPCurveGenerator? _mepCurveGenerator = null ;
-    private IMEPCurveGenerator MEPCurveGenerator => _mepCurveGenerator ??= FittingSizeCalculators.MEPCurveGenerators.MEPCurveGenerator.Create( MEPSystemType, CurveType ) ; 
-
 
     public RouteMEPSystem( Document document, SubRoute subRoute )
     {
-      DiameterTolerance = document.Application.VertexTolerance ;
-      AngleTolerance = document.Application.AngleTolerance ;
+      Document = document ;
+
+      var app = document.Application ;
+      DiameterTolerance = app.VertexTolerance ;
+      AngleTolerance = app.AngleTolerance ;
+      ShortCurveTolerance = app.ShortCurveTolerance ;
 
       MEPSystemType = subRoute.Route.GetMEPSystemType() ;
       //MEPSystem = CreateMEPSystem( document, connector, allConnectors ) ;
       MEPSystem = null ;
 
       CurveType = subRoute.GetMEPCurveType() ?? throw new InvalidOperationException() ;
-      ShortCurveTolerance = document.Application.ShortCurveTolerance ;
     }
-
-    private SizeTable<double, double>? _90ElbowSize ;
-
-    public double Get90ElbowSize( double diameter )
-    {
-      return ( _90ElbowSize ??= new SizeTable<double, double>( Calculate90ElbowSize ) ).Get( diameter ) ;
-    }
-
-    private SizeTable<double, double>? _45ElbowSize ;
-
-    public double Get45ElbowSize( double diameter )
-    {
-      return ( _45ElbowSize ??= new SizeTable<double, double>( Calculate45ElbowSize ) ).Get( diameter ) ;
-    }
-
-    private SizeTable<(double HeaderDiameter, double BranchDiameter), (double HeaderLength, double BranchLength)>? _teeSizeLength ;
-
-    public double GetTeeHeaderLength( double headerDiameter, double branchDiameter )
-    {
-      if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
-        return ( _teeSizeLength ??= new SizeTable<(double HeaderDiameter, double BranchDiameter), (double HeaderLength, double BranchLength)>( CalculateTeeLengths ) ).Get( ( headerDiameter, branchDiameter ) ).HeaderLength ;
-      }
-      else {
-        return branchDiameter * 0.5 ; // provisional
-      }
-    }
-
-    public double GetTeeBranchLength( double headerDiameter, double branchDiameter )
-    {
-      if ( JunctionType.Tee == CurveType.PreferredJunctionType ) {
-        return ( _teeSizeLength ??= new SizeTable<(double HeaderDiameter, double BranchDiameter), (double HeaderLength, double BranchLength)>( CalculateTeeLengths ) ).Get( ( headerDiameter, branchDiameter ) ).BranchLength ;
-      }
-      else {
-        return headerDiameter * 0.5 ; // provisional
-      }
-    }
-
-    private SizeTable<(double, double), double>? _reducerLength ;
-
-    public double GetReducerLength( double diameter1, double diameter2 )
-    {
-      if ( diameter1 <= 0 || diameter2 <= 0 || Math.Abs( diameter1 - diameter2 ) < DiameterTolerance ) return 0 ;
-
-      if ( diameter1 > diameter2 ) {
-        var tmp = diameter1 ;
-        diameter1 = diameter2 ;
-        diameter2 = tmp ;
-      }
-
-      return ( _reducerLength ??= new SizeTable<(double, double), double>( CalculateReducerLength ) ).Get( ( diameter1, diameter2 ) ) ;
-    }
-
-    public double GetWeldMinDistance( double diameter )
-    {
-      return ShortCurveTolerance ;
-    }
-
-    private double Calculate90ElbowSize( double diameter )
-    {
-      return ThreadDispatcher.Dispatch( () =>
-      {
-        var calculator = new ElbowSizeCalculator( Document, MEPCurveGenerator, diameter ) ;
-        return calculator.ElbowSize ;
-      } ) ;
-    }
-
-    private double Calculate45ElbowSize( double diameter )
-    {
-      return ThreadDispatcher.Dispatch( () =>
-      {
-        var calculator = new ElbowSizeCalculator( Document, MEPCurveGenerator, diameter ) ;
-        return calculator.ElbowSize ;
-      } ) ;
-    }
-
-    private (double Header, double Branch) CalculateTeeLengths( ( double HeaderDiameter, double BranchDiameter) value )
-    {
-      return ThreadDispatcher.Dispatch( () =>
-      {
-        var calculator = new TeeSizeCalculator( Document, MEPCurveGenerator, value.HeaderDiameter, value.BranchDiameter ) ;
-        return ( calculator.HeaderSize, calculator.BranchSize ) ;
-      } ) ;
-    }
-
-    private double CalculateReducerLength( (double, double) value )
-    {
-      return ThreadDispatcher.Dispatch( () =>
-      {
-        var calculator = new ReducerSizeCalculator( Document, MEPCurveGenerator, value.Item1, value.Item2 ) ;
-        return calculator.Size1 + calculator.Size2 ;
-      } ) ;
-    }
-
 
     #region Get MEPSystemType
 

@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
@@ -20,12 +21,12 @@ namespace Arent3d.Architecture.Routing
     private readonly List<Connector[]> _badConnectors = new() ;
     private readonly PassPointConnectorMapper _globalPassPointConnectorMapper = new() ;
 
-    public RouteGenerator( IReadOnlyCollection<Route> routes, Document document, CollisionTree.ICollisionCheckTargetCollector collector )
+    public RouteGenerator( IReadOnlyCollection<Route> routes, Document document, IFittingSizeCalculator fittingSizeCalculator, CollisionTree.ICollisionCheckTargetCollector collector )
     {
       _document = document ;
 
       _routeMEPSystems = ThreadDispatcher.Dispatch( () => CreateRouteMEPSystems( document, routes ) ) ;
-      var targets = AutoRoutingTargetGenerator.Run( _document, routes, _routeMEPSystems ) ;
+      var targets = AutoRoutingTargetGenerator.Run( _document, routes, _routeMEPSystems, fittingSizeCalculator ) ;
       RoutingTargets = targets.EnumerateAll() ;
       ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
 

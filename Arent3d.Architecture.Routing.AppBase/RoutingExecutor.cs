@@ -5,6 +5,7 @@ using System.Linq ;
 using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
@@ -20,16 +21,19 @@ namespace Arent3d.Architecture.Routing.AppBase
   public class RoutingExecutor
   {
     private readonly Document _document ;
+    private readonly IFittingSizeCalculator _fittingSizeCalculator ;
     private readonly List<Connector[]> _badConnectors = new() ;
 
     /// <summary>
     /// Generates a routing execution object.
     /// </summary>
     /// <param name="document"></param>
+    /// <param name="fittingSizeCalculator"></param>
     /// <param name="view"></param>
-    public RoutingExecutor( Document document, View view )
+    public RoutingExecutor( Document document, IFittingSizeCalculator fittingSizeCalculator, View view )
     {
       _document = document ;
+      _fittingSizeCalculator = fittingSizeCalculator ;
 
       CollectRacks( document, view ) ;
     }
@@ -131,7 +135,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       RouteGenerator generator ;
       using ( progressData?.Reserve( 0.02 ) ) {
-        generator = new RouteGenerator( routes, _document, collector ) ;
+        generator = new RouteGenerator( routes, _document, _fittingSizeCalculator, collector ) ;
       }
 
       using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
