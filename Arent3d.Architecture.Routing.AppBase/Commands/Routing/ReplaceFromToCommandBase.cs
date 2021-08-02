@@ -7,7 +7,6 @@ using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
-using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -69,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private IEndPoint PickNewEndPoint( UIDocument uiDocument, Route route, IEndPoint endPoint )
     {
       var fromPickResult = PickCommandUtil.PickResultFromAnother( route, endPoint ) ;
-      var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), fromPickResult, AddInType.Electrical ) ; //Implement after
+      var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ; //Implement after
 
       return PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
     }

@@ -20,20 +20,22 @@ namespace Arent3d.Architecture.Routing.AppBase
   /// </summary>
   public class RoutingExecutor
   {
+    public delegate RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector ) ;
+    
     private readonly Document _document ;
-    private readonly IFittingSizeCalculator _fittingSizeCalculator ;
+    private readonly CreateRouteGenerator _createRouteGenerator ;
     private readonly List<Connector[]> _badConnectors = new() ;
 
     /// <summary>
     /// Generates a routing execution object.
     /// </summary>
     /// <param name="document"></param>
-    /// <param name="fittingSizeCalculator"></param>
+    /// <param name="createRouteGenerator"></param>
     /// <param name="view"></param>
-    public RoutingExecutor( Document document, IFittingSizeCalculator fittingSizeCalculator, View view )
+    public RoutingExecutor( Document document, CreateRouteGenerator createRouteGenerator, View view )
     {
       _document = document ;
-      _fittingSizeCalculator = fittingSizeCalculator ;
+      _createRouteGenerator = createRouteGenerator ;
 
       CollectRacks( document, view ) ;
     }
@@ -135,7 +137,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       RouteGenerator generator ;
       using ( progressData?.Reserve( 0.02 ) ) {
-        generator = new RouteGenerator( routes, _document, _fittingSizeCalculator, collector ) ;
+        generator = _createRouteGenerator( routes, _document, collector ) ;
       }
 
       using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
@@ -199,17 +201,17 @@ namespace Arent3d.Architecture.Routing.AppBase
       _badConnectors.AddRange( badConnectorSet ) ;
     }
 
-    private readonly List<PipeInfo> _deletedPipeInfo = new() ;
+    private readonly List<RoutingElementInfo> _deletedElementInfo = new() ;
 
-    public bool HasDeletedElements => ( 0 < _deletedPipeInfo.Count ) ;
+    public bool HasDeletedElements => ( 0 < _deletedElementInfo.Count ) ;
 
-    public void RegisterDeletedPipe( ElementId deletingPipeId )
+    public void RegisterDeletedElement( ElementId deletingElementId )
     {
-      var elm = _document.GetElement( deletingPipeId ) ;
+      var elm = _document.GetElement( deletingElementId ) ;
       if ( null == elm ) throw new InvalidOperationException() ;
 
-      if ( PipeInfo.Create( elm ) is { } info ) {
-        _deletedPipeInfo.Add( info ) ;
+      if ( RoutingElementInfo.Create( elm ) is { } info ) {
+        _deletedElementInfo.Add( info ) ;
       }
     }
 
@@ -224,21 +226,21 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       var routeDic = routes.ToDictionary( route => route.RouteName ) ;
 
-      foreach ( var pipeInfo in _document.GetAllElementsOfRoute<MEPCurve>().Select( c => PipeInfo.Create( c, routeDic ) ).NonNull().Concat( _deletedPipeInfo ) ) {
+      foreach ( var pipeInfo in _document.GetAllElementsOfRoute<MEPCurve>().Select( c => RoutingElementInfo.Create( c, routeDic ) ).NonNull().Concat( _deletedElementInfo ) ) {
         foreach ( var reducer in pipeInfo.GetNeighborReducers( _document ) ) {
           pipeInfo.ApplyToReducer( reducer ) ;
         }
       }
     }
 
-    private class PipeInfo
+    private class RoutingElementInfo
     {
-      public static PipeInfo? Create( Element elm )
+      public static RoutingElementInfo? Create( Element elm )
       {
         return Create( elm, null ) ;
       }
 
-      public static PipeInfo? Create( Element elm, IReadOnlyDictionary<string, Route>? routeDic )
+      public static RoutingElementInfo? Create( Element elm, IReadOnlyDictionary<string, Route>? routeDic )
       {
         if ( elm.GetRouteName() is not { } routeName ) return null ;
         if ( null != routeDic && false == routeDic.ContainsKey( routeName ) ) return null ;
@@ -248,7 +250,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         var connectors = elm.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).ToList() ;
 
-        return new PipeInfo( elm.Id, routeName, subRouteIndex, fromSide!, toSide!, connectors ) ;
+        return new RoutingElementInfo( elm.Id, routeName, subRouteIndex, fromSide!, toSide!, connectors ) ;
       }
 
       public ElementId ElementId { get ; }
@@ -258,7 +260,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public string RoutedElementToSideConnectorIds { get ; }
       public IReadOnlyCollection<Connector> ConnectingConnectors { get ; }
 
-      private PipeInfo( ElementId elmId, string routeName, int subRouteIndex, string fromSide, string toSide, List<Connector> connectors )
+      private RoutingElementInfo( ElementId elmId, string routeName, int subRouteIndex, string fromSide, string toSide, List<Connector> connectors )
       {
         ElementId = elmId ;
         RouteName = routeName ;

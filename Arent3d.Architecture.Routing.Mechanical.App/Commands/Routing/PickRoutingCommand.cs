@@ -1,5 +1,4 @@
 using System.Collections.Generic ;
-using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -9,7 +8,6 @@ using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
@@ -23,6 +21,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     protected override AddInType GetAddInType()
     {
       return AddInType.Mechanical ;
+    }
+
+    protected override RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
+    {
+      return RoutingApp.GetRouteGeneratorInstantiator() ;
     }
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )

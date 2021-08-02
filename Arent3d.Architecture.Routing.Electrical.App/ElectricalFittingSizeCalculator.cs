@@ -6,6 +6,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 {
   internal class ElectricalFittingSizeCalculator : IFittingSizeCalculator
   {
+    public static IFittingSizeCalculator Instance { get ; } = new ElectricalFittingSizeCalculator() ;
+
+    private ElectricalFittingSizeCalculator()
+    {
+    }
+    
     public double Calc90ElbowSize( Document document, IMEPCurveGenerator mepCurveGenerator, double diameter )
     {
       return DefaultFittingSizeCalculator.Instance.Calc90ElbowSize( document, mepCurveGenerator, diameter ) ;

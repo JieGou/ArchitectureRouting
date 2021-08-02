@@ -19,8 +19,9 @@ namespace Arent3d.Architecture.Routing
   public class MEPSystemCreator
   {
     private readonly Document _document ;
-    private readonly AutoRoutingTarget _autoRoutingTarget ;
     private readonly RouteVertexToConnectorMapper _connectorMapper ;
+
+    public AutoRoutingTarget AutoRoutingTarget { get ; }
 
     /// <summary>
     /// Returns pass-point-to-connector relation manager.
@@ -36,7 +37,7 @@ namespace Arent3d.Architecture.Routing
     public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
     {
       _document = document ;
-      _autoRoutingTarget = autoRoutingTarget ;
+      AutoRoutingTarget = autoRoutingTarget ;
       _level = GetLevel( document, autoRoutingTarget ) ;
       _routeMepSystemDictionary = routeMepSystemDictionary ;
       _connectorMapper = new RouteVertexToConnectorMapper() ;
@@ -93,15 +94,15 @@ namespace Arent3d.Architecture.Routing
     /// <param name="routeEdge">A route edge.</param>
     /// <param name="passingEndPointInfo">Nearest from & to end points.</param>
     /// <returns>Newly created duct.</returns>
-    public Element CreateEdgeElement( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo, Domain domain )
+    public Element CreateEdgeElement( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo )
     {
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZRaw() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZRaw() ;
 
-      var subRoute = _autoRoutingTarget.GetSubRoute( routeEdge ) ;
+      var subRoute = AutoRoutingTarget.GetSubRoute( routeEdge ) ;
       var routeMepSystem = _routeMepSystemDictionary[ subRoute ] ;
 
-      var element = domain switch
+      var element = AutoRoutingTarget.Domain switch
       {
         Domain.DomainHvac => CreateDuct( startPos, endPos, routeMepSystem ),
         Domain.DomainPiping => CreatePipe( startPos, endPos, routeMepSystem ),

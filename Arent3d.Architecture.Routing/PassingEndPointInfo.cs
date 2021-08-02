@@ -110,5 +110,16 @@ namespace Arent3d.Architecture.Routing
 
     public IEnumerable<IEndPoint> FromEndPoints => _fromEndPoints.Values ;
     public IEnumerable<IEndPoint> ToEndPoints => _toEndPoints.Values ;
+
+    
+    public PassingEndPointInfo CreateSubPassingEndPointInfo( IEndPoint fromEndPoint, IEndPoint toEndPoint )
+    {
+      var result = new PassingEndPointInfo() ;
+
+      result._fromEndPoints.Add( fromEndPoint.Key, fromEndPoint ) ;
+      result._toEndPoints.Add( toEndPoint.Key, toEndPoint ) ;
+
+      return result ;
+    }
   }
 }

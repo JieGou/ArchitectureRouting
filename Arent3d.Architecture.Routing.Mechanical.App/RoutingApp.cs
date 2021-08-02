@@ -4,6 +4,7 @@ using System.Reflection ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
@@ -23,6 +24,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
     private static FromToTreeManager? _fromToTreeManager = null ;
 
     public static FromToTreeManager FromToTreeManager => _fromToTreeManager ??= new FromToTreeManager() ;
+
+    public static RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
+    {
+      return ( routes, document, collector ) => new RouteGenerator( routes, document, DefaultFittingSizeCalculator.Instance, collector ) ;
+    }
 
     protected override string GetLanguageDirectoryPath()
     {

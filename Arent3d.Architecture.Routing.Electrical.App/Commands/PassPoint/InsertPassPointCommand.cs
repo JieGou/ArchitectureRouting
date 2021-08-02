@@ -1,3 +1,4 @@
+using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.PassPoint ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
@@ -15,6 +16,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint
     protected override AddInType GetAddInType()
     {
       return AddInType.Electrical ;
+    }
+
+    protected override RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
+    {
+      return RoutingApp.GetRouteGeneratorInstantiator() ;
     }
   }
 }

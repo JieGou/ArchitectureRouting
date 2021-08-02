@@ -117,11 +117,7 @@ namespace Arent3d.Architecture.Routing
         mepSystemCreator.RegisterEndPointConnector( routeVertex ) ;
       }
 
-      var newElements = new List<Element>() ;
-      foreach ( var routeEdge in result.RouteEdges ) {
-        var elm = mepSystemCreator.CreateEdgeElement( routeEdge, result.GetPassingEndPoints( routeEdge ), routingTarget.Domain ) ;
-        newElements.Add( elm ) ;
-      }
+      var newElements = CreateEdges( mepSystemCreator, result ).ToList() ;
 
       newElements.AddRange( mepSystemCreator.ConnectAllVertices() ) ;
 
@@ -132,6 +128,11 @@ namespace Arent3d.Architecture.Routing
       _globalPassPointConnectorMapper.Merge( mepSystemCreator.PassPointConnectorMapper ) ;
 
       RegisterBadConnectors( mepSystemCreator.GetBadConnectorSet() ) ;
+    }
+
+    protected virtual IEnumerable<Element> CreateEdges( MEPSystemCreator mepSystemCreator, AutoRoutingResult result )
+    {
+      return result.RouteEdges.Select( routeEdge => mepSystemCreator.CreateEdgeElement( routeEdge, result.GetPassingEndPointInfo( routeEdge ) ) ) ;
     }
 
     private void RegisterBadConnectors( IEnumerable<Connector[]> badConnectorSet )

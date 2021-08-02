@@ -1,6 +1,9 @@
-﻿using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+﻿using System.Collections.ObjectModel ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.UI ;
 
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
@@ -13,6 +16,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override AddInType GetAddInType()
     {
       return AddInType.Electrical ;
+    }
+
+    protected override FromToWindow CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindow.FromToItems> fromToItemsList )
+    {
+      return new Forms.FromToWindow( uiDocument, fromToItemsList ) ;
     }
   }
 }

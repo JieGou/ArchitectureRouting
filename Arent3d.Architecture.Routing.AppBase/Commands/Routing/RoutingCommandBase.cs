@@ -3,7 +3,6 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
 using System.Threading.Tasks ;
-using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -21,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
 
-      var executor = new RoutingExecutor( document, GetFittingSizeCalculator(), commandData.View ) ;
+      var executor = new RoutingExecutor( document, GetRouteGeneratorInstantiator(), commandData.View ) ;
 
       IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? segments ;
       try {
@@ -62,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    protected virtual IFittingSizeCalculator GetFittingSizeCalculator() => DefaultFittingSizeCalculator.Instance ;
+    protected abstract RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator() ;
 
     private RoutingExecutionResult GenerateRoutes( UIDocument uiDocument, RoutingExecutor executor, IAsyncEnumerable<(string RouteName, RouteSegment Segment)> segments )
     {
@@ -161,7 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
         if ( 0 < elementsToDelete.Count ) {
-          elementsToDelete.ForEach( _executor.RegisterDeletedPipe ) ;
+          elementsToDelete.ForEach( _executor.RegisterDeletedElement ) ;
           failuresAccessor.DeleteElements( elementsToDelete.ToList() ) ;
 
           return FailureProcessingResult.ProceedWithCommit ;

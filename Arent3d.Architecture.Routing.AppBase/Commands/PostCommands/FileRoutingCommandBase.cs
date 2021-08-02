@@ -1,19 +1,13 @@
 using System.Collections.Generic ;
-using System.ComponentModel ;
-using System.Globalization ;
 using System.IO ;
-using Arent3d.Revit ;
 using Arent3d.Revit.Csv ;
 using Arent3d.Revit.I18n ;
-using Arent3d.Revit.UI ;
-using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using CsvHelper ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public class FileRoutingCommand : RoutingCommandBase
+  public abstract class FileRoutingCommandBase : RoutingCommandBase
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RoutingFromFile" ;
 

@@ -1,7 +1,7 @@
 ﻿using System ;
+using System.Collections.ObjectModel ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Revit.UI ;
-using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -12,11 +12,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private UIDocument? _uiDocument = null ;
     protected abstract AddInType GetAddInType() ;
 
+    protected abstract FromToWindow CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindow.FromToItems> fromToItemsList ) ;
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       _uiDocument = commandData.Application.ActiveUIDocument ;
       try {
-        FromToWindowViewModel.ShowFromToWindow( _uiDocument, GetAddInType() ) ;
+        FromToWindowViewModel.ShowFromToWindow( _uiDocument, GetAddInType(), CreateFromToWindow ) ;
       }
       catch ( Exception e ) {
         TaskDialog.Show( "ShowFrom_ToWindowCommand", e.Message ) ;

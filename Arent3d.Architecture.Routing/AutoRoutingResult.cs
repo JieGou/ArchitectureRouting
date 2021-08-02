@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing
       _passingEndPointInfo = PassingEndPointInfo.CollectPassingEndPointInfo( this ) ;
     }
 
-    public PassingEndPointInfo GetPassingEndPoints( IRouteEdge edge )
+    public PassingEndPointInfo GetPassingEndPointInfo( IRouteEdge edge )
     {
       if ( false == _passingEndPointInfo.TryGetValue( edge, out var info ) ) throw new ArgumentException() ;
 

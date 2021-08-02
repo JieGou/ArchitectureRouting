@@ -4,14 +4,13 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
-using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
-using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -25,6 +24,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override AddInType GetAddInType()
     {
       return AddInType.Electrical ;
+    }
+
+    protected override RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
+    {
+      return RoutingApp.GetRouteGeneratorInstantiator() ;
     }
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
@@ -78,7 +82,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
         curveType = RouteMEPSystem.GetMEPCurveType( document, new[] { connector }, null ) ;
 
-        var curveTypes = document.GetAllElements<MEPCurveType>().Where( c => c is ConduitType ).ToList() ;
         systemType = RouteMEPSystem.GetSystemType( document, connector ) ;
 
         if ( fromEndPoint.GetDiameter() is { } d1 ) {

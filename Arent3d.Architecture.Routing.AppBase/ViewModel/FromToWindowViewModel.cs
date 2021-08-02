@@ -12,7 +12,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class FromToWindowViewModel : ViewModelBase
   {
-    public static void ShowFromToWindow( UIDocument uiDocument, AddInType addInType )
+    public delegate FromToWindow FromToWindowCreator( UIDocument uiDocument, ObservableCollection<FromToWindow.FromToItems> fromToItemsList ) ;
+
+    public static void ShowFromToWindow( UIDocument uiDocument, AddInType addInType, FromToWindowCreator fromToWindowCreator )
     {
       UiDoc = uiDocument ;
       var allRoutes = uiDocument.Document.CollectRoutes( addInType ) ;
@@ -50,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         } ) ;
       }
 
-      var dialog = new FromToWindow( uiDocument, fromToItemsList ) ;
+      var dialog = fromToWindowCreator( uiDocument, fromToItemsList ) ;
 
       dialog.ShowDialog() ;
       OpenedDialog = dialog ;
