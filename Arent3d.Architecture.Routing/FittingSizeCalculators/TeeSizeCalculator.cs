@@ -17,9 +17,9 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
 
     protected override void GenerateFittingFromConnectors( IReadOnlyList<Connector> connectors )
     {
-      if ( 2 != connectors.Count ) return ;
+      if ( 3 != connectors.Count ) return ;
 
-      Document.Create.NewTransitionFitting( connectors[ 0 ], connectors[ 1 ] ) ;
+      Document.Create.NewTeeFitting( connectors[ 0 ], connectors[ 1 ], connectors[ 2 ] ) ;
     }
 
     private (double HeaderSize, double BranchSize)? _teeSizes ;
