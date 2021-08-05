@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.UI ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
@@ -276,25 +277,28 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private static (bool Result, Connector? Connector) CreateConnectorInOutFamily( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
     {
+      using var fitter = new TempZoomToFit( uiDocument ) ;
+
       uiDocument.SetSelection( element ) ;
+      fitter.ZoomToFit() ;
 
       var sv = new CreateConnector( uiDocument, element, firstConnector ) ;
 
       uiDocument.ClearSelection() ;
-      uiDocument.GetActiveUIView()?.ZoomToFit() ;
-
       return ( true, sv.GetPickedConnector() ) ;
     }
 
     private static (bool Result, Connector? Connector) SelectFromDialog( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
     {
+      using var fitter = new TempZoomToFit( uiDocument ) ;
+
       uiDocument.SetSelection( element ) ;
+      fitter.ZoomToFit() ;
 
       var sv = new SelectConnector( element, firstConnector ) { Title = message } ;
       sv.ShowDialog() ;
 
       uiDocument.ClearSelection() ;
-      uiDocument.GetActiveUIView()?.ZoomToFit() ;
 
       if ( true != sv.DialogResult ) return ( false, null ) ;
 
