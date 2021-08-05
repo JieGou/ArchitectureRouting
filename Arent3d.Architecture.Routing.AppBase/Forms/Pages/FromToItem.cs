@@ -132,7 +132,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
 
-      ViewFamilyType vft = (ViewFamilyType) doc.GetElement( doc.ActiveView.GetTypeId() ) ;
+      var is3DView = ( doc.ActiveView is View3D ) ;
 
       foreach ( var route in parentFromTos.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
         var routeItem = new FromToItem.RouteItem( doc, uiDoc, allRoutes, route, fromToItemsUiBase.FromToTreeIcons?[ "RouteItem" ] ) { ItemTypeName = route.RouteName, ElementId = route.OwnerElement?.Id, ItemTag = "Route" } ;
@@ -151,10 +151,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         Parameter? levelName = targetElement?.get_Parameter( BuiltInParameter.RBS_START_LEVEL_PARAM ) ;
         routeItem.ItemFloor = "(" + levelName?.AsValueString() + ")" ;
 
-        if ( ! vft.Name.Equals( "3D ビュー" ) ) {
+        if ( false == is3DView ) {
           string viewLevelName = routeItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL ).AsString() ;
           if ( viewLevelName != levelName?.AsValueString() ) {
-            SolidColorBrush scb = (SolidColorBrush) ( new BrushConverter().ConvertFrom( "#808080" ) ) ;
+            SolidColorBrush scb = (SolidColorBrush)( new BrushConverter().ConvertFrom( "#808080" ) ) ;
             scb.Opacity = 0.75 ;
             routeItem.TextColor = scb ;
           }
@@ -188,7 +188,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         Parameter? levelName = targetElement?.get_Parameter( BuiltInParameter.RBS_START_LEVEL_PARAM ) ;
         branchItem.ItemFloor = "(" + levelName?.AsValueString() + ")" ;
-        if ( ! vft.Name.Equals( "3D ビュー" ) ) {
+        if ( false == is3DView ) {
           string viewLevelName = branchItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL ).AsString() ;
           if ( viewLevelName != levelName?.AsValueString() ) {
             SolidColorBrush scb = (SolidColorBrush) ( new BrushConverter().ConvertFrom( "#808080" ) ) ;
@@ -264,9 +264,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       List<ElementId> elements = routeItem.Doc.GetAllElementsOfRouteName<Element>( subRoute.Route.RouteName ).Select( elem => elem.Id ).ToList() ;
       Element element = routeItem.Doc.GetElement( elements[ 0 ] ) ;
       Parameter? levelName = element.get_Parameter( BuiltInParameter.RBS_START_LEVEL_PARAM ) ;
-      ViewFamilyType vft = (ViewFamilyType) routeItem.Doc.GetElement( routeItem.Doc.ActiveView.GetTypeId() ) ;
 
-      //if ( !vft.Name.Equals( "3D ビュー" ) ) {
+      //if ( routeItem.Doc.ActiveView is not View3D ) {
       //    string viewLevelName = routeItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL ).AsString();
       //    if ( viewLevelName != levelName?.AsValueString() ) {
       //        SolidColorBrush scb = (SolidColorBrush) (new BrushConverter().ConvertFrom( "#808080" ));
