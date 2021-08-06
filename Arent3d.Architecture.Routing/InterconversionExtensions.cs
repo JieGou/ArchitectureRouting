@@ -30,7 +30,7 @@ namespace Arent3d.Architecture.Routing
         ConnectorProfileType.Oval => connector.Radius * 2,
         ConnectorProfileType.Rectangular => Math.Max( connector.Width, connector.Height ),
         ConnectorProfileType.Round => connector.Radius * 2,
-        _ => throw new ArgumentOutOfRangeException(),
+        _ => 0,
       } ) ;
     }
 

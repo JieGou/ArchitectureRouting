@@ -107,7 +107,7 @@ namespace Arent3d.Architecture.Routing
         Domain.DomainHvac => CreateDuct( startPos, endPos, routeMepSystem ),
         Domain.DomainPiping => CreatePipe( startPos, endPos, routeMepSystem ),
         Domain.DomainCableTrayConduit => CreateCableTrayConduit( startPos, endPos, routeMepSystem ),
-        Domain.DomainElectrical => throw new NotSupportedException(),
+        Domain.DomainElectrical => CreateCableTrayConduit( startPos, endPos, routeMepSystem ), // same as DomainCableTrayConduit for dummy conduits
         _ => throw new InvalidOperationException(),
       } ;
 
@@ -224,6 +224,11 @@ namespace Arent3d.Architecture.Routing
     /// </returns>
     private static (bool Success, FamilyInstance? Fitting) ConnectTwoConnectors( Document document, Connector connector1, Connector connector2 )
     {
+      if ( connector1.Domain != connector2.Domain ) {
+        // Connection between DomainElectrical & dummy conduit
+        return ( true, null ) ;
+      }
+      
       using var connectorTransaction = new SubTransaction( document ) ;
       try {
         connectorTransaction.Start() ;

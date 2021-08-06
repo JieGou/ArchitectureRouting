@@ -20,19 +20,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public ObservableCollection<ConnectorInfoClass> ConnectorList { get ; } = new() ;
 
-    public SelectConnector( Element element, Connector? firstConnector = null )
+    public SelectConnector( Element element, Connector? firstConnector, AddInType addInType )
     {
       InitializeComponent() ;
 
       _firstConnector = firstConnector ;
 
       if ( element is FamilyInstance familyInstance ) {
-        foreach ( var (conn, connElm) in GetConnectorAndConnectorElementPair( familyInstance ) ) {
+        foreach ( var (conn, connElm) in CreateConnector.GetConnectorAndConnectorElementPair( familyInstance, addInType ) ) {
           ConnectorList.Add( new ConnectorInfoClass( familyInstance, connElm, conn, _firstConnector ) ) ;
         }
       }
       else if ( element is MEPCurve curve ) {
-        foreach ( var c in curve.GetConnectors().Where( IsTargetConnector ) ) {
+        foreach ( var c in curve.GetConnectors().Where( c => ConnectorPicker.IsTargetConnector( c, addInType ) ) ) {
           ConnectorList.Add( new ConnectorInfoClass( c, _firstConnector ) ) ;
         }
       }
@@ -42,133 +42,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.Left = 0 ;
       this.Top += 10 ;
     }
-
-    private IEnumerable<(Connector, ConnectorElement)> GetConnectorAndConnectorElementPair( FamilyInstance familyInstance )
-    {
-      var familyInstanceTransform = familyInstance.GetTotalTransform() ;
-      using var familyDocument = familyInstance.Document.EditFamily( familyInstance.Symbol.Family ) ;
-
-      var connectors = familyInstance.GetConnectors().Where( IsTargetConnector ) ;
-      var connectorElements = familyDocument.GetAllElements<ConnectorElement>().Where( IsTargetConnectorElement ) ;
-      var seeker = new NearestConnectorPairSeeker( connectors, connectorElements, familyInstanceTransform ) ;
-
-      while ( true ) {
-        var (connector, connectorElement) = seeker.Pop() ;
-        if ( null == connector || null == connectorElement ) break ;
-
-        yield return ( connector, connectorElement ) ;
-      }
-    }
-
-    private static bool IsTargetConnectorElement( ConnectorElement connElm ) => IsTargetDomain( connElm.Domain ) ;
-
-    private static bool IsTargetConnector( Connector conn ) => conn.IsAnyEnd() && IsTargetDomain( conn.Domain ) ;
-
-    private static bool IsTargetDomain( Domain domain ) 
-    {
-      return domain switch
-      {
-        Domain.DomainPiping => true,
-        Domain.DomainHvac => true,
-        Domain.DomainCableTrayConduit => true,
-        _ => false
-      } ;
-    }
-
-    private class NearestConnectorPairSeeker
-    {
-      private readonly List<Connector> _connectors ;
-      private readonly List<ConnectorElement> _connectorElements ;
-      private readonly List<DistanceInfo> _distances = new() ;
-      
-      public NearestConnectorPairSeeker( IEnumerable<Connector> connectors, IEnumerable<ConnectorElement> connectorElements, Transform familyInstanceTransform )
-      {
-        _connectors = connectors.ToList() ;
-        _connectorElements = connectorElements.ToList() ;
-
-        foreach ( var connectorElement in _connectorElements ) {
-          var domain = connectorElement.Domain ;
-          var systemClassification = connectorElement.SystemClassification ;
-          var origin = familyInstanceTransform.OfPoint( connectorElement.Origin ) ;
-          var dirZ = familyInstanceTransform.OfVector( connectorElement.CoordinateSystem.BasisZ ) ;
-          var dirX = familyInstanceTransform.OfVector( connectorElement.CoordinateSystem.BasisX ) ;
-          foreach ( var connector in _connectors.Where( c => domain == c.Domain ) ) {
-            if ( domain != Domain.DomainCableTrayConduit && false == HasCompatibleSystemType( systemClassification, connector ) ) continue ;
-
-            var distance = connector.Origin.DistanceTo( origin ) ;
-            var angleZ = connector.CoordinateSystem.BasisZ.AngleTo( dirZ ) ;
-            var angleX = connector.CoordinateSystem.BasisX.AngleTo( dirX ) ;
-            _distances.Add( new DistanceInfo( connector, connectorElement, distance, angleZ, angleX ) ) ;
-          }
-        }
-
-        _distances.Sort( DistanceInfo.Compare ) ;
-      }
-
-      private static bool HasCompatibleSystemType( MEPSystemClassification systemClassification, Connector connector )
-      {
-        if ( systemClassification == MEPSystemClassification.Global || systemClassification == MEPSystemClassification.Fitting ) return true ;
-        return ( (int) systemClassification == (int) connector.GetSystemType() ) ;
-      }
-
-      public (Connector?, ConnectorElement?) Pop()
-      {
-        if ( 0 == _distances.Count ) return ( null, null ) ;
-
-        var first = _distances[ 0 ] ;
-        var (conn, connElm) = ( first.Connector, first.ConnectorElement ) ;
-        _distances.RemoveAll( d => d.IsConnector( conn ) || d.IsConnectorElement( connElm ) ) ;
-
-        return ( conn, connElm ) ;
-      }
-
-      private class DistanceInfo
-      {
-        public Connector Connector { get ; }
-        public ConnectorElement ConnectorElement { get ; }
-        private double Distance { get ; }
-        private double DirectionalDistance { get ; }
-        
-        public DistanceInfo( Connector connector, ConnectorElement connectorElement, double distance, double angleZ, double angleX )
-        {
-          Connector = connector ;
-          ConnectorElement = connectorElement ;
-          Distance = distance ;
-          DirectionalDistance = angleZ + angleX ;
-        }
-
-        public bool IsConnector( Connector conn )
-        {
-          return ( conn.Owner.Id == Connector.Owner.Id && conn.Id == Connector.Id ) ;
-        }
-
-        public bool IsConnectorElement( ConnectorElement connElm )
-        {
-          return ( connElm.Id == ConnectorElement.Id ) ;
-        }
-
-        public static int Compare( DistanceInfo x, DistanceInfo y )
-        {
-          var dist = x.Distance.CompareTo( y.Distance ) ;
-          if ( 0 != dist ) return dist ;
-
-          var dir = x.DirectionalDistance.CompareTo( y.DirectionalDistance ) ;
-          if ( 0 != dir ) return dir ;
-
-          var elm = x.ConnectorElement.Id.IntegerValue.CompareTo( y.ConnectorElement.Id.IntegerValue ) ;
-          if ( 0 != elm ) return elm ;
-
-          var connElm = x.Connector.Owner.Id.IntegerValue.CompareTo( y.Connector.Owner.Id.IntegerValue ) ;
-          if ( 0 != connElm ) return connElm ;
-
-          var conn = x.Connector.Id.CompareTo( y.Connector.Id ) ;
-          if ( 0 != conn ) return conn ;
-
-          return 0 ;
-        }
-      }
-    }
-
 
     public class ConnectorInfoClass : INotifyPropertyChanged
     {
@@ -208,13 +81,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         IsEnabled = true ;
       }
 
-      public ConnectorInfoClass( FamilyInstance familyInstance, ConnectorElement? connectorElement, Connector connector, Connector? firstConnector )
+      public ConnectorInfoClass( FamilyInstance familyInstance, ConnectorElement connectorElement, Connector connector, Connector? firstConnector )
       {
         Element = familyInstance ;
         Connector = connector ;
         ConnectorElement = connectorElement ;
 
-        IsEnabled = ( null != connectorElement ) && ( false == connector.IsConnected ) && ( ( null == firstConnector ) || ( HasCompatibleType( connector, firstConnector ) && firstConnector.HasSameShape( connectorElement ) ) ) ;
+        IsEnabled = CreateConnector.IsEnabledConnector( connector, firstConnector ) ;
       }
 
       public ConnectorInfoClass( Connector connector, Connector? firstConnector )
@@ -223,12 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         Connector = connector ;
         ConnectorElement = null ;
 
-        IsEnabled = ( false == connector.IsConnected ) && ( ( null == firstConnector ) || ( HasCompatibleType( connector, firstConnector ) && firstConnector.HasSameShape( connector ) ) ) ;
-      }
-
-      private static bool HasCompatibleType( Connector connector1, Connector connector2 )
-      {
-        return ( connector1.Domain == connector2.Domain ) && ( connector1.GetSystemType() == connector2.GetSystemType() ) ;
+        IsEnabled = CreateConnector.IsEnabledConnector( connector, firstConnector ) ;
       }
 
       private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )

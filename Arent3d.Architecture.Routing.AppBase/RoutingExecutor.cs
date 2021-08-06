@@ -153,6 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         Domain.DomainHvac => new HVacCollisionCheckTargetCollector( _document, routesInType ),
         Domain.DomainPiping => new PipingCollisionCheckTargetCollector( _document, routesInType ),
+        Domain.DomainElectrical => new CableTrayConduitCollisionCheckTargetCollector( _document, routesInType ),
         Domain.DomainCableTrayConduit => new CableTrayConduitCollisionCheckTargetCollector( _document, routesInType ), //for testing
         _ => throw new InvalidOperationException(),
       } ;

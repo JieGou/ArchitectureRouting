@@ -2,7 +2,6 @@
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.UI ;
-using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -10,7 +9,6 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB.Architecture ;
-using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.AppBase
 {
@@ -27,15 +25,11 @@ namespace Arent3d.Architecture.Routing.AppBase
       bool IsCompatibleTo( Element element ) ;
     }
 
-    private static AddInType? AddInType { get ; set ; }
-
     public static IPickResult GetConnector( UIDocument uiDocument, string message, IPickResult? firstPick, AddInType addInType )
     {
       var document = uiDocument.Document ;
 
-      AddInType = addInType ;
-      var filter = ( null == firstPick ) ? FamilyInstanceWithConnectorFilter.Instance : new FamilyInstanceCompatibleToTargetConnectorFilter( firstPick, addInType ) ;
-
+      var filter = ( null == firstPick ) ? FamilyInstanceWithConnectorFilter.GetInstance( addInType ) : new FamilyInstanceCompatibleToTargetConnectorFilter( firstPick, addInType ) ;
 
       while ( true ) {
         var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, filter, message ) ;
@@ -46,46 +40,31 @@ namespace Arent3d.Architecture.Routing.AppBase
         if ( PassPointPickResult.Create( element ) is { } ppResult ) return ppResult ;
         if ( SubRoutePickResult.Create( element ) is { } srResult ) return srResult ;
 
-        Connector? conn = firstPick?.PickedConnector ;
-        if ( firstPick?.SubRoute != null ) {
-          conn = firstPick?.SubRoute.GetReferenceConnector() ;
-        }
+        var conn = firstPick?.SubRoute?.GetReferenceConnector() ?? firstPick?.PickedConnector ;
 
-        var (result, connector) = FindConnector( uiDocument, element, message, conn ) ;
+        var (result, connector) = FindConnector( uiDocument, element, message, conn, addInType ) ;
         if ( false == result ) continue ;
 
         if ( null != connector ) {
           return new ConnectorPickResult( element, connector ) ;
         }
 
-        return new OriginPickResult( element ) ;
+        return new OriginPickResult( element, addInType ) ;
       }
     }
 
-    public static Connector? GetInOutConnector( UIDocument uiDocument, Element eleConn, string message, IPickResult? firstPick )
+    public static Connector? GetInOutConnector( UIDocument uiDocument, Element eleConn, string message, IPickResult? firstPick, AddInType addInType )
     {
       var document = uiDocument.Document ;
 
-      var pickedObject = uiDocument?.Selection.PickObject( ObjectType.Element, FamilyInstanceWithInOutConnectorFilter.Instance, message ) ;
+      var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, FamilyInstanceWithInOutConnectorFilter.GetInstance( addInType ), message ) ;
 
-      var element = document?.GetElement( pickedObject?.ElementId ) ;
-      if ( null == element )
-        return null ;
+      var element = document.GetElement( pickedObject?.ElementId ) ;
+      if ( null == element ) return null ;
 
       var connId = element.GetPropertyInt( RoutingFamilyLinkedParameter.RouteConnectorRelationIds ) ;
 
-
-      Connector? connResult = null ;
-
-      eleConn.GetConnectors().ForEach( conn =>
-      {
-        if ( connId == conn.Id ) {
-          connResult = conn ;
-          return ;
-        }
-      } ) ;
-
-      return connResult ;
+      return eleConn.GetConnectors().FirstOrDefault( conn => conn.Id == connId ) ;
     }
 
     #region PickResults
@@ -202,6 +181,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     private class OriginPickResult : IPickResult
     {
       private readonly Element _element ;
+      private readonly AddInType _addInType ;
 
       public SubRoute? SubRoute => null ;
       public Element PickedElement => _element ;
@@ -209,9 +189,10 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       public XYZ GetOrigin() => GetCenter( _element ) ;
 
-      public OriginPickResult( Element element )
+      public OriginPickResult( Element element, AddInType addInType )
       {
         _element = element ;
+        _addInType = addInType ;
       }
 
       public IEnumerable<ElementId> GetAllRelatedElements()
@@ -221,7 +202,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       public bool IsCompatibleTo( Connector connector ) => true ;
 
-      public bool IsCompatibleTo( Element element ) => element.GetConnectors().Any( IsPickTargetConnector ) ;
+      public bool IsCompatibleTo( Element element ) => element.GetConnectors().Any( c => IsTargetConnector( c, _addInType ) ) ;
     }
 
     private static XYZ GetCenter( Element element )
@@ -256,13 +237,13 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     #endregion
 
-    private static (bool Result, Connector? Connector) FindConnector( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
+    private static (bool Result, Connector? Connector) FindConnector( UIDocument uiDocument, Element element, string message, Connector? firstConnector, AddInType addInType )
     {
       if ( element.IsAutoRoutingGeneratedElement() ) {
         return GetEndOfRouting( element, ( null == firstConnector ) ) ;
       }
       else {
-        return CreateConnectorInOutFamily( uiDocument, element, message, firstConnector ) ;
+        return CreateConnectorInOutFamily( uiDocument, element, message, firstConnector, addInType ) ;
       }
     }
 
@@ -275,27 +256,27 @@ namespace Arent3d.Architecture.Routing.AppBase
       return ( ( null != connector ), connector ) ;
     }
 
-    private static (bool Result, Connector? Connector) CreateConnectorInOutFamily( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
+    private static (bool Result, Connector? Connector) CreateConnectorInOutFamily( UIDocument uiDocument, Element element, string message, Connector? firstConnector, AddInType addInType )
     {
       using var fitter = new TempZoomToFit( uiDocument ) ;
 
       uiDocument.SetSelection( element ) ;
       fitter.ZoomToFit() ;
 
-      var sv = new CreateConnector( uiDocument, element, firstConnector ) ;
+      var sv = new CreateConnector( uiDocument, element, firstConnector, addInType ) ;
 
       uiDocument.ClearSelection() ;
       return ( true, sv.GetPickedConnector() ) ;
     }
 
-    private static (bool Result, Connector? Connector) SelectFromDialog( UIDocument uiDocument, Element element, string message, Connector? firstConnector )
+    private static (bool Result, Connector? Connector) SelectFromDialog( UIDocument uiDocument, Element element, string message, Connector? firstConnector, AddInType addInType )
     {
       using var fitter = new TempZoomToFit( uiDocument ) ;
 
       uiDocument.SetSelection( element ) ;
       fitter.ZoomToFit() ;
 
-      var sv = new SelectConnector( element, firstConnector ) { Title = message } ;
+      var sv = new SelectConnector( element, firstConnector, addInType ) { Title = message } ;
       sv.ShowDialog() ;
 
       uiDocument.ClearSelection() ;
@@ -305,34 +286,44 @@ namespace Arent3d.Architecture.Routing.AppBase
       return ( true, sv.GetSelectedConnector() ) ;
     }
 
-    private static bool IsPickTargetConnector( Connector connector )
-    {
-      if ( AddInType == Routing.AddInType.Mechanical ) {
-        return connector.IsAnyEnd() && connector.Domain switch
-        {
-          Domain.DomainPiping => true,
-          Domain.DomainHvac => true,
-          Domain.DomainCableTrayConduit => false,
-          _ => false
-        } ;
-      }
+    public static bool IsTargetConnector( Connector conn, AddInType addInType ) => conn.IsAnyEnd() && IsTargetDomain( conn.Domain, addInType ) ;
 
-      return connector.IsAnyEnd() && connector.Domain switch
+    public static bool IsTargetDomain( Domain domain, AddInType addInType )
+    {
+      return domain switch
       {
-        Domain.DomainPiping => false,
-        Domain.DomainHvac => false,
-        Domain.DomainCableTrayConduit => true,
-        _ => false
+        Domain.DomainPiping => ( addInType == AddInType.Mechanical ),
+        Domain.DomainHvac => ( addInType == AddInType.Mechanical ),
+        Domain.DomainElectrical => ( addInType == AddInType.Electrical ),
+        Domain.DomainCableTrayConduit => ( addInType == AddInType.Electrical ),
+        _ => false,
       } ;
     }
 
     private class FamilyInstanceWithConnectorFilter : ISelectionFilter
     {
-      public static ISelectionFilter Instance { get ; } = new FamilyInstanceWithConnectorFilter() ;
+      private static readonly Dictionary<AddInType, ISelectionFilter> _dic = new() ;
+
+      public static ISelectionFilter GetInstance( AddInType addInType )
+      {
+        if ( false == _dic.TryGetValue( addInType, out var filter ) ) {
+          filter = new FamilyInstanceWithConnectorFilter( addInType ) ;
+          _dic.Add( addInType, filter ) ;
+        }
+
+        return filter ;
+      }
+
+      private readonly AddInType _addInType ;
+
+      protected FamilyInstanceWithConnectorFilter( AddInType addInType )
+      {
+        _addInType = addInType ;
+      }
 
       public bool AllowElement( Element elem )
       {
-        return IsRoutableForConnector( elem ) || IsRoutableForCenter( elem ) || IsRoutableFoRomm( elem ) ;
+        return IsRoutableForConnector( elem ) || IsRoutableForCenter( elem ) || IsRoutableForRoom( elem ) ;
       }
 
       private bool IsRoutableForConnector( Element elem )
@@ -340,12 +331,12 @@ namespace Arent3d.Architecture.Routing.AppBase
         return elem.GetConnectors().Any( IsTargetConnector ) && IsRoutableElement( elem ) ;
       }
 
-      private bool IsRoutableForCenter( Element elem )
+      private static bool IsRoutableForCenter( Element elem )
       {
         return ( elem is FamilyInstance fi ) && ( false == fi.IsPassPoint() ) ;
       }
 
-      private bool IsRoutableFoRomm( Element elem )
+      private static bool IsRoutableForRoom( Element elem )
       {
         return ( elem is Room ) ;
       }
@@ -369,7 +360,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       protected virtual bool IsTargetConnector( Connector connector )
       {
-        return IsPickTargetConnector( connector ) ;
+        return ConnectorPicker.IsTargetConnector( connector, _addInType ) ;
       }
 
       public bool AllowReference( Reference reference, XYZ position )
@@ -380,7 +371,24 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private class FamilyInstanceWithInOutConnectorFilter : ISelectionFilter
     {
-      public static ISelectionFilter Instance { get ; } = new FamilyInstanceWithInOutConnectorFilter() ;
+      private static readonly Dictionary<AddInType, ISelectionFilter> _dic = new() ;
+
+      public static ISelectionFilter GetInstance( AddInType addInType )
+      {
+        if ( false == _dic.TryGetValue( addInType, out var filter ) ) {
+          filter = new FamilyInstanceWithInOutConnectorFilter( addInType ) ;
+          _dic.Add( addInType, filter ) ;
+        }
+
+        return filter ;
+      }
+
+      private readonly AddInType _addInType ;
+
+      private FamilyInstanceWithInOutConnectorFilter( AddInType addInType )
+      {
+        _addInType = addInType ;
+      }
 
       public bool AllowElement( Element elem )
       {
@@ -388,7 +396,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
 
-      private bool IsRoutableForCenter( Element elem )
+      private static bool IsRoutableForCenter( Element elem )
       {
         return ( elem is FamilyInstance fi ) && ( true == fi.IsConnectorPoint() ) ;
       }
@@ -405,16 +413,14 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       private static bool IsEquipment( FamilyInstance fi )
       {
-        if ( fi.IsFittingElement() )
-          return false ;
-        if ( fi.IsPassPoint() )
-          return false ;
+        if ( fi.IsFittingElement() ) return false ;
+        if ( fi.IsPassPoint() ) return false ;
         return true ;
       }
 
       protected virtual bool IsTargetConnector( Connector connector )
       {
-        return IsPickTargetConnector( connector ) ;
+        return ConnectorPicker.IsTargetConnector( connector, _addInType ) ;
       }
 
       public bool AllowReference( Reference reference, XYZ position )
@@ -427,7 +433,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       private readonly IPickResult _compatibleResult ;
 
-      public FamilyInstanceCompatibleToTargetConnectorFilter( IPickResult compatibleResult, AddInType addInType )
+      public FamilyInstanceCompatibleToTargetConnectorFilter( IPickResult compatibleResult, AddInType addInType ) : base( addInType )
       {
         _compatibleResult = compatibleResult ;
       }

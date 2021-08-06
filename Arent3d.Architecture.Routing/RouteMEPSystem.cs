@@ -1,7 +1,6 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.FittingSizeCalculators.MEPCurveGenerators ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -64,6 +63,7 @@ namespace Arent3d.Architecture.Routing
       {
         Domain.DomainHvac => CreateMechanicalMEPSystem( document, baseConnector, allConnectors ),
         Domain.DomainPiping => CreatePipingMEPSystem( document, baseConnector, allConnectors ),
+        Domain.DomainElectrical => null, // same as DomainCableTrayConduit for dummy conduits
         Domain.DomainCableTrayConduit => null,
         _ => null,
       } ;
@@ -178,6 +178,7 @@ namespace Arent3d.Architecture.Routing
       {
         Domain.DomainHvac => ( typeof( DuctType ), type => GetDuctCompatibilityPriority( type, connector, diameterTolerance ) ),
         Domain.DomainPiping => ( typeof( PipeType ), type => GetPipeCompatibilityPriority( type, connector, diameterTolerance ) ),
+        Domain.DomainElectrical => ( typeof( ConduitType ), type => GetConduitAsCableCompatibilityPriority( type, connector, diameterTolerance ) ),
         Domain.DomainCableTrayConduit => ( typeof( ConduitType ), type => GetConduitCompatibilityPriority( type, connector, diameterTolerance ) ),
         _ => ( typeof( MEPCurveType ), _ => null ),
       } ;
@@ -185,23 +186,30 @@ namespace Arent3d.Architecture.Routing
 
     private static CompatibilityPriority? GetDuctCompatibilityPriority( MEPCurveType type, Connector connector, double diameterTolerance )
     {
-      if ( type is not DuctType dt ) return null ;
+      if ( type is not DuctType ) return null ;
 
       return GetShapeCompatibilityPriority( type, connector, diameterTolerance ) ;
     }
 
     private static CompatibilityPriority? GetPipeCompatibilityPriority( MEPCurveType type, Connector connector, double diameterTolerance )
     {
-      if ( type is not PipeType pt ) return null ;
+      if ( type is not PipeType ) return null ;
+
+      return GetShapeCompatibilityPriority( type, connector, diameterTolerance ) ;
+    }
+
+    private static CompatibilityPriority? GetConduitAsCableCompatibilityPriority( MEPCurveType type, Connector connector, double diameterTolerance )
+    {
+      if ( type is not ConduitType ) return null ;
 
       return GetShapeCompatibilityPriority( type, connector, diameterTolerance ) ;
     }
 
     private static CompatibilityPriority? GetConduitCompatibilityPriority( MEPCurveType type, Connector connector, double diameterTolerance )
     {
-      if ( type is not ConduitType ct ) return null ;
+      if ( type is not ConduitType ) return null ;
 
-      return GetShapeCompatibilityPriority( type, connector, diameterTolerance ) ;
+      return new CompatibilityPriority( CompatibilityPriorityType.UseConduitAsCable, 0 ) ;
     }
 
     private static CompatibilityPriority? GetShapeCompatibilityPriority( MEPCurveType type, Connector connector, double diameterTolerance )
@@ -228,8 +236,9 @@ namespace Arent3d.Architecture.Routing
 
     private enum CompatibilityPriorityType
     {
-      DifferentShape,
       SameShape,
+      DifferentShape,
+      UseConduitAsCable,
     }
 
     private class CompatibilityPriority
@@ -246,7 +255,7 @@ namespace Arent3d.Architecture.Routing
       public bool IsLessCompatibleThan( CompatibilityPriority another )
       {
         var type = ( (int) _priorityType ) - ( (int) another._priorityType ) ;
-        if ( 0 != type ) return ( type < 0 ) ;
+        if ( 0 != type ) return ( 0 < type ) ;
 
         return ( _diffValue > another._diffValue ) ;
       }

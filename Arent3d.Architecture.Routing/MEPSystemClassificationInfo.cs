@@ -15,7 +15,8 @@ namespace Arent3d.Architecture.Routing
       {
         Domain.DomainPiping => Create( connector.PipeSystemType ),
         Domain.DomainHvac => Create( connector.DuctSystemType ),
-        Domain.DomainElectrical => Create( connector.ElectricalSystemType ),
+        //Domain.DomainElectrical => Create( connector.ElectricalSystemType ),
+        Domain.DomainElectrical => CableTrayConduit, // Use CableTrayConduit for dummy conduits
         Domain.DomainCableTrayConduit => CableTrayConduit,
         _ => null,
       } ;
@@ -70,7 +71,8 @@ namespace Arent3d.Architecture.Routing
       {
         Domain.DomainUndefined => false,
         Domain.DomainHvac => true,
-        Domain.DomainElectrical => true,
+        //Domain.DomainElectrical => true,
+        Domain.DomainElectrical => false, // same as DomainCableTrayConduit for dummy conduits
         Domain.DomainPiping => true,
         Domain.DomainCableTrayConduit => false,
         _ => throw new ArgumentOutOfRangeException()
@@ -83,7 +85,8 @@ namespace Arent3d.Architecture.Routing
       {
         Domain.DomainUndefined => false,
         Domain.DomainHvac => false,
-        Domain.DomainElectrical => false,
+        //Domain.DomainElectrical => false,
+        Domain.DomainElectrical => true, // same as DomainCableTrayConduit for dummy conduits
         Domain.DomainPiping => false,
         Domain.DomainCableTrayConduit => true,
         _ => throw new ArgumentOutOfRangeException()

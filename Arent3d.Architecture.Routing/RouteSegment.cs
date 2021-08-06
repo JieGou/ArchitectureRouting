@@ -80,7 +80,7 @@ namespace Arent3d.Architecture.Routing
       }
 
       if ( ToEndPoint == oldEndPoint ) {
-        ToEndPoint = oldEndPoint ;
+        ToEndPoint = newEndPoint ;
       }
     }
   }

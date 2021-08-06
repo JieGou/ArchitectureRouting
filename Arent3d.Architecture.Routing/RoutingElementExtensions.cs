@@ -120,6 +120,24 @@ namespace Arent3d.Architecture.Routing
       } ;
     }
 
+    public static bool HasCompatibleSystemType( this Connector connector, MEPSystemClassification systemClassification )
+    {
+      if ( systemClassification == MEPSystemClassification.Global || systemClassification == MEPSystemClassification.Fitting ) {
+        return true ;
+      }
+
+      var another = (MEPSystemClassification)connector.GetSystemType() ;
+      if ( systemClassification == MEPSystemClassification.PowerCircuit && IsCompatibleToPowerCircuit( another ) ) return true ;
+      if ( another == MEPSystemClassification.PowerCircuit && IsCompatibleToPowerCircuit( systemClassification ) ) return true ;
+
+      return ( systemClassification == another ) ;
+    }
+
+    private static bool IsCompatibleToPowerCircuit( MEPSystemClassification systemClassification )
+    {
+      return ( systemClassification == MEPSystemClassification.PowerBalanced || systemClassification == MEPSystemClassification.PowerUnBalanced ) ;
+    }
+
     #endregion
 
     #region Connectors (Routing)

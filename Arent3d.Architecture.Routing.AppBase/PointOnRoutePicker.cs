@@ -163,6 +163,7 @@ namespace Arent3d.Architecture.Routing.AppBase
           {
             Domain.DomainPiping => true,
             Domain.DomainHvac => true,
+            Domain.DomainElectrical => false,
             Domain.DomainCableTrayConduit => false,
             _ => false
           } ;
@@ -172,6 +173,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         {
           Domain.DomainPiping => false,
           Domain.DomainHvac => false,
+          Domain.DomainElectrical => true,
           Domain.DomainCableTrayConduit => true,
           _ => false
         } ;
