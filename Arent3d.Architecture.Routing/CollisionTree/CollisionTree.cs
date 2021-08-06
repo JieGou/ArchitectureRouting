@@ -1,8 +1,8 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.CollisionLib ;
-using Arent3d.GeometryLib ;
+using System.Reflection ;
+using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -12,89 +12,64 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 {
   public class CollisionTree : ICollisionCheck
   {
-    private ITree _treeBody ;
+    private readonly Document _document ;
+    private readonly ICollisionCheckTargetCollector _collector ;
+    private readonly IReadOnlyCollection<ElementFilter> _filters ;
+    private readonly BuiltInCategory[] _categoriesOnRack ;
+    private readonly ElementParameterFilter _hasRouteNameFilter ;
+    private readonly IReadOnlyDictionary<(string RouteName, int SubRouteIndex),MEPSystemRouteCondition> _routeConditions ;
 
-#if DUMP_LOGS
-    public IReadOnlyCollection<(ElementId ElementId, Box3d Box)> TreeElementBoxes { get ; } 
+    public CollisionTree( Document document, ICollisionCheckTargetCollector collector, IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> routeConditions )
+    {
+      _document = document ;
+      _collector = collector ;
+      _filters = collector.CreateElementFilters().EnumerateAll() ;
+      _categoriesOnRack = collector.GetCategoriesOfRoutes() ;
+      _routeConditions = routeConditions ;
 
-    public CollisionTree( ICollisionCheckTargetCollector collector )
-    {
-      TreeElementBoxes = CollectTreeElementBoxes( collector ).ToList() ;
-      _treeBody = CreateTree( TreeElementBoxes.ConvertAll( box => new TreeElement( new BoxGeometryBody( box.Box ) ) ) ) ;
-    }
-#else
-    public CollisionTree( ICollisionCheckTargetCollector collector )
-    {
-      _treeBody = CreateTree( CollectTreeElementBoxes( collector ).Select( tuple => new TreeElement( new BoxGeometryBody( tuple.Box ) ) ).EnumerateAll() ) ;
-    }
-#endif
-
-    private static ITree CreateTree( IReadOnlyCollection<TreeElement> elms )
-    {
-      return CreateTreeByFactory( elms ) ;
+      _hasRouteNameFilter = CreateHasRouteNameFilter( document ) ;
     }
 
-    private static IEnumerable<(ElementId ElementId, Box3d Box)> CollectTreeElementBoxes( ICollisionCheckTargetCollector collector )
+    private static ElementParameterFilter CreateHasRouteNameFilter( Document document )
     {
-      foreach ( var element in collector.GetCollisionCheckTargets() ) {
-        var geom = element.GetGeometryElement() ;
-        if ( null == geom ) continue ;
-
-        if ( false == collector.IsTargetGeometryElement( geom ) ) continue ;
-
-        yield return ( element.Id, geom.GetBoundingBox().To3dRaw() ) ;
-      }
+      var parameter = GetSharedParameterElement( document, RoutingParameter.RouteName ) ?? throw new InvalidOperationException() ;
+      var parameterValueProvider = new ParameterValueProvider( parameter.Id ) ;
+      return new ElementParameterFilter( new FilterStringRule( parameterValueProvider, new FilterStringEquals(), "", false ), true ) ;
     }
-
-    private static ITree CreateTreeByFactory( IReadOnlyCollection<TreeElement> treeElements )
+    private static SharedParameterElement? GetSharedParameterElement<TPropertyEnum>( Document document, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum
     {
-      if ( 0 == treeElements.Count ) {
-        return TreeFactory.GetTreeInstanceToBuild( TreeFactory.TreeType.Dummy, null! ) ; // Dummyの場合はtreeElementsを使用しない
-      }
-      else {
-        var tree = TreeFactory.GetTreeInstanceToBuild( TreeFactory.TreeType.Bvh, treeElements ) ;
-        tree.Build() ;
-        return tree ;
-      }
-    }
+      var fieldInfo = typeof( TPropertyEnum ).GetField( propertyEnum.ToString() ) ;
+      var attr = fieldInfo?.GetCustomAttribute<ParameterGuidAttribute>() ;
+      if ( null == attr ) return null ;
 
+      return SharedParameterElement.Lookup( document, attr.Guid ) ;
+    }
 
     public IEnumerable<Box3d> GetCollidedBoxes( Box3d box )
     {
-      return this._treeBody.BoxIntersects( GetGeometryBodyBox( box ) ).Select( element => element.GlobalBox3d ) ;
+      var boxFilter = new BoundingBoxIntersectsFilter( new Outline( box.Min.ToXYZRaw(), box.Max.ToXYZRaw() ) ) ;
+      var elements = _document.GetAllElements<Element>().Where( boxFilter ) ;
+      return _filters.Aggregate( elements, ( current, filter ) => current.Where( filter ) ).Where( _collector.IsCollisionCheckElement ).Select( GetBoundingBox ) ;
     }
 
-    public IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesInDetailToRack( Box3d box )
+    private static Box3d GetBoundingBox( Element element )
     {
-      // Aggregated Tree から呼ぶこと、これを単独で呼ばないこと
-      var tuples = this._treeBody.GetIntersectsInDetailToRack( GetGeometryBodyBox( box ) ) ;
-      foreach ( var tuple in tuples ) {
-        yield return ( tuple.body.GetBounds(), tuple.cond, true ) ;
+      return element.get_BoundingBox( null ).To3dRaw() ;
+    }
+
+    public IEnumerable<(Box3d, IRouteCondition, bool)> GetCollidedBoxesAndConditions( Box3d box, bool bIgnoreStructure = false )
+    {
+      var boxFilter = new BoundingBoxIntersectsFilter( new Outline( box.Min.ToXYZRaw(), box.Max.ToXYZRaw() ) ) ;
+      var elements = _document.GetAllElements<Element>().OfCategory( _categoriesOnRack ).Where( boxFilter ).Where( _hasRouteNameFilter ) ;
+      foreach ( var element in elements ) {
+        if ( element.GetRouteName() is not { } routeName ) continue ;
+        if ( element.GetSubRouteIndex() is not { } subRouteIndex ) continue ;
+        if ( false == _routeConditions.TryGetValue( ( routeName, subRouteIndex ), out var routeCondition ) ) continue ;
+
+        yield return ( GetBoundingBox( element ), routeCondition, false ) ;
       }
     }
 
-    public IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesAndConditions( Box3d box, bool bIgnoreStructure )
-    {
-      var tuples = this._treeBody.GetIntersectAndRoutingCondition( GetGeometryBodyBox( box ) ) ;
-      foreach ( var tuple in tuples ) {
-        if ( null != tuple.cond ) {
-          yield return ( tuple.body.GetGlobalGeometryBox(), tuple.cond, false ) ;
-          continue ;
-        }
-
-        foreach ( var geo in tuple.Item1.GetGlobalGeometries() ) {
-          yield return ( geo.GetBounds(), null, tuple.isStructure ) ;
-        }
-      }
-    }
-
-    private static IGeometryBody GetGeometryBodyBox( Box3d box ) => new CollisionBox( box ) ;
-
-    public void AddElements( IEnumerable<Element> elements )
-    {
-      var geometryElements = elements.Select( elm => elm.GetGeometryElement() ).NonNull() ;
-      var treeElements = geometryElements.Select( geom => new TreeElement( new BoxGeometryBody( geom.GetBoundingBox().To3dRaw() ) ) ) ;
-      _treeBody = TreeFactory.AddElementsOnTree( ref _treeBody, out _, treeElements ) ;
-    }
+    public IEnumerable<(Box3d, IRouteCondition, bool)> GetCollidedBoxesInDetailToRack( Box3d box ) => Enumerable.Empty<(Box3d, IRouteCondition, bool)>() ;
   }
 }

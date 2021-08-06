@@ -14,5 +14,11 @@ namespace Arent3d.Architecture.Routing.StorableCaches
     protected override Route CreateNewStorable( Document document, string name ) => new Route( document, name ) ;
 
     public IEnumerable<SubRoute> CollectAllSubRoutes() => Values.SelectMany( route => route.SubRoutes ) ;
+
+    public SubRoute? GetSubRoute( string routeName, int subRouteIndex )
+    {
+      if ( false == TryGetValue( routeName, out var route ) ) return null ;
+      return route.GetSubRoute( subRouteIndex ) ;
+    }
   }
 }

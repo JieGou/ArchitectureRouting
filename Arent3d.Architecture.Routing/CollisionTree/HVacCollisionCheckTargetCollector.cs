@@ -10,7 +10,9 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     {
     }
 
-    protected override bool IsCollisionCheckElement( Element elm )
+    public override BuiltInCategory[] GetCategoriesOfRoutes() => (BuiltInCategory[])RoutingPropertyExtensions.DuctRoutingBuiltInCategorySet.Clone() ;
+
+    public override bool IsCollisionCheckElement( Element elm )
     {
       if ( elm is not FamilyInstance fi ) return true ;
 

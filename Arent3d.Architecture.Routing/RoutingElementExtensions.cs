@@ -621,10 +621,17 @@ namespace Arent3d.Architecture.Routing
       return element.GetDependentElements( CenterLineFilter ).Select( document.GetElement ).Where( e => e.IsValidObject ) ;
     }
 
-    private static readonly BuiltInCategory[] CenterLineCategories = { BuiltInCategory.OST_CenterLines, BuiltInCategory.OST_DuctCurvesCenterLine, BuiltInCategory.OST_DuctFittingCenterLine, BuiltInCategory.OST_FlexDuctCurvesCenterLine, BuiltInCategory.OST_PipeCurvesCenterLine, BuiltInCategory.OST_PipeFittingCenterLine, BuiltInCategory.OST_FlexPipeCurvesCenterLine, } ;
-    private static readonly ElementFilter CenterLineFilter = new LogicalOrFilter( Array.ConvertAll( CenterLineCategories, CreateElementFilter ) ) ;
-
-    private static ElementFilter CreateElementFilter( BuiltInCategory category ) => new ElementCategoryFilter( category ) ;
+    private static readonly BuiltInCategory[] CenterLineCategories =
+    {
+      BuiltInCategory.OST_CenterLines,
+      BuiltInCategory.OST_DuctCurvesCenterLine,
+      BuiltInCategory.OST_DuctFittingCenterLine,
+      BuiltInCategory.OST_FlexDuctCurvesCenterLine,
+      BuiltInCategory.OST_PipeCurvesCenterLine,
+      BuiltInCategory.OST_PipeFittingCenterLine,
+      BuiltInCategory.OST_FlexPipeCurvesCenterLine,
+    } ;
+    private static readonly ElementFilter CenterLineFilter = new ElementMulticategoryFilter( CenterLineCategories ) ;
 
     #endregion
   }

@@ -30,16 +30,16 @@ namespace Arent3d.Architecture.Routing
 
     private readonly Level _level ;
 
-    private readonly IReadOnlyDictionary<SubRoute, RouteMEPSystem> _routeMepSystemDictionary ;
+    private readonly IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> _routeConditionDictionary ;
 
     private readonly List<Connector[]> _badConnectors = new() ;
 
-    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
+    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> routeConditionDictionary )
     {
       _document = document ;
       AutoRoutingTarget = autoRoutingTarget ;
       _level = GetLevel( document, autoRoutingTarget ) ;
-      _routeMepSystemDictionary = routeMepSystemDictionary ;
+      _routeConditionDictionary = routeConditionDictionary ;
       _connectorMapper = new RouteVertexToConnectorMapper() ;
     }
 
@@ -100,7 +100,7 @@ namespace Arent3d.Architecture.Routing
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZRaw() ;
 
       var subRoute = AutoRoutingTarget.GetSubRoute( routeEdge ) ;
-      var routeMepSystem = _routeMepSystemDictionary[ subRoute ] ;
+      var routeMepSystem = _routeConditionDictionary[ subRoute.GetKey() ].Spec.RouteMEPSystem ;
 
       var element = AutoRoutingTarget.Domain switch
       {

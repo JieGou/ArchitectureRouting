@@ -5,8 +5,10 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 {
   public interface ICollisionCheckTargetCollector
   {
-    IEnumerable<Element> GetCollisionCheckTargets() ;
+    BuiltInCategory[] GetCategoriesOfRoutes() ;
 
-    bool IsTargetGeometryElement( GeometryElement gElm ) ;
+    IEnumerable<ElementFilter> CreateElementFilters() ;
+
+    bool IsCollisionCheckElement( Element element ) ;
   }
 }

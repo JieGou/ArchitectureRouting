@@ -6,20 +6,21 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
 {
-  internal class MEPSystemPipeSpec : IPipeSpec
+  public class MEPSystemPipeSpec : IPipeSpec
   {
-    private readonly RouteMEPSystem _sys ;
     private readonly IFittingSizeCalculator _fittingSizeCalculator ;
-    private Document Document => _sys.Document ;
+    private Document Document => RouteMEPSystem.Document ;
 
-    public double AngleTolerance => _sys.AngleTolerance ;
-    public double DiameterTolerance => _sys.DiameterTolerance ;
+    public double AngleTolerance => RouteMEPSystem.AngleTolerance ;
+    public double DiameterTolerance => RouteMEPSystem.DiameterTolerance ;
 
-    public string? Name => _sys.MEPSystemType?.Name ;
+    public RouteMEPSystem RouteMEPSystem { get ; }
+
+    public string? Name => RouteMEPSystem.MEPSystemType?.Name ;
 
     public MEPSystemPipeSpec( RouteMEPSystem routeMepSystem, IFittingSizeCalculator fittingSizeCalculator )
     {
-      _sys = routeMepSystem ;
+      RouteMEPSystem = routeMepSystem ;
       _fittingSizeCalculator = fittingSizeCalculator ;
     }
 
@@ -42,7 +43,7 @@ namespace Arent3d.Architecture.Routing
 
     public double GetTeeHeaderLength( IPipeDiameter header, IPipeDiameter branch )
     {
-      if ( JunctionType.Tee == _sys.CurveType.PreferredJunctionType ) {
+      if ( JunctionType.Tee == RouteMEPSystem.CurveType.PreferredJunctionType ) {
         return ( _teeSizeLength ??= new SizeTable<(double HeaderDiameter, double BranchDiameter), (double HeaderLength, double BranchLength)>( CalculateTeeLengths ) ).Get( ( header.Outside, branch.Outside ) ).HeaderLength ;
       }
       else {
@@ -52,7 +53,7 @@ namespace Arent3d.Architecture.Routing
 
     public double GetTeeBranchLength( IPipeDiameter header, IPipeDiameter branch )
     {
-      if ( JunctionType.Tee == _sys.CurveType.PreferredJunctionType ) {
+      if ( JunctionType.Tee == RouteMEPSystem.CurveType.PreferredJunctionType ) {
         return ( _teeSizeLength ??= new SizeTable<(double HeaderDiameter, double BranchDiameter), (double HeaderLength, double BranchLength)>( CalculateTeeLengths ) ).Get( ( header.Outside, branch.Outside ) ).BranchLength ;
       }
       else {
@@ -68,9 +69,7 @@ namespace Arent3d.Architecture.Routing
       if ( diameter1 <= 0 || diameter2 <= 0 || Math.Abs( diameter1 - diameter2 ) < DiameterTolerance ) return 0 ;
 
       if ( diameter1 > diameter2 ) {
-        var tmp = diameter1 ;
-        diameter1 = diameter2 ;
-        diameter2 = tmp ;
+        ( diameter1, diameter2 ) = ( diameter2, diameter1 ) ;
       }
 
       return ( _reducerLength ??= new SizeTable<(double, double), double>( CalculateReducerLength ) ).Get( ( diameter1, diameter2 ) ) ;
@@ -78,12 +77,12 @@ namespace Arent3d.Architecture.Routing
 
     public double GetWeldMinDistance( IPipeDiameter diameter )
     {
-      return _sys.ShortCurveTolerance ;
+      return RouteMEPSystem.ShortCurveTolerance ;
     }
 
 
     private IMEPCurveGenerator? _mepCurveGenerator = null ;
-    private IMEPCurveGenerator MEPCurveGenerator => _mepCurveGenerator ??= FittingSizeCalculators.MEPCurveGenerators.MEPCurveGenerator.Create( _sys.MEPSystemType, _sys.CurveType ) ; 
+    private IMEPCurveGenerator MEPCurveGenerator => _mepCurveGenerator ??= FittingSizeCalculators.MEPCurveGenerators.MEPCurveGenerator.Create( RouteMEPSystem.MEPSystemType, RouteMEPSystem.CurveType ) ; 
 
     private double Calculate90ElbowSize( double diameter )
     {

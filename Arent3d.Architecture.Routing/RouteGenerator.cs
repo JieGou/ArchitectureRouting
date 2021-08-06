@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
@@ -17,34 +18,41 @@ namespace Arent3d.Architecture.Routing
   public class RouteGenerator : RouteGeneratorBase<AutoRoutingTarget>
   {
     private readonly Document _document ;
-    private readonly IReadOnlyDictionary<SubRoute, RouteMEPSystem> _routeMEPSystems ;
+    private readonly IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> _routeConditions ;
     private readonly List<Connector[]> _badConnectors = new() ;
     private readonly PassPointConnectorMapper _globalPassPointConnectorMapper = new() ;
 
-    public RouteGenerator( IReadOnlyCollection<Route> routes, Document document, IFittingSizeCalculator fittingSizeCalculator, CollisionTree.ICollisionCheckTargetCollector collector )
+    public RouteGenerator( IReadOnlyCollection<Route> routes, Document document, IFittingSizeCalculator fittingSizeCalculator, ICollisionCheckTargetCollector collector )
     {
       _document = document ;
 
-      _routeMEPSystems = ThreadDispatcher.Dispatch( () => CreateRouteMEPSystems( document, routes ) ) ;
-      var targets = AutoRoutingTargetGenerator.Run( _document, routes, _routeMEPSystems, fittingSizeCalculator ) ;
+      _routeConditions = ThreadDispatcher.Dispatch( () => CreateRouteConditions( document, routes, fittingSizeCalculator ) ) ;
+      var targets = AutoRoutingTargetGenerator.Run( _document, routes, _routeConditions ) ;
       RoutingTargets = targets.EnumerateAll() ;
       ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
 
-      CollisionCheckTree = new CollisionTree.CollisionTree( collector ) ;
+      CollisionCheckTree = new CollisionTree.CollisionTree( document, collector, _routeConditions ) ;
       StructureGraph = DocumentMapper.Get( document ).RackCollection ;
 
       Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;
     }
 
-    private static IReadOnlyDictionary<SubRoute, RouteMEPSystem> CreateRouteMEPSystems( Document document, IReadOnlyCollection<Route> routes )
+    private static IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> CreateRouteConditions( Document document, IReadOnlyCollection<Route> routes, IFittingSizeCalculator fittingSizeCalculator )
     {
-      var dic = new Dictionary<SubRoute, RouteMEPSystem>() ;
+      var dic = new Dictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition>() ;
       
       foreach ( var route in routes ) {
         foreach ( var subRoute in route.SubRoutes ) {
-          if ( dic.ContainsKey( subRoute ) ) break ;  // same route
+          var key = subRoute.GetKey() ;
+          if ( dic.ContainsKey( key ) ) break ;  // same sub route
 
-          dic.Add( subRoute, new RouteMEPSystem( document, subRoute ) ) ;
+          var mepSystem = new RouteMEPSystem( document, subRoute ) ;
+
+          var edgeDiameter = subRoute.GetDiameter() ;
+          var spec = new MEPSystemPipeSpec( mepSystem, fittingSizeCalculator ) ;
+          var routeCondition = new MEPSystemRouteCondition( spec, edgeDiameter, subRoute.AvoidType ) ;
+
+          dic.Add( key, routeCondition ) ;
         }
       }
 
@@ -109,7 +117,7 @@ namespace Arent3d.Architecture.Routing
       result.DebugExport( GetResultLogFileName( _document, routingTarget ) ) ;
 #endif
 
-      var mepSystemCreator = new MEPSystemCreator( _document, routingTarget, _routeMEPSystems ) ;
+      var mepSystemCreator = new MEPSystemCreator( _document, routingTarget, _routeConditions ) ;
 
       foreach ( var routeVertex in result.RouteVertices ) {
         if ( routeVertex is not TerminalPoint ) continue ;
@@ -118,12 +126,9 @@ namespace Arent3d.Architecture.Routing
       }
 
       var newElements = CreateEdges( mepSystemCreator, result ).ToList() ;
-
       newElements.AddRange( mepSystemCreator.ConnectAllVertices() ) ;
 
       _document.Regenerate() ;
-
-      CollisionCheckTree.AddElements( newElements ) ;
 
       _globalPassPointConnectorMapper.Merge( mepSystemCreator.PassPointConnectorMapper ) ;
 

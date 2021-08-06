@@ -3,7 +3,7 @@ using Arent3d.Routing.Conditions ;
 
 namespace Arent3d.Architecture.Routing
 {
-  internal class MEPSystemRouteCondition : IRouteCondition
+  public class MEPSystemRouteCondition : IRouteCondition
   {
     private const string DefaultFluidPhase = "None" ;
 

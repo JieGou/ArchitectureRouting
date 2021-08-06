@@ -1,3 +1,5 @@
+using System ;
+using System.Linq ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
@@ -57,38 +59,94 @@ namespace Arent3d.Architecture.Routing
 
   public static class RoutingPropertyExtensions
   {
-    internal static readonly BuiltInCategory[] RoutingBuiltInCategorySet =
+    internal static readonly BuiltInCategory[] PipeRoutingBuiltInCategorySet =
     {
-      //Mechanical
+      BuiltInCategory.OST_FlexPipeCurves,
+      BuiltInCategory.OST_PipeFitting,
+      BuiltInCategory.OST_PipeCurves,
+    } ;
+
+    internal static readonly BuiltInCategory[] DuctRoutingBuiltInCategorySet =
+    {
       BuiltInCategory.OST_DuctTerminal,
-      BuiltInCategory.OST_DuctAccessory, 
-      BuiltInCategory.OST_DuctFitting, 
-      BuiltInCategory.OST_DuctSystem, 
-      BuiltInCategory.OST_DuctCurves, 
+      BuiltInCategory.OST_DuctFitting,
+      BuiltInCategory.OST_DuctCurves,
       BuiltInCategory.OST_PlaceHolderDucts,
       BuiltInCategory.OST_FlexDuctCurves,
-      BuiltInCategory.OST_FlexPipeCurves,
-      BuiltInCategory.OST_GenericModel,
-      BuiltInCategory.OST_MechanicalEquipment, 
-      BuiltInCategory.OST_PipeAccessory, 
-      BuiltInCategory.OST_PipeFitting,
+    } ;
+
+    internal static readonly BuiltInCategory[] OtherMechanicalBuiltInCategorySet =
+    {
+      BuiltInCategory.OST_DuctAccessory,
+      BuiltInCategory.OST_DuctSystem,
+      BuiltInCategory.OST_MechanicalEquipment,
+      BuiltInCategory.OST_PipeAccessory,
       //BuiltInCategory.OST_PipeSegments, // cannot use parameters for OST_PipeSegments category!
-      BuiltInCategory.OST_PipeCurves, 
-      BuiltInCategory.OST_PlumbingFixtures, 
+      BuiltInCategory.OST_PlumbingFixtures,
       BuiltInCategory.OST_Sprinklers,
-      //Electrical
+    } ;
+
+    internal static readonly BuiltInCategory[] ElectricalRoutingBuiltInCategorySet =
+    {
       BuiltInCategory.OST_Conduit,
       BuiltInCategory.OST_ConduitFitting,
       BuiltInCategory.OST_ConduitRun,
       BuiltInCategory.OST_CableTray,
-      BuiltInCategory.OST_ElectricalEquipment,
-      BuiltInCategory.OST_ElectricalFixtures
     } ;
 
-    internal static readonly BuiltInCategory[] PassPointBuiltInCategorySet = { BuiltInCategory.OST_MechanicalEquipment} ;
+    internal static readonly BuiltInCategory[] OtherElectricalBuiltInCategorySet =
+    {
+      BuiltInCategory.OST_ElectricalEquipment,
+      BuiltInCategory.OST_ElectricalFixtures,
+    } ;
+
+    internal static readonly BuiltInCategory[] CommonRoutingRoutingBuiltInCategorySet =
+    {
+      BuiltInCategory.OST_GenericModel,
+    } ;
+
+    internal static readonly BuiltInCategory[] RoutingBuiltInCategorySet = CombineArrays(
+      PipeRoutingBuiltInCategorySet,
+      DuctRoutingBuiltInCategorySet,
+      OtherMechanicalBuiltInCategorySet,
+      ElectricalRoutingBuiltInCategorySet,
+      OtherElectricalBuiltInCategorySet,
+      CommonRoutingRoutingBuiltInCategorySet
+    ) ;
+
+    internal static readonly BuiltInCategory[] RoutingCollisionBuiltInCategorySet = CombineArrays(
+      RoutingBuiltInCategorySet,
+      new[]
+      {
+        BuiltInCategory.OST_StructuralColumns,
+        BuiltInCategory.OST_StructuralFoundation,
+        BuiltInCategory.OST_StructuralFraming,
+        BuiltInCategory.OST_StructuralTruss,
+      }
+    ) ;
+    
+
+    private static T[] CombineArrays<T>( params T[][] arrays )
+    {
+      var totalLength = arrays.Sum( array => array.Length ) ;
+      var result = new T[ totalLength ] ;
+      var index = 0 ;
+      foreach ( var array in arrays ) {
+        Array.Copy( array, 0, result, index, array.Length ) ;
+        index += array.Length ;
+      }
+      return result ;
+    }
+
+    internal static readonly BuiltInCategory[] PassPointBuiltInCategorySet =
+    {
+      BuiltInCategory.OST_MechanicalEquipment,
+    } ;
+
     internal static readonly BuiltInCategory[] RoutingElementBuiltInCategorySet = 
-    { BuiltInCategory.OST_MechanicalEquipment,
-      BuiltInCategory.OST_GenericModel 
+    {
+      BuiltInCategory.OST_MechanicalEquipment,
+      BuiltInCategory.OST_GenericModel,
     } ;
 
     public static bool AllRoutingParametersAreRegistered( this Document document )

@@ -15,6 +15,11 @@ namespace Arent3d.Architecture.Routing
     
     public int SubRouteIndex { get ; }
 
+    public (string RouteName, int SubRouteIndex) GetKey()
+    {
+      return ( Route.RouteName, SubRouteIndex ) ;
+    }
+
     private readonly List<RouteSegment> _routeSegments = new() ;
 
     public IEnumerable<IEndPoint> FromEndPoints => _routeSegments.Select( s => s.FromEndPoint ).Distinct() ;

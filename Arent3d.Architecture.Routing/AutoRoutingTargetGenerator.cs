@@ -8,25 +8,23 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
 {
-  public class AutoRoutingTargetGenerator
+  internal class AutoRoutingTargetGenerator
   {
-    public static IEnumerable<AutoRoutingTarget> Run( Document document, IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary, IFittingSizeCalculator fittingSizeCalculator )
+    public static IEnumerable<AutoRoutingTarget> Run( Document document, IReadOnlyCollection<Route> routes, IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> routeConditionDictionary )
     {
-      return new AutoRoutingTargetGenerator( document, fittingSizeCalculator ).Create( routes, routeMepSystemDictionary ) ;
+      return new AutoRoutingTargetGenerator( document ).Create( routes, routeConditionDictionary ) ;
     }
 
 
     private readonly Document _document ;
-    private readonly IFittingSizeCalculator _fittingSizeCalculator ;
     private readonly Dictionary<(string, int), List<SubRoute>> _groups = new() ;
 
-    private AutoRoutingTargetGenerator( Document document, IFittingSizeCalculator fittingSizeCalculator )
+    private AutoRoutingTargetGenerator( Document document )
     {
       _document = document ;
-      _fittingSizeCalculator = fittingSizeCalculator ;
     }
 
-    private IEnumerable<AutoRoutingTarget> Create( IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
+    private IEnumerable<AutoRoutingTarget> Create( IReadOnlyCollection<Route> routes, IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> routeConditionDictionary )
     {
       var priorities = CollectPriorities( routes ) ;
 
@@ -36,7 +34,7 @@ namespace Arent3d.Architecture.Routing
         }
       }
 
-      return _groups.Values.Distinct().Select( list => GenerateAutoRoutingTarget( list, priorities, routeMepSystemDictionary ) ) ;
+      return _groups.Values.Distinct().Select( list => GenerateAutoRoutingTarget( list, priorities, routeConditionDictionary ) ) ;
     }
 
     private void AddSubRoute( SubRoute subRoute )
@@ -69,9 +67,9 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private AutoRoutingTarget GenerateAutoRoutingTarget( IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRoute, RouteMEPSystem> routeMepSystemDictionary )
+    private AutoRoutingTarget GenerateAutoRoutingTarget( IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> routeConditionDictionary )
     {
-      return new AutoRoutingTarget( _document, subRoutes, priorities, routeMepSystemDictionary, _fittingSizeCalculator ) ;
+      return new AutoRoutingTarget( _document, subRoutes, priorities, routeConditionDictionary ) ;
     }
 
     private static IReadOnlyDictionary<Route, int> CollectPriorities( IReadOnlyCollection<Route> routes )
