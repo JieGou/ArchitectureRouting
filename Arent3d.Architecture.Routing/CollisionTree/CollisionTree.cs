@@ -7,6 +7,7 @@ using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using MathLib ;
+using Line = Autodesk.Revit.DB.Line ;
 
 namespace Arent3d.Architecture.Routing.CollisionTree
 {
@@ -48,9 +49,26 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 
     public IEnumerable<Box3d> GetCollidedBoxes( Box3d box )
     {
-      var boxFilter = new BoundingBoxIntersectsFilter( new Outline( box.Min.ToXYZRaw(), box.Max.ToXYZRaw() ) ) ;
+      var min = box.Min.ToXYZRaw() ;
+      var max = box.Max.ToXYZRaw() ;
+      var boxFilter = new BoundingBoxIntersectsFilter( new Outline( min, max ) ) ;
+      var geometryFilter = new ElementIntersectsSolidFilter( CreateBoundingBoxSolid( min, max ) ) ;
       var elements = _document.GetAllElements<Element>().Where( boxFilter ) ;
-      return _filters.Aggregate( elements, ( current, filter ) => current.Where( filter ) ).Where( _collector.IsCollisionCheckElement ).Select( GetBoundingBox ) ;
+      return _filters.Aggregate( elements, ( current, filter ) => current.Where( filter ) ).Where( geometryFilter ).Where( _collector.IsCollisionCheckElement ).Select( GetBoundingBox ) ;
+    }
+
+    private static Solid CreateBoundingBoxSolid( XYZ min, XYZ max )
+    {
+      return GeometryCreationUtilities.CreateExtrusionGeometry( new[] { CreateBaseCurveLoop( min, max ) }, XYZ.BasisZ, max.Z - min.Z ) ;
+
+      static CurveLoop CreateBaseCurveLoop( XYZ min, XYZ max )
+      {
+        var p1 = min ;
+        var p2 = new XYZ( max.X, min.Y, min.Z ) ;
+        var p3 = new XYZ( max.X, max.Y, min.Z ) ;
+        var p4 = new XYZ( min.X, max.Y, min.Z ) ;
+        return CurveLoop.Create( new Curve[] { Line.CreateBound( p1, p2 ), Line.CreateBound( p2, p3 ), Line.CreateBound( p3, p4 ), Line.CreateBound( p4, p1 ) } ) ;
+      }
     }
 
     private static Box3d GetBoundingBox( Element element )
@@ -95,7 +113,11 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 
     private static IEnumerable<Solid> GetFineSolids( this Element element ) => element.GetSolids( new Options { DetailLevel = ViewDetailLevel.Fine, ComputeReferences = false, IncludeNonVisibleObjects = false } ) ;
 
-    private static IEnumerable<Solid> GetSolids( this Element element, Options options ) => element.get_Geometry( options ).GetSolids() ;
+    private static IEnumerable<Solid> GetSolids( this Element element, Options options )
+    {
+      if ( element.get_Geometry( options ) is not { } geom ) return Enumerable.Empty<Solid>() ;
+      return geom.GetSolids() ;
+    }
 
     private static IEnumerable<Solid> GetSolids( this GeometryElement geometry )
     {
