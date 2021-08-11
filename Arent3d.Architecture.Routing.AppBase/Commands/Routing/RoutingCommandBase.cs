@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
 using System.Threading.Tasks ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -67,6 +68,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       return uiDocument.Document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
       {
+        using var _ = FromToTreeManager.SuppressUpdate() ;
+
         SetupFailureHandlingOptions( transaction, executor ) ;
 
         segments = segments.Concat( GetRouteSegmentsInTransaction( uiDocument ).EnumerateAll().ToAsyncEnumerable() ) ;

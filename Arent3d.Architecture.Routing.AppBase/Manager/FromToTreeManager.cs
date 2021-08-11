@@ -92,30 +92,68 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     public void OnDocumentChanged( Autodesk.Revit.DB.Events.DocumentChangedEventArgs e, AddInType addInType )
     {
       if ( FromToTreeUiManager?.FromToTreeView is not { } fromToTreeView || UiApp == null ) return ;
+      if ( UpdateSuppressed() ) return ;
+
       var changedElementIds = e.GetAddedElementIds().Concat( e.GetDeletedElementIds() ).Concat( e.GetModifiedElementIds() ) ;
-
-      var transactions = e.GetTransactionNames() ;
-
       var changedRoute = e.GetDocument().FilterStorableElements<Route>( changedElementIds ) ;
 
       // provide ExternalCommandData object to dockable page
-      if ( ( transactions.Any( GetRoutingTransactions ) || changedRoute.Any() ) ) {
+      if ( changedRoute.Any() ) {
         fromToTreeView.CustomInitiator( UiApp, addInType ) ;
       }
     }
 
-    private static bool GetRoutingTransactions( string t )
+    #region Change suppression
+
+    public static IDisposable SuppressUpdate()
     {
-      var routingTransactions = new List<string>
-      {
-        "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ),
-        "TransactionName.Commands.Routing.PickRouting".GetAppStringByKeyOrDefault( "Add From-To" ),
-        "TransactionName.Commands.Routing.EraseSelectedRoutes".GetAppStringByKeyOrDefault( "Erase Selected" ),
-        "TransactionName.Commands.Routing.EraseAllRoutes".GetAppStringByKeyOrDefault( "Erase All From-Tos" ),
-        "TransactionName.Commands.Routing.PickAndReRoute".GetAppStringByKeyOrDefault( "Reroute All" ),
-        "TransactionName.Commands.Routing.RerouteAll".GetAppStringByKeyOrDefault( "Reroute Selected" ),
-      } ;
-      return routingTransactions.Contains( t ) ;
+      return new UpdateSuppressor() ;
     }
+
+    public static bool UpdateSuppressed()
+    {
+      lock ( _suppressCountLocker ) {
+        return ( 0 < _suppressCount ) ;
+      }
+    }
+
+    private static readonly object _suppressCountLocker = new object() ;
+    private static int _suppressCount = 0 ;
+
+    private static void IncreaseSuppressCount()
+    {
+      lock ( _suppressCountLocker ) {
+        ++_suppressCount ;
+      }
+    }
+    private static void DecreaseSuppressCount()
+    {
+      lock ( _suppressCountLocker ) {
+        if ( 0 == _suppressCount ) throw new InvalidOperationException() ;
+        --_suppressCount ;
+      }
+    }
+
+    private class UpdateSuppressor : IDisposable
+    {
+      public UpdateSuppressor()
+      {
+        IncreaseSuppressCount() ;
+      }
+
+      public void Dispose()
+      {
+        GC.SuppressFinalize( this ) ;
+
+        DecreaseSuppressCount() ;
+      }
+
+      ~UpdateSuppressor()
+      {
+        throw new InvalidOperationException( $"`{nameof( UpdateSuppressor )}` is not disposed. Use `using` statement." ) ;
+      }
+    }
+
+    #endregion
   }
 }
