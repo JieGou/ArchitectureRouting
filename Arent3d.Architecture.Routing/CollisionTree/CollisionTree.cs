@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     private readonly IReadOnlyCollection<ElementFilter> _filters ;
     private readonly BuiltInCategory[] _categoriesOnRack ;
     private readonly ElementParameterFilter _hasRouteNameFilter ;
-    private readonly IReadOnlyDictionary<(string RouteName, int SubRouteIndex),MEPSystemRouteCondition> _routeConditions ;
+    private readonly IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> _routeConditions ;
 
     public CollisionTree( Document document, ICollisionCheckTargetCollector collector, IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> routeConditions )
     {
@@ -36,6 +36,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
       var parameterValueProvider = new ParameterValueProvider( parameter.Id ) ;
       return new ElementParameterFilter( new FilterStringRule( parameterValueProvider, new FilterStringEquals(), "", false ), true ) ;
     }
+
     private static SharedParameterElement? GetSharedParameterElement<TPropertyEnum>( Document document, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum
     {
       var fieldInfo = typeof( TPropertyEnum ).GetField( propertyEnum.ToString() ) ;
@@ -71,5 +72,38 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     }
 
     public IEnumerable<(Box3d, IRouteCondition, bool)> GetCollidedBoxesInDetailToRack( Box3d box ) => Enumerable.Empty<(Box3d, IRouteCondition, bool)>() ;
+
+    public IEnumerable<(ElementId ElementId, MeshTriangle Triangle)> GetTriangles()
+    {
+      var elements = _document.GetAllElements<Element>() ;
+      var filteredElements = _filters.Aggregate( elements, ( current, filter ) => current.Where( filter ) ).Where( _collector.IsCollisionCheckElement ) ;
+      foreach ( var element in filteredElements.Where( elm => false == elm.IsAutoRoutingGeneratedElement() ) ) {
+        var elementId = element.Id ;
+        foreach ( var face in element.GetFaces() ) {
+          var mesh = face.Triangulate() ;
+          for ( int i = 0, n = mesh.NumTriangles ; i < n ; ++i ) {
+            yield return ( elementId, mesh.get_Triangle( i ) ) ;
+          }
+        }
+      }
+    }
+  }
+
+  internal static class SolidExtensions
+  {
+    public static IEnumerable<Face> GetFaces( this Element element ) => element.GetFineSolids().SelectMany( solid => solid.Faces.OfType<Face>() ) ;
+
+    private static IEnumerable<Solid> GetFineSolids( this Element element ) => element.GetSolids( new Options { DetailLevel = ViewDetailLevel.Fine, ComputeReferences = false, IncludeNonVisibleObjects = false } ) ;
+
+    private static IEnumerable<Solid> GetSolids( this Element element, Options options ) => element.get_Geometry( options ).GetSolids() ;
+
+    private static IEnumerable<Solid> GetSolids( this GeometryElement geometry )
+    {
+      var solids = geometry.OfType<Solid>().Where( solid => false == solid.Faces.IsEmpty ).ToList() ;
+      if ( 0 < solids.Count ) return solids ;
+
+      var instanceGeometryElements = geometry.OfType<GeometryInstance>().Select( geom => geom.GetInstanceGeometry() ) ;
+      return instanceGeometryElements.SelectMany( GetSolids ) ;
+    }
   }
 }

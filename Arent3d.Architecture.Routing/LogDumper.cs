@@ -110,18 +110,19 @@ namespace Arent3d.Architecture.Routing
     {
       using var _ = writer.WriteElement( elmName ) ;
 
-      foreach ( var box in collision.TreeElementBoxes ) {
-        writer.WriteBoxWithId( "Element", box.Box, box.ElementId.IntegerValue ) ;
+      foreach ( var (elmId, triangle) in collision.GetTriangles() ) {
+        writer.WriteTriangleWithId( "Element", triangle, elmId ) ;
       }
     }
 
-    private static void WriteBoxWithId( this XmlWriter writer, string elmName, Box3d box, int id )
+    private static void WriteTriangleWithId( this XmlWriter writer, string elmName, MeshTriangle triangle, ElementId id )
     {
       using var _ = writer.WriteElement( elmName ) ;
-      writer.WriteAttributeString( "ElementId", id.ToString() ) ;
+      writer.WriteAttributeString( "ElementId", id.IntegerValue.ToString() ) ;
 
-      writer.WriteVector( "Min", box.Min ) ;
-      writer.WriteVector( "Max", box.Max ) ;
+      writer.WriteVector( "P0", triangle.get_Vertex( 0 ).To3dRaw() ) ;
+      writer.WriteVector( "P1", triangle.get_Vertex( 1 ).To3dRaw() ) ;
+      writer.WriteVector( "P2", triangle.get_Vertex( 2 ).To3dRaw() ) ;
     }
 
     private static void WriteVector( this XmlWriter writer, string elmName, Vector3d dir )
@@ -314,14 +315,23 @@ namespace Arent3d.Architecture.Routing
     {
       private readonly ITree _treeBody ;
 
-      public DumpedCollisionTree( IReadOnlyCollection<Box3d> boxes )
+      public DumpedCollisionTree( IReadOnlyCollection<(ElementId, (Vector3d, Vector3d, Vector3d))> triangles )
       {
-        _treeBody = CreateTreeByFactory( boxes.ConvertAll( ToTreeElement ) ) ;
+        var dic = new Dictionary<int, TrianglesGeometry>() ;
+        foreach ( var (elementId, triangle) in triangles ) {
+          if ( false == dic.TryGetValue( elementId.IntegerValue, out var geom ) ) {
+            geom = new TrianglesGeometry( elementId ) ;
+            dic.Add( elementId.IntegerValue, geom ) ;
+          }
+          geom.AddTriangle( triangle ) ;
+        }
+
+        _treeBody = CreateTreeByFactory( dic.Values.ConvertAll( ToTreeElement ) ) ;
       }
 
-      private static TreeElement ToTreeElement( Box3d box )
+      private static TreeElement ToTreeElement( TrianglesGeometry geom )
       {
-        return new TreeElement( new BoxGeometryBody( box ) ) ;
+        return new TreeElement( new TriangleGeometryBody( geom ) ) ;
       }
 
       private static ITree CreateTreeByFactory( IReadOnlyCollection<TreeElement> treeElements )
@@ -371,12 +381,12 @@ namespace Arent3d.Architecture.Routing
     {
       if ( ! reader.IsStartElement( elmName ) ) return null ;
 
-      var list = new List<Box3d>() ;
+      var list = new List<(ElementId, (Vector3d, Vector3d, Vector3d))>() ;
 
       reader.ReadToFollowing( elmName ) ;
       reader.ReadStartElement( elmName ) ;
       while ( reader.IsStartElement() ) {
-        list.Add( ReadBox( reader, "Element" ) ) ;
+        list.Add( ReadTriangleWithElementId( reader, "Element" ) ) ;
       }
 
       reader.ReadEndElement() ;
@@ -404,15 +414,24 @@ namespace Arent3d.Architecture.Routing
       var str = reader.ReadElementString( tagName ) ;
       return Enum.TryParse( str, out TEnum val ) ? val : default ;
     }
-    private static Box3d ReadBox( XmlReader reader, string tagName )
+    private static (ElementId, (Vector3d, Vector3d, Vector3d)) ReadTriangleWithElementId( XmlReader reader, string tagName )
     {
       reader.ReadStartElement( tagName ) ;
-      var min = ReadVector( reader, "Min" ) ;
-      var max = ReadVector( reader, "Max" ) ;
+      var elmId = GetElementId( reader.GetAttribute( "ElementId" ) ) ;
+      var p0 = ReadVector( reader, "P0" ) ;
+      var p1 = ReadVector( reader, "P1" ) ;
+      var p2 = ReadVector( reader, "P2" ) ;
       reader.ReadEndElement() ;
 
-      return new Box3d( min, max ) ;
+      return ( elmId, ( p0, p1, p2 ) ) ;
     }
+
+    private static ElementId GetElementId( string? attr )
+    {
+      if ( null == attr || false == int.TryParse( attr, out var id ) || id < 0 ) return ElementId.InvalidElementId ;
+      return new ElementId( id ) ;
+    }
+
     private static Vector3d ReadVector( XmlReader reader, string tagName )
     {
       reader.ReadStartElement( tagName ) ;
@@ -483,6 +502,87 @@ namespace Arent3d.Architecture.Routing
       {
         return 1.0 / 120 ;  // 1/10 inches.
       }
+    }
+
+    private class TrianglesGeometry : IGeometry, ITriangleMesh
+    {
+      public ElementId ElementId { get ; }
+      public TrianglesGeometry( ElementId elementId )
+      {
+        ElementId = elementId ;
+        CodSys = LocalCodSys3d.Identity ;
+        _triangles = new List<Vector3d>() ;
+      }
+
+      private TrianglesGeometry( LocalCodSys3d newCodSys, TrianglesGeometry baseGeometry )
+      {
+        ElementId = baseGeometry.ElementId ;
+        CodSys = newCodSys ;
+        _triangles = baseGeometry._triangles ;
+      }
+
+      private Box3d? _bounds = null ;
+      public Box3d GetBounds() => _bounds ??= CalcBounds() ;
+
+      private Box3d CalcBounds()
+      {
+        double minX = double.PositiveInfinity, minY = double.PositiveInfinity, minZ = double.PositiveInfinity ;
+        double maxX = double.NegativeInfinity, maxY = double.NegativeInfinity, maxZ = double.NegativeInfinity ;
+
+        foreach ( var (x, y, z) in Vertices ) {
+          if ( x < minX ) minX = x ;
+          if ( maxX < x ) maxX = x ;
+          if ( y < minY ) minY = y ;
+          if ( maxY < y ) maxY = y ;
+          if ( z < minZ ) minZ = z ;
+          if ( maxZ < z ) maxZ = z ;
+        }
+
+        if ( minX > maxX ) return Box3d.Null ;
+        return new Box3d( new Vector3d( minX, minY, minZ ), new Vector3d( maxX, maxY, maxZ ) ) ;
+      }
+
+      public ITriangleMesh GetMesh( double meshingTolerance ) => this ;
+
+      public IGeometry Localize( LocalCodSys3d codsys ) => new TrianglesGeometry( codsys.LocalizeCodSys( CodSys ), this ) ;
+
+      public IGeometry Globalize( LocalCodSys3d codsys ) => new TrianglesGeometry( codsys.GlobalizeCodSys( CodSys ), this ) ;
+
+      public LocalCodSys3d CodSys { get ; }
+
+      private readonly List<Vector3d> _triangles ;
+      
+
+      public void AddTriangle( (Vector3d, Vector3d, Vector3d) triangle )
+      {
+        _triangles.Add( triangle.Item1 ) ;
+        _triangles.Add( triangle.Item2 ) ;
+        _triangles.Add( triangle.Item3 ) ;
+        _asArray = null ;
+      }
+
+      private Vector3d[]? _asArray = null ;
+      private Vector3d[] VertexArray => _asArray ??= Array.ConvertAll( _triangles.ToArray(), v => CodSys.LocalizePoint( v ) ) ;
+      
+      public ref readonly Vector3d GetVertex( int triangleIndex, int vertexIndex ) => ref VertexArray[ triangleIndex * 3 + vertexIndex ] ;
+
+      public int Count => _triangles.Count / 3 ;
+      public IEnumerable<Vector3d> Vertices => VertexArray ;
+
+      public ref readonly Vector3d this[ int triangleIndex, int vertexIndex ] => ref VertexArray[ triangleIndex * 3 + vertexIndex ] ;
+    }
+    private class TriangleGeometryBody : IGeometryBody
+    {
+      private readonly IReadOnlyList<TrianglesGeometry> _geoms ;
+
+      public TriangleGeometryBody( TrianglesGeometry geom )
+      {
+        _geoms = new[] { geom } ;
+      }
+
+      public IReadOnlyCollection<IGeometry> GetGeometries() => _geoms ;
+      public IReadOnlyCollection<IGeometry> GetGlobalGeometries() => _geoms ;
+      public Box3d GetGlobalGeometryBox() => _geoms[ 0 ].GetBounds() ;
     }
     
     #endregion
