@@ -35,7 +35,11 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     {
       var parameter = GetSharedParameterElement( document, RoutingParameter.RouteName ) ?? throw new InvalidOperationException() ;
       var parameterValueProvider = new ParameterValueProvider( parameter.Id ) ;
-      return new ElementParameterFilter( new FilterStringRule( parameterValueProvider, new FilterStringEquals(), "", false ), true ) ;
+#if REVIT2022
+      return new ElementParameterFilter( new FilterStringRule( parameterValueProvider, new FilterStringEquals(), "" ), true ) ;
+#else
+      return new ElementParameterFilter( new FilterStringRule( parameterValueProvider, new FilterStringEquals(), "", true ), true ) ;
+#endif
     }
 
     private static SharedParameterElement? GetSharedParameterElement<TPropertyEnum>( Document document, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum

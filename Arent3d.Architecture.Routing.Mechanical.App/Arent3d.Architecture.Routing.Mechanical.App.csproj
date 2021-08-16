@@ -1,77 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
-    
+    <Import Project="$(SolutionDir)CommonProjectProperties.prop"/>
+
     <PropertyGroup>
-        <Configurations>Debug 2020;Debug 2021;Debug 2022;Release 2020;Release 2021;Release 2022</Configurations>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        <LangVersion>9</LangVersion>
         <UseWPF>true</UseWPF>
-        <Nullable>enable</Nullable>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <Platforms>x64</Platforms>
-        <Authors>Arent Inc.</Authors>
-        <PlatformTarget>x64</PlatformTarget>
         <RootNamespace>Arent3d.Architecture.Routing.Mechanical.App</RootNamespace>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug 2019' ">
-        <ConfigMode>Debug</ConfigMode>
-        <RevitVersion>2019</RevitVersion>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug 2020' ">
-        <ConfigMode>Debug</ConfigMode>
-        <RevitVersion>2020</RevitVersion>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug 2021' ">
-        <ConfigMode>Debug</ConfigMode>
-        <RevitVersion>2021</RevitVersion>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug 2022' ">
-        <ConfigMode>Debug</ConfigMode>
-        <RevitVersion>2022</RevitVersion>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release 2019' ">
-        <ConfigMode>Release</ConfigMode>
-        <RevitVersion>2019</RevitVersion>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release 2020' ">
-        <ConfigMode>Release</ConfigMode>
-        <RevitVersion>2020</RevitVersion>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release 2021' ">
-        <ConfigMode>Release</ConfigMode>
-        <RevitVersion>2021</RevitVersion>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release 2022' ">
-        <ConfigMode>Release</ConfigMode>
-        <RevitVersion>2022</RevitVersion>
     </PropertyGroup>
 
     <PropertyGroup>
         <OutputPath>bin\$(ConfigMode)\$(RevitVersion)\</OutputPath>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(ConfigMode)' == 'DEBUG' ">
-        <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(ConfigMode)' == 'Release' ">
-        <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(RevitVersion)' == '2019' ">
-        <TargetFramework>net47</TargetFramework>
-        <DefineConstants>$(DefineConstants);REVIT2019</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(RevitVersion)' == '2020' ">
-        <TargetFramework>net472</TargetFramework>
-        <DefineConstants>$(DefineConstants);REVIT2020</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(RevitVersion)' == '2021' ">
-        <TargetFramework>net48</TargetFramework>
-        <DefineConstants>$(DefineConstants);REVIT2021</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(RevitVersion)' == '2022' ">
-        <TargetFramework>net48</TargetFramework>
-        <DefineConstants>$(DefineConstants);REVIT2022</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
@@ -80,22 +16,22 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="Arent3d.RevitAddinUtil, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="Arent3d.RevitAddinUtil, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
             <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.RevitAddinUtil.dll</HintPath>
         </Reference>
-        <Reference Include="Arent3d.Math, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="Arent3d.Math, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
             <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Math.dll</HintPath>
         </Reference>
-        <Reference Include="Arent3d.Utility, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="Arent3d.Utility, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
             <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Utility.dll</HintPath>
         </Reference>
-        <Reference Include="Arent3d.Revit, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="Arent3d.Revit, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
             <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Revit.dll</HintPath>
         </Reference>
-        <Reference Include="Arent3d.Revit.Csv, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="Arent3d.Revit.Csv, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
             <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Revit.Csv.dll</HintPath>
         </Reference>
-        <Reference Include="Arent3d.Revit.UI, Version=1.0.21.728, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="Arent3d.Revit.UI, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
             <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Revit.UI.dll</HintPath>
         </Reference>
         <Reference Include="PresentationCore" />

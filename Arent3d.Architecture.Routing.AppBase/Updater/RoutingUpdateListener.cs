@@ -1,14 +1,15 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Updater
 {
   public class RoutingUpdateListener : IDocumentUpdateListener
   {
+    public Guid Guid { get ; } = new Guid( "{3BC9CB75-EB32-4E64-8879-2644CCB07A68}" ) ;
     public string Name { get ; }
     public string Description { get ; }
     public ChangePriority ChangePriority { get ; }

@@ -396,7 +396,15 @@ namespace Arent3d.Architecture.Routing
     protected override void LoadAllFields( FieldReader reader )
     {
       _routeName = reader.GetSingle<string>( RouteNameField ) ;
-      reader.GetArray<RouteSegment>( RouteSegmentsField ).ForEach( segment => RegisterSegment( segment, false ) ) ;
+      _routeSegments.Clear() ;
+
+      try {
+        var routes = reader.GetArray<RouteSegment>( RouteSegmentsField ).ToArray() ;
+        routes.ForEach( segment => RegisterSegment( segment, false ) ) ;
+      }
+      catch {
+        _routeSegments.Clear() ;
+      }
     }
 
     protected override void SaveAllFields( FieldWriter writer )

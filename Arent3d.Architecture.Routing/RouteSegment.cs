@@ -1,9 +1,7 @@
 using System ;
-using System.Globalization ;
-using System.Text ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
-using Arent3d.Utility ;
+using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
@@ -89,39 +87,54 @@ namespace Arent3d.Architecture.Routing
   [StorableConverterOf( typeof( RouteSegment ) )]
   internal class RouteSegmentConverter : StorableConverterBase<RouteSegment>
   {
-    protected override RouteSegment Parse( Element storedElement, Parser parser )
+    private enum SerializeField
     {
-      var preferredDiameter = parser.GetDouble( 0 ) ;
-      var fromId = EndPointExtensions.ParseEndPoint( storedElement.Document, parser.GetString( 1 ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
-      var toId = EndPointExtensions.ParseEndPoint( storedElement.Document, parser.GetString( 2 ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
-      var isRoutingOnPipeSpace = parser.GetBool( 3 ) ?? throw new InvalidOperationException() ;
-      var curveType = parser.GetElement<MEPCurveType>( 4, storedElement.Document ) ?? throw new InvalidOperationException() ;
-      var fixedBopHeight = parser.GetDouble( 5 ) ;
-      var avoidType = parser.GetEnum<AvoidType>( 6 ) ?? throw new InvalidOperationException() ;
-      var classificationInfo = MEPSystemClassificationInfo.Deserialize( parser.GetString( 7 ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      PreferredNominalDiameter,
+      FromEndPoint,
+      ToEndPoint,
+      IsRoutingOnPipeSpace,
+      CurveType,
+      FixedBopHeight,
+      AvoidType,
+      SystemClassificationInfo,
+      SystemType,
+    }
+
+    protected override RouteSegment Deserialize( Element storedElement, IDeserializerObject deserializerObject )
+    {
+      var deserializer = deserializerObject.Of<SerializeField>() ;
+
+      var preferredDiameter = deserializer.GetDouble( SerializeField.PreferredNominalDiameter ) ;
+      var fromId = EndPointExtensions.ParseEndPoint( storedElement.Document, deserializer.GetString( SerializeField.FromEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      var toId = EndPointExtensions.ParseEndPoint( storedElement.Document, deserializer.GetString( SerializeField.ToEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      var isRoutingOnPipeSpace = deserializer.GetBool( SerializeField.IsRoutingOnPipeSpace ) ?? throw new InvalidOperationException() ;
+      var curveType = deserializer.GetElement<SerializeField, MEPCurveType>( SerializeField.CurveType, storedElement.Document ) ?? throw new InvalidOperationException() ;
+      var fixedBopHeight = deserializer.GetDouble( SerializeField.FixedBopHeight ) ;
+      var avoidType = deserializer.GetEnum<AvoidType>( SerializeField.AvoidType ) ?? throw new InvalidOperationException() ;
+      var classificationInfo = MEPSystemClassificationInfo.Deserialize( deserializer.GetString( SerializeField.SystemClassificationInfo ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
       MEPSystemType? systemType = null ;
       if ( classificationInfo.HasSystemType() ) {
-        systemType = parser.GetElement<MEPSystemType>( 8, storedElement.Document ) ?? throw new InvalidOperationException() ;
+        systemType = deserializer.GetElement<SerializeField, MEPSystemType>( SerializeField.SystemType, storedElement.Document ) ?? throw new InvalidOperationException() ;
       }
 
       return new RouteSegment( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
     }
 
-    protected override Stringifier Stringify( Element storedElement, RouteSegment customTypeValue )
+    protected override ISerializerObject Serialize( Element storedElement, RouteSegment customTypeValue )
     {
-      var stringifier = new Stringifier() ;
+      var serializerObject = new SerializerObject<SerializeField>() ;
 
-      stringifier.Add( customTypeValue.PreferredNominalDiameter ) ;
-      stringifier.Add( customTypeValue.FromEndPoint.ToString() ) ;
-      stringifier.Add( customTypeValue.ToEndPoint.ToString() ) ;
-      stringifier.Add( customTypeValue.IsRoutingOnPipeSpace ) ;
-      stringifier.Add( customTypeValue.CurveType ) ;
-      stringifier.Add( customTypeValue.FixedBopHeight ) ;
-      stringifier.Add( customTypeValue.AvoidType ) ;
-      stringifier.Add( customTypeValue.SystemClassificationInfo.Serialize() ) ;
-      stringifier.Add( customTypeValue.SystemType ) ;
+      serializerObject.Add( SerializeField.PreferredNominalDiameter, customTypeValue.PreferredNominalDiameter ) ;
+      serializerObject.AddNonNull( SerializeField.FromEndPoint, customTypeValue.FromEndPoint.ToString() ) ;
+      serializerObject.AddNonNull( SerializeField.ToEndPoint, customTypeValue.ToEndPoint.ToString() ) ;
+      serializerObject.Add( SerializeField.IsRoutingOnPipeSpace, customTypeValue.IsRoutingOnPipeSpace ) ;
+      serializerObject.Add( SerializeField.CurveType, customTypeValue.CurveType ) ;
+      serializerObject.Add( SerializeField.FixedBopHeight, customTypeValue.FixedBopHeight ) ;
+      serializerObject.Add( SerializeField.AvoidType, customTypeValue.AvoidType ) ;
+      serializerObject.AddNonNull( SerializeField.SystemClassificationInfo, customTypeValue.SystemClassificationInfo.Serialize() ) ;
+      serializerObject.Add( SerializeField.SystemType, customTypeValue.SystemType ) ;
 
-      return stringifier ;
+      return serializerObject ;
     }
   }
 }
