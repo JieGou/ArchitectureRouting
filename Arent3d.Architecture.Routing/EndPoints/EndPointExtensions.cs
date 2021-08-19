@@ -1,9 +1,8 @@
-using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Text.RegularExpressions ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
+using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 
@@ -26,31 +25,46 @@ namespace Arent3d.Architecture.Routing.EndPoints
     }
 
 
-    private static readonly char[] EndPointSplitter = { '|' } ;
-    private static readonly char[] NameParamSplitter = { ':' } ;
-    private static readonly Regex EscapeChars = new Regex( @"%:\|\+ ", RegexOptions.Singleline | RegexOptions.Compiled ) ;
+
+    private enum ListSerializeField
+    {
+      EndPoints,
+    }
+    private enum EndPointSerializeField
+    {
+      Type,
+      Parameters,
+    }
 
     public static string Stringify( this IEnumerable<IEndPoint> endPoints )
     {
-      return string.Join( "|", endPoints.Select( Stringify ) ) ;
+      var serializer = new SerializerObject<ListSerializeField>() ;
+      serializer.AddNonNull( ListSerializeField.EndPoints, endPoints.Select( Stringify ) ) ;
+      return serializer.ToString() ;
     }
 
     public static string Stringify( this IEndPoint endPoint )
     {
-      return $"{Escape( endPoint.TypeName )}:{Escape( endPoint.ParameterString )}" ;
+      var serializer = new SerializerObject<EndPointSerializeField>() ;
+      serializer.AddNonNull( EndPointSerializeField.Type, endPoint.TypeName ) ;
+      serializer.AddNonNull( EndPointSerializeField.Parameters, endPoint.ParameterString ) ;
+      return serializer.ToString() ;
     }
 
     public static IEnumerable<IEndPoint> ParseEndPoints( Document document, string str )
     {
-      return str.Split( EndPointSplitter, StringSplitOptions.RemoveEmptyEntries ).Select( part => ParseEndPoint( document, part ) ).NonNull() ;
+      var deserializer = new DeserializerObject<ListSerializeField>( str ) ;
+      var array = deserializer.GetNonNullStringArray( ListSerializeField.EndPoints ) ;
+      return array?.Select( item => ParseEndPoint( document, item ) ).NonNull() ?? Enumerable.Empty<IEndPoint>() ;
     }
 
     public static IEndPoint? ParseEndPoint( Document document, string str )
     {
-      var array = str.Split( NameParamSplitter, StringSplitOptions.None ) ;
-      if ( 2 != array.Length ) return null ;
+      var deserializer = new DeserializerObject<EndPointSerializeField>(str) ;
+      if ( deserializer.GetString( EndPointSerializeField.Type ) is not { } endPontType ) return null ;
+      if ( deserializer.GetString( EndPointSerializeField.Parameters ) is not { } paramString ) return null ;
 
-      return ParseEndPoint( document, Unescape( array[ 0 ] ), Unescape( array[ 1 ] ) ) ;
+      return ParseEndPoint( document, endPontType, paramString ) ;
     }
 
     public static IEndPoint? ParseEndPoint( Document document, string endPointType, string parameters )
@@ -63,16 +77,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
         TerminatePointEndPoint.Type => TerminatePointEndPoint.ParseParameterString( document, parameters ),
         _ => null,
       } ;
-    }
-
-    private static string Escape( string part )
-    {
-      return EscapeChars.Replace( part, match => Uri.HexEscape( match.Value[ 0 ] ) ) ;
-    }
-
-    private static string Unescape( string part )
-    {
-      return Uri.UnescapeDataString( part ) ;
     }
   }
 }

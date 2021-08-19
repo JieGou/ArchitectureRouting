@@ -2,6 +2,7 @@
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.UI ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -18,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       IEnumerable<ElementId> GetAllRelatedElements() ;
       SubRoute? SubRoute { get ; }
+      EndPointKey? EndPointOverSubRoute { get ; }
       Element PickedElement { get ; }
       Connector? PickedConnector { get ; }
       XYZ GetOrigin() ;
@@ -76,6 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       private readonly string? _routeName ;
 
       public SubRoute? SubRoute => null ;
+      public EndPointKey? EndPointOverSubRoute => null ;
       public Element PickedElement => _element ;
       public Connector? PickedConnector => _connector ;
 
@@ -103,15 +106,22 @@ namespace Arent3d.Architecture.Routing.AppBase
       private readonly SubRoute _subRoute ;
 
       public SubRoute? SubRoute => _subRoute ;
+      public EndPointKey? EndPointOverSubRoute { get ; }
       public Element PickedElement => _pickedElement ;
       public Connector? PickedConnector => null ;
 
       public XYZ GetOrigin() => GetCenter( _pickedElement ) ;
 
-      private SubRoutePickResult( Element element, SubRoute subRoute )
+      private SubRoutePickResult( Element element, SubRoute subRoute, EndPointKey? endPointOverSubRoute )
       {
         _pickedElement = element ;
         _subRoute = subRoute ;
+        EndPointOverSubRoute = endPointOverSubRoute ;
+      }
+
+      public SubRoutePickResult ApplyEndPointOverSubRoute( EndPointKey endPointOverSubRoute )
+      {
+        return new SubRoutePickResult( _pickedElement, _subRoute, endPointOverSubRoute ) ;
       }
 
       public IEnumerable<ElementId> GetAllRelatedElements()
@@ -130,7 +140,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         if ( false == RouteCache.Get( element.Document ).TryGetValue( routeName, out var route ) ) return null ;
         if ( route.GetSubRoute( subRouteIndex.Value ) is not { } subRoute ) return null ;
 
-        return new SubRoutePickResult( element, subRoute ) ;
+        return new SubRoutePickResult( element, subRoute, null ) ;
       }
 
       public bool IsCompatibleTo( Connector connector ) => _subRoute.GetReferenceConnector().IsCompatibleTo( connector ) ;
@@ -143,6 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       private readonly Route? _route ;
 
       public SubRoute? SubRoute => null ;
+      public EndPointKey? EndPointOverSubRoute => null ;
       public Element PickedElement => _element ;
       public Connector? PickedConnector => null ;
 
@@ -184,6 +195,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       private readonly AddInType _addInType ;
 
       public SubRoute? SubRoute => null ;
+      public EndPointKey? EndPointOverSubRoute => null ;
       public Element PickedElement => _element ;
       public Connector? PickedConnector => null ;
 

@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public static ConnectorPicker.IPickResult PickResultFromAnother( Route route, IEndPoint endPoint )
     {
       var (subRoute, anotherEndPoint) = GetOtherEndPoint( route, endPoint ) ;
-      return new PseudoPickResult( subRoute, anotherEndPoint) ;
+      return new PseudoPickResult( subRoute, anotherEndPoint ) ;
     }
 
     private static (SubRoute, IEndPoint) GetOtherEndPoint( Route route, IEndPoint endPoint )
@@ -128,16 +128,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       private readonly SubRoute _subRoute ;
       private readonly IEndPoint _endPoint ;
-      
+
       public PseudoPickResult( SubRoute subRoute, IEndPoint endPoint )
       {
         _subRoute = subRoute ;
         _endPoint = endPoint ;
+
+        if ( endPoint is RouteEndPoint routeEndPoint ) {
+          SubRoute = routeEndPoint.GetSubRoute() ?? subRoute ;
+          EndPointOverSubRoute = routeEndPoint.ReferenceEndPointKey ;
+        }
+        else {
+          SubRoute = subRoute ;
+          EndPointOverSubRoute = null ;
+        }
       }
 
       public IEnumerable<ElementId> GetAllRelatedElements() => Enumerable.Empty<ElementId>() ;
 
-      public SubRoute? SubRoute => ( _endPoint as RouteEndPoint )?.GetSubRoute() ?? _subRoute ;
+      public SubRoute? SubRoute { get ; }
+      public EndPointKey? EndPointOverSubRoute { get ; }
       public Element PickedElement => throw new InvalidOperationException() ;
       public Connector? PickedConnector => ( _endPoint as ConnectorEndPoint )?.GetConnector() ?? _subRoute.GetReferenceConnector() ;
       public XYZ GetOrigin() => _endPoint.RoutingStartPosition ;

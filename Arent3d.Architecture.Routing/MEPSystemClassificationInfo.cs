@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing
       } ;
     }
 
-    public static MEPSystemClassificationInfo? From( MEPSystemType systemType )
+    public static MEPSystemClassificationInfo From( MEPSystemType systemType )
     {
       return systemType switch
       {
@@ -31,12 +31,12 @@ namespace Arent3d.Architecture.Routing
       } ;
     }
 
-    public static MEPSystemClassificationInfo? From( MechanicalSystemType systemType )
+    public static MEPSystemClassificationInfo From( MechanicalSystemType systemType )
     {
       return Create( (DuctSystemType) systemType.SystemClassification ) ;
     }
 
-    public static MEPSystemClassificationInfo? From( PipingSystemType systemType )
+    public static MEPSystemClassificationInfo From( PipingSystemType systemType )
     {
       return Create( (PipeSystemType) systemType.SystemClassification ) ;
     }
@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing
     private static MEPSystemClassificationInfo Create( DuctSystemType systemType ) => new DuctSystemClassificationInfo( systemType ) ;
     private static MEPSystemClassificationInfo Create( ElectricalSystemType systemType ) => new ElectricalSystemClassificationInfo( systemType ) ;
 
-    private static MEPSystemClassificationInfo CableTrayConduit { get ; } = new CableTrayConduitSystemClassificationInfo() ;
+    public static MEPSystemClassificationInfo CableTrayConduit { get ; } = new CableTrayConduitSystemClassificationInfo() ;
     public static MEPSystemClassificationInfo Undefined { get ; } = new UndefinedSystemClassificationInfo() ;
 
 

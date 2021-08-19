@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
@@ -11,23 +12,39 @@ namespace Arent3d.Architecture.Routing.EndPoints
   {
     public const string Type = "Pass Point" ;
 
-    private static readonly char[] Separator = { '/' } ;
+    private enum SerializeField
+    {
+      PassPointId,
+      Diameter,
+      Position,
+      Direction,
+    }
 
     public static PassPointEndPoint? ParseParameterString( Document document, string str )
     {
-      var array = str.Split( Separator ) ;
-      if ( array.Length < 8 ) return null ;
+      var deserializer = new DeserializerObject<SerializeField>( str ) ;
 
-      if ( false == int.TryParse( array[ 0 ], out var passPointId ) ) return null ;
-      var radius = double.TryParse( array[ 1 ], out var diameter ) ? (double?) ( diameter * 0.5 ) : null ;
-      if ( false == double.TryParse( array[ 2 ], out var posX ) ) return null ;
-      if ( false == double.TryParse( array[ 3 ], out var posY ) ) return null ;
-      if ( false == double.TryParse( array[ 4 ], out var posZ ) ) return null ;
-      if ( false == double.TryParse( array[ 5 ], out var dirX ) ) return null ;
-      if ( false == double.TryParse( array[ 6 ], out var dirY ) ) return null ;
-      if ( false == double.TryParse( array[ 7 ], out var dirZ ) ) return null ;
+      if ( deserializer.GetElementId( SerializeField.PassPointId ) is not { } passPointId ) return null ;
+      var diameter = deserializer.GetDouble( SerializeField.Diameter ) ;
+      if ( deserializer.GetXYZ( SerializeField.Position ) is not { } position ) return null ;
+      if ( deserializer.GetXYZ( SerializeField.Direction ) is not { } direction ) return null ;
 
-      return new PassPointEndPoint( document, new ElementId( passPointId ), new XYZ( posX, posY, posZ ), new XYZ( dirX, dirY, dirZ ), radius ) ;
+      return new PassPointEndPoint( document, passPointId, position, direction, diameter * 0.5 ) ;
+    }
+
+    public string ParameterString
+    {
+      get
+      {
+        var stringifier = new SerializerObject<SerializeField>() ;
+
+        stringifier.Add( SerializeField.PassPointId, PassPointId ) ;
+        stringifier.Add( SerializeField.Diameter, GetDiameter() ) ;
+        stringifier.AddNonNull( SerializeField.Position, RoutingStartPosition ) ;
+        stringifier.AddNonNull( SerializeField.Direction, Direction ) ;
+
+        return stringifier.ToString() ;
+      }
     }
 
 
@@ -43,8 +60,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public ElementId PassPointId { get ; private set ; }
 
     public Instance? GetPassPoint() => Document.GetElementById<Instance>( PassPointId ) ;
-
-    public string ParameterString => $"{PassPointId.IntegerValue}/{GetDiameter()?.ToString() ?? "---"}/{RoutingStartPosition.X}/{RoutingStartPosition.Y}/{RoutingStartPosition.Z}/{Direction.X}/{Direction.Y}/{Direction.Z}" ;
 
     private XYZ PreferredPosition { get ; set ; } = XYZ.Zero ;
     

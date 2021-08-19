@@ -2,9 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Routing ;
-using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
 using MathLib ;
 

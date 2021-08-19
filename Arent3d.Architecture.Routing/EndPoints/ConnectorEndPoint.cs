@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions ;
 using Arent3d.Revit ;
+using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
@@ -8,22 +9,37 @@ namespace Arent3d.Architecture.Routing.EndPoints
   {
     public const string Type = "Connector" ;
 
-    private static readonly Regex _parameterParser = new Regex( @"^(-?\d+)/(-?\d+)$", RegexOptions.Singleline | RegexOptions.Compiled ) ;
-
     public static EndPointKey GenerateKey( Connector connector ) => GenerateKey( connector.Owner.Id, connector.Id ) ;
     private static EndPointKey GenerateKey( ElementId equipmentId, int connectorIndex )
     {
       return new EndPointKey( Type, BuildParameterString( equipmentId, connectorIndex ) ) ;
     }
     public static string BuildParameterString( Connector connector ) => BuildParameterString( connector.Owner.Id, connector.Id ) ;
-    private static string BuildParameterString( ElementId equipmentId, int connectorIndex ) => $"{equipmentId.IntegerValue}/{connectorIndex}" ;
+
+    private enum SerializeField
+    {
+      ElementId,
+      ConnectorIndex,
+    }
+
+    private static string BuildParameterString( ElementId equipmentId, int connectorIndex )
+    {
+      var stringifier = new SerializerObject<SerializeField>() ;
+
+      stringifier.Add( SerializeField.ElementId, equipmentId ) ;
+      stringifier.Add( SerializeField.ConnectorIndex, connectorIndex ) ;
+
+      return stringifier.ToString() ;
+    }
 
     public static ConnectorEndPoint? ParseParameterString( Document document, string str )
     {
-      var match = _parameterParser.Match( str ) ;
-      if ( false == match.Success ) return null ;
+      var deserializer = new DeserializerObject<SerializeField>( str ) ;
 
-      return new ConnectorEndPoint( document, new ElementId( int.Parse( match.Groups[ 1 ].Value ) ), int.Parse( match.Groups[ 2 ].Value ) ) ;
+      if ( deserializer.GetElementId( SerializeField.ElementId ) is not { } elementId ) return null ;
+      if ( deserializer.GetInt( SerializeField.ConnectorIndex ) is not { } connectorIndex ) return null ;
+
+      return new ConnectorEndPoint( document, elementId, connectorIndex ) ;
     }
 
 

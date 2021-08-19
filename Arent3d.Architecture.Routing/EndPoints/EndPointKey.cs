@@ -7,20 +7,20 @@ namespace Arent3d.Architecture.Routing.EndPoints
   /// </summary>
   public class EndPointKey : IEquatable<EndPointKey>
   {
-    private readonly string _type ;
-    private readonly string _param ;
+    internal string Type { get ; }
+    internal string Param { get ; }
     
     internal EndPointKey( string type, string param )
     {
-      _type = type ;
-      _param = param ;
+      Type = type ;
+      Param = param ;
     }
 
     public bool Equals( EndPointKey? other )
     {
       if ( other is null ) return false ;
 
-      return ( _type == other._type && _param == other._param ) ;
+      return ( Type == other.Type && Param == other.Param ) ;
     }
 
     public override bool Equals( object? obj )
@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public override int GetHashCode()
     {
-      return ( ( _type.GetHashCode() * 387 ) ^ _param.GetHashCode() ) ;
+      return ( ( Type.GetHashCode() * 387 ) ^ Param.GetHashCode() ) ;
     }
 
     public static bool operator ==( EndPointKey? left, EndPointKey? right )

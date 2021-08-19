@@ -1,6 +1,7 @@
 using System ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
@@ -9,20 +10,42 @@ namespace Arent3d.Architecture.Routing.EndPoints
   {
     public const string Type = "Route" ;
 
-    private static readonly Regex _parameterParser = new Regex( @"^(.*)/(\d+)$", RegexOptions.Singleline | RegexOptions.Compiled ) ;
+    private enum SerializeField
+    {
+      RouteName,
+      SubRouteIndex,
+      ReferenceEndPoint,
+    }
 
     public static RouteEndPoint? ParseParameterString( Document document, string str )
     {
-      var match = _parameterParser.Match( str ) ;
-      if ( false == match.Success ) return null ;
+      var deserializer = new DeserializerObject<SerializeField>( str ) ;
 
-      return new RouteEndPoint( document,  match.Groups[ 1 ].Value, int.Parse( match.Groups[ 2 ].Value ) ) ;
+      if ( deserializer.GetString( SerializeField.RouteName ) is not { } routeName ) return null ;
+      if ( deserializer.GetInt( SerializeField.SubRouteIndex ) is not { } subRouteIndex ) return null ;
+      var referenceEndPointKey = deserializer.GetEndPointKey( SerializeField.ReferenceEndPoint ) ;
+
+      return new RouteEndPoint( document, routeName, subRouteIndex, referenceEndPointKey ) ;
     }
+    public string ParameterString
+    {
+      get
+      {
+        var stringifier = new SerializerObject<SerializeField>() ;
 
+        stringifier.AddNonNull( SerializeField.RouteName, RouteName ) ;
+        stringifier.Add( SerializeField.SubRouteIndex, SubRouteIndex ) ;
+        stringifier.AddNullable( SerializeField.ReferenceEndPoint, ReferenceEndPointKey ) ;
+
+        return stringifier.ToString() ;
+      }
+    }
 
 
     public string TypeName => Type ;
     public EndPointKey Key => new EndPointKey( TypeName, ParameterString ) ;
+
+    public EndPointKey? ReferenceEndPointKey { get ; }
 
     public bool IsReplaceable => true ;
 
@@ -30,7 +53,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private readonly Document _document ;
 
-    public string ParameterString => $"{RouteName}/{SubRouteIndex}" ;
     public XYZ RoutingStartPosition => throw new InvalidOperationException() ;
 
     public string RouteName { get ; private set ; } = null! ;
@@ -45,16 +67,18 @@ namespace Arent3d.Architecture.Routing.EndPoints
       SubRouteIndex = subRouteIndex ;
     }
 
-    public RouteEndPoint( SubRoute subRoute )
+    public RouteEndPoint( SubRoute subRoute, EndPointKey? referenceEndPointKey )
     {
       _document = subRoute.Route.Document ;
       UpdateRoute( subRoute.Route.RouteName, subRoute.SubRouteIndex ) ;
+      ReferenceEndPointKey = referenceEndPointKey ;
     }
 
-    public RouteEndPoint( Document document, string routeName, int subRouteIndex )
+    private RouteEndPoint( Document document, string routeName, int subRouteIndex, EndPointKey? referenceEndPointKey )
     {
       _document = document ;
-      UpdateRoute( routeName,subRouteIndex ) ;
+      UpdateRoute( routeName, subRouteIndex ) ;
+      ReferenceEndPointKey = referenceEndPointKey ;
     }
 
     public XYZ GetRoutingDirection( bool isFrom ) => throw new InvalidOperationException() ;

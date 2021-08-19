@@ -1,4 +1,5 @@
 using Arent3d.Revit ;
+using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
@@ -7,24 +8,42 @@ namespace Arent3d.Architecture.Routing.EndPoints
   {
     public const string Type = "Terminate Point" ;
 
-    private static readonly char[] Separator = { '/' } ;
+    private enum SerializeField
+    {
+      TerminatePointId,
+      Diameter,
+      Position,
+      Direction,
+      LinkedInstanceId,
+    }
 
     public static TerminatePointEndPoint? ParseParameterString( Document document, string str )
     {
-      var array = str.Split( Separator ) ;
-      if ( array.Length < 9 ) return null ;
+      var deserializer = new DeserializerObject<SerializeField>( str ) ;
 
-      if ( false == int.TryParse( array[ 0 ], out var terminatePointId ) ) return null ;
-      var radius = double.TryParse( array[ 1 ], out var diameter ) ? (double?) ( diameter * 0.5 ) : null ;
-      if ( false == double.TryParse( array[ 2 ], out var posX ) ) return null ;
-      if ( false == double.TryParse( array[ 3 ], out var posY ) ) return null ;
-      if ( false == double.TryParse( array[ 4 ], out var posZ ) ) return null ;
-      if ( false == double.TryParse( array[ 5 ], out var dirX ) ) return null ;
-      if ( false == double.TryParse( array[ 6 ], out var dirY ) ) return null ;
-      if ( false == double.TryParse( array[ 7 ], out var dirZ ) ) return null ;
-      if ( false == int.TryParse( array[ 8 ], out var linkedInstanceId ) ) return null ;
+      if ( deserializer.GetElementId( SerializeField.TerminatePointId ) is not { } terminatePointId ) return null ;
+      var diameter = deserializer.GetDouble( SerializeField.Diameter ) ;
+      if ( deserializer.GetXYZ( SerializeField.Position ) is not { } position ) return null ;
+      if ( deserializer.GetXYZ( SerializeField.Direction ) is not { } direction ) return null ;
+      if ( deserializer.GetElementId( SerializeField.LinkedInstanceId ) is not { } linkedInstanceId ) return null ;
 
-      return new TerminatePointEndPoint( document, new ElementId( terminatePointId ), new XYZ( posX, posY, posZ ), new XYZ( dirX, dirY, dirZ ), radius, new ElementId( linkedInstanceId ) ) ;
+      return new TerminatePointEndPoint( document, terminatePointId, position, direction, diameter * 0.5, linkedInstanceId ) ;
+    }
+
+    public string ParameterString
+    {
+      get
+      {
+        var stringifier = new SerializerObject<SerializeField>() ;
+
+        stringifier.Add( SerializeField.TerminatePointId, TerminatePointId ) ;
+        stringifier.Add( SerializeField.Diameter, GetDiameter() ) ;
+        stringifier.AddNonNull( SerializeField.Position, RoutingStartPosition ) ;
+        stringifier.AddNonNull( SerializeField.Direction, Direction ) ;
+        stringifier.Add( SerializeField.LinkedInstanceId, LinkedInstanceId ) ;
+
+        return stringifier.ToString() ;
+      }
     }
 
 
@@ -41,8 +60,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public ElementId LinkedInstanceId { get ; private set ; }
 
     public Instance? GetTerminatePoint() => _document.GetElementById<Instance>( TerminatePointId ) ;
-
-    public string ParameterString => $"{TerminatePointId.IntegerValue}/{GetDiameter()?.ToString() ?? "---"}/{RoutingStartPosition.X}/{RoutingStartPosition.Y}/{RoutingStartPosition.Z}/{Direction.X}/{Direction.Y}/{Direction.Z}/{LinkedInstanceId.IntegerValue}" ;
 
     private XYZ PreferredPosition { get ; set ; } = XYZ.Zero ;
     public XYZ RoutingStartPosition => GetTerminatePoint()?.GetTotalTransform().Origin ?? PreferredPosition ;
