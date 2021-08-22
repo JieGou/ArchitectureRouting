@@ -319,7 +319,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public static ISelectionFilter GetInstance( AddInType addInType )
       {
         if ( false == _dic.TryGetValue( addInType, out var filter ) ) {
-          filter = new FamilyInstanceWithConnectorFilter( addInType ) ;
+          filter = new FamilyInstanceWithConnectorFilter( addInType, true ) ;
           _dic.Add( addInType, filter ) ;
         }
 
@@ -328,9 +328,12 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       private readonly AddInType _addInType ;
 
-      protected FamilyInstanceWithConnectorFilter( AddInType addInType )
+      private bool AllowRoute { get ; }
+
+      protected FamilyInstanceWithConnectorFilter( AddInType addInType, bool allowRoute )
       {
         _addInType = addInType ;
+        AllowRoute = allowRoute ;
       }
 
       public bool AllowElement( Element elem )
@@ -345,7 +348,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       private static bool IsRoutableForCenter( Element elem )
       {
-        return ( elem is FamilyInstance fi ) && ( false == fi.IsPassPoint() ) ;
+        return ( elem is FamilyInstance fi ) && ( false == fi.IsPassPoint() ) && ( false == elem.IsAutoRoutingGeneratedElement() ) ;
       }
 
       private static bool IsRoutableForRoom( Element elem )
@@ -357,8 +360,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         return elem switch
         {
-          MEPCurve => true,
-          FamilyInstance fi => IsEquipment( fi ) || elem.IsAutoRoutingGeneratedElement(),
+          MEPCurve => AllowRoute,
+          FamilyInstance fi => IsEquipment( fi ) || ( AllowRoute && elem.IsAutoRoutingGeneratedElement() ),
           _ => false,
         } ;
       }
@@ -445,9 +448,17 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       private readonly IPickResult _compatibleResult ;
 
-      public FamilyInstanceCompatibleToTargetConnectorFilter( IPickResult compatibleResult, AddInType addInType ) : base( addInType )
+      public FamilyInstanceCompatibleToTargetConnectorFilter( IPickResult compatibleResult, AddInType addInType ) : base( addInType, AllowsPickRoute( compatibleResult, addInType ) )
       {
         _compatibleResult = compatibleResult ;
+      }
+
+      private static bool AllowsPickRoute( IPickResult compatibleResult, AddInType addInType )
+      {
+        if ( AddInType.Electrical == addInType ) return true ;
+        if ( null == compatibleResult.SubRoute ) return true ;
+
+        return false ;
       }
 
       protected override bool IsTargetConnector( Connector connector )
