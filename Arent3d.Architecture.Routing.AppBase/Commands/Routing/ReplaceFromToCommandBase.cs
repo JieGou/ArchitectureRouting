@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var array = route.RouteSegments.SelectMany( GetReplaceableEndPoints ).ToArray() ;
       // TODO: selection ui
 
-      var sv = new SelectEndPoint( array ) { Title = message } ;
+      var sv = new SelectEndPoint( route, array ) { Title = message } ;
       sv.ShowDialog() ;
 
       uiDocument.ClearSelection() ;

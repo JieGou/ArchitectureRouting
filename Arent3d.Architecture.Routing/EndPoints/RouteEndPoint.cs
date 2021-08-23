@@ -1,6 +1,8 @@
 using System ;
+using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Utility ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
@@ -52,6 +54,33 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public bool IsOneSided => false ;
 
     private readonly Document _document ;
+
+    public XYZ GetIndicatorPosition( Route ownerRoute )
+    {
+      var ownerRouteName = ownerRoute.RouteName ;
+      return _document.GetAllElementsOfRouteName<FamilyInstance>( RouteName ).FirstOrDefault( elm => IsJoiningTo( elm, ownerRouteName ) )?.GetTotalTransform().Origin ?? XYZ.Zero ;
+    }
+
+    private static bool IsJoiningTo( Element elm, string ownerRouteName )
+    {
+      var connectors = elm.GetConnectors().EnumerateAll() ;
+      if ( connectors.Count < 3 ) return false ;
+
+      return connectors.Any( c => IsJoiningTo( c, ownerRouteName ) ) ;
+    }
+    private static bool IsJoiningTo( Connector connector, string ownerRouteName )
+    {
+      return connector.GetConnectedConnectors().Any( c => c.Owner.GetRouteName() == ownerRouteName || IsJunctionJoiningTo( c.Owner, ownerRouteName, c.Id ) ) ;
+    }
+    private static bool IsJunctionJoiningTo( Element elm, string ownerRouteName, int exceptId )
+    {
+      if ( elm is not FamilyInstance ) return false ;
+
+      var connectors = elm.GetConnectors().EnumerateAll() ;
+      if ( 2 != connectors.Count ) return false ;
+
+      return IsJoiningTo( connectors.First( c => c.Id != exceptId ), ownerRouteName ) ;
+    }
 
     public XYZ RoutingStartPosition => throw new InvalidOperationException() ;
 

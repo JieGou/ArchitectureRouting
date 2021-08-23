@@ -62,6 +62,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public Instance? GetPassPoint() => Document.GetElementById<Instance>( PassPointId ) ;
 
     private XYZ PreferredPosition { get ; set ; } = XYZ.Zero ;
+
+    public XYZ GetIndicatorPosition( Route ownerRoute ) => RoutingStartPosition ;
     
     public XYZ RoutingStartPosition => GetPreferredStartPosition() ;
     private XYZ PreferredDirection { get ; set ; } = XYZ.Zero ;

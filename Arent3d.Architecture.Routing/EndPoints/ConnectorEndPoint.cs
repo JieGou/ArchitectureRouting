@@ -60,6 +60,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public string ParameterString => BuildParameterString( EquipmentId, ConnectorIndex ) ;
 
+    public XYZ GetIndicatorPosition( Route ownerRoute ) => RoutingStartPosition ;
+
     public XYZ RoutingStartPosition => GetConnector()?.Origin ?? XYZ.Zero ;
 
     public ConnectorEndPoint( Connector connector )

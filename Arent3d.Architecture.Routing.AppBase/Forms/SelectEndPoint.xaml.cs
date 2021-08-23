@@ -1,13 +1,11 @@
 ﻿using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using System ;
 using System.Collections.ObjectModel ;
 using System.ComponentModel ;
 using System.Runtime.CompilerServices ;
 using System.Windows ;
 using System.Linq ;
-using Arent3d.Revit ;
-using Arent3d.Architecture.Routing.EndPoints;
+using Arent3d.Architecture.Routing.EndPoints ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -16,19 +14,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   /// </summary>
   public partial class SelectEndPoint : Window
   {
-    private readonly IEndPoint? _firstEndPoint;
+    private readonly IEndPoint? _firstEndPoint ;
 
     public ObservableCollection<EndPointInfoClass> EndPointList { get ; } = new() ;
 
-    public SelectEndPoint( IEndPoint[] points, IEndPoint? firstEndPoint = null )
+    public SelectEndPoint( Route route, IEndPoint[] points, IEndPoint? firstEndPoint = null )
     {
       InitializeComponent() ;
 
-      _firstEndPoint = firstEndPoint;
+      _firstEndPoint = firstEndPoint ;
 
-        foreach ( IEndPoint conn in points )  {
-            EndPointList.Add( new EndPointInfoClass(conn ) ) ;
-        }
+      foreach ( IEndPoint conn in points ) {
+        EndPointList.Add( new EndPointInfoClass( route, conn ) ) ;
+      }
 
       this.Left = 0 ;
       this.Top += 10 ;
@@ -36,58 +34,52 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public class EndPointInfoClass : INotifyPropertyChanged
     {
+      private bool _isSelected = false ;
 
-        private bool _isSelected = false;
-
-        public bool IsSelected
+      public bool IsSelected
+      {
+        get => _isSelected ;
+        set
         {
-            get => _isSelected;
-            set
-            {
-                _isSelected = value;
-                NotifyPropertyChanged();
-            }
+          _isSelected = value ;
+          NotifyPropertyChanged() ;
         }
+      }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+      public event PropertyChangedEventHandler? PropertyChanged ;
 
-        //private Element Element { get ; }
+      //private Element Element { get ; }
 
-        private XYZ? ConnectorPosition { get; }
-        private IEndPoint? Pointer { get; }
+      private XYZ? ConnectorPosition { get ; }
+      private IEndPoint? Pointer { get ; }
 
-        public EndPointInfoClass( IEndPoint point )
-        {
-            Pointer = point;
-            ConnectorPosition = point.RoutingStartPosition;
+      public EndPointInfoClass( Route route, IEndPoint point )
+      {
+        Pointer = point ;
+        ConnectorPosition = point.GetIndicatorPosition( route ) ;
+      }
 
+      private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )
+      {
+        PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
+      }
+
+      public IEndPoint? GetEndPoint()
+      {
+        if ( false == IsSelected ) return null ;
+
+        return Pointer ;
+      }
+
+      public override string ToString()
+      {
+        if ( null != Pointer ) {
+          return $"{Pointer.TypeName} - {ConnectorPosition?.X}, {ConnectorPosition?.Y}, {ConnectorPosition?.Z}" ;
         }
-
-        private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )
-        {
-            PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
+        else {
+          return "" ;
         }
-
-        public IEndPoint? GetEndPoint()
-        {
-            if ( false == IsSelected )
-                return null;
-
-            if ( null != Pointer )
-                return Pointer;
-
-            return null;
-        }
-        public override string ToString()
-        {
-            if ( null != Pointer ) {
-                return $"{Pointer.TypeName} - {ConnectorPosition?.X}, {ConnectorPosition?.Y}, {ConnectorPosition?.Z}";
-            }
-            else {
-                return "";
-            }
-
-        }
+      }
     }
 
     private void Button_Click( object sender, RoutedEventArgs e )
@@ -98,7 +90,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public IEndPoint GetSelectedEndPoint()
     {
-        return EndPointList.Select( cic => cic.GetEndPoint() ).NonNull().FirstOrDefault();
+      return EndPointList.Select( cic => cic.GetEndPoint() ).NonNull().FirstOrDefault()! ;
     }
   }
 }
