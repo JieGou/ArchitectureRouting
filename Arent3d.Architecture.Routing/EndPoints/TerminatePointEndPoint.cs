@@ -63,8 +63,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private XYZ PreferredPosition { get ; set ; } = XYZ.Zero ;
 
-    public XYZ GetIndicatorPosition( Route ownerRoute ) => RoutingStartPosition ;
-
     public XYZ RoutingStartPosition => GetTerminatePoint()?.GetTotalTransform().Origin ?? PreferredPosition ;
     private XYZ PreferredDirection { get ; set ; } = XYZ.Zero ;
     public XYZ Direction => GetTerminatePoint()?.GetTotalTransform().BasisX ?? PreferredDirection ;

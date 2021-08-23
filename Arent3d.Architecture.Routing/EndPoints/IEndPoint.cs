@@ -36,12 +36,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
     Connector? GetReferenceConnector() ;
 
     /// <summary>
-    /// Returns a position to show on UI.
-    /// </summary>
-    /// <param name="ownerRoute">Owner route of this end point.</param>
-    XYZ GetIndicatorPosition( Route ownerRoute ) ;
-
-    /// <summary>
     /// Returns the start position of routing.
     /// </summary>
     XYZ RoutingStartPosition { get ; }

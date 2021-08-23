@@ -64,6 +64,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new PseudoPickResult( subRoute, anotherEndPoint ) ;
     }
 
+    public static IEndPoint CreateRouteEndPoint( ConnectorPicker.IPickResult routePickResult )
+    {
+      return new RouteEndPoint( routePickResult.SubRoute!, routePickResult.EndPointOverSubRoute ) ;
+    }
+
     private static (SubRoute, IEndPoint) GetOtherEndPoint( Route route, IEndPoint endPoint )
     {
       var endPointSubRouteMap = new Dictionary<IEndPoint, (SubRoute? OfFrom, SubRoute? OfTo)>() ;
@@ -139,7 +144,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           EndPointOverSubRoute = routeEndPoint.ReferenceEndPointKey ;
         }
         else {
-          SubRoute = subRoute ;
+          SubRoute = null ;
           EndPointOverSubRoute = null ;
         }
       }

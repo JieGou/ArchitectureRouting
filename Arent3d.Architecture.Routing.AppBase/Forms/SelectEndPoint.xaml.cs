@@ -1,4 +1,5 @@
-﻿using Arent3d.Utility ;
+﻿using System ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
 using System.ComponentModel ;
@@ -6,6 +7,7 @@ using System.Runtime.CompilerServices ;
 using System.Windows ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Revit ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -18,14 +20,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public ObservableCollection<EndPointInfoClass> EndPointList { get ; } = new() ;
 
-    public SelectEndPoint( Route route, IEndPoint[] points, IEndPoint? firstEndPoint = null )
+    public SelectEndPoint( Document document, IEndPoint[] points, IEndPoint? firstEndPoint = null )
     {
       InitializeComponent() ;
 
       _firstEndPoint = firstEndPoint ;
 
       foreach ( IEndPoint conn in points ) {
-        EndPointList.Add( new EndPointInfoClass( route, conn ) ) ;
+        EndPointList.Add( new EndPointInfoClass( document, conn ) ) ;
       }
 
       this.Left = 0 ;
@@ -48,15 +50,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       public event PropertyChangedEventHandler? PropertyChanged ;
 
-      //private Element Element { get ; }
-
-      private XYZ? ConnectorPosition { get ; }
       private IEndPoint? Pointer { get ; }
+      private readonly string _label ;
 
-      public EndPointInfoClass( Route route, IEndPoint point )
+      public EndPointInfoClass( Document document, IEndPoint point )
       {
         Pointer = point ;
-        ConnectorPosition = point.GetIndicatorPosition( route ) ;
+        if ( point is RouteEndPoint routeEndPoint ) {
+          _label = $"{routeEndPoint.TypeName} - {routeEndPoint.RouteName}" ;
+        }
+        else {
+          var position = point.RoutingStartPosition ;
+          _label = $"{Pointer.TypeName} - {GetDisplayValue( document, position.X )}, {GetDisplayValue( document, position.Y )}, {GetDisplayValue( document, position.Z )}" ;
+        }
+      }
+
+      private static string GetDisplayValue( Document document, double value )
+      {
+        if ( DisplayUnit.METRIC == document.DisplayUnitSystem ) {
+          return value.RevitUnitsToMeters().ToString( "F2" ) ;
+        }
+        else {
+          return value.RevitUnitsToFeet().ToString( "F2" ) ;
+        }
       }
 
       private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )
@@ -71,15 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         return Pointer ;
       }
 
-      public override string ToString()
-      {
-        if ( null != Pointer ) {
-          return $"{Pointer.TypeName} - {ConnectorPosition?.X}, {ConnectorPosition?.Y}, {ConnectorPosition?.Z}" ;
-        }
-        else {
-          return "" ;
-        }
-      }
+      public override string ToString() => _label ;
     }
 
     private void Button_Click( object sender, RoutedEventArgs e )

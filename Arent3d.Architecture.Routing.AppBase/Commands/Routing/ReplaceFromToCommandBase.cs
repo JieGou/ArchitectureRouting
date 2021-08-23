@@ -4,6 +4,8 @@ using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.UI ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
@@ -29,8 +31,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       await Task.Yield() ;
 
-      oldEndPoint.EraseInstance() ;
-      newEndPoint.GenerateInstance( route.RouteName ) ;
+      if ( oldEndPoint is RouteEndPoint routeEndPoint ) {
+        var routes = RouteCache.Get( route.Document ) ;
+        foreach ( var tuple in routes[ routeEndPoint.RouteName ].ToSegmentsWithName().EnumerateAll() ) {
+          yield return tuple ;
+        }
+      }
+
+      ThreadDispatcher.Dispatch( () =>
+      {
+        oldEndPoint.EraseInstance() ;
+        newEndPoint.GenerateInstance( route.RouteName ) ;
+      } ) ;
 
       foreach ( var (routeName, segment) in route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll() ) {
         segment.ReplaceEndPoint( oldEndPoint, newEndPoint ) ;
@@ -47,7 +59,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var array = route.RouteSegments.SelectMany( GetReplaceableEndPoints ).ToArray() ;
       // TODO: selection ui
 
-      var sv = new SelectEndPoint( route, array ) { Title = message } ;
+      var sv = new SelectEndPoint( uiDocument.Document, array ) { Title = message } ;
       sv.ShowDialog() ;
 
       uiDocument.ClearSelection() ;
@@ -70,6 +82,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var fromPickResult = PickCommandUtil.PickResultFromAnother( route, endPoint ) ;
       var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ; //Implement after
 
+      if ( null != toPickResult.SubRoute ) {
+        return PickCommandUtil.CreateRouteEndPoint( toPickResult ) ;
+      }
+      
       return PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
     }
 
