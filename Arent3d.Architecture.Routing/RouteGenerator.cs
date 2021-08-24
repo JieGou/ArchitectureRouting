@@ -137,7 +137,7 @@ namespace Arent3d.Architecture.Routing
 
     protected virtual IEnumerable<Element> CreateEdges( MEPSystemCreator mepSystemCreator, AutoRoutingResult result )
     {
-      return result.RouteEdges.Select( routeEdge => mepSystemCreator.CreateEdgeElement( routeEdge, result.GetPassingEndPointInfo( routeEdge ) ) ) ;
+      return result.RouteEdges.Select( routeEdge => mepSystemCreator.CreateEdgeElement( routeEdge, mepSystemCreator.AutoRoutingTarget.GetSubRoute( routeEdge ), result.GetPassingEndPointInfo( routeEdge ) ) ) ;
     }
 
     private void RegisterBadConnectors( IEnumerable<Connector[]> badConnectorSet )

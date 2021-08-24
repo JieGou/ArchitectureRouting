@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -589,12 +590,14 @@ namespace Arent3d.Architecture.Routing
 
     public static IEnumerable<Route> CollectRoutes( this Document document, AddInType addInType )
     {
+      var routes = RouteCache.Get( document ).Values ;
+
       return addInType switch
       {
-        AddInType.Electrical => document.GetAllStorables<Route>().Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Electrical ),
-        AddInType.Mechanical => document.GetAllStorables<Route>().Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Mechanical ),
-        AddInType.Undefined => document.GetAllStorables<Route>().Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Undefined ),
-        _ => document.GetAllStorables<Route>().Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Undefined )
+        AddInType.Electrical => routes.Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Electrical ),
+        AddInType.Mechanical => routes.Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Mechanical ),
+        AddInType.Undefined => routes.Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Undefined ),
+        _ => routes.Where( r => r.GetSystemClassificationInfo().AddInType == AddInType.Undefined )
       } ;
     }
 

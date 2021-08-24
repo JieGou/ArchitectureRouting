@@ -14,22 +14,39 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     public static IDisposable SetTempColor( this UIDocument uiDocument, ConnectorPicker.IPickResult pickResult )
     {
-      var tempColor = new TempColor( uiDocument.ActiveView, new Color( 0, 0, 255 ) ) ;
-      uiDocument.Document.Transaction( "TransactionName.Commands.Routing.Common.ChangeColor".GetAppStringByKeyOrDefault( null ), t =>
-      {
-        tempColor.AddRange( pickResult.GetAllRelatedElements() ) ;
-        return Result.Succeeded ;
-      } ) ;
-      return tempColor ;
+      return new TempColorWrapper( uiDocument, pickResult.GetAllRelatedElements() ) ;
     }
 
-    public static void DisposeTempColor( this Document document, IDisposable tempColor )
+    private class TempColorWrapper : IDisposable
     {
-      document.Transaction( "TransactionName.Commands.Routing.Common.RevertColor".GetAppStringByKeyOrDefault( null ), t =>
+      private readonly Document _document ;
+      private readonly TempColor _tempColor ;
+      public TempColorWrapper( UIDocument uiDocument, IEnumerable<ElementId> elements )
       {
-        tempColor.Dispose() ;
-        return Result.Succeeded ;
-      } ) ;
+        _document = uiDocument.Document ;
+        _tempColor = new TempColor( uiDocument.ActiveView, new Color( 0, 0, 255 ) ) ;
+        _document.Transaction( "TransactionName.Commands.Routing.Common.ChangeColor".GetAppStringByKeyOrDefault( null ), t =>
+        {
+          _tempColor.AddRange( elements ) ;
+          return Result.Succeeded ;
+        } ) ;
+      }
+
+      public void Dispose()
+      {
+        GC.SuppressFinalize( this ) ;
+
+        _document.Transaction( "TransactionName.Commands.Routing.Common.RevertColor".GetAppStringByKeyOrDefault( null ), t =>
+        {
+          _tempColor.Dispose() ;
+          return Result.Succeeded ;
+        } ) ;
+      }
+
+      ~TempColorWrapper()
+      {
+        throw new InvalidOperationException( $"`{nameof( TempColorWrapper )}` is not disposed. Use `using` statement." ) ;
+      }
     }
 
     public static IEndPoint GetEndPoint( ConnectorPicker.IPickResult pickResult, ConnectorPicker.IPickResult anotherResult )
@@ -58,10 +75,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    public static ConnectorPicker.IPickResult PickResultFromAnother( Route route, IEndPoint endPoint )
+    public static (ConnectorPicker.IPickResult PickResult, bool AnotherIsFrom) PickResultFromAnother( Route route, IEndPoint endPoint )
     {
-      var (subRoute, anotherEndPoint) = GetOtherEndPoint( route, endPoint ) ;
-      return new PseudoPickResult( subRoute, anotherEndPoint ) ;
+      var ((subRoute, anotherEndPoint), isFrom) = GetOtherEndPoint( route, endPoint ) ;
+      return (new PseudoPickResult( subRoute, anotherEndPoint ), isFrom) ;
     }
 
     public static IEndPoint CreateRouteEndPoint( ConnectorPicker.IPickResult routePickResult )
@@ -69,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new RouteEndPoint( routePickResult.SubRoute!, routePickResult.EndPointOverSubRoute ) ;
     }
 
-    private static (SubRoute, IEndPoint) GetOtherEndPoint( Route route, IEndPoint endPoint )
+    private static ((SubRoute SubRoute, IEndPoint EndPoint), bool IsFrom) GetOtherEndPoint( Route route, IEndPoint endPoint )
     {
       var endPointSubRouteMap = new Dictionary<IEndPoint, (SubRoute? OfFrom, SubRoute? OfTo)>() ;
       foreach ( var subRoute in route.SubRoutes ) {
@@ -98,10 +115,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( false == endPointSubRouteMap.TryGetValue( endPoint, out var ofFromTo ) ) throw new InvalidOperationException() ;
 
       if ( null != ofFromTo.OfFrom ) {
-        return TrailFrom( endPointSubRouteMap, ofFromTo.OfFrom ) ?? throw new InvalidOperationException() ;
+        return (TrailFrom( endPointSubRouteMap, ofFromTo.OfFrom ) ?? throw new InvalidOperationException(), true) ;
       }
       else {
-        return TrailTo( endPointSubRouteMap, ofFromTo.OfTo! ) ?? throw new InvalidOperationException() ;
+        return (TrailTo( endPointSubRouteMap, ofFromTo.OfTo! ) ?? throw new InvalidOperationException(), false) ;
       }
     }
 
@@ -141,7 +158,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         if ( endPoint is RouteEndPoint routeEndPoint ) {
           SubRoute = routeEndPoint.GetSubRoute() ?? subRoute ;
-          EndPointOverSubRoute = routeEndPoint.ReferenceEndPointKey ;
+          EndPointOverSubRoute = routeEndPoint.EndPointKeyOverSubRoute ;
         }
         else {
           SubRoute = null ;

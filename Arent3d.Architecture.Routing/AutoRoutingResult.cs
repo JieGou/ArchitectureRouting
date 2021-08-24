@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing
       // IAutoRoutingResult.RouteEdges returns different instances between calls. AutoRoutingResult will preserve them.
       RouteEdges = result.RouteEdges.EnumerateAll() ;
 
-      _passingEndPointInfo = PassingEndPointInfo.CollectPassingEndPointInfo( this ) ;
+      _passingEndPointInfo = PassingEndPointInfo.CollectPassingEndPointInfo( RouteEdges ) ;
     }
 
     public PassingEndPointInfo GetPassingEndPointInfo( IRouteEdge edge )

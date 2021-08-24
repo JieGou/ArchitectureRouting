@@ -8,17 +8,17 @@ namespace Arent3d.Architecture.Routing
 {
   public class PassingEndPointInfo
   {
-    public static IReadOnlyDictionary<IRouteEdge, PassingEndPointInfo> CollectPassingEndPointInfo( AutoRoutingResult result )
+    public static IReadOnlyDictionary<IRouteEdge, PassingEndPointInfo> CollectPassingEndPointInfo( IReadOnlyCollection<IRouteEdge> routeEdges )
     {
       var dic = new Dictionary<IRouteEdge, PassingEndPointInfo>() ;
 
       var linkInfo = new Dictionary<IRouteVertex, (List<IRouteEdge> Enter, List<IRouteEdge> Exit)>() ;
-      foreach ( var edge in result.RouteEdges ) {
+      foreach ( var edge in routeEdges ) {
         AddLinkInfo( linkInfo, edge.Start, edge, true ) ;
         AddLinkInfo( linkInfo, edge.End, edge, false ) ;
       }
 
-      foreach ( var edge in result.RouteEdges ) {
+      foreach ( var edge in routeEdges ) {
         SeekEndPoints( dic, linkInfo, edge, true ) ;
         SeekEndPoints( dic, linkInfo, edge, false ) ;
       }
@@ -73,14 +73,19 @@ namespace Arent3d.Architecture.Routing
     private void RegisterFrom( IEndPoint? endPoint )
     {
       if ( null != endPoint ) {
-        _fromEndPoints.Add( endPoint.Key, endPoint ) ;
+        _fromEndPoints.Add( GetTrueEndPointKey( endPoint ), endPoint ) ;
       }
     }
     private void RegisterTo( IEndPoint? endPoint )
     {
       if ( null != endPoint ) {
-        _toEndPoints.Add( endPoint.Key, endPoint ) ;
+        _toEndPoints.Add( GetTrueEndPointKey( endPoint ), endPoint ) ;
       }
+    }
+
+    private static EndPointKey GetTrueEndPointKey( IEndPoint endPoint )
+    {
+      return ( endPoint as RouteEndPoint )?.EndPointKeyOverSubRoute ?? endPoint.Key ;
     }
 
     private void RegisterFrom( IEnumerable<KeyValuePair<EndPointKey, IEndPoint>> endPoints )
@@ -111,13 +116,17 @@ namespace Arent3d.Architecture.Routing
     public IEnumerable<IEndPoint> FromEndPoints => _fromEndPoints.Values ;
     public IEnumerable<IEndPoint> ToEndPoints => _toEndPoints.Values ;
 
+    public bool TryGetFromEndPoint( EndPointKey key, out IEndPoint endPoint ) => _fromEndPoints.TryGetValue( key, out endPoint ) ;
+    public bool TryGetToEndPoint( EndPointKey key, out IEndPoint endPoint ) => _toEndPoints.TryGetValue( key, out endPoint ) ;
+    
+
     
     public PassingEndPointInfo CreateSubPassingEndPointInfo( IEndPoint fromEndPoint, IEndPoint toEndPoint )
     {
       var result = new PassingEndPointInfo() ;
 
-      result._fromEndPoints.Add( fromEndPoint.Key, fromEndPoint ) ;
-      result._toEndPoints.Add( toEndPoint.Key, toEndPoint ) ;
+      result.RegisterFrom( fromEndPoint ) ;
+      result.RegisterTo( toEndPoint ) ;
 
       return result ;
     }

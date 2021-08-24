@@ -102,6 +102,11 @@
         <key>TransactionName.Commands.Routing.Common.RevertColor</key>
         <string>Restore Color for Highlighting</string>
 
+        <key>TransactionName.Commands.Routing.Common.PickEndPointOverSubRoute</key>
+        <string>Show End Points</string>
+        <key>TransactionName.Commands.Routing.Common.EndPickEndPointOverSubRoute</key>
+        <string>Hide End Points</string>
+
         <key>TransactionName.Commands.Routing.PickRouting</key>
         <string>Add From-To</string>
 
@@ -156,6 +161,8 @@
         <string>Pick the FROM point of a from-to.</string>
         <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
         <string>Pick the TO point of a from-to.</string>
+        <key>Dialog.Commands.Routing.PickRouting.PickEndPointOverSubRoute</key>
+        <string>Pick the continued point of a from-to.</string>
 
         <key>Dialog.Commands.Routing.PickAndReRoute.Pick</key>
         <string>Pick a from-to to reroute.</string>

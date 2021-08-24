@@ -1,9 +1,11 @@
 using System.Collections.Generic ;
 using System.ComponentModel ;
 using System.Reflection ;
+using System.Runtime.Remoting.Channels ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
@@ -37,6 +39,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
     protected override IAppUIBase? CreateAppUI( UIControlledApplication application )
     {
+      RouteCache.CacheRefreshed += ( _, _ ) => FromToTreeManager.UpdateTreeView( AddInType.Electrical ) ;
+
       return RoutingAppUI.Create( application ) ;
     }
 

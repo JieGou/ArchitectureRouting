@@ -2,7 +2,9 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Routing ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 
@@ -19,61 +21,34 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     protected override IEnumerable<Element> CreateEdges( MEPSystemCreator mepSystemCreator, AutoRoutingResult result )
     {
       var autoRoutingTarget = mepSystemCreator.AutoRoutingTarget ;
+      var allFromToList = autoRoutingTarget.GetAllSubRoutes().SelectMany( GetFromToEndPointKeys ).EnumerateAll() ;
       foreach ( var routeEdge in result.RouteEdges ) {
-        var subRoute = autoRoutingTarget.GetSubRoute( routeEdge ) ;
         var passingEndPointInfo = result.GetPassingEndPointInfo( routeEdge ) ;
-
-        foreach ( var (splitRouteEdge, splitPassingEndPointInfo) in SplitRouteEdgeBySegment( routeEdge, passingEndPointInfo, subRoute ) ) {
-          yield return mepSystemCreator.CreateEdgeElement( splitRouteEdge, splitPassingEndPointInfo ) ;
+        foreach ( var (subRoute, splitRouteEdge, splitPassingEndPointInfo) in GetMatchingRouteEdgeBySegments( allFromToList, routeEdge, passingEndPointInfo ) ) {
+          yield return mepSystemCreator.CreateEdgeElement( splitRouteEdge, subRoute, splitPassingEndPointInfo ) ;
         }
       }
     }
 
-    private IEnumerable<(IRouteEdge, PassingEndPointInfo)> SplitRouteEdgeBySegment( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo, SubRoute subRoute )
+    private static IEnumerable<(SubRoute, EndPointKey, EndPointKey)> GetFromToEndPointKeys( SubRoute subRoute )
     {
-      var fromPoints = passingEndPointInfo.FromEndPoints.ToList() ;
-      var toPoints = passingEndPointInfo.ToEndPoints.ToList() ;
+      return subRoute.Segments.Select( segment => ( subRoute, GetConnectingEndPointKey( segment.FromEndPoint ), GetConnectingEndPointKey( segment.ToEndPoint ) ) ) ;
+    }
 
-      while ( 0 < fromPoints.Count && 0 < toPoints.Count ) {
-        if ( 1 == fromPoints.Count ) {
-          var fromPoint = fromPoints[ 0 ] ;
-          var fromPointKey = fromPoint.Key ;
-          foreach ( var toPoint in toPoints ) {
-            var toPointKey = toPoint.Key ;
-            var splitRouteEdge = CreateSplitRouteEdge( routeEdge, ( fromPointKey, toPointKey ) ) ;
-            var splitPassingEndPointInfo = passingEndPointInfo.CreateSubPassingEndPointInfo( fromPoint, toPoint ) ;
-            yield return ( splitRouteEdge, splitPassingEndPointInfo ) ;
-          }
-          yield break ;
-        }
+    private static EndPointKey GetConnectingEndPointKey( IEndPoint endPoint )
+    {
+      return ( endPoint as RouteEndPoint )?.EndPointKeyOverSubRoute ?? endPoint.Key ;
+    }
 
-        if ( 1 == toPoints.Count ) {
-          var toPoint = toPoints[ 0 ] ;
-          var toPointKey = toPoint.Key ;
-          foreach ( var fromPoint in fromPoints ) {
-            var fromPointKey = fromPoint.Key ;
-            var splitRouteEdge = CreateSplitRouteEdge( routeEdge, ( fromPointKey, toPointKey ) ) ;
-            var splitPassingEndPointInfo = passingEndPointInfo.CreateSubPassingEndPointInfo( fromPoint, toPoint ) ;
-            yield return ( splitRouteEdge, splitPassingEndPointInfo ) ;
-          }
-          yield break ;
-        }
+    private IEnumerable<(SubRoute, IRouteEdge, PassingEndPointInfo)> GetMatchingRouteEdgeBySegments( IReadOnlyCollection<(SubRoute, EndPointKey, EndPointKey)> allFromToList, IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo )
+    {
+      foreach ( var (subRoute, fromEndPointKey, toEndPointKey) in allFromToList ) {
+        if ( false == passingEndPointInfo.TryGetFromEndPoint( fromEndPointKey, out var fromEndPoint ) ) continue ;
+        if ( false == passingEndPointInfo.TryGetToEndPoint( toEndPointKey, out var toEndPoint ) ) continue ;
 
-        {
-          // provisional implementation
-          // TODO: pair true from & to end points (for H type or 工 type junctions)
-          var fromPoint = fromPoints[ 0 ] ;
-          var fromPointKey = fromPoint.Key ;
-          var toPoint = toPoints[ 0 ] ;
-          var toPointKey = toPoint.Key ;
-
-          var splitRouteEdge = CreateSplitRouteEdge( routeEdge, ( fromPointKey, toPointKey ) ) ;
-          var splitPassingEndPointInfo = passingEndPointInfo.CreateSubPassingEndPointInfo( fromPoint, toPoint ) ;
-          yield return ( splitRouteEdge, splitPassingEndPointInfo ) ;
-
-          fromPoints.RemoveAt( 0 ) ;
-          toPoints.RemoveAt( 0 ) ;
-        }
+        var splitRouteEdge = CreateSplitRouteEdge( routeEdge, ( fromEndPointKey, toEndPointKey ) ) ;
+        var splitPassingEndPointInfo = passingEndPointInfo.CreateSubPassingEndPointInfo( fromEndPoint, toEndPoint ) ;
+        yield return ( subRoute, splitRouteEdge, splitPassingEndPointInfo ) ;
       }
     }
 

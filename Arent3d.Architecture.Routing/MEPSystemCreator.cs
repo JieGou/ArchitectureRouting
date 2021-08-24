@@ -92,14 +92,14 @@ namespace Arent3d.Architecture.Routing
     /// Creates a duct from a route edge.
     /// </summary>
     /// <param name="routeEdge">A route edge.</param>
+    /// <param name="subRoute">A SubRoute which routeEdge belongs to.</param>
     /// <param name="passingEndPointInfo">Nearest from & to end points.</param>
     /// <returns>Newly created duct.</returns>
-    public Element CreateEdgeElement( IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo )
+    public Element CreateEdgeElement( IRouteEdge routeEdge, SubRoute subRoute, PassingEndPointInfo passingEndPointInfo )
     {
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZRaw() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZRaw() ;
 
-      var subRoute = AutoRoutingTarget.GetSubRoute( routeEdge ) ;
       var routeMepSystem = _routeConditionDictionary[ subRoute.GetKey() ].Spec.RouteMEPSystem ;
 
       var element = AutoRoutingTarget.Domain switch

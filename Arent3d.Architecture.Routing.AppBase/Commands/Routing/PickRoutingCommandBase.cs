@@ -33,16 +33,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var segments = UiThread.RevitUiDispatcher.Invoke( () =>
       {
         var document = uiDocument.Document ;
-        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
-        var tempColor = uiDocument.SetTempColor( fromPickResult ) ;
-        try {
-          var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
+        using var tempColor = uiDocument.SetTempColor( fromPickResult ) ;
 
-          return CreateNewSegmentList( document, fromPickResult, toPickResult ) ;
-        }
-        finally {
-          document.DisposeTempColor( tempColor ) ;
-        }
+        var toPickResult = ConnectorPicker.GetConnector( uiDocument, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
+        return CreateNewSegmentList( document, fromPickResult, toPickResult ) ;
       } ) ;
 
       return segments ;
@@ -50,10 +45,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
-      if ( fromPickResult.SubRoute is { } subRoute1 ) {
+      if ( null != fromPickResult.SubRoute ) {
         return CreateNewSegmentWhereFromIsSubRoute( document, fromPickResult, toPickResult ) ;
       }
-      if ( toPickResult.SubRoute is { } subRoute2 ) {
+      if ( null != toPickResult.SubRoute ) {
         return CreateNewSegmentWhereToIsSubRoute( document, fromPickResult, toPickResult ) ;
       }
 

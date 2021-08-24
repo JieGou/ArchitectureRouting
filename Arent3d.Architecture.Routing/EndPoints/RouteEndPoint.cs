@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       RouteName,
       SubRouteIndex,
-      ReferenceEndPoint,
+      EndPointKeyOverSubRoute,
     }
 
     public static RouteEndPoint? ParseParameterString( Document document, string str )
@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       if ( deserializer.GetString( SerializeField.RouteName ) is not { } routeName ) return null ;
       if ( deserializer.GetInt( SerializeField.SubRouteIndex ) is not { } subRouteIndex ) return null ;
-      var referenceEndPointKey = deserializer.GetEndPointKey( SerializeField.ReferenceEndPoint ) ;
+      var referenceEndPointKey = deserializer.GetEndPointKey( SerializeField.EndPointKeyOverSubRoute ) ;
 
       return new RouteEndPoint( document, routeName, subRouteIndex, referenceEndPointKey ) ;
     }
@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
         stringifier.AddNonNull( SerializeField.RouteName, RouteName ) ;
         stringifier.Add( SerializeField.SubRouteIndex, SubRouteIndex ) ;
-        stringifier.AddNullable( SerializeField.ReferenceEndPoint, ReferenceEndPointKey ) ;
+        stringifier.AddNullable( SerializeField.EndPointKeyOverSubRoute, EndPointKeyOverSubRoute ) ;
 
         return stringifier.ToString() ;
       }
@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public string TypeName => Type ;
     public EndPointKey Key => new EndPointKey( TypeName, ParameterString ) ;
 
-    public EndPointKey? ReferenceEndPointKey { get ; }
+    public EndPointKey? EndPointKeyOverSubRoute { get ; }
 
     public bool IsReplaceable => true ;
 
@@ -69,18 +69,18 @@ namespace Arent3d.Architecture.Routing.EndPoints
       SubRouteIndex = subRouteIndex ;
     }
 
-    public RouteEndPoint( SubRoute subRoute, EndPointKey? referenceEndPointKey )
+    public RouteEndPoint( SubRoute subRoute, EndPointKey? endPointKeyOverSubRoute )
     {
       _document = subRoute.Route.Document ;
       UpdateRoute( subRoute.Route.RouteName, subRoute.SubRouteIndex ) ;
-      ReferenceEndPointKey = referenceEndPointKey ;
+      EndPointKeyOverSubRoute = endPointKeyOverSubRoute ;
     }
 
-    private RouteEndPoint( Document document, string routeName, int subRouteIndex, EndPointKey? referenceEndPointKey )
+    private RouteEndPoint( Document document, string routeName, int subRouteIndex, EndPointKey? endPointKeyOverSubRoute )
     {
       _document = document ;
       UpdateRoute( routeName, subRouteIndex ) ;
-      ReferenceEndPointKey = referenceEndPointKey ;
+      EndPointKeyOverSubRoute = endPointKeyOverSubRoute ;
     }
 
     public XYZ GetRoutingDirection( bool isFrom ) => throw new InvalidOperationException() ;

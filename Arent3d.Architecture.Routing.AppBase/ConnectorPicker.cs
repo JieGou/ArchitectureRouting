@@ -27,11 +27,11 @@ namespace Arent3d.Architecture.Routing.AppBase
       bool IsCompatibleTo( Element element ) ;
     }
 
-    public static IPickResult GetConnector( UIDocument uiDocument, string message, IPickResult? firstPick, AddInType addInType )
+    public static IPickResult GetConnector( UIDocument uiDocument, bool pickingFromSide, string message, IPickResult? compatiblePickResult, AddInType addInType )
     {
       var document = uiDocument.Document ;
 
-      var filter = ( null == firstPick ) ? FamilyInstanceWithConnectorFilter.GetInstance( addInType ) : new FamilyInstanceCompatibleToTargetConnectorFilter( firstPick, addInType ) ;
+      var filter = ( null == compatiblePickResult ) ? FamilyInstanceWithConnectorFilter.GetInstance( addInType ) : new FamilyInstanceCompatibleToTargetConnectorFilter( compatiblePickResult, addInType ) ;
 
       while ( true ) {
         var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, filter, message ) ;
@@ -40,9 +40,15 @@ namespace Arent3d.Architecture.Routing.AppBase
         if ( null == element ) continue ;
 
         if ( PassPointPickResult.Create( element ) is { } ppResult ) return ppResult ;
-        if ( SubRoutePickResult.Create( element ) is { } srResult ) return srResult ;
+        if ( SubRoutePickResult.Create( element ) is {} srResult ) {
+          if ( AddInType.Electrical == addInType ) {
+            if ( PickEndPointOverSubRoute( uiDocument, srResult, pickingFromSide ) is not { } endPoint ) continue ;
+            srResult = srResult.ApplyEndPointOverSubRoute( endPoint.Key ) ;
+          }
+          return srResult ;
+        }
 
-        var conn = firstPick?.SubRoute?.GetReferenceConnector() ?? firstPick?.PickedConnector ;
+        var conn = compatiblePickResult?.SubRoute?.GetReferenceConnector() ?? compatiblePickResult?.PickedConnector ;
 
         var (result, connector) = FindConnector( uiDocument, element, message, conn, addInType ) ;
         if ( false == result ) continue ;
@@ -52,6 +58,53 @@ namespace Arent3d.Architecture.Routing.AppBase
         }
 
         return new OriginPickResult( element, addInType ) ;
+      }
+    }
+
+    private static IEndPoint? PickEndPointOverSubRoute( UIDocument uiDocument, SubRoutePickResult pickResult, bool pickingFromSide )
+    {
+      var routes = RouteCache.Get( uiDocument.Document ) ;
+      var endPoints = GetAllEndPoints( routes, pickResult.SubRoute!, pickingFromSide ).ToHashSet() ;
+
+      if ( 0 == endPoints.Count ) return null ;
+      if ( 1 == endPoints.Count ) return endPoints.FirstOrDefault() ;
+
+      return ThreadDispatcher.Dispatch( () =>
+      {
+        using var displayEndPoints = new EndPointPicker( uiDocument, pickResult.GetAllRelatedElements(), endPoints ) ;
+        return displayEndPoints.Pick() ;
+      } ) ;
+    }
+
+    private static IEnumerable<IEndPoint> GetAllEndPoints( RouteCache routes, SubRoute subRoute, bool pickingFromSide )
+    {
+      // Direct end points
+      var endPoints = pickingFromSide ? subRoute.FromEndPoints : subRoute.ToEndPoints ;
+      foreach ( var ep in endPoints ) {
+        if ( ep is RouteEndPoint routeEndPoint && routes.GetSubRoute( routeEndPoint.RouteName, routeEndPoint.SubRouteIndex ) is { } baseSubRoute ) {
+          foreach ( var e in GetAllEndPoints( routes, baseSubRoute, pickingFromSide ) ) {
+            yield return e ;
+          }
+        }
+        else {
+          yield return ep ;
+        }
+      }
+
+      // Indirect end points
+      var routeName = subRoute.Route.RouteName ;
+      foreach ( var segment in subRoute.Route.GetChildBranches().SelectMany( route => route.RouteSegments ) ) {
+        if ( ( pickingFromSide ? segment.ToEndPoint : segment.FromEndPoint ) is RouteEndPoint routeEndPointToSubRoute && routeEndPointToSubRoute.RouteName == routeName ) {
+          var ep = ( pickingFromSide ? segment.FromEndPoint : segment.ToEndPoint ) ;
+          if ( ep is RouteEndPoint routeEndPoint && routes.GetSubRoute( routeEndPoint.RouteName, routeEndPoint.SubRouteIndex ) is { } baseSubRoute ) {
+            foreach ( var e in GetAllEndPoints( routes, baseSubRoute, pickingFromSide ) ) {
+              yield return e ;
+            }
+          }
+          else {
+            yield return ep ;
+          }
+        }
       }
     }
 
@@ -112,10 +165,13 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       public XYZ GetOrigin() => GetCenter( _pickedElement ) ;
 
-      private SubRoutePickResult( Element element, SubRoute subRoute, EndPointKey? endPointOverSubRoute )
+      private SubRoutePickResult( Element element, SubRoute subRoute )
       {
         _pickedElement = element ;
         _subRoute = subRoute ;
+      }
+      private SubRoutePickResult( Element element, SubRoute subRoute, EndPointKey endPointOverSubRoute ) : this(element,subRoute)
+      {
         EndPointOverSubRoute = endPointOverSubRoute ;
       }
 
@@ -129,7 +185,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         return _pickedElement.Document.GetAllElementsOfSubRoute<Element>( _subRoute.Route.RouteName, _subRoute.SubRouteIndex ).Select( e => e.Id ) ;
       }
 
-      public static IPickResult? Create( Element element )
+      public static SubRoutePickResult? Create( Element element )
       {
         var routeName = element.GetRouteName() ;
         if ( null == routeName ) return null ;
@@ -140,7 +196,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         if ( false == RouteCache.Get( element.Document ).TryGetValue( routeName, out var route ) ) return null ;
         if ( route.GetSubRoute( subRouteIndex.Value ) is not { } subRoute ) return null ;
 
-        return new SubRoutePickResult( element, subRoute, null ) ;
+        return new SubRoutePickResult( element, subRoute ) ;
       }
 
       public bool IsCompatibleTo( Connector connector ) => _subRoute.GetReferenceConnector().IsCompatibleTo( connector ) ;

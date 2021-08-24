@@ -94,13 +94,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( FromToTreeUiManager?.FromToTreeView is not { } fromToTreeView || UiApp == null ) return ;
       if ( UpdateSuppressed() ) return ;
 
-      var changedElementIds = e.GetAddedElementIds().Concat( e.GetDeletedElementIds() ).Concat( e.GetModifiedElementIds() ) ;
+      var changedElementIds = e.GetAddedElementIds().Concat( e.GetModifiedElementIds() ) ;
       var changedRoute = e.GetDocument().FilterStorableElements<Route>( changedElementIds ) ;
 
       // provide ExternalCommandData object to dockable page
-      if ( changedRoute.Any() ) {
+      if ( changedRoute.Any() || fromToTreeView.HasInvalidRoute() ) {
         fromToTreeView.CustomInitiator( UiApp, addInType ) ;
       }
+    }
+
+    // document opened event
+    public void UpdateTreeView( AddInType addInType )
+    {
+      if ( FromToTreeUiManager?.FromToTreeView is not { } fromToTreeView || UiApp == null ) return ;
+      if ( UpdateSuppressed() ) return ;
+
+      fromToTreeView.CustomInitiator( UiApp, addInType ) ;
     }
 
     #region Change suppression

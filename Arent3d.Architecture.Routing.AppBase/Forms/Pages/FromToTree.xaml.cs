@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     private static Document? Doc { get ; set ; }
     private static UIDocument? UiDoc { get ; set ; }
-    private static IReadOnlyCollection<Route>? AllRoutes { get ; set ; }
+    private IReadOnlyCollection<Route>? AllRoutes { get ; set ; }
 
     private SortedDictionary<string, TreeViewItem>? ItemDictionary { get ; }
 
@@ -77,6 +77,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ClearSelectedItem() ;
       SelectedFromTo.ClearDialog() ;
       this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
+    }
+
+    public bool HasInvalidRoute()
+    {
+      return AllRoutes?.Any( route => route.OwnerElement is not { } ownerElement || false == ownerElement.IsValidObject ) ?? false ;
     }
 
     /// <summary>

@@ -101,6 +101,11 @@
         <key>TransactionName.Commands.Routing.Common.RevertColor</key>
         <string>ハイライト用色変更の解除</string>
 
+        <key>TransactionName.Commands.Routing.Common.PickEndPointOverSubRoute</key>
+        <string>From-To端点の表示</string>
+        <key>TransactionName.Commands.Routing.Common.EndPickEndPointOverSubRoute</key>
+        <string>From-To端点の非表示</string>
+
         <key>TransactionName.Commands.Routing.PickRouting</key>
         <string>From-Toの作成</string>
 
@@ -148,6 +153,8 @@
         <string>From-Toの始点を選択してください。</string>
         <key>Dialog.Commands.Routing.PickRouting.PickSecond</key>
         <string>From-Toの終点を選択してください。</string>
+        <key>Dialog.Commands.Routing.PickRouting.PickEndPointOverSubRoute</key>
+        <string>From-Toの行き先を選択してください。</string>
 
         <key>Dialog.Commands.Routing.PickAndReRoute.Pick</key>
         <string>再ルーティングしたいFrom-Toを選択してください。</string>

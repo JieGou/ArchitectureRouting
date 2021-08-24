@@ -168,6 +168,11 @@ namespace Arent3d.Architecture.Routing
       return _ep2SubRoute[ ep ] ;
     }
 
+    public IEnumerable<SubRoute> GetAllSubRoutes()
+    {
+      return _ep2SubRoute.Values.Distinct() ;
+    }
+
 
     #region Inner classes
 

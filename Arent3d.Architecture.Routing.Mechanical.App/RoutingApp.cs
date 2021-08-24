@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
@@ -37,6 +38,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
     protected override IAppUIBase? CreateAppUI( UIControlledApplication application )
     {
+      RouteCache.CacheRefreshed += ( _, _ ) => FromToTreeManager.UpdateTreeView( AddInType.Mechanical ) ;
+
       return RoutingAppUI.Create( application ) ;
     }
 

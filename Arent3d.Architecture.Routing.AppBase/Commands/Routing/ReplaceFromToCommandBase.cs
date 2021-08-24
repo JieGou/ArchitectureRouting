@@ -79,14 +79,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private IEndPoint PickNewEndPoint( UIDocument uiDocument, Route route, IEndPoint endPoint )
     {
-      var fromPickResult = PickCommandUtil.PickResultFromAnother( route, endPoint ) ;
-      var toPickResult = ConnectorPicker.GetConnector( uiDocument, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ; //Implement after
+      var (anotherPickResult, isFrom) = PickCommandUtil.PickResultFromAnother( route, endPoint ) ;
+      var newPickResult = ConnectorPicker.GetConnector( uiDocument, !isFrom, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), anotherPickResult, GetAddInType() ) ; //Implement after
 
-      if ( null != toPickResult.SubRoute ) {
-        return PickCommandUtil.CreateRouteEndPoint( toPickResult ) ;
+      if ( null != newPickResult.SubRoute ) {
+        return PickCommandUtil.CreateRouteEndPoint( newPickResult ) ;
       }
       
-      return PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
+      return PickCommandUtil.GetEndPoint( newPickResult, anotherPickResult ) ;
     }
 
     private Route GetReplacingRoute( UIDocument uiDocument )
