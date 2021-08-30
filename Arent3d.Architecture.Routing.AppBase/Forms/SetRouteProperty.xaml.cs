@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       InitializeComponent() ;
     }
 
-    public void UpdateFromToParameters( IList<double>? diameters, IList<MEPSystemType>? systemTypes, IList<MEPCurveType>? curveTypes, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter )
+    public void UpdateFromToParameters( IList<double>? diameters, IList<MEPSystemType>? systemTypes, IList<MEPCurveType>? curveTypes, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, double? connectorFixedHeight = null )
     {
       SelectedFromToBaseDialog.UpdateFromToParameters( diameters, systemTypes, curveTypes ) ;
 
@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedFromToBaseDialog.CurveTypeOrg = SelectedFromToBaseDialog.CurveType = curveType ;
       SelectedFromToBaseDialog.SystemType = systemType ;
       SelectedFromToBaseDialog.CurveType = curveType ;
+      SelectedFromToBaseDialog.ConnectorFixedHeight = connectorFixedHeight;
       SelectedFromToBaseDialog.ResetDialog() ;
     }
 
