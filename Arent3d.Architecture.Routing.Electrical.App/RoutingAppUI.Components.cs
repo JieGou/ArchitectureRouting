@@ -41,6 +41,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     private readonly RibbonButton _replaceFromToCommandButton ; //just show dialog
     private readonly RibbonButton _showFromToWindowCommandButton ;
     private readonly RibbonButton _showFromToTreeCommandButton ;
+    private readonly RibbonButton _newConnectorCommandButton;
 
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
@@ -77,6 +78,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
         
+        _newConnectorCommandButton = routingPanel.AddButton<NewConnectorCommand>();
+
       }
       {
         var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
@@ -148,6 +151,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _eraseSelectedRoutesCommandButton.Enabled = setupIsDone ;
       _eraseAllRoutesCommandButton.Enabled = setupIsDone ;
       //_exportRoutingCommandButton.Enabled = setupIsDone ;
+      _newConnectorCommandButton.Enabled = setupIsDone;
 
       _insertPassPointCommandButton.Enabled = setupIsDone ;
       _insertBranchPointCommandButton.Enabled = setupIsDone ;
