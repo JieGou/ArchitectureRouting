@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static void GenerateConnector(UIDocument uiDocument, double originX, double originY, double originZ, double sizeX, double sizeY, Level level)
     {
-        var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.WirePipe)!;
+        var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.ConnectorOneSide)!;
         var instance = symbol.Instantiate(new XYZ(originX, originY, originZ), level, StructuralType.NonStructural);
     }
 

@@ -38,7 +38,11 @@ namespace Arent3d.Architecture.Routing
 
     [NameOnRevit("電線管用ファミリ")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
-    WirePipe,
+    ConnectorTwoSide,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide,
     }
 
   public static class RoutingFamilyExtensions
