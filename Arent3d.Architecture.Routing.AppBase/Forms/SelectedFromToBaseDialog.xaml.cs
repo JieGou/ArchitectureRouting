@@ -47,6 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public double FixedHeight { get ; set ; }
     public double FixedOrgHeight { get ; set ; }
+    public double? ConnectorFixedHeight { get ; set ; }
 
     public double CurrentMaxValue { get ; set ; }
     public double CurrentMinValue { get ; set ; }
@@ -224,7 +225,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         } ;
       }
 
-
+      if (HeightSetting.IsChecked == true) {
+        HeightNud.Value = CalcFixedHeight();
+      }
       //HeightNud.MinValue = DiameterComboBox.SelectedValue. ;
     }
 
@@ -393,6 +396,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
       }
 
+      HeightNud.Value = CalcFixedHeight();
       SetHeightTextVisibility( true ) ;
     }
 
@@ -422,6 +426,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
       }
 
+      HeightNud.Value = 0.0;
       SetHeightTextVisibility( false ) ;
     }
 
@@ -495,6 +500,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           IsEnableCurveType = true
         } ;
       }
+    }
+
+    private double CalcFixedHeight()
+    {
+        double diameter = DiameterComboBox.SelectedItem != null ? (double)DiameterComboBox.SelectedItem : 0;
+        double fixedHeight = ConnectorFixedHeight.HasValue ? (ConnectorFixedHeight.Value - (diameter / 2)) : 0.0;
+        return fixedHeight;
     }
   }
 }

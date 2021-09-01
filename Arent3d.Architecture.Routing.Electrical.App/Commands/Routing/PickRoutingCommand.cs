@@ -35,7 +35,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       var diameter = fromEndPoint.GetDiameter() ?? toEndPoint.GetDiameter() ?? 0 ;
 
-      return SetDialog( document, classificationInfo, RouteMEPSystem.GetSystemType( document, connector ), curveType, diameter ) ;
+      return SetDialog( document, classificationInfo, RouteMEPSystem.GetSystemType( document, connector ), curveType, diameter , fromEndPoint.RoutingStartPosition.Z.RevitUnitsToMillimeters() ) ;
     }
 
     protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => curveType.Category.Name ;

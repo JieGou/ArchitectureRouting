@@ -253,12 +253,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return lastIndex + 1 ;
     }
 
-    protected static SetRouteProperty SetDialog( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, double? dbDiameter )
+    protected static SetRouteProperty SetDialog( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, double? dbDiameter, double? connectorFixedHeight = null )
     {
       var sv = new SetRouteProperty() ;
       var propertySourceType = new PropertySource.RoutePropertySource( document, classificationInfo, systemType, curveType ) ;
       SelectedFromToViewModel.PropertySourceType = propertySourceType ;
-      sv.UpdateFromToParameters( propertySourceType.Diameters, propertySourceType.SystemTypes, propertySourceType.CurveTypes, systemType, curveType, dbDiameter ) ;
+      sv.UpdateFromToParameters( propertySourceType.Diameters, propertySourceType.SystemTypes, propertySourceType.CurveTypes, systemType, curveType, dbDiameter, connectorFixedHeight) ;
 
       sv.ShowDialog() ;
 
