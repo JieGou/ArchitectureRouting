@@ -1,4 +1,4 @@
-using System ;
+﻿using System ;
 using System.Linq ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -35,7 +35,15 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Routing Connector Out Point" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     ConnectorOutPoint,
-  }
+
+    [NameOnRevit("電線管用ファミリ")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorTwoSide,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide,
+    }
 
   public static class RoutingFamilyExtensions
   {
