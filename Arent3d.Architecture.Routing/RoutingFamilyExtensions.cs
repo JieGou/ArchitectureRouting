@@ -43,7 +43,35 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit("電線管用ファミリ(片側のみ)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
     ConnectorOneSide,
-    }
+
+    [NameOnRevit("ダクト用湿度ｾﾝｻｰ(ロゴあり)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    HumiditySensorForDuctWithLogo,
+
+    [NameOnRevit("ダクト用湿度ｾﾝｻｰ(ロゴなし)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    HumiditySensorForDuctWithoutLogo,
+
+    [NameOnRevit("ダンパ操作器")]
+    [FamilyCategory(BuiltInCategory.OST_DuctAccessory)]
+    DamperActuator,
+
+    [NameOnRevit("室内用湿度ｾﾝｻｰ(ロゴあり)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    IndoorHumiditySensorWithLogo,
+
+    [NameOnRevit("室内用湿度ｾﾝｻｰ(ロゴなし)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    IndoorHumiditySensorWithoutLogo,
+
+    [NameOnRevit("電動二方弁(ロゴあり)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    ElectricTwoWayValveWithLogo,
+
+    [NameOnRevit("電動二方弁(ロゴなし)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    ElectricTwoWayValveWithoutLogo,
+  }
 
   public static class RoutingFamilyExtensions
   {
