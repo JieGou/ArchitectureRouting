@@ -1,4 +1,4 @@
-using System ;
+﻿using System ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands ;
@@ -21,6 +21,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
     private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init", TitleKey: "Electrical.App.Panels.Routing.Initialize" ) ;
     private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", TitleKey: "Electrical.App.Panels.Routing.Routing" ) ;
+    private static readonly (string Key, string TitleKey) ConnectorsPanel = ( Key: "arent3d.architecture.routing.connectors", TitleKey: "Electrical.App.Panels.Routing.Connectors" ) ;
     private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "Electrical.App.Panels.Routing.Racks" ) ;
     private static readonly (string Key, string TitleKey) MonitorPanel = ( Key: "arent3d.architecture.routing.monitor", TitleKey: "Electrical.App.Panels.Routing.Monitor" ) ;
 
@@ -41,7 +42,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     private readonly RibbonButton _replaceFromToCommandButton ; //just show dialog
     private readonly RibbonButton _showFromToWindowCommandButton ;
     private readonly RibbonButton _showFromToTreeCommandButton ;
+
     private readonly RibbonButton _newConnectorCommandButton;
+    private readonly RibbonButton _newDamperActuatorCommandButton;
+    private readonly RibbonButton _newElectricTwoWayValveWithLogoCommandButton;
+    private readonly RibbonButton _newElectricTwoWayValveWithoutLogoCommandButton;
+    private readonly RibbonButton _newHumiditySensorForDuctWithLogoCommandButton;
+    private readonly RibbonButton _newHumiditySensorForDuctWithoutLogoCommandButton;
+    private readonly RibbonButton _newIndoorHumiditySensorWithLogoCommandButton;
+    private readonly RibbonButton _newIndoorHumiditySensorWithoutLogoCommandButton;
 
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
@@ -77,9 +86,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>() ;
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
+      }
+      {
+        var connectorsPanel = tab.CreateRibbonPanel(ConnectorsPanel.Key, ToDisplayName(ConnectorsPanel.TitleKey ) ) ;
         
-        _newConnectorCommandButton = routingPanel.AddButton<NewConnectorCommand>();
-
+        _newConnectorCommandButton = connectorsPanel.AddButton<NewConnectorCommand>();
+        _newDamperActuatorCommandButton = connectorsPanel.AddButton<NewDamperActuatorCommand>();
+        _newElectricTwoWayValveWithLogoCommandButton = connectorsPanel.AddButton<NewElectricTwoWayValveWithLogoCommand>();
+        _newElectricTwoWayValveWithoutLogoCommandButton = connectorsPanel.AddButton<NewElectricTwoWayValveWithoutLogoCommand>();
+        _newHumiditySensorForDuctWithLogoCommandButton = connectorsPanel.AddButton<NewHumiditySensorForDuctWithLogoCommand>();
+        _newHumiditySensorForDuctWithoutLogoCommandButton = connectorsPanel.AddButton<NewHumiditySensorForDuctWithoutLogoCommand>();
+        _newIndoorHumiditySensorWithLogoCommandButton = connectorsPanel.AddButton<NewIndoorHumiditySensorWithLogoCommand>();
+        _newIndoorHumiditySensorWithoutLogoCommandButton = connectorsPanel.AddButton<NewIndoorHumiditySensorWithoutLogoCommand>();
       }
       {
         var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
@@ -151,7 +169,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _eraseSelectedRoutesCommandButton.Enabled = setupIsDone ;
       _eraseAllRoutesCommandButton.Enabled = setupIsDone ;
       //_exportRoutingCommandButton.Enabled = setupIsDone ;
+
       _newConnectorCommandButton.Enabled = setupIsDone;
+      _newDamperActuatorCommandButton.Enabled = setupIsDone;
+      _newElectricTwoWayValveWithLogoCommandButton.Enabled = setupIsDone;
+      _newElectricTwoWayValveWithoutLogoCommandButton.Enabled = setupIsDone;
+      _newHumiditySensorForDuctWithLogoCommandButton.Enabled = setupIsDone;
+      _newHumiditySensorForDuctWithoutLogoCommandButton.Enabled = setupIsDone;
+      _newIndoorHumiditySensorWithLogoCommandButton.Enabled = setupIsDone;
+      _newIndoorHumiditySensorWithoutLogoCommandButton.Enabled = setupIsDone;
 
       _insertPassPointCommandButton.Enabled = setupIsDone ;
       _insertBranchPointCommandButton.Enabled = setupIsDone ;
