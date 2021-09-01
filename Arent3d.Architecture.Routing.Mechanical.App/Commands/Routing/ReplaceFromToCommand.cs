@@ -1,7 +1,9 @@
 ﻿using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
@@ -17,9 +19,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return AddInType.Mechanical ;
     }
 
-    protected override RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
+    protected override IEndPoint CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom )
     {
-      return RoutingApp.GetRouteGeneratorInstantiator() ;
+      return PickCommandUtil.CreateRouteEndPoint( newPickResult ) ;
+    }
+
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )
+    {
+      return new MechanicalRoutingExecutor( document, view ) ;
     }
   }
 }

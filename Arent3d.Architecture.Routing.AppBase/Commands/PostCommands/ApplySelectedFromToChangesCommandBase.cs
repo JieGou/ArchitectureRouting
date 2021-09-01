@@ -10,13 +10,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
   public abstract class ApplySelectedFromToChangesCommandBase : RoutingCommandBase
   {
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       if ( SelectedFromToViewModel.PropertySourceType is { } propertySource ) {
         var route = propertySource.TargetRoute ;
         var subRoutes = propertySource.TargetSubRoutes ;
 
-        if ( route == null || subRoutes == null ) return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
+        if ( route == null || subRoutes == null ) return base.GetRouteSegmentsParallelToTransaction( uiDocument, routingExecutor ) ;
         //Change SystemType
         route.SetMEPSystemType( SelectedFromToViewModel.SelectedSystemType ) ;
 
@@ -48,7 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
         return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
       }
 
-      return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
+      return base.GetRouteSegmentsParallelToTransaction( uiDocument, routingExecutor ) ;
     }
   }
 }

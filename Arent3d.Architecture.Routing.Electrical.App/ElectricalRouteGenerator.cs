@@ -2,7 +2,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
   {
     private readonly Dictionary<(IRouteVertex BaseVertex, (EndPointKey From, EndPointKey To) segment), IRouteVertex> _splitVertices = new() ;
     
-    public ElectricalRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector ) : base( routes, document, ElectricalFittingSizeCalculator.Instance, collector )
+    public ElectricalRouteGenerator( IReadOnlyCollection<Route> routes, Document document, IFittingSizeCalculator fittingSizeCalculator, ICollisionCheckTargetCollector collector ) : base( routes, document, fittingSizeCalculator, collector )
     {
     }
 

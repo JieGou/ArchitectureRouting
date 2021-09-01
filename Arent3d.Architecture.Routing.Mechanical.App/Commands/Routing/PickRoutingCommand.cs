@@ -24,9 +24,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return AddInType.Mechanical ;
     }
 
-    protected override RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )
     {
-      return RoutingApp.GetRouteGeneratorInstantiator() ;
+      return new MechanicalRoutingExecutor( document, view ) ;
+    }
+
+    protected override IEndPoint CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom )
+    {
+      return PickCommandUtil.CreateRouteEndPoint( newPickResult ) ;
     }
 
     protected override SetRouteProperty? CreateSegmentDialogWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo, IEndPoint fromEndPoint, IEndPoint toEndPoint )

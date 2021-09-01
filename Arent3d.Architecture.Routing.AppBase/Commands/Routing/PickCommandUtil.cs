@@ -86,6 +86,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new RouteEndPoint( routePickResult.SubRoute!, routePickResult.EndPointOverSubRoute ) ;
     }
 
+    public static IEndPoint CreateBranchingRouteEndPoint( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool isFrom )
+    {
+      // TODO: Create Pass Point
+
+      // TODO: Create BranchingRouteEndPoint
+      var element = routePickResult.PickedElement ;
+      var pos = routePickResult.GetOrigin() ;
+      var anotherPos = anotherPickResult.GetOrigin() ;
+      var dir = GetPreferredDirection( pos, anotherPos ) ;
+      var preferredRadius = ( routePickResult.PickedConnector ?? anotherPickResult.PickedConnector )?.Radius ;
+
+      return new TerminatePointEndPoint( element.Document, ElementId.InvalidElementId, pos, ( isFrom ? dir : -dir ), preferredRadius, element.Id ) ;
+    }
+
     private static ((SubRoute SubRoute, IEndPoint EndPoint), bool IsFrom) GetOtherEndPoint( Route route, IEndPoint endPoint )
     {
       var endPointSubRouteMap = new Dictionary<IEndPoint, (SubRoute? OfFrom, SubRoute? OfTo)>() ;

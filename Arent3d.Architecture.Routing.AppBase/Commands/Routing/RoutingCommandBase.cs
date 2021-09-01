@@ -21,11 +21,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
 
-      var executor = new RoutingExecutor( document, GetRouteGeneratorInstantiator(), commandData.View ) ;
+      var executor = CreateRoutingExecutor( document, commandData.View ) ;
 
       IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? segments ;
       try {
-        segments = GetRouteSegmentsParallelToTransaction( uiDocument ) ;
+        segments = GetRouteSegmentsParallelToTransaction( uiDocument, executor ) ;
         if ( null == segments ) return Result.Cancelled ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    protected abstract RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator() ;
+    protected abstract RoutingExecutor CreateRoutingExecutor( Document document, View view ) ;
 
     private RoutingExecutionResult GenerateRoutes( UIDocument uiDocument, RoutingExecutor executor, IAsyncEnumerable<(string RouteName, RouteSegment Segment)> segments )
     {
@@ -126,7 +126,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// Collects route segments to be auto-routed (parallel to transaction).
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
+    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
     }

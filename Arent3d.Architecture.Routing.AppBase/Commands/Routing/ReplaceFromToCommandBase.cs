@@ -17,12 +17,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     protected abstract AddInType GetAddInType() ;
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsParallelToTransaction( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       var route = GetReplacingRoute( uiDocument ) ;
 
       var oldEndPoint = GetChangingEndPoint( uiDocument, route ) ;
-      var newEndPoint = PickNewEndPoint( uiDocument, route, oldEndPoint ) ;
+      var newEndPoint = PickNewEndPoint( uiDocument, routingExecutor, route, oldEndPoint ) ;
 
       return GetReplacedEndPoints( route, oldEndPoint, newEndPoint ) ;
     }
@@ -77,17 +77,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( segment.ToEndPoint.IsReplaceable ) yield return segment.ToEndPoint ;
     }
 
-    private IEndPoint PickNewEndPoint( UIDocument uiDocument, Route route, IEndPoint endPoint )
+    private IEndPoint PickNewEndPoint( UIDocument uiDocument, RoutingExecutor routingExecutor, Route route, IEndPoint endPoint )
     {
       var (anotherPickResult, isFrom) = PickCommandUtil.PickResultFromAnother( route, endPoint ) ;
-      var newPickResult = ConnectorPicker.GetConnector( uiDocument, !isFrom, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), anotherPickResult, GetAddInType() ) ; //Implement after
+      var newPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, !isFrom, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), anotherPickResult, GetAddInType() ) ; //Implement after
 
       if ( null != newPickResult.SubRoute ) {
-        return PickCommandUtil.CreateRouteEndPoint( newPickResult ) ;
+        return CreateEndPointOnSubRoute( newPickResult, anotherPickResult, ( false == isFrom ) ) ;
       }
       
       return PickCommandUtil.GetEndPoint( newPickResult, anotherPickResult ) ;
     }
+
+    protected abstract IEndPoint CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom ) ;
 
     private Route GetReplacingRoute( UIDocument uiDocument )
     {

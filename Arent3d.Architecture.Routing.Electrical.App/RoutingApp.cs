@@ -26,12 +26,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
     public static FromToTreeManager FromToTreeManager => _fromToTreeManager ??= new FromToTreeManager() ;
 
-    public static RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
-    {
-      return ( routes, document, collector ) => new ElectricalRouteGenerator( routes, document, collector ) ;
-    }
-
-
     protected override string GetLanguageDirectoryPath()
     {
       return GetDefaultLanguageDirectoryPath( Assembly.GetExecutingAssembly() ) ;

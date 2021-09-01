@@ -12,9 +12,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      var document = commandData.Application.ActiveUIDocument.Document ;
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var document = uiDocument.Document ;
       var cache = RouteCache.Get( document ) ;
-      var hashSet = cache.Keys.ToHashSet() ;
+      var hashSet = commandData.Application.ActiveUIDocument.Document.CollectRoutes( GetAddInType() ).Select( route => route.RouteName ).ToHashSet() ;
 
       try {
         return document.Transaction( "TransactionName.Commands.Routing.EraseAllRoutes".GetAppStringByKeyOrDefault( null ), _ =>
@@ -29,5 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return Result.Failed ;
       }
     }
+
+    protected abstract AddInType GetAddInType() ;
   }
 }

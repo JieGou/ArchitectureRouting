@@ -1,14 +1,17 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.UI ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB.Architecture ;
 
 namespace Arent3d.Architecture.Routing.AppBase
@@ -27,7 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       bool IsCompatibleTo( Element element ) ;
     }
 
-    public static IPickResult GetConnector( UIDocument uiDocument, bool pickingFromSide, string message, IPickResult? compatiblePickResult, AddInType addInType )
+    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, bool pickingFromSide, string message, IPickResult? compatiblePickResult, AddInType addInType )
     {
       var document = uiDocument.Document ;
 
@@ -40,12 +43,14 @@ namespace Arent3d.Architecture.Routing.AppBase
         if ( null == element ) continue ;
 
         if ( PassPointPickResult.Create( element ) is { } ppResult ) return ppResult ;
-        if ( SubRoutePickResult.Create( element ) is {} srResult ) {
-          if ( AddInType.Electrical == addInType ) {
+        if ( AddInType.Electrical == addInType ) {
+          if ( SubRoutePickResult.Create( routingExecutor, element, pickedObject.GlobalPoint ) is {} srResult ) {
             if ( PickEndPointOverSubRoute( uiDocument, srResult, pickingFromSide ) is not { } endPoint ) continue ;
-            srResult = srResult.ApplyEndPointOverSubRoute( endPoint.Key ) ;
+            return srResult.ApplyEndPointOverSubRoute( endPoint.Key ) ;
           }
-          return srResult ;
+        }
+        else {
+          if ( SubRoutePickResult.Create( null, element, pickedObject.GlobalPoint ) is { } srResult ) return srResult ;
         }
 
         var conn = compatiblePickResult?.SubRoute?.GetReferenceConnector() ?? compatiblePickResult?.PickedConnector ;
@@ -155,29 +160,102 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private class SubRoutePickResult : IPickResult
     {
+      private readonly MEPSystemPipeSpec? _spec ;
       private readonly Element _pickedElement ;
       private readonly SubRoute _subRoute ;
+      private readonly XYZ _pickPosition ;
+      private XYZ? _pickPositionOnCenterline ;
 
       public SubRoute? SubRoute => _subRoute ;
       public EndPointKey? EndPointOverSubRoute { get ; }
       public Element PickedElement => _pickedElement ;
       public Connector? PickedConnector => null ;
 
-      public XYZ GetOrigin() => GetCenter( _pickedElement ) ;
+      public XYZ GetOrigin() => _pickPositionOnCenterline ??= GetPickPositionOnCenterline() ;
 
-      private SubRoutePickResult( Element element, SubRoute subRoute )
+      private XYZ GetPickPositionOnCenterline()
       {
+        if ( null == _spec ) throw new InvalidOperationException() ;
+
+        var halfRequiredLength = GetHalfRequiredLength() ;
+        if ( GetNearestMEPCurve( halfRequiredLength * 2 ) is not { } mepCurve ) return GetCenter( _pickedElement ) ;
+
+        var connectorPositions = mepCurve.GetConnectors().Where( c => c.IsAnyEnd() ).Select( c => c.Origin ).ToArray() ;
+        if ( connectorPositions.Length < 2 ) return GetCenter( mepCurve ) ;
+        XYZ o = connectorPositions[ 0 ], v = connectorPositions[ 1 ] - o ;
+        var len = v.GetLength() ;
+        v = v.Normalize() ;
+        var t = Math.Max( halfRequiredLength, Math.Min( ( _pickPosition - o ).DotProduct( v ), len - halfRequiredLength ) ) ;
+        return o + t * v ;
+      }
+
+      private double GetHalfRequiredLength()
+      {
+        var diameter = _subRoute.GetDiameter().DiameterValueToPipeDiameter() ;
+
+        var transaction = new Transaction( _pickedElement.Document ) ;
+        transaction.Start( "To Be Rollbacked" ) ;
+        try {
+          return _spec!.GetLongElbowSize( diameter ) + _spec.GetWeldMinDistance( diameter ) ;
+        }
+        finally {
+          transaction.RollBack() ;
+        }
+      }
+
+      private MEPCurve? GetNearestMEPCurve( double requiredLength )
+      {
+        if ( _pickedElement is MEPCurve pickedMEPCurve && HasEnoughLength( pickedMEPCurve, requiredLength ) ) return pickedMEPCurve ;
+        
+        var nearestDistance = double.PositiveInfinity ;
+        MEPCurve? nearestMEPCurve = null ;
+
+        foreach ( var connector in _pickedElement.GetConnectors().Where( c => c.IsAnyEnd() ) ) {
+          var distance = connector.Origin.DistanceTo( _pickPosition ) ;
+          if ( nearestDistance <= distance ) continue ;
+          if ( GetConnectingMEPCurve( connector, requiredLength ) is not { } mepCurve ) continue ;
+
+          nearestDistance = distance ;
+          nearestMEPCurve = mepCurve ;
+        }
+
+        return nearestMEPCurve ;
+
+        static MEPCurve? GetConnectingMEPCurve( Connector connector, double requiredLength )
+        {
+          foreach ( var c in connector.GetConnectedConnectors() ) {
+            if ( c.Owner is MEPCurve mepCurve && HasEnoughLength( mepCurve, requiredLength ) ) return mepCurve ;
+
+            if ( c.GetOtherConnectorsInOwner().Select( c2 => GetConnectingMEPCurve( c2, requiredLength ) ).FirstOrDefault( curve => null != curve ) is { } nextCurve ) return nextCurve ;
+          }
+          return null ;
+        }
+
+        static bool HasEnoughLength( MEPCurve mepCurve, double requiredLength )
+        {
+          var connectorPositions = mepCurve.GetConnectors().Where( c => c.IsAnyEnd() ).Select( c => c.Origin ).ToArray() ;
+          if ( connectorPositions.Length < 2 ) return false ;
+          return ( requiredLength < connectorPositions[ 1 ].DistanceTo( connectorPositions[ 0 ] ) ) ;
+        }
+      }
+
+      private SubRoutePickResult( MEPSystemPipeSpec? spec, Element element, SubRoute subRoute, XYZ pickPosition )
+      {
+        _spec = spec ;
         _pickedElement = element ;
         _subRoute = subRoute ;
+        _pickPosition = pickPosition ;
       }
-      private SubRoutePickResult( Element element, SubRoute subRoute, EndPointKey endPointOverSubRoute ) : this(element,subRoute)
+
+      private SubRoutePickResult( SubRoutePickResult baseResult, EndPointKey endPointOverSubRoute ) : this( baseResult._spec, baseResult._pickedElement, baseResult._subRoute, baseResult._pickPosition )
       {
         EndPointOverSubRoute = endPointOverSubRoute ;
+        _pickPositionOnCenterline = baseResult._pickPositionOnCenterline ;
       }
 
       public SubRoutePickResult ApplyEndPointOverSubRoute( EndPointKey endPointOverSubRoute )
       {
-        return new SubRoutePickResult( _pickedElement, _subRoute, endPointOverSubRoute ) ;
+        return new SubRoutePickResult( this, endPointOverSubRoute ) ;
       }
 
       public IEnumerable<ElementId> GetAllRelatedElements()
@@ -185,7 +263,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         return _pickedElement.Document.GetAllElementsOfSubRoute<Element>( _subRoute.Route.RouteName, _subRoute.SubRouteIndex ).Select( e => e.Id ) ;
       }
 
-      public static SubRoutePickResult? Create( Element element )
+      public static SubRoutePickResult? Create( RoutingExecutor? routingExecutor, Element element, XYZ pickPosition )
       {
         var routeName = element.GetRouteName() ;
         if ( null == routeName ) return null ;
@@ -196,7 +274,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         if ( false == RouteCache.Get( element.Document ).TryGetValue( routeName, out var route ) ) return null ;
         if ( route.GetSubRoute( subRouteIndex.Value ) is not { } subRoute ) return null ;
 
-        return new SubRoutePickResult( element, subRoute ) ;
+        return new SubRoutePickResult( routingExecutor?.GetMEPSystemPipeSpec( subRoute ), element, subRoute, pickPosition ) ;
       }
 
       public bool IsCompatibleTo( Connector connector ) => _subRoute.GetReferenceConnector().IsCompatibleTo( connector ) ;

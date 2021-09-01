@@ -18,27 +18,25 @@ namespace Arent3d.Architecture.Routing.AppBase
   /// <summary>
   /// Routing execution object.
   /// </summary>
-  public class RoutingExecutor
+  public abstract class RoutingExecutor
   {
-    public delegate RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector ) ;
-    
+    private readonly PipeSpecDictionary _pipeSpecDictionary ;
     private readonly Document _document ;
-    private readonly CreateRouteGenerator _createRouteGenerator ;
     private readonly List<Connector[]> _badConnectors = new() ;
 
     /// <summary>
     /// Generates a routing execution object.
     /// </summary>
     /// <param name="document"></param>
-    /// <param name="createRouteGenerator"></param>
     /// <param name="view"></param>
-    public RoutingExecutor( Document document, CreateRouteGenerator createRouteGenerator, View view )
+    public RoutingExecutor( Document document, View view )
     {
       _document = document ;
-      _createRouteGenerator = createRouteGenerator ;
-
+      _pipeSpecDictionary = new PipeSpecDictionary( document, GetFittingSizeCalculator() ) ;
       CollectRacks( document, view ) ;
     }
+
+    protected abstract IFittingSizeCalculator GetFittingSizeCalculator() ;
 
     private static void CollectRacks( Document document, View view )
     {
@@ -126,6 +124,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       } ;
     }
 
+    public MEPSystemPipeSpec GetMEPSystemPipeSpec( SubRoute subRoute ) => _pipeSpecDictionary.GetMEPSystemPipeSpec( subRoute ) ;
+
     private void ExecuteRouting( Domain domain, IReadOnlyCollection<Route> routes, IProgressData? progressData )
     {
       ThreadDispatcher.Dispatch( () => routes.ForEach( r => r.Save() ) ) ;
@@ -137,7 +137,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       RouteGenerator generator ;
       using ( progressData?.Reserve( 0.02 ) ) {
-        generator = _createRouteGenerator( routes, _document, collector ) ;
+        generator = CreateRouteGenerator( routes, _document, collector ) ;
       }
 
       using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
@@ -146,6 +146,8 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       RegisterBadConnectors( generator.GetBadConnectorSet() ) ;
     }
+
+    protected abstract RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector ) ;
 
     private ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )
     {
