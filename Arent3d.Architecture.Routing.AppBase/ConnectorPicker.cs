@@ -4,14 +4,12 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.UI ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Arent3d.Revit.UI ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB.Architecture ;
 
 namespace Arent3d.Architecture.Routing.AppBase
@@ -26,6 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       Element PickedElement { get ; }
       Connector? PickedConnector { get ; }
       XYZ GetOrigin() ;
+      Element GetOriginElement() ;
       bool IsCompatibleTo( Connector connector ) ;
       bool IsCompatibleTo( Element element ) ;
     }
@@ -141,6 +140,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public Connector? PickedConnector => _connector ;
 
       public XYZ GetOrigin() => _connector.Origin ;
+      public Element GetOriginElement() => PickedElement ;
 
       public ConnectorPickResult( Element element, Connector connector )
       {
@@ -164,29 +164,30 @@ namespace Arent3d.Architecture.Routing.AppBase
       private readonly Element _pickedElement ;
       private readonly SubRoute _subRoute ;
       private readonly XYZ _pickPosition ;
-      private XYZ? _pickPositionOnCenterline ;
+      private (Element, XYZ)? _pickPositionOnCenterline ;
 
       public SubRoute? SubRoute => _subRoute ;
       public EndPointKey? EndPointOverSubRoute { get ; }
       public Element PickedElement => _pickedElement ;
       public Connector? PickedConnector => null ;
 
-      public XYZ GetOrigin() => _pickPositionOnCenterline ??= GetPickPositionOnCenterline() ;
+      public XYZ GetOrigin() => (_pickPositionOnCenterline ??= GetPickPositionOnCenterline()).Item2 ;
+      public Element GetOriginElement() => (_pickPositionOnCenterline ??= GetPickPositionOnCenterline()).Item1 ;
 
-      private XYZ GetPickPositionOnCenterline()
+      private (Element, XYZ) GetPickPositionOnCenterline()
       {
         if ( null == _spec ) throw new InvalidOperationException() ;
 
         var halfRequiredLength = GetHalfRequiredLength() ;
-        if ( GetNearestMEPCurve( halfRequiredLength * 2 ) is not { } mepCurve ) return GetCenter( _pickedElement ) ;
+        if ( GetNearestMEPCurve( halfRequiredLength * 2 ) is not { } mepCurve ) return ( _pickedElement, GetCenter( _pickedElement ) ) ;
 
         var connectorPositions = mepCurve.GetConnectors().Where( c => c.IsAnyEnd() ).Select( c => c.Origin ).ToArray() ;
-        if ( connectorPositions.Length < 2 ) return GetCenter( mepCurve ) ;
+        if ( connectorPositions.Length < 2 ) return ( mepCurve, GetCenter( mepCurve ) ) ;
         XYZ o = connectorPositions[ 0 ], v = connectorPositions[ 1 ] - o ;
         var len = v.GetLength() ;
         v = v.Normalize() ;
         var t = Math.Max( halfRequiredLength, Math.Min( ( _pickPosition - o ).DotProduct( v ), len - halfRequiredLength ) ) ;
-        return o + t * v ;
+        return ( mepCurve, o + t * v ) ;
       }
 
       private double GetHalfRequiredLength()
@@ -292,6 +293,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public Connector? PickedConnector => null ;
 
       public XYZ GetOrigin() => GetCenter( _element ) ;
+      public Element GetOriginElement() => PickedElement ;
 
       private PassPointPickResult( Element element )
       {
@@ -334,6 +336,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public Connector? PickedConnector => null ;
 
       public XYZ GetOrigin() => GetCenter( _element ) ;
+      public Element GetOriginElement() => PickedElement ;
 
       public OriginPickResult( Element element, AddInType addInType )
       {

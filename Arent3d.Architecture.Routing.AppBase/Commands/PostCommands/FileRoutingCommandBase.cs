@@ -1,3 +1,4 @@
+using System ;
 using System.Collections.Generic ;
 using System.IO ;
 using Arent3d.Revit.Csv ;
@@ -11,16 +12,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RoutingFromFile" ;
 
-    /// <summary>
-    /// Collects from-to records to be auto-routed.
-    /// </summary>
-    /// <returns>Routing from-to records.</returns>
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       var csvFileName = OpenFromToCsv() ;
-      if ( null == csvFileName ) return null ;
+      if ( null == csvFileName ) return ( false, null ) ;
 
-      return ReadRouteRecordsFromFile( csvFileName ).ToSegmentsWithName( uiDocument.Document ) ;
+      return ( true, ReadRouteRecordsFromFile( csvFileName ) ) ;
+    }
+
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    {
+      var fileRecords = state as IAsyncEnumerable<RouteRecord> ?? throw new InvalidOperationException() ;
+
+      return fileRecords.ToSegmentsWithName( document ) ;
     }
 
     private static async IAsyncEnumerable<RouteRecord> ReadRouteRecordsFromFile( string csvFileName )

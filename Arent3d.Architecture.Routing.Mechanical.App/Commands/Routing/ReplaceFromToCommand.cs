@@ -19,9 +19,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return AddInType.Mechanical ;
     }
 
-    protected override IEndPoint CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom )
+    protected override (IEndPoint EndPoint, Route? AffectedRoute) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom )
     {
-      return PickCommandUtil.CreateRouteEndPoint( newPickResult ) ;
+      return ( PickCommandUtil.CreateRouteEndPoint( newPickResult ), null ) ;
     }
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )

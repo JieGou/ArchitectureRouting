@@ -8,7 +8,6 @@ using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
-using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -17,111 +16,72 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PickRoutingCommandBase : RoutingCommandBase
   {
+    private record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, SetRouteProperty Property, MEPSystemClassificationInfo ClassificationInfo ) ;
+    protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
+
     protected abstract AddInType GetAddInType() ;
 
-    /// <summary>
-    /// Collects from-to records to be auto-routed.
-    /// </summary>
-    /// <returns>Routing from-to records.</returns>
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument, RoutingExecutor routingExecutor )
-    {
-      return ReadRouteRecordsByPick( uiDocument, routingExecutor )?.EnumerateAll().ToAsyncEnumerable() ;
-    }
-
-    private IEnumerable<(string RouteName, RouteSegment Segment)>? ReadRouteRecordsByPick( UIDocument uiDocument, RoutingExecutor routingExecutor )
-    {
-      var segments = UiThread.RevitUiDispatcher.Invoke( () =>
-      {
-        var document = uiDocument.Document ;
-        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
-        using var tempColor = uiDocument.SetTempColor( fromPickResult ) ;
-
-        var toPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
-        return CreateNewSegmentList( document, fromPickResult, toPickResult ) ;
-      } ) ;
-
-      return segments ;
-    }
-
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
-    {
-      if ( null != fromPickResult.SubRoute ) {
-        return CreateNewSegmentWhereFromIsSubRoute( document, fromPickResult, toPickResult ) ;
-      }
-      if ( null != toPickResult.SubRoute ) {
-        return CreateNewSegmentWhereToIsSubRoute( document, fromPickResult, toPickResult ) ;
-      }
-
-      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult ) ;
-      var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
-
-      if ( ( fromEndPoint.GetReferenceConnector() ?? toEndPoint.GetReferenceConnector() ) is { } connector ) {
-        return CreateNewSegmentWithConnector( document, connector, fromEndPoint, toEndPoint ) ;
-
-      }
-      else {
-        return CreateNewSegmentFreeConnector( document, fromEndPoint, toEndPoint ) ;
-      }
-    }
-
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentWhereFromIsSubRoute( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
-    {
-      var subRoute = fromPickResult.SubRoute! ;
-      var classificationInfo = subRoute.Route.GetSystemClassificationInfo() ;
-      var systemType = subRoute.Route.GetMEPSystemType() ;
-      var curveType = subRoute.Route.GetDefaultCurveType() ;
-      var dblDiameter = subRoute.GetDiameter() ;
-
-      var sv = SetDialog( document, classificationInfo, systemType, curveType, dblDiameter ) ;
-      if ( true != sv.DialogResult ) return null ;
-
-      return CreateNewSegmentListForRoutePick( fromPickResult, toPickResult, false, classificationInfo, sv ) ;
-    }
-
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentWhereToIsSubRoute( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
-    {
-      var subRoute = toPickResult.SubRoute! ;
-      var classificationInfo = subRoute.Route.GetSystemClassificationInfo() ;
-      var systemType = subRoute.Route.GetMEPSystemType() ;
-      var curveType = subRoute.Route.GetDefaultCurveType() ;
-      var dblDiameter = subRoute.GetDiameter() ;
-
-      var sv = SetDialog( document, classificationInfo, systemType, curveType, dblDiameter ) ;
-      if ( true != sv.DialogResult ) return null ;
-
-      return CreateNewSegmentListForRoutePick( toPickResult, fromPickResult, true, classificationInfo, sv ) ;
-    }
-
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentWithConnector( Document document, Connector connector, IEndPoint fromEndPoint, IEndPoint toEndPoint )
-    {
-      if ( MEPSystemClassificationInfo.From( connector ) is not { } classificationInfo ) return Array.Empty<(string RouteName, RouteSegment Segment)>() ;
-
-      if ( CreateSegmentDialogWithConnector( document, connector, classificationInfo, fromEndPoint, toEndPoint ) is not { } sv ) return null ;
-      if ( true != sv.DialogResult ) return null ;
-
-      var systemType = sv.GetSelectSystemType() ;
-      var curveType = sv.GetSelectCurveType() ;
-
-      var routes = RouteCache.Get( document ) ;
-
-      var nameBase = GetNameBase( systemType, curveType ) ;
-      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
-      var name = nameBase + "_" + nextIndex ;
-
-      var diameter = sv.GetSelectDiameter().MillimetersToRevitUnits() ;
-      var isDirect = sv.GetCurrentDirect() ?? false ;
-      var targetFixedHeight = sv.GetFixedHeight()?.MillimetersToRevitUnits() ;
-
-      var segment = new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isDirect, targetFixedHeight, sv.GetAvoidTypeKey() ) ;
-      routes.FindOrCreate( name ) ;
-
-      return new[] { ( name, segment ) } ;
-    }
-
-    protected abstract SetRouteProperty? CreateSegmentDialogWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo, IEndPoint fromEndPoint, IEndPoint toEndPoint ) ;
+    protected abstract DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo ) ;
+    protected abstract MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType ) ;
+    protected abstract (IEndPoint EndPoint, Route? AffectedRoute) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom ) ;
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? CreateNewSegmentFreeConnector( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint )
+    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    {
+      var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
+      ConnectorPicker.IPickResult toPickResult ;
+
+      using ( uiDocument.SetTempColor( fromPickResult ) ) {
+        toPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
+      }
+
+      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
+      if ( true != property?.DialogResult ) return ( false, null ) ;
+
+      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSelectSystemType() ) is not { } classificationInfo ) return ( false, null ) ;
+
+      return ( true, new PickState( fromPickResult, toPickResult, property, classificationInfo ) ) ;
+    }
+
+    private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, MEPSystemType? systemType )
+    {
+      if ( ( fromPickResult.SubRoute ?? toPickResult.SubRoute )?.Route.GetSystemClassificationInfo() is { } routeSystemClassificationInfo ) return routeSystemClassificationInfo ;
+
+      if ( ( fromPickResult.PickedConnector ?? toPickResult.PickedConnector ) is { } connector && MEPSystemClassificationInfo.From( connector ) is { } connectorClassificationInfo ) return connectorClassificationInfo ;
+
+      return GetMEPSystemClassificationInfoFromSystemType( systemType ) ;
+    }
+
+    private SetRouteProperty? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    {
+      if ( ( fromPickResult.SubRoute ?? toPickResult.SubRoute ) is { } subRoute ) {
+        var route = subRoute.Route ;
+        return ShowDialog( document, new DialogInitValues( route.GetSystemClassificationInfo(), route.GetMEPSystemType(), route.GetDefaultCurveType(), subRoute.GetDiameter() ) ) ;
+      }
+
+      if ( ( fromPickResult.PickedConnector ?? toPickResult.PickedConnector ) is { } connector ) {
+        if ( MEPSystemClassificationInfo.From( connector ) is not { } classificationInfo ) return null ;
+
+        if ( CreateSegmentDialogDefaultValuesWithConnector( document, connector, classificationInfo ) is not { } initValues ) return null ;
+
+        return ShowDialog( document, initValues ) ;
+      }
+
+      return ShowDialog( document ) ;
+    }
+
+    private static SetRouteProperty ShowDialog( Document document, DialogInitValues initValues )
+    {
+      var sv = new SetRouteProperty() ;
+      var propertySourceType = new PropertySource.RoutePropertySource( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType ) ;
+      SelectedFromToViewModel.PropertySourceType = propertySourceType ;
+      sv.UpdateFromToParameters( propertySourceType.Diameters, propertySourceType.SystemTypes, propertySourceType.CurveTypes, initValues.SystemType, initValues.CurveType, initValues.Diameter ) ;
+
+      sv.ShowDialog() ;
+
+      return sv ;
+    }
+    private static SetRouteProperty ShowDialog( Document document )
     {
       var sv = new SetRouteProperty() ;
       var propertySourceType = new PropertySource.RoutePropertySource( document ) ;
@@ -130,77 +90,99 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       sv.ShowDialog() ;
 
-      if ( true != sv.DialogResult ) return null ;
+      return sv ;
+    }
 
-      var systemType = sv.GetSelectSystemType() ;
-      if ( GetMEPSystemClassificationInfoFromSystemType( systemType ) is not { } classificationInfo ) return null ;
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    {
+      var pickState = state as PickState ?? throw new InvalidOperationException() ;
+      var (fromPickResult, toPickResult, property, classificationInfo) = pickState ;
 
-      var curveType = sv.GetSelectCurveType() ;
+      if ( null != fromPickResult.SubRoute ) {
+        return CreateNewSegmentListForRoutePick( fromPickResult, toPickResult, false, property, classificationInfo ).ToAsyncEnumerable() ;
+      }
+      if ( null != toPickResult.SubRoute ) {
+        return CreateNewSegmentListForRoutePick( fromPickResult, toPickResult, true, property, classificationInfo ).ToAsyncEnumerable() ;
+      }
 
-      var routes = RouteCache.Get( document ) ;
+      return CreateNewSegmentList( document, fromPickResult, toPickResult, property, classificationInfo ).ToAsyncEnumerable() ;
+    }
 
-      var nameBase = GetNameBase( systemType, curveType ) ;
-      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
-      var name = nameBase + "_" + nextIndex ;
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, SetRouteProperty property, MEPSystemClassificationInfo classificationInfo )
+    {
+      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult ) ;
+      var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
 
-      var diameter = sv.GetSelectDiameter().MillimetersToRevitUnits() ;
-      var isDirect = sv.GetCurrentDirect() ?? false ;
-      var targetFixedHeight = sv.GetFixedHeight()?.MillimetersToRevitUnits() ;
-
-      var segment = new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isDirect, targetFixedHeight, sv.GetAvoidTypeKey() ) ;
-      routes.FindOrCreate( name ) ;
+      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, property, classificationInfo ) ;
 
       return new[] { ( name, segment ) } ;
     }
 
-    protected abstract MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType ) ;
-
-
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, MEPSystemClassificationInfo classificationInfo, SetRouteProperty setRouteProperty )
+    private (string RouteName, RouteSegment Segment) CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, SetRouteProperty property, MEPSystemClassificationInfo classificationInfo )
     {
-      return CreateSubBranchRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide, classificationInfo, setRouteProperty ) ;
+      var systemType = property.GetSelectSystemType() ;
+      var curveType = property.GetSelectCurveType() ;
+
+      var routes = RouteCache.Get( document ) ;
+      var nameBase = GetNameBase( systemType, curveType ) ;
+      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
+      var name = nameBase + "_" + nextIndex ;
+      routes.FindOrCreate( name ) ;
+
+      var diameter = property.GetSelectDiameter().MillimetersToRevitUnits() ;
+      var isDirect = property.GetCurrentDirect() ?? false ;
+      var targetFixedHeight = property.GetFixedHeight()?.MillimetersToRevitUnits() ;
+
+      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isDirect, targetFixedHeight, property.GetAvoidTypeKey() ) ) ;
     }
 
-    protected static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListWithinRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, MEPSystemClassificationInfo classificationInfo, SetRouteProperty setRouteProperty )
+
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, SetRouteProperty property, MEPSystemClassificationInfo classificationInfo )
     {
-      return AppendNewSegmentIntoPickedRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide ) ;
+      //return AppendNewSegmentIntoPickedRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide ) ;  // Use this, when a branch is to be merged into the parent from-to.
+      return CreateSubBranchRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide, property, classificationInfo ).EnumerateAll() ;
     }
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, MEPSystemClassificationInfo classificationInfo, SetRouteProperty setRouteProperty )
+    private IEnumerable<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, SetRouteProperty property, MEPSystemClassificationInfo classificationInfo )
     {
-      var routes = RouteCache.Get( routePickResult.SubRoute!.Route.Document ) ;
-      var routeEndPoint = CreateEndPointOnSubRoute( routePickResult, anotherPickResult, true ) ;
+      var affectedRoutes = new List<Route>() ;
+      var (routeEndPoint, affectedRoute1) = CreateEndPointOnSubRoute( routePickResult, anotherPickResult, true ) ;
+      if ( null != affectedRoute1 ) {
+        affectedRoutes.Add( affectedRoute1 ) ;
+      }
+
       IEndPoint anotherEndPoint ;
       if ( null != anotherPickResult.SubRoute ) {
-        anotherEndPoint = CreateEndPointOnSubRoute( anotherPickResult, routePickResult, false ) ;
+        Route? affectedRoute2 ;
+        ( anotherEndPoint, affectedRoute2 ) = CreateEndPointOnSubRoute( anotherPickResult, routePickResult, false ) ;
+        if ( null != affectedRoute2 ) {
+          affectedRoutes.Add( affectedRoute2 ) ;
+        }
       }
       else {
         anotherEndPoint = PickCommandUtil.GetEndPoint( anotherPickResult, routePickResult ) ;
       }
 
-      var systemType = setRouteProperty.GetSelectSystemType() ;
-      var curveType = setRouteProperty.GetSelectCurveType() ;
+      var fromEndPoint = anotherIndicatorIsFromSide ? anotherEndPoint : routeEndPoint ;
+      var toEndPoint = anotherIndicatorIsFromSide ? routeEndPoint : anotherEndPoint ;
 
-      var nameBase = GetNameBase( systemType, curveType ) ;
-      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
-      var name = nameBase + "_" + nextIndex ;
+      var document = routePickResult.SubRoute!.Route.Document ;
+      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, property, classificationInfo ) ;
 
-      var diameter = setRouteProperty.GetSelectDiameter().MillimetersToRevitUnits() ;
-      var isDirect = setRouteProperty.GetCurrentDirect() ?? false ;
-      var targetFixedHeight = setRouteProperty.GetFixedHeight()?.MillimetersToRevitUnits() ;
+      yield return ( name, segment ) ;
 
-      RouteSegment segment ;
-      if ( anotherIndicatorIsFromSide ) {
-        segment = new RouteSegment( classificationInfo, systemType, curveType, anotherEndPoint, routeEndPoint, diameter, isDirect, targetFixedHeight, setRouteProperty.GetAvoidTypeKey() ) ;
+      if ( 0 != affectedRoutes.Count ) {
+        var affectedRouteSet = new HashSet<Route>() ;
+        foreach ( var route in affectedRoutes ) {
+          affectedRouteSet.Add( route ) ;
+          affectedRouteSet.UnionWith( route.CollectAllDescendantBranches() ) ;
+        }
+
+        foreach ( var tuple in affectedRouteSet.ToSegmentsWithName() ) {
+          yield return tuple ;
+        }
       }
-      else {
-        segment = new RouteSegment( classificationInfo, systemType, curveType, routeEndPoint, anotherEndPoint, diameter, isDirect, targetFixedHeight, setRouteProperty.GetAvoidTypeKey() ) ;
-      }
-
-      return new[] { ( name, segment ) } ;
     }
-
-    protected abstract IEndPoint CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom ) ;
 
     private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide )
     {
@@ -259,18 +241,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
 
       return lastIndex + 1 ;
-    }
-
-    protected static SetRouteProperty SetDialog( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, double? dbDiameter, double? connectorFixedHeight = null )
-    {
-      var sv = new SetRouteProperty() ;
-      var propertySourceType = new PropertySource.RoutePropertySource( document, classificationInfo, systemType, curveType ) ;
-      SelectedFromToViewModel.PropertySourceType = propertySourceType ;
-      sv.UpdateFromToParameters( propertySourceType.Diameters, propertySourceType.SystemTypes, propertySourceType.CurveTypes, systemType, curveType, dbDiameter, connectorFixedHeight) ;
-
-      sv.ShowDialog() ;
-
-      return sv ;
     }
   }
 }

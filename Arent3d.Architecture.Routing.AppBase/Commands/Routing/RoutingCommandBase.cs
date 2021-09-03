@@ -23,10 +23,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var executor = CreateRoutingExecutor( document, commandData.View ) ;
 
-      IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? segments ;
+      object? state ;
       try {
-        segments = GetRouteSegmentsParallelToTransaction( uiDocument, executor ) ;
-        if ( null == segments ) return Result.Cancelled ;
+        bool success ;
+        ( success, state ) = OperateUI( uiDocument, executor ) ;
+        if ( false == success ) return Result.Cancelled ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
@@ -35,7 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         var result = document.TransactionGroup( GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ), _ =>
         {
-          var executionResult = GenerateRoutes( uiDocument, executor, segments ) ;
+          var executionResult = GenerateRoutes( document, executor, state ) ;
           if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
           if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
 
@@ -64,15 +65,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract RoutingExecutor CreateRoutingExecutor( Document document, View view ) ;
 
-    private RoutingExecutionResult GenerateRoutes( UIDocument uiDocument, RoutingExecutor executor, IAsyncEnumerable<(string RouteName, RouteSegment Segment)> segments )
+    private RoutingExecutionResult GenerateRoutes( Document document, RoutingExecutor executor, object? state )
     {
-      return uiDocument.Document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
+      return document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
       {
         using var _ = FromToTreeManager.SuppressUpdate() ;
 
         SetupFailureHandlingOptions( transaction, executor ) ;
 
-        segments = segments.Concat( GetRouteSegmentsInTransaction( uiDocument ).EnumerateAll().ToAsyncEnumerable() ) ;
+        var segments = GetRouteSegments( document, state ) ;
 
         var tokenSource = new CancellationTokenSource() ;
         var task = Task.Run( async () =>
@@ -123,21 +124,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected abstract string GetTransactionNameKey() ;
 
     /// <summary>
-    /// Collects route segments to be auto-routed (parallel to transaction).
+    /// Collects UI states.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument, RoutingExecutor routingExecutor )
-    {
-      return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
-    }
+    protected virtual (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor ) => ( true, null ) ;
 
     /// <summary>
-    /// Collects route segments to be auto-routed (in transaction).
+    /// Generate route segments to be auto-routed from UI state.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected virtual IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
+    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
-      return Enumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
+      return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
     }
 
 

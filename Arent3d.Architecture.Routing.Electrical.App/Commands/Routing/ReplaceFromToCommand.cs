@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return AddInType.Electrical ;
     }
 
-    protected override IEndPoint CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom )
+    protected override (IEndPoint EndPoint, Route? AffectedRoute) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom )
     {
       return PickCommandUtil.CreateBranchingRouteEndPoint( newPickResult, anotherPickResult, newPickIsFrom ) ;
     }

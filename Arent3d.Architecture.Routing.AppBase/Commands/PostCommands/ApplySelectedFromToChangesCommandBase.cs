@@ -2,21 +2,19 @@
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Utility ;
-using Autodesk.Revit.UI ;
-
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
 {
   public abstract class ApplySelectedFromToChangesCommandBase : RoutingCommandBase
   {
-
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       if ( SelectedFromToViewModel.PropertySourceType is { } propertySource ) {
         var route = propertySource.TargetRoute ;
         var subRoutes = propertySource.TargetSubRoutes ;
 
-        if ( route == null || subRoutes == null ) return base.GetRouteSegmentsParallelToTransaction( uiDocument, routingExecutor ) ;
+        if ( route == null || subRoutes == null ) return base.GetRouteSegments( document, state ) ;
         //Change SystemType
         route.SetMEPSystemType( SelectedFromToViewModel.SelectedSystemType ) ;
 
@@ -48,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
         return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
       }
 
-      return base.GetRouteSegmentsParallelToTransaction( uiDocument, routingExecutor ) ;
+      return base.GetRouteSegments( document, state ) ;
     }
   }
 }

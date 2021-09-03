@@ -1,8 +1,8 @@
+using System ;
 using System.Collections.Generic ;
-using Arent3d.Revit ;
-using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
-using Autodesk.Revit.Attributes ;
+using Arent3d.Revit.UI ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -11,29 +11,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     protected abstract AddInType GetAddInType() ;
 
-    protected override IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
+    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      return GetSelectedRouteSegments( uiDocument ) ;
-    }
-
-    private IEnumerable<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( UIDocument uiDocument )
-    {
-      // use lazy evaluation because GetRouteSegments()'s call time is not in the transaction.
-      var document = uiDocument.Document ;
-      var recreatedRoutes = ThreadDispatcher.Dispatch( () =>
-      {
-        var selectedRoutes = Route.CollectAllDescendantBranches( SelectRoutes( uiDocument ) ) ;
-
-        var allRoutes = Route.GetAllRelatedBranches( selectedRoutes ) ;
-        allRoutes.ExceptWith( selectedRoutes ) ;
-        RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), true ) ;
-        return allRoutes ;
-      } ) ;
-
-      // Returns affected, but not deleted routes to recreate them.
-      foreach ( var seg in recreatedRoutes.ToSegmentsWithName().EnumerateAll() ) {
-        yield return seg ;
-      }
+      return ( true, SelectRoutes( uiDocument ) ) ;
     }
 
     private IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
@@ -43,6 +23,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to delete.", GetAddInType() ) ;
       return new[] { pickInfo.Route } ;
+    }
+
+    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    {
+      var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
+
+      return UiThread.RevitUiDispatcher.Invoke( () => GetSelectedRouteSegments( document, routes ).ToAsyncEnumerable() ) ;
+    }
+
+    private IEnumerable<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( Document document, IReadOnlyCollection<Route> pickedRoutes )
+    {
+      var selectedRoutes = Route.CollectAllDescendantBranches( pickedRoutes ) ;
+
+      var recreatedRoutes = Route.GetAllRelatedBranches( selectedRoutes ) ;
+      recreatedRoutes.ExceptWith( selectedRoutes ) ;
+      RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), true ) ;
+
+      // Returns affected but not deleted routes to recreate them.
+      foreach ( var seg in recreatedRoutes.ToSegmentsWithName().EnumerateAll() ) {
+        yield return seg ;
+      }
     }
   }
 }
