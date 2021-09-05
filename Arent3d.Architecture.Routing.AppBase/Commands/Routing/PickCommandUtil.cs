@@ -87,17 +87,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new RouteEndPoint( routePickResult.SubRoute!, routePickResult.EndPointOverSubRoute ) ;
     }
 
-    public static (IEndPoint EndPoint, Route? AffectedRoute) CreateBranchingRouteEndPoint( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool isFrom )
+    public static (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateBranchingRouteEndPoint( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool isFrom )
     {
       var subRoute = routePickResult.SubRoute! ;
       var route = subRoute.Route ;
-      var document = route.Document ;
+      var document = subRoute.Route.Document ;
       var element = routePickResult.GetOriginElement() ;
       var pos = routePickResult.GetOrigin() ;
 
       // Create Pass Point
-      var passPointElement = InsertBranchingPassPointElement( document, subRoute, element, pos ) ;
-      UpdateSegments( route, GetNewSegmentList( subRoute, element, passPointElement ) ) ;
+      var routeName = route.Name ;
+      if ( InsertBranchingPassPointElement( document, subRoute, element, pos ) is not { } passPointElement ) throw new InvalidOperationException() ;
+      var otherSegments = GetNewSegmentList( subRoute, element, passPointElement ).Select( segment => ( routeName, segment ) ).EnumerateAll() ;
 
       // TODO: Create BranchingRouteEndPoint
       var anotherPos = anotherPickResult.GetOrigin() ;
@@ -105,26 +106,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var preferredRadius = ( routePickResult.PickedConnector ?? anotherPickResult.PickedConnector )?.Radius ;
       var endPoint = new TerminatePointEndPoint( document, ElementId.InvalidElementId, pos, ( isFrom ? dir : -dir ), preferredRadius, element.Id ) ;
 
-      return ( endPoint, route ) ;
+      return ( endPoint, otherSegments ) ;
     }
 
-    private static Instance InsertBranchingPassPointElement( Document document, SubRoute subRoute, Element routingElement, XYZ pos )
+    private static Instance? InsertBranchingPassPointElement( Document document, SubRoute subRoute, Element routingElement, XYZ pos )
     {
-      return document.AddPassPoint( subRoute.Route.RouteName, pos, GetElementDirection( routingElement ), subRoute.GetDiameter() * 0.5 ) ;
+      if ( routingElement.GetRoutingConnectors( true ).FirstOrDefault() is not { } fromConnector ) return null ;
+      if ( routingElement.GetRoutingConnectors( false ).FirstOrDefault() is not { } toConnector ) return null ;
 
-      static XYZ GetElementDirection( Element routingElement )
-      {
-        var connectorPositions = routingElement.GetConnectors().Where( c => c.IsAnyEnd() ).Select( c => c.Origin ).ToArray() ;
-        if ( connectorPositions.Length < 2 ) return XYZ.BasisX ;
-        return ( connectorPositions[ 1 ] - connectorPositions[ 0 ] ).Normalize() ;
-      }
-    }
-
-    private static void UpdateSegments( Route route, IEnumerable<RouteSegment> segmentList )
-    {
-      route.Clear() ;
-      segmentList.ForEach( segment => route.RegisterSegment( segment ) ) ;
-      throw new NotImplementedException() ;
+      var dir = ( toConnector.Origin - fromConnector.Origin ).Normalize() ;
+      return document.AddPassPoint( subRoute.Route.RouteName, pos, dir, subRoute.GetDiameter() * 0.5 ) ;
     }
 
     public static IEnumerable<RouteSegment> GetNewSegmentList( SubRoute subRoute, Element insertingElement, Instance passPointElement )

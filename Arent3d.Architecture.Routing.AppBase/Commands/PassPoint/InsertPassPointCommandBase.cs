@@ -24,17 +24,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
       return ( true, pickInfo ) ;
     }
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var pickInfo = state as PointOnRoutePicker.PickInfo ?? throw new InvalidOperationException() ;
 
-      return UiThread.RevitUiDispatcher.Invoke( () =>
-      {
-        var elm = InsertPassPointElement( document, pickInfo ) ;
-        var route = pickInfo.SubRoute.Route ;
-        var routeRecords = GetRelatedBranchSegments( route ) ;
-        return routeRecords.Concat( PickCommandUtil.GetNewSegmentList( pickInfo.SubRoute, pickInfo.Element, elm ).ToSegmentsWithName( route.RouteName ) ).EnumerateAll().ToAsyncEnumerable() ;
-      } ) ;
+      var elm = InsertPassPointElement( document, pickInfo ) ;
+      var route = pickInfo.SubRoute.Route ;
+      var routeRecords = GetRelatedBranchSegments( route ) ;
+      return routeRecords.Concat( PickCommandUtil.GetNewSegmentList( pickInfo.SubRoute, pickInfo.Element, elm ).ToSegmentsWithName( route.RouteName ) ).EnumerateAll() ;
     }
 
     private static IEnumerable<(string RouteName, RouteSegment Segment)> GetRelatedBranchSegments( Route route )

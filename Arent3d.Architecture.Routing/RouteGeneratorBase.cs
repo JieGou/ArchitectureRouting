@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing
       progressData?.ThrowIfCanceled() ;
 
       using ( progressData?.Reserve( 0.05 ) ) {
-        ThreadDispatcher.Dispatch( OnGenerationStarted ) ;
+        OnGenerationStarted() ;
       }
 
       progressData?.ThrowIfCanceled() ;
@@ -64,13 +64,13 @@ namespace Arent3d.Architecture.Routing
           if ( src is not TAutoRoutingTarget srcTarget ) return ;
 
           var wrapper = new AutoRoutingResult( result ) ;
-          ThreadDispatcher.Dispatch( () => OnRoutingTargetProcessed( srcTarget, wrapper ) ) ;
+          OnRoutingTargetProcessed( srcTarget, wrapper ) ;
           progressData?.ThrowIfCanceled() ;
         } ) ;
       }
 
       using ( progressData?.Reserve( 1 - progressData.Position ) ) {
-        ThreadDispatcher.Dispatch( OnGenerationFinished ) ;
+        OnGenerationFinished() ;
       }
 
       progressData?.ThrowIfCanceled() ;

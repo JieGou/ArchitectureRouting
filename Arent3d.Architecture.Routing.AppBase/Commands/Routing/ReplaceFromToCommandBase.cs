@@ -1,12 +1,10 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.UI ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
-using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
@@ -32,37 +30,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( true, new PickState( route, anotherPickResult, ( false == isFrom ), oldEndPoint, newPickResult ) ) ;
     }
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var pickState = state as PickState ?? throw new InvalidOperationException() ;
 
       var (route, anotherPickResult, anotherPickIsFrom, oldEndPoint, newPickResult) = pickState ;
 
       IEndPoint newEndPoint ;
-      Route? newAffectedRoute ;
+      IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? otherSegments ;
       if ( null != newPickResult.SubRoute ) {
-        ( newEndPoint, newAffectedRoute ) = CreateEndPointOnSubRoute( newPickResult, anotherPickResult, anotherPickIsFrom ) ;
+        ( newEndPoint, otherSegments ) = CreateEndPointOnSubRoute( newPickResult, anotherPickResult, anotherPickIsFrom ) ;
       }
       else {
         newEndPoint = PickCommandUtil.GetEndPoint( newPickResult, anotherPickResult ) ;
-        newAffectedRoute = null ;
+        otherSegments = null ;
       }
 
-      return GetReplacedEndPoints( route, oldEndPoint, newEndPoint, newAffectedRoute ) ;
+      var list = GetReplacedEndPoints( route, oldEndPoint, newEndPoint ).ToList() ;
+      if ( null != otherSegments ) {
+        list.AddRange( otherSegments ) ;
+      }
+
+      return list ;
     }
 
-    private static async IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetReplacedEndPoints( Route route, IEndPoint oldEndPoint, IEndPoint newEndPoint, Route? newAffectedRoute )
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> GetReplacedEndPoints( Route route, IEndPoint oldEndPoint, IEndPoint newEndPoint )
     {
-      await Task.Yield() ;
-
       var affectedRoutes = new List<Route>() ;
       if ( oldEndPoint is RouteEndPoint routeEndPoint ) {
         var routes = RouteCache.Get( route.Document ) ;
         affectedRoutes.Add( routes[ routeEndPoint.RouteName ] ) ;
-      }
-
-      if ( null != newAffectedRoute ) {
-        affectedRoutes.Add( newAffectedRoute ) ;
       }
 
       if ( 0 < affectedRoutes.Count ) {
@@ -77,11 +74,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      ThreadDispatcher.Dispatch( () =>
-      {
-        oldEndPoint.EraseInstance() ;
-        newEndPoint.GenerateInstance( route.RouteName ) ;
-      } ) ;
+      oldEndPoint.EraseInstance() ;
+      newEndPoint.GenerateInstance( route.RouteName ) ;
 
       foreach ( var (routeName, segment) in route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll() ) {
         segment.ReplaceEndPoint( oldEndPoint, newEndPoint ) ;
@@ -116,7 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( segment.ToEndPoint.IsReplaceable ) yield return segment.ToEndPoint ;
     }
 
-    protected abstract (IEndPoint EndPoint, Route? AffectedRoute) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom ) ;
+    protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom ) ;
 
     private Route GetReplacingRoute( UIDocument uiDocument )
     {

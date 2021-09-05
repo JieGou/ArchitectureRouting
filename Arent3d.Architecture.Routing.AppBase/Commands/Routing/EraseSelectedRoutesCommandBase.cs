@@ -25,14 +25,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new[] { pickInfo.Route } ;
     }
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
 
-      return UiThread.RevitUiDispatcher.Invoke( () => GetSelectedRouteSegments( document, routes ).ToAsyncEnumerable() ) ;
+      return GetSelectedRouteSegments( document, routes ) ;
     }
 
-    private IEnumerable<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( Document document, IReadOnlyCollection<Route> pickedRoutes )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetSelectedRouteSegments( Document document, IReadOnlyCollection<Route> pickedRoutes )
     {
       var selectedRoutes = Route.CollectAllDescendantBranches( pickedRoutes ) ;
 
@@ -41,9 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       RouteGenerator.EraseRoutes( document, selectedRoutes.ConvertAll( route => route.RouteName ), true ) ;
 
       // Returns affected but not deleted routes to recreate them.
-      foreach ( var seg in recreatedRoutes.ToSegmentsWithName().EnumerateAll() ) {
-        yield return seg ;
-      }
+      return recreatedRoutes.ToSegmentsWithName().EnumerateAll() ;
     }
   }
 }

@@ -1,8 +1,6 @@
 using System ;
-using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
@@ -70,14 +68,14 @@ namespace Arent3d.Architecture.Routing.AppBase
     /// Execute routing for the passed routing records.
     /// </summary>
     /// <param name="fromToList">Routing from-to records.</param>
-    /// <param name="progressData">Progress data which is notified the status.</param>
+    /// <param name="progressData">Progress bar.</param>
     /// <returns>Result of execution.</returns>
-    public async Task<RoutingExecutionResult> Run( IAsyncEnumerable<(string RouteName, RouteSegment Segment)> fromToList, IProgressData? progressData = null )
+    public RoutingExecutionResult Run( IReadOnlyCollection<(string RouteName, RouteSegment Segment)> fromToList, IProgressData? progressData = null )
     {
       try {
         IReadOnlyCollection<Route> routes ;
-        using ( progressData?.Reserve( 0.01 ) ) {
-          routes = await ConvertToRoutes( fromToList ) ;
+        using ( var p = progressData?.Reserve( 0.01 ) ) {
+          routes = ConvertToRoutes( fromToList, p ) ;
         }
 
         var domainRoutes = GroupByDomain( routes ) ;
@@ -128,18 +126,24 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private void ExecuteRouting( Domain domain, IReadOnlyCollection<Route> routes, IProgressData? progressData )
     {
-      ThreadDispatcher.Dispatch( () => routes.ForEach( r => r.Save() ) ) ;
+      routes.ForEach( r => r.Save() ) ;
 
+      progressData?.ThrowIfCanceled() ;
+      
       ICollisionCheckTargetCollector collector ;
       using ( progressData?.Reserve( 0.05 ) ) {
         collector = CreateCollisionCheckTargetCollector( domain, routes ) ;
       }
 
+      progressData?.ThrowIfCanceled() ;
+      
       RouteGenerator generator ;
       using ( progressData?.Reserve( 0.02 ) ) {
         generator = CreateRouteGenerator( routes, _document, collector ) ;
       }
 
+      progressData?.ThrowIfCanceled() ;
+      
       using ( var generatorProgressData = progressData?.Reserve( 1 - progressData.Position ) ) {
         generator.Execute( generatorProgressData ) ;
       }
@@ -165,16 +169,20 @@ namespace Arent3d.Architecture.Routing.AppBase
     /// Converts routing from-to records to routing objects.
     /// </summary>
     /// <param name="fromToList">Routing from-to records.</param>
+    /// <param name="progressData">Progress bar.</param>
     /// <returns>Routing objects</returns>
-    private async Task<IReadOnlyCollection<Route>> ConvertToRoutes( IAsyncEnumerable<(string RouteName, RouteSegment Segment)> fromToList )
+    private IReadOnlyCollection<Route> ConvertToRoutes( IReadOnlyCollection<(string RouteName, RouteSegment Segment)> fromToList, IProgressData? progressData )
     {
-      var oldRoutes = ThreadDispatcher.Dispatch( () => RouteCache.Get( _document ) ) ;
+      var oldRoutes = RouteCache.Get( _document ) ;
 
       var dic = new Dictionary<string, Route>() ;
       var result = new List<Route>() ;
 
       var parents = new HashSet<Route>() ;
-      await foreach ( var (routeName, segment) in fromToList ) {
+      progressData.ForEach( fromToList, tuple =>
+      {
+        var (routeName, segment) = tuple ;
+
         if ( false == dic.TryGetValue( routeName, out var route ) ) {
           route = oldRoutes.FindOrCreate( routeName ) ;
           route.Clear() ;
@@ -191,8 +199,10 @@ namespace Arent3d.Architecture.Routing.AppBase
           parents.UnionWith( toParent.GetAllRelatedBranches() ) ;
         }
 
-        ThreadDispatcher.Dispatch( () => route.RegisterSegment( segment ) ) ;
-      }
+        route.RegisterSegment( segment ) ;
+
+        progressData?.ThrowIfCanceled() ;
+      } ) ;
 
       result.AddRange( parents.Where( p => false == dic.ContainsKey( p.RouteName ) ) ) ;
 

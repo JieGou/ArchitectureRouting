@@ -2,7 +2,6 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
-using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -73,27 +72,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         SetupFailureHandlingOptions( transaction, executor ) ;
 
-        var segments = GetRouteSegments( document, state ) ;
-
-        var tokenSource = new CancellationTokenSource() ;
-        var task = Task.Run( async () =>
-        {
-          using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
+        try {
+          using var progress = ProgressBar.ShowWithNewThread( new CancellationTokenSource() ) ;
           progress.Message = "Routing..." ;
-          return await executor.Run( segments, progress ) ;
-        }, tokenSource.Token ) ;
-        task.ConfigureAwait( false ) ;
-        ThreadDispatcher.WaitWithDoEvents( task ) ;
 
-        if ( task.IsCanceled ) return ( Result.Cancelled, RoutingExecutionResult.Cancel ) ;
+          var segments = GetRouteSegments( document, state ) ;
+          var result = executor.Run( segments, progress ) ;
 
-        var result = task.Result ;
-        return result.Type switch
-        {
-          RoutingExecutionResultType.Success => ( Result.Succeeded, result ),
-          RoutingExecutionResultType.Cancel => ( Result.Cancelled, result ),
-          _ => ( Result.Failed, result ),
-        } ;
+          return result.Type switch
+          {
+            RoutingExecutionResultType.Success => ( Result.Succeeded, result ),
+            RoutingExecutionResultType.Cancel => ( Result.Cancelled, result ),
+            _ => ( Result.Failed, result ),
+          } ;
+        }
+        catch ( OperationCanceledException ) {
+          return ( Result.Cancelled, RoutingExecutionResult.Cancel ) ;
+        }
       }, RoutingExecutionResult.Cancel ) ;
     }
 
@@ -133,9 +128,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// Generate route segments to be auto-routed from UI state.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected virtual IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
-      return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
+      return Array.Empty<(string RouteName, RouteSegment Segment)>() ;
     }
 
 

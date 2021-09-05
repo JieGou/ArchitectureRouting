@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.IO ;
+using Arent3d.Utility ;
 using Arent3d.Revit.Csv ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
@@ -20,18 +21,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( true, ReadRouteRecordsFromFile( csvFileName ) ) ;
     }
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
-      var fileRecords = state as IAsyncEnumerable<RouteRecord> ?? throw new InvalidOperationException() ;
+      var fileRecords = state as IEnumerable<RouteRecord> ?? throw new InvalidOperationException() ;
 
-      return fileRecords.ToSegmentsWithName( document ) ;
+      return fileRecords.ToSegmentsWithName( document ).EnumerateAll() ;
     }
 
-    private static async IAsyncEnumerable<RouteRecord> ReadRouteRecordsFromFile( string csvFileName )
+    private static IEnumerable<RouteRecord> ReadRouteRecordsFromFile( string csvFileName )
     {
       using var reader = new StreamReader( csvFileName, true ) ;
       // Cannot use return directly, because `reader` will be closed in that case.
-      await foreach ( var item in reader.ReadCsvFileAsync<RouteRecord>() ) {
+      foreach ( var item in reader.ReadCsvFile<RouteRecord>() ) {
         yield return item ;
       }
     }

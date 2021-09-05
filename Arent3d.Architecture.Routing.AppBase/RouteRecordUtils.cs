@@ -29,11 +29,11 @@ namespace Arent3d.Architecture.Routing.AppBase
       return routes.SelectMany( ToSegmentsWithName ) ;
     }
 
-    public static async IAsyncEnumerable<(string RouteName, RouteSegment Segment)> ToSegmentsWithName( this IAsyncEnumerable<RouteRecord> routeRecords, Document document )
+    public static IEnumerable<(string RouteName, RouteSegment Segment)> ToSegmentsWithName( this IEnumerable<RouteRecord> routeRecords, Document document )
     {
       var endPointDictionary = new EndPointDictionaryForImport( document ) ;
 
-      await foreach ( var record in routeRecords ) {
+      foreach ( var record in routeRecords ) {
         var fromEndPoint = endPointDictionary.GetEndPoint( record.RouteName, record.FromKey,EndPointExtensions.ParseEndPoint( document, record.FromEndType, record.FromEndParams ) ) ;
         var toEndPoint = endPointDictionary.GetEndPoint( record.RouteName, record.ToKey, EndPointExtensions.ParseEndPoint( document, record.ToEndType, record.ToEndParams ) ) ;
         if ( null == fromEndPoint || null == toEndPoint ) continue ;

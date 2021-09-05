@@ -1,3 +1,4 @@
+using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.EndPoints ;
@@ -24,7 +25,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return new ElectricalRoutingExecutor( document, view ) ;
     }
 
-    protected override (IEndPoint EndPoint, Route? AffectedRoute) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom )
+    protected override (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom )
     {
       return PickCommandUtil.CreateBranchingRouteEndPoint( newPickResult, anotherPickResult, newPickIsFrom ) ;
     }

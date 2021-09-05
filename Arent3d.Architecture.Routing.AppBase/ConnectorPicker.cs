@@ -73,11 +73,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       if ( 0 == endPoints.Count ) return null ;
       if ( 1 == endPoints.Count ) return endPoints.FirstOrDefault() ;
 
-      return ThreadDispatcher.Dispatch( () =>
-      {
-        using var displayEndPoints = new EndPointPicker( uiDocument, pickResult.GetAllRelatedElements(), endPoints ) ;
-        return displayEndPoints.Pick() ;
-      } ) ;
+      using var displayEndPoints = new EndPointPicker( uiDocument, pickResult.GetAllRelatedElements(), endPoints ) ;
+      return displayEndPoints.Pick() ;
     }
 
     private static IEnumerable<IEndPoint> GetAllEndPoints( RouteCache routes, SubRoute subRoute, bool pickingFromSide )
@@ -194,8 +191,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         var diameter = _subRoute.GetDiameter().DiameterValueToPipeDiameter() ;
 
-        var transaction = new Transaction( _pickedElement.Document ) ;
-        transaction.Start( "To Be Rollbacked" ) ;
+        var transaction = new SubTransaction( _pickedElement.Document ) ;
+        transaction.Start() ;
         try {
           return _spec!.GetLongElbowSize( diameter ) + _spec.GetWeldMinDistance( diameter ) ;
         }
@@ -234,9 +231,10 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         static bool HasEnoughLength( MEPCurve mepCurve, double requiredLength )
         {
-          var connectorPositions = mepCurve.GetConnectors().Where( c => c.IsAnyEnd() ).Select( c => c.Origin ).ToArray() ;
-          if ( connectorPositions.Length < 2 ) return false ;
-          return ( requiredLength < connectorPositions[ 1 ].DistanceTo( connectorPositions[ 0 ] ) ) ;
+          if ( mepCurve.GetRoutingConnectors( true ).FirstOrDefault() is not { } fromConnector ) return false ;
+          if ( mepCurve.GetRoutingConnectors( false ).FirstOrDefault() is not { } toConnector ) return false ;
+
+          return ( requiredLength < toConnector.Origin.DistanceTo( fromConnector.Origin ) ) ;
         }
       }
 

@@ -25,11 +25,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new[] { pickInfo.Route } ;
     }
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
 
-      return Route.CollectAllDescendantBranches( routes ).ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
+      return Route.CollectAllDescendantBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
     }
   }
 }

@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing
     {
       _document = document ;
 
-      _routeConditions = ThreadDispatcher.Dispatch( () => CreateRouteConditions( document, routes, fittingSizeCalculator ) ) ;
+      _routeConditions = CreateRouteConditions( document, routes, fittingSizeCalculator ) ;
       var targets = AutoRoutingTargetGenerator.Run( _document, routes, _routeConditions ) ;
       RoutingTargets = targets.EnumerateAll() ;
       ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     private void ErasePreviousRoutes()
     {
-      ThreadDispatcher.Dispatch( () => EraseRoutes( _document, RoutingTargets.SelectMany( t => t.Routes ).Select( route => route.RouteName ), false ) ) ;
+      EraseRoutes( _document, RoutingTargets.SelectMany( t => t.Routes ).Select( route => route.RouteName ), false ) ;
     }
 
     public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints )
