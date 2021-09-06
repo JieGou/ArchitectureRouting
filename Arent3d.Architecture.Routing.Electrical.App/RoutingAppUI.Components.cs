@@ -51,6 +51,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     private readonly RibbonButton _newHumiditySensorForDuctWithoutLogoCommandButton;
     private readonly RibbonButton _newIndoorHumiditySensorWithLogoCommandButton;
     private readonly RibbonButton _newIndoorHumiditySensorWithoutLogoCommandButton;
+    private readonly RibbonButton _newEnvelopCommandButton;
 
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
@@ -86,6 +87,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>() ;
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
+        
+        _newEnvelopCommandButton = routingPanel.AddButton<NewEnvelopeCommand>() ;
       }
       {
         var connectorsPanel = tab.CreateRibbonPanel(ConnectorsPanel.Key, ToDisplayName(ConnectorsPanel.TitleKey ) ) ;
@@ -169,6 +172,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _eraseSelectedRoutesCommandButton.Enabled = setupIsDone ;
       _eraseAllRoutesCommandButton.Enabled = setupIsDone ;
       //_exportRoutingCommandButton.Enabled = setupIsDone ;
+      _newEnvelopCommandButton.Enabled = setupIsDone;
 
       _newConnectorCommandButton.Enabled = setupIsDone;
       _newDamperActuatorCommandButton.Enabled = setupIsDone;

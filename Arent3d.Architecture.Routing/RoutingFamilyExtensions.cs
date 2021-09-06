@@ -71,6 +71,10 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit("電動二方弁(ロゴなし)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
     ElectricTwoWayValveWithoutLogo,
+
+    [NameOnRevit( "Routing Envelope" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Envelope,
   }
 
   public static class RoutingFamilyExtensions
