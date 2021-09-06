@@ -1,3 +1,4 @@
+using System ;
 using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.CollisionTree ;
@@ -17,6 +18,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
     protected override RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector )
     {
       return new RouteGenerator( routes, document, GetFittingSizeCalculator(), collector ) ;
+    }
+
+    protected override ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )
+    {
+      return domain switch
+      {
+        Domain.DomainHvac => new HVacCollisionCheckTargetCollector( Document, routesInType ),
+        Domain.DomainPiping => new PipingCollisionCheckTargetCollector( Document, routesInType ),
+        _ => throw new InvalidOperationException(),
+      } ;
     }
   }
 }

@@ -161,6 +161,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       private readonly Element _pickedElement ;
       private readonly SubRoute _subRoute ;
       private readonly XYZ _pickPosition ;
+      private readonly HashSet<string> _relatedRouteNames ;
       private (Element, XYZ)? _pickPositionOnCenterline ;
 
       public SubRoute? SubRoute => _subRoute ;
@@ -244,9 +245,11 @@ namespace Arent3d.Architecture.Routing.AppBase
         _pickedElement = element ;
         _subRoute = subRoute ;
         _pickPosition = pickPosition ;
+        _relatedRouteNames = _subRoute.Route.GetAllRelatedBranches().Select( route => route.RouteName ).ToHashSet() ;
       }
 
-      private SubRoutePickResult( SubRoutePickResult baseResult, EndPointKey endPointOverSubRoute ) : this( baseResult._spec, baseResult._pickedElement, baseResult._subRoute, baseResult._pickPosition )
+      private SubRoutePickResult( SubRoutePickResult baseResult, EndPointKey endPointOverSubRoute )
+        : this( baseResult._spec, baseResult._pickedElement, baseResult._subRoute, baseResult._pickPosition )
       {
         EndPointOverSubRoute = endPointOverSubRoute ;
         _pickPositionOnCenterline = baseResult._pickPositionOnCenterline ;
@@ -277,7 +280,11 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
       public bool IsCompatibleTo( Connector connector ) => _subRoute.GetReferenceConnector().IsCompatibleTo( connector ) ;
-      public bool IsCompatibleTo( Element element ) => _subRoute.Route.RouteName != element.GetRouteName() ;
+
+      public bool IsCompatibleTo( Element element )
+      {
+        return ( element.GetRouteName() is not { } routeName ) || ( false == _relatedRouteNames.Contains( routeName ) ) ;
+      }
     }
 
     private class PassPointPickResult : IPickResult

@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase
   public abstract class RoutingExecutor
   {
     private readonly PipeSpecDictionary _pipeSpecDictionary ;
-    private readonly Document _document ;
+    protected Document Document { get ; }
     private readonly List<Connector[]> _badConnectors = new() ;
 
     /// <summary>
@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     /// <param name="view"></param>
     public RoutingExecutor( Document document, View view )
     {
-      _document = document ;
+      Document = document ;
       _pipeSpecDictionary = new PipeSpecDictionary( document, GetFittingSizeCalculator() ) ;
       CollectRacks( document, view ) ;
     }
@@ -139,7 +139,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       
       RouteGenerator generator ;
       using ( progressData?.Reserve( 0.02 ) ) {
-        generator = CreateRouteGenerator( routes, _document, collector ) ;
+        generator = CreateRouteGenerator( routes, Document, collector ) ;
       }
 
       progressData?.ThrowIfCanceled() ;
@@ -153,17 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     protected abstract RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector ) ;
 
-    private ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )
-    {
-      return domain switch
-      {
-        Domain.DomainHvac => new HVacCollisionCheckTargetCollector( _document, routesInType ),
-        Domain.DomainPiping => new PipingCollisionCheckTargetCollector( _document, routesInType ),
-        Domain.DomainElectrical => new CableTrayConduitCollisionCheckTargetCollector( _document, routesInType ),
-        Domain.DomainCableTrayConduit => new CableTrayConduitCollisionCheckTargetCollector( _document, routesInType ), //for testing
-        _ => throw new InvalidOperationException(),
-      } ;
-    }
+    protected abstract ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType ) ;
 
     /// <summary>
     /// Converts routing from-to records to routing objects.
@@ -173,7 +163,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     /// <returns>Routing objects</returns>
     private IReadOnlyCollection<Route> ConvertToRoutes( IReadOnlyCollection<(string RouteName, RouteSegment Segment)> fromToList, IProgressData? progressData )
     {
-      var oldRoutes = RouteCache.Get( _document ) ;
+      var oldRoutes = RouteCache.Get( Document ) ;
 
       var dic = new Dictionary<string, Route>() ;
       var result = new List<Route>() ;
@@ -220,7 +210,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     public void RegisterDeletedElement( ElementId deletingElementId )
     {
-      var elm = _document.GetElement( deletingElementId ) ;
+      var elm = Document.GetElement( deletingElementId ) ;
       if ( null == elm ) throw new InvalidOperationException() ;
 
       if ( RoutingElementInfo.Create( elm ) is { } info ) {
@@ -239,8 +229,8 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       var routeDic = routes.ToDictionary( route => route.RouteName ) ;
 
-      foreach ( var pipeInfo in _document.GetAllElementsOfRoute<MEPCurve>().Select( c => RoutingElementInfo.Create( c, routeDic ) ).NonNull().Concat( _deletedElementInfo ) ) {
-        foreach ( var reducer in pipeInfo.GetNeighborReducers( _document ) ) {
+      foreach ( var pipeInfo in Document.GetAllElementsOfRoute<MEPCurve>().Select( c => RoutingElementInfo.Create( c, routeDic ) ).NonNull().Concat( _deletedElementInfo ) ) {
+        foreach ( var reducer in pipeInfo.GetNeighborReducers( Document ) ) {
           pipeInfo.ApplyToReducer( reducer ) ;
         }
       }
