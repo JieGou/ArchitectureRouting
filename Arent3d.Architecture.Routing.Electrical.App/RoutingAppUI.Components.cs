@@ -12,17 +12,28 @@ using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App
 {
   partial class RoutingAppUI
   {
-    private const string RibbonTabNameKey = "Electrical.App.Routing.TabName"  ;
+    private const string RibbonTabNameKey = "Electrical.App.Routing.TabName" ;
 
-    private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init", TitleKey: "Electrical.App.Panels.Routing.Initialize" ) ;
-    private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing", TitleKey: "Electrical.App.Panels.Routing.Routing" ) ;
-    private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack", TitleKey: "Electrical.App.Panels.Routing.Racks" ) ;
-    private static readonly (string Key, string TitleKey) MonitorPanel = ( Key: "arent3d.architecture.routing.monitor", TitleKey: "Electrical.App.Panels.Routing.Monitor" ) ;
+    private static readonly (string Key, string TitleKey) InitPanel = ( Key: "arent3d.architecture.routing.init",
+      TitleKey: "Electrical.App.Panels.Routing.Initialize" ) ;
+
+    private static readonly (string Key, string TitleKey) RoutingPanel = ( Key: "arent3d.architecture.routing.routing",
+      TitleKey: "Electrical.App.Panels.Routing.Routing" ) ;
+
+    private static readonly (string Key, string TitleKey) RackPanel = ( Key: "arent3d.architecture.routing.rack",
+      TitleKey: "Electrical.App.Panels.Routing.Racks" ) ;
+
+    private static readonly (string Key, string TitleKey) MonitorPanel = ( Key: "arent3d.architecture.routing.monitor",
+      TitleKey: "Electrical.App.Panels.Routing.Monitor" ) ;
+
+    private static readonly (string Key, string TitleKey) ShaftPanel = ( Key: "arent3d.architecture.routing.shaft",
+      TitleKey: "Electrical.App.Panels.Routing.Shafts" ) ;
 
     private readonly RibbonButton _initializeCommandButton ;
     private readonly RibbonButton _showRoutingViewsCommandButton ;
@@ -41,19 +52,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     private readonly RibbonButton _replaceFromToCommandButton ; //just show dialog
     private readonly RibbonButton _showFromToWindowCommandButton ;
     private readonly RibbonButton _showFromToTreeCommandButton ;
-    private readonly RibbonButton _newConnectorCommandButton;
+    private readonly RibbonButton _newConnectorCommandButton ;
 
     private readonly RibbonButton _importRacksCommandButton ;
     private readonly RibbonButton _exportRacksCommandButton ;
     private readonly RibbonButton _eraseAllRacksCommandButton ;
-    private readonly RibbonButton _rackGuidCommanddButton;
+    private readonly RibbonButton _rackGuidCommanddButton ;
+
+    private readonly RibbonButton _createShaftCommandButton ;
 
     private readonly RibbonButton _monitorSelectionCommandButton ;
 
-    private readonly RegisterFromToTreeCommand _registerFromToTreeCommand;
+    private readonly RegisterFromToTreeCommand _registerFromToTreeCommand ;
 
     private readonly Guid _dpid = new Guid( "1EDCF677-4FF3-438F-AD0E-3658EB9A64AE" ) ;
-    
+
     private RoutingAppUI( UIControlledApplication application )
     {
       var tab = application.CreateRibbonTabEx( ToDisplayName( RibbonTabNameKey ) ) ;
@@ -77,26 +90,31 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         _replaceFromToCommandButton = routingPanel.AddButton<ReplaceFromToCommand>() ;
         _showFromToWindowCommandButton = routingPanel.AddButton<ShowFrom_ToWindowCommand>() ;
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
-        
-        _newConnectorCommandButton = routingPanel.AddButton<NewConnectorCommand>();
 
+        _newConnectorCommandButton = routingPanel.AddButton<NewConnectorCommand>() ;
       }
       {
         var rackPanel = tab.CreateRibbonPanel( RackPanel.Key, ToDisplayName( RackPanel.TitleKey ) ) ;
         _importRacksCommandButton = rackPanel.AddButton<ImportRacksCommand>() ;
         _exportRacksCommandButton = rackPanel.AddButton<ExportRacksCommand>() ;
         _eraseAllRacksCommandButton = rackPanel.AddButton<EraseAllRacksCommand>() ;
-        _rackGuidCommanddButton = rackPanel.AddButton<RackGuidCommand>();
+        _rackGuidCommanddButton = rackPanel.AddButton<RackGuidCommand>() ;
       }
       {
         var monitorPanel = tab.CreateRibbonPanel( MonitorPanel.Key, ToDisplayName( MonitorPanel.TitleKey ) ) ;
-        _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>( "Arent3d.Architecture.Routing.Electrical.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
+        _monitorSelectionCommandButton = monitorPanel.AddButton<MonitorSelectionCommand>(
+          "Arent3d.Architecture.Routing.Electrical.App.Commands.Enabler.MonitorSelectionCommandEnabler" ) ;
       }
+      {
+        var shaftPanel = tab.CreateRibbonPanel( ShaftPanel.Key, ToDisplayName( ShaftPanel.TitleKey ) ) ;
+        _createShaftCommandButton = shaftPanel.AddButton<CreateShaftCommand>() ;
+      }
+      _registerFromToTreeCommand = new RegisterFromToTreeCommand( application, _dpid, new PostCommandExecutor() ) ;
 
-      _registerFromToTreeCommand = new RegisterFromToTreeCommand(application, _dpid, new PostCommandExecutor()) ;
-
-      application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters;
-      application.ControlledApplication.ApplicationInitialized += new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent.MonitorSelectionApplicationInitialized ) ;
+      application.ControlledApplication.ApplicationInitialized += DockablePaneRegisters ;
+      application.ControlledApplication.ApplicationInitialized +=
+        new EventHandler<ApplicationInitializedEventArgs>( MonitorSelectionApplicationEvent
+          .MonitorSelectionApplicationInitialized ) ;
 
       InitializeRibbon() ;
     }
@@ -129,7 +147,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
       _eraseAllRacksCommandButton.Enabled = false ;
-      _rackGuidCommanddButton.Enabled = false;
+      _rackGuidCommanddButton.Enabled = false ;
+
+      _createShaftCommandButton.Enabled = false ;
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
@@ -138,7 +158,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         InitializeRibbon() ;
         return ;
       }
-      
+
       var setupIsDone = document.RoutingSettingsAreInitialized() ;
 
       _initializeCommandButton.Enabled = ! setupIsDone ;
@@ -151,7 +171,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _eraseSelectedRoutesCommandButton.Enabled = setupIsDone ;
       _eraseAllRoutesCommandButton.Enabled = setupIsDone ;
       //_exportRoutingCommandButton.Enabled = setupIsDone ;
-      _newConnectorCommandButton.Enabled = setupIsDone;
+      _newConnectorCommandButton.Enabled = setupIsDone ;
 
       _insertPassPointCommandButton.Enabled = setupIsDone ;
       _insertBranchPointCommandButton.Enabled = setupIsDone ;
@@ -163,12 +183,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
-      _rackGuidCommanddButton.Enabled = setupIsDone;
+      _rackGuidCommanddButton.Enabled = setupIsDone ;
+
+      _createShaftCommandButton.Enabled = setupIsDone ;
     }
 
     private void DockablePaneRegisters( object sender, ApplicationInitializedEventArgs e )
     {
-      _registerFromToTreeCommand.Initialize( new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
+      _registerFromToTreeCommand.Initialize(
+        new UIApplication( sender as Autodesk.Revit.ApplicationServices.Application ) ) ;
     }
   }
 }
