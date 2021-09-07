@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
     private readonly RibbonButton _initializeCommandButton ;
     private readonly RibbonButton _showRoutingViewsCommandButton ;
+    private readonly RibbonButton _showHeightSettingDialogCommandButton ;
 
     private readonly RibbonButton _pickRoutingCommandButton ;
 
@@ -61,6 +62,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         var initPanel = tab.CreateRibbonPanel( InitPanel.Key, ToDisplayName( InitPanel.TitleKey ) ) ;
         _initializeCommandButton = initPanel.AddButton<InitializeCommand>() ;
         _showRoutingViewsCommandButton = initPanel.AddButton<ShowRoutingViewsCommand>() ;
+        _showHeightSettingDialogCommandButton = initPanel.AddButton<ShowHeightSettingCommand>() ;
       }
       {
         var routingPanel = tab.CreateRibbonPanel( RoutingPanel.Key, ToDisplayName( RoutingPanel.TitleKey ) ) ;
