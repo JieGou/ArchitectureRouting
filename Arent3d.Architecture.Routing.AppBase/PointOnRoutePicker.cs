@@ -1,4 +1,4 @@
-using System ;
+﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.StorableCaches ;
@@ -66,13 +66,15 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
 
-    public static PickInfo PickRoute( UIDocument uiDocument, bool mepCurveOnly, string message, AddInType addInType, string? firstRouteId = null )
+    public static PickInfo PickRoute( UIDocument uiDocument, bool mepCurveOnly, string message, AddInType addInType,
+      string? firstRouteId = null )
     {
       var document = uiDocument.Document ;
 
       var dic = RouteCache.Get( document ) ;
       AddInType = addInType ;
-      var filter = new RouteFilter( dic, mepCurveOnly, ( null == firstRouteId ) ? null : elm => ( firstRouteId == elm.GetRouteName() ) ) ;
+      var filter = new RouteFilter( dic, mepCurveOnly,
+        ( null == firstRouteId ) ? null : elm => ( firstRouteId == elm.GetRouteName() ) ) ;
 
 
       while ( true ) {
@@ -89,6 +91,31 @@ namespace Arent3d.Architecture.Routing.AppBase
         if ( null == pos ) continue ;
 
         return new PickInfo( subRoute, elm, pos, dir! ) ;
+      }
+    }
+
+    public static (XYZ? Position, XYZ? Direction) PickPointOnRoute( UIDocument uiDocument, bool mepCurveOnly,
+      string message, AddInType addInType, string? firstRouteId = null )
+    {
+      var document = uiDocument.Document ;
+
+      var dic = RouteCache.Get( document ) ;
+      AddInType = addInType ;
+      var filter = new RouteFilter( dic, mepCurveOnly,
+        ( null == firstRouteId ) ? null : elm => ( firstRouteId == elm.GetRouteName() ) ) ;
+
+
+      while ( true ) {
+        var pickedObject = uiDocument.Selection.PickObject( ObjectType.PointOnElement, filter, message ) ;
+
+        var elm = document.GetElement( pickedObject.ElementId ) ;
+        if ( elm?.GetRouteName() is not { } routeName ) continue ;
+        if ( false == dic.TryGetValue( routeName, out var route ) ) continue ;
+
+        var (pos, dir) = GetPositionAndDirection( elm, pickedObject.GlobalPoint ) ;
+        if ( null == pos ) continue ;
+
+        return ( pos, dir ) ;
       }
     }
 
@@ -131,7 +158,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       private readonly bool _mepCurveOnly ;
       private readonly Predicate<Element>? _predicate ;
 
-      public RouteFilter( IReadOnlyDictionary<string, Route> allRoutes, bool mepCurveOnly, Predicate<Element>? predicate )
+      public RouteFilter( IReadOnlyDictionary<string, Route> allRoutes, bool mepCurveOnly,
+        Predicate<Element>? predicate )
       {
         _allRoutes = allRoutes ;
         _mepCurveOnly = mepCurveOnly ;
