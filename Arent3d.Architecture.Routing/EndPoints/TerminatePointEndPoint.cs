@@ -1,10 +1,13 @@
+using System.Diagnostics ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
 {
-  public class TerminatePointEndPoint : IEndPoint
+  [DebuggerDisplay("{Key}")]
+  public class TerminatePointEndPoint : IRealEndPoint
   {
     public const string Type = "Terminate Point" ;
 
@@ -48,7 +51,17 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
 
     public string TypeName => Type ;
+    public string DisplayTypeName => "EndPoint.DisplayTypeName.Terminal".GetAppStringByKeyOrDefault( TypeName ) ;
     public EndPointKey Key => new EndPointKey( TypeName, TerminatePointId.IntegerValue.ToString() ) ;
+
+    internal static TerminatePointEndPoint? FromKeyParam( Document document, string param )
+    {
+      if ( false == int.TryParse( param, out var terminatePointId ) ) return null ;
+      if ( document.GetElementById<FamilyInstance>( terminatePointId ) is not { } instance ) return null ;
+      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.TerminatePoint )?.Id ) return null ;
+
+      return new TerminatePointEndPoint( instance, null ) ;
+    }
 
     public bool IsReplaceable => true ;
 

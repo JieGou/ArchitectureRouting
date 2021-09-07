@@ -77,6 +77,11 @@ namespace Arent3d.Architecture.Routing.AppBase
       return ( RegisterEndPoint( endPoint ), endPoint ) ;
     }
 
+    public (string Key, IEndPoint EndPoint) Visit( PassPointBranchEndPoint endPoint )
+    {
+      return ( RegisterEndPoint( endPoint ), endPoint ) ;
+    }
+
     public (string Key, IEndPoint EndPoint) Visit( RouteEndPoint endPoint )
     {
       return (string.Empty, endPoint ) ;

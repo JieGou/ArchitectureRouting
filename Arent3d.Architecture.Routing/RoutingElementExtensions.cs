@@ -611,7 +611,7 @@ namespace Arent3d.Architecture.Routing
         return Array.Empty<IEndPoint>() ;
       }
 
-      return EndPointExtensions.ParseEndPoints( element.Document, str ) ;
+      return element.Document.ParseEndPoints( str ) ;
     }
 
     public static void SetMEPCurvesAsSameGroup( this IReadOnlyCollection<MEPCurve> curves )

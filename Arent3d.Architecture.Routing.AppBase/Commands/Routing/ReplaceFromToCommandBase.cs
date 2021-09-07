@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.UI ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
@@ -57,7 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static IEnumerable<(string RouteName, RouteSegment Segment)> GetReplacedEndPoints( Route route, IEndPoint oldEndPoint, IEndPoint newEndPoint )
     {
       var affectedRoutes = new List<Route>() ;
-      if ( oldEndPoint is RouteEndPoint routeEndPoint ) {
+      if ( oldEndPoint is IRouteBranchEndPoint routeEndPoint ) {
         var routes = RouteCache.Get( route.Document ) ;
         affectedRoutes.Add( routes[ routeEndPoint.RouteName ] ) ;
       }

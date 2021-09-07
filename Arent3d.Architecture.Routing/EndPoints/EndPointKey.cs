@@ -1,10 +1,12 @@
 using System ;
+using System.Diagnostics ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
 {
   /// <summary>
   /// A specifier which determine the equality of an end point.
   /// </summary>
+  [DebuggerDisplay("{Type}:{Param}")]
   public class EndPointKey : IEquatable<EndPointKey>
   {
     internal string Type { get ; }

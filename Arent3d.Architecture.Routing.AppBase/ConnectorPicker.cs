@@ -68,12 +68,17 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private static IEndPoint? PickEndPointOverSubRoute( UIDocument uiDocument, SubRoutePickResult pickResult, bool pickingFromSide )
     {
-      var endPoints = GetNearestEndPoints( pickResult.GetOriginElement(), pickingFromSide ).ToHashSet() ;
+      var endPoints = new Dictionary<EndPointKey, IEndPoint>() ;
+      foreach ( var endPoint in GetNearestEndPoints( pickResult.GetOriginElement(), pickingFromSide ) ) {
+        var key = endPoint.Key ;
+        if ( endPoints.ContainsKey( key ) ) continue ;
+        endPoints.Add( key, endPoint ) ;
+      }
 
       if ( 0 == endPoints.Count ) return null ;
-      if ( 1 == endPoints.Count ) return endPoints.FirstOrDefault() ;
+      if ( 1 == endPoints.Count ) return endPoints.Values.FirstOrDefault() ;
 
-      using var displayEndPoints = new EndPointPicker( uiDocument, pickResult.GetAllRelatedElements(), endPoints ) ;
+      using var displayEndPoints = new EndPointPicker( uiDocument, pickResult.GetAllRelatedElements(), endPoints.Values ) ;
       return displayEndPoints.Pick() ;
     }
 
@@ -81,7 +86,21 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       if ( originElement is not MEPCurve mepCurve ) return Array.Empty<IEndPoint>() ;
 
-      return mepCurve.GetMEPCurvesOnSameGroup().SelectMany( elm => elm.GetNearestEndPoints( pickingFromSide ) ) ;
+      var document = originElement.Document ;
+      var routes = RouteCache.Get( document ) ;
+      return mepCurve.GetMEPCurvesOnSameGroup().Select( elm => GetEndPoint( document, routes, elm.GetRouteName(), pickingFromSide ) ).NonNull() ;
+
+      static IEndPoint? GetEndPoint( Document document, RouteCache routes, string? routeName, bool pickingFromSide )
+      {
+        if ( null == routeName || false == routes.TryGetValue( routeName, out var route ) ) return null ;
+
+        if ( pickingFromSide ) {
+          return route.SubRoutes.FirstOrDefault()?.Segments.FirstOrDefault()?.FromEndPoint.ToEndPointOverSubRoute( document ) ;
+        }
+        else {
+          return route.SubRoutes.LastOrDefault()?.Segments.FirstOrDefault()?.ToEndPoint.ToEndPointOverSubRoute( document ) ;
+        }
+      }
     }
 
     public static Connector? GetInOutConnector( UIDocument uiDocument, Element eleConn, string message, IPickResult? firstPick, AddInType addInType )

@@ -10,6 +10,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
     string TypeName { get ; }
 
     /// <summary>
+    /// Type name of this end point (displayed).
+    /// </summary>
+    string DisplayTypeName { get ; }
+
+    /// <summary>
     /// A specifier which determine the equality of an end point.
     /// </summary>
     EndPointKey Key { get ; }
@@ -84,5 +89,19 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     void Accept( IEndPointVisitor visitor ) ;
     T Accept<T>( IEndPointVisitor<T> visitor ) ;
+  }
+
+  public interface IRealEndPoint : IEndPoint
+  {
+  }
+
+  public interface IEndPointOfPassPoint : IEndPoint
+  {
+    ElementId PassPointId { get ; }
+  }
+
+  public interface IRouteBranchEndPoint : IEndPoint
+  {
+    string RouteName { get ; }
   }
 }

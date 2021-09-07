@@ -34,8 +34,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       var endPointDictionary = new EndPointDictionaryForImport( document ) ;
 
       foreach ( var record in routeRecords ) {
-        var fromEndPoint = endPointDictionary.GetEndPoint( record.RouteName, record.FromKey,EndPointExtensions.ParseEndPoint( document, record.FromEndType, record.FromEndParams ) ) ;
-        var toEndPoint = endPointDictionary.GetEndPoint( record.RouteName, record.ToKey, EndPointExtensions.ParseEndPoint( document, record.ToEndType, record.ToEndParams ) ) ;
+        var fromEndPoint = endPointDictionary.GetEndPoint( record.RouteName, record.FromKey,document.ParseEndPoint( record.FromEndType, record.FromEndParams ) ) ;
+        var toEndPoint = endPointDictionary.GetEndPoint( record.RouteName, record.ToKey, document.ParseEndPoint( record.ToEndType, record.ToEndParams ) ) ;
         if ( null == fromEndPoint || null == toEndPoint ) continue ;
 
         var classificationInfo = MEPSystemClassificationInfo.Deserialize( record.SystemClassification ) ;

@@ -80,12 +80,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public static (ConnectorPicker.IPickResult PickResult, bool AnotherIsFrom) PickResultFromAnother( Route route, IEndPoint endPoint )
     {
       var ((subRoute, anotherEndPoint), isFrom) = GetOtherEndPoint( route, endPoint ) ;
-      return (new PseudoPickResult( subRoute, anotherEndPoint ), isFrom) ;
+      return (new PseudoPickResult( subRoute, anotherEndPoint, isFrom ), isFrom) ;
     }
 
     public static IEndPoint CreateRouteEndPoint( ConnectorPicker.IPickResult routePickResult )
     {
-      return new RouteEndPoint( routePickResult.SubRoute!, routePickResult.EndPointOverSubRoute ) ;
+      return new RouteEndPoint( routePickResult.SubRoute! ) ;
     }
 
     public static (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateBranchingRouteEndPoint( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool isFrom )
@@ -100,11 +100,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( InsertBranchingPassPointElement( document, subRoute, element, pos ) is not { } passPointElement ) throw new InvalidOperationException() ;
       var otherSegments = GetNewSegmentList( subRoute, element, passPointElement ).Select( segment => ( routeName, segment ) ).EnumerateAll() ;
 
-      // TODO: Create BranchingRouteEndPoint
+      // Create PassPointBranchEndPoint
       var anotherPos = anotherPickResult.GetOrigin() ;
-      var dir = GetPreferredDirection( pos, anotherPos ) ;
+      var angle = GetPreferredAngle( passPointElement.GetTotalTransform(), pos, anotherPos ) ;
       var preferredRadius = ( routePickResult.PickedConnector ?? anotherPickResult.PickedConnector )?.Radius ;
-      var endPoint = new TerminatePointEndPoint( document, ElementId.InvalidElementId, pos, ( isFrom ? dir : -dir ), preferredRadius, element.Id ) ;
+      var endPoint = new PassPointBranchEndPoint( document, passPointElement.Id, ( isFrom ? angle : -angle ), preferredRadius, routePickResult.EndPointOverSubRoute! ) ;
 
       return ( endPoint, otherSegments ) ;
     }
@@ -118,7 +118,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return route.GetSubRoute( representativeElement.GetSubRouteIndex()!.Value ) ;
     }
-
     private static Instance? InsertBranchingPassPointElement( Document document, SubRoute subRoute, Element routingElement, XYZ pos )
     {
       if ( routingElement.GetRoutingConnectors( true ).FirstOrDefault() is not { } fromConnector ) return null ;
@@ -126,6 +125,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var dir = ( toConnector.Origin - fromConnector.Origin ).Normalize() ;
       return document.AddPassPoint( subRoute.Route.RouteName, pos, dir, subRoute.GetDiameter() * 0.5 ) ;
+    }
+
+    private const double HalfPI = Math.PI / 2 ;
+    private const double OneAndAHalfPI = Math.PI + HalfPI ;
+    private static double GetPreferredAngle( Transform transform, XYZ pos, XYZ anotherPos )
+    {
+      var vec = pos - anotherPos ;
+      var x = transform.BasisY.DotProduct( vec ) ;
+      var y = transform.BasisZ.DotProduct( vec ) ;
+      if ( Math.Abs( y ) < Math.Abs( x ) ) {
+        return ( 0 < x ? 0 : Math.PI ) ;
+      }
+      else {
+        return ( 0 < y ? HalfPI : OneAndAHalfPI ) ;
+      }
     }
 
     public static IEnumerable<RouteSegment> GetNewSegmentList( SubRoute subRoute, Element insertingElement, Instance passPointElement )
@@ -213,14 +227,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       private readonly SubRoute _subRoute ;
       private readonly IEndPoint _endPoint ;
 
-      public PseudoPickResult( SubRoute subRoute, IEndPoint endPoint )
+      public PseudoPickResult( SubRoute subRoute, IEndPoint endPoint, bool isFrom )
       {
         _subRoute = subRoute ;
         _endPoint = endPoint ;
 
         if ( endPoint is RouteEndPoint routeEndPoint ) {
-          SubRoute = routeEndPoint.GetSubRoute() ?? subRoute ;
-          EndPointOverSubRoute = routeEndPoint.EndPointKeyOverSubRoute ;
+          SubRoute = routeEndPoint.GetSubRoute() ;
+          EndPointOverSubRoute = null ;
+        }
+        else if ( endPoint is PassPointBranchEndPoint passPointBranchEndPoint ) {
+          SubRoute = passPointBranchEndPoint.GetSubRoute( isFrom ) ?? subRoute ;
+          EndPointOverSubRoute = passPointBranchEndPoint.EndPointKeyOverSubRoute ;
         }
         else {
           SubRoute = null ;

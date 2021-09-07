@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
 
-      return Route.CollectAllDescendantBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
+      return Route.GetAllRelatedBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
     }
   }
 }

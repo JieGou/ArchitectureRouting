@@ -1,11 +1,13 @@
-using System.Text.RegularExpressions ;
+using System.Diagnostics ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
 {
-  public class ConnectorEndPoint : IEndPoint
+  [DebuggerDisplay("{Key}")]
+  public class ConnectorEndPoint : IRealEndPoint
   {
     public const string Type = "Connector" ;
 
@@ -15,6 +17,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
       return new EndPointKey( Type, BuildParameterString( equipmentId, connectorIndex ) ) ;
     }
     public static string BuildParameterString( Connector connector ) => BuildParameterString( connector.Owner.Id, connector.Id ) ;
+
+    internal static ConnectorEndPoint? FromKeyParam( Document document, string param ) => ParseParameterString( document, param ) ;
 
     private enum SerializeField
     {
@@ -44,6 +48,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
 
     public string TypeName => Type ;
+    public string DisplayTypeName => "EndPoint.DisplayTypeName.Connector".GetAppStringByKeyOrDefault( TypeName ) ;
 
     public EndPointKey Key => GenerateKey( EquipmentId, ConnectorIndex ) ;
 
