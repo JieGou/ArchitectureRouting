@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -89,14 +90,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateBranchingRouteEndPoint( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool isFrom )
     {
-      var subRoute = routePickResult.SubRoute! ;
-      var route = subRoute.Route ;
-      var document = subRoute.Route.Document ;
       var element = routePickResult.GetOriginElement() ;
+      var document = element.Document ;
       var pos = routePickResult.GetOrigin() ;
 
       // Create Pass Point
-      var routeName = route.Name ;
+      var subRoute = GetRepresentativeSubRoute( element ) ?? routePickResult.SubRoute! ;
+      var routeName = subRoute.Route.Name ;
       if ( InsertBranchingPassPointElement( document, subRoute, element, pos ) is not { } passPointElement ) throw new InvalidOperationException() ;
       var otherSegments = GetNewSegmentList( subRoute, element, passPointElement ).Select( segment => ( routeName, segment ) ).EnumerateAll() ;
 
@@ -107,6 +107,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var endPoint = new TerminatePointEndPoint( document, ElementId.InvalidElementId, pos, ( isFrom ? dir : -dir ), preferredRadius, element.Id ) ;
 
       return ( endPoint, otherSegments ) ;
+    }
+
+    private static SubRoute? GetRepresentativeSubRoute( Element element )
+    {
+      if ( element is not MEPCurve mepCurve || mepCurve.GetRepresentativeRouteName() is not { } routeName ) return null ;
+      if ( mepCurve.GetMEPCurvesOnSameGroup().FirstOrDefault( curve => curve.GetRouteName() == routeName && null != curve.GetSubRouteIndex() ) is not { } representativeElement ) return null ;
+
+      if ( false == RouteCache.Get( element.Document ).TryGetValue( routeName, out var route ) ) return null ;
+
+      return route.GetSubRoute( representativeElement.GetSubRouteIndex()!.Value ) ;
     }
 
     private static Instance? InsertBranchingPassPointElement( Document document, SubRoute subRoute, Element routingElement, XYZ pos )
@@ -180,7 +190,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( false == endPointSubRouteMap.TryGetValue( toEndPoint, out var tuple ) ) continue ;
 
         if ( null == tuple.OfFrom ) return ( subRoute, toEndPoint ) ;
-        if ( TrailFrom( endPointSubRouteMap, tuple.OfTo ! ) is { } result ) return result ;
+        if ( TrailFrom( endPointSubRouteMap, tuple.OfTo! ) is { } result ) return result ;
       }
 
       return null ;
@@ -192,7 +202,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( false == endPointSubRouteMap.TryGetValue( fromEndPoint, out var tuple ) ) continue ;
 
         if ( null == tuple.OfTo ) return ( subRoute, fromEndPoint ) ;
-        if ( TrailTo( endPointSubRouteMap, tuple.OfFrom ! ) is { } result ) return result ;
+        if ( TrailTo( endPointSubRouteMap, tuple.OfFrom! ) is { } result ) return result ;
       }
 
       return null ;

@@ -24,9 +24,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       var allFromToList = autoRoutingTarget.GetAllSubRoutes().SelectMany( GetFromToEndPointKeys ).EnumerateAll() ;
       foreach ( var routeEdge in result.RouteEdges ) {
         var passingEndPointInfo = result.GetPassingEndPointInfo( routeEdge ) ;
+        var representativeSubRoute = autoRoutingTarget.GetSubRoute( routeEdge ) ;
+
+        var mepCurveGroup = new List<MEPCurve>() ;
         foreach ( var (subRoute, splitRouteEdge, splitPassingEndPointInfo) in GetMatchingRouteEdgeBySegments( allFromToList, routeEdge, passingEndPointInfo ) ) {
-          yield return mepSystemCreator.CreateEdgeElement( splitRouteEdge, subRoute, splitPassingEndPointInfo ) ;
+          var mepCurve = mepSystemCreator.CreateEdgeElement( splitRouteEdge, subRoute, splitPassingEndPointInfo ) ;
+          mepCurve.SetRepresentativeRouteName( representativeSubRoute.Route.RouteName ) ;
+          yield return mepCurve ;
+          mepCurveGroup.Add( mepCurve ) ;
         }
+        mepCurveGroup.SetMEPCurvesAsSameGroup() ;
       }
     }
 

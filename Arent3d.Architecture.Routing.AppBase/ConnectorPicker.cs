@@ -10,6 +10,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB.Architecture ;
 
 namespace Arent3d.Architecture.Routing.AppBase
@@ -67,8 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private static IEndPoint? PickEndPointOverSubRoute( UIDocument uiDocument, SubRoutePickResult pickResult, bool pickingFromSide )
     {
-      var routes = RouteCache.Get( uiDocument.Document ) ;
-      var endPoints = GetAllEndPoints( routes, pickResult.SubRoute!, pickingFromSide ).ToHashSet() ;
+      var endPoints = GetNearestEndPoints( pickResult.GetOriginElement(), pickingFromSide ).ToHashSet() ;
 
       if ( 0 == endPoints.Count ) return null ;
       if ( 1 == endPoints.Count ) return endPoints.FirstOrDefault() ;
@@ -77,36 +77,11 @@ namespace Arent3d.Architecture.Routing.AppBase
       return displayEndPoints.Pick() ;
     }
 
-    private static IEnumerable<IEndPoint> GetAllEndPoints( RouteCache routes, SubRoute subRoute, bool pickingFromSide )
+    private static IEnumerable<IEndPoint> GetNearestEndPoints( Element originElement, bool pickingFromSide )
     {
-      // Direct end points
-      var endPoints = pickingFromSide ? subRoute.FromEndPoints : subRoute.ToEndPoints ;
-      foreach ( var ep in endPoints ) {
-        if ( ep is RouteEndPoint routeEndPoint && routes.GetSubRoute( routeEndPoint.RouteName, routeEndPoint.SubRouteIndex ) is { } baseSubRoute ) {
-          foreach ( var e in GetAllEndPoints( routes, baseSubRoute, pickingFromSide ) ) {
-            yield return e ;
-          }
-        }
-        else {
-          yield return ep ;
-        }
-      }
+      if ( originElement is not MEPCurve mepCurve ) return Array.Empty<IEndPoint>() ;
 
-      // Indirect end points
-      var routeName = subRoute.Route.RouteName ;
-      foreach ( var segment in subRoute.Route.GetChildBranches().SelectMany( route => route.RouteSegments ) ) {
-        if ( ( pickingFromSide ? segment.ToEndPoint : segment.FromEndPoint ) is RouteEndPoint routeEndPointToSubRoute && routeEndPointToSubRoute.RouteName == routeName ) {
-          var ep = ( pickingFromSide ? segment.FromEndPoint : segment.ToEndPoint ) ;
-          if ( ep is RouteEndPoint routeEndPoint && routes.GetSubRoute( routeEndPoint.RouteName, routeEndPoint.SubRouteIndex ) is { } baseSubRoute ) {
-            foreach ( var e in GetAllEndPoints( routes, baseSubRoute, pickingFromSide ) ) {
-              yield return e ;
-            }
-          }
-          else {
-            yield return ep ;
-          }
-        }
-      }
+      return mepCurve.GetMEPCurvesOnSameGroup().SelectMany( elm => elm.GetNearestEndPoints( pickingFromSide ) ) ;
     }
 
     public static Connector? GetInOutConnector( UIDocument uiDocument, Element eleConn, string message, IPickResult? firstPick, AddInType addInType )
@@ -192,27 +167,42 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         var diameter = _subRoute.GetDiameter().DiameterValueToPipeDiameter() ;
 
-        var transaction = new SubTransaction( _pickedElement.Document ) ;
-        transaction.Start() ;
+        var transaction = new Transaction( _pickedElement.Document ) ;
         try {
-          return _spec!.GetLongElbowSize( diameter ) + _spec.GetWeldMinDistance( diameter ) ;
+          transaction.Start( "To be rolled back" ) ;
+          try {
+            return _spec!.GetLongElbowSize( diameter ) + _spec.GetWeldMinDistance( diameter ) ;
+          }
+          finally {
+            transaction.RollBack() ;
+          }
         }
-        finally {
-          transaction.RollBack() ;
+        catch {
+          // Already in a transaction
+          var subTransaction = new SubTransaction( _pickedElement.Document ) ;
+          subTransaction.Start() ;
+          try {
+            return _spec!.GetLongElbowSize( diameter ) + _spec.GetWeldMinDistance( diameter ) ;
+          }
+          finally {
+            subTransaction.RollBack() ;
+          }
         }
       }
 
       private MEPCurve? GetNearestMEPCurve( double requiredLength )
       {
-        if ( _pickedElement is MEPCurve pickedMEPCurve && HasEnoughLength( pickedMEPCurve, requiredLength ) ) return pickedMEPCurve ;
+        var pickedMEPCurve = _pickedElement as MEPCurve ;
+        if ( null != pickedMEPCurve && HasEnoughLength( pickedMEPCurve, requiredLength ) ) return pickedMEPCurve ;
         
         var nearestDistance = double.PositiveInfinity ;
         MEPCurve? nearestMEPCurve = null ;
+        var groupIds = pickedMEPCurve?.GetMEPCurveGroupName() ;
 
         foreach ( var connector in _pickedElement.GetConnectors().Where( c => c.IsAnyEnd() ) ) {
           var distance = connector.Origin.DistanceTo( _pickPosition ) ;
           if ( nearestDistance <= distance ) continue ;
-          if ( GetConnectingMEPCurve( connector, requiredLength ) is not { } mepCurve ) continue ;
+          if ( GetConnectingMEPCurve( connector, groupIds, requiredLength ) is not { } mepCurve ) continue ;
 
           nearestDistance = distance ;
           nearestMEPCurve = mepCurve ;
@@ -220,12 +210,19 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         return nearestMEPCurve ;
 
-        static MEPCurve? GetConnectingMEPCurve( Connector connector, double requiredLength )
+        static MEPCurve? GetConnectingMEPCurve( Connector connector, string? groupIds, double requiredLength )
         {
           foreach ( var c in connector.GetConnectedConnectors() ) {
-            if ( c.Owner is MEPCurve mepCurve && HasEnoughLength( mepCurve, requiredLength ) ) return mepCurve ;
+            var nextGroupIds = groupIds ;
+            if ( c.Owner is MEPCurve mepCurve ) {
+              var newGroupIds = mepCurve.GetMEPCurveGroupName() ;
+              if ( null != groupIds && groupIds != newGroupIds ) continue ;
+              if ( HasEnoughLength( mepCurve, requiredLength ) ) return mepCurve ;
 
-            if ( c.GetOtherConnectorsInOwner().Select( c2 => GetConnectingMEPCurve( c2, requiredLength ) ).FirstOrDefault( curve => null != curve ) is { } nextCurve ) return nextCurve ;
+              nextGroupIds = newGroupIds ;
+            }
+
+            if ( c.GetOtherConnectorsInOwner().Select( c2 => GetConnectingMEPCurve( c2, nextGroupIds, requiredLength ) ).FirstOrDefault( curve => null != curve ) is { } nextCurve ) return nextCurve ;
           }
           return null ;
         }

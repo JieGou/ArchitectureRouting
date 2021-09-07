@@ -95,7 +95,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="subRoute">A SubRoute which routeEdge belongs to.</param>
     /// <param name="passingEndPointInfo">Nearest from & to end points.</param>
     /// <returns>Newly created duct.</returns>
-    public Element CreateEdgeElement( IRouteEdge routeEdge, SubRoute subRoute, PassingEndPointInfo passingEndPointInfo )
+    public MEPCurve CreateEdgeElement( IRouteEdge routeEdge, SubRoute subRoute, PassingEndPointInfo passingEndPointInfo )
     {
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZRaw() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZRaw() ;
