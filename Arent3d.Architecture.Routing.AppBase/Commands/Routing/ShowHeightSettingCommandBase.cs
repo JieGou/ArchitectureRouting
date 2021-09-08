@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using Arent3d.Architecture.Routing.AppBase.Forms;
-using Arent3d.Architecture.Routing.AppBase.Model;
+using Arent3d.Architecture.Routing.Storable;
 using Arent3d.Revit;
 using Arent3d.Revit.UI;
 using Autodesk.Revit.DB;
@@ -17,50 +17,72 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       UIDocument uIDocument = commandData.Application.ActiveUIDocument;
       Document document = uIDocument.Document;
-
-      HeightSettingModel heightSettingModel = new HeightSettingModel();
-      // TODO get data of height setting from snoop DB
-
-
-      var x = new HeightSettingDialog();
-      x.HeightOfLv1.Text = heightSettingModel.HeightOfLevels[0].ToString() ?? "4000";
-      x.HeightOfLv2.Text = heightSettingModel.HeightOfLevels[1].ToString() ?? "8000";
-      x.HeightOfConectorsLv1.Text = heightSettingModel.HeightOfConnectorsByLevel[0].ToString() ?? "2000";
-      x.HeightOfConectorsLv2.Text = heightSettingModel.HeightOfConnectorsByLevel[1].ToString() ?? "2000";
-      x.ShowDialog();
-
-
-      if (x.DialogResult ?? false)
+      return document.Transaction("TransactionName.Commands.Routing.HeightSetting", _ =>
       {
-        double heightOfConector = double.Parse(x.HeightOfConectorsLv1.Text);
+        // TODO get data of height setting from snoop DB
+        HeightSettingStorable settingStorables = document.GetAllStorables<HeightSettingStorable>()
+                                                           .ToArray()
+                                                           .DefaultIfEmpty(new HeightSettingStorable(document))
+                                                           .First()
+                                                           ;
 
-        return document.Transaction("TransactionName.Commands.Routing.HeightSetting", _ =>
+
+        var dialog = new HeightSettingDialog();
+        dialog.HeightOfLv1.Text = settingStorables.HeightOfLevels["レベル 1"].ToString() ?? "4000";
+        dialog.HeightOfLv2.Text = settingStorables.HeightOfLevels["レベル 2"].ToString() ?? "8000";
+        dialog.HeightOfConectorsLv1.Text = settingStorables.HeightOfConnectorsByLevel["レベル 1"].ToString() ?? "2000";
+        dialog.HeightOfConectorsLv2.Text = settingStorables.HeightOfConnectorsByLevel["レベル 2"].ToString() ?? "2000";
+        dialog.ShowDialog();
+
+        if (dialog.DialogResult ?? false)
         {
-          heightSettingModel.HeightOfLevels[0] = double.Parse(x.HeightOfLv1.Text);
-          heightSettingModel.HeightOfLevels[1] = double.Parse(x.HeightOfLv2.Text);
-          heightSettingModel.HeightOfConnectorsByLevel[0] = double.Parse(x.HeightOfConectorsLv1.Text);
-          heightSettingModel.HeightOfConnectorsByLevel[1] = double.Parse(x.HeightOfConectorsLv2.Text);
+          double heightOfConector = double.Parse(dialog.HeightOfConectorsLv1.Text);
 
-          // TODO handle for only 1 level
-          ICollection<Element> connectors = new FilteredElementCollector(document).OfClass(typeof(FamilyInstance))
-                                        .OfCategory(BuiltInCategory.OST_ElectricalFixtures)
-                                        .ToElements();
 
-          foreach (var item in connectors)
+          settingStorables.HeightOfLevels["レベル 1"] = double.Parse(dialog.HeightOfLv1.Text);
+          settingStorables.HeightOfLevels["レベル 2"] = double.Parse(dialog.HeightOfLv2.Text);
+          settingStorables.HeightOfConnectorsByLevel["レベル 1"] = double.Parse(dialog.HeightOfConectorsLv1.Text);
+          settingStorables.HeightOfConnectorsByLevel["レベル 2"] = double.Parse(dialog.HeightOfConectorsLv2.Text);
+
+          settingStorables.Save();
+
+
+          Dictionary<ElementId, List<Element>> connectors = new FilteredElementCollector(document).OfClass(typeof(FamilyInstance))
+                                              .OfCategory(BuiltInCategory.OST_ElectricalFixtures)
+                                              .ToElements()
+                                              .GroupBy(x => x.LevelId)
+                                              .ToDictionary(g => g.Key, g => g.ToList())
+                                              ;
+
+
+          ICollection<Element> levels = new FilteredElementCollector(document).OfClass(typeof(Level)).ToElements();
+
+          foreach (var lvElement in levels)
           {
-            LocationPoint? lp = item.Location as LocationPoint;
-            double newZ = heightSettingModel.HeightOfConnectorsByLevel[0] - lp!.Point.Z.RevitUnitsToMillimeters();
-            var newLocation = new XYZ(0, 0, newZ.MillimetersToRevitUnits());
-            item.Location.Move(newLocation);
+            var lv = (Level)lvElement;
+
+            // Set Elevation from floor for all connector on this floor
+            if (settingStorables.HeightOfConnectorsByLevel.ContainsKey(lv.Name) && connectors.ContainsKey(lv.Id))
+            {
+              foreach (var item in connectors[lv.Id])
+              {
+                item.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM)
+                    .Set(settingStorables.HeightOfConnectorsByLevel[lv.Name].MillimetersToRevitUnits());
+              }
+            }
+
+            // Set Elevation for level
+            if (settingStorables.HeightOfLevels.ContainsKey(lv.Name))
+            {
+              lv.Elevation = settingStorables.HeightOfLevels[lv.Name].MillimetersToRevitUnits();
+            }
+
           }
-          return Result.Succeeded;
-        });
+        }
 
-      }
+        return Result.Succeeded;
 
-
-
-      return Result.Cancelled;
+      });
     }
 
   }
