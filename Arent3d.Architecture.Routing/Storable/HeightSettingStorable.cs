@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.Storable
     /// <param name="owner">Owner element.</param>
     private HeightSettingStorable( DataStorage owner ) : base(owner, false)
     {
-      HeightOfLevels = new Dictionary<string, double>() { { Level1Name, 0 }, { Level2Name, 4000 } };
+      HeightOfLevels = new Dictionary<string, double>() { { Level1Name, 4000 }, { Level2Name, 8000 } };
       HeightOfConnectorsByLevel = new Dictionary<string, double>() { { Level1Name, 2000 }, { Level2Name, 2000 } };
 
     }
