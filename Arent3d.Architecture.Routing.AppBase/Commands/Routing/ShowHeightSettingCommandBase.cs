@@ -28,21 +28,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
 
         var dialog = new HeightSettingDialog();
-        dialog.HeightOfLv1.Text = settingStorables.HeightOfLevels["レベル 1"].ToString() ?? "4000";
-        dialog.HeightOfLv2.Text = settingStorables.HeightOfLevels["レベル 2"].ToString() ?? "8000";
-        dialog.HeightOfConectorsLv1.Text = settingStorables.HeightOfConnectorsByLevel["レベル 1"].ToString() ?? "2000";
-        dialog.HeightOfConectorsLv2.Text = settingStorables.HeightOfConnectorsByLevel["レベル 2"].ToString() ?? "2000";
+        // Set default value for dialog
+        dialog.ElevationOfLv1.Text = settingStorables.ElevationOfLevels[HeightSettingStorable.LEVEL1_NAME].ToString();
+        dialog.ElevationOfLv2.Text = settingStorables.ElevationOfLevels[HeightSettingStorable.LEVEL2_NAME].ToString();
+
+        dialog.HeightOfLv1.Text = settingStorables.HeightOfLevels[HeightSettingStorable.LEVEL1_NAME].ToString();
+        dialog.HeightOfLv2.Text = settingStorables.HeightOfLevels[HeightSettingStorable.LEVEL2_NAME].ToString();
+
+        dialog.HeightOfConectorsLv1.Text = settingStorables.HeightOfConnectorsByLevel[HeightSettingStorable.LEVEL1_NAME].ToString();
+        dialog.HeightOfConectorsLv2.Text = settingStorables.HeightOfConnectorsByLevel[HeightSettingStorable.LEVEL2_NAME].ToString();
+
         dialog.ShowDialog();
 
         if (dialog.DialogResult ?? false)
         {
           double heightOfConector = double.Parse(dialog.HeightOfConectorsLv1.Text);
 
+          settingStorables.ElevationOfLevels[HeightSettingStorable.LEVEL1_NAME] = double.Parse(dialog.ElevationOfLv1.Text);
+          settingStorables.ElevationOfLevels[HeightSettingStorable.LEVEL2_NAME] = double.Parse(dialog.ElevationOfLv2.Text);
 
-          settingStorables.HeightOfLevels["レベル 1"] = double.Parse(dialog.HeightOfLv1.Text);
-          settingStorables.HeightOfLevels["レベル 2"] = double.Parse(dialog.HeightOfLv2.Text);
-          settingStorables.HeightOfConnectorsByLevel["レベル 1"] = double.Parse(dialog.HeightOfConectorsLv1.Text);
-          settingStorables.HeightOfConnectorsByLevel["レベル 2"] = double.Parse(dialog.HeightOfConectorsLv2.Text);
+          settingStorables.HeightOfLevels[HeightSettingStorable.LEVEL1_NAME] = double.Parse(dialog.HeightOfLv1.Text);
+          settingStorables.HeightOfLevels[HeightSettingStorable.LEVEL2_NAME] = double.Parse(dialog.HeightOfLv2.Text);
+
+          settingStorables.HeightOfConnectorsByLevel[HeightSettingStorable.LEVEL1_NAME] = double.Parse(dialog.HeightOfConectorsLv1.Text);
+          settingStorables.HeightOfConnectorsByLevel[HeightSettingStorable.LEVEL2_NAME] = double.Parse(dialog.HeightOfConectorsLv2.Text);
 
           settingStorables.Save();
 
@@ -74,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             // Set Elevation for level
             if (settingStorables.HeightOfLevels.ContainsKey(lv.Name))
             {
-              lv.Elevation = settingStorables.HeightOfLevels[lv.Name].MillimetersToRevitUnits();
+              lv.Elevation = settingStorables.ElevationOfLevels[lv.Name].MillimetersToRevitUnits();
             }
 
           }
