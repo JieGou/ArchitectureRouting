@@ -64,11 +64,11 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
     IndoorHumiditySensorWithoutLogo,
 
-    [NameOnRevit("電動二方弁(ロゴあり)")]
+    [NameOnRevit("電動二方弁(ロゴあり)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
     ElectricTwoWayValveWithLogo,
 
-    [NameOnRevit("電動二方弁(ロゴなし)")]
+    [NameOnRevit("電動二方弁(ロゴなし)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
     ElectricTwoWayValveWithoutLogo,
 
