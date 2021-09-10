@@ -132,6 +132,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _exportRacksCommandButton.Enabled = false ;
       _eraseAllRacksCommandButton.Enabled = false ;
       _rackGuidCommanddButton.Enabled = false;
+
+      _showHeightSettingDialogCommandButton.Enabled = false;
     }
 
     public partial void UpdateUI( Document document, AppUIUpdateType updateType )
@@ -166,6 +168,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _exportRacksCommandButton.Enabled = setupIsDone ;
       _eraseAllRacksCommandButton.Enabled = setupIsDone ;
       _rackGuidCommanddButton.Enabled = setupIsDone;
+
+      _showHeightSettingDialogCommandButton.Enabled = setupIsDone;
     }
 
     private void DockablePaneRegisters( object sender, ApplicationInitializedEventArgs e )

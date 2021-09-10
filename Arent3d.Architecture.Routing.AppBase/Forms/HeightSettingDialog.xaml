@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         xmlns:controlLib="clr-namespace:ControlLib;assembly=NumericUpDown"
         mc:Ignorable="d"
-        Title="Height Setting" Height="155" Width="412.5" ContentRendered="Window_ContentRendered">
+        Title="Height Setting" Height="155" Width="420" ContentRendered="Window_ContentRendered">
   <Grid>
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="50"></ColumnDefinition>
@@ -22,19 +22,19 @@
     </Grid.RowDefinitions>
 
 
-    <Label Grid.Row="0"  Grid.Column="1" Content="Elevation:" Margin="0,0,1,0"/>
-    <Label Grid.Row="0"  Grid.Column="2" Content="Height of levels:" Margin="0,0,1,0"/>
-    <Label Grid.Row="0" Grid.Column="3" Content="Height of connectors:"/>
+    <Label Grid.Row="0"  Grid.Column="1" Content="Elevation:" VerticalContentAlignment="Center"/>
+    <Label Grid.Row="0"  Grid.Column="2" Content="Height of levels:" VerticalContentAlignment="Center"/>
+    <Label Grid.Row="0" Grid.Column="3" Content="Height of connectors:" VerticalContentAlignment="Center"/>
 
-    <Label Grid.Row="1" Grid.Column="0" Content="Level 1:"/>
-    <TextBox x:Name="ElevationOfLv1" Grid.Row="1" Grid.Column="1"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus"/>
-    <TextBox x:Name="HeightOfLv1" Grid.Row="1" Grid.Column="2"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus"/>
-    <TextBox x:Name="HeightOfConectorsLv1" Grid.Row="1" Grid.Column="3"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" GotFocus="TextBox_GotFocus"/>
+    <Label Grid.Row="1" Grid.Column="0" Content="Level 1:" VerticalContentAlignment="Center"/>
+    <TextBox x:Name="ElevationOfLv1" Grid.Row="1" Grid.Column="1"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
+    <TextBox x:Name="HeightOfLv1" Grid.Row="1" Grid.Column="2"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
+    <TextBox x:Name="HeightOfConectorsLv1" Grid.Row="1" Grid.Column="3"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Stretch" GotFocus="TextBox_GotFocus"/>
 
-    <Label Grid.Row="2" Grid.Column="0" Content="Level 2:"/>
-    <TextBox x:Name="ElevationOfLv2" Grid.Row="2" Grid.Column="1"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus"/>
-    <TextBox x:Name="HeightOfLv2" Grid.Row="2"  Grid.Column="2"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus"/>
-    <TextBox x:Name="HeightOfConectorsLv2" Grid.Row="2"  Grid.Column="3"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus"/>
+    <Label Grid.Row="2" Grid.Column="0" Content="Level 2:" VerticalContentAlignment="Center"/>
+    <TextBox x:Name="ElevationOfLv2" Grid.Row="2" Grid.Column="1"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
+    <TextBox x:Name="HeightOfLv2" Grid.Row="2"  Grid.Column="2"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
+    <TextBox x:Name="HeightOfConectorsLv2" Grid.Row="2"  Grid.Column="3"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
 
     <Button x:Name="BtnOk" 
                 Grid.Column="3" Grid.Row="3"
