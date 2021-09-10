@@ -43,6 +43,14 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit("電線管用ファミリ(片側のみ)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
     ConnectorOneSide,
+    
+    [NameOnRevit("Cable Tray")]
+    [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
+     CableTray,
+    
+    [NameOnRevit("Cable Tray Fitting")]
+    [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
+    CableTrayFitting,
     }
 
   public static class RoutingFamilyExtensions

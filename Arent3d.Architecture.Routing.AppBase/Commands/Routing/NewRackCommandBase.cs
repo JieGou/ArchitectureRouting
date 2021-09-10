@@ -11,9 +11,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
     public abstract class NewRackCommandBase : IExternalCommand
     {
-        private static readonly double DefaultThickness = 200.0;
-        private static readonly double DefaultWidth = 100.0;
-        private static readonly double DefaultHeight = 4000.0 ;
     protected abstract AddInType GetAddInType() ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -48,37 +45,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                           var conduit = (element as Conduit)!;
                           var location = (element.Location as LocationCurve)!;
                           var line = (location.Curve as Line)!;
+                          var lineOX = Line.CreateBound(XYZ.Zero, XYZ.BasisX);
 
                           var length = conduit.ParametersMap.get_Item("Length").AsDouble();
                           var bounding = conduit.get_BoundingBox(uiDocument.ActiveView)!;
                           var endPos = line.Origin.Multiply(length);
 
-                          var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.RackGuide)!; // TODO using Cable Tray family
+                          var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.CableTray)!; // TODO using Cable Tray family
 
                           // Create cable tray
                           var instance = symbol.Instantiate(
                                             new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z),
                                             uiDocument.ActiveView.GenLevel, StructuralType.NonStructural);
 
+                          var instanceHeight= instance.ParametersMap.get_Item("トレイ幅").AsDouble();
+                          var instanceWidth = instance.ParametersMap.get_Item("トレイ長さ").AsDouble();
+
                           // settings cable tray length, thickness, direction, postion
-                          if (line.Direction == XYZ.BasisX)
+                          if (line.Direction.X == 1.0)
                           {
-                              instance.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0.0);
-                              SetParameter(instance, "幅", DefaultWidth.MillimetersToRevitUnits()); // TODO change parameter
-                              SetParameter(instance, "高さ", DefaultThickness.MillimetersToRevitUnits()); // TODO change parameter
-                              SetParameter(instance, "奥行き", length); // TODO change parameter
-                              ElementTransformUtils.RotateElement(document, instance.Id, Line.CreateBound(XYZ.Zero, XYZ.BasisX), (Math.PI / 180) * (90));
-                              instance.Location.Move(new XYZ(length, 0, 0));
-                              SetParameter(instance, "Arent-Offset", 0);
+                              SetParameter(instance, "トレイ高さ", length); // TODO change parameter
+                              ElementTransformUtils.RotateElement(document, instance.Id,
+                                  Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X, line.Origin.Y + 1, line.Origin.Z)), (Math.PI / 180) * (90));
+                              ElementTransformUtils.RotateElement(document, instance.Id,
+                                  Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X + 1, line.Origin.Y, line.Origin.Z)), (Math.PI / 180) * (90));
+                              instance.Location.Move(new XYZ(length - (75.0).MillimetersToRevitUnits(), -instanceWidth/2, -instanceHeight/2));
                           }
-                          else
+                          else if (line.Direction.Y == 1.0)
                           {
-                              instance.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0.0);
-                              SetParameter(instance, "幅", DefaultWidth.MillimetersToRevitUnits()); // TODO change parameter
-                              SetParameter(instance, "高さ", DefaultThickness.MillimetersToRevitUnits()); // TODO change parameter
-                              SetParameter(instance, "奥行き", length); // TODO change parameter
-                              instance.Location.Move(new XYZ(0, length, 0));
-                              SetParameter(instance, "Arent-Offset", 0);
+                              SetParameter(instance, "トレイ高さ", length); // TODO change parameter
+                              ElementTransformUtils.RotateElement(document, instance.Id,
+                                  Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X + 1, line.Origin.Y, line.Origin.Z)), (Math.PI / 180) * (90));
+                              ElementTransformUtils.RotateElement(document, instance.Id,
+                                  Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X, line.Origin.Y + 1, line.Origin.Z)), (Math.PI / 180) * (90));
+                              instance.Location.Move(new XYZ(0, length/2, 0));
                           }
 
                       } else // element is conduit fitting
@@ -86,35 +86,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                           var conduit = (element as FamilyInstance)!;
 
                           var location = (element.Location as LocationPoint)!;
-                          var line = Line.CreateBound(new XYZ(0, 0, 0), new XYZ(0, 1, 0));
 
-                          var length = conduit.ParametersMap.get_Item("呼び半径").AsDouble();
-                          var bounding = conduit.get_BoundingBox(uiDocument.ActiveView)!;
-                          var endPos = line!.Origin.Multiply(length);
+                          var length = conduit.ParametersMap.get_Item("呼び半径").AsDouble(); 
+                          var bendRadius = conduit.ParametersMap.get_Item("Bend Radius").AsDouble();
+                           var bounding = conduit.get_BoundingBox(uiDocument.ActiveView)!;
 
-                          var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.RackGuide)!; // TODO using Cable Tray fitting family
+                          var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.CableTrayFitting)!; // TODO using Cable Tray fitting family
 
                           var instance = symbol.Instantiate(
-                                            new XYZ(location!.Point.X, location!.Point.Y, DefaultHeight.MillimetersToRevitUnits()),
+                                            new XYZ(location.Point.X, location.Point.Y, location.Point.Z),
                                             uiDocument.ActiveView.GenLevel, StructuralType.NonStructural);
 
                           // settings cable tray length, thickness, direction, postion
-                          if (line.Direction.X == 1.0)
+                          if (conduit.FacingOrientation.Y == -1.0)
                           {
-                              instance.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0.0); // TODO change parameter
-                              SetParameter(instance, "幅", DefaultWidth.MillimetersToRevitUnits()); // TODO change parameter
-                              SetParameter(instance, "高さ", DefaultThickness.MillimetersToRevitUnits()); // TODO change parameter
-                              SetParameter(instance, "奥行き", length); // TODO change parameter
-                              ElementTransformUtils.RotateElement(document, instance.Id, line, (Math.PI / 180) * (90));
-                              SetParameter(instance, "Arent-Offset", 0);
+                              SetParameter(instance, "トレイ高さ", length); // TODO change parameter
+                              SetParameter(instance, "Bend Radius", bendRadius/2);
+                              var loc = (instance.Location as LocationPoint)!;
+                              instance.Location.Rotate(Line.CreateBound(new XYZ(location.Point.X, location.Point.Y, loc.Point.Z), new XYZ(location.Point.X, location.Point.Y - 1, location.Point.Z)),
+                                  (Math.PI / 180) * (180));
                           }
-                          else
+                          else if (conduit.FacingOrientation.Y == 1.0)
                           {
-                              instance.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0.0);
-                              SetParameter(instance, "幅", DefaultWidth.MillimetersToRevitUnits()); // TODO change parameter
-                              SetParameter(instance, "高さ", DefaultThickness.MillimetersToRevitUnits()); // TODO change parameter
-                              SetParameter(instance, "奥行き", length); // TODO change parameter
-                              SetParameter(instance, "Arent-Offset", 0);
+                              SetParameter(instance, "トレイ高さ", length); // TODO change parameter
+                              SetParameter(instance, "Bend Radius", bendRadius / 2);
+                              //ElementTransformUtils.RotateElement(document, instance.Id,
+                              //    Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X, line.Origin.Y + 1, line.Origin.Z)), (Math.PI / 180) * (180));
+                              //ElementTransformUtils.RotateElement(document, instance.Id,
+                              //    Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X + 1, line.Origin.Y, line.Origin.Z)), (Math.PI / 180) * (90));
                           }
                       }
                   }
@@ -131,12 +130,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       catch ( Exception e ) {
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
-      }
-    }
+            }
+        }
 
-    private static void SetParameter( FamilyInstance instance, string parameterName, double value )
-    {
-      instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
+        private static void SetParameter(FamilyInstance instance, string parameterName, double value)
+        {
+            instance.ParametersMap.get_Item(parameterName)?.Set(value);
+        }
     }
-  }
 }
