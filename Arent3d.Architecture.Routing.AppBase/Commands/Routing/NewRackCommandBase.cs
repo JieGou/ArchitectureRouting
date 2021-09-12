@@ -34,7 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     return Result.Failed;
                 }
 
-                var result = document.Transaction("TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault("Import Rack"), _ =>
+                var result = document.Transaction("TransactionName.Commands.Rack.NewRack".GetAppStringByKeyOrDefault("New Rack"), _ =>
                 {
                     var routeName = RoutingElementExtensions.GetRouteName(pickFrom.Element);
                     if (routeName != null)
