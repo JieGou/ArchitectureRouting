@@ -6,136 +6,218 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.DB.Electrical;
+using System.Collections.Generic;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
     public abstract class NewRackCommandBase : IExternalCommand
     {
-    protected abstract AddInType GetAddInType() ;
+        /// <summary>
+        /// Max Distance Tolerance when find Connector Closest
+        /// </summary>
+        private readonly double maxDistanceTolerance = (100.0).MillimetersToRevitUnits();
+        protected abstract AddInType GetAddInType();
 
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
-    {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
-      try {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            var uiDocument = commandData.Application.ActiveUIDocument;
+            var document = uiDocument.Document;
+            try
+            {
                 // 線クリックのui設定＿Setting UI of wire click
-        var pickFrom = PointOnRoutePicker.PickRoute(uiDocument, false, "Pick a point on a route.", GetAddInType());
-        var pickTo = PointOnRoutePicker.PickRoute(uiDocument, false, "Pick a point on a route.", GetAddInType());
+                var pickFrom = PointOnRoutePicker.PickRoute(uiDocument, false, "Pick a point on a route.", GetAddInType());
 
-        // TODO 電動二方弁でコネクタ設定時エラーが出る（おそらくコネクタタイプの問題）＿Error occurs when setting the connector with an motor two-way valve (probably connector type problem)
+                // TODO 電動二方弁でコネクタ設定時エラーが出る（おそらくコネクタタイプの問題）＿Error occurs when setting the connector with an motor two-way valve (probably connector type problem)
 
-        if ( null == pickFrom.Position || null == pickTo.Position || null == pickFrom.RouteDirection ||
-             null == pickTo.RouteDirection) {
-          return Result.Failed ;
-        }
+                if (null == pickFrom.Position || null == pickFrom.RouteDirection)
+                {
+                    return Result.Failed;
+                }
 
-        var result = document.Transaction("TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault( "Import Rack" ), _ =>
-          {
-              var routeName = RoutingElementExtensions.GetRouteName(pickFrom.Element);
-              if (routeName != null)
-              {
-                  // get all elements in route
-                  var allElementsInRoute = document.GetAllElementsOfRouteName<Element>(routeName);
+                var result = document.Transaction("TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault("Import Rack"), _ =>
+                {
+                    var routeName = RoutingElementExtensions.GetRouteName(pickFrom.Element);
+                    if (routeName != null)
+                    {
+                        // get all elements in route
+                        var allElementsInRoute = document.GetAllElementsOfRouteName<Element>(routeName);
+                        var connectors = new List<Connector>();
+                        // Browse each conduits and draw the cable tray below
+                        foreach (var element in allElementsInRoute)
+                        {
+                            if (element is Conduit) // element is straight conduit
+                            {
+                                var conduit = (element as Conduit)!;
 
-                  // Browse each conduits and draw the cable tray below
-                  foreach (var element in allElementsInRoute)
-                  {
-                      if (element is Conduit) // element is straight conduit
-                      {
-                          var conduit = (element as Conduit)!;
-                          var location = (element.Location as LocationCurve)!;
-                          var line = (location.Curve as Line)!;
-                          var lineOX = Line.CreateBound(XYZ.Zero, XYZ.BasisX);
+                                var location = (element.Location as LocationCurve)!;
+                                var line = (location.Curve as Line)!;
+                                Connector firstConnector = GetFirstConnector(element.GetConnectorManager()!.Connectors)!;
 
-                          var length = conduit.ParametersMap.get_Item("Length").AsDouble();
-                          var bounding = conduit.get_BoundingBox(uiDocument.ActiveView)!;
-                          var endPos = line.Origin.Multiply(length);
+                                var length = conduit.ParametersMap.get_Item("Length").AsDouble();
+                                var diameter = conduit.ParametersMap.get_Item("Outside Diameter").AsDouble();
 
-                          var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.CableTray)!; // TODO using Cable Tray family
+                                var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.CableTray)!; // TODO may change in the future
 
-                          // Create cable tray
-                          var instance = symbol.Instantiate(
-                                            new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z),
-                                            uiDocument.ActiveView.GenLevel, StructuralType.NonStructural);
+                                // Create cable tray
+                                var instance = symbol.Instantiate(
+                                                        new XYZ(firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z),
+                                                        uiDocument.ActiveView.GenLevel, StructuralType.NonStructural);
 
-                          var instanceHeight= instance.ParametersMap.get_Item("トレイ幅").AsDouble();
-                          var instanceWidth = instance.ParametersMap.get_Item("トレイ長さ").AsDouble();
+                                // set cable rack length
+                                SetParameter(instance, "トレイ長さ", length); // TODO may be must change when FamilyType change
 
-                          // settings cable tray length, thickness, direction, postion
-                          if (line.Direction.X == 1.0)
-                          {
-                              SetParameter(instance, "トレイ高さ", length); // TODO change parameter
-                              ElementTransformUtils.RotateElement(document, instance.Id,
-                                  Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X, line.Origin.Y + 1, line.Origin.Z)), (Math.PI / 180) * (90));
-                              ElementTransformUtils.RotateElement(document, instance.Id,
-                                  Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X + 1, line.Origin.Y, line.Origin.Z)), (Math.PI / 180) * (90));
-                              instance.Location.Move(new XYZ(length - (75.0).MillimetersToRevitUnits(), -instanceWidth/2, -instanceHeight/2));
-                          }
-                          else if (line.Direction.Y == 1.0)
-                          {
-                              SetParameter(instance, "トレイ高さ", length); // TODO change parameter
-                              ElementTransformUtils.RotateElement(document, instance.Id,
-                                  Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X + 1, line.Origin.Y, line.Origin.Z)), (Math.PI / 180) * (90));
-                              ElementTransformUtils.RotateElement(document, instance.Id,
-                                  Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X, line.Origin.Y + 1, line.Origin.Z)), (Math.PI / 180) * (90));
-                              instance.Location.Move(new XYZ(0, length/2, 0));
-                          }
+                                // move cable rack to under conduit
+                                instance.Location.Move(new XYZ(0, 0, -diameter)); // TODO may be must change when FamilyType change
 
-                      } else // element is conduit fitting
-                      {
-                          var conduit = (element as FamilyInstance)!;
+                                // set cable tray direction
+                                if (1.0 == line.Direction.Y)
+                                {
+                                    ElementTransformUtils.RotateElement(document, instance.Id,
+                                        Line.CreateBound(new XYZ(firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z),
+                                        new XYZ(firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1)),
+                                        Math.PI / 2);
+                                }
 
-                          var location = (element.Location as LocationPoint)!;
+                                // save connectors of cable rack
+                                foreach (Connector connector in instance.GetConnectorManager()!.Connectors)
+                                {
+                                    connectors.Add(connector);
+                                }
 
-                          var length = conduit.ParametersMap.get_Item("呼び半径").AsDouble(); 
-                          var bendRadius = conduit.ParametersMap.get_Item("Bend Radius").AsDouble();
-                           var bounding = conduit.get_BoundingBox(uiDocument.ActiveView)!;
+                            }
+                            else // element is conduit fitting
+                            {
+                                var conduit = (element as FamilyInstance)!;
 
-                          var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.CableTrayFitting)!; // TODO using Cable Tray fitting family
+                                var location = (element.Location as LocationPoint)!;
 
-                          var instance = symbol.Instantiate(
-                                            new XYZ(location.Point.X, location.Point.Y, location.Point.Z),
-                                            uiDocument.ActiveView.GenLevel, StructuralType.NonStructural);
+                                var length = conduit.ParametersMap.get_Item("呼び半径").AsDouble();
+                                var diameter = conduit.ParametersMap.get_Item("呼び径").AsDouble();
+                                var bendRadius = conduit.ParametersMap.get_Item("Bend Radius").AsDouble();
 
-                          // settings cable tray length, thickness, direction, postion
-                          if (conduit.FacingOrientation.Y == -1.0)
-                          {
-                              SetParameter(instance, "トレイ高さ", length); // TODO change parameter
-                              SetParameter(instance, "Bend Radius", bendRadius/2);
-                              var loc = (instance.Location as LocationPoint)!;
-                              instance.Location.Rotate(Line.CreateBound(new XYZ(location.Point.X, location.Point.Y, loc.Point.Z), new XYZ(location.Point.X, location.Point.Y - 1, location.Point.Z)),
-                                  (Math.PI / 180) * (180));
-                          }
-                          else if (conduit.FacingOrientation.Y == 1.0)
-                          {
-                              SetParameter(instance, "トレイ高さ", length); // TODO change parameter
-                              SetParameter(instance, "Bend Radius", bendRadius / 2);
-                              //ElementTransformUtils.RotateElement(document, instance.Id,
-                              //    Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X, line.Origin.Y + 1, line.Origin.Z)), (Math.PI / 180) * (180));
-                              //ElementTransformUtils.RotateElement(document, instance.Id,
-                              //    Line.CreateBound(new XYZ(line.Origin.X, line.Origin.Y, line.Origin.Z), new XYZ(line.Origin.X + 1, line.Origin.Y, line.Origin.Z)), (Math.PI / 180) * (90));
-                          }
-                      }
-                  }
-              }
+                                var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.CableTrayFitting)!; // TODO may change in the future
 
-            return Result.Succeeded ;
-          } ) ;
+                                var instance = symbol.Instantiate(
+                                                        new XYZ(location.Point.X, location.Point.Y, location.Point.Z),
+                                                        uiDocument.ActiveView.GenLevel, StructuralType.NonStructural);
 
-        return result ;
-      }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        return Result.Cancelled ;
-      }
-      catch ( Exception e ) {
-        CommandUtils.DebugAlertException( e ) ;
-        return Result.Failed ;
+                                // set cable tray Bend Radius
+                                SetParameter(instance, "Bend Radius", bendRadius / 2); // TODO may be must change when FamilyType change
+
+                                // set cable tray fitting direction
+                                if (1.0 == conduit.FacingOrientation.X)
+                                {
+                                    instance.Location.Rotate(Line.CreateBound(new XYZ(location.Point.X, location.Point.Y, location.Point.Z),
+                                        new XYZ(location.Point.X, location.Point.Y, location.Point.Z - 1)),
+                                        Math.PI / 2);
+                                }
+                                else if (-1.0 == conduit.FacingOrientation.X)
+                                {
+                                    instance.Location.Rotate(Line.CreateBound(new XYZ(location.Point.X, location.Point.Y, location.Point.Z),
+                                        new XYZ(location.Point.X, location.Point.Y, location.Point.Z + 1)),
+                                        Math.PI / 2);
+                                }
+                                else if (-1.0 == conduit.FacingOrientation.Y)
+                                {
+                                    instance.Location.Rotate(Line.CreateBound(new XYZ(location.Point.X, location.Point.Y, location.Point.Z),
+                                        new XYZ(location.Point.X, location.Point.Y, location.Point.Z + 1)),
+                                        Math.PI);
+                                }
+
+                                // move cable rack to under conduit
+                                instance.Location.Move(new XYZ(0, 0, -diameter)); // TODO may be must change when FamilyType change
+
+                                // save connectors of cable rack
+                                foreach (Connector connector in instance.GetConnectorManager()!.Connectors)
+                                {
+                                    connectors.Add(connector);
+                                }
+                            }
+                        }
+
+                        // connect all connectors
+                        foreach (Connector connector in connectors)
+                        {
+                            if (!connector.IsConnected)
+                            {
+                                var otherConnectors = connectors.FindAll(x => !x.IsConnected && x.Owner.Id != connector.Owner.Id);
+                                if (otherConnectors != null)
+                                {
+                                    var connectTo = GetConnectorClosestTo(otherConnectors, connector.Origin, maxDistanceTolerance);
+                                    if (connectTo != null)
+                                    {
+                                        connector.ConnectTo(connectTo);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return Result.Succeeded;
+                });
+
+                return result;
+            }
+            catch (Autodesk.Revit.Exceptions.OperationCanceledException)
+            {
+                return Result.Cancelled;
+            }
+            catch (Exception e)
+            {
+                CommandUtils.DebugAlertException(e);
+                return Result.Failed;
             }
         }
 
         private static void SetParameter(FamilyInstance instance, string parameterName, double value)
         {
             instance.ParametersMap.get_Item(parameterName)?.Set(value);
+        }
+
+        /// <summary>
+        /// Return the connector in the set
+        /// closest to the given point.
+        /// </summary>
+        /// <param name="connectors"></param>
+        /// <param name="point"></param>
+        /// <param name="maxDistance"></param>
+        /// <returns></returns>
+        private static Connector? GetConnectorClosestTo(
+          List<Connector> connectors,
+          XYZ point, double maxDistance = double.MaxValue)
+        {
+            double minDistance = double.MaxValue;
+            Connector? targetConnector = null;
+
+            foreach (Connector connector in connectors)
+            {
+                double distance = connector.Origin.DistanceTo(point);
+
+                if (distance < minDistance && distance <= maxDistance)
+                {
+                    targetConnector = connector;
+                    minDistance = distance;
+                }
+            }
+            return targetConnector;
+        }
+
+        /// <summary>
+        /// Return the first connector.
+        /// </summary>
+        /// <param name="connectors"></param>
+        /// <returns></returns>
+        private static Connector? GetFirstConnector(
+          ConnectorSet connectors)
+        {
+            foreach (Connector connector in connectors)
+            {
+                if (0 == connector.Id)
+                {
+                    return connector;
+                }
+            }
+            return null;
         }
     }
 }
