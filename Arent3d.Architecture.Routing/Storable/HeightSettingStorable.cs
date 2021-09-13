@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Arent3d.Architecture.Routing.Storable
@@ -15,22 +16,14 @@ namespace Arent3d.Architecture.Routing.Storable
   [StorableVisibility(AppInfo.VendorId)]
   public sealed class HeightSettingStorable : StorableBase
   {
-
-    public const string LEVEL1_NAME = "レベル 1";
-    public const string LEVEL2_NAME = "レベル 2";
-
     private const string ELEVATION_OF_LEVELS_FIELD = "ElevationOfLevels";
     private const string HEIGHT_OF_LEVELS_FIELD = "HeightOfLevels";
     private const string HEIGHT_OF_CONNECTORS_BY_LEVEL_FIELD = "HeightOfConnectorsByLevel";
-    private const double DEFAULT_ELEVATION_LV1 = 0;
-    private const double DEFAULT_ELEVATION_LV2 = 4000;
-    private const double DEFAULT_HEIGHT_OF_LEVEL = 3000;
-    private const double DEFAULT_HEIGHT_OF_CONNECTORS = DEFAULT_HEIGHT_OF_LEVEL/2;
 
     public Dictionary<string, double> ElevationOfLevels { get; set; }
     public Dictionary<string, double> HeightOfLevels { get; set; }
     public Dictionary<string, double> HeightOfConnectorsByLevel { get; set; }
-    private Dictionary<int, string> Levels { get; set; } = new Dictionary<int, string> { { 1, LEVEL1_NAME }, { 2, LEVEL2_NAME } };
+    public List<Level> Levels { get; set; }
 
 
     /// <summary>
@@ -39,20 +32,16 @@ namespace Arent3d.Architecture.Routing.Storable
     /// <param name="owner">Owner element.</param>
     private HeightSettingStorable( DataStorage owner ) : base(owner, false)
     {
-      ElevationOfLevels = new Dictionary<string, double>() { 
-        { LEVEL1_NAME, DEFAULT_ELEVATION_LV1 }, 
-        { LEVEL2_NAME, DEFAULT_ELEVATION_LV2 } 
-      };
+      Levels = new FilteredElementCollector(owner.Document).OfClass(typeof(Level))
+                                                           .AsEnumerable()
+                                                           .OfType<Level>()
+                                                           .ToList();
 
-      HeightOfLevels = new Dictionary<string, double>() { 
-        { LEVEL1_NAME, DEFAULT_HEIGHT_OF_LEVEL }, 
-        { LEVEL2_NAME, DEFAULT_HEIGHT_OF_LEVEL } 
-      };
+      ElevationOfLevels = new Dictionary<string, double>();
 
-      HeightOfConnectorsByLevel = new Dictionary<string, double>() { 
-        { LEVEL1_NAME, DEFAULT_HEIGHT_OF_CONNECTORS }, 
-        { LEVEL2_NAME, DEFAULT_HEIGHT_OF_CONNECTORS } 
-      };
+      HeightOfLevels = new Dictionary<string, double>();
+
+      HeightOfConnectorsByLevel = new Dictionary<string, double>();
 
     }
 
@@ -62,20 +51,16 @@ namespace Arent3d.Architecture.Routing.Storable
     /// <param name="document"></param>
     public HeightSettingStorable( Document document ) : base(document, false)
     {
-      ElevationOfLevels = new Dictionary<string, double>() {
-        { LEVEL1_NAME, DEFAULT_ELEVATION_LV1 },
-        { LEVEL2_NAME, DEFAULT_ELEVATION_LV2 }
-      };
+      Levels = new FilteredElementCollector(document).OfClass(typeof(Level))
+                                                     .AsEnumerable()
+                                                     .OfType<Level>()
+                                                     .ToList();
 
-      HeightOfLevels = new Dictionary<string, double>() {
-        { LEVEL1_NAME, DEFAULT_HEIGHT_OF_LEVEL },
-        { LEVEL2_NAME, DEFAULT_HEIGHT_OF_LEVEL }
-      };
+      ElevationOfLevels = new Dictionary<string, double>();
 
-      HeightOfConnectorsByLevel = new Dictionary<string, double>() {
-        { LEVEL1_NAME, DEFAULT_HEIGHT_OF_CONNECTORS },
-        { LEVEL2_NAME, DEFAULT_HEIGHT_OF_CONNECTORS }
-      };
+      HeightOfLevels = new Dictionary<string, double>();
+
+      HeightOfConnectorsByLevel = new Dictionary<string, double>();
     }
 
     public override string Name => throw new NotImplementedException();
@@ -88,9 +73,9 @@ namespace Arent3d.Architecture.Routing.Storable
 
       foreach (var level in Levels)
       {
-        ElevationOfLevels.Add(level.Value, double.Parse(reader.GetSingle<string>(ELEVATION_OF_LEVELS_FIELD + level.Key)));
-        HeightOfLevels.Add(level.Value, double.Parse(reader.GetSingle<string>(HEIGHT_OF_LEVELS_FIELD + level.Key)));
-        HeightOfConnectorsByLevel.Add(level.Value, double.Parse(reader.GetSingle<string>(HEIGHT_OF_CONNECTORS_BY_LEVEL_FIELD + level.Key)));
+        ElevationOfLevels.Add(level.Name, double.Parse(reader.GetSingle<string>(ELEVATION_OF_LEVELS_FIELD + level.Id.IntegerValue)));
+        HeightOfLevels.Add(level.Name, double.Parse(reader.GetSingle<string>(HEIGHT_OF_LEVELS_FIELD + level.Id.IntegerValue)));
+        HeightOfConnectorsByLevel.Add(level.Name, double.Parse(reader.GetSingle<string>(HEIGHT_OF_CONNECTORS_BY_LEVEL_FIELD + level.Id.IntegerValue)));
       }
     }
 
@@ -98,9 +83,9 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       foreach (var level in Levels)
       {
-        writer.SetSingle(HEIGHT_OF_LEVELS_FIELD + level.Key, HeightOfLevels[level.Value].ToString());
-        writer.SetSingle(HEIGHT_OF_CONNECTORS_BY_LEVEL_FIELD + level.Key, HeightOfConnectorsByLevel[level.Value].ToString());
-        writer.SetSingle(ELEVATION_OF_LEVELS_FIELD + level.Key, ElevationOfLevels[level.Value].ToString());
+        writer.SetSingle(HEIGHT_OF_LEVELS_FIELD + level.Id.IntegerValue, HeightOfLevels[level.Name].ToString());
+        writer.SetSingle(HEIGHT_OF_CONNECTORS_BY_LEVEL_FIELD + level.Id.IntegerValue, HeightOfConnectorsByLevel[level.Name].ToString());
+        writer.SetSingle(ELEVATION_OF_LEVELS_FIELD + level.Id.IntegerValue, ElevationOfLevels[level.Name].ToString());
       }
     }
 
@@ -108,11 +93,18 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       foreach (var level in Levels)
       {
-        generator.SetSingle<string>(HEIGHT_OF_LEVELS_FIELD + level.Key);
-        generator.SetSingle<string>(HEIGHT_OF_CONNECTORS_BY_LEVEL_FIELD + level.Key);
-        generator.SetSingle<string>(ELEVATION_OF_LEVELS_FIELD + level.Key);
+        generator.SetSingle<string>(HEIGHT_OF_LEVELS_FIELD + level.Id.IntegerValue);
+        generator.SetSingle<string>(HEIGHT_OF_CONNECTORS_BY_LEVEL_FIELD + level.Id.IntegerValue);
+        generator.SetSingle<string>(ELEVATION_OF_LEVELS_FIELD + level.Id.IntegerValue);
       }
-     
+
+    }
+
+    public void ClearAll()
+    {
+      ElevationOfLevels.Clear();
+      HeightOfLevels.Clear();
+      HeightOfConnectorsByLevel.Clear();
     }
   }
 

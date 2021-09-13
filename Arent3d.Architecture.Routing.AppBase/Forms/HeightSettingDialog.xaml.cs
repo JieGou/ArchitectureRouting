@@ -1,4 +1,6 @@
 ﻿using Arent3d.Architecture.Routing.AppBase.Model;
+using Arent3d.Architecture.Routing.AppBase.ViewModel;
+using Arent3d.Architecture.Routing.Storable;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,14 +22,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   /// </summary>
   public partial class HeightSettingDialog : Window
   {
-    public HeightSettingDialog()
+
+    public HeightSettingDialog( HeightSettingViewModel viewModel)
     {
       InitializeComponent();
+      this.DataContext = viewModel;
     }
 
     private void Button_Click( object sender, RoutedEventArgs e )
     {
-      // TODO apply data and save to db
       DialogResult = true;
       Close();
     }
@@ -40,7 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Window_ContentRendered( object sender, EventArgs e )
     {
-      HeightOfLv1.Focus();
     }
+
   }
 }

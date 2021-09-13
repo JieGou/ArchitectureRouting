@@ -1,47 +1,40 @@
-﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.HeightSettingDialog"
+﻿<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         xmlns:controlLib="clr-namespace:ControlLib;assembly=NumericUpDown"
+        xmlns:ViewModel="clr-namespace:Arent3d.Architecture.Routing.AppBase.ViewModel" x:Class="Arent3d.Architecture.Routing.AppBase.Forms.HeightSettingDialog"
         mc:Ignorable="d"
-        Title="Height Setting" Height="155" Width="420" ContentRendered="Window_ContentRendered">
+        Title="Height Setting" Height="390.5" Width="438" ContentRendered="Window_ContentRendered">
   <Grid>
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="50"></ColumnDefinition>
-      <ColumnDefinition Width="*"></ColumnDefinition>
-      <ColumnDefinition Width="*"></ColumnDefinition>
-      <ColumnDefinition Width="*"></ColumnDefinition>
-    </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
-      <RowDefinition Height="*"></RowDefinition>
-      <RowDefinition Height="*"></RowDefinition>
-      <RowDefinition Height="*"></RowDefinition>
-      <RowDefinition Height="33"></RowDefinition>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="33"/>
     </Grid.RowDefinitions>
 
 
-    <Label Grid.Row="0"  Grid.Column="1" Content="Elevation:" VerticalContentAlignment="Center"/>
-    <Label Grid.Row="0"  Grid.Column="2" Content="Height of levels:" VerticalContentAlignment="Center"/>
-    <Label Grid.Row="0" Grid.Column="3" Content="Height of connectors:" VerticalContentAlignment="Center"/>
+    <DataGrid Grid.ColumnSpan="2" Grid.Row="0" ItemsSource="{Binding HeightSettingModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+      <DataGrid.Columns>
 
-    <Label Grid.Row="1" Grid.Column="0" Content="Level 1:" VerticalContentAlignment="Center"/>
-    <TextBox x:Name="ElevationOfLv1" Grid.Row="1" Grid.Column="1"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
-    <TextBox x:Name="HeightOfLv1" Grid.Row="1" Grid.Column="2"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
-    <TextBox x:Name="HeightOfConectorsLv1" Grid.Row="1" Grid.Column="3"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Stretch" GotFocus="TextBox_GotFocus"/>
+        <DataGridTextColumn Header="Level Name" Binding="{Binding LevelName}" CanUserSort="True" IsReadOnly="True"/>
+        <DataGridTextColumn Header="Elevation" Binding="{Binding Elevation}" CanUserSort="False" SortDirection="Ascending"/>
+        <DataGridTextColumn Header="Height Of Level" Binding="{Binding HeightOfLevel}" CanUserSort="False"/>
+        <DataGridTextColumn Header="Height Of Connectors" Binding="{Binding HeightOfConnectors}" CanUserSort="False"/>
 
-    <Label Grid.Row="2" Grid.Column="0" Content="Level 2:" VerticalContentAlignment="Center"/>
-    <TextBox x:Name="ElevationOfLv2" Grid.Row="2" Grid.Column="1"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
-    <TextBox x:Name="HeightOfLv2" Grid.Row="2"  Grid.Column="2"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
-    <TextBox x:Name="HeightOfConectorsLv2" Grid.Row="2"  Grid.Column="3"  TextWrapping="Wrap" Text="0" Margin="0,5,5,0" GotFocus="TextBox_GotFocus" VerticalContentAlignment="Center"/>
 
+      </DataGrid.Columns>
+    </DataGrid>
+
+   
     <Button x:Name="BtnOk" 
                 Grid.Column="3" Grid.Row="3"
                 Content="OK" 
                 Click="Button_Click" 
                 Margin="0,5,5,5" 
                 HorizontalAlignment="Right" Width="80"/>
+    
 
   </Grid>
 </Window>
