@@ -22,38 +22,26 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
 
     public double Calc90ElbowSize( Document document, IMEPCurveGenerator mepCurveGenerator, double diameter )
     {
-      return ThreadDispatcher.Dispatch( () =>
-      {
-        var calculator = new Elbow90SizeCalculator( document, mepCurveGenerator, diameter ) ;
-        return calculator.ElbowSize ;
-      } ) ;
+      var calculator = new Elbow90SizeCalculator( document, mepCurveGenerator, diameter ) ;
+      return calculator.ElbowSize ;
     }
 
     public double Calc45ElbowSize( Document document, IMEPCurveGenerator mepCurveGenerator, double diameter )
     {
-      return ThreadDispatcher.Dispatch( () =>
-      {
-        var calculator = new Elbow45SizeCalculator( document, mepCurveGenerator, diameter ) ;
-        return calculator.ElbowSize ;
-      } ) ;
+      var calculator = new Elbow45SizeCalculator( document, mepCurveGenerator, diameter ) ;
+      return calculator.ElbowSize ;
     }
 
     public (double Header, double Branch) CalculateTeeLengths( Document document, IMEPCurveGenerator mepCurveGenerator, double headerDiameter, double branchDiameter )
     {
-      return ThreadDispatcher.Dispatch( () =>
-      {
-        var calculator = new TeeSizeCalculator( document, mepCurveGenerator, headerDiameter, branchDiameter ) ;
-        return ( calculator.HeaderSize, calculator.BranchSize ) ;
-      } ) ;
+      var calculator = new TeeSizeCalculator( document, mepCurveGenerator, headerDiameter, branchDiameter ) ;
+      return ( calculator.HeaderSize, calculator.BranchSize ) ;
     }
 
     public double CalculateReducerLength( Document document, IMEPCurveGenerator mepCurveGenerator, double diameter1, double diameter2 )
     {
-      return ThreadDispatcher.Dispatch( () =>
-      {
-        var calculator = new ReducerSizeCalculator( document, mepCurveGenerator, diameter1, diameter2 ) ;
-        return calculator.Size1 + calculator.Size2 ;
-      } ) ;
+      var calculator = new ReducerSizeCalculator( document, mepCurveGenerator, diameter1, diameter2 ) ;
+      return calculator.Size1 + calculator.Size2 ;
     }
   }
   

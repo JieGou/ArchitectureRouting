@@ -8,13 +8,13 @@ using Arent3d.Revit.UI;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public abstract partial class FromToWindow : RevitDialog
+  public abstract partial class FromToWindowBase : RevitDialog
   {
     public ObservableCollection<FromToItems> FromToItemsList { get ; }
 
     protected UIDocument UiDocument { get ; }
 
-    protected FromToWindow( UIDocument uiDoc, ObservableCollection<FromToItems> fromToItemsList ) : base( uiDoc )
+    protected FromToWindowBase( UIDocument uiDoc, ObservableCollection<FromToItems> fromToItemsList ) : base( uiDoc )
     {
       InitializeComponent() ;
       FromToItemsList = fromToItemsList ;

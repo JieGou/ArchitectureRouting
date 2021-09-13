@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class FromToWindowViewModel : ViewModelBase
   {
-    public delegate FromToWindow FromToWindowCreator( UIDocument uiDocument, ObservableCollection<FromToWindow.FromToItems> fromToItemsList ) ;
+    public delegate FromToWindowBase FromToWindowCreator( UIDocument uiDocument, ObservableCollection<FromToWindowBase.FromToItems> fromToItemsList ) ;
 
     public static void ShowFromToWindow( UIDocument uiDocument, AddInType addInType, FromToWindowCreator fromToWindowCreator )
     {
@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OpenedDialog.Close() ;
       }
 
-      var fromToItemsList = new ObservableCollection<FromToWindow.FromToItems>() ;
+      var fromToItemsList = new ObservableCollection<FromToWindowBase.FromToItems>() ;
 
       foreach ( var route in allRoutes ) {
         var systemTypeList = new ObservableCollection<MEPSystemType>( uiDocument.Document.GetSystemTypes( route.GetSystemClassificationInfo() ).OrderBy( s => s.Name ).ToList() ) ;
@@ -34,7 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         IEnumerable<string> subRouteDiameters = route.SubRoutes.Select( s => (int) Math.Round( s.GetDiameter().RevitUnitsToMillimeters() ) + " mm" ) ;
         IEnumerable<string> allPassPoints = route.GetAllPassPointEndPoints().ToList().Select( p => p.ToString() ) ;
 
-        fromToItemsList.Add( new FromToWindow.FromToItems()
+        fromToItemsList.Add( new FromToWindowBase.FromToItems()
         {
           Id = route.RouteName,
           From = route.FirstFromConnector(),

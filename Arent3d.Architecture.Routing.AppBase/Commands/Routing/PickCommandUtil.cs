@@ -2,9 +2,11 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -78,12 +80,84 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public static (ConnectorPicker.IPickResult PickResult, bool AnotherIsFrom) PickResultFromAnother( Route route, IEndPoint endPoint )
     {
       var ((subRoute, anotherEndPoint), isFrom) = GetOtherEndPoint( route, endPoint ) ;
-      return (new PseudoPickResult( subRoute, anotherEndPoint ), isFrom) ;
+      return (new PseudoPickResult( subRoute, anotherEndPoint, isFrom ), isFrom) ;
     }
 
     public static IEndPoint CreateRouteEndPoint( ConnectorPicker.IPickResult routePickResult )
     {
-      return new RouteEndPoint( routePickResult.SubRoute!, routePickResult.EndPointOverSubRoute ) ;
+      return new RouteEndPoint( routePickResult.SubRoute! ) ;
+    }
+
+    public static (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateBranchingRouteEndPoint( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool isFrom )
+    {
+      var element = routePickResult.GetOriginElement() ;
+      var document = element.Document ;
+      var pos = routePickResult.GetOrigin() ;
+
+      // Create Pass Point
+      var subRoute = GetRepresentativeSubRoute( element ) ?? routePickResult.SubRoute! ;
+      var routeName = subRoute.Route.Name ;
+      if ( InsertBranchingPassPointElement( document, subRoute, element, pos ) is not { } passPointElement ) throw new InvalidOperationException() ;
+      var otherSegments = GetNewSegmentList( subRoute, element, passPointElement ).Select( segment => ( routeName, segment ) ).EnumerateAll() ;
+
+      // Create PassPointBranchEndPoint
+      var preferredRadius = ( routePickResult.PickedConnector ?? anotherPickResult.PickedConnector )?.Radius ;
+      var endPoint = new PassPointBranchEndPoint( document, passPointElement.Id, preferredRadius, routePickResult.EndPointOverSubRoute! ) ;
+
+      return ( endPoint, otherSegments ) ;
+    }
+
+    private static SubRoute? GetRepresentativeSubRoute( Element element )
+    {
+      if ( element is not MEPCurve mepCurve || mepCurve.GetRepresentativeRouteName() is not { } routeName ) return null ;
+      if ( mepCurve.GetMEPCurvesOnSameGroup().FirstOrDefault( curve => curve.GetRouteName() == routeName && null != curve.GetSubRouteIndex() ) is not { } representativeElement ) return null ;
+
+      if ( false == RouteCache.Get( element.Document ).TryGetValue( routeName, out var route ) ) return null ;
+
+      return route.GetSubRoute( representativeElement.GetSubRouteIndex()!.Value ) ;
+    }
+    private static Instance? InsertBranchingPassPointElement( Document document, SubRoute subRoute, Element routingElement, XYZ pos )
+    {
+      if ( routingElement.GetRoutingConnectors( true ).FirstOrDefault() is not { } fromConnector ) return null ;
+      if ( routingElement.GetRoutingConnectors( false ).FirstOrDefault() is not { } toConnector ) return null ;
+
+      var dir = ( toConnector.Origin - fromConnector.Origin ).Normalize() ;
+      return document.AddPassPoint( subRoute.Route.RouteName, pos, dir, subRoute.GetDiameter() * 0.5 ) ;
+    }
+
+    private const double HalfPI = Math.PI / 2 ;
+    private const double OneAndAHalfPI = Math.PI + HalfPI ;
+    private static double GetPreferredAngle( Transform transform, XYZ pos, XYZ anotherPos )
+    {
+      var vec = pos - anotherPos ;
+      var x = transform.BasisY.DotProduct( vec ) ;
+      var y = transform.BasisZ.DotProduct( vec ) ;
+      if ( Math.Abs( y ) < Math.Abs( x ) ) {
+        return ( 0 < x ? 0 : Math.PI ) ;
+      }
+      else {
+        return ( 0 < y ? HalfPI : OneAndAHalfPI ) ;
+      }
+    }
+
+    public static IEnumerable<RouteSegment> GetNewSegmentList( SubRoute subRoute, Element insertingElement, Instance passPointElement )
+    {
+      var detector = new RouteSegmentDetector( subRoute, insertingElement ) ;
+      var passPoint = new PassPointEndPoint( passPointElement ) ;
+      foreach ( var segment in subRoute.Route.RouteSegments.EnumerateAll() ) {
+        if ( detector.IsPassingThrough( segment ) ) {
+          // split segment
+          var diameter = segment.GetRealNominalDiameter() ?? segment.PreferredNominalDiameter ;
+          var isRoutingOnPipeSpace = segment.IsRoutingOnPipeSpace ;
+          var fixeBopHeight = segment.FixedBopHeight ;
+          var avoidType = segment.AvoidType ;
+          yield return new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) ;
+          yield return new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType ) ;
+        }
+        else {
+          yield return segment ;
+        }
+      }
     }
 
     private static ((SubRoute SubRoute, IEndPoint EndPoint), bool IsFrom) GetOtherEndPoint( Route route, IEndPoint endPoint )
@@ -128,7 +202,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( false == endPointSubRouteMap.TryGetValue( toEndPoint, out var tuple ) ) continue ;
 
         if ( null == tuple.OfFrom ) return ( subRoute, toEndPoint ) ;
-        if ( TrailFrom( endPointSubRouteMap, tuple.OfTo ! ) is { } result ) return result ;
+        if ( TrailFrom( endPointSubRouteMap, tuple.OfTo! ) is { } result ) return result ;
       }
 
       return null ;
@@ -140,7 +214,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( false == endPointSubRouteMap.TryGetValue( fromEndPoint, out var tuple ) ) continue ;
 
         if ( null == tuple.OfTo ) return ( subRoute, fromEndPoint ) ;
-        if ( TrailTo( endPointSubRouteMap, tuple.OfFrom ! ) is { } result ) return result ;
+        if ( TrailTo( endPointSubRouteMap, tuple.OfFrom! ) is { } result ) return result ;
       }
 
       return null ;
@@ -151,14 +225,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       private readonly SubRoute _subRoute ;
       private readonly IEndPoint _endPoint ;
 
-      public PseudoPickResult( SubRoute subRoute, IEndPoint endPoint )
+      public PseudoPickResult( SubRoute subRoute, IEndPoint endPoint, bool isFrom )
       {
         _subRoute = subRoute ;
         _endPoint = endPoint ;
 
         if ( endPoint is RouteEndPoint routeEndPoint ) {
-          SubRoute = routeEndPoint.GetSubRoute() ?? subRoute ;
-          EndPointOverSubRoute = routeEndPoint.EndPointKeyOverSubRoute ;
+          SubRoute = routeEndPoint.GetSubRoute() ;
+          EndPointOverSubRoute = null ;
+        }
+        else if ( endPoint is PassPointBranchEndPoint passPointBranchEndPoint ) {
+          SubRoute = passPointBranchEndPoint.GetSubRoute( isFrom ) ?? subRoute ;
+          EndPointOverSubRoute = passPointBranchEndPoint.EndPointKeyOverSubRoute ;
         }
         else {
           SubRoute = null ;
@@ -173,6 +251,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       public Element PickedElement => throw new InvalidOperationException() ;
       public Connector? PickedConnector => ( _endPoint as ConnectorEndPoint )?.GetConnector() ?? _subRoute.GetReferenceConnector() ;
       public XYZ GetOrigin() => _endPoint.RoutingStartPosition ;
+      public Element GetOriginElement() => throw new InvalidOperationException() ;
 
       public bool IsCompatibleTo( Connector connector )
       {

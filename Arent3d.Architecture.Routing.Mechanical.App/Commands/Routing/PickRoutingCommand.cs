@@ -1,11 +1,7 @@
 using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.StorableCaches ;
-using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -24,20 +20,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return AddInType.Mechanical ;
     }
 
-    protected override RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )
     {
-      return RoutingApp.GetRouteGeneratorInstantiator() ;
+      return new MechanicalRoutingExecutor( document, view ) ;
     }
 
-    protected override SetRouteProperty? CreateSegmentDialogWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo, IEndPoint fromEndPoint, IEndPoint toEndPoint )
+    protected override (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom )
+    {
+      return ( PickCommandUtil.CreateRouteEndPoint( newPickResult ), null ) ;
+    }
+
+    protected override DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo )
     {
       if ( RouteMEPSystem.GetSystemType( document, connector ) is not { } defaultSystemType ) return null ;
 
       var curveType = RouteMEPSystem.GetMEPCurveType( document, new[] { connector }, defaultSystemType ) ;
 
-      var diameter = fromEndPoint.GetDiameter() ?? toEndPoint.GetDiameter() ?? 0 ;
-
-      return SetDialog( document, classificationInfo, defaultSystemType, curveType, diameter ) ;
+      return new DialogInitValues( classificationInfo, defaultSystemType, curveType, connector.GetDiameter() ) ;
     }
 
     protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => systemType?.Name ?? curveType.Category.Name ;

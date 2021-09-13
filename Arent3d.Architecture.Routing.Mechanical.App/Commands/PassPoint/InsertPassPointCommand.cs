@@ -2,6 +2,7 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.PassPoint ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint
@@ -18,9 +19,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint
       return AddInType.Mechanical ;
     }
 
-    protected override RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )
     {
-      return RoutingApp.GetRouteGeneratorInstantiator() ;
+      return new MechanicalRoutingExecutor( document, view ) ;
     }
   }
 }

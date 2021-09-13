@@ -42,8 +42,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="EndPoints\PassPointBranchEndPoint.cs" />
-  </ItemGroup>
-
 </Project>

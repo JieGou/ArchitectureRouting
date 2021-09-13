@@ -17,7 +17,10 @@
         
         <key>Electrical.App.Panels.Routing.Racks</key>
         <string>PS</string>
-        
+
+        <key>Electrical.App.Panels.Routing.Shafts</key>
+        <string>Shaft</string>
+      
         <key>Electrical.App.Panels.Routing.Monitor</key>
         <string>Monitor Selection</string>
 
@@ -201,6 +204,12 @@
         <string>上に避ける</string>
         <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket</key>
         <string>下に避ける</string>
+
+        <key>Dialog.Forms.FromToWindow.Title</key>
+        <string>配線From-To</string>
+
+        <key>Dialog.Forms.FromToTree.Title</key>
+        <string>配線From-To</string>
 
 
         <!-- Parameter Names -->

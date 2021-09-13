@@ -55,10 +55,17 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     {
       var min = box.Min.ToXYZRaw() ;
       var max = box.Max.ToXYZRaw() ;
+      if ( IsTooSmall( max - min, _document.Application.ShortCurveTolerance ) ) return Enumerable.Empty<Box3d>() ;
+      
       var boxFilter = new BoundingBoxIntersectsFilter( new Outline( min, max ) ) ;
       var geometryFilter = new ElementIntersectsSolidFilter( CreateBoundingBoxSolid( min, max ) ) ;
       var elements = _document.GetAllElements<Element>().Where( boxFilter ) ;
       return _filters.Aggregate( elements, ( current, filter ) => current.Where( filter ) ).Where( geometryFilter ).Where( _collector.IsCollisionCheckElement ).Select( GetBoundingBox ) ;
+
+      static bool IsTooSmall( XYZ size, double tolerance )
+      {
+        return ( size.X <= tolerance || size.Y <= tolerance || size.Z <= tolerance ) ;
+      }
     }
 
     private static Solid CreateBoundingBoxSolid( XYZ min, XYZ max )

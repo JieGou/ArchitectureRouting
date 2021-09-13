@@ -2,53 +2,49 @@
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Utility ;
-using Autodesk.Revit.UI ;
-
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
 {
   public abstract class ApplySelectedFromToChangesCommandBase : RoutingCommandBase
   {
-
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
-      if ( SelectedFromToViewModel.PropertySourceType is { } propertySource ) {
-        var route = propertySource.TargetRoute ;
-        var subRoutes = propertySource.TargetSubRoutes ;
+      if ( SelectedFromToViewModel.PropertySourceType is not { } propertySource ) return base.GetRouteSegments( document, state ) ;
 
-        if ( route == null || subRoutes == null ) return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
-        //Change SystemType
-        route.SetMEPSystemType( SelectedFromToViewModel.SelectedSystemType ) ;
+      var route = propertySource.TargetRoute ;
+      var subRoutes = propertySource.TargetSubRoutes ;
+      if ( route == null || subRoutes == null ) return base.GetRouteSegments( document, state ) ;
 
-        foreach ( var subRoute in subRoutes ) {
-          //Change Diameter
-          if ( SelectedFromToViewModel.SelectedDiameter is { } selectedDiameter ) {
-            subRoute.ChangePreferredNominalDiameter( selectedDiameter ) ;
-          }
+      //Change SystemType
+      route.SetMEPSystemType( SelectedFromToViewModel.SelectedSystemType ) ;
 
-          //Change CurveType
-          if ( SelectedFromToViewModel.SelectedCurveType is { } selectedCurveType ) {
-            subRoute.SetMEPCurveType( selectedCurveType ) ;
-          }
-
-          //ChangeDirect
-          if ( SelectedFromToViewModel.IsDirect is { } isDirect ) {
-            subRoute.ChangeIsRoutingOnPipeSpace( isDirect ) ;
-          }
-
-          //Change FixedHeight
-          if ( SelectedFromToViewModel.OnHeightSetting is { } ) {
-            subRoute.ChangeFixedBopHeight( SelectedFromToViewModel.FixedHeight ) ;
-          }
-
-          //Change AvoidType
-          subRoute.ChangeAvoidType( SelectedFromToViewModel.AvoidType ) ;
+      foreach ( var subRoute in subRoutes ) {
+        //Change Diameter
+        if ( SelectedFromToViewModel.SelectedDiameter is { } selectedDiameter ) {
+          subRoute.ChangePreferredNominalDiameter( selectedDiameter ) ;
         }
 
-        return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
+        //Change CurveType
+        if ( SelectedFromToViewModel.SelectedCurveType is { } selectedCurveType ) {
+          subRoute.SetMEPCurveType( selectedCurveType ) ;
+        }
+
+        //ChangeDirect
+        if ( SelectedFromToViewModel.IsDirect is { } isDirect ) {
+          subRoute.ChangeIsRoutingOnPipeSpace( isDirect ) ;
+        }
+
+        //Change FixedHeight
+        if ( SelectedFromToViewModel.OnHeightSetting is { } ) {
+          subRoute.ChangeFixedBopHeight( SelectedFromToViewModel.FixedHeight ) ;
+        }
+
+        //Change AvoidType
+        subRoute.ChangeAvoidType( SelectedFromToViewModel.AvoidType ) ;
       }
 
-      return base.GetRouteSegmentsParallelToTransaction( uiDocument ) ;
+      return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll() ;
     }
   }
 }
