@@ -1,14 +1,11 @@
 ﻿using System ;
 using System.Collections.Generic ;
-using System.Collections.ObjectModel ;
 using System.ComponentModel ;
-using System.Data ;
 using System.Linq ;
 using System.Runtime.CompilerServices ;
+using System.Windows ;
 using System.Windows.Media ;
 using System.Windows.Media.Imaging ;
-using Arent3d.Architecture.Routing.AppBase.Commands ;
-using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
@@ -53,7 +50,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public bool IsRootRoute { get ; set ; }
 
-    public SolidColorBrush TextColor { get ; set ; }
+    public Brush NormalTextColor { get ; set ; }
+    public Brush SelectionTextColor { get ; set ; } = SystemColors.HighlightTextBrush ;
+    public Brush InactiveSelectionTextColor { get ; set ; } = SystemColors.InactiveSelectionHighlightBrush ;
+
     private List<FromToItem> ChildrenList { get ; }
     public abstract BitmapImage? Icon { get ; }
 
@@ -80,10 +80,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     // Property source for UI
     public PropertySource? PropertySourceType { get ; private init ; }
 
-    protected FromToItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes )
+    private FromToItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes )
     {
       ItemFloor = "" ;
-      TextColor = (SolidColorBrush) ( new BrushConverter().ConvertFrom( "#000000" ) ) ;
+      NormalTextColor = SystemColors.ControlTextBrush ;
       _itemTypeName = "" ;
       IsEditing = false ;
       ItemTag = "" ;
@@ -101,11 +101,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public abstract void OnDoubleClicked() ;
 
-    private void NotifyPropertyChanged( [CallerMemberName] String propertyName = "" )
+    private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )
     {
-      if ( PropertyChanged != null ) {
-        PropertyChanged( this, new PropertyChangedEventArgs( propertyName ) ) ;
-      }
+      PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
     }
 
     /// <summary>
@@ -114,6 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// <param name="doc"></param>
     /// <param name="uiDoc"></param>
     /// <param name="allRoutes"></param>
+    /// <param name="fromToItemsUiBase"></param>
     /// <returns></returns>
     public static IEnumerable<FromToItem> CreateRouteFromToItems( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes, FromToItemsUiBase fromToItemsUiBase )
     {
@@ -123,13 +122,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       ItemDictionary = new SortedDictionary<string, FromToItem>() ;
 
-      foreach ( var route in allRoutes ) {
-        if ( route.HasParent() ) {
-          childBranches.Add( route ) ;
+      if ( fromToItemsUiBase.UseHierarchies ) {
+        foreach ( var route in allRoutes ) {
+          if ( route.HasParent() ) {
+            childBranches.Add( route ) ;
+          }
+          else {
+            parentFromTos.Add( route ) ;
+          }
         }
-        else {
-          parentFromTos.Add( route ) ;
-        }
+      }
+      else {
+        parentFromTos.AddRange( allRoutes ) ;
       }
 
       var is3DView = ( doc.ActiveView is View3D ) ;
@@ -154,9 +158,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( false == is3DView ) {
           string viewLevelName = routeItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL ).AsString() ;
           if ( viewLevelName != levelName?.AsValueString() ) {
-            SolidColorBrush scb = (SolidColorBrush)( new BrushConverter().ConvertFrom( "#808080" ) ) ;
-            scb.Opacity = 0.75 ;
-            routeItem.TextColor = scb ;
+            routeItem.NormalTextColor = SystemColors.GrayTextBrush ;
           }
         }
 
@@ -166,7 +168,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
 
         // Create and add ChildItems
-        routeItem.CreateChildItems( routeItem, fromToItemsUiBase ) ;
+        CreateChildItems( routeItem, fromToItemsUiBase ) ;
         yield return routeItem ;
       }
 
@@ -191,9 +193,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( false == is3DView ) {
           string viewLevelName = branchItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL ).AsString() ;
           if ( viewLevelName != levelName?.AsValueString() ) {
-            SolidColorBrush scb = (SolidColorBrush) ( new BrushConverter().ConvertFrom( "#808080" ) ) ;
-            scb.Opacity = 0.75 ;
-            branchItem.TextColor = scb ;
+            branchItem.NormalTextColor = SystemColors.GrayTextBrush ;
           }
         }
 
@@ -204,7 +204,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
 
         // Create and add ChildItems
-        branchItem.CreateChildItems( branchItem, fromToItemsUiBase ) ;
+        CreateChildItems( branchItem, fromToItemsUiBase ) ;
       }
     }
 
@@ -216,7 +216,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void CreateEndPointItem( RouteItem routeItem, IEndPoint endPoint, FromToItemsUiBase fromToItemsUiBase )
     {
       switch ( endPoint ) {
-        // Create ConnectorItem
         case ConnectorEndPoint connectorEndPoint :
         {
           var connector = connectorEndPoint.GetConnector() ;
@@ -227,7 +226,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             if ( routeItem.Doc.GetElementById<ViewFamilyType>( routeItem.Doc.ActiveView.GetTypeId() ) is { } vft && ! vft.Name.Contains( "3D" ) ) {
               string viewLevelName = routeItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL ).AsString() ;
               if ( viewLevelName != level?.Name ) {
-                connectorItem.TextColor.Opacity = 0.75 ;
+                connectorItem.NormalTextColor = SystemColors.GrayTextBrush ;
               }
             }
 
@@ -236,14 +235,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
           break ;
         }
-        // Create PassPointItem
         case PassPointEndPoint passPointEndPoint :
         {
           var passPointItem = new PassPointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, passPointEndPoint, fromToItemsUiBase.FromToTreeIcons?[ "PassPointItem" ] ) { ItemTypeName = "PassPoint", ElementId = passPointEndPoint.PassPointId, ItemTag = "PassPoint", } ;
           routeItem.ChildrenList.Add( passPointItem ) ;
           break ;
         }
-        // Create PassPointItem
+        case PassPointBranchEndPoint passPointBranchEndPoint :
+        {
+          if ( passPointBranchEndPoint.ToEndPointOverSubRoute( routeItem.Doc ) is { } endPointOverSubRoute ) {
+            CreateEndPointItem( routeItem, endPointOverSubRoute, fromToItemsUiBase ) ;
+          }
+          break ;
+        }
         case TerminatePointEndPoint terminatePointEndPoint :
         {
           var passPointItem = new TerminatePointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, terminatePointEndPoint, fromToItemsUiBase.FromToTreeIcons?[ "TerminatePointItem" ] ) { ItemTypeName = "TerminatePoint", ElementId = terminatePointEndPoint.TerminatePointId, ItemTag = "TerminatePoint", } ;
@@ -280,11 +284,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// Create and add ChildItems to RouteItem
     /// </summary>
     /// <param name="routeItem"></param>
-    private void CreateChildItems( RouteItem routeItem, FromToItemsUiBase fromToItemsUiBase )
+    /// <param name="fromToItemsUiBase"></param>
+    private static void CreateChildItems( RouteItem routeItem, FromToItemsUiBase fromToItemsUiBase )
+    {
+      if ( fromToItemsUiBase.ShowSubRoutes ) {
+        CreateChildItemsWithSubRoutes( routeItem, fromToItemsUiBase ) ;
+      }
+      else {
+        CreateChildItemsWithoutSubRoutes( routeItem, fromToItemsUiBase ) ;
+      }
+    }
+    private static void CreateChildItemsWithSubRoutes( RouteItem routeItem, FromToItemsUiBase fromToItemsUiBase )
     {
       foreach ( var subRoute in routeItem.SubRoutes ) {
         // if no PassPoint
-        if ( routeItem.SubRoutes.Count() < 2 ) {
+        if ( routeItem.SubRoutes.Count < 2 ) {
           foreach ( var endPoint in subRoute.AllEndPoints ) {
             if ( endPoint == subRoute.AllEndPoints.LastOrDefault() ) {
               routeItem.CreateSubRouteItem( routeItem, subRoute, fromToItemsUiBase ) ;
@@ -309,6 +323,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
     }
+    private static void CreateChildItemsWithoutSubRoutes( RouteItem routeItem, FromToItemsUiBase fromToItemsUiBase )
+    {
+      if ( routeItem.SubRoutes.FirstOrDefault()?.Segments.FirstOrDefault()?.FromEndPoint is { } fromEndPoint ) {
+        routeItem.CreateEndPointItem( routeItem, fromEndPoint, fromToItemsUiBase ) ;
+      }
+      if ( routeItem.SubRoutes.LastOrDefault()?.Segments.FirstOrDefault()?.ToEndPoint is { } toEndPoint ) {
+        routeItem.CreateEndPointItem( routeItem, toEndPoint, fromToItemsUiBase ) ;
+      }
+    }
+
 
 
     /// <summary>
@@ -318,7 +342,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       private Route? _selectedRoute ;
 
-      public readonly IEnumerable<SubRoute> SubRoutes ;
+      public IReadOnlyCollection<SubRoute> SubRoutes { get ; }
 
 
       private List<ElementId>? _targetElements ;

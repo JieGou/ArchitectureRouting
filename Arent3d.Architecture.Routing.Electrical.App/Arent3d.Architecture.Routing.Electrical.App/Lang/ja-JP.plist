@@ -205,6 +205,9 @@
         <key>Dialog.Forms.FromToWindow.Title</key>
         <string>配線From-To</string>
 
+        <key>Dialog.Forms.FromToTree.Title</key>
+        <string>配線From-To</string>
+
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

@@ -1,7 +1,5 @@
 ﻿using System ;
-using System.Windows ;
 using System.Windows.Media.Imaging ;
-using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
@@ -25,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       UiControlledApplication = uiControlledApplication ;
       DpId = new DockablePaneId( dpId ) ;
       PostCommandExecutor = postCommandExecutor ;
-      InitializeDockablePane() ;
+      InitializeDockablePane( fromToItemsUi ) ;
       // subscribe DockableFrameVisibilityChanged event
       uiControlledApplication.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>( UIControlledApplication_DockableVisibilityChanged ) ;
     }
@@ -35,12 +33,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       Dockable?.Show() ;
     }
 
-    private void InitializeDockablePane()
+    private void InitializeDockablePane( FromToItemsUiBase fromToItemsUi )
     {
-      DockablePaneProviderData data = new DockablePaneProviderData { FrameworkElement = FromToTreeView as FrameworkElement, InitialState = new DockablePaneState { DockPosition = DockPosition.Tabbed, TabBehind = DockablePanes.BuiltInDockablePanes.ProjectBrowser } } ;
       // register dockable pane
       if ( ! DockablePane.PaneIsRegistered( DpId ) ) {
-        UiControlledApplication.RegisterDockablePane( DpId, "From-To Tree", FromToTreeView as IDockablePaneProvider ) ;
+        UiControlledApplication.RegisterDockablePane( DpId, fromToItemsUi.TabTitle, FromToTreeView ) ;
       }
     }
 
