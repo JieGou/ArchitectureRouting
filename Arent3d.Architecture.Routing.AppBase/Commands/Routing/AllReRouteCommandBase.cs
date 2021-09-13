@@ -1,7 +1,6 @@
 using System.Collections.Generic ;
-using Arent3d.Revit.UI ;
-using Autodesk.Revit.Attributes ;
-using Autodesk.Revit.UI ;
+using Arent3d.Utility ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -9,9 +8,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     protected abstract AddInType GetAddInType() ;
 
-    protected override IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
-      return uiDocument.Document.CollectRoutes( GetAddInType() ).ToSegmentsWithName() ;
+      return document.CollectRoutes( GetAddInType() ).ToSegmentsWithName().EnumerateAll() ;
     }
   }
 }

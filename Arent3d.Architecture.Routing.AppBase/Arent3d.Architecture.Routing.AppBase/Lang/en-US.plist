@@ -206,6 +206,18 @@
         <string>Avoid below From-To</string>
 
 
+        <!-- End Point Names -->
+        <key>EndPoint.DisplayTypeName.Connector</key>
+        <string>Connector</string>
+        <key>EndPoint.DisplayTypeName.PassPoint</key>
+        <string>Pass Point</string>
+        <key>EndPoint.DisplayTypeName.Route</key>
+        <string>Other From-to</string>
+        <key>EndPoint.DisplayTypeName.Terminal</key>
+        <string>Coordination</string>
+        <key>EndPoint.DisplayTypeName.PassPointBranch</key>
+        <string>Other From-to</string>
+
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
         <string>Width</string>

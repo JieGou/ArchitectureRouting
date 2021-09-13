@@ -51,30 +51,51 @@ namespace Arent3d.Architecture.Routing.EndPoints
       return serializer.ToString() ;
     }
 
-    public static IEnumerable<IEndPoint> ParseEndPoints( Document document, string str )
+    public static IEnumerable<IEndPoint> ParseEndPoints( this Document document, string str )
     {
       var deserializer = new DeserializerObject<ListSerializeField>( str ) ;
       var array = deserializer.GetNonNullStringArray( ListSerializeField.EndPoints ) ;
-      return array?.Select( item => ParseEndPoint( document, item ) ).NonNull() ?? Enumerable.Empty<IEndPoint>() ;
+      return array?.Select( document.ParseEndPoint ).NonNull() ?? Enumerable.Empty<IEndPoint>() ;
     }
 
-    public static IEndPoint? ParseEndPoint( Document document, string str )
+    public static IEndPoint? ParseEndPoint( this Document document, string str )
     {
       var deserializer = new DeserializerObject<EndPointSerializeField>(str) ;
       if ( deserializer.GetString( EndPointSerializeField.Type ) is not { } endPontType ) return null ;
       if ( deserializer.GetString( EndPointSerializeField.Parameters ) is not { } paramString ) return null ;
 
-      return ParseEndPoint( document, endPontType, paramString ) ;
+      return document.ParseEndPoint( endPontType, paramString ) ;
     }
 
-    public static IEndPoint? ParseEndPoint( Document document, string endPointType, string parameters )
+    public static IEndPoint? ParseEndPoint( this Document document, string endPointType, string parameters )
     {
       return endPointType switch
       {
         ConnectorEndPoint.Type => ConnectorEndPoint.ParseParameterString( document, parameters ),
         PassPointEndPoint.Type => PassPointEndPoint.ParseParameterString( document, parameters ),
+        PassPointBranchEndPoint.Type => PassPointBranchEndPoint.ParseParameterString( document, parameters ),
         RouteEndPoint.Type => RouteEndPoint.ParseParameterString( document, parameters ),
         TerminatePointEndPoint.Type => TerminatePointEndPoint.ParseParameterString( document, parameters ),
+        _ => null,
+      } ;
+    }
+
+    public static IEndPoint? ToEndPointOverSubRoute( this IEndPoint endPoint, Document document )
+    {
+      if ( endPoint is not PassPointBranchEndPoint passPointBranchEndPoint ) return endPoint ;
+
+      return document.ToEndPoint( passPointBranchEndPoint.EndPointKeyOverSubRoute ) ;
+    }
+
+    private static IEndPoint? ToEndPoint( this Document document, EndPointKey key )
+    {
+      return key.Type switch
+      {
+        ConnectorEndPoint.Type => ConnectorEndPoint.FromKeyParam( document, key.Param ),
+        PassPointEndPoint.Type => PassPointEndPoint.FromKeyParam( document, key.Param ),
+        PassPointBranchEndPoint.Type => null,
+        RouteEndPoint.Type => RouteEndPoint.FromKeyParam( document, key.Param ),
+        TerminatePointEndPoint.Type => TerminatePointEndPoint.FromKeyParam( document, key.Param ),
         _ => null,
       } ;
     }

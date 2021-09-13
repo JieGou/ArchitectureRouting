@@ -105,8 +105,8 @@ namespace Arent3d.Architecture.Routing
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
       var preferredDiameter = deserializer.GetDouble( SerializeField.PreferredNominalDiameter ) ;
-      var fromId = EndPointExtensions.ParseEndPoint( storedElement.Document, deserializer.GetString( SerializeField.FromEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
-      var toId = EndPointExtensions.ParseEndPoint( storedElement.Document, deserializer.GetString( SerializeField.ToEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      var fromId = storedElement.Document.ParseEndPoint( deserializer.GetString( SerializeField.FromEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      var toId = storedElement.Document.ParseEndPoint( deserializer.GetString( SerializeField.ToEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
       var isRoutingOnPipeSpace = deserializer.GetBool( SerializeField.IsRoutingOnPipeSpace ) ?? throw new InvalidOperationException() ;
       var curveType = deserializer.GetElement<SerializeField, MEPCurveType>( SerializeField.CurveType, storedElement.Document ) ?? throw new InvalidOperationException() ;
       var fixedBopHeight = deserializer.GetDouble( SerializeField.FixedBopHeight ) ;
