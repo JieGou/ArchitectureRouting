@@ -18,6 +18,9 @@
         <key>Electrical.App.Panels.Routing.Racks</key>
         <string>Pipe Spaces</string>
 
+        <key>Electrical.App.Panels.Routing.Shafts</key>
+        <string>Shaft</string>
+      
         <key>Electrical.App.Panels.Routing.Monitor</key>
         <string>Monitor Selection</string>
 
