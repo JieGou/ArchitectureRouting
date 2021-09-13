@@ -1,4 +1,4 @@
-using System ;
+﻿using System ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands ;
@@ -49,6 +49,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     private readonly RibbonButton _showFromToWindowCommandButton ;
     private readonly RibbonButton _showFromToTreeCommandButton ;
     private readonly RibbonButton _newRackCommandButton ;
+    private readonly RibbonButton _newRackFromToCommandButton ;
     private readonly RibbonButton _newConnectorCommandButton ;
 
     private readonly RibbonButton _importRacksCommandButton ;
@@ -87,6 +88,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         _showFromToTreeCommandButton = routingPanel.AddButton<ShowFromToTreeCommand>() ;
 
         _newRackCommandButton = routingPanel.AddButton<NewRackCommand>() ;
+        _newRackFromToCommandButton = routingPanel.AddButton<NewRackFromToCommand>() ;
         _newConnectorCommandButton = routingPanel.AddButton<NewConnectorCommand>() ;
       }
       {
@@ -137,6 +139,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _showFromToWindowCommandButton.Enabled = false ;
       _showFromToTreeCommandButton.Enabled = false ;
       _newRackCommandButton.Enabled = false ;
+      _newRackFromToCommandButton.Enabled = false ;
 
       _importRacksCommandButton.Enabled = false ;
       _exportRacksCommandButton.Enabled = false ;
@@ -172,6 +175,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       _showFromToWindowCommandButton.Enabled = setupIsDone ;
       _showFromToTreeCommandButton.Enabled = setupIsDone ;
       _newRackCommandButton.Enabled = setupIsDone ;
+      _newRackFromToCommandButton.Enabled = setupIsDone ;
 
       _importRacksCommandButton.Enabled = setupIsDone ;
       _exportRacksCommandButton.Enabled = setupIsDone ;
