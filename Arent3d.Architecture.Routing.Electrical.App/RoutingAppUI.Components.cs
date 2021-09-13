@@ -1,4 +1,4 @@
-using Arent3d.Architecture.Routing.Electrical.App.Commands ;
+﻿using Arent3d.Architecture.Routing.Electrical.App.Commands ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing ;
@@ -51,6 +51,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
         private static class ShowFromToTreeCommandButton { }
+
+        [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
+        private static class NewRackCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.rack", TitleKey = "Electrical.App.Panels.Routing.Racks" )]
