@@ -184,29 +184,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       private double GetHalfRequiredLength()
       {
-        var diameter = _subRoute.GetDiameter().DiameterValueToPipeDiameter() ;
-
-        var transaction = new Transaction( _pickedElement.Document ) ;
-        try {
-          transaction.Start( "To be rolled back" ) ;
-          try {
-            return _spec!.GetLongElbowSize( diameter ) + _spec.GetWeldMinDistance( diameter ) ;
-          }
-          finally {
-            transaction.RollBack() ;
-          }
-        }
-        catch {
-          // Already in a transaction
-          var subTransaction = new SubTransaction( _pickedElement.Document ) ;
-          subTransaction.Start() ;
-          try {
-            return _spec!.GetLongElbowSize( diameter ) + _spec.GetWeldMinDistance( diameter ) ;
-          }
-          finally {
-            subTransaction.RollBack() ;
-          }
-        }
+        return _subRoute.Route.Document.Application.ShortCurveTolerance ;
       }
 
       private MEPCurve? GetNearestMEPCurve( double requiredLength )

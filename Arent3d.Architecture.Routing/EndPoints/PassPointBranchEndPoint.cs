@@ -19,7 +19,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       PassPointId,
       Diameter,
-      Angle,
       EndPointKeyOverSubRoute,
     }
 
@@ -29,10 +28,9 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       if ( deserializer.GetElementId( SerializeField.PassPointId ) is not { } passPointId ) return null ;
       var diameter = deserializer.GetDouble( SerializeField.Diameter ) ;
-      if ( deserializer.GetDouble( SerializeField.Angle ) is not { } angle ) return null ;
       if ( deserializer.GetEndPointKey( SerializeField.EndPointKeyOverSubRoute ) is not { } referenceEndPointKey ) return null ;
 
-      return new PassPointBranchEndPoint( document, passPointId, angle, diameter * 0.5, referenceEndPointKey ) ;
+      return new PassPointBranchEndPoint( document, passPointId, diameter * 0.5, referenceEndPointKey ) ;
     }
 
     public string ParameterString
@@ -43,7 +41,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
         stringifier.Add( SerializeField.PassPointId, PassPointId ) ;
         stringifier.Add( SerializeField.Diameter, GetDiameter() ) ;
-        stringifier.Add( SerializeField.Angle, Angle ) ;
         stringifier.AddNonNull( SerializeField.EndPointKeyOverSubRoute, EndPointKeyOverSubRoute ) ;
 
         return stringifier.ToString() ;
@@ -86,17 +83,15 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public XYZ RoutingStartPosition => GetPreferredStartPosition() ?? XYZ.Zero ;
     public XYZ Direction => GetDirectionFromAngle() ?? XYZ.BasisX ;
 
-    private double Angle { get ; set ; }
-
     private XYZ? GetDirectionFromAngle()
     {
       if ( GetPassPoint() is not { } passPoint ) return null ;
 
       var transform = passPoint.GetTotalTransform() ;
-      return transform.BasisY * Math.Cos( Angle ) + transform.BasisZ * Math.Sin( Angle ) ;
+      return transform.BasisX ;
     }
 
-    private double? PreferredRadius { get ; set ; } = 0 ;
+    private double? PreferredRadius { get ; set ; }
 
     public void UpdatePreferredParameters()
     {
@@ -146,12 +141,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
       return route.RouteSegments.Where( s => s.FromEndPoint.Key == pointKey || s.ToEndPoint.Key == pointKey ) ;
     }
 
-    public PassPointBranchEndPoint( Document document, ElementId passPointId, double angleRadians, double? preferredRadius, EndPointKey endPointKeyOverSubRoute )
+    public PassPointBranchEndPoint( Document document, ElementId passPointId, double? preferredRadius, EndPointKey endPointKeyOverSubRoute )
     {
       Document = document ;
       PassPointId = passPointId ;
 
-      Angle = angleRadians ;
       PreferredRadius = preferredRadius ;
 
       EndPointKeyOverSubRoute = endPointKeyOverSubRoute ;

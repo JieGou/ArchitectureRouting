@@ -101,10 +101,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var otherSegments = GetNewSegmentList( subRoute, element, passPointElement ).Select( segment => ( routeName, segment ) ).EnumerateAll() ;
 
       // Create PassPointBranchEndPoint
-      var anotherPos = anotherPickResult.GetOrigin() ;
-      var angle = GetPreferredAngle( passPointElement.GetTotalTransform(), pos, anotherPos ) ;
       var preferredRadius = ( routePickResult.PickedConnector ?? anotherPickResult.PickedConnector )?.Radius ;
-      var endPoint = new PassPointBranchEndPoint( document, passPointElement.Id, ( isFrom ? angle : -angle ), preferredRadius, routePickResult.EndPointOverSubRoute! ) ;
+      var endPoint = new PassPointBranchEndPoint( document, passPointElement.Id, preferredRadius, routePickResult.EndPointOverSubRoute! ) ;
 
       return ( endPoint, otherSegments ) ;
     }
