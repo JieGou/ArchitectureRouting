@@ -195,6 +195,9 @@
         <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket</key>
         <string>下に避ける</string>
 
+        <key>Dialog.Forms.FromToWindow.Title</key>
+        <string>配管From-To</string>
+
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

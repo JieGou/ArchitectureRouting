@@ -212,6 +212,9 @@
         <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket</key>
         <string>Avoid below From-To</string>
 
+        <key>Dialog.Forms.FromToWindow.Title</key>
+        <string>Electrical From-To</string>
+
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

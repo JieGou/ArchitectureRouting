@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private UIDocument? _uiDocument = null ;
     protected abstract AddInType GetAddInType() ;
 
-    protected abstract FromToWindow CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindow.FromToItems> fromToItemsList ) ;
+    protected abstract FromToWindowBase CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindowBase.FromToItems> fromToItemsList ) ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
