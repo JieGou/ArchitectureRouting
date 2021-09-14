@@ -3,6 +3,7 @@ using Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Rack ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft;
 using Arent3d.Revit.UI.Attributes ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App
@@ -74,7 +75,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [Button( typeof( RackGuidCommand ), OnlyInitialized = true )]
         private static class RackGuidCommandButton { }
       }
-
+      [Panel( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Shafts" )]
+      private static class ShaftPanel
+      {
+        [Button( typeof( CreateShaftCommand ), OnlyInitialized = true )]
+        private static class CreateShaftCommandButton { }
+      }
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Electrical.App.Panels.Routing.Monitor" )]
       private static class MonitorPanel
       {
