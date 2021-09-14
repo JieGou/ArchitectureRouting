@@ -22,7 +22,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   /// </summary>
   public partial class HeightSettingDialog : Window
   {
-
     public HeightSettingDialog( HeightSettingViewModel viewModel)
     {
       InitializeComponent();
@@ -39,10 +38,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var textBox = (TextBox)sender;
       textBox.SelectAll();
-    }
-
-    private void Window_ContentRendered( object sender, EventArgs e )
-    {
     }
 
   }
