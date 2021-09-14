@@ -34,8 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         if (dialog.DialogResult ?? false)
         {
-          viewModel.GetStorable().Save();
-
+          viewModel.SettingStorable.Save();
 
           Dictionary<ElementId, List<FamilyInstance>> connectors = new FilteredElementCollector(document).OfClass(typeof(FamilyInstance))
                                                                                                          .OfCategory(BuiltInCategory.OST_ElectricalFixtures)
@@ -45,35 +44,46 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                                                                                                          .ToDictionary(g => g.Key, g => g.ToList());
           var conduits = new FilteredElementCollector(document).OfClass(typeof(Conduit))
                                                                .OfCategory(BuiltInCategory.OST_Conduit)
-                                                               .ToElements()
-                                                               .OfType<Conduit>();
+                                                               .AsEnumerable()
+                                                               .OfType<Conduit>()
+                                                               .GroupBy(x => x.ReferenceLevel.Id)
+                                                               .ToDictionary(g => g.Key, g => g.ToList());
 
           foreach (Level level in settingStorables.Levels)
           {
-            var heightConnector = settingStorables.HeightOfConnectorsByLevel[level.Name].MillimetersToRevitUnits();
+            var heightConnector = settingStorables[level].HeightOfConnectors.MillimetersToRevitUnits();
             // Set Elevation from floor for all connector on this floor
-            if (settingStorables.HeightOfConnectorsByLevel.ContainsKey(level.Name) && connectors.ContainsKey(level.Id))
+            if (connectors.ContainsKey(level.Id))
             {
-              foreach (var item in connectors[level.Id])
+              foreach (var connector in connectors[level.Id])
               {
-                item.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(heightConnector);
+                var elevationFromFloor = connector.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).AsDouble();
+                if (elevationFromFloor != heightConnector)
+                {
+                  connector.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(heightConnector);
+                }
+              }
+            }
+
+            // Set Top Elevation for conduit
+            if (conduits.ContainsKey(level.Id))
+            {
+              foreach (Conduit conduit in conduits[level.Id])
+              {
+                var elevationFromFloor = conduit.get_Parameter(BuiltInParameter.RBS_CTC_BOTTOM_ELEVATION).AsDouble();
+                if (elevationFromFloor != heightConnector)
+                {
+                  conduit.get_Parameter(BuiltInParameter.RBS_CTC_BOTTOM_ELEVATION).Set(heightConnector);
+                }
               }
             }
 
             // Set Elevation for level
-            if (settingStorables.HeightOfLevels.ContainsKey(level.Name))
+            if (level.Elevation != settingStorables[level].Elevation.MillimetersToRevitUnits())
             {
-              level.Elevation = settingStorables.ElevationOfLevels[level.Name].MillimetersToRevitUnits();
+              level.Elevation = settingStorables[level].Elevation.MillimetersToRevitUnits();
             }
 
-            // Set Top Elevation for conduit
-            foreach (Conduit conduit in conduits)
-            {
-              if (conduit.ReferenceLevel.Id == level.Id)
-              {
-                conduit.get_Parameter(BuiltInParameter.RBS_CTC_BOTTOM_ELEVATION).Set(heightConnector);
-              }
-            }
           }
         }
 
