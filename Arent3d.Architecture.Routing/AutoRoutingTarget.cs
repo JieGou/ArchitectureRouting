@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing
 
     public Domain Domain { get ; }
 
-    public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> routeConditionDictionary )
+    public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
     {
       Routes = subRoutes.Select( subRoute => subRoute.Route ).Distinct().EnumerateAll() ;
 
@@ -45,8 +45,8 @@ namespace Arent3d.Architecture.Routing
       var depths = GetDepths( subRoutes ) ;
 
       var dic = new Dictionary<AutoRoutingEndPoint, SubRoute>() ;
-      _fromEndPoints = GenerateEndPointList( subRoutes, subRoute => GetFromEndPoints( subRoute, depths[ subRoute ], routeConditionDictionary[ subRoute.GetKey() ] ), dic ) ;
-      _toEndPoints = GenerateEndPointList( subRoutes, subRoute => GetToEndPoints( subRoute, depths[ subRoute ], routeConditionDictionary[ subRoute.GetKey() ] ), dic ) ;
+      _fromEndPoints = GenerateEndPointList( subRoutes, subRoute => GetFromEndPoints( subRoute, depths[ subRoute ], routeConditionDictionary[ new SubRouteInfo( subRoute ) ] ), dic ) ;
+      _toEndPoints = GenerateEndPointList( subRoutes, subRoute => GetToEndPoints( subRoute, depths[ subRoute ], routeConditionDictionary[ new SubRouteInfo( subRoute ) ] ), dic ) ;
       _ep2SubRoute = dic ;
 
       AutoRoutingEndPoint.ApplyDepths( _fromEndPoints, _toEndPoints ) ;

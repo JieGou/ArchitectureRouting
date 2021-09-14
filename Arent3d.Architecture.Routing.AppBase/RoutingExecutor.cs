@@ -126,8 +126,6 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private void ExecuteRouting( Domain domain, IReadOnlyCollection<Route> routes, IProgressData? progressData )
     {
-      routes.ForEach( r => r.Save() ) ;
-
       progressData?.ThrowIfCanceled() ;
       
       ICollisionCheckTargetCollector collector ;
@@ -149,6 +147,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
       RegisterBadConnectors( generator.GetBadConnectorSet() ) ;
+
+      routes.ForEach( r => r.Save() ) ;
     }
 
     protected abstract RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector ) ;

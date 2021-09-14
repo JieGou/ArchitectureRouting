@@ -87,18 +87,25 @@ namespace Arent3d.Architecture.Routing.AppBase
       if ( originElement is not MEPCurve mepCurve ) return Array.Empty<IEndPoint>() ;
 
       var document = originElement.Document ;
-      var routes = RouteCache.Get( document ) ;
-      return mepCurve.GetMEPCurvesOnSameGroup().Select( elm => GetEndPoint( document, routes, elm.GetRouteName(), pickingFromSide ) ).NonNull() ;
+      return mepCurve.GetSubRouteGroup().Select( subRoute => GetEndPoint( document, subRoute, pickingFromSide ) ).NonNull() ;
 
-      static IEndPoint? GetEndPoint( Document document, RouteCache routes, string? routeName, bool pickingFromSide )
+      static IEndPoint? GetEndPoint( Document document, SubRoute subRoute, bool pickingFromSide )
       {
-        if ( null == routeName || false == routes.TryGetValue( routeName, out var route ) ) return null ;
+        while ( true ) {  // tail recursion
+          if ( pickingFromSide ) {
+            var endPoint = subRoute.Segments.FirstOrDefault()?.FromEndPoint.ToEndPointOverSubRoute( document ) ;
+            if ( endPoint is not PassPointEndPoint ) return endPoint ;
+            if ( subRoute.PreviousSubRoute is not { } prevSubRoute ) return endPoint ;
 
-        if ( pickingFromSide ) {
-          return route.SubRoutes.FirstOrDefault()?.Segments.FirstOrDefault()?.FromEndPoint.ToEndPointOverSubRoute( document ) ;
-        }
-        else {
-          return route.SubRoutes.LastOrDefault()?.Segments.FirstOrDefault()?.ToEndPoint.ToEndPointOverSubRoute( document ) ;
+            subRoute = prevSubRoute ;
+          }
+          else {
+            var endPoint = subRoute.Segments.FirstOrDefault()?.ToEndPoint.ToEndPointOverSubRoute( document ) ;
+            if ( endPoint is not PassPointEndPoint ) return endPoint ;
+            if ( subRoute.NextSubRoute is not { } nextSubRoute ) return endPoint ;
+
+            subRoute = nextSubRoute ;
+          }
         }
       }
     }
@@ -194,12 +201,12 @@ namespace Arent3d.Architecture.Routing.AppBase
         
         var nearestDistance = double.PositiveInfinity ;
         MEPCurve? nearestMEPCurve = null ;
-        var groupIds = pickedMEPCurve?.GetMEPCurveGroupName() ;
+        var subRouteInfo = _pickedElement.GetSubRouteInfo() ;
 
         foreach ( var connector in _pickedElement.GetConnectors().Where( c => c.IsAnyEnd() ) ) {
           var distance = connector.Origin.DistanceTo( _pickPosition ) ;
           if ( nearestDistance <= distance ) continue ;
-          if ( GetConnectingMEPCurve( connector, groupIds, requiredLength ) is not { } mepCurve ) continue ;
+          if ( GetConnectingMEPCurve( connector, subRouteInfo, requiredLength ) is not { } mepCurve ) continue ;
 
           nearestDistance = distance ;
           nearestMEPCurve = mepCurve ;
@@ -207,19 +214,19 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         return nearestMEPCurve ;
 
-        static MEPCurve? GetConnectingMEPCurve( Connector connector, string? groupIds, double requiredLength )
+        static MEPCurve? GetConnectingMEPCurve( Connector connector, SubRouteInfo? subRouteInfo, double requiredLength )
         {
           foreach ( var c in connector.GetConnectedConnectors() ) {
-            var nextGroupIds = groupIds ;
+            var nextSubRouteInfo = subRouteInfo ;
             if ( c.Owner is MEPCurve mepCurve ) {
-              var newGroupIds = mepCurve.GetMEPCurveGroupName() ;
-              if ( null != groupIds && groupIds != newGroupIds ) continue ;
+              var newSubRouteInfo = mepCurve.GetSubRouteInfo() ;
+              if ( nextSubRouteInfo != newSubRouteInfo ) continue ;
               if ( HasEnoughLength( mepCurve, requiredLength ) ) return mepCurve ;
 
-              nextGroupIds = newGroupIds ;
+              nextSubRouteInfo = newSubRouteInfo ;
             }
 
-            if ( c.GetOtherConnectorsInOwner().Select( c2 => GetConnectingMEPCurve( c2, nextGroupIds, requiredLength ) ).FirstOrDefault( curve => null != curve ) is { } nextCurve ) return nextCurve ;
+            if ( c.GetOtherConnectorsInOwner().Select( c2 => GetConnectingMEPCurve( c2, nextSubRouteInfo, requiredLength ) ).FirstOrDefault( curve => null != curve ) is { } nextCurve ) return nextCurve ;
           }
           return null ;
         }
@@ -261,14 +268,8 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       public static SubRoutePickResult? Create( RoutingExecutor? routingExecutor, Element element, XYZ pickPosition )
       {
-        var routeName = element.GetRouteName() ;
-        if ( null == routeName ) return null ;
-
-        var subRouteIndex = element.GetSubRouteIndex() ;
-        if ( null == subRouteIndex ) return null ;
-
-        if ( false == RouteCache.Get( element.Document ).TryGetValue( routeName, out var route ) ) return null ;
-        if ( route.GetSubRoute( subRouteIndex.Value ) is not { } subRoute ) return null ;
+        if ( element.GetSubRouteInfo() is not { } subRouteInfo ) return null ;
+        if ( RouteCache.Get( element.Document ).GetSubRoute( subRouteInfo ) is not { } subRoute ) return null ;
 
         return new SubRoutePickResult( routingExecutor?.GetMEPSystemPipeSpec( subRoute ), element, subRoute, pickPosition ) ;
       }

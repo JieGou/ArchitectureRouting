@@ -534,6 +534,14 @@ namespace Arent3d.Architecture.Routing
       return value ;
     }
 
+    public static SubRouteInfo? GetSubRouteInfo( this Element element )
+    {
+      if ( element.GetRouteName() is not { } routeName ) return null ;
+      if ( element.GetSubRouteIndex() is not { } subRouteIndex ) return null ;
+
+      return new SubRouteInfo( routeName, subRouteIndex ) ;
+    }
+
     public static IEnumerable<Connector> CollectRoutingEndPointConnectors( this Document document, string routeName, bool fromConnector )
     {
       return document.GetAllElementsOfRouteName<MEPCurve>( routeName ).SelectMany( e => e.GetRoutingConnectors( fromConnector ) ).Distinct() ;
@@ -614,45 +622,35 @@ namespace Arent3d.Architecture.Routing
       return element.Document.ParseEndPoints( str ) ;
     }
 
-    public static void SetMEPCurvesAsSameGroup( this IReadOnlyCollection<MEPCurve> curves )
+    public static IReadOnlyCollection<SubRoute> GetSubRouteGroup( this Element element )
     {
-      var ids = string.Join( "|", curves.Select( curve => curve.Id.IntegerValue.ToString() ).OrderBy( id => id ) ) ;
-      foreach ( var curve in curves ) {
-        curve.SetProperty( RoutingParameter.RelatedMEPCurveIds, ids ) ;
-      }
+      if ( ( element.GetRepresentativeSubRoute() ?? element.GetSubRouteInfo() ) is not { } subRouteInfo ) return Array.Empty<SubRoute>() ;
+
+      var routeCache = RouteCache.Get( element.Document ) ;
+      if ( routeCache.GetSubRoute( subRouteInfo ) is not { } subRoute ) return Array.Empty<SubRoute>() ;
+
+      var subRouteGroup = subRoute.GetSubRouteGroup() ;
+      if ( subRouteGroup.Count < 2 ) return new[] { subRoute } ;
+
+      var result = new List<SubRoute>( subRouteGroup.Count ) ;
+      result.AddRange( subRouteGroup.Select( routeCache.GetSubRoute ).NonNull() ) ;
+      return result ;
     }
 
-    public static string? GetMEPCurveGroupName( this MEPCurve curve )
+    public static void SetRepresentativeSubRoute( this Element element, SubRouteInfo subRouteInfo )
     {
-      return curve.TryGetProperty( RoutingParameter.RelatedMEPCurveIds, out string? ids ) ? ids : null ;
+      element.SetProperty( RoutingParameter.RepresentativeRouteName, subRouteInfo.RouteName ) ;
+      element.SetProperty( RoutingParameter.RepresentativeSubRouteIndex, subRouteInfo.SubRouteIndex ) ;
     }
 
-    public static IReadOnlyCollection<MEPCurve> GetMEPCurvesOnSameGroup( this MEPCurve curve )
+    public static SubRouteInfo? GetRepresentativeSubRoute( this Element element )
     {
-      if ( curve.GetMEPCurveGroupName() is not { } ids || 0 == ids.Length ) return Array.Empty<MEPCurve>() ;
+      if ( false == element.TryGetProperty( RoutingParameter.RepresentativeRouteName, out string? routeName ) || ( null == routeName ) ) return null ;
+      if ( false == element.TryGetProperty( RoutingParameter.RepresentativeSubRouteIndex, out int subRouteIndex ) ) return null ;
 
-      var document = curve.Document ;
-      var array = ids.Split( '|' ) ;
-
-      var list = new List<MEPCurve>( array.Length ) ;
-      foreach ( var s in array ) {
-        if ( false == int.TryParse( s, out var id ) ) continue ;
-        if ( document.GetElementById<MEPCurve>( id ) is not { } elm ) continue ;
-        list.Add( elm ) ;
-      }
-
-      return list ;
+      return new SubRouteInfo( routeName, subRouteIndex ) ;
     }
-
-    public static void SetRepresentativeRouteName( this MEPCurve mepCurve, string routeName )
-    {
-      mepCurve.SetProperty( RoutingParameter.RepresentativeRouteName, routeName ) ;
-    }
-    public static string? GetRepresentativeRouteName( this MEPCurve mepCurve )
-    {
-      return mepCurve.TryGetProperty( RoutingParameter.RepresentativeRouteName, out string? value ) ? value : null ;
-    }
-
+    
     #endregion
 
     #region Center Lines

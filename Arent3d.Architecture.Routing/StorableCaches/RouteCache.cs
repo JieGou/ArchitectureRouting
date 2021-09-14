@@ -20,5 +20,6 @@ namespace Arent3d.Architecture.Routing.StorableCaches
       if ( false == TryGetValue( routeName, out var route ) ) return null ;
       return route.GetSubRoute( subRouteIndex ) ;
     }
+    public SubRoute? GetSubRoute( SubRouteInfo subRouteInfo ) => GetSubRoute( subRouteInfo.RouteName, subRouteInfo.SubRouteIndex ) ;
   }
 }
