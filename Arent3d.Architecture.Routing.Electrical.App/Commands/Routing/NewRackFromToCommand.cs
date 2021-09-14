@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class NewRackFromToCommand : NewRackFromToCommandBase
-    {
+  {
     protected override AddInType GetAddInType()
     {
       return AddInType.Electrical ;
