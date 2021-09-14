@@ -195,5 +195,9 @@ If you change it, it will be automatically re-routed.</string>
 	<string>Length</string>
 	<key>Revit.Property.Builtin.BendRadius</key>
 	<string>Bender Radius</string>
+	<key>Dialog.Commands.NewRackFromTo.Dialog.Title.Error</key>
+	<string>There is an error creating a new cable rack</string>
+	<key>Dialog.Commands.NewRackFromTo.Dialog.Body.Error.CanNotConnectTwoPiles</key>
+	<string>Couldn&apos;t find the connection between the 2 pipes</string>
 </dict>
 </plist>

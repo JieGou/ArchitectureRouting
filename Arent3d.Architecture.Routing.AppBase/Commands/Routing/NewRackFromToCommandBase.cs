@@ -43,8 +43,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     var toElement = pickTo.Element;
                     var routeName = RoutingElementExtensions.GetRouteName(pickFrom.Element)!;
 
-                    var connectors = DFSWithStack(fromElement, toElement);
-
+                    var connectors = FindAllConnectorsBetweenTwoElement(fromElement, toElement);
+                    if (null == connectors || !connectors.Any())
+                    {
+                        TaskDialog.Show("Dialog.Commands.NewRackFromTo.Dialog.Title.Error".GetAppStringByKeyOrDefault(null), "Dialog.Commands.NewRackFromTo.Dialog.Body.Error.CanNotConnectTwoPiles".GetAppStringByKeyOrDefault(null));
+                        return Result.Failed;
+                    }
                     var rackConnectors = new List<Connector>();
                     foreach (var connector in connectors)
                     {
@@ -57,8 +61,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                             var line = (location.Curve as Line)!;
                             Connector firstConnector = GetFirstConnector(element.GetConnectorManager()!.Connectors)!;
 
-                            var length = conduit.ParametersMap.get_Item("Length").AsDouble();
-                            var diameter = conduit.ParametersMap.get_Item("Outside Diameter").AsDouble();
+                            var length = conduit.ParametersMap.get_Item("Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault(document, "Length")).AsDouble();
+                            var diameter = conduit.ParametersMap.get_Item("Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault(document, "Outside Diameter")).AsDouble();
 
                             var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.CableTray)!; // TODO may change in the future
 
@@ -68,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                                                     uiDocument.ActiveView.GenLevel, StructuralType.NonStructural);
 
                             // set cable rack length
-                            SetParameter(instance, "トレイ長さ", length); // TODO may be must change when FamilyType change
+                            SetParameter(instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault(document, "トレイ長さ"), length); // TODO may be must change when FamilyType change
 
                             // move cable rack to under conduit
                             instance.Location.Move(new XYZ(0, 0, -diameter)); // TODO may be must change when FamilyType change
@@ -95,9 +99,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                             var location = (element.Location as LocationPoint)!;
 
-                            var length = conduit.ParametersMap.get_Item("呼び半径").AsDouble();
-                            var diameter = conduit.ParametersMap.get_Item("呼び径").AsDouble();
-                            var bendRadius = conduit.ParametersMap.get_Item("Bend Radius").AsDouble();
+                            var length = conduit.ParametersMap.get_Item("Revit.Property.Builtin.NominalRadius".GetDocumentStringByKeyOrDefault(document, "呼び半径")).AsDouble();
+                            var diameter = conduit.ParametersMap.get_Item("Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault(document, "呼び径")).AsDouble();
+                            var bendRadius = conduit.ParametersMap.get_Item("Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault(document, "Bend Radius")).AsDouble();
 
                             var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.CableTrayFitting)!; // TODO may change in the future
 
@@ -106,7 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                                                     uiDocument.ActiveView.GenLevel, StructuralType.NonStructural);
 
                             // set cable tray Bend Radius
-                            SetParameter(instance, "Bend Radius", bendRadius / 2); // TODO may be must change when FamilyType change
+                            SetParameter(instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault(document, "Bend Radius"), bendRadius / 2); // TODO may be must change when FamilyType change
 
                             // set cable tray fitting direction
                             if (1.0 == conduit.FacingOrientation.X)
@@ -238,9 +242,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             return targetConnector;
         }
 
-
-        private static IEnumerable<Connector> DFSWithStack(Element fromElement, Element toElement)
+        /// <summary>
+        /// Return all connectors between fromElement and toElement. Using DFS algorithm with stack
+        /// </summary>
+        /// <param name="fromElement"></param>
+        /// <param name="toElement"></param>
+        /// <returns></returns>
+        private static IEnumerable<Connector> FindAllConnectorsBetweenTwoElement(Element fromElement, Element toElement)
         {
+            bool existRouting = false;
             var visited = new HashSet<Connector>();
             var correctPath = new HashSet<Connector>();
             Stack<Connector> stack = new Stack<Connector>();
@@ -260,6 +270,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 {
                     visited.Add(current);
                     correctPath.Add(current);
+                    existRouting = true;
                     break;
                 }
                 if (visited.Any(x => x.Owner.Id == current.Owner.Id && x.Id == current.Id))
@@ -283,6 +294,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                 foreach (var neighbour in neighbours)
                     stack.Push(neighbour);
+            }
+            if (!existRouting)
+            {
+                correctPath = new HashSet<Connector>();
             }
             return correctPath;
         }

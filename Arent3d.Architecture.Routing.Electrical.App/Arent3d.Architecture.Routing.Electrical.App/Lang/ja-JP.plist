@@ -189,5 +189,9 @@ FixedBopHeight</string>
 	<string>長さ</string>
 	<key>Revit.Property.Builtin.BendRadius</key>
 	<string>曲げ半径</string>
+	<key>Dialog.Commands.NewRackFromTo.Dialog.Title.Error</key>
+	<string>新しいケーブルラックの作成にエラーがあります</string>
+	<key>Dialog.Commands.NewRackFromTo.Dialog.Body.Error.CanNotConnectTwoPiles</key>
+	<string>2本のパイプ間の接続が見つかりませんでした</string>
 </dict>
 </plist>

@@ -54,6 +54,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
         private static class NewRackCommandButton { }
+
+        [Button( typeof( NewRackFromToCommand ), OnlyInitialized = true )]
+        private static class NewRackFromToCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.rack", TitleKey = "Electrical.App.Panels.Routing.Racks" )]
