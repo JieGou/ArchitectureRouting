@@ -51,8 +51,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   var line = ( location.Curve as Line )! ;
                   Connector firstConnector = GetFirstConnector( element.GetConnectorManager()!.Connectors )! ;
 
-                  var length = conduit.ParametersMap.get_Item( "Length" ).AsDouble() ;
-                  var diameter = conduit.ParametersMap.get_Item( "Outside Diameter" ).AsDouble() ;
+                  var length = conduit.ParametersMap.get_Item("Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
+                  var diameter = conduit.ParametersMap.get_Item("Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault(document, "Outside Diameter") ).AsDouble() ;
 
                   var symbol =
                     uiDocument.Document.GetFamilySymbol( RoutingFamilyType
@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
 
                   // set cable rack length
-                  SetParameter( instance, "トレイ長さ", length ) ; // TODO may be must change when FamilyType change
+                  SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault(document, "トレイ長さ"), length ) ; // TODO may be must change when FamilyType change
 
                   // move cable rack to under conduit
                   instance.Location.Move( new XYZ( 0, 0,
@@ -90,9 +90,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                   var location = ( element.Location as LocationPoint )! ;
 
-                  var length = conduit.ParametersMap.get_Item( "呼び半径" ).AsDouble() ;
-                  var diameter = conduit.ParametersMap.get_Item( "呼び径" ).AsDouble() ;
-                  var bendRadius = conduit.ParametersMap.get_Item( "Bend Radius" ).AsDouble() ;
+                  var length = conduit.ParametersMap.get_Item("Revit.Property.Builtin.NominalRadius".GetDocumentStringByKeyOrDefault(document, "呼び半径") ).AsDouble() ;
+                  var diameter = conduit.ParametersMap.get_Item("Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault(document, "呼び径") ).AsDouble() ;
+                  var bendRadius = conduit.ParametersMap.get_Item("Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault(document, "Bend Radius") ).AsDouble() ;
 
                   var symbol =
                     uiDocument.Document.GetFamilySymbol( RoutingFamilyType
@@ -102,7 +102,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
 
                   // set cable tray Bend Radius
-                  SetParameter( instance, "Bend Radius",
+                  SetParameter( instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault(document, "Bend Radius"),
                     bendRadius / 2 ) ; // TODO may be must change when FamilyType change
 
                   // set cable tray fitting direction

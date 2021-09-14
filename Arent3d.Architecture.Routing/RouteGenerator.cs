@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing
     {
       _document = document ;
 
-      _routeConditions = ThreadDispatcher.Dispatch( () => CreateRouteConditions( document, routes, fittingSizeCalculator ) ) ;
+      _routeConditions = CreateRouteConditions( document, routes, fittingSizeCalculator ) ;
       var targets = AutoRoutingTargetGenerator.Run( _document, routes, _routeConditions ) ;
       RoutingTargets = targets.EnumerateAll() ;
       ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     private void ErasePreviousRoutes()
     {
-      ThreadDispatcher.Dispatch( () => EraseRoutes( _document, RoutingTargets.SelectMany( t => t.Routes ).Select( route => route.RouteName ), false ) ) ;
+      EraseRoutes( _document, RoutingTargets.SelectMany( t => t.Routes ).Select( route => route.RouteName ), false ) ;
     }
 
     public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints )
@@ -147,31 +147,22 @@ namespace Arent3d.Architecture.Routing
 
     protected override void OnGenerationFinished()
     {
-      var list = new List<Connector>() ;
+      foreach ( var (route, passPointId, prevConn, nextConn) in _globalPassPointConnectorMapper.GetPassPointConnections( _document ) ) {
+        var element = _document.GetElement( passPointId ) ;
+        if ( element.GetRouteName() == route.RouteName ) {
+          element.SetPassPointConnectors( new[] { prevConn }, new[] { nextConn } ) ;
+        }
 
-      foreach ( var (passPointId, (conn1, conn2, others)) in _globalPassPointConnectorMapper.GetPassPointConnections( _document ) ) {
-        // pass point must have from-side and to-side connector
-        if ( null == conn1 || null == conn2 ) throw new InvalidOperationException() ;
-
-        var element = _document.GetElement( new ElementId( passPointId ) ) ;
-        element.SetPassPointConnectors( new[] { conn1 }, new[] { conn2 } ) ;
-
-        list.Clear() ;
-        list.Add( conn1 ) ;
-        list.Add( conn2 ) ;
-        if ( null != others ) list.AddRange( others ) ;
-
-        var routeName = conn1.Owner.GetRouteName() ?? conn2.Owner.GetRouteName() ;
-        var subRouteIndex = conn1.Owner.GetSubRouteIndex() ?? conn2.Owner.GetSubRouteIndex() ;
-
-        var (success, fitting) = MEPSystemCreator.ConnectConnectors( _document, list ) ;
+        var (success, fitting) = MEPSystemCreator.ConnectConnectors( _document, new[] { prevConn, nextConn } ) ;
         if ( success && null != fitting ) {
           // set routing id.
-          if ( null != routeName ) fitting.SetProperty( RoutingParameter.RouteName, routeName ) ;
-          if ( null != subRouteIndex ) fitting.SetProperty( RoutingParameter.SubRouteIndex, subRouteIndex.Value ) ;
+          fitting.SetProperty( RoutingParameter.RouteName, route.RouteName ) ;
+          if ( ( prevConn.Owner.GetSubRouteIndex() ?? nextConn.Owner.GetSubRouteIndex() ) is { } subRouteIndex ) {
+            fitting.SetProperty( RoutingParameter.SubRouteIndex, subRouteIndex ) ;
+          }
 
           // Relate fitting to the pass point.
-          element.SetProperty( RoutingParameter.RelatedPassPointId, passPointId ) ;
+          element.SetProperty( RoutingParameter.RelatedPassPointId, passPointId.IntegerValue ) ;
         }
       }
     }

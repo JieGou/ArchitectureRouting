@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return AddInType.Electrical ;
     }
 
-    protected override FromToWindow CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindow.FromToItems> fromToItemsList )
+    protected override FromToWindowBase CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindowBase.FromToItems> fromToItemsList )
     {
       return new Forms.FromToWindow( uiDocument, fromToItemsList ) ;
     }

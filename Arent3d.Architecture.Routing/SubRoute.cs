@@ -1,12 +1,13 @@
 using System.Collections.Generic ;
+using System.Diagnostics ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
 {
+  [DebuggerDisplay( "{Route.Name}@{SubRouteIndex}" )]
   public class SubRoute
   {
     private const double DefaultDiameter = 1.0 ;

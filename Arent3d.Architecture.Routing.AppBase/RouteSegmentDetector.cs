@@ -58,6 +58,10 @@ namespace Arent3d.Architecture.Routing.AppBase
         if ( routeEndPoint.GetSubRoute() is not { } subRoute ) return false ;
         return subRoute.Segments.Any( seg => ContainsFromEndPoint( seg.FromEndPoint ) ) ;
       }
+      if ( endPoint is PassPointBranchEndPoint passPointBranchEndPoint ) {
+        if ( passPointBranchEndPoint.GetSubRoute( true ) is not { } subRoute ) return false ;
+        return subRoute.Segments.Any( seg => ContainsFromEndPoint( seg.FromEndPoint ) ) ;
+      }
 
       return _fromElms.Contains( endPoint.Key ) ;
     }
@@ -66,6 +70,10 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       if ( endPoint is RouteEndPoint routeEndPoint ) {
         if ( routeEndPoint.GetSubRoute() is not { } subRoute ) return false ;
+        return subRoute.Segments.Any( seg => ContainsToEndPoint( seg.ToEndPoint ) ) ;
+      }
+      if ( endPoint is PassPointBranchEndPoint passPointBranchEndPoint ) {
+        if ( passPointBranchEndPoint.GetSubRoute( false ) is not { } subRoute ) return false ;
         return subRoute.Segments.Any( seg => ContainsToEndPoint( seg.ToEndPoint ) ) ;
       }
 

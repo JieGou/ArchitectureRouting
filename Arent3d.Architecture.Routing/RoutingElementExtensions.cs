@@ -213,15 +213,15 @@ namespace Arent3d.Architecture.Routing
 
     public static void SetPassPointConnectors( this Element element, IReadOnlyCollection<Connector> fromConnectors, IReadOnlyCollection<Connector> toConnectors )
     {
-      element.SetProperty( RoutingParameter.PassPointNextToFromSideConnectorIds, string.Join( "|", fromConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
-      element.SetProperty( RoutingParameter.PassPointNextToToSideConnectorIds, string.Join( "|", toConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
+      element.SetProperty( PassPointParameter.PassPointNextToFromSideConnectorIds, string.Join( "|", fromConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
+      element.SetProperty( PassPointParameter.PassPointNextToToSideConnectorIds, string.Join( "|", toConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
     }
 
     private static readonly char[] PassPointConnectorSeparator = { '|' } ;
 
     public static IEnumerable<IEndPoint> GetPassPointConnectors( this Element element, bool isFrom )
     {
-      var parameter = isFrom ? RoutingParameter.PassPointNextToFromSideConnectorIds : RoutingParameter.PassPointNextToToSideConnectorIds ;
+      var parameter = isFrom ? PassPointParameter.PassPointNextToFromSideConnectorIds : PassPointParameter.PassPointNextToToSideConnectorIds ;
       if ( false == element.TryGetProperty( parameter, out string? str ) ) return Array.Empty<IEndPoint>() ;
       if ( string.IsNullOrEmpty( str ) ) return Array.Empty<IEndPoint>() ;
 
@@ -611,7 +611,46 @@ namespace Arent3d.Architecture.Routing
         return Array.Empty<IEndPoint>() ;
       }
 
-      return EndPointExtensions.ParseEndPoints( element.Document, str ) ;
+      return element.Document.ParseEndPoints( str ) ;
+    }
+
+    public static void SetMEPCurvesAsSameGroup( this IReadOnlyCollection<MEPCurve> curves )
+    {
+      var ids = string.Join( "|", curves.Select( curve => curve.Id.IntegerValue.ToString() ).OrderBy( id => id ) ) ;
+      foreach ( var curve in curves ) {
+        curve.SetProperty( RoutingParameter.RelatedMEPCurveIds, ids ) ;
+      }
+    }
+
+    public static string? GetMEPCurveGroupName( this MEPCurve curve )
+    {
+      return curve.TryGetProperty( RoutingParameter.RelatedMEPCurveIds, out string? ids ) ? ids : null ;
+    }
+
+    public static IReadOnlyCollection<MEPCurve> GetMEPCurvesOnSameGroup( this MEPCurve curve )
+    {
+      if ( curve.GetMEPCurveGroupName() is not { } ids || 0 == ids.Length ) return Array.Empty<MEPCurve>() ;
+
+      var document = curve.Document ;
+      var array = ids.Split( '|' ) ;
+
+      var list = new List<MEPCurve>( array.Length ) ;
+      foreach ( var s in array ) {
+        if ( false == int.TryParse( s, out var id ) ) continue ;
+        if ( document.GetElementById<MEPCurve>( id ) is not { } elm ) continue ;
+        list.Add( elm ) ;
+      }
+
+      return list ;
+    }
+
+    public static void SetRepresentativeRouteName( this MEPCurve mepCurve, string routeName )
+    {
+      mepCurve.SetProperty( RoutingParameter.RepresentativeRouteName, routeName ) ;
+    }
+    public static string? GetRepresentativeRouteName( this MEPCurve mepCurve )
+    {
+      return mepCurve.TryGetProperty( RoutingParameter.RepresentativeRouteName, out string? value ) ? value : null ;
     }
 
     #endregion

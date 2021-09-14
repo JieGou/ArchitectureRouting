@@ -1,8 +1,8 @@
+using System ;
 using System.Collections.Generic ;
 using Arent3d.Revit.I18n ;
-using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
-using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -11,19 +11,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     protected abstract AddInType GetAddInType() ;
 
-    protected override IAsyncEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
+    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    {
+      return ( true, SelectRoutes( uiDocument ) ) ;
+    }
+
+    private IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
     {
       var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
+      if ( 0 < list.Count ) return list ;
 
-      if ( 0 < list.Count ) {
-        return Route.CollectAllDescendantBranches( list ).ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
-      }
-      else {
-        // newly select
-        var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.PickAndReRoute.Pick".GetAppStringByKeyOrDefault( null ), GetAddInType() ) ;
+      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Dialog.Commands.Routing.PickAndReRoute.Pick".GetAppStringByKeyOrDefault( null ), GetAddInType() ) ;
+      return new[] { pickInfo.Route } ;
+    }
 
-        return pickInfo.Route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll().ToAsyncEnumerable() ;
-      }
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    {
+      var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
+
+      return Route.GetAllRelatedBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
     }
   }
 }

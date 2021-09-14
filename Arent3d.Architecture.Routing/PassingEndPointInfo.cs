@@ -73,19 +73,14 @@ namespace Arent3d.Architecture.Routing
     private void RegisterFrom( IEndPoint? endPoint )
     {
       if ( null != endPoint ) {
-        _fromEndPoints.Add( GetTrueEndPointKey( endPoint ), endPoint ) ;
+        _fromEndPoints.Add( endPoint.Key, endPoint ) ;
       }
     }
     private void RegisterTo( IEndPoint? endPoint )
     {
       if ( null != endPoint ) {
-        _toEndPoints.Add( GetTrueEndPointKey( endPoint ), endPoint ) ;
+        _toEndPoints.Add( endPoint.Key, endPoint ) ;
       }
-    }
-
-    private static EndPointKey GetTrueEndPointKey( IEndPoint endPoint )
-    {
-      return ( endPoint as RouteEndPoint )?.EndPointKeyOverSubRoute ?? endPoint.Key ;
     }
 
     private void RegisterFrom( IEnumerable<KeyValuePair<EndPointKey, IEndPoint>> endPoints )
@@ -121,7 +116,7 @@ namespace Arent3d.Architecture.Routing
     
 
     
-    public PassingEndPointInfo CreateSubPassingEndPointInfo( IEndPoint fromEndPoint, IEndPoint toEndPoint )
+    public static PassingEndPointInfo CreatePassingEndPointInfo( IEndPoint fromEndPoint, IEndPoint toEndPoint )
     {
       var result = new PassingEndPointInfo() ;
 
