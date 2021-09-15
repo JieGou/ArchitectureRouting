@@ -1,4 +1,6 @@
 ﻿using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Commands.PostCommands ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.PostCommands ;
 using Arent3d.Revit.UI;
 using Autodesk.Revit.UI ;
 
@@ -6,14 +8,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 {
   public class PostCommandExecutor : IPostCommandExecutorBase
   {
-    public void ChangeRouteNameCommand(UIApplication? app)
-    { 
-      app?.PostCommand<Commands.PostCommands.ApplyChangeRouteNameCommand>() ;
+    public void ChangeRouteNameCommand( UIApplication app, Route route, string newName )
+    {
+      CommandParameterStorage.Set( new ApplyChangeRouteNameCommandParameter( route, newName ) ) ;
+      app.PostCommand<ApplyChangeRouteNameCommand>() ;
     }
 
     public void ApplySelectedFromToChangesCommand(UIApplication? app)
     {
-      app?.PostCommand<Commands.PostCommands.ApplySelectedFromToChangesCommand>() ;
+      app?.PostCommand<ApplySelectedFromToChangesCommand>() ;
     }
 
   }

@@ -444,8 +444,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           selectedItem.IsEditing = false ;
           selectedItem.ItemTypeName = tb.Text ;
           tb.Text = "" ;
-          if ( SelectedFromToViewModel.UiApp is { } app ) {
-            PostCommandExecutor.ChangeRouteNameCommand(app);
+          if ( SelectedFromToViewModel.UiApp is { } app && ( selectedItem.PropertySourceType as PropertySource.RoutePropertySource )?.TargetRoute is { } route ) {
+            PostCommandExecutor.ChangeRouteNameCommand( app, route, tb.Text ) ;
           }
         }
       }
@@ -495,8 +495,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         selectedItem.IsEditing = false ;
         selectedItem.ItemTypeName = tb.Text ;
         tb.Text = "" ;
-        if ( SelectedFromToViewModel.UiApp is { } app ) {
-          PostCommandExecutor.ChangeRouteNameCommand(app);
+        if ( SelectedFromToViewModel.UiApp is { } app && ( selectedItem.PropertySourceType as PropertySource.RoutePropertySource )?.TargetRoute is { } route ) {
+          PostCommandExecutor.ChangeRouteNameCommand( app, route, tb.Text ) ;
         }
       }
     }
