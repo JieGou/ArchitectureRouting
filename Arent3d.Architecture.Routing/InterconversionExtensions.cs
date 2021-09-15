@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing
         }
 
         case ConnectorProfileType.Round :
-          // connector.Radius = diameter * 0.5 ;
+          connector.Radius = diameter * 0.5 ;
           break ;
 
         default : throw new ArgumentOutOfRangeException() ;
