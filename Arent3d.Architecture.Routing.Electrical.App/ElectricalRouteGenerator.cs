@@ -44,7 +44,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         }
 
         representativeSubRoute.SetSubRouteGroup( groupedSubRoutes.ConvertAll( subRoute => new SubRouteInfo( subRoute ) ) ) ;
-        representativeSubRoute.Route.Save() ;
       }
     }
 

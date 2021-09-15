@@ -96,6 +96,8 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
+    public int GetMultiplicity() => Math.Max( 1, GetSubRouteGroup().Count ) ;
+    
     public IReadOnlyCollection<SubRouteInfo> GetSubRouteGroup()
     {
       return _routeSegments.Select( seg => seg.SubRouteGroup ).FirstOrDefault() ?? Array.Empty<SubRouteInfo>() ;
