@@ -82,6 +82,9 @@
         <key>Electrical.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change&#xA;FixedBopHeight</string>
 
+        <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
+        <string>New Rack
+From-To</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -144,7 +147,9 @@
 
         <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Route高さを変更</string>
-        
+
+        <key>TransactionName.Commands.Rack.NewRackFromTo</key>
+        <string>新しいラック「From-To」</string> 
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
