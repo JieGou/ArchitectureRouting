@@ -281,6 +281,6 @@ If you change it, it will be automatically re-routed.</string>
 	    <string>Length</string>
 
 	    <key>Revit.Property.Builtin.BendRadius</key>
-	    <string>Bender Radius</string>
+	    <string>Bend Radius</string>
     </dict>
 </plist>
