@@ -8,6 +8,11 @@ namespace Arent3d.Architecture.Routing
     public string RouteName { get ; private set ; }
     public int SubRouteIndex { get ; private set ; }
 
+    internal void ReplaceRouteName( string newRouteName )
+    {
+      RouteName = newRouteName ;
+    }
+
     internal SubRouteInfo( string routeName, int subRouteIndex )
     {
       RouteName = routeName ;

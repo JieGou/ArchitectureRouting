@@ -487,6 +487,16 @@ namespace Arent3d.Architecture.Routing
       return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRouteName() == routeName ) ;
     }
 
+    public static IEnumerable<TElement> GetAllElementsOfRepresentativeRouteName<TElement>( this Document document, string routeName ) where TElement : Element
+    {
+      var parameterName = document.GetParameterName( RoutingParameter.RepresentativeRouteName ) ;
+      if ( null == parameterName ) return Array.Empty<TElement>() ;
+
+      var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
+
+      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRepresentativeRouteName() == routeName ) ;
+    }
+
     public static IEnumerable<TElement> GetAllElementsOfSubRoute<TElement>( this Document document, string routeName, int subRouteIndex ) where TElement : Element
     {
       var routeNameParameterName = document.GetParameterName( RoutingParameter.RouteName ) ;
@@ -643,9 +653,15 @@ namespace Arent3d.Architecture.Routing
       element.SetProperty( RoutingParameter.RepresentativeSubRouteIndex, subRouteInfo.SubRouteIndex ) ;
     }
 
+    public static string? GetRepresentativeRouteName( this Element element )
+    {
+      if ( false == element.TryGetProperty( RoutingParameter.RepresentativeRouteName, out string? value ) ) return null ;
+      return value ;
+    }
+
     public static SubRouteInfo? GetRepresentativeSubRoute( this Element element )
     {
-      if ( false == element.TryGetProperty( RoutingParameter.RepresentativeRouteName, out string? routeName ) || ( null == routeName ) ) return null ;
+      if ( element.GetRepresentativeRouteName() is not { } routeName ) return null ;
       if ( false == element.TryGetProperty( RoutingParameter.RepresentativeSubRouteIndex, out int subRouteIndex ) ) return null ;
 
       return new SubRouteInfo( routeName, subRouteIndex ) ;
