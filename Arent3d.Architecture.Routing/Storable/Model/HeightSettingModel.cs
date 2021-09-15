@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
-  public class HeightSettingModel
+  public class HeightSettingModel : IEquatable<HeightSettingModel>
   {
     private const double DEFAULT_HEIGHT_OF_LEVEL = 3000;
     private const double DEFAULT_HEIGHT_OF_CONNECTORS = DEFAULT_HEIGHT_OF_LEVEL / 2;
@@ -23,7 +23,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     public HeightSettingModel( Level levels )
     {
-      if(levels == null) throw new ArgumentNullException(nameof(levels));
+      if (levels == null)
+        throw new ArgumentNullException(nameof(levels));
 
       LevelId = levels.Id.IntegerValue;
       LevelName = levels.Name;
@@ -35,7 +36,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     public HeightSettingModel( Level levels, double elevation, double underfloor, double heightOfLevel, double heightOfConnectors )
     {
-      if(levels == null) throw new ArgumentNullException(nameof(levels));
+      if (levels == null)
+        throw new ArgumentNullException(nameof(levels));
 
       LevelId = levels.Id.IntegerValue;
       LevelName = levels.Name;
@@ -54,6 +56,16 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Underfloor = underfloor ?? DEFAULT_UNDERFLOOR;
       HeightOfLevel = heightOfLevel ?? DEFAULT_HEIGHT_OF_LEVEL;
       HeightOfConnectors = heightOfConnectors ?? DEFAULT_HEIGHT_OF_CONNECTORS;
+    }
+
+    public bool Equals( HeightSettingModel other )
+    {
+      return LevelId == other.LevelId
+             && LevelName == other.LevelName
+             && Elevation == other.Elevation
+             && Underfloor == other.Underfloor
+             && HeightOfLevel == other.HeightOfLevel
+             && HeightOfConnectors == other.HeightOfConnectors;
     }
   }
 }

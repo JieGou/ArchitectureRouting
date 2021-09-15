@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.Storable
 {
   [Guid("83A448F4-E120-44E0-A220-F2D3F11B6A09")]
   [StorableVisibility(AppInfo.VendorId)]
-  public sealed class HeightSettingStorable : StorableBase
+  public sealed class HeightSettingStorable : StorableBase, IEquatable<HeightSettingStorable>
   {
     private const string HEIGHT_SETTING_FIELD = "HeightSetting";
 
@@ -70,6 +70,25 @@ namespace Arent3d.Architecture.Routing.Storable
       generator.SetArray<HeightSettingModel>(HEIGHT_SETTING_FIELD);
     }
 
+    public bool Equals( HeightSettingStorable other )
+    {
+      if (other == null || other.HeightSettingsData == null) return false;
+
+      return Enumerable.SequenceEqual(HeightSettingsData.Values, other.HeightSettingsData.Values, new HeightSettingStorableComparer());
+    }
+  }
+
+  public class HeightSettingStorableComparer : IEqualityComparer<HeightSettingModel>
+  {
+    public bool Equals( HeightSettingModel x, HeightSettingModel y )
+    {
+      return x.Equals(y);
+    }
+
+    public int GetHashCode( HeightSettingModel obj )
+    {
+      return obj.GetHashCode();
+    }
   }
 
 }

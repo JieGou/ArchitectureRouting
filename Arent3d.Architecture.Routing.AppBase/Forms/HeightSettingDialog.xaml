@@ -8,7 +8,7 @@
         xmlns:HeightSettingsRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.HeightSettingsRules" 
         x:Class="Arent3d.Architecture.Routing.AppBase.Forms.HeightSettingDialog"
         mc:Ignorable="d"
-        Title="Height Setting" Height="300" Width="550">
+        Title="Height Setting" Height="300" Width="590">
   <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="*"/>
@@ -34,7 +34,7 @@
 
         <DataGridTextColumn Header="Level Name" Binding="{Binding LevelName, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" EditingElementStyle="{StaticResource errorStyle}"/>
 
-        <DataGridTextColumn Header="Elevation" CanUserSort="True" SortDirection="Ascending" MinWidth="80" EditingElementStyle="{StaticResource errorStyle}">
+        <DataGridTextColumn Header="Elevation (mm)" CanUserSort="True" SortDirection="Ascending" MinWidth="80" EditingElementStyle="{StaticResource errorStyle}">
           <DataGridTextColumn.Binding>
             <Binding Path="Elevation"  NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True">
               <Binding.ValidationRules>
@@ -44,7 +44,7 @@
           </DataGridTextColumn.Binding>
         </DataGridTextColumn>
 
-        <DataGridTextColumn Header="Underfloor" CanUserSort="False" MinWidth="80" EditingElementStyle="{StaticResource errorStyle}">
+        <DataGridTextColumn Header="Underfloor (mm)" CanUserSort="False" MinWidth="80" EditingElementStyle="{StaticResource errorStyle}">
           <DataGridTextColumn.Binding>
             <Binding Path="Underfloor"  NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True">
               <Binding.ValidationRules>
@@ -54,7 +54,7 @@
           </DataGridTextColumn.Binding>
         </DataGridTextColumn>
 
-        <DataGridTextColumn Header="Height Of Level" CanUserSort="False" MinWidth="130" EditingElementStyle="{StaticResource errorStyle}">
+        <DataGridTextColumn Header="Height Of Level (mm)" CanUserSort="False" MinWidth="130" EditingElementStyle="{StaticResource errorStyle}">
           <DataGridTextColumn.Binding>
             <Binding Path="HeightOfLevel"  NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True">
               <Binding.ValidationRules>
@@ -64,7 +64,7 @@
           </DataGridTextColumn.Binding>
         </DataGridTextColumn>
 
-        <DataGridTextColumn Header="Height Of Connectors" CanUserSort="False" MinWidth="130" EditingElementStyle="{StaticResource errorStyle}">
+        <DataGridTextColumn Header="Height Of Connectors (mm)" CanUserSort="False" MinWidth="130" EditingElementStyle="{StaticResource errorStyle}">
           <DataGridTextColumn.Binding>
             <Binding Path="HeightOfConnectors"  NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True">
               <Binding.ValidationRules>
