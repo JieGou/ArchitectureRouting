@@ -33,14 +33,24 @@ namespace Arent3d.Architecture.Routing
     NearestToSideEndPoints,
 
     [ParameterGuid( "6cf2fece-a396-43e8-bede-4a2a75de5511" ), NameOnRevit( "Related Pass Point Id" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RoutingBuiltInCategorySet ) )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.PassPointBuiltInCategorySet ) )]
     RelatedPassPointId,
 
     [ParameterGuid( "0e79cbf5-ac77-4fd2-be12-7969f5204a28" ), NameOnRevit( "Related Terminate Point Id" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.PassPointBuiltInCategorySet ) )]
     RelatedTerminatePointId,
+    
+    [ParameterGuid( "96614f55-d304-44d5-8af1-9d359299538a" ), NameOnRevit( "Related MEP Curve Ids" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RoutingBuiltInCategorySet ) )]
+    RelatedMEPCurveIds,
+    
+    [ParameterGuid( "ba87dfa3-c1f7-4b44-b07d-00333404bda8" ), NameOnRevit( "Representative Route Name" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RoutingBuiltInCategorySet ) )]
+    RepresentativeRouteName,
+  }
 
-    // PassPointSharedParameters
+  public enum PassPointParameter
+  {
     [ParameterGuid( "b975f161-499f-4cc6-8e11-0d7ddf25b1f4" ), NameOnRevit( "PassPoint From-side Element Id" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.PassPointBuiltInCategorySet ) )]
     PassPointNextToFromSideConnectorIds,
@@ -157,7 +167,7 @@ namespace Arent3d.Architecture.Routing
     public static void MakeCertainAllRoutingParameters( this Document document )
     {
       document.LoadAllAllParametersFromFile<RoutingParameter>( AssetManager.GetRoutingSharedParameterPath() ) ;
-      document.LoadAllAllParametersFromFile<RoutingParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
+      document.LoadAllAllParametersFromFile<PassPointParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
       document.LoadAllAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() );
     }
   }

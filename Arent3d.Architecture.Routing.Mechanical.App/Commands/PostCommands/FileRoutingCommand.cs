@@ -2,6 +2,7 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Revit ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.PostCommands
 {
@@ -11,9 +12,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.PostCommands
   {
     private const string Guid = "F27CF6F7-F9FC-4E04-8D80-C404FE0ADCA6" ;
 
-    protected override RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )
     {
-      return RoutingApp.GetRouteGeneratorInstantiator() ;
+      return new MechanicalRoutingExecutor( document, view ) ;
     }
   }
 }

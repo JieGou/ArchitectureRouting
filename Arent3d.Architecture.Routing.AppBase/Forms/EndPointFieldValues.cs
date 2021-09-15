@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       public string Visit( ConnectorEndPoint endPoint ) => endPoint.EquipmentId.IntegerValue.ToString() ;
       public string Visit( RouteEndPoint endPoint ) => endPoint.RouteName ;
       public string Visit( PassPointEndPoint endPoint ) => endPoint.PassPointId.IntegerValue.ToString() ;
+      public string Visit( PassPointBranchEndPoint endPoint ) => endPoint.PassPointId.IntegerValue.ToString() ;
       public string Visit( TerminatePointEndPoint endPoint ) => endPoint.TerminatePointId.IntegerValue.ToString() ;
     }
 
@@ -21,7 +22,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       public string Visit( ConnectorEndPoint endPoint )=> endPoint.ConnectorIndex.ToString() ;
       public string Visit( RouteEndPoint endPoint ) => string.Empty ;
       public string Visit( PassPointEndPoint endPoint ) => string.Empty ;
-      public string Visit( TerminatePointEndPoint endPoint ) => endPoint.LinkedInstanceId?.IntegerValue.ToString() ?? string.Empty ;
+      public string Visit( PassPointBranchEndPoint endPoint ) => string.Empty ;
+      public string Visit( TerminatePointEndPoint endPoint ) => endPoint.LinkedInstanceId.IntegerValue.ToString() ;
     }
   }
 }

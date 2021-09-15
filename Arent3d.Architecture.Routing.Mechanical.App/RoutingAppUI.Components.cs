@@ -1,7 +1,6 @@
 using Arent3d.Architecture.Routing.Mechanical.App.Commands ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint ;
-using Arent3d.Architecture.Routing.Mechanical.App.Commands.BranchPoint ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.Rack ;
 using Arent3d.Revit.UI.Attributes ;
@@ -37,9 +36,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
         [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]
         private static class InsertPassPointCommandButton { }
-
-        [Button( typeof( InsertBranchPointCommand ), OnlyInitialized = true )]
-        private static class InsertBranchPointCommandButton { }
 
         [Button( typeof( EraseSelectedRoutesCommand ), OnlyInitialized = true )]
         private static class EraseSelectedRoutesCommandButton { }

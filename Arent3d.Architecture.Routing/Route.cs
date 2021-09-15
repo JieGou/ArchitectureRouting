@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using System.Diagnostics ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
 using Arent3d.Architecture.Routing.EndPoints ;
@@ -17,6 +18,7 @@ namespace Arent3d.Architecture.Routing
   /// </summary>
   [Guid( "83A448F4-E120-44E0-A220-F2D3F11B6A05" )]
   [StorableVisibility( AppInfo.VendorId )]
+  [DebuggerDisplay( "{RouteName}" )]
   public sealed class Route : StorableBase, IEquatable<Route>
   {
     private string _routeName ;
@@ -367,7 +369,7 @@ namespace Arent3d.Architecture.Routing
     /// <returns></returns>
     public bool HasParent()
     {
-      return _subRoutes.SelectMany( subRoute => subRoute.AllEndPoints.OfType<RouteEndPoint>() ).Any( endPoint => null != endPoint.ParentBranch().Route ) ;
+      return _subRoutes.SelectMany( subRoute => subRoute.AllEndPoints.OfType<IRouteBranchEndPoint>() ).Any( endPoint => null != endPoint.ParentBranch().Route ) ;
     }
 
     private static void AddChildren( HashSet<Route> routeSet, Route root, Action<Route>? onAdd = null )
