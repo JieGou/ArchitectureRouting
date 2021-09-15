@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing
     HumiditySensorForDuctWithoutLogo,
 
     [NameOnRevit("ダンパ操作器")]
-    [FamilyCategory(BuiltInCategory.OST_DuctAccessory)]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
     DamperActuator,
 
     [NameOnRevit("室内用湿度ｾﾝｻｰ(ロゴあり)")]
