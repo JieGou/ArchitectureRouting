@@ -1,11 +1,7 @@
-﻿using Arent3d.Revit ;
-using Autodesk.Revit.DB ;
-using System ;
-using System.Collections.Generic ;
-using System.Linq ;
-using System.Text ;
-using System.Threading.Tasks ;
+﻿using System ;
 using Arent3d.Architecture.Routing.Utils ;
+using Arent3d.Revit ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
@@ -30,7 +26,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
       LevelId = levels.Id.IntegerValue ;
       LevelName = StringUtils.DefaultIfBlank( levels.Name, DEFAULT_LEVEL_NAME ) ;
-      Elevation = levels.Elevation.RevitUnitsToMillimeters() ;
+      Elevation = Math.Round(levels.Elevation.RevitUnitsToMillimeters()) ;
       Underfloor = DEFAULT_UNDERFLOOR ;
       HeightOfLevel = DEFAULT_HEIGHT_OF_LEVEL ;
       HeightOfConnectors = DEFAULT_HEIGHT_OF_CONNECTORS ;
@@ -43,20 +39,20 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
       LevelId = levels.Id.IntegerValue ;
       LevelName = StringUtils.DefaultIfBlank( levels.Name, DEFAULT_LEVEL_NAME ) ;
-      Elevation = elevation ;
-      Underfloor = underfloor ;
-      HeightOfLevel = heightOfLevel ;
-      HeightOfConnectors = heightOfConnectors ;
+      Elevation = Math.Round( elevation ) ;
+      Underfloor = Math.Round( underfloor ) ;
+      HeightOfLevel = Math.Round( heightOfLevel ) ;
+      HeightOfConnectors = Math.Round( heightOfConnectors ) ;
     }
 
     public HeightSettingModel( int? levelId, string? levelName, double? elevation, double? underfloor, double? heightOfLevel, double? heightOfConnectors )
     {
       LevelId = levelId ?? throw new ArgumentNullException( nameof( levelId ) ) ;
       LevelName = StringUtils.DefaultIfBlank( levelName, DEFAULT_LEVEL_NAME ) ;
-      Elevation = elevation ?? 0 ;
-      Underfloor = underfloor ?? DEFAULT_UNDERFLOOR ;
-      HeightOfLevel = heightOfLevel ?? DEFAULT_HEIGHT_OF_LEVEL ;
-      HeightOfConnectors = heightOfConnectors ?? DEFAULT_HEIGHT_OF_CONNECTORS ;
+      Elevation = Math.Round( elevation ?? 0 ) ;
+      Underfloor = Math.Round( underfloor ?? DEFAULT_UNDERFLOOR ) ;
+      HeightOfLevel = Math.Round( heightOfLevel ?? DEFAULT_HEIGHT_OF_LEVEL ) ;
+      HeightOfConnectors = Math.Round( heightOfConnectors ?? DEFAULT_HEIGHT_OF_CONNECTORS ) ;
     }
 
     public bool Equals( HeightSettingModel other )
