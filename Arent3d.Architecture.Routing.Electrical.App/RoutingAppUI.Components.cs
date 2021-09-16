@@ -52,6 +52,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
         private static class ShowFromToTreeCommandButton { }
+        
+        [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
+        private static class ShowHeightSettingCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.rack", TitleKey = "Electrical.App.Panels.Routing.Racks" )]
