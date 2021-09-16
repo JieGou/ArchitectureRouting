@@ -259,7 +259,7 @@ From-To</string>
         <string>Length</string>
         
         <key>Revit.Property.Builtin.BendRadius</key>
-        <string>Bender Radius</string>
+        <string>Bend Radius</string>
         
         <key>Dialog.Commands.NewRackFromTo.Dialog.Title.Error</key>
         <string>There is an error creating a new cable rack</string>
