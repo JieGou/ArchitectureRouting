@@ -15,8 +15,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
   public class FromToTreeManager
   {
-    public UIApplication? UiApp = null ;
-    public FromToTreeUiManager? FromToTreeUiManager = null ;
+    public UIApplication? UiApp { get ; set ; } = null ;
+    public FromToTreeUiManager? FromToTreeUiManager { get ; set ; } = null ;
 
     public FromToTreeManager()
     {

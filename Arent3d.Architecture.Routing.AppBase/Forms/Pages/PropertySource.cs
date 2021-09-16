@@ -1,14 +1,10 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
-using Arent3d.Revit.UI ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
-using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -17,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   /// </summary>
   public abstract class PropertySource
   {
-    private Document Doc { get ; }
+    public Document Document { get ; }
 
 
     //For experimental state
@@ -25,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     protected PropertySource( Document doc )
     {
-      Doc = doc ;
+      Document = doc ;
     }
 
 
@@ -54,7 +50,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       public bool? IsDirect { get ; private set ; }
 
       //HeightSetting
-      public bool? OnHeightSetting { get ; private set ; }
+      public bool? UseFixedHeight { get ; private set ; }
       public double? FixedHeight { get ; }
 
       public AvoidType AvoidType { get ; }
@@ -73,24 +69,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           CurveType = subRoute.GetMEPCurveType() ;
 
           //Diameter Info
-          Diameters = (IList<double>?) CurveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
+          Diameters = (IList<double>?) CurveType.GetNominalDiameters( Document.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
           Diameter = subRoute.GetDiameter() ;
 
           //System Type Info(PipingSystemType in lookup)
-          SystemTypes = Doc.GetSystemTypes( subRoute.Route.GetSystemClassificationInfo() ).OrderBy( s => s.Name ).ToList() ;
-          SystemType = subRoute.Route.GetMEPSystemType() ;
+          var systemClassification = subRoute.Route.GetSystemClassificationInfo() ;
+          if ( systemClassification.HasSystemType() ) {
+            SystemTypes = Document.GetSystemTypes( systemClassification ).OrderBy( s => s.Name ).ToList() ;
+            SystemType = subRoute.Route.GetMEPSystemType() ;
+          }
+          else {
+            SystemTypes = null ;
+            SystemType = null ;
+          }
 
           //CurveType Info
           var curveTypeId = CurveType.GetValidId() ;
           // _isExperimental is true while we treat only round shape
-          CurveTypes = _isExperimental ? Doc.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : Doc.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
+          CurveTypes = _isExperimental ? Document.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : Document.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
 
 
           //Direct Info
           IsDirect = subRoute.IsRoutingOnPipeSpace ;
 
           //Height Info
-          OnHeightSetting = ( subRoute.FixedBopHeight != null ) ;
+          UseFixedHeight = ( subRoute.FixedBopHeight != null ) ;
           FixedHeight = subRoute.FixedBopHeight ;
 
           //AvoidType Info
@@ -105,19 +108,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       public RoutePropertySource( Document doc ) : base( doc )
       {
         //Diameter Info
-        CurveType = Doc.GetAllElements<MEPCurveType>().First() ;
+        CurveType = Document.GetAllElements<MEPCurveType>().First() ;
         //Diameters = (IList<double>?) CurveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>();
         //Diameter = Diameters[0];
 
         //System Type Info(PipingSystemType in lookup)
-        SystemTypes = Doc.GetAllElements<MEPSystemType>().OrderBy( s => s.Name ).ToList() ;
+        SystemTypes = Document.GetAllElements<MEPSystemType>().OrderBy( s => s.Name ).ToList() ;
         SystemType = SystemTypes[ 0 ] ;
 
         //CurveType Info
-        var curveTypeId = CurveType.GetValidId() ;
-        CurveTypes = Doc.GetAllElements<MEPCurveType>().ToList() ;
+        CurveTypes = Document.GetAllElements<MEPCurveType>().ToList() ;
 
-        //AvoidType Info
+        IsDirect = true ;
+        UseFixedHeight = false ;
+        FixedHeight = null ;
         AvoidType = AvoidType.Whichever ;
       }
 
@@ -127,24 +131,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( classificationInfo.HasSystemType() ) {
           //Diameter Info
           CurveType = curveType ;
-          Diameters = (IList<double>?) curveType?.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
+          Diameters = (IList<double>?) curveType?.GetNominalDiameters( Document.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
 
           //System Type Info(PipingSystemType in lookup)
-          SystemTypes = Doc.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList() ;
+          SystemTypes = Document.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList() ;
           SystemType = systemType ;
 
           //CurveType Info
-          var curveTypeId = CurveType.GetValidId() ;
           // _isExperimental is true while we treat only round shape
-          CurveTypes = _isExperimental ? Doc.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : Doc.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
+          CurveTypes = _isExperimental ? Document.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : Document.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
 
-          //AvoidType Info
+          IsDirect = true ;
+          UseFixedHeight = false ;
+          FixedHeight = null ;
           AvoidType = AvoidType.Whichever ;
         }
         else {
           //Diameter Info
           CurveType = curveType ;
-          Diameters = (IList<double>?) curveType?.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
+          Diameters = (IList<double>?) curveType?.GetNominalDiameters( Document.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
 
           //Standard Type Info
           StandardTypes = doc.GetStandardTypes().ToList() ;
@@ -154,9 +159,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           var curveTypeId = CurveType.GetValidId() ;
           // _isExperimental is true while we treat only round shape
           CurveTypes = doc.GetAllElements<MEPCurveType>().Where( c => c.GetType() == typeof( ConduitType ) ).OrderBy( c => c.Name ).ToList() ;
-          ;
 
-          //AvoidType Info
+          IsDirect = true ;
+          UseFixedHeight = false ;
+          FixedHeight = null ;
           AvoidType = AvoidType.Whichever ;
         }
       }
@@ -177,7 +183,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         IsDirect = route.UniqueIsRoutingOnPipeSpace ;
 
         if ( IsHeightSettingMultiSelected( route ) ) {
-          OnHeightSetting = null ;
+          UseFixedHeight = null ;
         }
       }
 

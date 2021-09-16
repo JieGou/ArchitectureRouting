@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PickRoutingCommandBase : RoutingCommandBase
   {
-    private record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, SetRouteProperty Property, MEPSystemClassificationInfo ClassificationInfo ) ;
+    private record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, RoutePropertyDialog PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
     protected abstract AddInType GetAddInType() ;
@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return GetMEPSystemClassificationInfoFromSystemType( systemType ) ;
     }
 
-    private SetRouteProperty? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    private RoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
       if ( ( fromPickResult.SubRoute ?? toPickResult.SubRoute ) is { } subRoute ) {
         var route = subRoute.Route ;
@@ -70,23 +70,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ShowDialog( document ) ;
     }
 
-    private static SetRouteProperty ShowDialog( Document document, DialogInitValues initValues )
+    private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues )
     {
-      var sv = new SetRouteProperty() ;
+      var sv = new RoutePropertyDialog() ;
       var propertySourceType = new PropertySource.RoutePropertySource( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType ) ;
       SelectedFromToViewModel.PropertySourceType = propertySourceType ;
-      sv.UpdateFromToParameters( propertySourceType.Diameters, propertySourceType.SystemTypes, propertySourceType.CurveTypes, initValues.SystemType, initValues.CurveType, initValues.Diameter ) ;
+      sv.UpdateFromToParameters( propertySourceType ) ;
 
       sv.ShowDialog() ;
 
       return sv ;
     }
-    private static SetRouteProperty ShowDialog( Document document )
+    private static RoutePropertyDialog ShowDialog( Document document )
     {
-      var sv = new SetRouteProperty() ;
+      var sv = new RoutePropertyDialog() ;
       var propertySourceType = new PropertySource.RoutePropertySource( document ) ;
       SelectedFromToViewModel.PropertySourceType = propertySourceType ;
-      sv.UpdateFromToParameters( propertySourceType.Diameters, propertySourceType.SystemTypes, propertySourceType.CurveTypes, propertySourceType.SystemType, propertySourceType.CurveType, 0 ) ;
+      sv.UpdateFromToParameters( propertySourceType ) ;
 
       sv.ShowDialog() ;
 
@@ -108,20 +108,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return CreateNewSegmentList( document, fromPickResult, toPickResult, property, classificationInfo ) ;
     }
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, SetRouteProperty property, MEPSystemClassificationInfo classificationInfo )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, RoutePropertyDialog propertyDialog, MEPSystemClassificationInfo classificationInfo )
     {
       var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult ) ;
       var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
 
-      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, property, classificationInfo ) ;
+      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, propertyDialog, classificationInfo ) ;
 
       return new[] { ( name, segment ) } ;
     }
 
-    private (string RouteName, RouteSegment Segment) CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, SetRouteProperty property, MEPSystemClassificationInfo classificationInfo )
+    private (string RouteName, RouteSegment Segment) CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, RoutePropertyDialog propertyDialog, MEPSystemClassificationInfo classificationInfo )
     {
-      var systemType = property.GetSelectSystemType() ;
-      var curveType = property.GetSelectCurveType() ;
+      var systemType = propertyDialog.GetSelectSystemType() ;
+      var curveType = propertyDialog.GetSelectCurveType() ;
 
       var routes = RouteCache.Get( document ) ;
       var nameBase = GetNameBase( systemType, curveType ) ;
@@ -129,21 +129,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var name = nameBase + "_" + nextIndex ;
       routes.FindOrCreate( name ) ;
 
-      var diameter = property.GetSelectDiameter().MillimetersToRevitUnits() ;
-      var isDirect = property.GetCurrentDirect() ?? false ;
-      var targetFixedHeight = property.GetFixedHeight()?.MillimetersToRevitUnits() ;
+      var diameter = propertyDialog.GetSelectDiameter().MillimetersToRevitUnits() ;
+      var isDirect = propertyDialog.GetCurrentDirect() ;
+      var targetFixedHeight = propertyDialog.GetFixedHeight()?.MillimetersToRevitUnits() ;
 
-      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isDirect, targetFixedHeight, property.GetAvoidTypeKey() ) ) ;
+      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isDirect, targetFixedHeight, propertyDialog.GetAvoidTypeKey() ) ) ;
     }
 
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, SetRouteProperty property, MEPSystemClassificationInfo classificationInfo )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, RoutePropertyDialog propertyDialog, MEPSystemClassificationInfo classificationInfo )
     {
       //return AppendNewSegmentIntoPickedRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide ) ;  // Use this, when a branch is to be merged into the parent from-to.
-      return CreateSubBranchRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide, property, classificationInfo ).EnumerateAll() ;
+      return CreateSubBranchRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide, propertyDialog, classificationInfo ).EnumerateAll() ;
     }
 
-    private IEnumerable<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, SetRouteProperty property, MEPSystemClassificationInfo classificationInfo )
+    private IEnumerable<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, RoutePropertyDialog propertyDialog, MEPSystemClassificationInfo classificationInfo )
     {
       var affectedRoutes = new List<Route>() ;
       var (routeEndPoint, otherSegments1) = CreateEndPointOnSubRoute( routePickResult, anotherPickResult, true ) ;
@@ -161,7 +161,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var toEndPoint = anotherIndicatorIsFromSide ? routeEndPoint : anotherEndPoint ;
 
       var document = routePickResult.SubRoute!.Route.Document ;
-      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, property, classificationInfo ) ;
+      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, propertyDialog, classificationInfo ) ;
 
       // Inserted segment
       yield return ( name, segment ) ;

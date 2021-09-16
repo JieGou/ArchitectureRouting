@@ -199,13 +199,13 @@
         <key>Dialog.Forms.FromToTree.Rename</key>
         <string>名称が重複しているため、他の名称に変更してください。</string>
 
-        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.None</key>
+        <key>Dialog.Forms.FromToEditControl.ProcessConstraints.None</key>
         <string>どちらでもよい</string>
-        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoPocket</key>
+        <key>Dialog.Forms.FromToEditControl.ProcessConstraints.NoPocket</key>
         <string>よけない</string>
-        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoDrainPocket</key>
+        <key>Dialog.Forms.FromToEditControl.ProcessConstraints.NoDrainPocket</key>
         <string>上に避ける</string>
-        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket</key>
+        <key>Dialog.Forms.FromToEditControl.ProcessConstraints.NoVentPocket</key>
         <string>下に避ける</string>
 
         <key>Dialog.Forms.FromToWindow.Title</key>

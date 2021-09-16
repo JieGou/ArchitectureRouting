@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         OnHeightSetting = heightSetting ;
         if ( OnHeightSetting is true ) {
           if ( fixedHeight is { } selectedFixedHeight ) {
-            FixedHeight = GetTotalHeight( fixedHeight ) ;
+            FixedHeight = GetTotalHeight( selectedFixedHeight ) ;
           }
         }
         else {
@@ -105,22 +105,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       else {
         return false ;
       }
-    }
-
-    /// <summary>
-    /// Reset Diameter List by Curve Type
-    /// </summary>
-    /// <param name="curveTypeIndex"></param>
-    /// <returns></returns>
-    public static IEnumerable<double> ResetNominalDiameters( int curveTypeIndex )
-    {
-      if ( PropertySourceType?.CurveTypes is not { } curveTypes || null == UiDoc ) return Enumerable.Empty<double>() ;
-      if ( curveTypeIndex < 0 || curveTypes.Count <= curveTypeIndex ) return Enumerable.Empty<double>() ;
-
-      //Reset diameter list in PropertySourceType
-      Diameters = curveTypes[ curveTypeIndex ].GetNominalDiameters( UiDoc.Document.Application.VertexTolerance ) ;
-
-      return Diameters ;
     }
 
     public static double GetRouteHeightFromFloor( double totalHeight )
@@ -175,11 +159,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return GetConnectorLevel()?.Elevation ;
     }
 
-    private static double GetTotalHeight( double? selectedHeight )
+    private static double GetTotalHeight( double selectedHeight )
     {
       var targetHeight = 0.0 ;
-      if ( GetFloorHeight() is { } floorHeight && TargetRoute?.GetSubRoute( 0 )?.GetDiameter() is { } diameter && selectedHeight is { } selected ) {
-        targetHeight = selected.MillimetersToRevitUnits() + floorHeight - diameter / 2 ;
+      if ( GetFloorHeight() is { } floorHeight && TargetRoute?.GetSubRoute( 0 )?.GetDiameter() is { } diameter ) {
+        targetHeight = selectedHeight.MillimetersToRevitUnits() + floorHeight - diameter / 2 ;
       }
 
       return targetHeight ;

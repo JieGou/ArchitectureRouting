@@ -101,13 +101,10 @@
         <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto">
             <local:SelectedFromToBase.Style>
                 <Style TargetType="local:SelectedFromToBase">
-                    <!--TargetTypeをUserControlにしても変わらない-->
                     <Setter Property="Visibility" Value="Hidden" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsRouterVisibility}" Value="True">
+                        <DataTrigger Binding="{Binding IsRouterVisible, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" Value="True">
                             <Setter Property="Visibility" Value="Visible" />
-                            <Setter Property="IsEnableSystemType" Value="{Binding IsEnableSystemType}" />
-                            <Setter Property="IsEnableCurveType" Value="{Binding IsEnableCurveType}" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -117,15 +114,13 @@
         <local:PassPointInfo Grid.Row="2" Width="Auto">
             <local:PassPointInfo.Style>
                 <Style TargetType="local:PassPointInfo">
-                    <!--TargetTypeをUserControlにしても変わらない-->
                     <Setter Property="Visibility" Value="Hidden" />
-
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsConnectorVisibility}" Value="True">
+                        <DataTrigger Binding="{Binding IsPassPointVisible, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" Value="True">
                             <Setter Property="Visibility" Value="Visible" />
-                            <Setter Property="XPoint" Value="{Binding CoordinatesX}" />
-                            <Setter Property="YPoint" Value="{Binding CoordinatesY}" />
-                            <Setter Property="ZPoint" Value="{Binding CoordinatesZ}" />
+                            <Setter Property="XPoint" Value="{Binding CoordinatesX, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" />
+                            <Setter Property="YPoint" Value="{Binding CoordinatesY, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" />
+                            <Setter Property="ZPoint" Value="{Binding CoordinatesZ, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>

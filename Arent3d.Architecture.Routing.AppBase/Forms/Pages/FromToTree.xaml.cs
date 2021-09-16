@@ -4,55 +4,74 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Input ;
-using Arent3d.Architecture.Routing.AppBase.Manager ;
-//using Arent3d.Architecture.Routing.AppBase.Manager;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using Arent3d.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class FromToTree : Page, IDockablePaneProvider
   {
-    private static Document? Doc { get ; set ; }
-    private static UIDocument? UiDoc { get ; set ; }
+    private static readonly DependencyPropertyKey IsConnectorVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsConnectorVisible", typeof( bool ), typeof( FromToTree ), new PropertyMetadata( false ) ) ;
+    private static readonly DependencyPropertyKey IsPassPointVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsPassPointVisible", typeof( bool ), typeof( FromToTree ), new PropertyMetadata( false ) ) ;
+    private static readonly DependencyPropertyKey IsRouterVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsRouterVisible", typeof( bool ), typeof( FromToTree ), new PropertyMetadata( false ) ) ;
+    private static readonly DependencyPropertyKey CoordinatesXPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesX", typeof( string ), typeof( FromToTree ), new PropertyMetadata( string.Empty ) ) ;
+    private static readonly DependencyPropertyKey CoordinatesYPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesY", typeof( string ), typeof( FromToTree ), new PropertyMetadata( string.Empty ) ) ;
+    private static readonly DependencyPropertyKey CoordinatesZPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesZ", typeof( string ), typeof( FromToTree ), new PropertyMetadata( string.Empty ) ) ;
+
+    public bool IsPassPointVisible
+    {
+      get { return (bool)GetValue( IsPassPointVisiblePropertyKey.DependencyProperty ) ; }
+      private set { SetValue( IsPassPointVisiblePropertyKey, value ) ; }
+    }
+    public bool IsConnectorVisible
+    {
+      get { return (bool)GetValue( IsConnectorVisiblePropertyKey.DependencyProperty ) ; }
+      private  set { SetValue( IsConnectorVisiblePropertyKey, value ) ; }
+    }
+    public bool IsRouterVisible
+    {
+      get { return (bool)GetValue( IsRouterVisiblePropertyKey.DependencyProperty ) ; }
+      private   set { SetValue( IsRouterVisiblePropertyKey, value ) ; }
+    }
+
+    public string CoordinatesX
+    {
+      get { return (string)GetValue( CoordinatesXPropertyKey.DependencyProperty ) ; }
+      private set { SetValue( CoordinatesXPropertyKey, value ) ; }
+    }
+
+    public string CoordinatesY
+    {
+      get { return (string)GetValue( CoordinatesYPropertyKey.DependencyProperty ) ; }
+      private set { SetValue( CoordinatesYPropertyKey, value ) ; }
+    }
+
+    public string CoordinatesZ
+    {
+      get { return (string)GetValue( CoordinatesZPropertyKey.DependencyProperty ) ; }
+      private set { SetValue( CoordinatesZPropertyKey, value ) ; }
+    }
+
     private IReadOnlyCollection<Route>? AllRoutes { get ; set ; }
 
     private SortedDictionary<string, TreeViewItem>? ItemDictionary { get ; }
 
     private bool IsLeftMouseClick { get ; set ; }
 
-    private FromToItem? selectedLeftItem { get ; set ; }
-
-    public bool IsConnectorVisibility { get ; set ; }
-
-    public bool IsRouterVisibility { get ; set ; }
-
-    private bool IsPassPointVisibility { get ; set ; }
-
-    public string CoordinatesX { get ; }
-
-    public string CoordinatesY { get ;  }
-
-    public string CoordinatesZ { get ;  }
+    private FromToItem? SelectedLeftItem { get ; set ; }
     
     public string TitleLabel { get ; }
     
     public IPostCommandExecutorBase PostCommandExecutor { get ; }
     
     public FromToItemsUiBase FromToItemsUi { get ; }
-    
 
     public FromToTree( string titleLabel, IPostCommandExecutorBase postCommandExecutor, FromToItemsUiBase fromToItemsUi)
     {
-      this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
-      this.CoordinatesX = "X1" ;
-      this.CoordinatesY = "Y1" ;
-      this.CoordinatesZ = "Z1" ;
       InitializeComponent() ;
       ItemDictionary = new SortedDictionary<string, TreeViewItem>() ;
       TitleLabel = titleLabel ;
@@ -75,7 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public void ClearSelection()
     {
       ClearSelectedItem() ;
-      SelectedFromTo.ClearDialog() ;
+      SelectedFromTo.EditingSource = null ;
       this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
     }
 
@@ -88,11 +107,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// initialize page
     /// </summary>
     /// <param name="uiApplication"></param>
+    /// <param name="addInType"></param>
     public void CustomInitiator( UIApplication uiApplication, AddInType addInType )
     {
-      Doc = uiApplication.ActiveUIDocument.Document ;
-      UiDoc = uiApplication.ActiveUIDocument ;
-      AllRoutes = UiDoc.Document.CollectRoutes(addInType).ToList() ;
+      AllRoutes = uiApplication.ActiveUIDocument.Document.CollectRoutes(addInType).ToList() ;
       // call the treeview display method
       DisplayTreeViewItem( uiApplication, addInType ) ;
       IsLeftMouseClick = false ;
@@ -142,53 +160,68 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
 
     /// <summary>
-    /// Set SelectedFromtTo Dialog by Selected Route in Selecting TreeView
+    /// Set SelectedFromTo Dialog by Selected Route in Selecting TreeView
     /// </summary>
-    /// <param name="route"></param>
+    /// <param name="propertySource"></param>
     private void DisplaySelectedFromTo( PropertySource.RoutePropertySource propertySource )
     {
-      SelectedFromTo.UpdateFromToParameters( propertySource.Diameters, propertySource.SystemTypes, propertySource.CurveTypes ) ;
+      IsRouterVisible = true ;
+      IsConnectorVisible = false ;
+      IsPassPointVisible = false ;
+
+      SelectedFromTo.EditingSource = propertySource ;
+    }
+
+    private void DisplaySelectedConnector( ConnectorPropertySource propertySource )
+    {
+      IsRouterVisible = false ;
+      IsConnectorVisible = true ;
+      IsPassPointVisible = false ;
+
+      SelectedFromTo.EditingSource = null ;
+    }
+
+    private void DisplaySelectedPassPoint( PassPointPropertySource propertySource )
+    {
+      IsRouterVisible = false ;
+      IsConnectorVisible = false ;
+      IsPassPointVisible = true ;
+
+      SelectedFromTo.EditingSource = null ;
       
-      SelectedFromTo.DiameterOrg = SelectedFromTo.Diameter = propertySource?.Diameter ;
+      var (x, y, z) = propertySource.PassPointPosition ;
+      var coordinateX = x.RevitUnitsToMillimeters() ;
+      var coordinateY = y.RevitUnitsToMillimeters() ;
+      var coordinateZ = z.RevitUnitsToMillimeters() ;
+      CoordinatesX = "X:" + ( Math.Floor( coordinateX * 10 ) ) / 10 + " mm" ;
+      CoordinatesY = "Y:" + ( Math.Floor( coordinateY * 10 ) ) / 10 + " mm" ;
+      CoordinatesZ = "Z:" + ( Math.Floor( coordinateZ * 10 ) ) / 10 + " mm" ;
+    }
 
-      SelectedFromTo.SystemTypeOrg = SelectedFromTo.SystemType = propertySource?.SystemType ;
+    private void DisplaySelectedTerminatePoint( TerminatePointPropertySource propertySource )
+    {
+      IsRouterVisible = false ;
+      IsConnectorVisible = false ;
+      IsPassPointVisible = true ;
 
-      SelectedFromTo.CurveTypeOrg = SelectedFromTo.CurveType = propertySource?.CurveType ;
+      SelectedFromTo.EditingSource = null ;
       
-      
-      if ( SelectedFromTo.CurveType is { } curveType ) {
-        SelectedFromTo.CurveTypeLabel = SelectedFromTo.GetTypeLabel( curveType.GetType().Name ) ;
-      }
+      var (x, y, z) = propertySource.TerminatePointPosition ;
+      var coordinateX = x.RevitUnitsToMillimeters() ;
+      var coordinateY = y.RevitUnitsToMillimeters() ;
+      var coordinateZ = z.RevitUnitsToMillimeters() ;
+      CoordinatesX = "X:" + ( Math.Floor( coordinateX * 10 ) ) / 10 + " mm" ;
+      CoordinatesY = "Y:" + ( Math.Floor( coordinateY * 10 ) ) / 10 + " mm" ;
+      CoordinatesZ = "Z:" + ( Math.Floor( coordinateZ * 10 ) ) / 10 + " mm" ;
+    }
 
-      SelectedFromTo.CurrentOrgDirect = SelectedFromTo.CurrentDirect = propertySource?.IsDirect ;
+    private void HideControls()
+    {
+      IsRouterVisible = false ;
+      IsConnectorVisible = false ;
+      IsPassPointVisible = false ;
 
-      // Set min, max value
-      if ( propertySource?.Diameter is { } diameter ) {
-        SelectedFromTo.CurrentMinValue = Math.Round( ( diameter / 2 ).RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero ) ;
-        SelectedFromTo.CurrentMaxValue = Math.Round( ( SelectedFromToViewModel.GetUpLevelHeightFromLevel() - diameter / 2 ).RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero ) ;
-      }
-
-      SelectedFromTo.CurrentOrgHeightSetting = SelectedFromTo.CurrentHeightSetting = propertySource?.OnHeightSetting ;
-      if ( propertySource?.OnHeightSetting != null ) {
-        SelectedFromTo.SetHeightTextVisibility( (bool) propertySource.OnHeightSetting ) ;
-        if ( propertySource.FixedHeight is { } fixedHeight ) {
-          var heightValue = SelectedFromToViewModel.GetRouteHeightFromFloor( fixedHeight ).RevitUnitsToMillimeters() ;
-          var round = Math.Round( heightValue, 2, MidpointRounding.AwayFromZero ) ; 
-          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = round ;
-        }
-        else {
-          SelectedFromTo.FixedOrgHeight = SelectedFromTo.FixedHeight = SelectedFromTo.CurrentMinValue ;
-        }
-      }
-      else {
-        SelectedFromTo.SetHeightTextVisibility( false ) ;
-      }
-
-      if ( propertySource?.AvoidType is { } avoidType ) {
-        SelectedFromTo.AvoidTypeOrgKey = SelectedFromTo.AvoidTypeKey = avoidType ;
-      }
-
-      SelectedFromTo.ResetDialog() ;
+      SelectedFromTo.EditingSource = null ;
     }
 
     private static int? NegativeToNull( int? index ) => ( index < 0 ? null : index ) ;
@@ -208,58 +241,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         SelectedFromToViewModel.FromToItem = selectedFromToItem ;
 
         if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && selectedFromToItem.ItemTag == "Route" ) {
-          this.DataContext = new { IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = selectedFromToItem.IsRootRoute, IsEnableCurveType = selectedFromToItem.IsRootRoute } ;
-          // show SelectedFromTo 
           DisplaySelectedFromTo( routePropertySource ) ;
         }
         else if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && selectedFromToItem.ItemTypeName == "Section" ) {
-          // show Connector UI
-          this.DataContext = new { IsRouterVisibility = true, IsConnectorVisibility = false, IsEnableSystemType = false, IsEnableCurveType = true } ;
           DisplaySelectedFromTo( routeSubPropertySource ) ;
         }
         else if ( selectedFromToItem.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
-          // show Connector UI
-          var transform = connectorPropertySource.ConnectorTransform ;
-          SelectedFromTo.ClearDialog() ;
-          this.DataContext = new { IsRouterVisibility = false, IsConnectorVisibility = false } ;
+          DisplaySelectedConnector( connectorPropertySource ) ;
         }
         else if ( selectedFromToItem.PropertySourceType is PassPointPropertySource passPointPropertySource ) {
-          // show Connector UI
-          var (x, y, z) = passPointPropertySource.PassPointPosition ;
-          SelectedFromTo.ClearDialog() ;
-          var coordinateX = x.RevitUnitsToMillimeters() ;
-          var coordinateY = y.RevitUnitsToMillimeters() ;
-          var coordinateZ = z.RevitUnitsToMillimeters() ;
-          this.DataContext = new
-          {
-            IsRouterVisibility = false,
-            IsConnectorVisibility = true,
-            CoordinatesX = "X:" + ( Math.Floor( coordinateX * 10 ) ) / 10 + " mm",
-            CoordinatesY = "Y:" + ( Math.Floor( coordinateY * 10 ) ) / 10 + " mm",
-            CoordinatesZ = "Z:" + ( Math.Floor( coordinateZ * 10 ) ) / 10 + " mm",
-          } ;
+          DisplaySelectedPassPoint( passPointPropertySource ) ;
         }
         else if ( selectedFromToItem.PropertySourceType is TerminatePointPropertySource terminatePointPropertySource ) {
-          // show Connector UI
-          var (x, y, z) = terminatePointPropertySource.TerminatePointPosition ;
-          SelectedFromTo.ClearDialog() ;
-          var coordinateX = x.RevitUnitsToMillimeters() ;
-          var coordinateY = y.RevitUnitsToMillimeters() ;
-          var coordinateZ = z.RevitUnitsToMillimeters() ;
-          this.DataContext = new
-          {
-            IsRouterVisibility = false,
-            IsConnectorVisibility = true,
-            CoordinatesX = "X:" + ( Math.Floor( coordinateX * 10 ) ) / 10 + " mm",
-            CoordinatesY = "Y:" + ( Math.Floor( coordinateY * 10 ) ) / 10 + " mm",
-            CoordinatesZ = "Z:" + ( Math.Floor( coordinateZ * 10 ) ) / 10 + " mm",
-          } ;
+          DisplaySelectedTerminatePoint( terminatePointPropertySource ) ;
         }
         else {
-          // don't show SelectedFromTo 
-
-          SelectedFromTo.ClearDialog() ;
+          HideControls() ;
         }
+      }
+      else {
+        HideControls() ;
       }
     }
 
@@ -370,7 +371,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedItem = (FromToItem) FromToTreeView.SelectedItem ;
       if ( selectedItem != null ) {
         IsLeftMouseClick = true ;
-        selectedLeftItem = selectedItem ;
+        SelectedLeftItem = selectedItem ;
       }
     }
 
@@ -393,7 +394,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void TextBlock_PreviewMouseLeftButtonUp( object sender, MouseButtonEventArgs e )
     {
       var selectedItem = (FromToItem) FromToTreeView.SelectedItem ;
-      if ( IsLeftMouseClick && selectedItem == selectedLeftItem ) {
+      if ( IsLeftMouseClick && selectedItem == SelectedLeftItem ) {
         if ( selectedItem != null && selectedItem.ItemTag == "Route" ) {
           selectedItem.IsEditing = true ;
         }
