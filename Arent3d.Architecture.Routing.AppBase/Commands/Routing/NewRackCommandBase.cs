@@ -92,6 +92,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                         var location = (element.Location as LocationCurve)!;
                         var line = (location.Curve as Line)!;
+
+                        // Ignore the case of vertical conduits in the oz direction
+                        if (1.0 == line.Direction.Z || -1.0 == line.Direction.Z)
+                        {
+                            continue;
+                        }
+
                         Connector firstConnector = GetFirstConnector(element.GetConnectorManager()!.Connectors)!;
 
                         var length = conduit.ParametersMap.get_Item("Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault(document, "Length")).AsDouble();
@@ -133,6 +140,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     {
                         var conduit = (element as FamilyInstance)!;
 
+                        // Ignore the case of vertical conduits in the oz direction
+                        if (1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z || 1.0 == conduit.FacingOrientation.Y)
+                        {
+                            continue;
+                        }
                         var location = (element.Location as LocationPoint)!;
 
                         var length = conduit.ParametersMap.get_Item("Revit.Property.Builtin.NominalRadius".GetDocumentStringByKeyOrDefault(document, "呼び半径")).AsDouble();
@@ -171,8 +183,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                         }
 
                         // move cable rack to under conduit
-                        instance.Location.Move(new XYZ(0, 0,
-                          -diameter)); // TODO may be must change when FamilyType change
+                        instance.Location.Move(new XYZ(0, 0,-diameter)); // TODO may be must change when FamilyType change
 
                         // save connectors of cable rack
                         connectors.AddRange(instance.GetConnectors());
