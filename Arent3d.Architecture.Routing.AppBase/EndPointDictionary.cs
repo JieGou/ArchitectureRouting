@@ -37,12 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private static void GenerateInstance( IEndPoint endPoint, string routeName )
     {
-      if ( null == ThreadDispatcher.UiDispatcher ) {
-        endPoint.GenerateInstance( routeName ) ;
-      }
-      else {
-        ThreadDispatcher.UiDispatcher.Invoke( () => endPoint.GenerateInstance( routeName ) ) ;
-      }
+      endPoint.GenerateInstance( routeName ) ;
     }
   }
 
@@ -78,6 +73,11 @@ namespace Arent3d.Architecture.Routing.AppBase
     }
 
     public (string Key, IEndPoint EndPoint) Visit( PassPointEndPoint endPoint )
+    {
+      return ( RegisterEndPoint( endPoint ), endPoint ) ;
+    }
+
+    public (string Key, IEndPoint EndPoint) Visit( PassPointBranchEndPoint endPoint )
     {
       return ( RegisterEndPoint( endPoint ), endPoint ) ;
     }

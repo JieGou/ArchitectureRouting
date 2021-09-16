@@ -1,24 +1,23 @@
+using System ;
 using System.Collections.Generic ;
+using System.Diagnostics ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
 {
+  [DebuggerDisplay( "{Route.Name}@{SubRouteIndex}" )]
   public class SubRoute
   {
     private const double DefaultDiameter = 1.0 ;
     
     public Route Route { get ; }
-    
     public int SubRouteIndex { get ; }
 
-    public (string RouteName, int SubRouteIndex) GetKey()
-    {
-      return ( Route.RouteName, SubRouteIndex ) ;
-    }
+    public SubRoute? PreviousSubRoute => Route.GetSubRoute( SubRouteIndex - 1 ) ;
+    public SubRoute? NextSubRoute => Route.GetSubRoute( SubRouteIndex + 1 ) ;
 
     private readonly List<RouteSegment> _routeSegments = new() ;
 
@@ -94,6 +93,20 @@ namespace Arent3d.Architecture.Routing
     {
       foreach ( var seg in Segments ) {
         seg.ChangePreferredNominalDiameter( nominalDiameter ) ;
+      }
+    }
+
+    public int GetMultiplicity() => Math.Max( 1, GetSubRouteGroup().Count ) ;
+    
+    public IReadOnlyCollection<SubRouteInfo> GetSubRouteGroup()
+    {
+      return _routeSegments.Select( seg => seg.SubRouteGroup ).FirstOrDefault() ?? Array.Empty<SubRouteInfo>() ;
+    }
+
+    public void SetSubRouteGroup( IReadOnlyCollection<SubRouteInfo> subRouteGroup )
+    {
+      foreach ( var seg in Segments ) {
+        seg.SetSubRouteGroup( subRouteGroup ) ;
       }
     }
 

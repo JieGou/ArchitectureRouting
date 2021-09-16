@@ -2,7 +2,6 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
-using System.Threading.Tasks ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -21,12 +20,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
 
-      var executor = new RoutingExecutor( document, GetRouteGeneratorInstantiator(), commandData.View ) ;
+      var executor = CreateRoutingExecutor( document, commandData.View ) ;
 
-      IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? segments ;
+      object? state ;
       try {
-        segments = GetRouteSegmentsParallelToTransaction( uiDocument ) ;
-        if ( null == segments ) return Result.Cancelled ;
+        bool success ;
+        ( success, state ) = OperateUI( uiDocument, executor ) ;
+        if ( false == success ) return Result.Cancelled ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
@@ -35,7 +35,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         var result = document.TransactionGroup( GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ), _ =>
         {
-          var executionResult = GenerateRoutes( uiDocument, executor, segments ) ;
+          var executionResult = GenerateRoutes( document, executor, state ) ;
           if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
           if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
 
@@ -62,37 +62,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    protected abstract RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator() ;
+    protected abstract RoutingExecutor CreateRoutingExecutor( Document document, View view ) ;
 
-    private RoutingExecutionResult GenerateRoutes( UIDocument uiDocument, RoutingExecutor executor, IAsyncEnumerable<(string RouteName, RouteSegment Segment)> segments )
+    private RoutingExecutionResult GenerateRoutes( Document document, RoutingExecutor executor, object? state )
     {
-      return uiDocument.Document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
+      return document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
       {
         using var _ = FromToTreeManager.SuppressUpdate() ;
 
         SetupFailureHandlingOptions( transaction, executor ) ;
 
-        segments = segments.Concat( GetRouteSegmentsInTransaction( uiDocument ).EnumerateAll().ToAsyncEnumerable() ) ;
-
-        var tokenSource = new CancellationTokenSource() ;
-        var task = Task.Run( async () =>
-        {
-          using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
+        try {
+          using var progress = ProgressBar.ShowWithNewThread( new CancellationTokenSource() ) ;
           progress.Message = "Routing..." ;
-          return await executor.Run( segments, progress ) ;
-        }, tokenSource.Token ) ;
-        task.ConfigureAwait( false ) ;
-        ThreadDispatcher.WaitWithDoEvents( task ) ;
 
-        if ( task.IsCanceled ) return ( Result.Cancelled, RoutingExecutionResult.Cancel ) ;
+          var segments = GetRouteSegments( document, state ) ;
+          var result = executor.Run( segments, progress ) ;
 
-        var result = task.Result ;
-        return result.Type switch
-        {
-          RoutingExecutionResultType.Success => ( Result.Succeeded, result ),
-          RoutingExecutionResultType.Cancel => ( Result.Cancelled, result ),
-          _ => ( Result.Failed, result ),
-        } ;
+          return result.Type switch
+          {
+            RoutingExecutionResultType.Success => ( Result.Succeeded, result ),
+            RoutingExecutionResultType.Cancel => ( Result.Cancelled, result ),
+            _ => ( Result.Failed, result ),
+          } ;
+        }
+        catch ( OperationCanceledException ) {
+          return ( Result.Cancelled, RoutingExecutionResult.Cancel ) ;
+        }
       }, RoutingExecutionResult.Cancel ) ;
     }
 
@@ -108,70 +104,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static void SetupFailureHandlingOptions( Transaction transaction, RoutingExecutor executor )
     {
-      transaction.SetFailureHandlingOptions( ModifyFailureHandlingOptions( transaction.GetFailureHandlingOptions(), executor ) ) ;
+      if ( executor.CreateFailuresPreprocessor() is not { } failuresPreprocessor ) return ;
+      
+      transaction.SetFailureHandlingOptions( ModifyFailureHandlingOptions( transaction.GetFailureHandlingOptions(), failuresPreprocessor ) ) ;
     }
 
-    private static FailureHandlingOptions ModifyFailureHandlingOptions( FailureHandlingOptions handlingOptions, RoutingExecutor executor )
+    private static FailureHandlingOptions ModifyFailureHandlingOptions( FailureHandlingOptions handlingOptions, IFailuresPreprocessor failuresPreprocessor )
     {
-      var failuresPreprocessor = new RoutingFailuresPreprocessor( executor ) ;
-
-      handlingOptions = handlingOptions.SetFailuresPreprocessor( failuresPreprocessor ) ;
-
-      return handlingOptions ;
+      return handlingOptions.SetFailuresPreprocessor( failuresPreprocessor ) ;
     }
 
     protected abstract string GetTransactionNameKey() ;
 
     /// <summary>
-    /// Collects route segments to be auto-routed (parallel to transaction).
+    /// Collects UI states.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected virtual IAsyncEnumerable<(string RouteName, RouteSegment Segment)>? GetRouteSegmentsParallelToTransaction( UIDocument uiDocument )
-    {
-      return AsyncEnumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
-    }
+    protected virtual (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor ) => ( true, null ) ;
 
     /// <summary>
-    /// Collects route segments to be auto-routed (in transaction).
+    /// Generate route segments to be auto-routed from UI state.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected virtual IEnumerable<(string RouteName, RouteSegment Segment)> GetRouteSegmentsInTransaction( UIDocument uiDocument )
+    protected virtual IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
-      return Enumerable.Empty<(string RouteName, RouteSegment Segment)>() ;
-    }
-
-
-    private class RoutingFailuresPreprocessor : IFailuresPreprocessor
-    {
-      private readonly RoutingExecutor _executor ;
-      
-      public RoutingFailuresPreprocessor( RoutingExecutor executor )
-      {
-        _executor = executor ;
-      }
-
-      public FailureProcessingResult PreprocessFailures( FailuresAccessor failuresAccessor )
-      {
-        var document = failuresAccessor.GetDocument() ;
-
-        var elementsToDelete = new HashSet<ElementId>() ;
-        foreach ( var failure in failuresAccessor.GetFailureMessages() ) {
-          foreach ( var elmId in failure.GetFailingElementIds() ) {
-            if ( document.GetElementById<MEPCurve>( elmId ) is null ) continue ;
-            elementsToDelete.Add( elmId ) ;
-          }
-        }
-
-        if ( 0 < elementsToDelete.Count ) {
-          elementsToDelete.ForEach( _executor.RegisterDeletedElement ) ;
-          failuresAccessor.DeleteElements( elementsToDelete.ToList() ) ;
-
-          return FailureProcessingResult.ProceedWithCommit ;
-        }
-        else {
-          return FailureProcessingResult.Continue ;
-        }
-      }
+      return Array.Empty<(string RouteName, RouteSegment Segment)>() ;
     }
   }
 }

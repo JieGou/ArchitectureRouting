@@ -1,14 +1,15 @@
 using System ;
-using System.Linq ;
-using System.Text.RegularExpressions ;
+using System.Collections.Generic ;
+using System.Diagnostics ;
 using Arent3d.Architecture.Routing.StorableCaches ;
-using Arent3d.Utility ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
 {
-  public class RouteEndPoint : IEndPoint
+  [DebuggerDisplay("{Key}")]
+  public class RouteEndPoint : IRouteBranchEndPoint
   {
     public const string Type = "Route" ;
 
@@ -16,7 +17,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       RouteName,
       SubRouteIndex,
-      EndPointKeyOverSubRoute,
     }
 
     public static RouteEndPoint? ParseParameterString( Document document, string str )
@@ -25,9 +25,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       if ( deserializer.GetString( SerializeField.RouteName ) is not { } routeName ) return null ;
       if ( deserializer.GetInt( SerializeField.SubRouteIndex ) is not { } subRouteIndex ) return null ;
-      var referenceEndPointKey = deserializer.GetEndPointKey( SerializeField.EndPointKeyOverSubRoute ) ;
 
-      return new RouteEndPoint( document, routeName, subRouteIndex, referenceEndPointKey ) ;
+      return new RouteEndPoint( document, routeName, subRouteIndex ) ;
     }
     public string ParameterString
     {
@@ -37,7 +36,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
         stringifier.AddNonNull( SerializeField.RouteName, RouteName ) ;
         stringifier.Add( SerializeField.SubRouteIndex, SubRouteIndex ) ;
-        stringifier.AddNullable( SerializeField.EndPointKeyOverSubRoute, EndPointKeyOverSubRoute ) ;
 
         return stringifier.ToString() ;
       }
@@ -45,9 +43,10 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
 
     public string TypeName => Type ;
+    public string DisplayTypeName => "EndPoint.DisplayTypeName.Route".GetAppStringByKeyOrDefault( TypeName ) ;
     public EndPointKey Key => new EndPointKey( TypeName, ParameterString ) ;
 
-    public EndPointKey? EndPointKeyOverSubRoute { get ; }
+    internal static RouteEndPoint? FromKeyParam( Document document, string param ) => ParseParameterString( document, param ) ;
 
     public bool IsReplaceable => true ;
 
@@ -60,27 +59,27 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public string RouteName { get ; private set ; } = null! ;
     public int SubRouteIndex { get ; private set ; }
 
-    public Route? GetRoute() => ParentBranch().Route ;
-    public SubRoute? GetSubRoute() => ParentBranch().SubRoute ;
-
-    public void UpdateRoute( string routeName, int subRouteIndex )
+    public SubRoute GetSubRoute()
     {
-      RouteName = routeName ;
-      SubRouteIndex = subRouteIndex ;
+      if ( false == RouteCache.Get( _document ).TryGetValue( RouteName, out var route ) ) throw new KeyNotFoundException() ;
+
+      return route.GetSubRoute( SubRouteIndex ) ?? throw new KeyNotFoundException() ;
     }
 
-    public RouteEndPoint( SubRoute subRoute, EndPointKey? endPointKeyOverSubRoute )
+    internal void ReplaceRouteName( string newRouteName )
     {
-      _document = subRoute.Route.Document ;
-      UpdateRoute( subRoute.Route.RouteName, subRoute.SubRouteIndex ) ;
-      EndPointKeyOverSubRoute = endPointKeyOverSubRoute ;
+      RouteName = newRouteName ;
     }
 
-    private RouteEndPoint( Document document, string routeName, int subRouteIndex, EndPointKey? endPointKeyOverSubRoute )
+    public RouteEndPoint( SubRoute subRoute ) : this( subRoute.Route.Document, subRoute.Route.RouteName, subRoute.SubRouteIndex )
+    {
+    }
+
+    private RouteEndPoint( Document document, string routeName, int subRouteIndex )
     {
       _document = document ;
-      UpdateRoute( routeName, subRouteIndex ) ;
-      EndPointKeyOverSubRoute = endPointKeyOverSubRoute ;
+      RouteName = routeName ;
+      SubRouteIndex = subRouteIndex ;
     }
 
     public XYZ GetRoutingDirection( bool isFrom ) => throw new InvalidOperationException() ;
@@ -94,9 +93,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public (Route? Route, SubRoute? SubRoute) ParentBranch()
     {
-      if ( false == RouteCache.Get( _document ).TryGetValue( RouteName, out var route ) ) return ( null, null ) ;
-
-      return ( route, route.GetSubRoute( SubRouteIndex ) ) ;
+      var subRoute = GetSubRoute() ;
+      return ( subRoute.Route, subRoute ) ;
     }
 
     public bool GenerateInstance( string routeName ) => false ;

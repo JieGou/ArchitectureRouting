@@ -26,11 +26,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
     public static FromToTreeManager FromToTreeManager => _fromToTreeManager ??= new FromToTreeManager() ;
 
-    public static RoutingExecutor.CreateRouteGenerator GetRouteGeneratorInstantiator()
-    {
-      return ( routes, document, collector ) => new RouteGenerator( routes, document, DefaultFittingSizeCalculator.Instance, collector ) ;
-    }
-
     protected override string GetLanguageDirectoryPath()
     {
       return GetDefaultLanguageDirectoryPath( Assembly.GetExecutingAssembly() ) ;

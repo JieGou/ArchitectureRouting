@@ -10,85 +10,54 @@ namespace Arent3d.Architecture.Routing
   /// </summary>
   public class PassPointConnectorMapper
   {
-    private readonly Dictionary<int, (ConnectorId?, ConnectorId?, List<ConnectorId>?)> _passPointConnectors = new() ;
+    private readonly Dictionary<(Route Route, int PassPointElementId), (ConnectorId? Prev, ConnectorId? Next)> _passPointConnectors = new() ;
 
-    public void Add( ElementId elementId, bool isFrom, Connector connector )
+    public void Add( Route route, ElementId passPointElementId, Connector connector, bool continuesToFrom )
     {
-      var id = elementId.IntegerValue ;
+      var key = ( Route: route, PassPointElementId: passPointElementId.IntegerValue ) ;
 
-      if ( _passPointConnectors.TryGetValue( id, out var tuple ) ) {
-        if ( isFrom ) {
-          if ( null != tuple.Item1 ) throw new InvalidOperationException() ;
-          _passPointConnectors[ id ] = ( new ConnectorId( connector ), tuple.Item2, tuple.Item3 ) ;
+      if ( _passPointConnectors.TryGetValue( key, out var tuple ) ) {
+        if ( continuesToFrom ) {
+          if ( null != tuple.Next ) throw new InvalidOperationException() ;
+          _passPointConnectors[ key ] = ( tuple.Prev, new ConnectorId( connector ) ) ;
         }
         else {
-          if ( null != tuple.Item2 ) throw new InvalidOperationException() ;
-          _passPointConnectors[ id ] = ( tuple.Item1, new ConnectorId( connector ), tuple.Item3 ) ;
-          _passPointConnectors[ id ] = ( tuple.Item1, new ConnectorId( connector ), tuple.Item3 ) ;
+          if ( null != tuple.Prev ) throw new InvalidOperationException() ;
+          _passPointConnectors[ key ] = ( new ConnectorId( connector ), tuple.Next ) ;
         }
       }
       else {
-        if ( isFrom ) {
-          _passPointConnectors.Add( id, ( new ConnectorId( connector ), null, tuple.Item3 ) ) ;
+        if ( continuesToFrom ) {
+          _passPointConnectors.Add( key, ( null, new ConnectorId( connector ) ) ) ;
         }
         else {
-          _passPointConnectors.Add( id, ( null, new ConnectorId( connector ), tuple.Item3 ) ) ;
+          _passPointConnectors.Add( key, ( new ConnectorId( connector ), null ) ) ;
         }
       }
-    }
-
-    public void AddBranch( ElementId elementId, Connector connector )
-    {
-      var id = elementId.IntegerValue ;
-
-      if ( _passPointConnectors.TryGetValue( id, out var tuple ) ) {
-        if ( null == tuple.Item3 ) {
-          tuple.Item3 = new List<ConnectorId>() ;
-          _passPointConnectors[ id ] = tuple ;
-        }
-      }
-      else {
-        tuple = ( null, null, new List<ConnectorId>() ) ;
-        _passPointConnectors.Add( id, tuple ) ;
-      }
-
-      tuple.Item3.Add( new ConnectorId( connector ) ) ;
     }
 
     public void Merge( PassPointConnectorMapper another )
     {
-      foreach ( var (id, (connector1, connector2, list)) in another._passPointConnectors ) {
-        if ( _passPointConnectors.TryGetValue( id, out var tuple ) ) {
-          if ( null != tuple.Item1 && null != connector1 ) throw new InvalidOperationException() ;
-          if ( null != tuple.Item2 && null != connector2 ) throw new InvalidOperationException() ;
+      foreach ( var (key, (prevConnector, nextConnector)) in another._passPointConnectors ) {
+        if ( _passPointConnectors.TryGetValue( key, out var tuple ) ) {
+          if ( null != tuple.Prev && null != prevConnector ) throw new InvalidOperationException() ;
+          if ( null != tuple.Next && null != nextConnector ) throw new InvalidOperationException() ;
 
-          _passPointConnectors[ id ] = ( tuple.Item1 ?? connector1, tuple.Item2 ?? connector2, MergeList( list, tuple.Item3 ) ) ;
+          _passPointConnectors[ key ] = ( tuple.Prev ?? prevConnector, tuple.Next ?? nextConnector ) ;
         }
         else {
-          _passPointConnectors.Add( id, ( connector1, connector2, list ) ) ;
+          _passPointConnectors.Add( key, ( prevConnector, nextConnector ) ) ;
         }
       }
     }
 
-    private static List<ConnectorId>? MergeList( List<ConnectorId>? list1, List<ConnectorId>? list2 )
+    public IEnumerable<(Route Route, ElementId PassPointElementId, Connector Prev, Connector Next)> GetPassPointConnections( Document document )
     {
-      if ( null != list1 && null != list2 ) {
-        var result = new List<ConnectorId>() ;
-        result.AddRange( list1 ) ;
-        result.AddRange( list2 ) ;
-        return result ;
-      }
+      foreach ( var (key, (prevConnector, nextConnector)) in _passPointConnectors ) {
+        if ( prevConnector?.GetConnector( document ) is not { } con1 ) continue ;
+        if ( nextConnector?.GetConnector( document ) is not { } con2 ) continue ;
 
-      return list1 ?? list2 ;
-    }
-
-    public IEnumerable<(int, (Connector, Connector, IReadOnlyList<Connector>?))> GetPassPointConnections( Document document )
-    {
-      foreach ( var (key, (cid1, cid2, others)) in _passPointConnectors ) {
-        if ( cid1?.GetConnector( document ) is not { } con1 ) continue ;
-        if ( cid2?.GetConnector( document ) is not { } con2 ) continue ;
-
-        yield return ( key, ( con1, con2, ( null == others ? null : ConnectorId.ToConnectorList( document, others ) ) ) ) ;
+        yield return ( key.Route, new ElementId( key.PassPointElementId ), con1, con2 ) ;
       }
     }
   }

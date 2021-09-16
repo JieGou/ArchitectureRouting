@@ -1,8 +1,9 @@
+using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -12,79 +13,87 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 {
   public class ElectricalRouteGenerator : RouteGenerator
   {
-    private readonly Dictionary<(IRouteVertex BaseVertex, (EndPointKey From, EndPointKey To) segment), IRouteVertex> _splitVertices = new() ;
-    
-    public ElectricalRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector ) : base( routes, document, ElectricalFittingSizeCalculator.Instance, collector )
+    private readonly Dictionary<(IRouteVertex BaseVertex, Route Route), IRouteVertex> _splitVertices = new() ;
+    private IReadOnlyDictionary<SubRoute, PassingBranchInfo>? _branchMap = null ;
+
+    public ElectricalRouteGenerator( IReadOnlyCollection<Route> routes, Document document, IFittingSizeCalculator fittingSizeCalculator, ICollisionCheckTargetCollector collector ) : base( routes, document, fittingSizeCalculator, collector )
     {
+    }
+
+    protected override void OnGenerationStarted()
+    {
+      _branchMap = PassingBranchInfo.CreateBranchMap( RoutingTargets.SelectMany( target => target.Routes ).Distinct() ) ;
     }
 
     protected override IEnumerable<Element> CreateEdges( MEPSystemCreator mepSystemCreator, AutoRoutingResult result )
     {
+      if ( null == _branchMap ) throw new InvalidOperationException() ;
+
       var autoRoutingTarget = mepSystemCreator.AutoRoutingTarget ;
-      var allFromToList = autoRoutingTarget.GetAllSubRoutes().SelectMany( GetFromToEndPointKeys ).EnumerateAll() ;
       foreach ( var routeEdge in result.RouteEdges ) {
         var passingEndPointInfo = result.GetPassingEndPointInfo( routeEdge ) ;
-        foreach ( var (subRoute, splitRouteEdge, splitPassingEndPointInfo) in GetMatchingRouteEdgeBySegments( allFromToList, routeEdge, passingEndPointInfo ) ) {
-          yield return mepSystemCreator.CreateEdgeElement( splitRouteEdge, subRoute, splitPassingEndPointInfo ) ;
+        var representativeSubRoute = autoRoutingTarget.GetSubRoute( routeEdge ) ;
+        var representativeSubRouteInfo = new SubRouteInfo( representativeSubRoute ) ;
+
+        var groupedSubRoutes = new List<SubRoute>() ;
+        foreach ( var (subRoute, splitRouteEdge, splitPassingEndPointInfo) in GetMatchingRouteEdgeBySegments( representativeSubRoute, routeEdge, passingEndPointInfo ) ) {
+          var mepCurve = mepSystemCreator.CreateEdgeElement( splitRouteEdge, subRoute, splitPassingEndPointInfo ) ;
+          mepCurve.SetRepresentativeSubRoute( representativeSubRouteInfo ) ;
+          groupedSubRoutes.Add( subRoute );
+          yield return mepCurve ;
         }
+
+        representativeSubRoute.SetSubRouteGroup( groupedSubRoutes.ConvertAll( subRoute => new SubRouteInfo( subRoute ) ) ) ;
       }
     }
 
-    private static IEnumerable<(SubRoute, EndPointKey, EndPointKey)> GetFromToEndPointKeys( SubRoute subRoute )
+    private IEnumerable<(SubRoute, IRouteEdge, PassingEndPointInfo)> GetMatchingRouteEdgeBySegments( SubRoute representativeSubRoute, IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo )
     {
-      return subRoute.Segments.Select( segment => ( subRoute, GetConnectingEndPointKey( segment.FromEndPoint ), GetConnectingEndPointKey( segment.ToEndPoint ) ) ) ;
-    }
-
-    private static EndPointKey GetConnectingEndPointKey( IEndPoint endPoint )
-    {
-      return ( endPoint as RouteEndPoint )?.EndPointKeyOverSubRoute ?? endPoint.Key ;
-    }
-
-    private IEnumerable<(SubRoute, IRouteEdge, PassingEndPointInfo)> GetMatchingRouteEdgeBySegments( IReadOnlyCollection<(SubRoute, EndPointKey, EndPointKey)> allFromToList, IRouteEdge routeEdge, PassingEndPointInfo passingEndPointInfo )
-    {
-      foreach ( var (subRoute, fromEndPointKey, toEndPointKey) in allFromToList ) {
+      if ( false == _branchMap!.TryGetValue( representativeSubRoute, out var passingBranchInfo ) ) throw new KeyNotFoundException() ;
+      
+      foreach ( var (subRoute, fromEndPointKey, toEndPointKey) in passingBranchInfo.GetPassingSubRoutes() ) {
         if ( false == passingEndPointInfo.TryGetFromEndPoint( fromEndPointKey, out var fromEndPoint ) ) continue ;
         if ( false == passingEndPointInfo.TryGetToEndPoint( toEndPointKey, out var toEndPoint ) ) continue ;
 
-        var splitRouteEdge = CreateSplitRouteEdge( routeEdge, ( fromEndPointKey, toEndPointKey ) ) ;
-        var splitPassingEndPointInfo = passingEndPointInfo.CreateSubPassingEndPointInfo( fromEndPoint, toEndPoint ) ;
+        var splitRouteEdge = CreateSplitRouteEdge( routeEdge, subRoute.Route ) ;
+        var splitPassingEndPointInfo = PassingEndPointInfo.CreatePassingEndPointInfo( fromEndPoint, toEndPoint ) ;
         yield return ( subRoute, splitRouteEdge, splitPassingEndPointInfo ) ;
       }
     }
 
-    private IRouteEdge CreateSplitRouteEdge( IRouteEdge routeEdge, (EndPointKey From, EndPointKey To) segment )
+    private IRouteEdge CreateSplitRouteEdge( IRouteEdge routeEdge, Route route )
     {
-      var startVertex = GetSplitVertex( routeEdge.Start, segment ) ;
-      var endVertex = GetSplitVertex( routeEdge.End, segment ) ;
+      var startVertex = GetSplitVertex( routeEdge.Start, route ) ;
+      var endVertex = GetSplitVertex( routeEdge.End, route ) ;
       return new SplitRouteEdge( routeEdge, startVertex, endVertex ) ;
     }
 
-    private IRouteVertex GetSplitVertex( IRouteVertex routeVertex, (EndPointKey From, EndPointKey To) segment )
+    private IRouteVertex GetSplitVertex( IRouteVertex routeVertex, Route route )
     {
-      if ( false == _splitVertices.TryGetValue( ( routeVertex, segment ), out var splitVertex ) ) {
+      if ( false == _splitVertices.TryGetValue( ( routeVertex, route ), out var splitVertex ) ) {
         splitVertex = new SplitRouteVertex( routeVertex ) ;
-        _splitVertices.Add( ( routeVertex, segment ), splitVertex ) ;
+        _splitVertices.Add( ( routeVertex, route ), splitVertex ) ;
       }
 
       return splitVertex ;
     }
 
-    private class SplitRouteVertex : IRouteVertex
+    private class SplitRouteVertex : IPseudoTerminalPoint
     {
-      private readonly IRouteVertex _baseRouteVertex ;
-
       public SplitRouteVertex( IRouteVertex routeVertex )
       {
-        _baseRouteVertex = routeVertex ;
+        BaseRouteVertex = routeVertex ;
       }
 
-      public Vector3d Position => _baseRouteVertex.Position ;
+      public IRouteVertex BaseRouteVertex { get ; }
 
-      public IPipeDiameter PipeDiameter => _baseRouteVertex.PipeDiameter ;
+      public Vector3d Position => BaseRouteVertex.Position ;
 
-      public IAutoRoutingEndPoint LineInfo => _baseRouteVertex.LineInfo ;
+      public IPipeDiameter PipeDiameter => BaseRouteVertex.PipeDiameter ;
 
-      public bool IsOverflow => _baseRouteVertex.IsOverflow ;
+      public IAutoRoutingEndPoint LineInfo => BaseRouteVertex.LineInfo ;
+
+      public bool IsOverflow => BaseRouteVertex.IsOverflow ;
     }
 
     private class SplitRouteEdge : IRouteEdge

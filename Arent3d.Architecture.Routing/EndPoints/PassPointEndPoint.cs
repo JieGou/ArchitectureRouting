@@ -1,14 +1,17 @@
 using System ;
 using System.Collections.Generic ;
+using System.Diagnostics ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
 {
-  public class PassPointEndPoint : IEndPoint
+  [DebuggerDisplay("{Key}")]
+  public class PassPointEndPoint : IEndPointOfPassPoint
   {
     public const string Type = "Pass Point" ;
 
@@ -49,7 +52,20 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
 
     public string TypeName => Type ;
-    public EndPointKey Key => new EndPointKey( TypeName, PassPointId.IntegerValue.ToString() ) ;
+    public string DisplayTypeName => "EndPoint.DisplayTypeName.PassPoint".GetAppStringByKeyOrDefault( TypeName ) ;
+
+    public EndPointKey Key => KeyFromPassPointId( PassPointId ) ;
+
+    public static EndPointKey KeyFromPassPointId( ElementId passPointId ) => new EndPointKey( Type, passPointId.IntegerValue.ToString() ) ;
+
+    internal static PassPointEndPoint? FromKeyParam( Document document, string param )
+    {
+      if ( false == int.TryParse( param, out var passPointId ) ) return null ;
+      if ( document.GetElementById<FamilyInstance>( passPointId ) is not { } instance ) return null ;
+      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.PassPoint )?.Id ) return null ;
+
+      return new PassPointEndPoint( instance ) ;
+    }
 
     public bool IsReplaceable => false ;
 
@@ -62,8 +78,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public Instance? GetPassPoint() => Document.GetElementById<Instance>( PassPointId ) ;
 
     private XYZ PreferredPosition { get ; set ; } = XYZ.Zero ;
-    
-    public XYZ RoutingStartPosition => GetPreferredStartPosition() ;
+
+    public XYZ RoutingStartPosition => GetPreferredStartPosition() ?? PreferredPosition ;
     private XYZ PreferredDirection { get ; set ; } = XYZ.Zero ;
     public XYZ Direction => GetPassPoint()?.GetTotalTransform().BasisX ?? PreferredDirection ;
     private double? PreferredRadius { get ; set ; } = 0 ;
@@ -84,38 +100,39 @@ namespace Arent3d.Architecture.Routing.EndPoints
     }
 
     /// <summary>
-    /// return startposition after comparing to FixedBopHeight
+    /// return start position after comparing to FixedBopHeight
     /// </summary>
     /// <returns></returns>
-    private XYZ GetPreferredStartPosition()
+    private XYZ? GetPreferredStartPosition()
     {
-      var passPoint = GetPassPoint() ;
-      var originalStartPosition = passPoint?.GetTotalTransform().Origin ?? PreferredPosition ;
-      var startPosition = originalStartPosition ;
+      if ( GetPassPoint() is not { } passPoint ) return null ;
 
-      if ( passPoint is { } passP && passP.GetRouteName() is { } routeName ) {
-        var route = RouteCache.Get( passP.Document )[ routeName ] ;
-        var passpointKey = this.Key ;
-        var segments = GetRelatedSegments( route, passpointKey ) ;
-        var targetSegment = segments?.Where( s => s.FixedBopHeight != null ).FirstOrDefault( h => ! Equals( h.FixedBopHeight, passPoint.GetTotalTransform().Origin.Z ) ) ;
-        var targetHeight = targetSegment?.FixedBopHeight ;
-        var targetDiameter = targetSegment?.PreferredNominalDiameter ;
+      var startPosition = passPoint.GetTotalTransform().Origin ;
 
-        if ( targetHeight is { } fixedBopHeight && targetDiameter is {} diameter &&  passP.GetTotalTransform().Origin.Z is { } originZ ) {
-          var fixedCenterHeight = fixedBopHeight + diameter/2 ;
-          var difference = Math.Abs( fixedCenterHeight - originZ ) ;
-          if ( difference < targetDiameter ) {
-            startPosition = new XYZ( originalStartPosition.X, originalStartPosition.Y, fixedCenterHeight ) ;
-          }
-        }
-      }
+      if ( passPoint.GetRouteName() is not { } routeName || false == RouteCache.Get( passPoint.Document ).TryGetValue( routeName, out var route ) ) return startPosition ;
 
-      return startPosition ;
+      var segments = GetRelatedSegments( route, Key ) ;
+      var passPointZ = passPoint.GetTotalTransform().Origin.Z ;
+      if ( segments.FirstOrDefault( s => HasDifferentHeight( s.FixedBopHeight, passPointZ ) ) is not { } targetSegment ) return startPosition ;
+      if ( targetSegment.FixedBopHeight is not { } fixedBopHeight ) return startPosition ;
+      if ( targetSegment.PreferredNominalDiameter is not { } diameter ) return startPosition ;
+
+      var fixedCenterHeight = fixedBopHeight + diameter / 2 ;
+      var difference = Math.Abs( fixedCenterHeight - passPointZ ) ;
+      if ( diameter <= difference ) return startPosition ;
+
+      return new XYZ( startPosition.X, startPosition.Y, fixedCenterHeight ) ;
     }
 
-    private IEnumerable<RouteSegment>? GetRelatedSegments( Route? route, EndPointKey? pointKey )
+    private static bool HasDifferentHeight( double? fixedBopHeight, double passPointZ )
     {
-      return route?.RouteSegments.Where( s => s.FromEndPoint.Key == pointKey || s.ToEndPoint.Key == pointKey ) ;
+      if ( fixedBopHeight is not { } height ) return false ;
+      return ( passPointZ != height ) ; // Explicit comparison
+    }
+
+    private static IEnumerable<RouteSegment> GetRelatedSegments( Route route, EndPointKey pointKey )
+    {
+      return route.RouteSegments.Where( s => s.FromEndPoint.Key == pointKey || s.ToEndPoint.Key == pointKey ) ;
     }
 
     public PassPointEndPoint( Instance instance )

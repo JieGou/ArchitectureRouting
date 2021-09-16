@@ -1,4 +1,5 @@
 using System ;
+using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Utility.Serialization ;
@@ -21,6 +22,18 @@ namespace Arent3d.Architecture.Routing
     public IEndPoint FromEndPoint { get ; private set ; }
     public IEndPoint ToEndPoint { get ; private set ; }
     public bool IsRoutingOnPipeSpace { get ; internal set ; } = false ;
+
+    public IReadOnlyCollection<SubRouteInfo> SubRouteGroup { get ; private set ; } = Array.Empty<SubRouteInfo>() ;
+
+    internal void SetSubRouteGroup( IReadOnlyCollection<SubRouteInfo> subRouteGroup )
+    {
+      if ( 1 < subRouteGroup.Count ) {
+        SubRouteGroup = subRouteGroup ;
+      }
+      else {
+        SubRouteGroup = Array.Empty<SubRouteInfo>() ;
+      }
+    }
 
     public double? GetRealNominalDiameter()
     {
@@ -98,6 +111,7 @@ namespace Arent3d.Architecture.Routing
       AvoidType,
       SystemClassificationInfo,
       SystemType,
+      SubRouteGroup,
     }
 
     protected override RouteSegment Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -105,8 +119,8 @@ namespace Arent3d.Architecture.Routing
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
       var preferredDiameter = deserializer.GetDouble( SerializeField.PreferredNominalDiameter ) ;
-      var fromId = EndPointExtensions.ParseEndPoint( storedElement.Document, deserializer.GetString( SerializeField.FromEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
-      var toId = EndPointExtensions.ParseEndPoint( storedElement.Document, deserializer.GetString( SerializeField.ToEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      var fromId = storedElement.Document.ParseEndPoint( deserializer.GetString( SerializeField.FromEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
+      var toId = storedElement.Document.ParseEndPoint( deserializer.GetString( SerializeField.ToEndPoint ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
       var isRoutingOnPipeSpace = deserializer.GetBool( SerializeField.IsRoutingOnPipeSpace ) ?? throw new InvalidOperationException() ;
       var curveType = deserializer.GetElement<SerializeField, MEPCurveType>( SerializeField.CurveType, storedElement.Document ) ?? throw new InvalidOperationException() ;
       var fixedBopHeight = deserializer.GetDouble( SerializeField.FixedBopHeight ) ;
@@ -116,8 +130,14 @@ namespace Arent3d.Architecture.Routing
       if ( classificationInfo.HasSystemType() ) {
         systemType = deserializer.GetElement<SerializeField, MEPSystemType>( SerializeField.SystemType, storedElement.Document ) ?? throw new InvalidOperationException() ;
       }
+      var subRouteGroups = deserializer.GetNonNullArray( SerializeField.SubRouteGroup, SubRouteInfo.CreateForDeserialize ) ;
 
-      return new RouteSegment( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
+      var routeSegment = new RouteSegment( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType ) ;
+      if ( null != subRouteGroups ) {
+        routeSegment.SetSubRouteGroup( subRouteGroups ) ;
+      }
+
+      return routeSegment ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, RouteSegment customTypeValue )
@@ -133,6 +153,10 @@ namespace Arent3d.Architecture.Routing
       serializerObject.Add( SerializeField.AvoidType, customTypeValue.AvoidType ) ;
       serializerObject.AddNonNull( SerializeField.SystemClassificationInfo, customTypeValue.SystemClassificationInfo.Serialize() ) ;
       serializerObject.Add( SerializeField.SystemType, customTypeValue.SystemType ) ;
+
+      if ( 1 < customTypeValue.SubRouteGroup.Count ) {
+        serializerObject.AddNonNull( SerializeField.SubRouteGroup, customTypeValue.SubRouteGroup ) ;
+      }
 
       return serializerObject ;
     }

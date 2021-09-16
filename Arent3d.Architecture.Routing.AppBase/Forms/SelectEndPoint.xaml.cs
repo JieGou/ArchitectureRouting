@@ -56,12 +56,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       public EndPointInfoClass( Document document, IEndPoint point )
       {
         Pointer = point ;
-        if ( point is RouteEndPoint routeEndPoint ) {
-          _label = $"{routeEndPoint.TypeName} - {routeEndPoint.RouteName}" ;
+        if ( point is IRouteBranchEndPoint routeEndPoint ) {
+          _label = $"{routeEndPoint.DisplayTypeName} - {routeEndPoint.RouteName}" ;
         }
         else {
           var position = point.RoutingStartPosition ;
-          _label = $"{Pointer.TypeName} - {GetDisplayValue( document, position.X )}, {GetDisplayValue( document, position.Y )}, {GetDisplayValue( document, position.Z )}" ;
+          _label = $"{Pointer.DisplayTypeName} - {GetDisplayValue( document, position.X )}, {GetDisplayValue( document, position.Y )}, {GetDisplayValue( document, position.Z )}" ;
         }
       }
 

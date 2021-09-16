@@ -196,6 +196,19 @@
         <string>下に避ける</string>
 
 
+        <!-- End Point Names -->
+        <key>EndPoint.DisplayTypeName.Connector</key>
+        <string>コネクター</string>
+        <key>EndPoint.DisplayTypeName.PassPoint</key>
+        <string>通過点</string>
+        <key>EndPoint.DisplayTypeName.Route</key>
+        <string>他のFrom-to</string>
+        <key>EndPoint.DisplayTypeName.Terminal</key>
+        <string>座標</string>
+        <key>EndPoint.DisplayTypeName.PassPointBranch</key>
+        <string>他のFrom-to</string>
+
+
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
         <string>幅</string>

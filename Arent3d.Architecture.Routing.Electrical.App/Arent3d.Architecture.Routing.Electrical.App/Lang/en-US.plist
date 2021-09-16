@@ -18,6 +18,9 @@
         <key>Electrical.App.Panels.Routing.Racks</key>
         <string>Pipe Spaces</string>
 
+        <key>Electrical.App.Panels.Routing.Shafts</key>
+        <string>Shaft</string>
+      
         <key>Electrical.App.Panels.Routing.Monitor</key>
         <string>Monitor Selection</string>
 
@@ -214,6 +217,12 @@
         <string>Avoid on From-To</string>
         <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket</key>
         <string>Avoid below From-To</string>
+
+        <key>Dialog.Forms.FromToWindow.Title</key>
+        <string>Electrical From-To</string>
+
+        <key>Dialog.Forms.FromToTree.Title</key>
+        <string>Electrical From-To</string>
 
 
         <!-- Parameter Names -->

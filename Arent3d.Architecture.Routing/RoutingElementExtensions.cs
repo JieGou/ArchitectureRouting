@@ -213,15 +213,15 @@ namespace Arent3d.Architecture.Routing
 
     public static void SetPassPointConnectors( this Element element, IReadOnlyCollection<Connector> fromConnectors, IReadOnlyCollection<Connector> toConnectors )
     {
-      element.SetProperty( RoutingParameter.PassPointNextToFromSideConnectorIds, string.Join( "|", fromConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
-      element.SetProperty( RoutingParameter.PassPointNextToToSideConnectorIds, string.Join( "|", toConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
+      element.SetProperty( PassPointParameter.PassPointNextToFromSideConnectorIds, string.Join( "|", fromConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
+      element.SetProperty( PassPointParameter.PassPointNextToToSideConnectorIds, string.Join( "|", toConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
     }
 
     private static readonly char[] PassPointConnectorSeparator = { '|' } ;
 
     public static IEnumerable<IEndPoint> GetPassPointConnectors( this Element element, bool isFrom )
     {
-      var parameter = isFrom ? RoutingParameter.PassPointNextToFromSideConnectorIds : RoutingParameter.PassPointNextToToSideConnectorIds ;
+      var parameter = isFrom ? PassPointParameter.PassPointNextToFromSideConnectorIds : PassPointParameter.PassPointNextToToSideConnectorIds ;
       if ( false == element.TryGetProperty( parameter, out string? str ) ) return Array.Empty<IEndPoint>() ;
       if ( string.IsNullOrEmpty( str ) ) return Array.Empty<IEndPoint>() ;
 
@@ -487,6 +487,16 @@ namespace Arent3d.Architecture.Routing
       return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRouteName() == routeName ) ;
     }
 
+    public static IEnumerable<TElement> GetAllElementsOfRepresentativeRouteName<TElement>( this Document document, string routeName ) where TElement : Element
+    {
+      var parameterName = document.GetParameterName( RoutingParameter.RepresentativeRouteName ) ;
+      if ( null == parameterName ) return Array.Empty<TElement>() ;
+
+      var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
+
+      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRepresentativeRouteName() == routeName ) ;
+    }
+
     public static IEnumerable<TElement> GetAllElementsOfSubRoute<TElement>( this Document document, string routeName, int subRouteIndex ) where TElement : Element
     {
       var routeNameParameterName = document.GetParameterName( RoutingParameter.RouteName ) ;
@@ -532,6 +542,14 @@ namespace Arent3d.Architecture.Routing
     {
       if ( false == element.TryGetProperty( RoutingParameter.SubRouteIndex, out int value ) ) return null ;
       return value ;
+    }
+
+    public static SubRouteInfo? GetSubRouteInfo( this Element element )
+    {
+      if ( element.GetRouteName() is not { } routeName ) return null ;
+      if ( element.GetSubRouteIndex() is not { } subRouteIndex ) return null ;
+
+      return new SubRouteInfo( routeName, subRouteIndex ) ;
     }
 
     public static IEnumerable<Connector> CollectRoutingEndPointConnectors( this Document document, string routeName, bool fromConnector )
@@ -611,9 +629,44 @@ namespace Arent3d.Architecture.Routing
         return Array.Empty<IEndPoint>() ;
       }
 
-      return EndPointExtensions.ParseEndPoints( element.Document, str ) ;
+      return element.Document.ParseEndPoints( str ) ;
     }
 
+    public static IReadOnlyCollection<SubRoute> GetSubRouteGroup( this Element element )
+    {
+      if ( ( element.GetRepresentativeSubRoute() ?? element.GetSubRouteInfo() ) is not { } subRouteInfo ) return Array.Empty<SubRoute>() ;
+
+      var routeCache = RouteCache.Get( element.Document ) ;
+      if ( routeCache.GetSubRoute( subRouteInfo ) is not { } subRoute ) return Array.Empty<SubRoute>() ;
+
+      var subRouteGroup = subRoute.GetSubRouteGroup() ;
+      if ( subRouteGroup.Count < 2 ) return new[] { subRoute } ;
+
+      var result = new List<SubRoute>( subRouteGroup.Count ) ;
+      result.AddRange( subRouteGroup.Select( routeCache.GetSubRoute ).NonNull() ) ;
+      return result ;
+    }
+
+    public static void SetRepresentativeSubRoute( this Element element, SubRouteInfo subRouteInfo )
+    {
+      element.SetProperty( RoutingParameter.RepresentativeRouteName, subRouteInfo.RouteName ) ;
+      element.SetProperty( RoutingParameter.RepresentativeSubRouteIndex, subRouteInfo.SubRouteIndex ) ;
+    }
+
+    public static string? GetRepresentativeRouteName( this Element element )
+    {
+      if ( false == element.TryGetProperty( RoutingParameter.RepresentativeRouteName, out string? value ) ) return null ;
+      return value ;
+    }
+
+    public static SubRouteInfo? GetRepresentativeSubRoute( this Element element )
+    {
+      if ( element.GetRepresentativeRouteName() is not { } routeName ) return null ;
+      if ( false == element.TryGetProperty( RoutingParameter.RepresentativeSubRouteIndex, out int subRouteIndex ) ) return null ;
+
+      return new SubRouteInfo( routeName, subRouteIndex ) ;
+    }
+    
     #endregion
 
     #region Center Lines
