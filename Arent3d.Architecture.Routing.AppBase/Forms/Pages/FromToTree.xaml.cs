@@ -442,6 +442,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         else {
           selectedItem.IsEditing = false ;
           selectedItem.ItemTypeName = tb.Text ;
+          tb.Text = "" ;
           if ( SelectedFromToViewModel.UiApp is { } app ) {
             PostCommandExecutor.ChangeRouteNameCommand(app);
           }
@@ -479,8 +480,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void TextBox_PreviewLostKeyboardFocus( object sender, KeyboardFocusChangedEventArgs e )
     {
       System.Windows.Controls.TextBox tb = (System.Windows.Controls.TextBox) sender ;
-      var selectedItem = (FromToItem) FromToTreeView.SelectedItem ;
-
+      if ( FromToTreeView.SelectedItem is not FromToItem selectedItem ) return ;
 
       if ( tb.Text == "" ) {
         tb.Text = selectedItem.ItemTypeName ;
@@ -493,6 +493,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       else {
         selectedItem.IsEditing = false ;
         selectedItem.ItemTypeName = tb.Text ;
+        tb.Text = "" ;
         if ( SelectedFromToViewModel.UiApp is { } app ) {
           PostCommandExecutor.ChangeRouteNameCommand(app);
         }

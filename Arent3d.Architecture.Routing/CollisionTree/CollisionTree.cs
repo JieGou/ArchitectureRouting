@@ -18,9 +18,9 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     private readonly IReadOnlyCollection<ElementFilter> _filters ;
     private readonly BuiltInCategory[] _categoriesOnRack ;
     private readonly ElementParameterFilter _hasRouteNameFilter ;
-    private readonly IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> _routeConditions ;
+    private readonly IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> _routeConditions ;
 
-    public CollisionTree( Document document, ICollisionCheckTargetCollector collector, IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> routeConditions )
+    public CollisionTree( Document document, ICollisionCheckTargetCollector collector, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditions )
     {
       _document = document ;
       _collector = collector ;
@@ -92,9 +92,8 @@ namespace Arent3d.Architecture.Routing.CollisionTree
       var boxFilter = new BoundingBoxIntersectsFilter( new Outline( box.Min.ToXYZRaw(), box.Max.ToXYZRaw() ) ) ;
       var elements = _document.GetAllElements<Element>().OfCategory( _categoriesOnRack ).Where( boxFilter ).Where( _hasRouteNameFilter ) ;
       foreach ( var element in elements ) {
-        if ( element.GetRouteName() is not { } routeName ) continue ;
-        if ( element.GetSubRouteIndex() is not { } subRouteIndex ) continue ;
-        if ( false == _routeConditions.TryGetValue( ( routeName, subRouteIndex ), out var routeCondition ) ) continue ;
+        if ( element.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
+        if ( false == _routeConditions.TryGetValue( subRouteInfo, out var routeCondition ) ) continue ;
 
         yield return ( GetBoundingBox( element ), routeCondition, false ) ;
       }

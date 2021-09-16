@@ -29,5 +29,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         _ => throw new InvalidOperationException(),
       } ;
     }
+
+    public override IFailuresPreprocessor CreateFailuresPreprocessor() => new RoutingFailuresPreprocessor( this ) ;
   }
 }

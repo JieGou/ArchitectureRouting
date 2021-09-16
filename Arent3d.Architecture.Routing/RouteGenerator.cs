@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing
   public class RouteGenerator : RouteGeneratorBase<AutoRoutingTarget>
   {
     private readonly Document _document ;
-    private readonly IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> _routeConditions ;
+    private readonly IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> _routeConditions ;
     private readonly List<Connector[]> _badConnectors = new() ;
     private readonly PassPointConnectorMapper _globalPassPointConnectorMapper = new() ;
 
@@ -37,13 +37,13 @@ namespace Arent3d.Architecture.Routing
       Specifications.Set( DiameterProvider.Instance, PipeClearanceProvider.Instance ) ;
     }
 
-    private static IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> CreateRouteConditions( Document document, IReadOnlyCollection<Route> routes, IFittingSizeCalculator fittingSizeCalculator )
+    private static IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> CreateRouteConditions( Document document, IReadOnlyCollection<Route> routes, IFittingSizeCalculator fittingSizeCalculator )
     {
-      var dic = new Dictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition>() ;
+      var dic = new Dictionary<SubRouteInfo, MEPSystemRouteCondition>() ;
       
       foreach ( var route in routes ) {
         foreach ( var subRoute in route.SubRoutes ) {
-          var key = subRoute.GetKey() ;
+          var key = new SubRouteInfo( subRoute ) ;
           if ( dic.ContainsKey( key ) ) break ;  // same sub route
 
           var mepSystem = new RouteMEPSystem( document, subRoute ) ;
