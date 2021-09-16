@@ -70,8 +70,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var allConnectors = new FilteredElementCollector(document).OfClass(typeof(FamilyInstance))
                                                                .OfCategory(BuiltInCategory.OST_ElectricalFixtures)
-                                                               .AsEnumerable()
-                                                               .OfType<FamilyInstance>();
+                                                               .AsEnumerable();
         var connectors = allConnectors.GroupBy(x => x.LevelId).ToDictionary(g => g.Key, g => g.ToList());
 
 
@@ -94,7 +93,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             {
               p.ForEach(connectors[level.Id].Count, connectors[level.Id], connector =>
               {
-                var elevationFromFloor = connector.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).AsDouble();
+                var family = (connector as FamilyInstance)!;
+                var elevationFromFloor = family.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).AsDouble();
                 if (elevationFromFloor != heightConnector)
                 {
                   connector.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(heightConnector);

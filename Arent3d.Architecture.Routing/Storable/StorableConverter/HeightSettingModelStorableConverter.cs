@@ -1,16 +1,11 @@
-﻿using Arent3d.Architecture.Routing.Storable.Model;
-using Arent3d.Revit;
-using Arent3d.Utility.Serialization;
-using Autodesk.Revit.DB;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit ;
+using Arent3d.Utility.Serialization ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 {
-  [StorableConverterOf(typeof(HeightSettingModel))]
+  [StorableConverterOf( typeof( HeightSettingModel ) )]
   internal class HeightSettingModelStorableConverter : StorableConverterBase<HeightSettingModel>
   {
     private enum SerializeField
@@ -27,33 +22,28 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
-      var levelId = deserializer.GetInt(SerializeField.LevelId);
-      var levelName = deserializer.GetString(SerializeField.LevelName);
-      var elevation = deserializer.GetDouble(SerializeField.Elevation);
-      var underfloor = deserializer.GetDouble(SerializeField.Underfloor);
-      var heightOfLevel = deserializer.GetDouble(SerializeField.HeightOfLevel);
-      var heightOfConnectors = deserializer.GetDouble(SerializeField.HeightOfConnectors);
+      var levelId = deserializer.GetInt( SerializeField.LevelId ) ;
+      var levelName = deserializer.GetString( SerializeField.LevelName ) ;
+      var elevation = deserializer.GetDouble( SerializeField.Elevation ) ;
+      var underfloor = deserializer.GetDouble( SerializeField.Underfloor ) ;
+      var heightOfLevel = deserializer.GetDouble( SerializeField.HeightOfLevel ) ;
+      var heightOfConnectors = deserializer.GetDouble( SerializeField.HeightOfConnectors ) ;
 
-      return new HeightSettingModel(levelId,
-                                    levelName,
-                                    elevation,
-                                    underfloor,
-                                    heightOfLevel,
-                                    heightOfConnectors);
+      return new HeightSettingModel( levelId, levelName, elevation, underfloor, heightOfLevel, heightOfConnectors ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, HeightSettingModel customTypeValue )
     {
-      var serializerObject = new SerializerObject<SerializeField>();
+      var serializerObject = new SerializerObject<SerializeField>() ;
 
-      serializerObject.Add(SerializeField.LevelId, customTypeValue.LevelId);
-      serializerObject.AddNonNull(SerializeField.LevelName, customTypeValue.LevelName);
-      serializerObject.Add(SerializeField.Elevation, customTypeValue.Elevation);
-      serializerObject.Add(SerializeField.Underfloor, customTypeValue.Underfloor);
-      serializerObject.Add(SerializeField.HeightOfLevel, customTypeValue.HeightOfLevel);
-      serializerObject.Add(SerializeField.HeightOfConnectors, customTypeValue.HeightOfConnectors);
+      serializerObject.Add( SerializeField.LevelId, customTypeValue.LevelId ) ;
+      serializerObject.AddNonNull( SerializeField.LevelName, customTypeValue.LevelName ) ;
+      serializerObject.Add( SerializeField.Elevation, customTypeValue.Elevation ) ;
+      serializerObject.Add( SerializeField.Underfloor, customTypeValue.Underfloor ) ;
+      serializerObject.Add( SerializeField.HeightOfLevel, customTypeValue.HeightOfLevel ) ;
+      serializerObject.Add( SerializeField.HeightOfConnectors, customTypeValue.HeightOfConnectors ) ;
 
-      return serializerObject;
+      return serializerObject ;
     }
   }
 }
