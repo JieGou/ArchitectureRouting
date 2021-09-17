@@ -55,6 +55,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button(typeof(NewEnvelopeCommand), OnlyInitialized = true)]
         private static class NewEnvelopeCommandButton { }
+                
+        [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
+        private static class ShowHeightSettingCommandButton { }
+
       }
 
       [Panel("arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors")]
