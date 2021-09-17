@@ -72,6 +72,7 @@ namespace Arent3d.Architecture.Routing.Storable
 
     public bool Equals( HeightSettingStorable other )
     {
+      if ( other == null ) return false ;
       return Enumerable.SequenceEqual( HeightSettingsData.Values, other.HeightSettingsData.Values, new HeightSettingStorableComparer() ) ;
     }
   }
