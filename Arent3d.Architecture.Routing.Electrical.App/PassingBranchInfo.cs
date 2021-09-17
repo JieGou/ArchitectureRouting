@@ -35,8 +35,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     private static IEndPoint GetFromEndPoint( SubRoute subRoute ) => subRoute.Segments.First().FromEndPoint ;
     private static IEndPoint GetToEndPoint( SubRoute subRoute ) => subRoute.Segments.First().ToEndPoint ;
 
-    private static SubRoute GetPreviousSubRoute( SubRoute subRoute ) => subRoute.Route.GetSubRoute( subRoute.SubRouteIndex - 1 ) ?? throw new InvalidOperationException() ;
-    private static SubRoute GetNextSubRoute( SubRoute subRoute ) => subRoute.Route.GetSubRoute( subRoute.SubRouteIndex + 1 ) ?? throw new InvalidOperationException() ;
+    private static SubRoute GetPreviousSubRoute( SubRoute subRoute ) => subRoute.PreviousSubRoute ?? throw new InvalidOperationException() ;
+    private static SubRoute GetNextSubRoute( SubRoute subRoute ) => subRoute.NextSubRoute ?? throw new InvalidOperationException() ;
 
     private static IReadOnlyDictionary<SubRoute, (List<SubRoute> Prev, List<SubRoute> Next)> CreatePrevNextSubRouteDictionary( IEnumerable<Route> routes )
     {

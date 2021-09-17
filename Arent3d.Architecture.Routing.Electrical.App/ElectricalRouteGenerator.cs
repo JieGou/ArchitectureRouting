@@ -33,15 +33,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       foreach ( var routeEdge in result.RouteEdges ) {
         var passingEndPointInfo = result.GetPassingEndPointInfo( routeEdge ) ;
         var representativeSubRoute = autoRoutingTarget.GetSubRoute( routeEdge ) ;
+        var representativeSubRouteInfo = new SubRouteInfo( representativeSubRoute ) ;
 
-        var mepCurveGroup = new List<MEPCurve>() ;
+        var groupedSubRoutes = new List<SubRoute>() ;
         foreach ( var (subRoute, splitRouteEdge, splitPassingEndPointInfo) in GetMatchingRouteEdgeBySegments( representativeSubRoute, routeEdge, passingEndPointInfo ) ) {
           var mepCurve = mepSystemCreator.CreateEdgeElement( splitRouteEdge, subRoute, splitPassingEndPointInfo ) ;
-          mepCurve.SetRepresentativeRouteName( representativeSubRoute.Route.RouteName ) ;
+          mepCurve.SetRepresentativeSubRoute( representativeSubRouteInfo ) ;
+          groupedSubRoutes.Add( subRoute );
           yield return mepCurve ;
-          mepCurveGroup.Add( mepCurve ) ;
         }
-        mepCurveGroup.SetMEPCurvesAsSameGroup() ;
+
+        representativeSubRoute.SetSubRouteGroup( groupedSubRoutes.ConvertAll( subRoute => new SubRouteInfo( subRoute ) ) ) ;
       }
     }
 

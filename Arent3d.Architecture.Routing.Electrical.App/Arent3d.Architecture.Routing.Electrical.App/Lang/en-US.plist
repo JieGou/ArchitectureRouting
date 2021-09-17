@@ -99,6 +99,9 @@ Tree</string>
         <key>Electrical.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change
 FixedBopHeight</string>
+
+		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
+		<string>Height Setting</string>
         
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>Create Rack

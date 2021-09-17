@@ -109,13 +109,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static SubRoute? GetRepresentativeSubRoute( Element element )
     {
-      if ( element is not MEPCurve mepCurve || mepCurve.GetRepresentativeRouteName() is not { } routeName ) return null ;
-      if ( mepCurve.GetMEPCurvesOnSameGroup().FirstOrDefault( curve => curve.GetRouteName() == routeName && null != curve.GetSubRouteIndex() ) is not { } representativeElement ) return null ;
+      if ( ( element.GetRepresentativeSubRoute() ?? element.GetSubRouteInfo() ) is not { } subRouteInfo ) return null ;
 
-      if ( false == RouteCache.Get( element.Document ).TryGetValue( routeName, out var route ) ) return null ;
-
-      return route.GetSubRoute( representativeElement.GetSubRouteIndex()!.Value ) ;
+      return RouteCache.Get( element.Document ).GetSubRoute( subRouteInfo ) ;
     }
+
     private static Instance? InsertBranchingPassPointElement( Document document, SubRoute subRoute, Element routingElement, XYZ pos )
     {
       if ( routingElement.GetRoutingConnectors( true ).FirstOrDefault() is not { } fromConnector ) return null ;

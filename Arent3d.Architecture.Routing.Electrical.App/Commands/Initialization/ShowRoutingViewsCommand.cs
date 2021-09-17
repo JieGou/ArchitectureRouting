@@ -7,7 +7,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Initialization.ShowRoutingViewsCommand", DefaultString = "Plans" )]
-  [Image( "resources/Plans.png", ImageType = ImageType.Large )]
+  [Image("resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class ShowRoutingViewsCommand : ShowRoutingViewsCommandBase
   {
   }

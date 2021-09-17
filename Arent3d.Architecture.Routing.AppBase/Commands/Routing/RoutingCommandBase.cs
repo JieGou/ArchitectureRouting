@@ -104,16 +104,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static void SetupFailureHandlingOptions( Transaction transaction, RoutingExecutor executor )
     {
-      transaction.SetFailureHandlingOptions( ModifyFailureHandlingOptions( transaction.GetFailureHandlingOptions(), executor ) ) ;
+      if ( executor.CreateFailuresPreprocessor() is not { } failuresPreprocessor ) return ;
+      
+      transaction.SetFailureHandlingOptions( ModifyFailureHandlingOptions( transaction.GetFailureHandlingOptions(), failuresPreprocessor ) ) ;
     }
 
-    private static FailureHandlingOptions ModifyFailureHandlingOptions( FailureHandlingOptions handlingOptions, RoutingExecutor executor )
+    private static FailureHandlingOptions ModifyFailureHandlingOptions( FailureHandlingOptions handlingOptions, IFailuresPreprocessor failuresPreprocessor )
     {
-      var failuresPreprocessor = new RoutingFailuresPreprocessor( executor ) ;
-
-      handlingOptions = handlingOptions.SetFailuresPreprocessor( failuresPreprocessor ) ;
-
-      return handlingOptions ;
+      return handlingOptions.SetFailuresPreprocessor( failuresPreprocessor ) ;
     }
 
     protected abstract string GetTransactionNameKey() ;
@@ -131,40 +129,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected virtual IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       return Array.Empty<(string RouteName, RouteSegment Segment)>() ;
-    }
-
-
-    private class RoutingFailuresPreprocessor : IFailuresPreprocessor
-    {
-      private readonly RoutingExecutor _executor ;
-      
-      public RoutingFailuresPreprocessor( RoutingExecutor executor )
-      {
-        _executor = executor ;
-      }
-
-      public FailureProcessingResult PreprocessFailures( FailuresAccessor failuresAccessor )
-      {
-        var document = failuresAccessor.GetDocument() ;
-
-        var elementsToDelete = new HashSet<ElementId>() ;
-        foreach ( var failure in failuresAccessor.GetFailureMessages() ) {
-          foreach ( var elmId in failure.GetFailingElementIds() ) {
-            if ( document.GetElementById<MEPCurve>( elmId ) is null ) continue ;
-            elementsToDelete.Add( elmId ) ;
-          }
-        }
-
-        if ( 0 < elementsToDelete.Count ) {
-          elementsToDelete.ForEach( _executor.RegisterDeletedElement ) ;
-          failuresAccessor.DeleteElements( elementsToDelete.ToList() ) ;
-
-          return FailureProcessingResult.ProceedWithCommit ;
-        }
-        else {
-          return FailureProcessingResult.Continue ;
-        }
-      }
     }
   }
 }

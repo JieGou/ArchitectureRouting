@@ -66,22 +66,20 @@ namespace Arent3d.Architecture.Routing.EndPoints
       return route.GetSubRoute( SubRouteIndex ) ?? throw new KeyNotFoundException() ;
     }
 
-    public void UpdateRoute( string routeName, int subRouteIndex )
+    internal void ReplaceRouteName( string newRouteName )
     {
-      RouteName = routeName ;
-      SubRouteIndex = subRouteIndex ;
+      RouteName = newRouteName ;
     }
 
-    public RouteEndPoint( SubRoute subRoute )
+    public RouteEndPoint( SubRoute subRoute ) : this( subRoute.Route.Document, subRoute.Route.RouteName, subRoute.SubRouteIndex )
     {
-      _document = subRoute.Route.Document ;
-      UpdateRoute( subRoute.Route.RouteName, subRoute.SubRouteIndex ) ;
     }
 
     private RouteEndPoint( Document document, string routeName, int subRouteIndex )
     {
       _document = document ;
-      UpdateRoute( routeName, subRouteIndex ) ;
+      RouteName = routeName ;
+      SubRouteIndex = subRouteIndex ;
     }
 
     public XYZ GetRoutingDirection( bool isFrom ) => throw new InvalidOperationException() ;

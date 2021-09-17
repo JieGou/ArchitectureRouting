@@ -34,7 +34,7 @@ namespace Arent3d.Architecture.Routing
     {
       var oldName = this._routeName ;
 
-      RenameAllDescendents( oldName, routeName ) ;
+      RenameAllRelatedData( oldName, routeName ) ;
 
       this._routeName = routeName ;
       this.Save() ;
@@ -280,22 +280,37 @@ namespace Arent3d.Architecture.Routing
       return Enumerable.Empty<PassPointEndPoint>() ;
     }
 
-    private void RenameAllDescendents( string oldName, string newRouteName )
+    private void RenameAllRelatedData( string oldRouteName, string newRouteName )
     {
-      if ( oldName != "" && oldName != "None" ) {
-        var childBranches = GetChildBranches() ;
-        foreach ( var route in childBranches ) {
-          var endPoint = route._subRoutes.SelectMany( subRoute => subRoute.FromEndPoints.OfType<RouteEndPoint>() ).LastOrDefault( i => i.RouteName == oldName ) ;
-          // Update FromEndPoint's RouteName and save
-          endPoint?.UpdateRoute( newRouteName, endPoint.SubRouteIndex ) ;
-          route.Save() ;
+      RenameOtherSubRoutes( oldRouteName, newRouteName ) ;
+      RenameElements( oldRouteName, newRouteName ) ;
+    }
+
+    private void RenameOtherSubRoutes( string oldRouteName, string newRouteName )
+    {
+      foreach ( var route in RouteCache.Get( Document ).Values ) {
+        foreach ( var segment in route.SubRoutes.SelectMany( subRoute => subRoute.Segments ) ) {
+          foreach ( var endPoint in new[] { segment.FromEndPoint, segment.ToEndPoint }.OfType<RouteEndPoint>().Where( ep => ep.RouteName == oldRouteName ) ) {
+            endPoint.ReplaceRouteName( newRouteName ) ;
+          }
+
+          foreach ( var subRouteInfo in segment.SubRouteGroup.Where( info => info.RouteName == oldRouteName ) ) {
+            subRouteInfo.ReplaceRouteName( newRouteName ) ;
+          }
         }
 
-        var allElements = Document.GetAllElementsOfRouteName<Element>( oldName ) ;
-        foreach ( var element in allElements ) {
-          // Rename element's RouteName Parameter 
-          element.SetProperty( RoutingParameter.RouteName, newRouteName ) ;
-        }
+        route.Save() ;
+      }
+    }
+
+    private void RenameElements( string oldRouteName, string newRouteName )
+    {
+      foreach ( var element in Document.GetAllElementsOfRouteName<Element>( oldRouteName ) ) {
+        element.SetProperty( RoutingParameter.RouteName, newRouteName ) ;
+      }
+
+      foreach ( var element in Document.GetAllElementsOfRepresentativeRouteName<Element>( oldRouteName ) ) {
+        element.SetProperty( RoutingParameter.RepresentativeRouteName, newRouteName ) ;
       }
     }
 

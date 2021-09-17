@@ -29,5 +29,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         _ => throw new InvalidOperationException(),
       } ;
     }
+
+    public override IFailuresPreprocessor CreateFailuresPreprocessor() => new RoutingFailuresPreprocessor( this ) ;
   }
 }
