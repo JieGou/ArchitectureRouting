@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var result = document.Transaction( "TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault( "Import Pipe Spaces" ), _ =>
         {
-          GenerateConnector(uiDocument, originX, originY, originZ, uiDocument.ActiveView.GenLevel);
+          GenerateConnector(uiDocument, originX, originY, 0, uiDocument.ActiveView.GenLevel);
 
           return Result.Succeeded ;
         });
