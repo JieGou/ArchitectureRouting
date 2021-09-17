@@ -119,6 +119,7 @@ namespace Arent3d.Architecture.Routing
     public bool? UniqueIsRoutingOnPipeSpace => SubRoutes.Select( subRoute => subRoute.IsRoutingOnPipeSpace ).Distinct().Select( d => (bool?) d ).UniqueOrDefault() ;
 
     public double? UniqueFixedBopHeight => SubRoutes.Select( ( subRoute => subRoute.FixedBopHeight ) ).Distinct().UniqueOrDefault() ;
+    public AvoidType? UniqueAvoidType => SubRoutes.Select( subRoute => subRoute.AvoidType ).Distinct().Select( at => (AvoidType?)at ).UniqueOrDefault() ;
 
     /// <summary>
     /// for loading from storage.

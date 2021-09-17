@@ -69,7 +69,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
     protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()
     {
-      yield return new RoutingUpdateListener() ;
+      yield return new RoutingUpdateListener( FromToTreeManager ) ;
     }
   }
 }

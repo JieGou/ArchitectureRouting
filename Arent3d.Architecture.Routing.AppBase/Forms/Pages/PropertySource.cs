@@ -15,212 +15,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     public Document Document { get ; }
 
-
-    //For experimental state
-    private bool _isExperimental = true ;
-
     protected PropertySource( Document doc )
     {
       Document = doc ;
     }
+  }
 
+  /// <summary>
+  /// PropertySource for RouteItem, SubRouteItem
+  /// </summary>
+  public class RoutePropertySource : PropertySource
+  {
+    //Route
+    public Route TargetRoute { get ; }
+    public IReadOnlyCollection<SubRoute> TargetSubRoutes { get ; }
 
-    /// <summary>
-    /// PropertySource for RouteItem, SubRouteItem
-    /// </summary>
-    public class RoutePropertySource : PropertySource
+    public RouteProperties Properties { get ; }
+
+    public RoutePropertySource( Document doc, IReadOnlyCollection<SubRoute> subRoutes ) : base( doc )
     {
-      //Route
-      public Route? TargetRoute { get ; }
-      public readonly IReadOnlyCollection<SubRoute>? TargetSubRoutes ;
+      if ( 0 == subRoutes.Count ) throw new ArgumentException() ;
 
-      //Diameter
-      public double? Diameter { get ; private set ; }
-      public IList<double>? Diameters { get ; }
+      TargetSubRoutes = subRoutes ;
+      TargetRoute = subRoutes.First().Route ;
 
-      //SystemType 
-      public MEPSystemType? SystemType { get ; }
-      public IList<MEPSystemType>? SystemTypes { get ; }
-
-      //CurveType
-      public MEPCurveType? CurveType { get ; private set ; }
-      public IList<MEPCurveType>? CurveTypes { get ; }
-
-      //Direct
-      public bool? IsDirect { get ; private set ; }
-
-      //HeightSetting
-      public bool? UseFixedHeight { get ; private set ; }
-      public double? FixedHeight { get ; }
-
-      public AvoidType AvoidType { get ; }
-
-      public string? StandardType { get ; }
-
-      public IList<string>? StandardTypes { get ; }
-
-      public RoutePropertySource( Document doc, IReadOnlyCollection<SubRoute> subRoutes ) : base( doc )
-      {
-        TargetSubRoutes = subRoutes ;
-        TargetRoute = subRoutes.ElementAt( 0 ).Route ;
-
-        //Set properties
-        if ( TargetSubRoutes?.FirstOrDefault() is { } subRoute ) {
-          CurveType = subRoute.GetMEPCurveType() ;
-
-          //Diameter Info
-          Diameters = (IList<double>?) CurveType.GetNominalDiameters( Document.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
-          Diameter = subRoute.GetDiameter() ;
-
-          //System Type Info(PipingSystemType in lookup)
-          var systemClassification = subRoute.Route.GetSystemClassificationInfo() ;
-          if ( systemClassification.HasSystemType() ) {
-            SystemTypes = Document.GetSystemTypes( systemClassification ).OrderBy( s => s.Name ).ToList() ;
-            SystemType = subRoute.Route.GetMEPSystemType() ;
-          }
-          else {
-            SystemTypes = null ;
-            SystemType = null ;
-          }
-
-          //CurveType Info
-          var curveTypeId = CurveType.GetValidId() ;
-          // _isExperimental is true while we treat only round shape
-          CurveTypes = _isExperimental ? Document.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : Document.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
-
-
-          //Direct Info
-          IsDirect = subRoute.IsRoutingOnPipeSpace ;
-
-          //Height Info
-          UseFixedHeight = ( subRoute.FixedBopHeight != null ) ;
-          FixedHeight = subRoute.FixedBopHeight ;
-
-          //AvoidType Info
-          AvoidType = subRoute.AvoidType ;
-
-          if ( TargetSubRoutes?.Count > 1 ) {
-            IsMultiSelected() ;
-          }
-        }
-      }
-
-      public RoutePropertySource( Document doc ) : base( doc )
-      {
-        //Diameter Info
-        CurveType = Document.GetAllElements<MEPCurveType>().First() ;
-        //Diameters = (IList<double>?) CurveType.GetNominalDiameters( Doc.Application.VertexTolerance ).ToList() ?? Array.Empty<double>();
-        //Diameter = Diameters[0];
-
-        //System Type Info(PipingSystemType in lookup)
-        SystemTypes = Document.GetAllElements<MEPSystemType>().OrderBy( s => s.Name ).ToList() ;
-        SystemType = SystemTypes[ 0 ] ;
-
-        //CurveType Info
-        CurveTypes = Document.GetAllElements<MEPCurveType>().ToList() ;
-
-        IsDirect = true ;
-        UseFixedHeight = false ;
-        FixedHeight = null ;
-        AvoidType = AvoidType.Whichever ;
-      }
-
-      public RoutePropertySource( Document doc, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType ) : base( doc )
-      {
-        // For Conduit
-        if ( classificationInfo.HasSystemType() ) {
-          //Diameter Info
-          CurveType = curveType ;
-          Diameters = (IList<double>?) curveType?.GetNominalDiameters( Document.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
-
-          //System Type Info(PipingSystemType in lookup)
-          SystemTypes = Document.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList() ;
-          SystemType = systemType ;
-
-          //CurveType Info
-          // _isExperimental is true while we treat only round shape
-          CurveTypes = _isExperimental ? Document.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : Document.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
-
-          IsDirect = true ;
-          UseFixedHeight = false ;
-          FixedHeight = null ;
-          AvoidType = AvoidType.Whichever ;
-        }
-        else {
-          //Diameter Info
-          CurveType = curveType ;
-          Diameters = (IList<double>?) curveType?.GetNominalDiameters( Document.Application.VertexTolerance ).ToList() ?? Array.Empty<double>() ;
-
-          //Standard Type Info
-          StandardTypes = doc.GetStandardTypes().ToList() ;
-          StandardType = StandardTypes[ 0 ] ;
-
-          //CurveType Info
-          var curveTypeId = CurveType.GetValidId() ;
-          // _isExperimental is true while we treat only round shape
-          CurveTypes = doc.GetAllElements<MEPCurveType>().Where( c => c.GetType() == typeof( ConduitType ) ).OrderBy( c => c.Name ).ToList() ;
-
-          IsDirect = true ;
-          UseFixedHeight = false ;
-          FixedHeight = null ;
-          AvoidType = AvoidType.Whichever ;
-        }
-      }
-
-      private void IsMultiSelected()
-      {
-        if ( TargetSubRoutes?.ElementAt( 0 ).Route is not { } route ) return ;
-        // if Diameter is multi selected, set null
-        if ( IsDiameterMultiSelected( route ) ) {
-          Diameter = null ;
-        }
-
-        // if CurveType is multi selected, set null
-        if ( IsCurveTypeMultiSelected( route ) ) {
-          CurveType = null ;
-        }
-
-        IsDirect = route.UniqueIsRoutingOnPipeSpace ;
-
-        if ( IsHeightSettingMultiSelected( route ) ) {
-          UseFixedHeight = null ;
-        }
-      }
-
-      /// <summary>
-      /// Get CurveType's multi selected state
-      /// </summary>
-      /// <param name="route"></param>
-      /// <returns></returns>
-      private static bool IsCurveTypeMultiSelected( Route route )
-      {
-        return ( null == route.UniqueCurveType ) ;
-      }
-
-      /// <summary>
-      /// Get Diameter's multi selected state
-      /// </summary>
-      /// <param name="route"></param>
-      /// <returns></returns>
-      private static bool IsDiameterMultiSelected( Route route )
-      {
-        return ( null == route.UniqueDiameter ) ;
-      }
-
-      private static bool IsHeightSettingMultiSelected( Route route )
-      {
-        var allNull = true ;
-        foreach ( var subRoute in route.SubRoutes ) {
-          allNull = ( subRoute.FixedBopHeight == null ) ;
-        }
-
-        if ( allNull ) {
-          return false ;
-        }
-        else {
-          return ( null == route.UniqueFixedBopHeight ) ;
-        }
-      }
+      Properties = new RouteProperties( subRoutes ) ;
     }
   }
 

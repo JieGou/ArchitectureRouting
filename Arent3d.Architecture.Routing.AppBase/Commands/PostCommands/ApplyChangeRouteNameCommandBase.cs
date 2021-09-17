@@ -9,14 +9,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
   {
     public Route Route { get ; }
     public string NewName { get ; }
-    
+
     public ApplyChangeRouteNameCommandParameter( Route route, string newName )
     {
       Route = route ;
       NewName = newName ;
     }
   }
-  
+
   public abstract class ApplyChangeRouteNameCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )

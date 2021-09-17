@@ -17,16 +17,17 @@
             <local:FromToEditControl Grid.Row="0"
                                      x:Name="FromToEdit"
                                      AllowIndeterminate="False"
+                                     DisplayUnitSystem="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:SelectedFromToBase}}"
                                      ValueChanged="FromToEdit_OnValueChanged" />
 
             <local:Dialog2Buttons Grid.Row="1" Margin="-2,0,0,0"
-                                  LeftButton="OK"
-                                  RightButton="Reset"
-                                  VerticalAlignment="Center"
-                                  HorizontalAlignment="Right"
-                                  LeftOnClick="Dialog2Buttons_OnLeftOnClick"
-                                  RightOnClick="Dialog2Buttons_OnRightOnClick"
-                                  IsEnableLeftButton="{Binding IsChanged, ElementName=FromToEdit}" />
+                                                                                                                                                                                                                                                                                     LeftButton="OK"
+                                                                                                                                                                                                                                                                                     RightButton="Reset"
+                                                                                                                                                                                                                                                                                     VerticalAlignment="Center"
+                                                                                                                                                                                                                                                                                     HorizontalAlignment="Right"
+                                                                                                                                                                                                                                                                                     LeftOnClick="Dialog2Buttons_OnLeftOnClick"
+                                                                                                                                                                                                                                                                                     RightOnClick="Dialog2Buttons_OnRightOnClick"
+                                                                                                                                                                                                                                                                                     IsEnableLeftButton="{Binding IsChanged, ElementName=FromToEdit}" />
         </Grid>
     </Border>
 </UserControl>

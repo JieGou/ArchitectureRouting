@@ -43,14 +43,14 @@
                                                 <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
                                                 <Condition Binding="{Binding IsSelectionActive, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
                                             </MultiDataTrigger.Conditions>
-                                            <Setter Property="Foreground" Value="{Binding SelectionTextColor}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
                                         </MultiDataTrigger>
                                         <MultiDataTrigger>
                                             <MultiDataTrigger.Conditions>
                                                 <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
                                                 <Condition Binding="{Binding IsSelectionActive, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="False" />
                                             </MultiDataTrigger.Conditions>
-                                            <Setter Property="Foreground" Value="{Binding InactiveSelectionTextColor}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}" />
                                         </MultiDataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -79,14 +79,14 @@
                                                 <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
                                                 <Condition Binding="{Binding IsSelectionActive, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
                                             </MultiDataTrigger.Conditions>
-                                            <Setter Property="Foreground" Value="{Binding SelectionTextColor}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
                                         </MultiDataTrigger>
                                         <MultiDataTrigger>
                                             <MultiDataTrigger.Conditions>
                                                 <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
                                                 <Condition Binding="{Binding IsSelectionActive, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="False" />
                                             </MultiDataTrigger.Conditions>
-                                            <Setter Property="Foreground" Value="{Binding InactiveSelectionTextColor}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}" />
                                         </MultiDataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -98,7 +98,7 @@
             </TreeView.ItemTemplate>
         </TreeView>
 
-        <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto">
+        <local:SelectedFromToBase x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" DisplayUnitSystem="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}">
             <local:SelectedFromToBase.Style>
                 <Style TargetType="local:SelectedFromToBase">
                     <Setter Property="Visibility" Value="Hidden" />
@@ -111,16 +111,16 @@
             </local:SelectedFromToBase.Style>
         </local:SelectedFromToBase>
 
-        <local:PassPointInfo Grid.Row="2" Width="Auto">
+        <local:PassPointInfo Grid.Row="2" Width="Auto" DisplayUnitSystem="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}">
             <local:PassPointInfo.Style>
                 <Style TargetType="local:PassPointInfo">
                     <Setter Property="Visibility" Value="Hidden" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsPassPointVisible, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" Value="True">
                             <Setter Property="Visibility" Value="Visible" />
-                            <Setter Property="XPoint" Value="{Binding CoordinatesX, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" />
-                            <Setter Property="YPoint" Value="{Binding CoordinatesY, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" />
-                            <Setter Property="ZPoint" Value="{Binding CoordinatesZ, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}}" />
+                            <Setter Property="XPoint" Value="{Binding CoordinatesX, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}, Mode=OneWay}" />
+                            <Setter Property="YPoint" Value="{Binding CoordinatesY, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}, Mode=OneWay}" />
+                            <Setter Property="ZPoint" Value="{Binding CoordinatesZ, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToTree}, Mode=OneWay}" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>

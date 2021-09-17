@@ -1,8 +1,6 @@
 ﻿using System ;
 using Autodesk.Revit.DB ;
-using System.Collections.Generic ;
 using System.Windows ;
-
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -16,9 +14,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       InitializeComponent() ;
     }
 
-    public void UpdateFromToParameters( PropertySource.RoutePropertySource propertySource )
+    public RoutePropertyDialog( Document document, RouteProperties properties )
     {
-      FromToEdit.SetPropertySourceValues( propertySource ) ;
+      InitializeComponent() ;
+
+      FromToEdit.DisplayUnitSystem = document.DisplayUnitSystem ;
+      UpdateProperties( properties ) ;
+    }
+
+    private void UpdateProperties( RouteProperties properties )
+    {
+      FromToEdit.SetRouteProperties( properties ) ;
       FromToEdit.ResetDialog() ;
     }
 
@@ -41,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public double GetSelectDiameter() => FromToEdit.Diameter ?? throw new InvalidOperationException() ;
 
-    public bool GetCurrentDirect() => FromToEdit.UseDirectRouting ?? throw new InvalidOperationException() ;
+    public bool GetRouteOnPipeSpace() => FromToEdit.IsRouteOnPipeSpace ?? throw new InvalidOperationException() ;
 
     public double? GetFixedHeight()
     {
@@ -49,6 +55,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return FromToEdit.FixedHeight ;
     }
 
-    public AvoidType GetAvoidTypeKey() => FromToEdit.AvoidType ;
+    public AvoidType GetSelectedAvoidType() => FromToEdit.AvoidType ?? throw new InvalidOperationException() ;
   }
 }

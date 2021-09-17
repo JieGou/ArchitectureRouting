@@ -1,5 +1,7 @@
-﻿using Arent3d.Architecture.Routing.AppBase ;
+﻿using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.PostCommands ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.PostCommands ;
 using Arent3d.Revit.UI;
 using Autodesk.Revit.UI ;
@@ -8,16 +10,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 {
   public class PostCommandExecutor : IPostCommandExecutorBase
   {
-    public void ChangeRouteNameCommand( UIApplication app, Route route, string newName )
+    private static UIApplication? UiApp => RoutingApp.FromToTreeManager.UiApp ;
+    
+    public void ChangeRouteNameCommand( Route route, string newName )
     {
+      if ( UiApp is not { } uiApp ) return ;
+
       CommandParameterStorage.Set( new ApplyChangeRouteNameCommandParameter( route, newName ) ) ;
-      app.PostCommand<ApplyChangeRouteNameCommand>() ;
+      uiApp.PostCommand<ApplyChangeRouteNameCommand>() ;
     }
 
-    public void ApplySelectedFromToChangesCommand(UIApplication? app)
+    public void ApplySelectedFromToChangesCommand( Route route, IReadOnlyCollection<SubRoute> subRoutes, RouteProperties properties )
     {
-      app?.PostCommand<ApplySelectedFromToChangesCommand>() ;
-    }
+      if ( UiApp is not { } uiApp ) return ;
 
+      CommandParameterStorage.Set( new ApplySelectedFromToChangesCommandParameter( route, subRoutes, properties ) ) ;
+      uiApp.PostCommand<ApplySelectedFromToChangesCommand>() ;
+    }
   }
 }

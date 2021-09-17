@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
              xmlns:controlLib="clr-namespace:ControlLib;assembly=NumericUpDown"
+             xmlns:valueConverters="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters"
              mc:Ignorable="d"
              Background="White"
              Height="Auto" Width="Auto">
@@ -79,8 +80,7 @@
                     </Style>
                 </Label.Style>
             </Label>
-            <ComboBox x:Name="CurveTypeComboBox"
-                      Grid.Column="1"
+            <ComboBox Grid.Column="1"
                       Grid.Row="1"
                       ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       DisplayMemberPath="Name"
@@ -107,13 +107,31 @@
                    VerticalAlignment="Center"
                    Grid.Column="0"
                    Grid.Row="2" />
-            <ComboBox x:Name="DiameterComboBox"
-                      Grid.Column="1"
+            <ComboBox Grid.Column="1"
                       Grid.Row="2"
                       ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       SelectionChanged="DiameterComboBox_SelectionChanged"
                       SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       VerticalAlignment="Center">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock>
+                            <TextBlock.Style>
+                                <Style TargetType="{x:Type TextBlock}">
+                                    <Setter Property="Text" Value="{Binding Converter={x:Static valueConverters:LengthToStringConverter.Default}, Mode=OneWay}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="IMPERIAL">
+                                            <Setter Property="Text" Value="{Binding Converter={x:Static valueConverters:LengthToStringConverter.Inches}, Mode=OneWay}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="METRIC">
+                                            <Setter Property="Text" Value="{Binding Converter={x:Static valueConverters:LengthToStringConverter.Millimeters}, Mode=OneWay}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
             </ComboBox>
 
             <Label Content="Via PS"
@@ -124,7 +142,7 @@
 
             <CheckBox Grid.Column="1"
                       Grid.Row="3"
-                      IsChecked="{Binding UseDirectRouting, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      IsChecked="{Binding IsRouteOnPipeSpace, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       Checked="Direct_OnChecked"
                       Unchecked="Direct_OnUnchecked"
                       HorizontalAlignment="Left"
@@ -153,16 +171,16 @@
                         </Style>
                     </Label.Style>
                 </Label>
-                
-                <controlLib:NumericUpDown
-                                       Value="{Binding FixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
-                                       ValueChanged="HeightNud_OnValueChanged"
-                                       VerticalAlignment="Center" HorizontalAlignment="Right"
-                                       HorizontalContentAlignment="Right"
-                                       Increment="100"
-                                       MaxValue="{Binding CurrentMaxValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
-                                       MinValue="{Binding CurrentMinValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
-                                       Width="80">
+
+                <!-- Manually update Value because binding is not called -->
+                <controlLib:NumericUpDown Name="FixedHeightNumericUpDown"
+                                          ValueChanged="FixedHeightNumericUpDown_OnValueChanged"
+                                          VerticalAlignment="Center" HorizontalAlignment="Right"
+                                          HorizontalContentAlignment="Right"
+                                          Increment="100"
+                                          MaxValue="{Binding CurrentMaxValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                                          MinValue="{Binding CurrentMinValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                                          Width="80">
                     <controlLib:NumericUpDown.Style>
                         <Style TargetType="{x:Type controlLib:NumericUpDown}">
                             <Setter Property="Visibility" Value="Hidden"/>
@@ -178,9 +196,16 @@
                     <Label.Style>
                         <Style TargetType="{x:Type Label}">
                             <Setter Property="Visibility" Value="Hidden"/>
+                            <Setter Property="Content" Value="&quot;"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsChecked, ElementName=HeightSetting}" Value="True">
                                     <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="IMPERIAL">
+                                    <Setter Property="Content" Value="&quot;"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="METRIC">
+                                    <Setter Property="Content" Value="mm"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>

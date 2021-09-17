@@ -3,7 +3,6 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
@@ -72,10 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues )
     {
-      var sv = new RoutePropertyDialog() ;
-      var propertySourceType = new PropertySource.RoutePropertySource( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType ) ;
-      SelectedFromToViewModel.PropertySourceType = propertySourceType ;
-      sv.UpdateFromToParameters( propertySourceType ) ;
+      var sv = new RoutePropertyDialog( document, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType ) ) ;
 
       sv.ShowDialog() ;
 
@@ -83,11 +79,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
     private static RoutePropertyDialog ShowDialog( Document document )
     {
-      var sv = new RoutePropertyDialog() ;
-      var propertySourceType = new PropertySource.RoutePropertySource( document ) ;
-      SelectedFromToViewModel.PropertySourceType = propertySourceType ;
-      sv.UpdateFromToParameters( propertySourceType ) ;
-
+      var sv = new RoutePropertyDialog( document, new RouteProperties( document ) ) ;
       sv.ShowDialog() ;
 
       return sv ;
@@ -129,13 +121,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var name = nameBase + "_" + nextIndex ;
       routes.FindOrCreate( name ) ;
 
-      var diameter = propertyDialog.GetSelectDiameter().MillimetersToRevitUnits() ;
-      var isDirect = propertyDialog.GetCurrentDirect() ;
-      var targetFixedHeight = propertyDialog.GetFixedHeight()?.MillimetersToRevitUnits() ;
+      var diameter = propertyDialog.GetSelectDiameter() ;
+      var isRoutingOnPipeSpace = propertyDialog.GetRouteOnPipeSpace() ;
+      var fixedHeight = propertyDialog.GetFixedHeight() ;
+      var avoidType = propertyDialog.GetSelectedAvoidType() ;
 
-      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isDirect, targetFixedHeight, propertyDialog.GetAvoidTypeKey() ) ) ;
+      double? trueFixedHeight = ( fixedHeight.HasValue ? RouteProperties.GetTrueFixedHeight( GetLevel( document, fromEndPoint ) ?? GetLevel( document, toEndPoint ), diameter, fixedHeight.Value ) : null ) ;
+
+      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, trueFixedHeight, avoidType ) ) ;
     }
 
+    private static Level? GetLevel( Document document, IEndPoint endPoint )
+    {
+      if ( endPoint.GetReferenceConnector()?.Owner.LevelId is not { } levelId ) return null ;
+
+      return document.GetElementById<Level>( levelId ) ;
+    }
 
     private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, RoutePropertyDialog propertyDialog, MEPSystemClassificationInfo classificationInfo )
     {

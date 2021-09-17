@@ -15,12 +15,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class FromToTree : Page, IDockablePaneProvider
   {
+    private static readonly DependencyPropertyKey DisplayUnitSystemPropertyKey = DependencyProperty.RegisterReadOnly( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( FromToTree ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
     private static readonly DependencyPropertyKey IsConnectorVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsConnectorVisible", typeof( bool ), typeof( FromToTree ), new PropertyMetadata( false ) ) ;
     private static readonly DependencyPropertyKey IsPassPointVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsPassPointVisible", typeof( bool ), typeof( FromToTree ), new PropertyMetadata( false ) ) ;
     private static readonly DependencyPropertyKey IsRouterVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsRouterVisible", typeof( bool ), typeof( FromToTree ), new PropertyMetadata( false ) ) ;
     private static readonly DependencyPropertyKey CoordinatesXPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesX", typeof( string ), typeof( FromToTree ), new PropertyMetadata( string.Empty ) ) ;
     private static readonly DependencyPropertyKey CoordinatesYPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesY", typeof( string ), typeof( FromToTree ), new PropertyMetadata( string.Empty ) ) ;
     private static readonly DependencyPropertyKey CoordinatesZPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesZ", typeof( string ), typeof( FromToTree ), new PropertyMetadata( string.Empty ) ) ;
+
+    public DisplayUnit DisplayUnitSystem
+    {
+      get { return (DisplayUnit)GetValue( DisplayUnitSystemPropertyKey.DependencyProperty ) ; }
+      private set { SetValue( DisplayUnitSystemPropertyKey, value ) ; }
+    }
 
     public bool IsPassPointVisible
     {
@@ -110,7 +117,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// <param name="addInType"></param>
     public void CustomInitiator( UIApplication uiApplication, AddInType addInType )
     {
-      AllRoutes = uiApplication.ActiveUIDocument.Document.CollectRoutes(addInType).ToList() ;
+      var document = uiApplication.ActiveUIDocument.Document ;
+      AllRoutes = document.CollectRoutes(addInType).ToList() ;
+      DisplayUnitSystem = document.DisplayUnitSystem ;
       // call the treeview display method
       DisplayTreeViewItem( uiApplication, addInType ) ;
       IsLeftMouseClick = false ;
@@ -127,8 +136,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       FromToTreeView.DataContext = fromToVm ;
 
       FromToTreeView.ItemsSource = fromToVm.FromToItems ;
-      
-      
     }
 
 
@@ -163,7 +170,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// Set SelectedFromTo Dialog by Selected Route in Selecting TreeView
     /// </summary>
     /// <param name="propertySource"></param>
-    private void DisplaySelectedFromTo( PropertySource.RoutePropertySource propertySource )
+    private void DisplaySelectedFromTo( RoutePropertySource propertySource )
     {
       IsRouterVisible = true ;
       IsConnectorVisible = false ;
@@ -233,17 +240,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// <param name="e"></param>
     private void FromToTreeView_OnSelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
     {
-      if ( FromToTreeView.SelectedItem == null ) return ;
       var selectedItem = FromToTreeView.SelectedItem ;
       
       if ( selectedItem is FromToItem selectedFromToItem ) {
         selectedFromToItem.OnSelected() ;
-        SelectedFromToViewModel.FromToItem = selectedFromToItem ;
+        SelectedFromTo.TargetFromToItem = selectedFromToItem ;
 
-        if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routePropertySource && selectedFromToItem.ItemTag == "Route" ) {
+        if ( selectedFromToItem.PropertySourceType is RoutePropertySource routePropertySource && selectedFromToItem.ItemTag == "Route" ) {
           DisplaySelectedFromTo( routePropertySource ) ;
         }
-        else if ( selectedFromToItem.PropertySourceType is PropertySource.RoutePropertySource routeSubPropertySource && selectedFromToItem.ItemTypeName == "Section" ) {
+        else if ( selectedFromToItem.PropertySourceType is RoutePropertySource routeSubPropertySource && selectedFromToItem.ItemTypeName == "Section" ) {
           DisplaySelectedFromTo( routeSubPropertySource ) ;
         }
         else if ( selectedFromToItem.PropertySourceType is ConnectorPropertySource connectorPropertySource ) {
@@ -444,8 +450,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           selectedItem.IsEditing = false ;
           selectedItem.ItemTypeName = tb.Text ;
           tb.Text = "" ;
-          if ( SelectedFromToViewModel.UiApp is { } app && ( selectedItem.PropertySourceType as PropertySource.RoutePropertySource )?.TargetRoute is { } route ) {
-            PostCommandExecutor.ChangeRouteNameCommand( app, route, tb.Text ) ;
+          if ( ( selectedItem.PropertySourceType as RoutePropertySource )?.TargetRoute is { } route ) {
+            PostCommandExecutor.ChangeRouteNameCommand( route, tb.Text ) ;
           }
         }
       }
@@ -495,8 +501,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         selectedItem.IsEditing = false ;
         selectedItem.ItemTypeName = tb.Text ;
         tb.Text = "" ;
-        if ( SelectedFromToViewModel.UiApp is { } app && ( selectedItem.PropertySourceType as PropertySource.RoutePropertySource )?.TargetRoute is { } route ) {
-          PostCommandExecutor.ChangeRouteNameCommand( app, route, tb.Text ) ;
+        if ( ( selectedItem.PropertySourceType as RoutePropertySource )?.TargetRoute is { } route ) {
+          PostCommandExecutor.ChangeRouteNameCommand( route, tb.Text ) ;
         }
       }
     }

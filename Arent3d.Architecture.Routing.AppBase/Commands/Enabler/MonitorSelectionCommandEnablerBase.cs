@@ -16,7 +16,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Enabler
     public bool IsCommandAvailable( UIApplication uiApp, CategorySet selectedCategories )
     {
       var uiDoc = uiApp.ActiveUIDocument ;
-      SelectedFromToViewModel.UiDoc = uiApp.ActiveUIDocument ;
 
       //If no Doc
       if ( uiDoc == null ) {

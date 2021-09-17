@@ -6,11 +6,10 @@ using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
 using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using ControlLib ;
+using LengthConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters.LengthConverter ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -37,50 +36,49 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public static readonly DependencyProperty SystemTypeIndexProperty = DependencyProperty.Register( "SystemTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty CurveTypeIndexProperty = DependencyProperty.Register( "CurveTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
-    public static readonly DependencyProperty UseDirectRoutingProperty = DependencyProperty.Register( "UseDirectRouting", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)true ) ) ;
+    public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)true ) ) ;
     public static readonly DependencyProperty UseFixedHeightProperty = DependencyProperty.Register( "UseFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
-    public static readonly DependencyProperty FixedHeightProperty = DependencyProperty.Register( "FixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( null ) ) ;
+    public static readonly DependencyProperty FixedHeightProperty = DependencyProperty.Register( "FixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, FixedHeight_Changed ) ) ;
     public static readonly DependencyProperty AvoidTypeIndexProperty = DependencyProperty.Register( "AvoidTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
     public static readonly DependencyProperty CurrentMinValueProperty = DependencyProperty.Register( "CurrentMinValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMinValue ) ) ;
     public static readonly DependencyProperty CurrentMaxValueProperty = DependencyProperty.Register( "CurrentMaxValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMaxValue ) ) ;
     private static readonly DependencyPropertyKey CanApplyPropertyKey = DependencyProperty.RegisterReadOnly( "CanApply", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
     private static readonly DependencyPropertyKey IsChangedPropertyKey = DependencyProperty.RegisterReadOnly( "IsChanged", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
     public static readonly DependencyProperty AllowIndeterminateProperty = DependencyProperty.Register( "AllowIndeterminate", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( default( bool ) ) ) ;
+    public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( FromToEditControl ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
 
     //Diameter Info
-    private double DiameterTolerance { get ; set ; }
+    private double VertexTolerance { get ; set ; }
     public ObservableCollection<double> Diameters { get ; } = new ObservableCollection<double>() ;
     private double? DiameterOrg { get ; set ; }
     public double? Diameter
     {
       get => GetDiameterOnIndex( Diameters, (int)GetValue( DiameterIndexProperty ) ) ;
-      private set => SetValue( DiameterIndexProperty, GetDiameterIndex( Diameters, value ) ) ;
+      private set => SetValue( DiameterIndexProperty, GetDiameterIndex( Diameters, value, VertexTolerance ) ) ;
     }
     private static double? GetDiameterOnIndex( IReadOnlyList<double> diameters, int index )
     {
       if ( index < 0 || diameters.Count <= index ) return null ;
       return diameters[ index ] ;
     }
-    private static int GetDiameterIndex( IEnumerable<double> diameters, double? value )
+    private static int GetDiameterIndex( IEnumerable<double> diameters, double? value, double tolerance )
     {
       if ( value is not { } diameter ) return -1 ;
 
-      var diameterMillimeters = diameter.RevitUnitsToMillimeters() ;
-      return diameters.FindIndex( d => DiameterEquals( d, diameterMillimeters ) ) ;
+      return diameters.FindIndex( d => LengthEquals( d, diameter, tolerance ) ) ;
     }
 
-    private static bool DiameterEquals( double d1, double d2 )
+    private static bool LengthEquals( double d1, double d2, double tolerance )
     {
-      return ( RoundMillimeters( d1 ) == RoundMillimeters( d2 ) ) ;
+      return Math.Abs( d1 - d2 ) < tolerance ;
     }
-    private static bool DiameterEquals( double? d1, double? d2 )
+    private static bool LengthEquals( double? d1, double? d2, double tolerance )
     {
       if ( d1.HasValue != d2.HasValue ) return false ;
       if ( false == d1.HasValue ) return true ;
 
-      return DiameterEquals( d1.Value, d2!.Value ) ;
+      return LengthEquals( d1.Value, d2!.Value, tolerance ) ;
     }
-    private static double RoundMillimeters( double d ) => Math.Round( d, 2, MidpointRounding.AwayFromZero ) ;
 
     //SystemType Info
     public ObservableCollection<MEPSystemType> SystemTypes { get ; } = new ObservableCollection<MEPSystemType>() ;
@@ -116,7 +114,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         else {
           CurveTypeLabel = DefaultCurveTypeLabel ;
         }
+
+        UpdateDiameterList() ;
       }
+    }
+
+    private void UpdateDiameterList()
+    {
+      var curveType = CurveType ;
+      var currentDiameter = Diameter ;
+
+      Diameters.Clear() ;
+      if ( curveType?.GetNominalDiameters( VertexTolerance ) is { } diameters ) {
+        diameters.ForEach( Diameters.Add ) ;
+      }
+
+      if ( currentDiameter is {} d ) {
+        SetCurrentValue( DiameterIndexProperty, UIHelper.FindClosestIndex( Diameters, d ) );
+      }
+      else {
+        SetCurrentValue( DiameterIndexProperty, -1 );
+      }
+    }
+
+    public DisplayUnit DisplayUnitSystem
+    {
+      get { return (DisplayUnit)GetValue( DisplayUnitSystemProperty ) ; }
+      set { SetValue( DisplayUnitSystemProperty, value ) ; }
     }
 
     private string CurveTypeLabel
@@ -148,11 +172,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     //Direct Info
-    private bool? UseDirectRoutingOrg { get ; set ; }
-    public bool? UseDirectRouting
+    private bool? IsRouteOnPipeSpaceOrg { get ; set ; }
+    public bool? IsRouteOnPipeSpace
     {
-      get => (bool?) GetValue( UseDirectRoutingProperty ) ;
-      private set => SetValue( UseDirectRoutingProperty, value ) ;
+      get => (bool?) GetValue( IsRouteOnPipeSpaceProperty ) ;
+      private set => SetValue( IsRouteOnPipeSpaceProperty, value ) ;
     }
 
     //HeightSetting
@@ -182,27 +206,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     //AvoidType
-    private AvoidType AvoidTypeOrg { get ; set ; }
-    public AvoidType AvoidType
+    private AvoidType? AvoidTypeOrg { get ; set ; }
+    public AvoidType? AvoidType
     {
       get => GetAvoidTypeOnIndex( AvoidTypes.Keys, (int)GetValue( AvoidTypeIndexProperty ) ) ;
       private set => SetValue( AvoidTypeIndexProperty, GetAvoidTypeIndex( AvoidTypes.Keys, value ) ) ;
     }
-    private static AvoidType GetAvoidTypeOnIndex( IEnumerable<AvoidType> avoidTypes, int index )
+    private static AvoidType? GetAvoidTypeOnIndex( IEnumerable<AvoidType> avoidTypes, int index )
     {
+      if ( index < 0 ) return null ;
       return avoidTypes.ElementAtOrDefault( index ) ;
     }
-    private static int GetAvoidTypeIndex( IEnumerable<AvoidType> avoidTypes, AvoidType avoidType )
+    private static int GetAvoidTypeIndex( IEnumerable<AvoidType> avoidTypes, AvoidType? avoidType )
     {
-      return avoidTypes.IndexOf( avoidType ) ;
+      return ( avoidType is { } type ? avoidTypes.IndexOf( type ) : -1 ) ;
     }
 
     public IReadOnlyDictionary<AvoidType, string> AvoidTypes { get ; } = new Dictionary<AvoidType, string>
     {
-      [ AvoidType.Whichever ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.None".GetAppStringByKeyOrDefault( "Whichever" ),
-      [ AvoidType.NoAvoid ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoPocket".GetAppStringByKeyOrDefault( "Don't avoid From-To" ),
-      [ AvoidType.AvoidAbove ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoDrainPocket".GetAppStringByKeyOrDefault( "Avoid on From-To" ),
-      [ AvoidType.AvoidBelow ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoVentPocket".GetAppStringByKeyOrDefault( "Avoid below From-To" ),
+      [ Routing.AvoidType.Whichever ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.None".GetAppStringByKeyOrDefault( "Whichever" ),
+      [ Routing.AvoidType.NoAvoid ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoPocket".GetAppStringByKeyOrDefault( "Don't avoid From-To" ),
+      [ Routing.AvoidType.AvoidAbove ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoDrainPocket".GetAppStringByKeyOrDefault( "Avoid on From-To" ),
+      [ Routing.AvoidType.AvoidBelow ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoVentPocket".GetAppStringByKeyOrDefault( "Avoid below From-To" ),
     } ;
 
     public bool CanApply
@@ -229,7 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( UseSystemType && null == SystemType ) return false ;
         if ( UseCurveType && null == CurveType ) return false ;
         if ( null == Diameter ) return false ;
-        if ( null == UseDirectRouting ) return false ;
+        if ( null == IsRouteOnPipeSpace ) return false ;
         if ( null == UseFixedHeight ) return false ;
         if ( double.IsNaN( FixedHeight ) ) return false ;
       }
@@ -241,10 +266,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       if ( UseSystemType && SystemTypeOrg?.Id != SystemType?.Id ) return true ;
       if ( UseCurveType && CurveTypeOrg?.Id != CurveType?.Id ) return true ;
-      if ( DiameterEquals( DiameterOrg?.RevitUnitsToMillimeters(), Diameter?.RevitUnitsToMillimeters() ) ) return true ;
-      if ( UseDirectRouting != UseDirectRoutingOrg ) return true ;
+      if ( false == LengthEquals( DiameterOrg, Diameter, VertexTolerance ) ) return true ;
+      if ( IsRouteOnPipeSpace != IsRouteOnPipeSpaceOrg ) return true ;
       if ( UseFixedHeight != UseFixedHeightOrg ) return true ;
-      if ( true == UseFixedHeight && FixedHeight != FixedHeightOrg ) return true ;
+      if ( true == UseFixedHeight && false == LengthEquals( FixedHeightOrg, FixedHeight, VertexTolerance ) ) return true ;
       if ( AvoidTypeOrg != AvoidType ) return true ;
 
       return false ;
@@ -276,24 +301,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void CurveTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
-      if ( CurveTypeComboBox.IsDropDownOpen ) //avoid changes in construction
-      {
-        var curveType = CurveType ;
-        var currentDiameter = Diameter ;
-
-        Diameters.Clear() ;
-        if ( curveType?.GetNominalDiameters( DiameterTolerance ) is { } diameters ) {
-          diameters.Select( d => RoundMillimeters( d.RevitUnitsToMillimeters() ) ).ForEach( Diameters.Add ) ;
-        }
-
-        if ( currentDiameter is {} d ) {
-          SetCurrentValue( DiameterIndexProperty, UIHelper.FindClosestIndex( Diameters, d ) );
-        }
-        else {
-          SetCurrentValue( DiameterIndexProperty, -1 );
-        }
-      }
-
       OnValueChanged( EventArgs.Empty ) ;
     }
 
@@ -306,21 +313,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// <summary>
     /// Update Diameters, SystemTypes, and CurveTypes
     /// </summary>
-    /// <param name="diameters"></param>
     /// <param name="systemTypes"></param>
     /// <param name="curveTypes"></param>
-    private void SetAvailableParameterList( IList<double>? diameters, IList<MEPSystemType>? systemTypes, IList<MEPCurveType>? curveTypes, double diameterTolerance )
+    /// <param name="vertexTolerance"></param>
+    private void SetAvailableParameterList( IList<MEPSystemType>? systemTypes, IList<MEPCurveType> curveTypes, double vertexTolerance )
     {
-      DiameterTolerance = diameterTolerance ;
+      VertexTolerance = vertexTolerance ;
       Diameters.Clear() ;
       SystemTypes.Clear() ;
       CurveTypes.Clear() ;
-
-      if ( diameters != null ) {
-        foreach ( var d in diameters ) {
-          Diameters.Add( RoundMillimeters( d.RevitUnitsToMillimeters() ) ) ;
-        }
-      }
 
       if ( systemTypes != null ) {
         foreach ( var s in systemTypes ) {
@@ -333,25 +334,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         UseSystemType = false ;
       }
 
-      if ( curveTypes != null ) {
-        foreach ( var c in curveTypes ) {
-          CurveTypes.Add( c ) ;
-        }
+      foreach ( var c in curveTypes ) {
+        CurveTypes.Add( c ) ;
       }
     }
 
-    public void SetPropertySourceValues( PropertySource.RoutePropertySource propertySource )
+    public void SetRouteProperties( RouteProperties properties )
     {
-      SetAvailableParameterList( propertySource.Diameters, propertySource.SystemTypes, propertySource.CurveTypes, propertySource.Document.Application.VertexTolerance ) ;
+      SetAvailableParameterList( properties.SystemTypes, properties.CurveTypes, properties.VertexTolerance ) ;
 
-      SystemTypeOrg = propertySource.SystemType ;
-      CurveTypeOrg = propertySource.CurveType ;
-      DiameterOrg = propertySource.Diameter ;
+      SystemTypeOrg = properties.SystemType ;
+      CurveTypeOrg = properties.CurveType ;
+      DiameterOrg = properties.Diameter ;
 
-      UseDirectRoutingOrg = propertySource.IsDirect ;
-      UseFixedHeightOrg = propertySource.UseFixedHeight ;
-      FixedHeightOrg = propertySource.FixedHeight ?? double.NaN ;
-      AvoidTypeOrg = propertySource.AvoidType ;
+      IsRouteOnPipeSpaceOrg = properties.IsRouteOnPipeSpace ;
+      UseFixedHeightOrg = properties.UseFixedHeight ;
+      FixedHeightOrg = properties.FixedHeight ;
+      AvoidTypeOrg = properties.AvoidType ;
     }
 
     public void ResetDialog()
@@ -360,7 +359,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CurveType = CurveTypeOrg ;
       Diameter = DiameterOrg ;
 
-      UseDirectRouting = UseDirectRoutingOrg ;
+      IsRouteOnPipeSpace = IsRouteOnPipeSpaceOrg ;
       UseFixedHeight = UseFixedHeightOrg ;
       FixedHeight = FixedHeightOrg ;
       AvoidType = AvoidTypeOrg ;
@@ -377,10 +376,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SystemTypeOrg = null ;
       CurveTypeOrg = null ;
 
-      UseDirectRoutingOrg = false ;
+      IsRouteOnPipeSpaceOrg = false ;
       UseFixedHeightOrg = false ;
       FixedHeightOrg = 0.0 ;
-      AvoidTypeOrg = AvoidType.Whichever ;
+      AvoidTypeOrg = Routing.AvoidType.Whichever ;
 
       ResetDialog() ;
     }
@@ -415,9 +414,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return new KeyValuePair<AvoidType, string>( avoidTypeKey, AvoidTypes[ avoidTypeKey ] ) ;
     }
 
-    private void HeightNud_OnValueChanged( object sender, ValueChangedEventArgs e )
+    private void FixedHeightNumericUpDown_OnValueChanged( object sender, ValueChangedEventArgs e )
     {
+      // Manually update FixedHeight because Value binding is not called.
+      FixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( FixedHeightNumericUpDown.Value ) ;
+
       OnValueChanged( EventArgs.Empty ) ;
+    }
+
+    private static void FixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
+    {
+      if ( d is not FromToEditControl fromToEditControl ) return ;
+      if ( e.NewValue is not double newValue ) return ;
+
+      fromToEditControl.FixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+    }
+
+    private static LengthConverter GetLengthConverter( DisplayUnit displayUnitSystem )
+    {
+      return displayUnitSystem switch
+      {
+        DisplayUnit.METRIC => LengthConverter.Millimeters,
+        DisplayUnit.IMPERIAL => LengthConverter.Inches,
+        _ => LengthConverter.Default,
+      } ;
     }
   }
 }

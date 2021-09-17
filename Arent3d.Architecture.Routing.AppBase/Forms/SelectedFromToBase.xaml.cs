@@ -2,24 +2,32 @@
 using System.Collections.Generic ;
 using System.Windows ;
 using System.Windows.Controls ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit.I18n ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class SelectedFromToBase : UserControl
   {
+    public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( SelectedFromToBase ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
+
+    public DisplayUnit DisplayUnitSystem
+    {
+      get { return (DisplayUnit)GetValue( DisplayUnitSystemProperty ) ; }
+      set { SetValue( DisplayUnitSystemProperty, value ) ; }
+    }
+
     public FromToTree? ParentFromToTree { get ; set ; }
 
-    private PropertySource.RoutePropertySource? _editingSource ;
-    public PropertySource.RoutePropertySource? EditingSource
+    private RoutePropertySource? _editingSource ;
+    public RoutePropertySource? EditingSource
     {
       get => _editingSource ;
       set
       {
         _editingSource = value ;
         if ( value is { } source ) {
-          FromToEdit.SetPropertySourceValues( source ) ;
+          FromToEdit.SetRouteProperties( source.Properties ) ;
           ResetDialog() ;
         }
         else {
@@ -27,6 +35,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
     }
+
+    public FromToItem? TargetFromToItem { get ; set ; }
 
     public SelectedFromToBase()
     {
@@ -41,15 +51,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void UpdateDateContext()
     {
-      if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource && SelectedFromToViewModel.FromToItem.ItemTag == "Route" ) {
-        FromToEdit.SystemTypeEditable = SelectedFromToViewModel.FromToItem.IsRootRoute ;
-        FromToEdit.CurveTypeEditable = SelectedFromToViewModel.FromToItem.IsRootRoute ;
+      if ( TargetFromToItem?.PropertySourceType is RoutePropertySource && TargetFromToItem.ItemTag == "Route" ) {
+        FromToEdit.SystemTypeEditable = TargetFromToItem.IsRootRoute ;
+        FromToEdit.CurveTypeEditable = TargetFromToItem.IsRootRoute ;
       }
-      else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is PropertySource.RoutePropertySource && SelectedFromToViewModel.FromToItem.ItemTypeName == "Section" ) {
+      else if ( TargetFromToItem?.PropertySourceType is RoutePropertySource && TargetFromToItem.ItemTypeName == "Section" ) {
         FromToEdit.SystemTypeEditable = false ;
         FromToEdit.CurveTypeEditable = true ;
       }
-      else if ( SelectedFromToViewModel.FromToItem?.PropertySourceType is ConnectorPropertySource ) {
+      else if ( TargetFromToItem?.PropertySourceType is ConnectorPropertySource ) {
         FromToEdit.SystemTypeEditable = false ;
         FromToEdit.CurveTypeEditable = false ;
       }
@@ -57,16 +67,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
-      if ( SelectedFromToViewModel.FromToItem?.ItemTag == "Route" ) {
+      if ( TargetFromToItem?.PropertySourceType is not RoutePropertySource routePropertySource ) return ;
+
+      if ( TargetFromToItem?.ItemTag == "Route" ) {
         var result = MessageBox.Show( "Dialog.Forms.SelectedFromToBase.ChangeFromTo".GetAppStringByKeyOrDefault( "Do you want to change the From-To information?&#xA;If you change it, it will be automatically re-routed." ), "", MessageBoxButton.YesNo ) ;
         if ( result != MessageBoxResult.Yes ) return ;
       }
 
-      var systemType = GetSelected( FromToEdit.SystemTypes, FromToEdit.SystemTypeComboBox.SelectedIndex ) ;
-      if ( GetSelected( FromToEdit.Diameters, FromToEdit.DiameterComboBox.SelectedIndex ) is not { } diameter ) return ;
-      if ( GetSelected( FromToEdit.CurveTypes, FromToEdit.CurveTypeComboBox.SelectedIndex ) is not { } curveType ) return ;
-
-      SelectedFromToViewModel.ApplySelectedChanges( diameter, systemType, curveType, FromToEdit.UseDirectRouting, FromToEdit.UseFixedHeight, FromToEdit.FixedHeight, FromToEdit.AvoidType, ParentFromToTree?.PostCommandExecutor ) ;
+      var route = routePropertySource.TargetRoute ;
+      var routeProperties = new RouteProperties( route, FromToEdit.SystemType, FromToEdit.CurveType, FromToEdit.Diameter, FromToEdit.IsRouteOnPipeSpace, FromToEdit.UseFixedHeight, FromToEdit.FixedHeight, FromToEdit.AvoidType ) ;
+      ParentFromToTree?.PostCommandExecutor.ApplySelectedFromToChangesCommand( route, routePropertySource.TargetSubRoutes, routeProperties ) ;
     }
 
     private static T? GetSelected<T>( IReadOnlyList<T> systemTypes, int selectedIndex ) where T : class
