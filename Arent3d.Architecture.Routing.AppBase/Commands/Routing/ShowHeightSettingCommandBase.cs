@@ -34,19 +34,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( dialog.DialogResult ?? false ) {
         return document.Transaction( "TransactionName.Commands.Routing.HeightSetting", _ =>
         {
-          var tokenSource = new CancellationTokenSource() ;
-          using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
-          progress.Message = "Height Setting..." ;
-
           var newStorage = viewModel.SettingStorable ;
-          using ( var p = progress?.Reserve( 0.5 ) ) {
-            ApplySetting( document, newStorage, p ) ;
-          }
+          if (IsSettingChanged(document, settingStorables))
+          {
+            var tokenSource = new CancellationTokenSource() ;
+            using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
+            progress.Message = "Height Setting..." ;
+            
+            using ( var p = progress?.Reserve( 0.5 ) ) {
+              ApplySetting( document, newStorage, p ) ;
+            }
 
-          using ( progress?.Reserve( 0.5 ) ) {
-            SaveSetting( document, settingStorables ) ;
+            using (progress?.Reserve(0.5)) {
+              SaveSetting(document, settingStorables);
+            }
           }
-
+          
           return Result.Succeeded ;
         } ) ;
       }
@@ -112,13 +115,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public void SaveSetting( Document document, HeightSettingStorable newSettings )
     {
+      newSettings.Save() ;
+    }
+
+    public bool IsSettingChanged(Document document, HeightSettingStorable newSettings)
+    {
       var old = document.GetAllStorables<HeightSettingStorable>()
-                        .AsEnumerable()
-                        .DefaultIfEmpty( new HeightSettingStorable( document ) )
-                        .First() ;
-      if ( ! newSettings.Equals( old ) ) {
-        newSettings.Save() ;
-      }
+        .AsEnumerable()
+        .DefaultIfEmpty( new HeightSettingStorable( document ) )
+        .First() ;
+      return !newSettings.Equals(old);
     }
   }
 }
