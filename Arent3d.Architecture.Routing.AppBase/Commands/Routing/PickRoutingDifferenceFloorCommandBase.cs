@@ -54,13 +54,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     var pointCeilingOfPickFrom = new XYZ(pickFromPoint.X, pickFromPoint.Y, pickFromPoint.Z + heightOfPickFromLvl.MillimetersToRevitUnits() - pickFromElevation);
                     Conduit.Create(document, type!.Id, pickFromPoint, pointCeilingOfPickFrom, levelOfPickFrom!.Id);
 
-                    var pointRackOfPickFrom = new XYZ(pointCeilingOfPickFrom.X, pointCeilingOfPickFrom.Y - distanceFromPickFrom, pointCeilingOfPickFrom.Z);
+                    var pointRackOfPickFrom = new XYZ(rackPoint.X, rackPoint.Y, pointCeilingOfPickFrom.Z);
                     Conduit.Create(document, type!.Id, pointCeilingOfPickFrom, pointRackOfPickFrom, levelOfPickFrom.Id);
 
                     var pointCeilingOfPickTo = new XYZ(pickToPoint.X, pickToPoint.Y, pickToPoint.Z + heightOfPickToLvl.MillimetersToRevitUnits() - pickToElevation);
                     Conduit.Create(document, type!.Id, pickToPoint, pointCeilingOfPickTo, levelOfPickTo!.Id);
 
-                    var pointRackOfPickTo = new XYZ(pointCeilingOfPickTo.X, pointCeilingOfPickTo.Y - distanceFromPickTo, pointCeilingOfPickTo.Z);
+                    var pointRackOfPickTo = new XYZ(rackPoint.X, rackPoint.Y, pointCeilingOfPickTo.Z);
                     Conduit.Create(document, type!.Id, pointCeilingOfPickTo, pointRackOfPickTo, levelOfPickTo.Id);
 
                     Conduit.Create(document, type!.Id, pointRackOfPickFrom, pointRackOfPickTo, levelOfPickFrom.Id);

@@ -8,7 +8,7 @@ using ImageType = Arent3d.Revit.UI.ImageType;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
     [Transaction(TransactionMode.Manual)]
-    [DisplayNameKey("Electrical.App.Commands.Shaft.CreateArentShaftCommand", DefaultString = "Pick\nFrom-to Difference Level")]
+    [DisplayNameKey("Electrical.App.Commands.Shaft.CreateArentShaftCommand", DefaultString = "Pick From-to\nDifference Level")]
     [Image("resources/Initialize-16.bmp", ImageType = ImageType.Normal)]
     [Image("resources/Initialize-32.bmp", ImageType = ImageType.Large)]
     public class PickRoutingDifferenceFloorCommand: PickRoutingDifferenceFloorCommandBase
