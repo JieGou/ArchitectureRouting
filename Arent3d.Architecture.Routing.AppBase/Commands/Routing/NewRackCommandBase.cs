@@ -141,7 +141,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               }
 
               // check cable tray exists
-              var cableTrayExists = CableTrayExists( document, instance ) ;
+              var cableTrayExists = ExistsCableTray( document, instance ) ;
               var el = document.GetAllElements<Element>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
                 .Where( x => IsSameLocation( x.Location, instance.Location ) && x.Id != instance.Id ) ;
               if ( cableTrayExists ) {
@@ -209,8 +209,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
 
               // check cable tray exists
-              var cableTrayExists = CableTrayExists( document, instance ) ;
-              if ( cableTrayExists ) {
+              if ( ExistsCableTray(document, instance) ) {
                 transaction.RollBack() ;
                 continue ;
               }
@@ -289,7 +288,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="document"></param>
     /// <param name="familyInstance"></param>
     /// <returns></returns>
-    public bool CableTrayExists( Document document, FamilyInstance familyInstance )
+    public bool ExistsCableTray( Document document, FamilyInstance familyInstance )
     {
       return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
         .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
