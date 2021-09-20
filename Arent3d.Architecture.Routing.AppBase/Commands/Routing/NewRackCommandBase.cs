@@ -138,13 +138,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ),
                   Math.PI / 2 ) ;
+              } else if ( -1.0 == line.Direction.Y ) {
+                ElementTransformUtils.RotateElement( document, instance.Id,
+                  Line.CreateBound(
+                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
+                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ),
+                  Math.PI / 2 ) ;
+              } else if ( -1.0 == line.Direction.X ) {
+                ElementTransformUtils.RotateElement( document, instance.Id,
+                  Line.CreateBound(
+                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
+                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ),
+                  Math.PI ) ;
               }
 
               // check cable tray exists
-              var cableTrayExists = ExistsCableTray( document, instance ) ;
-              var el = document.GetAllElements<Element>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
-                .Where( x => IsSameLocation( x.Location, instance.Location ) && x.Id != instance.Id ) ;
-              if ( cableTrayExists ) {
+              if ( ExistsCableTray( document, instance ) ) {
                 transaction.RollBack() ;
                 continue ;
               }
