@@ -120,11 +120,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public bool IsSettingChanged(Document document, HeightSettingStorable newSettings)
     {
-      var old = document.GetAllStorables<HeightSettingStorable>()
-        .AsEnumerable()
-        .DefaultIfEmpty( new HeightSettingStorable( document ) )
-        .First() ;
-      return !newSettings.Equals(old);
+      var old = document.GetAllStorables<HeightSettingStorable>().ToList() ;
+      if ( old == null || old.Count() == 0 ) return true ;
+      return !newSettings.Equals(old[0]);
     }
   }
 }
