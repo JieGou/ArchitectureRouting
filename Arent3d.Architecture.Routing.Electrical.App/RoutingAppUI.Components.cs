@@ -80,9 +80,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof(CreateArentShaftCommand), OnlyInitialized = true )]
         private static class CreateArentShaftCommandButton { }
-
-        [Button( typeof( PickRoutingDifferenceFloorCommand ), OnlyInitialized = true )]
-        private static class PickRoutingDifferenceFloorCommandButton { }
       }
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Electrical.App.Panels.Routing.Monitor" )]
       private static class MonitorPanel
