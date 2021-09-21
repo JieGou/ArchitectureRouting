@@ -61,9 +61,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( index < 0 || diameters.Count <= index ) return null ;
       return diameters[ index ] ;
     }
-    private static int GetDiameterIndex( IEnumerable<double> diameters, double? value, double tolerance )
+    private static int GetDiameterIndex( IReadOnlyList<double> diameters, double? value, double tolerance )
     {
-      if ( value is not { } diameter ) return -1 ;
+      if ( value is not { } diameter ) {
+        if ( 0 < diameters.Count ) return 0 ; // Use minimum value
+        return -1 ;
+      }
 
       return diameters.FindIndex( d => LengthEquals( d, diameter, tolerance ) ) ;
     }
