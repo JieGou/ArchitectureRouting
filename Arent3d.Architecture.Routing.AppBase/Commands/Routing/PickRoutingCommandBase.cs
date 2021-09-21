@@ -125,10 +125,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var isRoutingOnPipeSpace = propertyDialog.GetRouteOnPipeSpace() ;
       var fixedHeight = propertyDialog.GetFixedHeight() ;
       var avoidType = propertyDialog.GetSelectedAvoidType() ;
+      var shaftElementId = propertyDialog.GetShaftElementId() ;
 
       double? trueFixedHeight = ( fixedHeight.HasValue ? RouteProperties.GetTrueFixedHeight( GetLevel( document, fromEndPoint ) ?? GetLevel( document, toEndPoint ), diameter, fixedHeight.Value ) : null ) ;
 
-      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, trueFixedHeight, avoidType ) ) ;
+      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, trueFixedHeight, avoidType,shaftElementId ) ) ;
     }
 
     private static Level? GetLevel( Document document, IEndPoint endPoint )
@@ -217,17 +218,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static RouteSegment CreateNewSegment( SubRoute subRoute, EndPointKey? endPointOverSubRoute, ConnectorPicker.IPickResult pickResult, IEndPoint newEndPoint, bool newEndPointIndicatorIsFromSide )
     {
+      var document = subRoute.Route.Document ;
       var detector = new RouteSegmentDetector( subRoute, pickResult.PickedElement ) ;
       var classificationInfo = subRoute.Route.GetSystemClassificationInfo() ;
       var systemType = subRoute.Route.GetMEPSystemType() ;
       var curveType = subRoute.Route.GetDefaultCurveType() ;
 
       if ( null != endPointOverSubRoute && subRoute.AllEndPoints.FirstOrDefault( ep => ep.Key == endPointOverSubRoute ) is { } overSubRoute ) {
+        var shaft = ( newEndPoint.GetLevelId( document ) != overSubRoute.GetLevelId( document ) ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
         if ( newEndPointIndicatorIsFromSide ) {
-          return new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, overSubRoute, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
+          return new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, overSubRoute, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType, shaft ) ;
         }
         else {
-          return new RouteSegment( classificationInfo, systemType, curveType, overSubRoute, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
+          return new RouteSegment( classificationInfo, systemType, curveType, overSubRoute, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType, shaft ) ;
         }
       }
 
@@ -235,21 +238,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( false == detector.IsPassingThrough( segment ) ) continue ;
 
         if ( newEndPointIndicatorIsFromSide ) {
-          return new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, segment.ToEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
+          var shaft = ( newEndPoint.GetLevelId( document ) != segment.ToEndPoint.GetLevelId( document ) ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
+          return new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, segment.ToEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType, shaft ) ;
         }
         else {
-          return new RouteSegment( classificationInfo, systemType, curveType, segment.FromEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
+          var shaft = ( segment.FromEndPoint.GetLevelId( document ) != newEndPoint.GetLevelId( document ) ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
+          return new RouteSegment( classificationInfo, systemType, curveType, segment.FromEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType, shaft ) ;
         }
       }
 
       // fall through: add terminate end point.
       if ( newEndPointIndicatorIsFromSide ) {
-        var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( false ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-        return new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, terminateEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
+        var terminateEndPoint = new TerminatePointEndPoint( document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( false ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
+        var shaft = ( newEndPoint.GetLevelId( document ) != terminateEndPoint.GetLevelId( document ) ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
+        return new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, terminateEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType, shaft ) ;
       }
       else {
-        var terminateEndPoint = new TerminatePointEndPoint( pickResult.PickedElement.Document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( true ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-        return new RouteSegment( classificationInfo, systemType, curveType, terminateEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType ) ;
+        var terminateEndPoint = new TerminatePointEndPoint( document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( true ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
+        var shaft = ( terminateEndPoint.GetLevelId( document ) != newEndPoint.GetLevelId( document ) ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
+        return new RouteSegment( classificationInfo, systemType, curveType, terminateEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FixedBopHeight, subRoute.AvoidType, shaft ) ;
       }
     }
 

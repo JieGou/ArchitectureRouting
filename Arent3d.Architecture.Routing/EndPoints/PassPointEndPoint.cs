@@ -84,6 +84,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public XYZ Direction => GetPassPoint()?.GetTotalTransform().BasisX ?? PreferredDirection ;
     private double? PreferredRadius { get ; set ; } = 0 ;
 
+    public ElementId GetLevelId( Document document ) => GetPassPoint()?.LevelId ?? document.GuessLevelId( PreferredPosition ) ;
+
     public void UpdatePreferredParameters()
     {
       if ( GetPassPoint() is not { } passPoint ) return ;

@@ -66,6 +66,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
       return route.GetSubRoute( SubRouteIndex ) ?? throw new KeyNotFoundException() ;
     }
 
+    public ElementId GetLevelId( Document document ) => ElementId.InvalidElementId ;
+
     internal void ReplaceRouteName( string newRouteName )
     {
       RouteName = newRouteName ;

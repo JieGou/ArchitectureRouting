@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing
 
     private static Level GetLevel( Document document, AutoRoutingTarget autoRoutingTarget )
     {
-      var level = autoRoutingTarget.EndPoints.Select( endPoint => GetLevel( document, endPoint ) ).FirstOrDefault( l => l != null && l.IsValidObject ) ;
+      var level = autoRoutingTarget.EndPoints.Select( endPoint => endPoint.GetEndPoint()?.GetLevel( document ) ).FirstOrDefault( l => l != null && l.IsValidObject ) ;
       return level ?? Level.Create( document, 0.0 ) ;
     }
 

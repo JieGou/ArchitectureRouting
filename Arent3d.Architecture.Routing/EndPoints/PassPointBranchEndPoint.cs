@@ -93,6 +93,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private double? PreferredRadius { get ; set ; }
 
+    public ElementId GetLevelId( Document document ) => GetPassPoint()?.LevelId ?? ElementId.InvalidElementId ;
+
     public void UpdatePreferredParameters()
     {
       if ( GetPassPoint() is not { } passPoint ) return ;

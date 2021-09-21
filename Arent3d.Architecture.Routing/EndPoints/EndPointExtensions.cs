@@ -1,5 +1,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Arent3d.Utility.Serialization ;
@@ -22,6 +23,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
         IPseudoEndPoint pep => pep.Source.GetEndPoint(),
         _ => null,
       } ;
+    }
+
+    public static Level? GetLevel( this IEndPoint endPoint, Document document )
+    {
+      return document.GetElementById<Level>( endPoint.GetLevelId( document ) ) ;
     }
 
 
