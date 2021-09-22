@@ -81,6 +81,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public XYZ Direction => GetTerminatePoint()?.GetTotalTransform().BasisX ?? PreferredDirection ;
     private double? PreferredRadius { get ; set ; } = 0 ;
 
+    public ElementId GetLevelId( Document document ) => GetTerminatePoint()?.LevelId ?? document.GuessLevelId( PreferredPosition ) ;
+
     public void UpdatePreferredParameters()
     {
       if ( GetTerminatePoint() is not { } terminatePoint ) return ;

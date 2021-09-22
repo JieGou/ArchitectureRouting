@@ -41,7 +41,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     {
       var fromToManager = RoutingApp.FromToTreeManager ;
       fromToManager.UiApp = uiApplication ;
-      SelectedFromToViewModel.UiApp = uiApplication ;
 
       //Initialize FromToTreeView when open directly rvt file
       if ( fromToManager.FromToTreeUiManager is { } fromToTreeUiManager && fromToManager.UiApp.ActiveUIDocument != null ) {

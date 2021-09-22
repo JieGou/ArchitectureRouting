@@ -67,7 +67,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       ribbonTab.IsVisible = false ;
     }
 
-    public static int FindClosestIndex( List<double> list, double value )
+    public static int FindClosestIndex( IList<double> list, double value )
     {
       var closest = list.OrderBy(item => Math.Abs(value - item)).First();
       return list.IndexOf(closest);

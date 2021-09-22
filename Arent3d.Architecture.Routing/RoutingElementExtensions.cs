@@ -255,11 +255,7 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius )
     {
-      var symbol = document.GetFamilySymbol( RoutingFamilyType.PassPoint )! ;
-      if ( false == symbol.IsActive ) symbol.Activate() ;
-
-      var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural ) ;
-      instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
@@ -277,22 +273,15 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddConnectorFamily( this Document document, Connector conn, string routeName, FlowDirectionType directionType, XYZ position, XYZ direction, double? radius )
     {
-      var symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorPoint )! ;
-      if ( directionType == FlowDirectionType.In ) {
-        //In
-        symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorInPoint )! ;
-      }
-      else if ( directionType == FlowDirectionType.Out ) {
-        //Out
-        symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorOutPoint )! ;
-      }
+      var routingFamilyType = directionType switch
+      {
+        FlowDirectionType.In => RoutingFamilyType.ConnectorInPoint,
+        FlowDirectionType.Out => RoutingFamilyType.ConnectorOutPoint,
+        _ => RoutingFamilyType.ConnectorPoint,
+      } ;
 
-      if ( false == symbol.IsActive )
-        symbol.Activate() ;
-
-      var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural ) ;
-      instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
-      int id = conn.Id ;
+      var instance = document.CreateFamilyInstance( routingFamilyType, position, StructuralType.NonStructural, true ) ;
+      var id = conn.Id ;
 
       instance.SetProperty( RoutingFamilyLinkedParameter.RouteConnectorRelationIds, id ) ;
 
@@ -338,23 +327,12 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddRackGuid( this Document document, XYZ position )
     {
-      var symbol = document.GetFamilySymbol( RoutingFamilyType.RackGuide )! ;
-      if ( false == symbol.IsActive )
-        symbol.Activate() ;
-
-      var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural ) ;
-
-      return instance ;
+      return document.CreateFamilyInstance( RoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true ) ;
     }
 
     public static FamilyInstance AddCornPoint( this Document document, string routeName, XYZ position )
     {
-      var symbol = document.GetFamilySymbol( RoutingFamilyType.CornPoint )! ;
-      if ( false == symbol.IsActive )
-        symbol.Activate() ;
-
-      var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural ) ;
-
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.CornPoint, position, StructuralType.NonStructural, true ) ;
       instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
 
       return instance ;
@@ -398,11 +376,7 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddTerminatePoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius )
     {
-      var symbol = document.GetFamilySymbol( RoutingFamilyType.TerminatePoint )! ;
-      if ( false == symbol.IsActive ) symbol.Activate() ;
-
-      var instance = document.Create.NewFamilyInstance( position, symbol, StructuralType.NonStructural ) ;
-      instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.TerminatePoint, position, StructuralType.NonStructural, true ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
@@ -564,6 +538,22 @@ namespace Arent3d.Architecture.Routing
       return ( From: fromList, To: toList ) ;
     }
 
+    public static IEnumerable<(MEPCurve, SubRoute)> CollectAllMultipliedRoutingElements( this Document document, int multiplicity )
+    {
+      if ( multiplicity < 2 ) throw new ArgumentOutOfRangeException( nameof( multiplicity ) ) ;
+
+      var routes = RouteCache.Get( document ) ;
+      
+      foreach ( var mepCurve in document.GetAllElementsOfRoute<MEPCurve>() ) {
+        if ( mepCurve.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
+        if ( mepCurve.GetRepresentativeSubRoute() != subRouteInfo ) continue ;
+        if ( routes.GetSubRoute( subRouteInfo ) is not { } subRoute ) continue ;
+        if ( subRoute.GetMultiplicity() < multiplicity ) continue ;
+
+        yield return ( mepCurve, subRoute ) ;
+      }
+    }
+
     #endregion
 
     #region Routing (From-To)
@@ -688,6 +678,68 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_FlexPipeCurvesCenterLine,
     } ;
     private static readonly ElementFilter CenterLineFilter = new ElementMulticategoryFilter( CenterLineCategories ) ;
+
+    #endregion
+
+    #region General
+
+    private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool autoLevelDetection )
+    {
+      var symbol = document.GetFamilySymbol( familyType )! ;
+      if ( false == symbol.IsActive ) {
+        symbol.Activate() ;
+      }
+
+      if ( false == autoLevelDetection ) {
+        return document.Create.NewFamilyInstance( position, symbol, structuralType ) ;
+      }
+
+      var level = document.GuessLevel( position ) ;
+      var instance = document.Create.NewFamilyInstance( position, symbol, level, structuralType ) ;
+      instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
+      document.Regenerate() ;
+      ElementTransformUtils.MoveElement( document, instance.Id, position - instance.GetTotalTransform().Origin ) ;
+
+      return instance ;
+    }
+
+    public static ElementId GuessLevelId( this Document document, XYZ position )
+    {
+      return GuessLevel( document, position ).Id ;
+    }
+
+    public static Level GuessLevel( this Document document, XYZ position )
+    {
+      var z = position.Z - document.Application.VertexTolerance ;
+      var list = document.GetAllElements<Level>().Select( level => new LevelByElevation( level.Elevation, level ) ).ToList() ;
+      if ( 0 == list.Count ) Level.Create( document, 0 ) ;
+
+      list.Sort() ;
+
+      var index = list.BinarySearch( new LevelByElevation( z, null ) ) ;
+      if ( 0 <= index ) return list[ index ].Level! ;
+
+      var greaterIndex = ~index ;
+      return list[ Math.Max( 0, greaterIndex - 1 ) ].Level! ;
+    }
+
+    private record LevelByElevation( double LevelElevation, Level? Level ) : IComparable<LevelByElevation>, IComparable
+    {
+      public int CompareTo( LevelByElevation? other )
+      {
+        if ( ReferenceEquals( this, other ) ) return 0 ;
+        if ( ReferenceEquals( null, other ) ) return 1 ;
+        return LevelElevation.CompareTo( other.LevelElevation ) ;
+      }
+
+      public int CompareTo( object? obj )
+      {
+        if ( ReferenceEquals( null, obj ) ) return 1 ;
+        if ( ReferenceEquals( this, obj ) ) return 0 ;
+
+        return obj is LevelByElevation other ? CompareTo( other ) : throw new ArgumentException( $"Object must be of type {nameof( LevelByElevation )}" ) ;
+      }
+    }
 
     #endregion
   }

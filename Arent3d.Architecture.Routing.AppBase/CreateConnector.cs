@@ -36,8 +36,11 @@ namespace Arent3d.Architecture.Routing.AppBase
           }
         }
 
-        var instanceOrg = element.Document.AddTerminatePoint( element.GetRouteName()!, ( element.Location as LocationPoint )!.Point, XYZ.BasisX, null ) ;
-        tempInstanceIds.Add( instanceOrg.Id ) ;
+        if ( ( familyInstance?.GetTotalTransform().Origin ?? ( element.Location as LocationPoint )?.Point ) is { } point ) {
+          var instanceOrg = element.Document.AddTerminatePoint( element.GetRouteName()!, point, XYZ.BasisX, null ) ;
+          tempInstanceIds.Add( instanceOrg.Id ) ;
+        }
+
         orgTransparency = SetElementTransparency( element, 50 ) ;
 
         tr.Commit() ;

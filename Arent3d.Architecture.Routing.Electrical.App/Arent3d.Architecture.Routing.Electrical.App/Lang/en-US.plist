@@ -245,13 +245,13 @@ If you change it, it will be automatically re-routed.</string>
         <string>Since the name is duplicated, please change it to another name.</string>
 
 
-        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.None</key>
+        <key>Dialog.Forms.FromToEditControl.ProcessConstraints.None</key>
         <string>Whichever</string>
-        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoPocket</key>
+        <key>Dialog.Forms.FromToEditControl.ProcessConstraints.NoPocket</key>
         <string>Don't avoid From-To</string>
-        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoDrainPocket</key>
+        <key>Dialog.Forms.FromToEditControl.ProcessConstraints.NoDrainPocket</key>
         <string>Avoid on From-To</string>
-        <key>Dialog.Forms.SelectedFromToBase.ProcessConstraints.NoVentPocket</key>
+        <key>Dialog.Forms.FromToEditControl.ProcessConstraints.NoVentPocket</key>
         <string>Avoid below From-To</string>
 
         <key>Dialog.Forms.FromToWindow.Title</key>
