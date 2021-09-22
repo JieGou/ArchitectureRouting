@@ -16,11 +16,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public static void ShowFromToWindow( UIDocument uiDocument, AddInType addInType, FromToWindowCreator fromToWindowCreator )
     {
-      UiDoc = uiDocument ;
       var allRoutes = uiDocument.Document.CollectRoutes( addInType ) ;
-      if ( OpenedDialog != null ) {
-        OpenedDialog.Close() ;
-      }
+      OpenedDialog?.Close() ;
 
       var fromToItemsList = new ObservableCollection<FromToWindowBase.FromToItems>() ;
 

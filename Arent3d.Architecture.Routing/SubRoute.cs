@@ -74,6 +74,16 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
+    public ElementId ShaftElementId => Segments.First().ShaftElementId ;
+
+    public void ChangeShaftElement( Element? shaftElement )
+    {
+      var shaftElementId = shaftElement?.Id ?? ElementId.InvalidElementId ;
+      foreach ( var seg in Segments ) {
+        seg.ShaftElementId = shaftElementId ;
+      }
+    }
+
     public MEPCurveType GetMEPCurveType()
     {
       return _routeSegments.Select( seg => seg.CurveType ).NonNull().FirstOrDefault() ?? Route.GetDefaultCurveType() ;

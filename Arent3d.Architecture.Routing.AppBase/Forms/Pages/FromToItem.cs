@@ -51,27 +51,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public bool IsRootRoute { get ; set ; }
 
     public Brush NormalTextColor { get ; set ; }
-    public Brush SelectionTextColor { get ; set ; } = SystemColors.HighlightTextBrush ;
-    public Brush InactiveSelectionTextColor { get ; set ; } = SystemColors.InactiveSelectionHighlightBrush ;
 
     private List<FromToItem> ChildrenList { get ; }
     public abstract BitmapImage? Icon { get ; }
 
     private static SortedDictionary<string, FromToItem>? ItemDictionary { get ; set ; }
-
-    private bool _selected ;
-
-    public bool Selected
-    {
-      get => this._selected ;
-      set
-      {
-        this._selected = value ;
-        if ( value == true ) {
-          OnSelected() ;
-        }
-      }
-    }
 
     private IReadOnlyCollection<Route> AllRoutes { get ; set ; }
     private Document Doc { get ; }
@@ -347,16 +331,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       private List<ElementId>? _targetElements ;
 
-      private static BitmapImage RouteItemIcon { get ; set ; } = new BitmapImage( new Uri( "../../resources/MEP.ico", UriKind.Relative ) ) ;
+      private static BitmapImage RouteItemIcon { get ; } = new BitmapImage( new Uri( "../../resources/MEP.ico", UriKind.Relative ) ) ;
       public override BitmapImage Icon => RouteItemIcon ;
 
       public RouteItem( Document doc, UIDocument uiDoc, IReadOnlyCollection<Route> allRoutes, Route ownRoute, BitmapImage? bitmapImage ) : base( doc, uiDoc, allRoutes )
       {
         SubRoutes = ownRoute.SubRoutes ;
-        /*if ( bitmapImage is { } ) { 
-          RouteItemIcon = bitmapImage ;
-        }*/ // TODO
-        PropertySourceType = new PropertySource.RoutePropertySource( doc, ownRoute.SubRoutes ) ;
+        PropertySourceType = new RoutePropertySource( doc, ownRoute.SubRoutes ) ;
       }
 
       public override void OnSelected()
@@ -364,12 +345,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         _targetElements = new List<ElementId>() ;
 
         _selectedRoute = AllRoutes.FirstOrDefault( r => r.OwnerElement?.Id == ElementId ) ;
-
         if ( _selectedRoute == null ) return ;
-        // set SelectedRoute to SelectedFromToViewModel
-        SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, _selectedRoute.SubRoutes.ToList(), this ) ;
 
-        _targetElements = Doc?.GetAllElementsOfRouteName<Element>( ItemTypeName ).Select( elem => elem.Id ).ToList() ;
+        _targetElements = Doc.GetAllElementsOfRouteName<Element>( ItemTypeName ).Select( elem => elem.Id ).ToList() ;
         // Select targetElements
         if ( _targetElements != null ) {
           UiDoc.Selection.SetElementIds( _targetElements ) ;
@@ -431,7 +409,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         /*if ( bitmapImage is { } ) {
           RouteItemIcon = bitmapImage ;
         }*/ // TODO
-        PropertySourceType = new PropertySource.RoutePropertySource( Doc, new List<SubRoute>() { ownSubRoute } ) ;
+        PropertySourceType = new RoutePropertySource( Doc, new List<SubRoute>() { ownSubRoute } ) ;
       }
 
       public override void OnSelected()
@@ -443,9 +421,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         // Select targetElements
         if ( _targetElements == null ) return ;
         UiDoc.Selection.SetElementIds( _targetElements ) ;
-        // set SelectedRoute to SelectedFromToViewModel
-        var targetSubRoutes = new List<SubRoute> { Route.SubRoutes.ElementAt( SubRouteIndex ) } ;
-        if ( UiDoc != null ) SelectedFromToViewModel.SetSelectedFromToInfo( UiDoc, Doc, targetSubRoutes, this ) ;
       }
 
       public override void OnDoubleClicked()

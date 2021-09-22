@@ -13,10 +13,10 @@ using Autodesk.Revit.UI.Events ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Manager
 {
-  public class FromToTreeManager
+  public class FromToTreeManager : IUIApplicationHolder
   {
-    public UIApplication? UiApp = null ;
-    public FromToTreeUiManager? FromToTreeUiManager = null ;
+    public UIApplication? UiApp { get ; set ; } = null ;
+    public FromToTreeUiManager? FromToTreeUiManager { get ; set ; } = null ;
 
     public FromToTreeManager()
     {

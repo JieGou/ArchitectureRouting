@@ -61,11 +61,14 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public ElementId EquipmentId { get ; }
     public int ConnectorIndex { get ; }
 
-    public Connector? GetConnector() => _document.GetElementById<Instance>( EquipmentId )?.GetConnectorManager()?.Lookup( ConnectorIndex ) ;
+    public Element? GetOwnerElement() => _document.GetElementById<Instance>( EquipmentId ) ;
+    public Connector? GetConnector() => GetOwnerElement()?.GetConnectorManager()?.Lookup( ConnectorIndex ) ;
 
     public string ParameterString => BuildParameterString( EquipmentId, ConnectorIndex ) ;
 
     public XYZ RoutingStartPosition => GetConnector()?.Origin ?? XYZ.Zero ;
+
+    public ElementId GetLevelId( Document document ) => GetOwnerElement()?.LevelId ?? ElementId.InvalidElementId ;
 
     public ConnectorEndPoint( Connector connector )
     {

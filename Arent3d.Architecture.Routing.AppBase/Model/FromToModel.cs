@@ -11,15 +11,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
 {
   public class FromToModel
   {
-    private UIApplication UiApp ;
-    private Application App ;
-    private UIDocument UiDoc ;
-    private Document Doc ;
+    private UIDocument UiDoc { get ; set ; }
+    private Document Doc { get ; set ; }
 
     public FromToModel( UIApplication uiApp )
     {
-      UiApp = uiApp ;
-      App = UiApp.Application ;
       UiDoc = uiApp.ActiveUIDocument ;
       Doc = UiDoc.Document ;
     }

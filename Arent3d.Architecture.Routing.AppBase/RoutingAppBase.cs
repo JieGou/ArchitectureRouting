@@ -1,3 +1,4 @@
+using System ;
 using System.Collections.Generic ;
 using System.Reflection ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
@@ -51,9 +52,6 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
     }
 
-    protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()
-    {
-      yield return new RoutingUpdateListener() ;
-    }
+    protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners() => Array.Empty<IDocumentUpdateListener>() ;
   }
 }

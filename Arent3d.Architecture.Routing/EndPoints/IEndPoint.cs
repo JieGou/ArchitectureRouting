@@ -64,6 +64,13 @@ namespace Arent3d.Architecture.Routing.EndPoints
     double? GetDiameter() ;
 
     /// <summary>
+    /// Returns level id which this end point is placed on. 
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    ElementId GetLevelId( Document document ) ;
+
+    /// <summary>
     /// Returns the required minimum straight length.
     /// </summary>
     double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) ;

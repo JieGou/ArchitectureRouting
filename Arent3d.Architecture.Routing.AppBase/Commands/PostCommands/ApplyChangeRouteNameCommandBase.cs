@@ -1,37 +1,36 @@
-﻿using Arent3d.Architecture.Routing.AppBase.ViewModel;
-using Arent3d.Revit.I18n;
-using Autodesk.Revit.DB;
+﻿using Arent3d.Revit.I18n ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using System;
-
+using Arent3d.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
 {
-    public abstract class ApplyChangeRouteNameCommandBase : IExternalCommand
-    {
-        public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
-        {
-            var uiDocument = commandData.Application.ActiveUIDocument;
-            var document = uiDocument.Document;
+  public class ApplyChangeRouteNameCommandParameter
+  {
+    public Route Route { get ; }
+    public string NewName { get ; }
 
-            try {
-                if ( SelectedFromToViewModel.PropertySourceType is { } propertySource ) {
-                    Route? targetRoute = propertySource.TargetRoute;
-                    if( targetRoute != null && SelectedFromToViewModel.FromToItem != null) { 
-                        
-                        using ( Transaction t = new Transaction( document, "TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand".GetAppStringByKeyOrDefault(" Rename RouteName") ) ) {
-                            t.Start();
-                            targetRoute.Rename(SelectedFromToViewModel.FromToItem.ItemTypeName);
-                            t.Commit();
-                        }
-                    }
-                }
-                return Result.Succeeded;
-            }
-            catch ( Exception e ) {
-                CommandUtils.DebugAlertException( e );
-                return Result.Failed;
-            }
-        }
+    public ApplyChangeRouteNameCommandParameter( Route route, string newName )
+    {
+      Route = route ;
+      NewName = newName ;
     }
+  }
+
+  public abstract class ApplyChangeRouteNameCommandBase : IExternalCommand
+  {
+    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
+    {
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var document = uiDocument.Document ;
+
+      if ( CommandParameterStorage.Pop<ApplyChangeRouteNameCommandParameter>() is not { } arg ) return Result.Cancelled ;
+
+      return document.Transaction( "TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand".GetAppStringByKeyOrDefault( " Rename RouteName" ), t =>
+      {
+        arg.Route.Rename( arg.NewName ) ;
+        return Result.Succeeded ;
+      } ) ;
+    }
+  }
 }
