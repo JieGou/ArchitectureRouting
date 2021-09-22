@@ -24,6 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             Selection selection = uiDocument.Selection;
             try
             {
+                // Pick start point 
                 XYZ point1 = selection.PickPoint("Pick start point");
                 XYZ? point3 = null;
                 RectangleExternal? rectangleExternal = null;
@@ -31,7 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                 {
                     rectangleExternal = new RectangleExternal(uiApp) { DrawingServer = { BasePoint = point1 } };
                     rectangleExternal.DrawExternal();
-
+                    // Pick end point 
                     point3 = selection.PickPoint("Pick end point");
                 }
                 catch (Exception)
@@ -41,15 +42,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                 finally
                 {
                     if (rectangleExternal != null)
-                    {
                         rectangleExternal.Dispose();
-                    }
                 }
 
-                if (point3 == null)
-                {
-                    return Result.Succeeded;
-                }
+                if (point3 == null) return Result.Succeeded;
 
                 var midPoint = (point1 + point3) * 0.5;
                 var currView = document.ActiveView;
