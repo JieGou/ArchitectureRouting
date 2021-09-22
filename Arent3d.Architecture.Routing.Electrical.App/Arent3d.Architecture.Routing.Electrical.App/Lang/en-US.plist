@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+﻿<?xml version = "1.0" encoding = "UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
     <dict>
         <!-- Application UI Strings -->
@@ -20,15 +20,14 @@
 
         <key>Electrical.App.Panels.Routing.Shafts</key>
         <string>Shaft</string>
-      
+
         <key>Electrical.App.Panels.Routing.Monitor</key>
         <string>Monitor Selection</string>
 
 
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>
-        <string>Insert
-Branch Point</string>
+        <string>Insert&#xA;Branch Point</string>
 
         <key>Electrical.App.Commands.Initialization.InitializeCommand</key>
         <string>Initialize</string>
@@ -37,76 +36,58 @@ Branch Point</string>
         <string>Plans</string>
 
         <key>Electrical.App.Commands.PassPoint.InsertPassPointCommand</key>
-        <string>Insert
-Pass Point</string>
+        <string>Insert&#xA;Pass Point</string>
 
         <key>Electrical.App.Commands.Rack.EraseAllRacksCommand</key>
-        <string>Delete
-All PS</string>
+        <string>Delete&#xA;All PS</string>
 
         <key>Electrical.App.Commands.Rack.ExportRacksCommand</key>
-        <string>Export
-PS</string>
+        <string>Export&#xA;PS</string>
 
         <key>Electrical.App.Commands.Rack.ImportRacksCommand</key>
-        <string>Import
-PS</string>
+        <string>Import&#xA;PS</string>
 
         <key>Electrical.App.Commands.Routing.AllReRouteCommand</key>
-        <string>Re-Route
-All</string>
+        <string>Re-Route&#xA;All</string>
 
         <key>Electrical.App.Commands.Routing.EraseAllRoutesCommand</key>
-        <string>Delete
-All From-To</string>
+        <string>Delete&#xA;All From-To</string>
 
         <key>Electrical.App.Commands.Routing.EraseSelectedRoutesCommand</key>
-        <string>Delete
-From-To</string>
+        <string>Delete&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.ExportRoutingCommand</key>
-        <string>Export
-From-To</string>
+        <string>Export&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.FileRoutingCommand</key>
-        <string>Import
-From-To</string>
+        <string>Import&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.PickAndReRouteCommand</key>
-        <string>Re-Route
-Selected</string>
+        <string>Re-Route&#xA;Selected</string>
 
         <key>Electrical.App.Commands.Routing.PickRoutingCommand</key>
-        <string>Pick
-From-To</string>
+        <string>Pick&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.ReplaceFromToCommand</key>
-        <string>Replace
-From-To</string>
+        <string>Replace&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Selecting.GetSelectedFromToInfoCommand</key>
-        <string>Modify
-From-To</string>
+        <string>Modify&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.ShowFrom_ToWindowCommand</key>
-        <string>From-To
-Window</string>
+        <string>From-To&#xA;Window</string>
 
         <key>Electrical.App.Commands.Routing.ShowFromTreeCommand</key>
-        <string>From-To
-Tree</string>
+        <string>From-To&#xA;Tree</string>
 
         <key>Electrical.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
-        <string>Change
-FixedBopHeight</string>
+        <string>Change&#xA;FixedBopHeight</string>
 
-		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
-		<string>Height Setting</string>
-        
-        <key>Electrical.App.Commands.Routing.NewRackCommand</key>
-        <string>Create Rack
-For All
-        </string>
+        <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
+        <string>Height Setting</string>
+
+		<key>Electrical.App.Commands.Routing.NewRackCommand</key>
+        <string>Create Rack&#xA;For All</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -169,8 +150,8 @@ For All
 
         <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change Route Height</string>
-        
-        <key>TransactionName.Commands.Rack.CreateCableRackForAllRoute</key>
+
+		<key>TransactionName.Commands.Rack.CreateCableRackForAllRoute</key>
         <string>Create Cable Rack For All Route</string>
 
         <!-- Dialogs -->
@@ -217,20 +198,17 @@ For All
 
         <key>Dialog.Commands.Routing.Dialog.Title.Error</key>
         <string>Routing Error</string>
-        
+
         <key>Dialog.Commands.Routing.Common.Body.Error.ExceptionOccured</key>
         <string>An unhandled exception occured.</string>
         <key>Dialog.Commands.Routing.Common.Body.Error.DeletedSomeFailedElements</key>
-        <string>Some elements cannot be created on routing.
-Add pass points to generate valid route shape.</string>
+        <string>Some elements cannot be created on routing.&#xA;Add pass points to generate valid route shape.</string>
         <key>Dialog.Commands.Routing.Common.Body.Error.FittingCannotBeInserted</key>
-        <string>Some fitting elements could not be inserted on the following connectors:
-
-{0}</string>
+        <string>Some fitting elements could not be inserted on the following connectors:&#xA;&#xA;{0}</string>
 
         <key>Dialog.Forms.SelectedFromToBase.ChangeFromTo</key>
-        <string>Do you want to change the From-To information?
-If you change it, it will be automatically re-routed.</string>
+		
+        <string>Do you want to change the From-To information?&#xA;If you change it, it will be automatically re-routed.</string>
 
         <key>Dialog.Forms.FromToTree.Rename</key>
         <string>Since the name is duplicated, please change it to another name.</string>
@@ -276,14 +254,15 @@ If you change it, it will be automatically re-routed.</string>
 
         <key>Revit.Property.Builtin.OffsetHeight</key>
         <string>Offset Height</string>
+
+		<key>Revit.Property.Builtin.OutsideDiameter</key>
+        <string>Outside Diameter</string>
         
-	    <key>Revit.Property.Builtin.OutsideDiameter</key>
-	    <string>Outside Diameter</string>
+        <key>Revit.Property.Builtin.Conduit.Length</key>
+        <string>Length</string>
+        
+        <key>Revit.Property.Builtin.BendRadius</key>
+        <string>Bend Radius</string>
 
-	    <key>Revit.Property.Builtin.Conduit.Length</key>
-	    <string>Length</string>
-
-	    <key>Revit.Property.Builtin.BendRadius</key>
-	    <string>Bend Radius</string>
     </dict>
 </plist>
