@@ -27,7 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       {
         _editingSource = value ;
         if ( value is { } source ) {
-          FromToEdit.SetRouteProperties( source.Properties ) ;
+          FromToEdit.SetRouteProperties( new RoutePropertyTypeList( source.TargetSubRoutes ), source.Properties ) ;
           ResetDialog() ;
         }
         else {

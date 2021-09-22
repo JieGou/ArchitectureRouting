@@ -71,7 +71,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues )
     {
-      var sv = new RoutePropertyDialog( document, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType ) ) ;
+      var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo ) ;
+      var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault() ) ) ;
 
       sv.ShowDialog() ;
 
@@ -79,7 +80,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
     private static RoutePropertyDialog ShowDialog( Document document )
     {
-      var sv = new RoutePropertyDialog( document, new RouteProperties( document ) ) ;
+      var routeChoiceSpec = new RoutePropertyTypeList( document ) ;
+      var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ) ) ;
       sv.ShowDialog() ;
 
       return sv ;

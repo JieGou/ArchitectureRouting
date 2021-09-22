@@ -14,17 +14,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       InitializeComponent() ;
     }
 
-    public RoutePropertyDialog( Document document, RouteProperties properties )
+    public RoutePropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
       InitializeComponent() ;
 
       FromToEdit.DisplayUnitSystem = document.DisplayUnitSystem ;
-      UpdateProperties( properties ) ;
+      UpdateProperties( propertyTypeList, properties ) ;
     }
 
-    private void UpdateProperties( RouteProperties properties )
+    private void UpdateProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
-      FromToEdit.SetRouteProperties( properties ) ;
+      FromToEdit.SetRouteProperties( propertyTypeList, properties ) ;
       FromToEdit.ResetDialog() ;
     }
 

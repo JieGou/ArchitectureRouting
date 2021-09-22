@@ -318,10 +318,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// </summary>
     /// <param name="systemTypes"></param>
     /// <param name="curveTypes"></param>
-    /// <param name="vertexTolerance"></param>
-    private void SetAvailableParameterList( IList<MEPSystemType>? systemTypes, IList<MEPCurveType> curveTypes, double vertexTolerance )
+    private void SetAvailableParameterList( IList<MEPSystemType>? systemTypes, IList<MEPCurveType> curveTypes)
     {
-      VertexTolerance = vertexTolerance ;
       Diameters.Clear() ;
       SystemTypes.Clear() ;
       CurveTypes.Clear() ;
@@ -342,9 +340,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    public void SetRouteProperties( RouteProperties properties )
+    public void SetRouteProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
-      SetAvailableParameterList( properties.SystemTypes, properties.CurveTypes, properties.VertexTolerance ) ;
+      VertexTolerance = properties.VertexTolerance ;
+      SetAvailableParameterList( propertyTypeList.SystemTypes, propertyTypeList.CurveTypes ) ;
 
       SystemTypeOrg = properties.SystemType ;
       CurveTypeOrg = properties.CurveType ;
