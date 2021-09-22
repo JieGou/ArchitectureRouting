@@ -145,8 +145,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   var conduit = ( element as FamilyInstance )! ;
 
                   // Ignore the case of vertical conduits in the oz direction
-                  if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z ||
-                       1.0 == conduit.FacingOrientation.Y ) {
+                  if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z) {
                     continue ;
                   }
 
