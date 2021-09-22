@@ -1,5 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
     <dict>
 
@@ -27,8 +26,7 @@
 
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>
-        <string>Insert
-Branch Point</string>
+        <string>Insert&#xA;Branch Point</string>
 
         <key>Electrical.App.Commands.Initialization.InitializeCommand</key>
         <string>Initialize</string>
@@ -37,83 +35,58 @@ Branch Point</string>
         <string>Plans</string>
           
         <key>Electrical.App.Commands.PassPoint.InsertPassPointCommand</key>
-        <string>Insert
-Pass Point</string>
+        <string>Insert&#xA;Pass Point</string>
 
         <key>Electrical.App.Commands.Rack.EraseAllRacksCommand</key>
-        <string>Delete
-All PS</string>
+        <string>Delete&#xA;All PS</string>
           
         <key>Electrical.App.Commands.Rack.ExportRacksCommand</key>
-        <string>Export
-PS</string>
+        <string>Export&#xA;PS</string>
         
         <key>Electrical.App.Commands.Rack.ImportRacksCommand</key>
-        <string>Import
-PS</string>
+        <string>Import&#xA;PS</string>
 
         <key>Electrical.App.Commands.Routing.AllReRouteCommand</key>
-        <string>Reroute
-All</string>
+        <string>Reroute&#xA;All</string>
 
         <key>Electrical.App.Commands.Routing.EraseAllRoutesCommand</key>
-        <string>Delete
-All From-To</string>
+        <string>Delete&#xA;All From-To</string>
 
         <key>Electrical.Commands.Routing.EraseSelectedRoutesCommand</key>
-        <string>Delete
-From-To</string>
+        <string>Delete&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.ExportRoutingCommand</key>
-        <string>Export
-From-To</string>
+        <string>Export&#xA;From-To</string>
         
         <key>Electrical.App.Commands.Routing.FileRoutingCommand</key>
-        <string>Import
-From-To</string>
+        <string>Import&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.PickAndReRouteCommand</key>
-        <string>Reroute
-Selected</string>
+        <string>Reroute&#xA;Selected</string>
 
         <key>Electrical.App.Commands.Routing.PickRoutingCommand</key>
-        <string>Pick
-From-To</string>
+        <string>Pick&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.ReplaceFromToCommand</key>
-        <string>Replace
-From-To</string>
+        <string>Replace&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Selecting.GetSelectedFromToInfoCommand</key>
-        <string>Modify
-From-To</string>
+        <string>Modify&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.ShowFrom_ToWindowCommand</key>
-        <string>From-To
-Window</string>
+        <string>From-To&#xA;Window</string>
 
         <key>Electrical.App.Commands.Routing.ShowFromTreeCommand</key>
-        <string>From-To
-Tree</string>
+        <string>From-To&#xA;Tree</string>
 
         <key>Electrical.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
-        <string>Change
-FixedBopHeight</string>
+        <string>Change&#xA;FixedBopHeight</string>
 		
 		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
 		<string>Height Setting</string>
 
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
-        <string>ラックを作成する
-すべてのコンジット用
-        </string>
-
-        <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
-        <string>
-            Create Rack
-            From-To
-        </string>
-
+        <string>ラックを作成する&#xA;すべてのコンジット用</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -176,12 +149,9 @@ FixedBopHeight</string>
 
         <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Route高さを変更</string>
-        
+
         <key>TransactionName.Commands.Rack.CreateCableRackForAllRoute</key>
         <string>すべてのルートのケーブルラックを作成する</string>
-
-        <key>TransactionName.Commands.Rack.NewRackFromTo</key>
-        <string>Create Cable Rack From-To</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
@@ -223,16 +193,12 @@ FixedBopHeight</string>
         <key>Dialog.Commands.Routing.Common.Body.Error.ExceptionOccured</key>
         <string>未ハンドルの例外が発生しました。</string>
         <key>Dialog.Commands.Routing.Common.Body.Error.DeletedSomeFailedElements</key>
-        <string>ルーティング時、一部の要素が作成できませんでした。
-通過点を指定することでエラーのない形状を作成できます。</string>
+        <string>ルーティング時、一部の要素が作成できませんでした。&#xA;通過点を指定することでエラーのない形状を作成できます。</string>
         <key>Dialog.Commands.Routing.Common.Body.Error.FittingCannotBeInserted</key>
-        <string>以下のコネクタに対し、継手要素が挿入できませんでした：
-
-{0}</string>
+        <string>以下のコネクタに対し、継手要素が挿入できませんでした：&#xA;&#xA;{0}</string>
 
         <key>Dialog.Forms.SelectedFromToBase.ChangeFromTo</key>
-        <string>From-To情報を変更しますか？
-変更する場合、自動的に再ルーティングが行われます。</string>
+        <string>From-To情報を変更しますか？&#xA;変更する場合、自動的に再ルーティングが行われます。</string>
 
         <key>Dialog.Forms.FromToTree.Rename</key>
         <string>名称が重複しているため、他の名称に変更してください。</string>
@@ -277,14 +243,13 @@ FixedBopHeight</string>
 
         <key>Revit.Property.Builtin.OffsetHeight</key>
         <string>オフセット高さ</string>
-        
-	    <key>Revit.Property.Builtin.OutsideDiameter</key>
-	    <string>外径</string>
 
-	    <key>Revit.Property.Builtin.Conduit.Length</key>
-	    <string>長さ</string>
-
-	    <key>Revit.Property.Builtin.BendRadius</key>
-	    <string>曲げ半径</string>
+        <key>Revit.Property.Builtin.OutsideDiameter</key>
+        <string>外径</string>
+        <key>Revit.Property.Builtin.Conduit.Length</key>
+        <string>長さ</string>
+        <key>Revit.Property.Builtin.BendRadius</key>
+        <string>曲げ半径</string>
     </dict>
 </plist>
+

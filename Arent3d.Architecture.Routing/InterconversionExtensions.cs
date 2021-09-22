@@ -1,4 +1,4 @@
-﻿using System ;
+using System ;
 using Arent3d.Routing ;
 using Autodesk.Revit.DB ;
 using MathLib ;
