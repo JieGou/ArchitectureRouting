@@ -1,4 +1,3 @@
-using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CollisionTree ;
@@ -8,8 +7,9 @@ using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.Exceptions ;
 using MathLib ;
-using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
+using InvalidOperationException = System.InvalidOperationException ;
 
 namespace Arent3d.Architecture.Routing.AppBase
 {
@@ -126,8 +126,6 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     private void ExecuteRouting( Domain domain, IReadOnlyCollection<Route> routes, IProgressData? progressData )
     {
-      routes.ForEach( r => r.Save() ) ;
-
       progressData?.ThrowIfCanceled() ;
       
       ICollisionCheckTargetCollector collector ;
@@ -149,6 +147,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
       RegisterBadConnectors( generator.GetBadConnectorSet() ) ;
+
+      routes.ForEach( r => r.Save() ) ;
     }
 
     protected abstract RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector ) ;
@@ -290,7 +290,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       private static HashSet<ConnectorId> GetEndPoints( Document document, string connectors )
       {
-        return EndPointExtensions.ParseEndPoints( document, connectors ).OfType<ConnectorEndPoint>().Select( c => new ConnectorId( c ) ).ToHashSet() ;
+        return document.ParseEndPoints( connectors ).OfType<ConnectorEndPoint>().Select( c => new ConnectorId( c ) ).ToHashSet() ;
       }
 
       private IEnumerable<FamilyInstance> GetNeighborReducers( Document document, HashSet<ConnectorId> endPoints, bool isFrom )
@@ -318,5 +318,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         }
       }
     }
+
+    public abstract IFailuresPreprocessor CreateFailuresPreprocessor() ;
   }
 }

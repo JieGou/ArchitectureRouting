@@ -40,13 +40,13 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.PassPointBuiltInCategorySet ) )]
     RelatedTerminatePointId,
     
-    [ParameterGuid( "96614f55-d304-44d5-8af1-9d359299538a" ), NameOnRevit( "Related MEP Curve Ids" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RoutingBuiltInCategorySet ) )]
-    RelatedMEPCurveIds,
-    
     [ParameterGuid( "ba87dfa3-c1f7-4b44-b07d-00333404bda8" ), NameOnRevit( "Representative Route Name" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RoutingBuiltInCategorySet ) )]
     RepresentativeRouteName,
+    
+    [ParameterGuid( "9e825887-84fe-474d-ac2e-c683f7376647" ), NameOnRevit( "Representative SubRoute Index" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RoutingBuiltInCategorySet ) )]
+    RepresentativeSubRouteIndex,
   }
 
   public enum PassPointParameter

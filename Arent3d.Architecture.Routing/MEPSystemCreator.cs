@@ -30,11 +30,11 @@ namespace Arent3d.Architecture.Routing
 
     private readonly Level _level ;
 
-    private readonly IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> _routeConditionDictionary ;
+    private readonly IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> _routeConditionDictionary ;
 
     private readonly List<Connector[]> _badConnectors = new() ;
 
-    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<(string RouteName, int SubRouteIndex), MEPSystemRouteCondition> routeConditionDictionary )
+    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
     {
       _document = document ;
       AutoRoutingTarget = autoRoutingTarget ;
@@ -104,7 +104,7 @@ namespace Arent3d.Architecture.Routing
       var startPos = _connectorMapper.GetNewConnectorPosition( routeEdge.Start, routeEdge.End ).ToXYZRaw() ;
       var endPos = _connectorMapper.GetNewConnectorPosition( routeEdge.End, routeEdge.Start ).ToXYZRaw() ;
 
-      var routeMepSystem = _routeConditionDictionary[ subRoute.GetKey() ].Spec.RouteMEPSystem ;
+      var routeMepSystem = _routeConditionDictionary[ new SubRouteInfo( subRoute ) ].Spec.RouteMEPSystem ;
 
       var element = AutoRoutingTarget.Domain switch
       {
@@ -408,7 +408,7 @@ namespace Arent3d.Architecture.Routing
       if ( null == fitting ) return null ;
 
       if ( null != subRouteData ) {
-        MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromEndPoints, toEndPoints ) ;
+        MarkAsAutoRoutedElement( fitting, subRouteData.RouteName, subRouteData.SubRouteIndex, fromEndPoints, toEndPoints ) ;
       }
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
@@ -439,7 +439,7 @@ namespace Arent3d.Architecture.Routing
       if ( null == fitting ) return null ;
 
       if ( null != subRouteData ) {
-        MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromEndPoints, toEndPoints ) ;
+        MarkAsAutoRoutedElement( fitting, subRouteData.RouteName, subRouteData.SubRouteIndex, fromEndPoints, toEndPoints ) ;
       }
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
@@ -470,7 +470,7 @@ namespace Arent3d.Architecture.Routing
       if ( null == fitting ) return null ;
 
       if ( null != subRouteData ) {
-        MarkAsAutoRoutedElement( fitting, subRouteData.Value.RouteName, subRouteData.Value.SubRouteIndex, fromEndPoints, toEndPoints ) ;
+        MarkAsAutoRoutedElement( fitting, subRouteData.RouteName, subRouteData.SubRouteIndex, fromEndPoints, toEndPoints ) ;
       }
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
@@ -478,46 +478,39 @@ namespace Arent3d.Architecture.Routing
       return fitting ;
     }
 
-    private static (string RouteName, int SubRouteIndex)? GuessSubRoute( params Connector[] connectors )
+    private static SubRouteInfo? GuessSubRoute( params Connector[] connectors )
     {
-      var subRoutes = new List<(string RouteName, int SubRouteIndex)>() ;
-      var counts = new Dictionary<(string RouteName, int SubRouteIndex), int>() ;
+      var subRoutes = new List<SubRouteInfo>() ;
+      var counts = new Dictionary<SubRouteInfo, int>() ;
       foreach ( var connector in connectors ) {
-        var elm = connector.Owner ;
+        if ( connector.Owner.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
 
-        var routeName = elm.GetRouteName() ;
-        if ( null == routeName ) continue ;
+        subRoutes.Add( subRouteInfo ) ;
 
-        var subRouteIndex = elm.GetSubRouteIndex() ;
-        if ( null == subRouteIndex ) continue ;
-
-        var tuple = ( routeName, subRouteIndex.Value ) ;
-        subRoutes.Add( tuple ) ;
-
-        if ( false == counts.TryGetValue( tuple, out var count ) ) {
-          counts.Add( tuple, count ) ;
+        if ( false == counts.TryGetValue( subRouteInfo, out var count ) ) {
+          counts.Add( subRouteInfo, count ) ;
         }
         else {
-          counts[ tuple ] = count + 1 ;
+          counts[ subRouteInfo ] = count + 1 ;
         }
       }
 
       if ( 0 == counts.Count ) return null ;
 
-      var maxTuple = ( RouteName: string.Empty, SubRouteIndex: -1 ) ;
+      SubRouteInfo? maxSubRouteInfo = null ;
       var maxCount = -1 ;
-      foreach ( var tuple in subRoutes ) {
-        var count = counts[ tuple ] ;
-        if ( count > maxCount || ( count == maxCount && IsGreaterThan( tuple, maxTuple ) ) ) {
-          maxTuple = tuple ;
+      foreach ( var subRouteInfo in subRoutes ) {
+        var count = counts[ subRouteInfo ] ;
+        if ( count > maxCount || ( count == maxCount && IsGreaterThan( subRouteInfo, maxSubRouteInfo! ) ) ) {
+          maxSubRouteInfo = subRouteInfo ;
           maxCount = count ;
         }
       }
 
-      return maxTuple ;
+      return maxSubRouteInfo ;
     }
 
-    private static bool IsGreaterThan( (string RouteName, int SubRouteIndex) tuple1, (string RouteName, int SubRouteIndex) tuple2 )
+    private static bool IsGreaterThan( SubRouteInfo tuple1, SubRouteInfo tuple2 )
     {
       if ( tuple1.RouteName != tuple2.RouteName ) return string.Compare( tuple1.RouteName, tuple2.RouteName, StringComparison.InvariantCulture ) > 0 ;
       return tuple1.SubRouteIndex > tuple2.SubRouteIndex ;
