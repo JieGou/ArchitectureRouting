@@ -86,6 +86,8 @@
 		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
 		<string>Height Setting</string>
 
+        <key>Electrical.App.Commands.Routing.NewRackCommand</key>
+        <string>Create Rack&#xA;For All</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -149,6 +151,8 @@
         <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change Route Height</string>
 
+        <key>TransactionName.Commands.Rack.CreateCableRackForAllRoute</key>
+        <string>Create Cable Rack For All Route</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
@@ -250,6 +254,12 @@
         <key>Revit.Property.Builtin.OffsetHeight</key>
         <string>Offset Height</string>
 
+        <key>Revit.Property.Builtin.OutsideDiameter</key>
+        <string>Outside Diameter</string>
+        <key>Revit.Property.Builtin.Conduit.Length</key>
+        <string>Length</string>
+        <key>Revit.Property.Builtin.BendRadius</key>
+        <string>Bend Radius</string>
 
     </dict>
 </plist>
