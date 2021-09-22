@@ -10,6 +10,7 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using ControlLib ;
 using LengthConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters.LengthConverter ;
+using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -46,6 +47,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static readonly DependencyPropertyKey IsChangedPropertyKey = DependencyProperty.RegisterReadOnly( "IsChanged", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
     public static readonly DependencyProperty AllowIndeterminateProperty = DependencyProperty.Register( "AllowIndeterminate", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( default( bool ) ) ) ;
     public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( FromToEditControl ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
+    public static readonly DependencyProperty LocationTypeIndexProperty = DependencyProperty.Register( "LocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
+    public static readonly DependencyProperty ToFixedHeightProperty = DependencyProperty.Register( "ToFixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, ToFixedHeight_Changed ) ) ;
+    public static readonly DependencyProperty ToUseFixedHeightProperty = DependencyProperty.Register( "ToUseFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
+    public static readonly DependencyProperty ToLocationTypeIndexProperty = DependencyProperty.Register( "ToLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
 
     //Diameter Info
     private double VertexTolerance { get ; set ; }
@@ -185,6 +190,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     //HeightSetting
     private bool? UseFixedHeightOrg { get ; set ; }
     private double FixedHeightOrg { get ; set ; }
+    private double CeilingFixedHeightOrg { get ; set ; }
     public bool? UseFixedHeight
     {
       get => (bool?) GetValue( UseFixedHeightProperty ) ;
@@ -197,6 +203,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
     public double ConnectorFixedHeight => FixedHeight - ( ( Diameter ?? 0.0 ) / 2 ) ;
 
+    //ToHeightSetting
+    private bool? ToUseFixedHeightOrg { get ; set ; }
+    private double ToFixedHeightOrg { get ; set ; }
+    private double ToCeilingFixedHeightOrg { get ; set ; }
+    public bool? ToUseFixedHeight
+    {
+      get => (bool?) GetValue( ToUseFixedHeightProperty ) ;
+      private set => SetValue( ToUseFixedHeightProperty, value ) ;
+    }
+    public double ToFixedHeight
+    {
+      get => (double) GetValue( ToFixedHeightProperty ) ;
+      private set => SetValue( ToFixedHeightProperty, value ) ;
+    }
+    
     public double CurrentMinValue
     {
       get => (double) GetValue( CurrentMinValueProperty ) ;
@@ -232,7 +253,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       [ Routing.AvoidType.AvoidAbove ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoDrainPocket".GetAppStringByKeyOrDefault( "Avoid on From-To" ),
       [ Routing.AvoidType.AvoidBelow ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoVentPocket".GetAppStringByKeyOrDefault( "Avoid below From-To" ),
     } ;
+    
+    //LocationType
+    private string? LocationTypeOrg { get ; set ; }
+    public string? LocationType
+    {
+      get => GetLocationTypeOnIndex( LocationTypes.Keys, (int)GetValue( LocationTypeIndexProperty ) ) ;
+      private set => SetValue( LocationTypeIndexProperty, GetLocationTypeIndex( LocationTypes.Keys, value ) ) ;
+    }
+    private string? ToLocationTypeOrg { get ; set ; }
+    public string? ToLocationType
+    {
+      get => GetLocationTypeOnIndex( LocationTypes.Keys, (int)GetValue( ToLocationTypeIndexProperty ) ) ;
+      private set => SetValue( ToLocationTypeIndexProperty, GetLocationTypeIndex( LocationTypes.Keys, value ) ) ;
+    }
+    private static string? GetLocationTypeOnIndex( IEnumerable<string> locationTypes, int index )
+    {
+      if ( index < 0 ) return null ;
+      return locationTypes.ElementAtOrDefault( index ) ;
+    }
+    private static int GetLocationTypeIndex( IEnumerable<string> locationTypes, string? locationType )
+    {
+      return ( locationType is { } type ? locationTypes.IndexOf( type ) : -1 ) ;
+    }
 
+    public IReadOnlyDictionary<string, string> LocationTypes { get ; } = new Dictionary<string, string>
+    {
+      { "Floor", "FL" } ,
+      { "Ceiling", "CL" }
+    } ;
+    
+    public bool IsDifferentLevel { get ; set ; }
+    
     public bool CanApply
     {
       get => (bool)GetValue( CanApplyPropertyKey.DependencyProperty ) ;
@@ -274,6 +326,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( UseFixedHeight != UseFixedHeightOrg ) return true ;
       if ( true == UseFixedHeight && false == LengthEquals( FixedHeightOrg, FixedHeight, VertexTolerance ) ) return true ;
       if ( AvoidTypeOrg != AvoidType ) return true ;
+      if ( LocationTypeOrg != LocationType ) return true ;
 
       return false ;
     }
@@ -352,8 +405,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       IsRouteOnPipeSpaceOrg = properties.IsRouteOnPipeSpace ;
       UseFixedHeightOrg = properties.UseFixedHeight ;
-      FixedHeightOrg = properties.FixedHeight ;
+      FixedHeightOrg = properties.IsPickRouting ? properties.FloorConnectorFixedHeight : properties.FixedHeight ;
       AvoidTypeOrg = properties.AvoidType ;
+      LocationTypeOrg = properties.LocationType ;
+      CeilingFixedHeightOrg = properties.CeilingConnectorFixedHeight ;
+      IsDifferentLevel = properties.IsDifferentLevel ;
+      
+      ToUseFixedHeightOrg = properties.UseFixedHeight ;
+      ToFixedHeightOrg = properties.IsPickRouting ? properties.FloorToConnectorFixedHeight : properties.ToFixedHeight ;
+      ToCeilingFixedHeightOrg = properties.CeilingToConnectorFixedHeight ;
+      ToLocationTypeOrg = properties.LocationType ;
+      if ( properties.IsDifferentLevel && properties.IsPickRouting ) {
+        LbHeight2.Visibility = Visibility.Visible ;
+        ToHeightSetting.Visibility = Visibility.Visible ;
+      }
+      else {
+        LbHeight2.Visibility = Visibility.Hidden ;
+        ToHeightSetting.Visibility = Visibility.Hidden ;
+      }
     }
 
     public void ResetDialog()
@@ -367,6 +436,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       FixedHeight = FixedHeightOrg ;
       AvoidType = AvoidTypeOrg ;
       CanApply = false ;
+      LocationType = LocationTypeOrg ;
+      
+      ToUseFixedHeight = ToUseFixedHeightOrg ;
+      ToFixedHeight = ToFixedHeightOrg ;
+      ToLocationType = ToLocationTypeOrg ;
     }
 
     public void ClearDialog()
@@ -383,7 +457,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       UseFixedHeightOrg = false ;
       FixedHeightOrg = 0.0 ;
       AvoidTypeOrg = Routing.AvoidType.Whichever ;
+      LocationTypeOrg = "Floor" ;
 
+      ToUseFixedHeightOrg = false ;
+      ToFixedHeightOrg = 0.0 ;
+      ToLocationTypeOrg = "Floor" ;
+      
       ResetDialog() ;
     }
 
@@ -406,12 +485,48 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       OnValueChanged( EventArgs.Empty ) ;
     }
+    
+    private void ToHeight_OnChecked( object sender, RoutedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+    }
+
+    private void ToHeight_OnUnchecked( object sender, RoutedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+    }
 
     private void AvoidTypeComboBox_OnSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       OnValueChanged( EventArgs.Empty ) ;
     }
 
+    private void LocationTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+      if ( LocationTypeComboBox.SelectedIndex == 0 ) {
+        LocationType = "Floor" ;
+        FixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( FixedHeightOrg ) ;
+      }
+      else {
+        LocationType = "Ceiling" ;
+        FixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( CeilingFixedHeightOrg ) ;
+      }
+    }
+    
+    private void ToLocationTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+      if ( ToLocationTypeComboBox.SelectedIndex == 0 ) {
+        ToLocationType = "Floor" ;
+        ToFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( ToFixedHeightOrg ) ;
+      }
+      else {
+        ToLocationType = "Ceiling" ;
+        ToFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( ToCeilingFixedHeightOrg ) ;
+      }
+    }
+    
     private KeyValuePair<AvoidType, string> GetAvoidTypeKeyValuePair( AvoidType avoidTypeKey )
     {
       return new KeyValuePair<AvoidType, string>( avoidTypeKey, AvoidTypes[ avoidTypeKey ] ) ;
@@ -424,6 +539,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       OnValueChanged( EventArgs.Empty ) ;
     }
+    
+    private void ToFixedHeightNumericUpDown_OnValueChanged( object sender, ValueChangedEventArgs e )
+    {
+      // Manually update FixedHeight because Value binding is not called.
+      ToFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( ToFixedHeightNumericUpDown.Value ) ;
+
+      OnValueChanged( EventArgs.Empty ) ;
+    }
 
     private static void FixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
@@ -431,6 +554,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( e.NewValue is not double newValue ) return ;
 
       fromToEditControl.FixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+    }
+    
+    private static void ToFixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
+    {
+      if ( d is not FromToEditControl fromToEditControl ) return ;
+      if ( e.NewValue is not double newValue ) return ;
+
+      fromToEditControl.ToFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
     }
 
     private static LengthConverter GetLengthConverter( DisplayUnit displayUnitSystem )
