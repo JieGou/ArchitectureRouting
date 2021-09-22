@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
     <dict>
 
@@ -85,8 +85,6 @@
 		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
 		<string>Height Setting</string>
 
-		<key>Electrical.App.Commands.Routing.NewRackCommand</key>
-        <string>ラックを作成する&#xA;すべてのコンジット用</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -150,8 +148,6 @@
         <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Route高さを変更</string>
         
-		<key>TransactionName.Commands.Rack.CreateCableRackForAllRoute</key>
-        <string>すべてのルートのケーブルラックを作成する</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
@@ -244,14 +240,6 @@
         <key>Revit.Property.Builtin.OffsetHeight</key>
         <string>オフセット高さ</string>
 
-		<key>Revit.Property.Builtin.OutsideDiameter</key>
-	    <string>外径</string>
-		
-	    <key>Revit.Property.Builtin.Conduit.Length</key>
-	    <string>長さ</string>
-		
-	    <key>Revit.Property.Builtin.BendRadius</key>
-	    <string>曲げ半径</string>
     </dict>
 </plist>
 
