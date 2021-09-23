@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static readonly bool UseExperimentalFeatures = true ;
 
     public IList<MEPSystemType>? SystemTypes { get ; }
+    public IList<Opening>? Shafts { get ; }
     public IList<MEPCurveType> CurveTypes { get ; }
     public IList<string>? StandardTypes { get ; }
 
@@ -37,6 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public RoutePropertyTypeList( Document document )
     {
       SystemTypes = document.GetAllElements<MEPSystemType>().OrderBy( s => s.Name ).ToList() ;
+      Shafts = document.GetAllElements<Opening>().ToList() ;
       CurveTypes = document.GetAllElements<MEPCurveType>().OrderBy( s => s.Name ).ToList() ;
     }
 
@@ -50,6 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         CurveTypes = document.GetAllElements<ConduitType>().OrderBy( c => c.Name ).OfType<MEPCurveType>().ToList() ;
         StandardTypes = document.GetStandardTypes().ToList() ;
       }
+      Shafts = document.GetAllElements<Opening>().ToList() ;
     }
 
     private static IList<MEPCurveType> GetCompatibleCurveTypes( Document document, Type? mepCurveTypeClass )
@@ -62,4 +65,5 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return curveTypes.OrderBy( s => s.Name ).ToList() ;
     }
   }
+  
 }

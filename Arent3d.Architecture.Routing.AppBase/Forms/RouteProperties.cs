@@ -16,6 +16,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     //SystemType 
     public MEPSystemType? SystemType { get ; }
+    
+    // Shaft 
+    public Opening? Shaft { get ; }    
 
     //CurveType
     public MEPCurveType? CurveType { get ; private set ; }
@@ -75,6 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Document = document ;
 
       SystemType = spec.SystemTypes?.FirstOrDefault() ;
+      Shaft = spec.Shafts?.FirstOrDefault() ;
       CurveType = spec.CurveTypes.FirstOrDefault() ;
       Diameter = null ;
 

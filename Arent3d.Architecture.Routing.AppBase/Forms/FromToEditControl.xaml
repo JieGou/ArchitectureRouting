@@ -23,6 +23,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Label Content="System Type"
@@ -227,7 +228,46 @@
                       SelectionChanged="AvoidTypeComboBox_OnSelectionChanged"
                       VerticalAlignment="Center">
             </ComboBox>
-
+            
+            <Label Content="Shaft"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Grid.Column="0"
+                   Grid.Row="6">
+                <Label.Style>
+                    <Style TargetType="{x:Type Label}">
+                        <Setter Property="Foreground" Value="{DynamicResource SystemColors.ControlTextBrushKey}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding UseShaft, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource SystemColors.GrayTextBrushKey}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Label.Style>
+            </Label>
+            <ComboBox x:Name="ShaftComboBox"
+                      Grid.Column="1"
+                      Grid.Row="6"
+                      ItemsSource="{Binding  Shafts, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      DisplayMemberPath="Id"
+                      SelectionChanged="ShaftComboBox_SelectionChanged"
+                      SelectedIndex="{Binding ShaftIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      VerticalAlignment="Center">
+                <ComboBox.Style>
+                    <Style TargetType="{x:Type ComboBox}">
+                        <Setter Property="IsEnabled" Value="True"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ShaftEditable, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding UseShaft, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ComboBox.Style>
+            </ComboBox>
+            
         </Grid>
     </Border>
 </UserControl>
