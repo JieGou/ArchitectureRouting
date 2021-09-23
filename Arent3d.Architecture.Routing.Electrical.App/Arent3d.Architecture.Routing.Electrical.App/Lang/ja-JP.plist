@@ -19,10 +19,11 @@
         <string>PS</string>
 
         <key>Electrical.App.Panels.Routing.Shafts</key>
-        <string>Shaft</string>
+        <string>シャフト</string>
       
         <key>Electrical.App.Panels.Routing.Monitor</key>
         <string>Monitor Selection</string>
+
 
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>
@@ -213,6 +214,9 @@
 
         <key>Dialog.Forms.FromToTree.Title</key>
         <string>配線From-To</string>
+
+        <key>Dialog.Electrical.Shaft.List.None</key>
+        <string>(使用しない)</string>
 
 
         <!-- Parameter Names -->

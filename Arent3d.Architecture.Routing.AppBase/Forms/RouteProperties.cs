@@ -71,6 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       FixedHeight = ( true == UseFixedHeight ? GetDisplayFixedHeight( firstSubRoute ) : 0.0 ) ;
+      Shaft = document.GetElementById<Opening>( firstSubRoute.ShaftElementId ) ;
     }
 
     public RouteProperties( Document document, RoutePropertyTypeList spec )
@@ -118,7 +119,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFixedHeight, double fixedHeight, AvoidType? avoidType )
+    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFixedHeight, double fixedHeight, AvoidType? avoidType, Opening? shaft )
     {
       Document = route.Document ;
 
@@ -134,6 +135,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         FixedHeight = GetTrueFixedHeight( route, fixedHeight ) ;
       }
       AvoidType = avoidType ;
+      Shaft = shaft ;
     }
 
     private void SetIndeterminateValues( Route route )

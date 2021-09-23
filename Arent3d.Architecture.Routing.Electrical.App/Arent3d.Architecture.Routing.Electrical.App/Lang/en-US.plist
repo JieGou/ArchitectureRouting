@@ -224,6 +224,9 @@
         <key>Dialog.Forms.FromToTree.Title</key>
         <string>Electrical From-To</string>
 
+        <key>Dialog.Electrical.Shaft.List.None</key>
+        <string>(None)</string>
+
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
