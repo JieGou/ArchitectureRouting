@@ -109,6 +109,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( CreateShaftCommand ), OnlyInitialized = true )]
         private static class CreateShaftCommandButton { }
+
+        [Button( typeof(CreateArentShaftCommand), OnlyInitialized = true )]
+        private static class CreateArentShaftCommandButton { }
       }
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Electrical.App.Panels.Routing.Monitor" )]
       private static class MonitorPanel
