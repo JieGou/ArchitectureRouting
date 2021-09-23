@@ -35,21 +35,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return document.Transaction( "TransactionName.Commands.Routing.HeightSetting", _ =>
         {
           var newStorage = viewModel.SettingStorable ;
-          if (IsSettingChanged(document, settingStorables))
-          {
+          if ( ShouldApplySetting( document, settingStorables ) ) {
             var tokenSource = new CancellationTokenSource() ;
             using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
             progress.Message = "Height Setting..." ;
-            
+
             using ( var p = progress?.Reserve( 0.5 ) ) {
               ApplySetting( document, newStorage, p ) ;
             }
 
-            using (progress?.Reserve(0.5)) {
-              SaveSetting(document, settingStorables);
+            using ( progress?.Reserve( 0.5 ) ) {
+              SaveSetting( document, settingStorables ) ;
             }
           }
-          
+
           return Result.Succeeded ;
         } ) ;
       }
@@ -118,11 +117,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       newSettings.Save() ;
     }
 
-    public bool IsSettingChanged(Document document, HeightSettingStorable newSettings)
+    public bool ShouldApplySetting( Document document, HeightSettingStorable newSettings )
     {
       var old = document.GetAllStorables<HeightSettingStorable>().ToList() ;
       if ( old == null || old.Count() == 0 ) return true ;
-      return !newSettings.Equals(old[0]);
+      return ! newSettings.Equals( old[ 0 ] ) ;
     }
   }
 }
