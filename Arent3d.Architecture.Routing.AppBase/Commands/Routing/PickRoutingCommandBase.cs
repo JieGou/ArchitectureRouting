@@ -54,33 +54,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private RoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
+      var isDiffLevel = fromPickResult.PickedElement.LevelId != toPickResult.PickedElement.LevelId ;
+      HeightSettingStorable settingStorables = document.GetAllStorables<HeightSettingStorable>().AsEnumerable().DefaultIfEmpty( new HeightSettingStorable( document ) ).First() ;
+      double floorHeightConnector = 0, ceilingHeightConnector = 0, floorToHeightConnector = 0, ceilingToHeightConnector = 0 ;
+      foreach ( Level level in settingStorables.Levels ) {
+        if ( fromPickResult.PickedElement.LevelId == level.Id ) {
+          floorHeightConnector = Math.Abs( settingStorables[ level ].Underfloor ) ;
+          ceilingHeightConnector = settingStorables[ level ].HeightOfLevel ;
+        }
+
+        if ( toPickResult.PickedElement.LevelId == level.Id ) {
+          floorToHeightConnector = Math.Abs( settingStorables[ level ].Underfloor ) ;
+          ceilingToHeightConnector = settingStorables[ level ].HeightOfLevel ;
+        }
+      }
+      
       if ( ( fromPickResult.SubRoute ?? toPickResult.SubRoute ) is { } subRoute ) {
         var route = subRoute.Route ;
-        return ShowDialog( document, new DialogInitValues( route.GetSystemClassificationInfo(), route.GetMEPSystemType(), route.GetDefaultCurveType(), subRoute.GetDiameter() ) ) ;
+        return ShowDialog( document, new DialogInitValues( route.GetSystemClassificationInfo(), route.GetMEPSystemType(), route.GetDefaultCurveType(), subRoute.GetDiameter() ), true, floorHeightConnector, ceilingHeightConnector, floorToHeightConnector, ceilingToHeightConnector, isDiffLevel ) ;
       }
 
       if ( ( fromPickResult.PickedConnector ?? toPickResult.PickedConnector ) is { } connector ) {
         if ( MEPSystemClassificationInfo.From( connector ) is not { } classificationInfo ) return null ;
 
         if ( CreateSegmentDialogDefaultValuesWithConnector( document, connector, classificationInfo ) is not { } initValues ) return null ;
-
-        HeightSettingStorable settingStorables = document.GetAllStorables<HeightSettingStorable>()
-          .AsEnumerable()
-          .DefaultIfEmpty(new HeightSettingStorable(document))
-          .First();
-        double floorHeightConnector = 0, ceilingHeightConnector = 0, floorToHeightConnector = 0, ceilingToHeightConnector = 0 ;
-        foreach ( Level level in settingStorables.Levels ) {
-          if ( fromPickResult.PickedElement.LevelId == level.Id ) {
-            floorHeightConnector = Math.Abs( settingStorables [ level ].Underfloor ) ;
-            ceilingHeightConnector = settingStorables [ level ].HeightOfLevel ;
-          }
-          if ( toPickResult.PickedElement.LevelId == level.Id ) {
-            floorToHeightConnector = Math.Abs( settingStorables [ level ].Underfloor ) ;
-            ceilingToHeightConnector = settingStorables [ level ].HeightOfLevel ;
-          }
-        }
-
-        var isDiffLevel = fromPickResult.PickedElement.LevelId != toPickResult.PickedElement.LevelId ;
 
         return ShowDialog( document, initValues, true, floorHeightConnector, ceilingHeightConnector, floorToHeightConnector, ceilingToHeightConnector, isDiffLevel ) ;
       }
@@ -90,7 +87,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, bool isPickRouting = false, double floorHeightConnector = 0, double ceilingHeightConnector = 0, double floorToHeightConnector = 0, double ceilingToHeightConnector = 0, bool isDiffLevel = false )
     {
-      var sv = new RoutePropertyDialog( document, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, floorHeightConnector, ceilingHeightConnector, floorToHeightConnector, ceilingToHeightConnector, isDiffLevel, isPickRouting ) ) ;
+      var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo ) ;
+      var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), floorHeightConnector, ceilingHeightConnector, floorToHeightConnector, ceilingToHeightConnector, isDiffLevel, isPickRouting ) ) ;
 
       sv.ShowDialog() ;
 
@@ -98,7 +96,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
     private static RoutePropertyDialog ShowDialog( Document document )
     {
-      var sv = new RoutePropertyDialog( document, new RouteProperties( document ) ) ;
+      var routeChoiceSpec = new RoutePropertyTypeList( document ) ;
+      var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ) ) ;
       sv.ShowDialog() ;
 
       return sv ;

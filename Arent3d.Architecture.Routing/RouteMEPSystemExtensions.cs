@@ -115,14 +115,13 @@ namespace Arent3d.Architecture.Routing
     /// Get compatible curve types.
     /// </summary>
     /// <param name="doc"></param>
-    /// <param name="curveType"></param>
+    /// <param name="mepCurveTypeClass"></param>
     /// <returns></returns>
-    public static IEnumerable<MEPCurveType> GetCurveTypes( this Document doc, MEPCurveType? curveType )
+    public static IEnumerable<MEPCurveType> GetCurveTypes( this Document doc, Type? mepCurveTypeClass )
     {
-      if ( null == curveType ) return Enumerable.Empty<MEPCurveType>() ;
+      if ( null == mepCurveTypeClass ) return Enumerable.Empty<MEPCurveType>() ;
 
-      var type = curveType.GetType() ;
-      return doc.GetAllElements<MEPCurveType>().Where( s => s.IsCompatibleCurveType( type ) ).Select( s => s ) ;
+      return doc.GetAllElements<MEPCurveType>().Where( s => s.IsCompatibleCurveType( mepCurveTypeClass ) ).Select( s => s ) ;
     }
 
     private static Segment? GetTargetSegment( this MEPCurveType type )

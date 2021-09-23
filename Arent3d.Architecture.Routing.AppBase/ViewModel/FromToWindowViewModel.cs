@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var systemTypeList = new ObservableCollection<MEPSystemType>( uiDocument.Document.GetSystemTypes( route.GetSystemClassificationInfo() ).OrderBy( s => s.Name ).ToList() ) ;
         var systemTypeId = route.GetMEPSystemType().GetValidId() ;
         int systemTypeIndex = systemTypeList.FindIndex( s => s.Id == systemTypeId ) ;
-        var curveTypeList = new ObservableCollection<MEPCurveType>( uiDocument.Document.GetCurveTypes( route.UniqueCurveType ).OrderBy( s => s.Name ).ToList() ) ;
+        var curveTypeList = new ObservableCollection<MEPCurveType>( uiDocument.Document.GetCurveTypes( route.SubRoutes.Select( subRoute => subRoute.GetMEPCurveType() ).FirstOrDefault()?.GetType() ).OrderBy( s => s.Name ).ToList() ) ;
         var curveTypeId = route.UniqueCurveType.GetValidId() ;
         int curveTypeIndex = curveTypeList.FindIndex( c => c.Id == curveTypeId ) ;
         IEnumerable<string> subRouteDiameters = route.SubRoutes.Select( s => (int) Math.Round( s.GetDiameter().RevitUnitsToMillimeters() ) + " mm" ) ;
