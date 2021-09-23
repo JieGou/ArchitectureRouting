@@ -57,10 +57,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public AvoidType GetSelectedAvoidType() => FromToEdit.AvoidType ?? throw new InvalidOperationException() ;
 
-    public ElementId GetShaftElementId()
+    public Opening? GetShaft()
     {
-      // TODO
-      return ElementId.InvalidElementId ;
+      return FromToEdit.Shaft ;
     }
   }
 }

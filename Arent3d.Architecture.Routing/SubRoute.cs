@@ -76,7 +76,7 @@ namespace Arent3d.Architecture.Routing
 
     public ElementId ShaftElementId => Segments.First().ShaftElementId ;
 
-    public void ChangeShaftElement( Element? shaftElement )
+    public void ChangeShaftElement( Opening? shaftElement )
     {
       var shaftElementId = shaftElement?.Id ?? ElementId.InvalidElementId ;
       foreach ( var seg in Segments ) {

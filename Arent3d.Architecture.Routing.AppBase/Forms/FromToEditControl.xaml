@@ -42,8 +42,7 @@
                     </Style>
                 </Label.Style>
             </Label>
-            <ComboBox x:Name="SystemTypeComboBox"
-                      Grid.Column="1"
+            <ComboBox Grid.Column="1"
                       Grid.Row="0"
                       ItemsSource="{Binding  SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       DisplayMemberPath="Name"
@@ -245,14 +244,26 @@
                     </Style>
                 </Label.Style>
             </Label>
-            <ComboBox x:Name="ShaftComboBox"
-                      Grid.Column="1"
+            <ComboBox Grid.Column="1"
                       Grid.Row="6"
-                      ItemsSource="{Binding  Shafts, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
-                      DisplayMemberPath="Value"
+                      ItemsSource="{Binding Shafts, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       SelectionChanged="ShaftComboBox_SelectionChanged"
                       SelectedIndex="{Binding ShaftIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       VerticalAlignment="Center">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding Converter="{x:Static valueConverters:ShaftToStringConverter.Instance}" Mode="OneWay">
+                                    <MultiBinding.Bindings>
+                                        <Binding Path="Value" />
+                                        <Binding Path="DisplayUnitSystem" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:FromToEditControl}" />
+                                    </MultiBinding.Bindings>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
                 <ComboBox.Style>
                     <Style TargetType="{x:Type ComboBox}">
                         <Setter Property="IsEnabled" Value="True"/>

@@ -33,6 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       CurveTypes = GetCompatibleCurveTypes( document, firstSubRoute.GetMEPCurveType().GetType() ) ;
+      Shafts = document.GetAllElements<Opening>().ToList() ;
     }
 
     public RoutePropertyTypeList( Document document )
@@ -40,6 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SystemTypes = document.GetAllElements<MEPSystemType>().OrderBy( s => s.Name ).ToList() ;
       Shafts = document.GetAllElements<Opening>().ToList() ;
       CurveTypes = document.GetAllElements<MEPCurveType>().OrderBy( s => s.Name ).ToList() ;
+      Shafts = document.GetAllElements<Opening>().ToList() ;
     }
 
     public RoutePropertyTypeList( Document document, MEPSystemClassificationInfo classificationInfo )

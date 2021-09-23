@@ -127,11 +127,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var isRoutingOnPipeSpace = propertyDialog.GetRouteOnPipeSpace() ;
       var fixedHeight = propertyDialog.GetFixedHeight() ;
       var avoidType = propertyDialog.GetSelectedAvoidType() ;
-      var shaftElementId = propertyDialog.GetShaftElementId() ;
+      var shaftElementId = propertyDialog.GetShaft()?.Id ?? ElementId.InvalidElementId ;
 
       double? trueFixedHeight = ( fixedHeight.HasValue ? RouteProperties.GetTrueFixedHeight( GetLevel( document, fromEndPoint ) ?? GetLevel( document, toEndPoint ), diameter, fixedHeight.Value ) : null ) ;
 
-      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, trueFixedHeight, avoidType,shaftElementId ) ) ;
+      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, trueFixedHeight, avoidType, shaftElementId ) ) ;
     }
 
     private static Level? GetLevel( Document document, IEndPoint endPoint )
