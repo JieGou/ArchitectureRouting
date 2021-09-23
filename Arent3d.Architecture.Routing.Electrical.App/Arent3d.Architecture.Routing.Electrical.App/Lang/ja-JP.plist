@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
     <dict>
 
@@ -23,6 +23,9 @@
       
         <key>Electrical.App.Panels.Routing.Monitor</key>
         <string>Monitor Selection</string>
+        
+        <key>Electrical.App.Panels.Routing.Connectors</key>
+        <string>Connectors</string>
 
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>

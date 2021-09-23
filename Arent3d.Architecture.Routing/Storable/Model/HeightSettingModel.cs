@@ -8,7 +8,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
   public class HeightSettingModel : IEquatable<HeightSettingModel>
   {
     private const double DEFAULT_HEIGHT_OF_LEVEL = 3000 ;
-    private const double DEFAULT_HEIGHT_OF_CONNECTORS = DEFAULT_HEIGHT_OF_LEVEL / 2 ;
+    private const double DEFAULT_HEIGHT_OF_CONNECTORS = 2000 ;
     private const double DEFAULT_UNDERFLOOR = -500 ;
     private const string DEFAULT_LEVEL_NAME = "(No level name)" ;
 

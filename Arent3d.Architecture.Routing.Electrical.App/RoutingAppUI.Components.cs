@@ -1,4 +1,4 @@
-using Arent3d.Architecture.Routing.Electrical.App.Commands ;
+﻿using Arent3d.Architecture.Routing.Electrical.App.Commands ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing ;
@@ -52,12 +52,43 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
         private static class ShowFromToTreeCommandButton { }
-        
+
+        [Button(typeof(NewEnvelopeCommand), OnlyInitialized = true)]
+        private static class NewEnvelopeCommandButton { }
+                
         [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
         private static class ShowHeightSettingCommandButton { }
 
         [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
         private static class NewRackCommandButton { }
+      }
+
+      [Panel("arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors")]
+      private static class ConnectorsPanel
+      {
+        [Button(typeof(NewConnectorCommand), OnlyInitialized = true)]
+        private static class NewConnectorCommandButton { }
+
+        [Button(typeof(NewDamperActuatorCommand), OnlyInitialized = true)]
+        private static class NewDamperActuatorCommandButton { }
+
+        [Button(typeof(NewElectricTwoWayValveWithLogoCommand), OnlyInitialized = true)]
+        private static class NewElectricTwoWayValveWithLogoCommandButton { }
+
+        [Button(typeof(NewElectricTwoWayValveWithoutLogoCommand), OnlyInitialized = true)]
+        private static class NewElectricTwoWayValveWithoutLogoCommandButton { }
+
+        [Button(typeof(NewHumiditySensorForDuctWithLogoCommand), OnlyInitialized = true)]
+        private static class NewHumiditySensorForDuctWithLogoCommandButton { }
+
+        [Button(typeof(NewHumiditySensorForDuctWithoutLogoCommand), OnlyInitialized = true)]
+        private static class NewHumiditySensorForDuctWithoutLogoCommandButton { }
+
+        [Button(typeof(NewIndoorHumiditySensorWithLogoCommand), OnlyInitialized = true)]
+        private static class NewIndoorHumiditySensorWithLogoCommandButton { }
+
+        [Button(typeof(NewIndoorHumiditySensorWithoutLogoCommand), OnlyInitialized = true)]
+        private static class NewIndoorHumiditySensorWithoutLogoCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.rack", TitleKey = "Electrical.App.Panels.Routing.Racks" )]
@@ -80,6 +111,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( CreateShaftCommand ), OnlyInitialized = true )]
         private static class CreateShaftCommandButton { }
+
+        [Button( typeof(CreateArentShaftCommand), OnlyInitialized = true )]
+        private static class CreateArentShaftCommandButton { }
       }
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Electrical.App.Panels.Routing.Monitor" )]
       private static class MonitorPanel
