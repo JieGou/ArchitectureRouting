@@ -6,6 +6,7 @@ using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
 using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using ControlLib ;
@@ -106,13 +107,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     //Shafts Info
-    public ObservableCollection<Opening> Shafts { get ; } = new ObservableCollection<Opening>() ;
-    private Opening? ShaftOrg { get ; set ; }
-    public Opening? Shaft
-    {
-      get => GetTypeOnIndex( Shafts, (int)GetValue( SystemTypeIndexProperty ) ) ;
-      private set => SetValue( SystemTypeIndexProperty, GetTypeIndex( Shafts, value ) ) ;
-    }
+    public Dictionary<ElementId, string> Shafts { set ; get ; } = new Dictionary<ElementId, string>() ;
+    public ElementId ShaftIndex { get ; } = new ElementId( 0 );
+
+
     public bool ShaftsEditable
     {
       get => (bool) GetValue( ShaftEditableProperty ) ;
@@ -350,7 +348,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       Diameters.Clear() ;
       SystemTypes.Clear() ;
-      Shafts.Clear();
       CurveTypes.Clear() ;
 
       // System type
@@ -366,10 +363,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       // Shafts
+      Shafts[ ShaftIndex ] = "シャフト不使用" ;
       if ( shafts != null ) {
         foreach ( var s in shafts ) {
-          Shafts.Add( s ) ;
+          var (x, y, z) = s.BoundaryCurves.get_Item( 0 ).GetEndPoint( 0 ) ;
+          Shafts[ s.Id ] = "(X: " + x + ", Y: " + y + ", Z: " + z + ")" ;
+          var levelTop = s.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ) ;
+          var levelBottom = s.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT ) ;
+          Shafts[ s.Id ] += " Top Constraint: " + levelTop.AsValueString() + " - Base Constraint: " + levelBottom.AsValueString() ;
         }
+
         UseShaft = true ;
       }
       else {
@@ -388,7 +391,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SetAvailableParameterList( propertyTypeList.SystemTypes, propertyTypeList.Shafts, propertyTypeList.CurveTypes ) ;
 
       SystemTypeOrg = properties.SystemType ;
-      ShaftOrg = properties.Shaft ;
       CurveTypeOrg = properties.CurveType ;
       DiameterOrg = properties.Diameter ;
 

@@ -249,7 +249,7 @@
                       Grid.Column="1"
                       Grid.Row="6"
                       ItemsSource="{Binding  Shafts, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
-                      DisplayMemberPath="Id"
+                      DisplayMemberPath="Value"
                       SelectionChanged="ShaftComboBox_SelectionChanged"
                       SelectedIndex="{Binding ShaftIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       VerticalAlignment="Center">
