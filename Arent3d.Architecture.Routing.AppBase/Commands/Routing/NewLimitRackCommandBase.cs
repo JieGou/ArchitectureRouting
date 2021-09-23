@@ -8,6 +8,7 @@ using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.StorableCaches;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -23,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       BuiltInCategory.OST_CableTray, BuiltInCategory.OST_CableTrayFitting
     } ;
 
-    private readonly int minNumberOfMultiplicity = 4 ;
+    private readonly int minNumberOfMultiplicity = 5 ;
     private readonly double minLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
 
     protected abstract AddInType GetAddInType() ;
@@ -41,6 +42,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             foreach ( var element in elements ) {
               var (mepCurve, subRoute) = element ;
               var conduit = ( mepCurve as Conduit )! ;
+              var routes = RouteCache.Get( document ) ;
+              var sumDiameter = subRoute.GetSubRouteGroup().Sum( s => routes.GetSubRoute(s)?.GetDiameter() ) ;
               CreateCableRackForConduit( uiDocument, conduit ) ;
             }
 
