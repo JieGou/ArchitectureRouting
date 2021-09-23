@@ -5,7 +5,8 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
       mc:Ignorable="d"
-      Height="280" Width="330" Background="White"
+      Height="270" Width="530" Background="White"
+      WindowStartupLocation="CenterOwner"      
       Title="RoutePropertyDialog">
 
     <Grid  Background="White" Margin="5">
@@ -16,7 +17,7 @@
 
         <local:FromToEditControl x:Name="FromToEdit" Grid.Row="0" Width="Auto" />
 
-        <local:Dialog2Buttons Grid.Row="1" Margin="-2,0,0,0"
+        <local:Dialog2Buttons Grid.Row="1" Margin="-2,5,0,0"
                                   LeftButton="OK"
                                   RightButton="Cancel"
                                   VerticalAlignment="Center"

@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public RoutePropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
       InitializeComponent() ;
-
+      WindowStartupLocation = WindowStartupLocation.CenterScreen ;
       FromToEdit.DisplayUnitSystem = document.DisplayUnitSystem ;
       UpdateProperties( propertyTypeList, properties ) ;
     }
