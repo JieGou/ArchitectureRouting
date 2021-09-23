@@ -1,6 +1,7 @@
 ﻿using System.Linq ;
 using System.Threading ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -20,11 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       Document document = uIDocument.Document ;
 
       // get data of height setting from snoop DB
-      HeightSettingStorable settingStorables = document.GetAllStorables<HeightSettingStorable>()
-                                                       .AsEnumerable()
-                                                       .DefaultIfEmpty( new HeightSettingStorable( document ) )
-                                                       .First() ;
-
+      HeightSettingStorable settingStorables = document.GetHeightSettingStorable() ;
 
       var viewModel = new ViewModel.HeightSettingViewModel( settingStorables ) ;
       var dialog = new HeightSettingDialog( viewModel ) ;
