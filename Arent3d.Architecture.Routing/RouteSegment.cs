@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing
     public double? PreferredNominalDiameter { get ; private set ; }
 
     public double? FixedBopHeight { get ; set ; }
-
+    public double? ToFixedBopHeight { get ; set ; }
     public AvoidType AvoidType { get ; set ; }
 
     public IEndPoint FromEndPoint { get ; private set ; }
@@ -70,7 +70,7 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType, ElementId shaftElementId )
+    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, double? fixedBopHeight, AvoidType avoidType, ElementId shaftElementId, double? toFixedBopHeight = null )
     {
       SystemClassificationInfo = classificationInfo ;
       SystemType = systemType ;
@@ -79,6 +79,7 @@ namespace Arent3d.Architecture.Routing
       PreferredNominalDiameter = ( 0 < preferredNominalDiameter ? preferredNominalDiameter : null ) ;
       IsRoutingOnPipeSpace = isRoutingOnPipeSpace ;
       FixedBopHeight = fixedBopHeight ;
+      ToFixedBopHeight = toFixedBopHeight ;
       AvoidType = avoidType ;
       FromEndPoint = fromEndPoint ;
       ToEndPoint = toEndPoint ;
@@ -111,6 +112,7 @@ namespace Arent3d.Architecture.Routing
       IsRoutingOnPipeSpace,
       CurveType,
       FixedBopHeight,
+      ToFixedBopHeight,
       AvoidType,
       SystemClassificationInfo,
       SystemType,
@@ -128,6 +130,7 @@ namespace Arent3d.Architecture.Routing
       var isRoutingOnPipeSpace = deserializer.GetBool( SerializeField.IsRoutingOnPipeSpace ) ?? throw new InvalidOperationException() ;
       var curveType = deserializer.GetElement<SerializeField, MEPCurveType>( SerializeField.CurveType, storedElement.Document ) ?? throw new InvalidOperationException() ;
       var fixedBopHeight = deserializer.GetDouble( SerializeField.FixedBopHeight ) ;
+      var toFixedBopHeight = deserializer.GetDouble( SerializeField.ToFixedBopHeight ) ;
       var avoidType = deserializer.GetEnum<AvoidType>( SerializeField.AvoidType ) ?? throw new InvalidOperationException() ;
       var classificationInfo = MEPSystemClassificationInfo.Deserialize( deserializer.GetString( SerializeField.SystemClassificationInfo ) ?? throw new InvalidOperationException() ) ?? throw new InvalidOperationException() ;
       MEPSystemType? systemType = null ;
@@ -137,7 +140,7 @@ namespace Arent3d.Architecture.Routing
       var subRouteGroups = deserializer.GetNonNullArray( SerializeField.SubRouteGroup, SubRouteInfo.CreateForDeserialize ) ;
       var shaftElementId = deserializer.GetElementId( SerializeField.ShaftElementId ) ?? ElementId.InvalidElementId ;
 
-      var routeSegment = new RouteSegment( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType, shaftElementId ) ;
+      var routeSegment = new RouteSegment( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fixedBopHeight, avoidType, shaftElementId, toFixedBopHeight ) ;
       if ( null != subRouteGroups ) {
         routeSegment.SetSubRouteGroup( subRouteGroups ) ;
       }
@@ -155,6 +158,7 @@ namespace Arent3d.Architecture.Routing
       serializerObject.Add( SerializeField.IsRoutingOnPipeSpace, customTypeValue.IsRoutingOnPipeSpace ) ;
       serializerObject.Add( SerializeField.CurveType, customTypeValue.CurveType ) ;
       serializerObject.Add( SerializeField.FixedBopHeight, customTypeValue.FixedBopHeight ) ;
+      serializerObject.Add( SerializeField.ToFixedBopHeight, customTypeValue.ToFixedBopHeight ) ;
       serializerObject.Add( SerializeField.AvoidType, customTypeValue.AvoidType ) ;
       serializerObject.AddNonNull( SerializeField.SystemClassificationInfo, customTypeValue.SystemClassificationInfo.Serialize() ) ;
       serializerObject.Add( SerializeField.SystemType, customTypeValue.SystemType ) ;
