@@ -49,7 +49,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                     if (rectangleExternal != null)
                         rectangleExternal.Dispose();
                     TaskDialog.Show("Dialog.Commands.Draw.Common.Title.Error".GetAppStringByKeyOrDefault("エラー"),
-                                    "Dialog.Commands.Draw.Common.Body.Error".GetAppStringByKeyOrDefault("始点と終点が一致します。"));
+                                    "Dialog.Commands.Draw.Common.Body.Error".GetAppStringByKeyOrDefault("始点と終点が同じです。"));
                     return Result.Cancelled;
                 }
 
