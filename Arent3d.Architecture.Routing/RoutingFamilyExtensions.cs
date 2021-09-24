@@ -75,7 +75,6 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Routing Envelope" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     Envelope,
-  }
     
     [NameOnRevit("Cable Tray")]
     [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
