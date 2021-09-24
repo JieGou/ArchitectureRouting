@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -24,7 +25,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var result = document.Transaction( "TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault( "Import Pipe Spaces" ), _ =>
         {
-          GenerateConnector(uiDocument, originX, originY, 0, uiDocument.ActiveView.GenLevel);
+          var level = uiDocument.ActiveView.GenLevel ;
+          var heightOfConnector = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+          GenerateConnector(uiDocument, originX, originY,heightOfConnector , level);
 
           return Result.Succeeded ;
         });
