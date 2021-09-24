@@ -204,7 +204,10 @@
         <string>Avoid on From-To</string>
         <key>Dialog.Forms.FromToEditControl.ProcessConstraints.NoVentPocket</key>
         <string>Avoid below From-To</string>
-
+        <key>Dialog.Commands.Draw.Common.Title.Error</key>
+        <string>Error</string>
+        <key>Dialog.Commands.Draw.Common.Body.Error</key>
+        <string>Your end point is almost equal to start point</string>
 
         <!-- End Point Names -->
         <key>EndPoint.DisplayTypeName.Connector</key>

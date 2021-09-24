@@ -1,10 +1,8 @@
 ﻿using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics;
-using Arent3d.Revit;
+using Arent3d.Revit.I18n;
 using Arent3d.Revit.UI;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.Electrical;
-using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using System;
@@ -50,7 +48,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                 {
                     if (rectangleExternal != null)
                         rectangleExternal.Dispose();
-                    TaskDialog.Show("Error", "Your end point is almost equal to start point");
+                    TaskDialog.Show("Dialog.Commands.Draw.Common.Title.Error".GetAppStringByKeyOrDefault("エラー"),
+                                    "Dialog.Commands.Draw.Common.Body.Error".GetAppStringByKeyOrDefault("始点と終点が一致します。"));
                     return Result.Cancelled;
                 }
 
