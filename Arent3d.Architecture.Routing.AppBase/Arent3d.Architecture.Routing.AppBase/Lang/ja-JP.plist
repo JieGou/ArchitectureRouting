@@ -197,7 +197,7 @@
         <key>Dialog.Commands.Draw.Common.Title.Error</key>
         <string>エラー</string>
         <key>Dialog.Commands.Draw.Common.Body.Error</key>
-        <string>始点と終点が一致します。</string>
+        <string>始点と終点が同じです。</string>
 
 
         <!-- End Point Names -->
