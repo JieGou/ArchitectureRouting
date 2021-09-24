@@ -1,4 +1,4 @@
-using System ;
+﻿using System ;
 using System.Collections.Generic;
 using System.Linq ;
 using Arent3d.Revit ;
@@ -13,8 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class NewConnectorCommandBase : IExternalCommand
   {
-    private static readonly double DefaultHighestLevelHeight = ( 3.0 ).MetersToRevitUnits() ;
-    private static readonly double DefaultConnectorSize = ( 0.5 ).MetersToRevitUnits() ;
+    protected  abstract RoutingFamilyType RoutingFamilyType { get; }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -22,11 +21,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       try {
         var (originX, originY, originZ) = uiDocument.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
-        double sizeX = DefaultConnectorSize, sizeY = DefaultConnectorSize;
 
         var result = document.Transaction( "TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault( "Import Pipe Spaces" ), _ =>
         {
-            GenerateConnector(uiDocument, originX, originY, sizeX, sizeY, originZ, uiDocument.ActiveView.GenLevel);
+          GenerateConnector(uiDocument, originX, originY, 0, uiDocument.ActiveView.GenLevel);
 
           return Result.Succeeded ;
         });
@@ -42,9 +40,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void GenerateConnector(UIDocument uiDocument, double originX, double originY, double originZ, double sizeX, double sizeY, Level level)
+    private void GenerateConnector(UIDocument uiDocument, double originX, double originY, double originZ, Level level)
     {
-        var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.ConnectorOneSide)!;
+        var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType)!;
         var instance = symbol.Instantiate(new XYZ(originX, originY, originZ), level, StructuralType.NonStructural);
     }
 
