@@ -1,4 +1,5 @@
-﻿using Arent3d.Revit;
+﻿using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics;
+using Arent3d.Revit;
 using Arent3d.Revit.UI;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
@@ -12,10 +13,8 @@ using System.Linq;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 {
-    public abstract class CreateShaftCommandBase : IExternalCommand
+    public abstract class CreateArentShaftCommandBase : IExternalCommand
     {
-        private const double WIDTH = 3000;
-        private const double HEIGHT = 2000;
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             UIApplication uiApp = commandData.Application;
@@ -25,28 +24,44 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             Selection selection = uiDocument.Selection;
             try
             {
-                XYZ selectedPoint = selection.PickPoint("Pick a point");
-                FilteredElementCollector collector = new FilteredElementCollector(document).OfClass(typeof(ConduitType));
-                ConduitType? type = collector.FirstElement() as ConduitType;
+                // Pick start point 
+                XYZ point1 = selection.PickPoint("Pick start point");
+                XYZ? point3 = null;
+                RectangleExternal? rectangleExternal = null;
+                try
+                {
+                    rectangleExternal = new RectangleExternal(uiApp) { DrawingServer = { BasePoint = point1 } };
+                    rectangleExternal.DrawExternal();
+                    // Pick end point 
+                    point3 = selection.PickPoint("Pick end point");
+                }
+                catch (Exception)
+                {
+                    //
+                }
+                finally
+                {
+                    if (rectangleExternal != null)
+                        rectangleExternal.Dispose();
+                }
+
+                if (point3 == null) return Result.Succeeded;
+
+                var midPoint = (point1 + point3) * 0.5;
+                var currView = document.ActiveView;
+                var plane = Plane.CreateByNormalAndOrigin(currView.RightDirection, midPoint);
+                var mirrorMat = Transform.CreateReflection(plane);
+
+                var point2 = mirrorMat.OfPoint(point1);
+                var point4 = mirrorMat.OfPoint(point3);
 
                 IList<Element> levels = new FilteredElementCollector(document).OfClass(typeof(Level)).ToElements();
                 Level? lowestLevel = levels.ElementAt(0) as Level;
                 Level? highestLevel = levels.ElementAt(levels.Count - 1) as Level;
                 if (lowestLevel == null && highestLevel == null) return Result.Failed;
-                var result = document.Transaction("Create Shaft Connector", _ =>
+
+                var result = document.Transaction("Create Arent Shaft", _ =>
                 {
-                    XYZ point1 = new XYZ(selectedPoint.X - (WIDTH / 2).MillimetersToRevitUnits(),
-                                         selectedPoint.Y + (HEIGHT / 2).MillimetersToRevitUnits(),
-                                         selectedPoint.Z);
-                    XYZ point2 = new XYZ(selectedPoint.X + (WIDTH / 2).MillimetersToRevitUnits(),
-                                         point1.Y,
-                                         selectedPoint.Z);
-                    XYZ point3 = new XYZ(point2.X,
-                                         selectedPoint.Y - (HEIGHT / 2).MillimetersToRevitUnits(),
-                                         selectedPoint.Z);
-                    XYZ point4 = new XYZ(point1.X,
-                                         point3.Y,
-                                         selectedPoint.Z);
                     Curve left = Line.CreateBound(point1, point4);
                     Curve upper = Line.CreateBound(point1, point2);
                     Curve right = Line.CreateBound(point2, point3);
@@ -62,17 +77,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                     shaftOpening.get_Parameter(BuiltInParameter.WALL_BASE_CONSTRAINT).Set(lowestLevel!.Id);
                     shaftOpening.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE).Set(highestLevel!.Id);
 
-                    double heightOfFloor = highestLevel!.Elevation - lowestLevel!.Elevation;
-                    var familySymbol = document.GetFamilySymbol(RoutingFamilyType.ConnectorTwoSide)!;
-                    var bottomConnector = familySymbol.Instantiate(selectedPoint, lowestLevel, StructuralType.NonStructural);
-                    bottomConnector.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0);
-                    var topConnector = familySymbol.Instantiate(selectedPoint, lowestLevel, StructuralType.NonStructural);
-                    topConnector.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(heightOfFloor);
+                    double width = point1.DistanceTo(point2);
+                    double height = point2.DistanceTo(point3);
 
-                    var firstPoint = new XYZ(selectedPoint.X, selectedPoint.Y, lowestLevel.Elevation);
-                    var secondPoint = new XYZ(selectedPoint.X, selectedPoint.Y, highestLevel.Elevation);
-                    Conduit.Create(document, type!.Id, firstPoint, secondPoint, lowestLevel.Id);
-
+                    FamilyInstance fi = document.AddRackGuid(midPoint);
+                    fi.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0.0);
+                    fi.get_Parameter(BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM).Set(0.0);
+                    fi.LookupParameter("幅").Set(width);
+                    fi.LookupParameter("奥行き").Set(height);
+                    fi.LookupParameter("高さ").Set(highestLevel!.Elevation);
+                    fi.LookupParameter("Arent-Offset").Set(lowestLevel!.Elevation);
                     return Result.Succeeded;
                 });
 
