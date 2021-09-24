@@ -46,6 +46,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                 }
 
                 if (point3 == null) return Result.Succeeded;
+                if (point3.DistanceTo(point1) <= 0.1)
+                {
+                    if (rectangleExternal != null)
+                        rectangleExternal.Dispose();
+                    TaskDialog.Show("Error", "Your end point is almost equal to start point");
+                    return Result.Cancelled;
+                }
 
                 var midPoint = (point1 + point3) * 0.5;
                 var currView = document.ActiveView;
@@ -83,6 +90,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                     FamilyInstance fi = document.AddRackGuid(midPoint);
                     fi.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0.0);
                     fi.get_Parameter(BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM).Set(0.0);
+                    fi.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM).Set(lowestLevel!.Id);
                     fi.LookupParameter("幅").Set(width);
                     fi.LookupParameter("奥行き").Set(height);
                     fi.LookupParameter("高さ").Set(highestLevel!.Elevation);
