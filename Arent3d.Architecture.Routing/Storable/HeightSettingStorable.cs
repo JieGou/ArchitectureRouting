@@ -19,7 +19,37 @@ namespace Arent3d.Architecture.Routing.Storable
     public Dictionary<int, HeightSettingModel> HeightSettingsData { get ; private set ; }
     public List<Level> Levels { get ; private set ; }
 
+    /// <summary>
+    /// Get Height settings data by Level object
+    /// </summary>
+    /// <param name="level"></param>
     public HeightSettingModel this[ Level level ] => HeightSettingsData.GetOrDefault( level.Id.IntegerValue, new HeightSettingModel( level ) ) ;
+
+    /// <summary>
+    /// Get Height settings data by level Id.
+    /// </summary>
+    /// <param name="levelId"></param>
+    public HeightSettingModel this[ int levelId ]
+    {
+      get
+      {
+        var level = Levels.First( x => x.Id.IntegerValue == levelId ) ;
+        return HeightSettingsData.GetOrDefault( level.Id.IntegerValue, new HeightSettingModel( level ) ) ;
+      }
+    }
+
+    /// <summary>
+    /// Get Height settings data by level Id.
+    /// </summary>
+    /// <param name="levelId"></param>
+    public HeightSettingModel this[ ElementId levelId ]
+    {
+      get
+      {
+        var level = Levels.First( x => x.Id == levelId ) ;
+        return HeightSettingsData.GetOrDefault( level.Id.IntegerValue, new HeightSettingModel( level ) ) ;
+      }
+    }
 
 
     /// <summary>
@@ -72,6 +102,7 @@ namespace Arent3d.Architecture.Routing.Storable
 
     public bool Equals( HeightSettingStorable other )
     {
+      if ( other == null ) return false ;
       return Enumerable.SequenceEqual( HeightSettingsData.Values, other.HeightSettingsData.Values, new HeightSettingStorableComparer() ) ;
     }
   }

@@ -59,6 +59,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
         private static class ShowHeightSettingCommandButton { }
 
+        [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
+        private static class NewRackCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors")]
@@ -109,6 +111,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( CreateShaftCommand ), OnlyInitialized = true )]
         private static class CreateShaftCommandButton { }
+
+        [Button( typeof(CreateArentShaftCommand), OnlyInitialized = true )]
+        private static class CreateArentShaftCommandButton { }
       }
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Electrical.App.Panels.Routing.Monitor" )]
       private static class MonitorPanel
