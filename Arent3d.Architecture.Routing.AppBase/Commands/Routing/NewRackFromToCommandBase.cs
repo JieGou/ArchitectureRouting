@@ -136,9 +136,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   }
 
                   // save connectors of cable rack
-                  foreach ( Connector rackConnector in instance.GetConnectorManager()!.Connectors ) {
-                    rackConnectors.Add( connector ) ;
-                  }
+                  rackConnectors.AddRange( instance.GetConnectors() ) ;
                 }
                 else // element is conduit fitting
                 {
