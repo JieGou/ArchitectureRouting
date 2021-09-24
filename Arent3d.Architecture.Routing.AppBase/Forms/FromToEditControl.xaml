@@ -165,10 +165,14 @@
                           SelectionChanged="LocationTypeComboBox_SelectionChanged"
                           SelectedIndex ="{Binding LocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                           VerticalAlignment="Center"
-                          DisplayMemberPath="Value">
+                          DisplayMemberPath="Value"
+                          Margin="5,0,5,0"
+                          Padding="5,0,0,4">
                     <ComboBox.Style>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="Visibility" Value="Hidden"/>
+                            <Setter Property="Height" Value="18"/>
+                            <Setter Property="FontSize" Value="12"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsChecked, ElementName=HeightSetting}" Value="True">
                                     <Setter Property="Visibility" Value="Visible"/>
@@ -237,10 +241,14 @@
                           SelectionChanged="ToLocationTypeComboBox_SelectionChanged"
                           SelectedIndex ="{Binding ToLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                           VerticalAlignment="Center"
-                          DisplayMemberPath="Value">
+                          DisplayMemberPath="Value"
+                          Margin="5,0,5,0"
+                          Padding="5,0,0,4">
                     <ComboBox.Style>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="Visibility" Value="Hidden"/>
+                            <Setter Property="Height" Value="18"/>
+                            <Setter Property="FontSize" Value="12"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsChecked, ElementName=ToHeightSetting}" Value="True">
                                     <Setter Property="Visibility" Value="Visible"/>
