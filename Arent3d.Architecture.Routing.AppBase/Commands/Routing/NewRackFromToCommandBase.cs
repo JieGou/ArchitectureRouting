@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private readonly double maxDistanceTolerance = ( 1.0 ).MillimetersToRevitUnits() ;
+    private readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
 
     private readonly BuiltInCategory[] ConduitBuiltInCategories =
     {
@@ -153,7 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                   var length = conduit.ParametersMap
                     .get_Item( "Revit.Property.Builtin.NominalRadius".GetDocumentStringByKeyOrDefault( document,
-                      "呼び半径" ) ).AsDouble() ;
+                      "電線管長さ") ).AsDouble() ;
                   var diameter = conduit.ParametersMap
                     .get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document,
                       "呼び径" ) ).AsDouble() ;
@@ -172,6 +172,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   SetParameter( instance,
                     "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ),
                     bendRadius / 2 ) ; // TODO may be must change when FamilyType change
+                          
+                  // set cable rack length
+                  SetParameter( instance,
+                    "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ),
+                    length ) ; // TODO may be must change when FamilyType change
 
                   // set cable tray fitting direction
                   if ( 1.0 == conduit.FacingOrientation.X ) {
@@ -250,7 +255,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     /// <param name="connectors"></param>
     /// <param name="point"></param>
-    /// <param name="minDist"></param>
+    /// <param name="maxDistance"></param>
     /// <returns></returns>
     private static Connector? GetConnectorClosestTo( List<Connector> connectors, XYZ point,
       double maxDistance = double.MaxValue )
@@ -390,7 +395,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var locationPoint = ( location as LocationPoint )! ;
         var otherLocationPoint = ( otherLocation as LocationPoint )! ;
-        return locationPoint.Point.IsAlmostEqualTo( otherLocationPoint.Point, maxDistanceTolerance ) &&
+        return locationPoint.Point.DistanceTo( otherLocationPoint.Point) <= maxDistanceTolerance &&
                locationPoint.Rotation == otherLocationPoint.Rotation ;
       }
       else if ( location is LocationCurve ) {

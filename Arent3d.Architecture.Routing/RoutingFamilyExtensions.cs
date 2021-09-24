@@ -78,7 +78,7 @@ namespace Arent3d.Architecture.Routing
     
     [NameOnRevit("Cable Tray")]
     [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
-     CableTray,
+    CableTray,
     
     [NameOnRevit("Cable Tray Fitting")]
     [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
