@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private readonly double maxDistanceTolerance = ( 1.0 ).MillimetersToRevitUnits() ;
+    private readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
 
     private readonly BuiltInCategory[] CableTrayBuiltInCategories =
     {
@@ -27,6 +27,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private readonly int minNumberOfMultiplicity = 5 ;
     private readonly double minLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
 
+        private readonly double[] CableTrayWidthMapping =
+        {
+          200.0,
+          300.0,
+          400.0,
+          500.0,
+          600.0,
+          800.0,
+          1000.0,
+          1200.0
+        };
+
     protected abstract AddInType GetAddInType() ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -35,16 +47,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       try {
         var result = document.Transaction(
-          "TransactionName.Commands.Rack.CreateCableRackFroAllRoute".GetAppStringByKeyOrDefault(
-            "Create Cable Rack For All Route" ), _ =>
+          "TransactionName.Commands.Rack.CreateLimitCableRack".GetAppStringByKeyOrDefault(
+            "Create Limit Cable" ), _ =>
           {
             var elements = document.CollectAllMultipliedRoutingElements( minNumberOfMultiplicity ) ;
             foreach ( var element in elements ) {
               var (mepCurve, subRoute) = element ;
               var conduit = ( mepCurve as Conduit )! ;
-              var routes = RouteCache.Get( document ) ;
-              var sumDiameter = subRoute.GetSubRouteGroup().Sum( s => routes.GetSubRoute(s)?.GetDiameter() ) ;
-              CreateCableRackForConduit( uiDocument, conduit ) ;
+              var cableRackWidth = CalcCableRackWidth(document, subRoute);
+              CreateCableRackForConduit( uiDocument, conduit, cableRackWidth ) ;
             }
 
             return Result.Succeeded ;
@@ -71,7 +82,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     /// <param name="uiDocument"></param>
     /// <param name="routeName"></param>
-    private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit )
+    private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit, double cableRackWidth )
     {
       if ( conduit != null ) {
         var document = uiDocument.Document ;
@@ -113,8 +124,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ),
             length ) ; // TODO may be must change when FamilyType change
 
+        // set cable rack length
+        SetParameter(instance,
+            "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault(document, "トレイ幅"),
+            cableRackWidth.MillimetersToRevitUnits()); // TODO may be must change when FamilyType change
+
           // move cable rack to under conduit
-          instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
+                    instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
 
           // set cable tray direction
           if ( 1.0 == line.Direction.Y ) {
@@ -191,26 +207,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return null ;
     }
 
-    /// <summary>
-    /// Check cable tray exists (same place)
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="familyInstance"></param>
-    /// <returns></returns>
-    public bool ExistsCableTray( Document document, FamilyInstance familyInstance )
+        /// <summary>
+        /// Check cable tray exists (same place)
+        /// </summary>
+        /// <param name="document"></param>
+        /// <param name="familyInstance"></param>
+        /// <returns></returns>
+        private bool ExistsCableTray( Document document, FamilyInstance familyInstance )
     {
       return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
         .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
                      x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) ).Any() ;
     }
 
-    /// <summary>
-    /// compare 2 locations
-    /// </summary>
-    /// <param name="location"></param>
-    /// <param name="otherLocation"></param>
-    /// <returns></returns>
-    public bool IsSameLocation( Location location, Location otherLocation )
+        /// <summary>
+        /// compare 2 locations
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="otherLocation"></param>
+        /// <returns></returns>
+        private bool IsSameLocation( Location location, Location otherLocation )
     {
       if ( location is LocationPoint ) {
         if ( ! ( otherLocation is LocationPoint ) ) {
@@ -239,5 +255,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return location.Equals( otherLocation ) ;
     }
+
+        private double CalcCableRackWidth(Document document, SubRoute subRoute)
+        {
+            var routes = RouteCache.Get(document);
+            var sumDiameter = subRoute.GetSubRouteGroup().Sum(s => routes.GetSubRoute(s)?.GetDiameter().RevitUnitsToMillimeters() + 10) + 120;
+            var cableTraywidth = 0.6 * sumDiameter;
+            foreach (var width in CableTrayWidthMapping)
+            {
+                if (cableTraywidth <= width)
+                {
+                    cableTraywidth = width;
+                    return cableTraywidth!.Value;
+                }
+            }
+            return cableTraywidth!.Value;
+        }
   }
 }
