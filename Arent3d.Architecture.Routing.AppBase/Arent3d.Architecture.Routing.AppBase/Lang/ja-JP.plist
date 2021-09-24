@@ -200,7 +200,7 @@
         <string>始点と終点が一致します。</string>
 
 
-      <!-- End Point Names -->
+        <!-- End Point Names -->
         <key>EndPoint.DisplayTypeName.Connector</key>
         <string>コネクター</string>
         <key>EndPoint.DisplayTypeName.PassPoint</key>
