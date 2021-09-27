@@ -92,6 +92,9 @@
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>Create Rack&#xA;For All</string>
 
+        <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
+        <string>Create Rack&#xA;From-To</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
@@ -156,6 +159,9 @@
 
         <key>TransactionName.Commands.Rack.CreateCableRackForAllRoute</key>
         <string>Create Cable Rack For All Route</string>
+
+        <key>TransactionName.Commands.Rack.NewRackFromTo</key>
+        <string>Create Cable Rack From-To</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>

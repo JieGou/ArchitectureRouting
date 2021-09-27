@@ -91,6 +91,9 @@
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>ラックを作成する&#xA;すべてのコンジット用</string>
 
+        <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
+        <string>Create Rack&#xA;From-To</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
@@ -155,6 +158,9 @@
 
         <key>TransactionName.Commands.Rack.CreateCableRackForAllRoute</key>
         <string>すべてのルートのケーブルラックを作成する</string>
+
+        <key>TransactionName.Commands.Rack.NewRackFromTo</key>
+        <string>Create Cable Rack From-To</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
