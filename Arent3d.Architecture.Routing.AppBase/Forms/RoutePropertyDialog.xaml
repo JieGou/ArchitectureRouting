@@ -5,7 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
       mc:Ignorable="d"
-      Height="240" Width="330" Background="White"
+      Height="265" Width="400" Background="White"
       Title="RoutePropertyDialog">
 
     <Grid  Background="White" Margin="5">

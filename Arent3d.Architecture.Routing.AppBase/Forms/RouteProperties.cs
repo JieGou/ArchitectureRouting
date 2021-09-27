@@ -26,10 +26,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     //HeightSetting
     public bool? UseFixedHeight { get ; private set ; }
     public double FixedHeight { get ; }
+    public double ToFixedHeight { get ; }
+    public double FloorConnectorFixedHeight { get ; }
+    public double CeilingConnectorFixedHeight { get ; }
+    public double FloorToConnectorFixedHeight { get ; }
+    public double CeilingToConnectorFixedHeight { get ; }
 
     public AvoidType? AvoidType { get ; private set ; }
 
     public string? StandardType { get ; }
+    
+    public string? LocationType { get ; }
+    public bool IsDifferentLevel { get ; }
+    public bool IsPickRouting { get ; }
 
     internal RouteProperties( IReadOnlyCollection<SubRoute> subRoutes )
     {
@@ -68,6 +77,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       FixedHeight = ( true == UseFixedHeight ? GetDisplayFixedHeight( firstSubRoute ) : 0.0 ) ;
+      
+      LocationType = "Floor" ;
     }
 
     public RouteProperties( Document document, RoutePropertyTypeList spec )
@@ -82,9 +93,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       UseFixedHeight = false ;
       FixedHeight = 0.0 ;
       AvoidType = Routing.AvoidType.Whichever ;
+      LocationType = "Floor" ;
     }
 
-    public RouteProperties( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, string? standardType )
+    public RouteProperties( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, string? standardType, double floorHeightConnector = 0, double ceilingHeightConnector = 0, double floorToHeightConnector = 0, double ceilingToHeightConnector = 0, bool isDiffLevel = false, bool isPickRouting = false )
     {
       Document = document ;
       
@@ -99,6 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         UseFixedHeight = false ;
         FixedHeight = 0.0 ;
         AvoidType = Routing.AvoidType.Whichever ;
+        LocationType = "Floor" ;
       }
       else {
         //Diameter Info
@@ -111,6 +124,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         UseFixedHeight = false ;
         FixedHeight = 0.0 ;
         AvoidType = Routing.AvoidType.Whichever ;
+        LocationType = "Floor" ;
+        ToFixedHeight = 0.0 ;
+        FloorConnectorFixedHeight = floorHeightConnector ;
+        CeilingConnectorFixedHeight = ceilingHeightConnector ;
+        FloorToConnectorFixedHeight = floorToHeightConnector ;
+        CeilingToConnectorFixedHeight = ceilingToHeightConnector ;
+        IsDifferentLevel = isDiffLevel ;
+        IsPickRouting = isPickRouting ;
       }
     }
 
@@ -130,6 +151,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         FixedHeight = GetTrueFixedHeight( route, fixedHeight ) ;
       }
       AvoidType = avoidType ;
+      LocationType = "Floor" ;
     }
 
     private void SetIndeterminateValues( Route route )
