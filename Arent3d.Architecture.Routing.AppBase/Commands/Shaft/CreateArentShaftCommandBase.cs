@@ -1,10 +1,8 @@
 ﻿using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics;
-using Arent3d.Revit;
+using Arent3d.Revit.I18n;
 using Arent3d.Revit.UI;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.Electrical;
-using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using System;
@@ -46,6 +44,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                 }
 
                 if (point3 == null) return Result.Succeeded;
+                if (point3.DistanceTo(point1) <= 0.1)
+                {
+                    if (rectangleExternal != null)
+                        rectangleExternal.Dispose();
+                    TaskDialog.Show("Dialog.Commands.Draw.Common.Title.Error".GetAppStringByKeyOrDefault("エラー"),
+                                    "Dialog.Commands.Draw.Common.Body.Error".GetAppStringByKeyOrDefault("始点と終点が同じです。"));
+                    return Result.Cancelled;
+                }
 
                 var midPoint = (point1 + point3) * 0.5;
                 var currView = document.ActiveView;
@@ -83,6 +89,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                     FamilyInstance fi = document.AddRackGuid(midPoint);
                     fi.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0.0);
                     fi.get_Parameter(BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM).Set(0.0);
+                    fi.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM).Set(lowestLevel!.Id);
                     fi.LookupParameter("幅").Set(width);
                     fi.LookupParameter("奥行き").Set(height);
                     fi.LookupParameter("高さ").Set(highestLevel!.Elevation);
