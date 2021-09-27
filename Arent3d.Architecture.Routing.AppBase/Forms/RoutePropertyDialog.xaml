@@ -5,7 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
       mc:Ignorable="d"
-      Height="270" Width="530" Background="White"
+      Height="295" Width="630" Background="White"
       WindowStartupLocation="CenterOwner"      
       Title="RoutePropertyDialog">
 

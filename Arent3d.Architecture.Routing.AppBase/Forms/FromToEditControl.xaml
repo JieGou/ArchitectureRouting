@@ -24,6 +24,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Label Content="System Type"
@@ -316,7 +317,7 @@
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Grid.Column="0"
-                   Grid.Row="6">
+                   Grid.Row="7">
                 <Label.Style>
                     <Style TargetType="{x:Type Label}">
                         <Setter Property="Foreground" Value="{DynamicResource SystemColors.ControlTextBrushKey}"/>
@@ -329,7 +330,7 @@
                 </Label.Style>
             </Label>
             <ComboBox Grid.Column="1"
-                      Grid.Row="6"
+                      Grid.Row="7"
                       ItemsSource="{Binding Shafts, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       SelectionChanged="ShaftComboBox_SelectionChanged"
                       SelectedIndex="{Binding ShaftIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
