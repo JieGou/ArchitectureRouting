@@ -1,6 +1,6 @@
 ﻿using System ;
-using System.Collections.Generic;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -8,12 +8,11 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
-
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class NewConnectorCommandBase : IExternalCommand
   {
-    protected  abstract RoutingFamilyType RoutingFamilyType { get; }
+    protected abstract RoutingFamilyType RoutingFamilyType { get ; }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -24,12 +23,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var result = document.Transaction( "TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault( "Import Pipe Spaces" ), _ =>
         {
-          GenerateConnector(uiDocument, originX, originY, 0, uiDocument.ActiveView.GenLevel);
+          var level = uiDocument.ActiveView.GenLevel ;
+          var heightOfConnector = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+          GenerateConnector( uiDocument, originX, originY, heightOfConnector, level ) ;
 
           return Result.Succeeded ;
-        });
+        } ) ;
 
-        return result;
+        return result ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
@@ -40,10 +41,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private void GenerateConnector(UIDocument uiDocument, double originX, double originY, double originZ, Level level)
+    private void GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level )
     {
-        var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType)!;
-        var instance = symbol.Instantiate(new XYZ(originX, originY, originZ), level, StructuralType.NonStructural);
+      var symbol = uiDocument.Document.GetFamilySymbol( RoutingFamilyType )! ;
+      var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
     }
 
     private static Level? GetUpperLevel( Level refRevel )

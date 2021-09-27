@@ -1,4 +1,5 @@
-﻿using System.Linq ;
+﻿using System.Collections.Generic ;
+using System.Linq ;
 using System.Threading ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -10,7 +11,6 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
-
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class ShowHeightSettingCommandBase : IExternalCommand
@@ -59,10 +59,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       if ( settingStorables == null ) return ;
 
-      var allConnectors = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) )
-                                                                  .OfCategory( BuiltInCategory.OST_ElectricalFixtures )
-                                                                  .AsEnumerable()
-                                                                  .OfType<FamilyInstance>() ;
+      FilteredElementCollector connectorCollector = new FilteredElementCollector( document ) ;
+      List<BuiltInCategory> builtInCats = new List<BuiltInCategory>() ;
+      builtInCats.Add( BuiltInCategory.OST_ElectricalFixtures ) ;
+      builtInCats.Add( BuiltInCategory.OST_ElectricalEquipment ) ;
+      ElementMulticategoryFilter filterConnectors = new ElementMulticategoryFilter( builtInCats ) ;
+      connectorCollector.WherePasses( filterConnectors ) ;
+      var allConnectors = connectorCollector.OfType<FamilyInstance>() ;
       var connectors = allConnectors.GroupBy( x => x.LevelId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
 
 
