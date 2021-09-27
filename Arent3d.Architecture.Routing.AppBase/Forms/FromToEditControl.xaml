@@ -149,7 +149,7 @@
                       HorizontalAlignment="Left"
                       VerticalAlignment="Center" />
 
-            <Label Grid.Row="4" Grid.Column="0" Content="Height"
+            <Label Grid.Row="4" Grid.Column="0" Content="Frist connector through height"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center" />
             <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"
@@ -222,7 +222,7 @@
                 </Label>
             </StackPanel>
 
-            <Label Grid.Row="5" Grid.Column="0" Content="Height 2"
+            <Label Grid.Row="5" Grid.Column="0" Content="Second connector through height"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center" 
                    Visibility="Hidden"

@@ -59,12 +59,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       double floorHeightConnector = 0, ceilingHeightConnector = 0, floorToHeightConnector = 0, ceilingToHeightConnector = 0 ;
       foreach ( Level level in settingStorables.Levels ) {
         if ( fromPickResult.PickedElement.LevelId == level.Id ) {
-          floorHeightConnector = Math.Abs( settingStorables[ level ].Underfloor ) ;
+          floorHeightConnector = settingStorables[ level ].Underfloor ;
           ceilingHeightConnector = settingStorables[ level ].HeightOfLevel ;
         }
 
         if ( toPickResult.PickedElement.LevelId == level.Id ) {
-          floorToHeightConnector = Math.Abs( settingStorables[ level ].Underfloor ) ;
+          floorToHeightConnector = settingStorables[ level ].Underfloor ;
           ceilingToHeightConnector = settingStorables[ level ].HeightOfLevel ;
         }
       }

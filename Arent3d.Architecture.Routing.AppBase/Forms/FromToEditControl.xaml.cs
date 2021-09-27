@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   public partial class FromToEditControl : UserControl
   {
     private const string DefaultCurveTypeLabel = "Type" ;
-    private const double DefaultCurrentMinValue = 0 ;
+    private const double DefaultCurrentMinValue = -10000 ;
     private const double DefaultCurrentMaxValue = 10000 ;
 
     public event EventHandler? ValueChanged ;

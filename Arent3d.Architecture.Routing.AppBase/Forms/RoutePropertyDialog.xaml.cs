@@ -52,14 +52,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public double? GetFixedHeight()
     {
       if ( true != FromToEdit.UseFixedHeight ) return null ;
-      if ( FromToEdit.LocationType == "Floor" ) return -FromToEdit.FixedHeight ;
       return FromToEdit.FixedHeight ;
     }
     
     public double? GetToFixedHeight()
     {
       if ( true != FromToEdit.ToUseFixedHeight ) return null ;
-      if ( FromToEdit.ToLocationType == "Floor" ) return -FromToEdit.ToFixedHeight ;
       return FromToEdit.ToFixedHeight ;
     }
 
