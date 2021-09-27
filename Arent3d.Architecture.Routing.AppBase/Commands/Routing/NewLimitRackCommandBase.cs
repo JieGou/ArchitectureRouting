@@ -8,7 +8,7 @@ using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
-using Arent3d.Architecture.Routing.StorableCaches;
+using Arent3d.Architecture.Routing.StorableCaches ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -27,17 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private readonly int minNumberOfMultiplicity = 5 ;
     private readonly double minLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
 
-        private readonly double[] CableTrayWidthMapping =
-        {
-          200.0,
-          300.0,
-          400.0,
-          500.0,
-          600.0,
-          800.0,
-          1000.0,
-          1200.0
-        };
+    private readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
 
     protected abstract AddInType GetAddInType() ;
 
@@ -47,15 +37,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       try {
         var result = document.Transaction(
-          "TransactionName.Commands.Rack.CreateLimitCableRack".GetAppStringByKeyOrDefault(
-            "Create Limit Cable" ), _ =>
+          "TransactionName.Commands.Rack.CreateLimitCableRack".GetAppStringByKeyOrDefault( "Create Limit Cable" ), _ =>
           {
             var elements = document.CollectAllMultipliedRoutingElements( minNumberOfMultiplicity ) ;
             foreach ( var element in elements ) {
               var (mepCurve, subRoute) = element ;
-              var conduit = ( mepCurve as Conduit )! ;
-              var cableRackWidth = CalcCableRackWidth(document, subRoute);
-              CreateCableRackForConduit( uiDocument, conduit, cableRackWidth ) ;
+              if ( RouteLength( subRoute.Route.RouteName, elements, document ) >= minLengthOfConduit ) {
+                var conduit = ( mepCurve as Conduit )! ;
+                var cableRackWidth = CalcCableRackMaxWidth( subRoute.Route.Name, elements, document ) ;
+                if ( 800.0 <= cableRackWidth ) {
+                  CreateCableRackForConduit( uiDocument, conduit, cableRackWidth / 2, true ) ;
+                  CreateCableRackForConduit( uiDocument, conduit, cableRackWidth / 2, false ) ;
+                }
+                else {
+                  CreateCableRackForConduit( uiDocument, conduit, cableRackWidth ) ;
+                }
+              }
             }
 
             return Result.Succeeded ;
@@ -82,7 +79,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     /// <param name="uiDocument"></param>
     /// <param name="routeName"></param>
-    private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit, double cableRackWidth )
+    private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit, double cableRackWidth,
+      bool? createCableRackOntheLeft = null )
     {
       if ( conduit != null ) {
         var document = uiDocument.Document ;
@@ -107,9 +105,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               "Outside Diameter" ) ).AsDouble() ;
 
           // check length of conduit must be great than or equal minLengthOfConduit
-          if ( length < minLengthOfConduit ) {
-            return ;
-          }
+          //if ( length < minLengthOfConduit ) {
+          //  return ;
+          //}
 
           var symbol =
             uiDocument.Document.GetFamilySymbol( RoutingFamilyType.CableTray )! ; // TODO may change in the future
@@ -124,13 +122,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ),
             length ) ; // TODO may be must change when FamilyType change
 
-        // set cable rack length
-        SetParameter(instance,
-            "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault(document, "トレイ幅"),
-            cableRackWidth.MillimetersToRevitUnits()); // TODO may be must change when FamilyType change
+          // set cable rack length
+          SetParameter( instance,
+            "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ),
+            cableRackWidth.MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
 
           // move cable rack to under conduit
-                    instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
+          instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
 
           // set cable tray direction
           if ( 1.0 == line.Direction.Y ) {
@@ -138,17 +136,47 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
                 new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ),
               Math.PI / 2 ) ;
+
+            if ( createCableRackOntheLeft.HasValue && createCableRackOntheLeft.Value ) {
+              instance.Location.Move( new XYZ( -cableRackWidth.MillimetersToRevitUnits() / 2, 0, 0 ) ) ;
+            }
+            else if ( createCableRackOntheLeft.HasValue && ! createCableRackOntheLeft.Value ) {
+              instance.Location.Move( new XYZ( cableRackWidth.MillimetersToRevitUnits() / 2, 0, 0 ) ) ;
+            }
           }
           else if ( -1.0 == line.Direction.Y ) {
             ElementTransformUtils.RotateElement( document, instance.Id,
               Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
                 new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ),
               Math.PI / 2 ) ;
+
+
+            if ( createCableRackOntheLeft.HasValue && createCableRackOntheLeft.Value ) {
+              instance.Location.Move( new XYZ( -cableRackWidth.MillimetersToRevitUnits() / 2, 0, 0 ) ) ;
+            }
+            else if ( createCableRackOntheLeft.HasValue && ! createCableRackOntheLeft.Value ) {
+              instance.Location.Move( new XYZ( cableRackWidth.MillimetersToRevitUnits() / 2, 0, 0 ) ) ;
+            }
           }
           else if ( -1.0 == line.Direction.X ) {
             ElementTransformUtils.RotateElement( document, instance.Id,
               Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
                 new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ), Math.PI ) ;
+
+            if ( createCableRackOntheLeft.HasValue && createCableRackOntheLeft.Value ) {
+              instance.Location.Move( new XYZ( 0, -cableRackWidth.MillimetersToRevitUnits() / 2, 0 ) ) ;
+            }
+            else if ( createCableRackOntheLeft.HasValue && ! createCableRackOntheLeft.Value ) {
+              instance.Location.Move( new XYZ( 0, cableRackWidth.MillimetersToRevitUnits() / 2, 0 ) ) ;
+            }
+          }
+          else if ( 1.0 == line.Direction.X ) {
+            if ( createCableRackOntheLeft.HasValue && createCableRackOntheLeft.Value ) {
+              instance.Location.Move( new XYZ( 0, -cableRackWidth.MillimetersToRevitUnits() / 2, 0 ) ) ;
+            }
+            else if ( createCableRackOntheLeft.HasValue && ! createCableRackOntheLeft.Value ) {
+              instance.Location.Move( new XYZ( 0, cableRackWidth.MillimetersToRevitUnits() / 2, 0 ) ) ;
+            }
           }
 
           // check cable tray exists
@@ -207,26 +235,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return null ;
     }
 
-        /// <summary>
-        /// Check cable tray exists (same place)
-        /// </summary>
-        /// <param name="document"></param>
-        /// <param name="familyInstance"></param>
-        /// <returns></returns>
-        private bool ExistsCableTray( Document document, FamilyInstance familyInstance )
+    /// <summary>
+    /// Check cable tray exists (same place)
+    /// </summary>
+    /// <param name="document"></param>
+    /// <param name="familyInstance"></param>
+    /// <returns></returns>
+    private bool ExistsCableTray( Document document, FamilyInstance familyInstance )
     {
       return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
         .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
                      x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) ).Any() ;
     }
 
-        /// <summary>
-        /// compare 2 locations
-        /// </summary>
-        /// <param name="location"></param>
-        /// <param name="otherLocation"></param>
-        /// <returns></returns>
-        private bool IsSameLocation( Location location, Location otherLocation )
+    /// <summary>
+    /// compare 2 locations
+    /// </summary>
+    /// <param name="location"></param>
+    /// <param name="otherLocation"></param>
+    /// <returns></returns>
+    private bool IsSameLocation( Location location, Location otherLocation )
     {
       if ( location is LocationPoint ) {
         if ( ! ( otherLocation is LocationPoint ) ) {
@@ -235,7 +263,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var locationPoint = ( location as LocationPoint )! ;
         var otherLocationPoint = ( otherLocation as LocationPoint )! ;
-        return locationPoint.Point.IsAlmostEqualTo( otherLocationPoint.Point, maxDistanceTolerance ) &&
+        return locationPoint.Point.DistanceTo( otherLocationPoint.Point ) <= maxDistanceTolerance &&
                locationPoint.Rotation == otherLocationPoint.Rotation ;
       }
       else if ( location is LocationCurve ) {
@@ -256,20 +284,60 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return location.Equals( otherLocation ) ;
     }
 
-        private double CalcCableRackWidth(Document document, SubRoute subRoute)
-        {
-            var routes = RouteCache.Get(document);
-            var sumDiameter = subRoute.GetSubRouteGroup().Sum(s => routes.GetSubRoute(s)?.GetDiameter().RevitUnitsToMillimeters() + 10) + 120;
-            var cableTraywidth = 0.6 * sumDiameter;
-            foreach (var width in CableTrayWidthMapping)
-            {
-                if (cableTraywidth <= width)
-                {
-                    cableTraywidth = width;
-                    return cableTraywidth!.Value;
-                }
-            }
-            return cableTraywidth!.Value;
+    private double CalcCableRackWidth( Document document, SubRoute subRoute )
+    {
+      var routes = RouteCache.Get( document ) ;
+      var sumDiameter = subRoute.GetSubRouteGroup()
+        .Sum( s => routes.GetSubRoute( s )?.GetDiameter().RevitUnitsToMillimeters() + 10 ) + 120 ;
+      var cableTraywidth = 0.6 * sumDiameter ;
+      foreach ( var width in CableTrayWidthMapping ) {
+        if ( cableTraywidth <= width ) {
+          cableTraywidth = width ;
+          return cableTraywidth!.Value ;
         }
+      }
+
+      return cableTraywidth!.Value ;
+    }
+
+    private double CalcCableRackMaxWidth( string routeName, IEnumerable<(MEPCurve, SubRoute)> elements,
+      Document document )
+    {
+      var routeElements = elements.Where( x => x.Item2.Route.RouteName == routeName ) ;
+      var maxWidth = 0.0 ;
+      if ( routeMaxWidthCache.ContainsKey( routeName ) ) {
+        return routeMaxWidthCache[ routeName ] ;
+      }
+      else {
+        foreach ( var (mepCurve, subRoute) in routeElements ) {
+          var cableTraywidth = CalcCableRackWidth( document, subRoute ) ;
+          if ( cableTraywidth > maxWidth ) {
+            maxWidth = cableTraywidth ;
+          }
+        }
+
+        routeMaxWidthCache.Add( routeName, maxWidth ) ;
+        return maxWidth ;
+      }
+    }
+
+    private Dictionary<string, double> routeLengthCache = new Dictionary<string, double>() ;
+    private Dictionary<string, double> routeMaxWidthCache = new Dictionary<string, double>() ;
+
+    private double RouteLength( string routeName, IEnumerable<(MEPCurve, SubRoute)> elements, Document document )
+    {
+      if ( routeLengthCache.ContainsKey( routeName ) ) {
+        return routeLengthCache[ routeName ] ;
+      }
+
+      var routeLength = elements.Where( x => x.Item2.Route.RouteName == routeName ).Sum( x =>
+        ( x.Item1 as Conduit )!.ParametersMap
+        .get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) )
+        .AsDouble() ) ;
+
+      routeLengthCache.Add( routeName, routeLength ) ;
+
+      return routeLength ;
+    }
   }
 }
