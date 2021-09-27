@@ -1,4 +1,6 @@
 ﻿using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics;
+using Arent3d.Architecture.Routing.Extensions;
+using Arent3d.Architecture.Routing.Storable;
 using Arent3d.Revit.I18n;
 using Arent3d.Revit.UI;
 using Autodesk.Revit.ApplicationServices;
@@ -61,9 +63,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                 var point2 = mirrorMat.OfPoint(point1);
                 var point4 = mirrorMat.OfPoint(point3);
 
-                IList<Element> levels = new FilteredElementCollector(document).OfClass(typeof(Level)).ToElements();
-                Level? lowestLevel = levels.ElementAt(0) as Level;
-                Level? highestLevel = levels.ElementAt(levels.Count - 1) as Level;
+                HeightSettingStorable heightSetting = document.GetHeightSettingStorable();
+                var levels = heightSetting.Levels.OrderBy(x => x.Elevation).ToList();
+                Level? lowestLevel = levels.FirstOrDefault();
+                Level? highestLevel = levels.LastOrDefault();
                 if (lowestLevel == null && highestLevel == null) return Result.Failed;
 
                 var result = document.Transaction("Create Arent Shaft", _ =>
@@ -93,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                     fi.LookupParameter("幅").Set(width);
                     fi.LookupParameter("奥行き").Set(height);
                     fi.LookupParameter("高さ").Set(highestLevel!.Elevation);
-                    fi.LookupParameter("Arent-Offset").Set(lowestLevel!.Elevation);
+                    fi.LookupParameter("Arent-Offset").Set(0.0);
                     return Result.Succeeded;
                 });
 

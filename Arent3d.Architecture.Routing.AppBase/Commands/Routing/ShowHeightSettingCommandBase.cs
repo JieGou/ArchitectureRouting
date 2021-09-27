@@ -110,6 +110,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           level.Elevation = settingStorables[ level ].Elevation.MillimetersToRevitUnits() ;
         }
       }
+
+      // Set height for Arent shaft
+      var arentShafts = document.GetAllFamilyInstances(RoutingFamilyType.RackGuide);
+      var levels = settingStorables.Levels.OrderBy(x => x.Elevation).ToList();
+      Level? lowestLevel = levels.FirstOrDefault();
+      Level? highestLevel = levels.LastOrDefault();
+      if(lowestLevel != null && highestLevel != null) { 
+        foreach (FamilyInstance shaft in arentShafts) {
+          shaft.LookupParameter("高さ").Set(highestLevel!.Elevation);
+        }
+      }
     }
 
     public void SaveSetting( Document document, HeightSettingStorable newSettings )
