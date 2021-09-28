@@ -30,11 +30,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     public static readonly DependencyProperty SystemTypeEditableProperty = DependencyProperty.Register( "SystemTypeEditable", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty ShaftEditableProperty = DependencyProperty.Register( "ShaftEditable", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty CurveTypeEditableProperty = DependencyProperty.Register( "CurveTypeEditable", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty UseSystemTypeProperty = DependencyProperty.Register( "UseSystemType", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty UseShaftProperty = DependencyProperty.Register( "UseShaft", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty UseCurveTypeProperty = DependencyProperty.Register( "UseCurveType", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty DiameterIndexProperty = DependencyProperty.Register( "DiameterIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty SystemTypeIndexProperty = DependencyProperty.Register( "SystemTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty ShaftIndexProperty = DependencyProperty.Register( "ShaftIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty CurveTypeIndexProperty = DependencyProperty.Register( "CurveTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
     public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)true ) ) ;
@@ -93,8 +96,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private MEPSystemType? SystemTypeOrg { get ; set ; }
     public MEPSystemType? SystemType
     {
-      get => GetTypeOnIndex( SystemTypes, (int)GetValue( SystemTypeIndexProperty ) ) ;
-      private set => SetValue( SystemTypeIndexProperty, GetTypeIndex( SystemTypes, value ) ) ;
+      get => GetItemOnIndex( SystemTypes, (int)GetValue( SystemTypeIndexProperty ) ) ;
+      private set => SetValue( SystemTypeIndexProperty, GetItemIndex( SystemTypes, value ) ) ;
     }
     public bool SystemTypeEditable
     {
@@ -107,15 +110,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       set => SetValue( UseSystemTypeProperty, value ) ;
     }
 
+    //Shafts Info
+    public ObservableCollection<OpeningProxy> Shafts { get ; } = new ObservableCollection<OpeningProxy>() ;
+    private Opening? ShaftOrg { get ; set ; }
+    public Opening? Shaft
+    {
+      get => GetItemOnIndex( Shafts, (int)GetValue( ShaftIndexProperty ) )?.Value ;
+      private set => SetValue( ShaftIndexProperty, GetShaftIndex( Shafts, value ) ) ;
+    }
+
+    public bool ShaftEditable
+    {
+      get => (bool) GetValue( ShaftEditableProperty ) ;
+      set => SetValue( ShaftEditableProperty, value ) ;
+    }
+    private bool UseShaft
+    {
+      get => (bool) GetValue( UseShaftProperty ) ;
+      set => SetValue( UseShaftProperty, value ) ;
+    }
+    
     //CurveType Info
     public ObservableCollection<MEPCurveType> CurveTypes { get ; } = new ObservableCollection<MEPCurveType>() ;
     private MEPCurveType? CurveTypeOrg { get ; set ; }
     public MEPCurveType? CurveType
     {
-      get => GetTypeOnIndex( CurveTypes, (int)GetValue( CurveTypeIndexProperty ) ) ;
+      get => GetItemOnIndex( CurveTypes, (int)GetValue( CurveTypeIndexProperty ) ) ;
       private set
       {
-        SetValue( CurveTypeIndexProperty, GetTypeIndex( CurveTypes, value ) ) ;
+        SetValue( CurveTypeIndexProperty, GetItemIndex( CurveTypes, value ) ) ;
         if ( value is { } curveType ) {
           CurveTypeLabel = UIHelper.GetTypeLabel( curveType.GetType().Name ) ;
         }
@@ -167,16 +190,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       set => SetValue( UseCurveTypeProperty, value ) ;
     }
 
-    private static T? GetTypeOnIndex<T>( IReadOnlyList<T> values, int index ) where T : class
+    private static T? GetItemOnIndex<T>( IReadOnlyList<T> values, int index ) where T : class
     {
       if ( index < 0 || values.Count <= index ) return null ;
       return values[ index ] ;
     }
-    private static int GetTypeIndex<T>( IEnumerable<T> elementTypes, T? value ) where T : Element
+    private static int GetItemIndex<TElement>( IEnumerable<TElement> elements, TElement? value ) where TElement : Element
     {
-      if ( value is not { } elementType ) return -1 ;
+      if ( value is not { } item ) return -1 ;
 
-      return elementTypes.FindIndex( e => e.Id == elementType.Id ) ;
+      return elements.FindIndex( elm => elm.Id == item.Id ) ;
+    }
+    private static int GetShaftIndex( IEnumerable<OpeningProxy> elements, Opening? value )
+    {
+      return elements.FindIndex( elm => elm.Value?.Id == value?.Id ) ;
     }
 
     //Direct Info
@@ -326,6 +353,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( UseFixedHeight != UseFixedHeightOrg ) return true ;
       if ( true == UseFixedHeight && false == LengthEquals( FixedHeightOrg, FixedHeight, VertexTolerance ) ) return true ;
       if ( AvoidTypeOrg != AvoidType ) return true ;
+      if ( UseShaft && ShaftOrg?.Id != Shaft?.Id ) return true ;
       if ( LocationTypeOrg != LocationType ) return true ;
 
       return false ;
@@ -354,7 +382,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       OnValueChanged( EventArgs.Empty ) ;
     }
-
+    
+    private void ShaftComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+    }
+    
     private void CurveTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       OnValueChanged( EventArgs.Empty ) ;
@@ -367,16 +400,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     /// <summary>
-    /// Update Diameters, SystemTypes, and CurveTypes
+    /// Update Diameters, SystemTypes, Shafts and CurveTypes
     /// </summary>
     /// <param name="systemTypes"></param>
+    /// <param name="shafts"></param>
     /// <param name="curveTypes"></param>
-    private void SetAvailableParameterList( IList<MEPSystemType>? systemTypes, IList<MEPCurveType> curveTypes)
+    private void SetAvailableParameterList( IList<MEPSystemType>? systemTypes, IList<Opening>? shafts, IList<MEPCurveType> curveTypes )
     {
       Diameters.Clear() ;
       SystemTypes.Clear() ;
       CurveTypes.Clear() ;
+      Shafts.Clear() ;
 
+      // System type
       if ( systemTypes != null ) {
         foreach ( var s in systemTypes ) {
           SystemTypes.Add( s ) ;
@@ -388,6 +424,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         UseSystemType = false ;
       }
 
+      Shafts.Add( new OpeningProxy( null ) ) ;
+      if ( null != shafts ) {
+        foreach ( var shaft in shafts ) {
+          Shafts.Add( new OpeningProxy( shaft ) ) ;
+        }
+
+        UseShaft = true ;
+      }
+      else {
+        UseShaft = false ;
+      }
+      
+      // Curve type
       foreach ( var c in curveTypes ) {
         CurveTypes.Add( c ) ;
       }
@@ -396,11 +445,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public void SetRouteProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
       VertexTolerance = properties.VertexTolerance ;
-      SetAvailableParameterList( propertyTypeList.SystemTypes, propertyTypeList.CurveTypes ) ;
+      SetAvailableParameterList( propertyTypeList.SystemTypes, propertyTypeList.Shafts, propertyTypeList.CurveTypes ) ;
 
       SystemTypeOrg = properties.SystemType ;
       CurveTypeOrg = properties.CurveType ;
       DiameterOrg = properties.Diameter ;
+      ShaftOrg = properties.Shaft ;
 
       IsRouteOnPipeSpaceOrg = properties.IsRouteOnPipeSpace ;
       UseFixedHeightOrg = properties.UseFixedHeight ;
@@ -429,6 +479,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SystemType = SystemTypeOrg ;
       CurveType = CurveTypeOrg ;
       Diameter = DiameterOrg ;
+      Shaft = ShaftOrg ;
 
       IsRouteOnPipeSpace = IsRouteOnPipeSpaceOrg ;
       UseFixedHeight = UseFixedHeightOrg ;
@@ -451,6 +502,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DiameterOrg = null ;
       SystemTypeOrg = null ;
       CurveTypeOrg = null ;
+      ShaftOrg = null ;
 
       IsRouteOnPipeSpaceOrg = false ;
       UseFixedHeightOrg = false ;
@@ -571,6 +623,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         DisplayUnit.IMPERIAL => LengthConverter.Inches,
         _ => LengthConverter.Default,
       } ;
+    }
+
+    public class OpeningProxy
+    {
+      internal OpeningProxy( Opening? opening )
+      {
+        Value = opening ;
+      }
+
+      public Opening? Value { get ; }
     }
   }
 }

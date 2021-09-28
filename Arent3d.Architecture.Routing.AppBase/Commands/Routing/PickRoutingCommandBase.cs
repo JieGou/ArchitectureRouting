@@ -144,7 +144,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var fixedHeight = propertyDialog.GetFixedHeight() ;
       var toFixedHeight = propertyDialog.GetToFixedHeight() ;
       var avoidType = propertyDialog.GetSelectedAvoidType() ;
-      var shaftElementId = propertyDialog.GetShaftElementId() ;
+      var shaftElementId = propertyDialog.GetShaft()?.Id ?? ElementId.InvalidElementId ;
 
       double? trueFixedHeight = ( fixedHeight.HasValue ? RouteProperties.GetTrueFixedHeight( GetLevel( document, fromEndPoint ) ?? GetLevel( document, toEndPoint ), diameter, fixedHeight.Value ) : null ) ;
       double? trueToFixedHeight = ( toFixedHeight.HasValue ? RouteProperties.GetTrueFixedHeight( GetLevel( document, toEndPoint ), diameter, toFixedHeight.Value ) : null ) ;

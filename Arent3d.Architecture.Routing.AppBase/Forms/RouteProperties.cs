@@ -16,6 +16,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     //SystemType 
     public MEPSystemType? SystemType { get ; }
+    
+    // Shaft 
+    public Opening? Shaft { get ; }    
 
     //CurveType
     public MEPCurveType? CurveType { get ; private set ; }
@@ -77,6 +80,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       FixedHeight = ( true == UseFixedHeight ? GetDisplayFixedHeight( firstSubRoute ) : 0.0 ) ;
+      Shaft = document.GetElementById<Opening>( firstSubRoute.ShaftElementId ) ;
       
       LocationType = "Floor" ;
     }
@@ -86,6 +90,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Document = document ;
 
       SystemType = spec.SystemTypes?.FirstOrDefault() ;
+      Shaft = spec.Shafts?.FirstOrDefault() ;
       CurveType = spec.CurveTypes.FirstOrDefault() ;
       Diameter = null ;
 
@@ -135,7 +140,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFixedHeight, double fixedHeight, AvoidType? avoidType )
+    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFixedHeight, double fixedHeight, AvoidType? avoidType, Opening? shaft )
     {
       Document = route.Document ;
 
@@ -151,6 +156,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         FixedHeight = GetTrueFixedHeight( route, fixedHeight ) ;
       }
       AvoidType = avoidType ;
+      Shaft = shaft ;
       LocationType = "Floor" ;
     }
 

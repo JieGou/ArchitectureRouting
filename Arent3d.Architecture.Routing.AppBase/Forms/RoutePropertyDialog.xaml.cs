@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public RoutePropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
       InitializeComponent() ;
-
+      WindowStartupLocation = WindowStartupLocation.CenterScreen ;
       FromToEdit.DisplayUnitSystem = document.DisplayUnitSystem ;
       UpdateProperties( propertyTypeList, properties ) ;
     }
@@ -63,10 +63,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public AvoidType GetSelectedAvoidType() => FromToEdit.AvoidType ?? throw new InvalidOperationException() ;
 
-    public ElementId GetShaftElementId()
+    public Opening? GetShaft()
     {
-      // TODO
-      return ElementId.InvalidElementId ;
+      return FromToEdit.Shaft ;
     }
   }
 }
