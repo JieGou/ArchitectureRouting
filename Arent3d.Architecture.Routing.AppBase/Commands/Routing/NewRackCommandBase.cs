@@ -16,14 +16,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
+    private static readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
 
     private readonly BuiltInCategory[] ConduitBuiltInCategories =
     {
       BuiltInCategory.OST_Conduit, BuiltInCategory.OST_ConduitFitting, BuiltInCategory.OST_ConduitRun
     } ;
 
-    private readonly BuiltInCategory[] CableTrayBuiltInCategories =
+    private static readonly BuiltInCategory[] CableTrayBuiltInCategories =
     {
       BuiltInCategory.OST_CableTray, BuiltInCategory.OST_CableTrayFitting
     } ;
@@ -70,7 +70,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void SetParameter( FamilyInstance instance, string parameterName, double value )
+    public static void SetParameter( FamilyInstance instance, string parameterName, double value )
     {
       instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
     }
@@ -261,7 +261,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="point"></param>
     /// <param name="maxDistance"></param>
     /// <returns></returns>
-    private static Connector? GetConnectorClosestTo( List<Connector> connectors, XYZ point,
+    public static Connector? GetConnectorClosestTo( List<Connector> connectors, XYZ point,
       double maxDistance = double.MaxValue )
     {
       double minDistance = double.MaxValue ;
@@ -284,7 +284,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     /// <param name="connectors"></param>
     /// <returns></returns>
-    private static Connector? GetFirstConnector( ConnectorSet connectors )
+    public static Connector? GetFirstConnector( ConnectorSet connectors )
     {
       foreach ( Connector connector in connectors ) {
         if ( 0 == connector.Id ) {
@@ -301,7 +301,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="document"></param>
     /// <param name="familyInstance"></param>
     /// <returns></returns>
-    public bool ExistsCableTray( Document document, FamilyInstance familyInstance )
+    public static bool ExistsCableTray( Document document, FamilyInstance familyInstance )
     {
       return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
         .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
@@ -314,7 +314,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="location"></param>
     /// <param name="otherLocation"></param>
     /// <returns></returns>
-    public bool IsSameLocation( Location location, Location otherLocation )
+    public static bool IsSameLocation( Location location, Location otherLocation )
     {
       if ( location is LocationPoint ) {
         if ( ! ( otherLocation is LocationPoint ) ) {
