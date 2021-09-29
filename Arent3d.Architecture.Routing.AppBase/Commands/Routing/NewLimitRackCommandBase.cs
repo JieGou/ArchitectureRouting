@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
 
     protected abstract AddInType GetAddInType() ;
+    private Dictionary<ElementId, List<Connector>> elbowsToCreate = new Dictionary<ElementId, List<Connector>>() ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -44,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               var (mepCurve, subRoute) = element ;
               if ( RouteLength( subRoute.Route.RouteName, elements, document ) >= minLengthOfConduit ) {
                 var conduit = ( mepCurve as Conduit )! ;
-                var cableRackWidth = CalcCableRackMaxWidth( subRoute.Route.Name, elements, document ) ;
+                var cableRackWidth = CalcCableRackMaxWidth( element, elements, document ) ;
                 if ( 800.0 <= cableRackWidth ) {
                   CreateCableRackForConduit( uiDocument, conduit, cableRackWidth / 2, true ) ;
                   CreateCableRackForConduit( uiDocument, conduit, cableRackWidth / 2, false ) ;
@@ -54,6 +55,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 }
               }
             }
+
+            List<ElementId> ids = new List<ElementId>() ;
+            foreach ( var elbow in elbowsToCreate ) {
+              //document.Create.NewElbowFitting(elbow.Value.First(), elbow.Value.Last());
+              //ids.AddRange(elbow.Value.Select(y => y.Owner.Id).ToList());
+            }
+            //uiDocument.Selection.SetElementIds(ids);
+            //uiDocument.ShowElements(ids);
 
             return Result.Succeeded ;
           } ) ;
@@ -84,6 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       if ( conduit != null ) {
         var document = uiDocument.Document ;
+
         using var transaction = new SubTransaction( document ) ;
         try {
           transaction.Start() ;
@@ -183,6 +193,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( ExistsCableTray( document, instance ) ) {
             transaction.RollBack() ;
             return ;
+          }
+
+          var elbows = conduit.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd()
+            .Select( c => c.Owner ).OfType<FamilyInstance>() ;
+          foreach ( var elbow in elbows ) {
+            if ( elbowsToCreate.ContainsKey( elbow.Id ) ) {
+              elbowsToCreate[ elbow.Id ].Add( GetConnectorClosestTo( instance.GetConnectors().ToList(),
+                ( elbow.Location as LocationPoint )!.Point )! ) ;
+            }
+            else {
+              elbowsToCreate.Add( elbow.Id,
+                new List<Connector>()
+                {
+                  GetConnectorClosestTo( instance.GetConnectors().ToList(),
+                    ( elbow.Location as LocationPoint )!.Point )!
+                } ) ;
+            }
           }
 
           transaction.Commit() ;
@@ -300,13 +327,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return cableTraywidth!.Value ;
     }
 
-    private double CalcCableRackMaxWidth( string routeName, IEnumerable<(MEPCurve, SubRoute)> elements,
+    private double CalcCableRackMaxWidth( (MEPCurve, SubRoute) element, IEnumerable<(MEPCurve, SubRoute)> elements,
       Document document )
     {
+      var routeName = element.Item2.Route.RouteName ;
       var routeElements = elements.Where( x => x.Item2.Route.RouteName == routeName ) ;
       var maxWidth = 0.0 ;
       if ( routeMaxWidthCache.ContainsKey( routeName ) ) {
-        return routeMaxWidthCache[ routeName ] ;
+        var elbowsConnected = element.Item1.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd()
+          .Select( c => c.Owner ).OfType<FamilyInstance>() ;
+        var straightsConnected = element.Item1.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd()
+          .Select( c => c.Owner ).OfType<Conduit>() ;
+        if ( elbowsConnected.Any() && straightsConnected.Any() && element.Item2.PreviousSubRoute != null &&
+             straightsConnected.First().GetSubRouteIndex()!.Value == element.Item2.PreviousSubRoute!.SubRouteIndex ) {
+          var key = routeMaxWidthCache[ routeName ].Keys
+            .Where( x => x <= element.Item2.PreviousSubRoute!.SubRouteIndex ).Max() ;
+          return routeMaxWidthCache[ routeName ][ key ] ;
+        }
+        else if ( elbowsConnected.Any() &&
+                  ( element.Item2.PreviousSubRoute == null || ( element.Item2.PreviousSubRoute != null &&
+                                                                straightsConnected.Any() &&
+                                                                straightsConnected.First().GetSubRouteIndex()!.Value !=
+                                                                element.Item2.PreviousSubRoute!.SubRouteIndex ) ) &&
+                  ! routeMaxWidthCache[ routeName ].ContainsKey( element.Item2.SubRouteIndex ) ) {
+          maxWidth = CalcCableRackWidth( document, element.Item2 ) ;
+          routeMaxWidthCache[ routeName ].Add( element.Item2.SubRouteIndex, maxWidth ) ;
+          return maxWidth ;
+        }
+        else {
+          var key = routeMaxWidthCache[ routeName ].Keys.Where( x => x <= element.Item2.SubRouteIndex ).Max() ;
+          return routeMaxWidthCache[ routeName ][ key ] ;
+        }
       }
       else {
         foreach ( var (mepCurve, subRoute) in routeElements ) {
@@ -316,13 +367,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
 
-        routeMaxWidthCache.Add( routeName, maxWidth ) ;
+        Dictionary<int, double> routeWidths = new Dictionary<int, double>() ;
+        routeWidths.Add( element.Item2.SubRouteIndex, maxWidth ) ;
+        routeMaxWidthCache.Add( routeName, routeWidths ) ;
         return maxWidth ;
       }
     }
 
     private Dictionary<string, double> routeLengthCache = new Dictionary<string, double>() ;
-    private Dictionary<string, double> routeMaxWidthCache = new Dictionary<string, double>() ;
+
+    private Dictionary<string, Dictionary<int, double>> routeMaxWidthCache =
+      new Dictionary<string, Dictionary<int, double>>() ;
 
     private double RouteLength( string routeName, IEnumerable<(MEPCurve, SubRoute)> elements, Document document )
     {
