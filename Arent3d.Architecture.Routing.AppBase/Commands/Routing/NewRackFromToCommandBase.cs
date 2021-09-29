@@ -18,16 +18,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     private readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
 
-    private readonly BuiltInCategory[] ConduitBuiltInCategories =
-    {
-      BuiltInCategory.OST_Conduit, BuiltInCategory.OST_ConduitFitting, BuiltInCategory.OST_ConduitRun
-    } ;
-
-    private readonly BuiltInCategory[] CableTrayBuiltInCategories =
-    {
-      BuiltInCategory.OST_CableTray, BuiltInCategory.OST_CableTrayFitting
-    } ;
-
     protected abstract AddInType GetAddInType() ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -79,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     continue ;
                   }
 
-                  Connector firstConnector = GetFirstConnector( element.GetConnectorManager()!.Connectors )! ;
+                  Connector firstConnector = NewRackCommandBase.GetFirstConnector( element.GetConnectorManager()!.Connectors )! ;
 
                   var length = conduit.ParametersMap
                     .get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document,
@@ -98,7 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
 
                   // set cable rack length
-                  SetParameter( instance,
+                  NewRackCommandBase.SetParameter( instance,
                     "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ),
                     length ) ; // TODO may be must change when FamilyType change
 
@@ -130,7 +120,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   }
 
                   // check cable tray exists
-                  if ( ExistsCableTray( document, instance ) ) {
+                  if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
                     transaction.RollBack() ;
                     continue ;
                   }
@@ -167,12 +157,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
 
                   // set cable tray Bend Radius
-                  SetParameter( instance,
+                  NewRackCommandBase.SetParameter( instance,
                     "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ),
                     bendRadius / 2 ) ; // TODO may be must change when FamilyType change
                           
                   // set cable rack length
-                  SetParameter( instance,
+                  NewRackCommandBase.SetParameter( instance,
                     "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ),
                     length ) ; // TODO may be must change when FamilyType change
 
@@ -198,7 +188,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     -diameter ) ) ; // TODO may be must change when FamilyType change
 
                   // check cable tray exists
-                  if ( ExistsCableTray( document, instance ) ) {
+                  if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
                     transaction.RollBack() ;
                     continue ;
                   }
@@ -220,7 +210,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var otherConnectors =
                   rackConnectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
                 if ( otherConnectors != null ) {
-                  var connectTo = GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
+                  var connectTo = NewRackCommandBase.GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
                   if ( connectTo != null ) {
                     connector.ConnectTo( connectTo ) ;
                   }
@@ -240,72 +230,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
-    }
-
-    private static void SetParameter( FamilyInstance instance, string parameterName, double value )
-    {
-      instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
-    }
-
-    /// <summary>
-    /// Return the connector in the set
-    /// closest to the given point.
-    /// </summary>
-    /// <param name="connectors"></param>
-    /// <param name="point"></param>
-    /// <param name="maxDistance"></param>
-    /// <returns></returns>
-    private static Connector? GetConnectorClosestTo( List<Connector> connectors, XYZ point,
-      double maxDistance = double.MaxValue )
-    {
-      double minDistance = double.MaxValue ;
-      Connector? targetConnector = null ;
-
-      foreach ( Connector connector in connectors ) {
-        double distance = connector.Origin.DistanceTo( point ) ;
-
-        if ( distance < minDistance && distance <= maxDistance ) {
-          targetConnector = connector ;
-          minDistance = distance ;
-        }
-      }
-
-      return targetConnector ;
-    }
-
-    /// <summary>
-    /// Return the first connector.
-    /// </summary>
-    /// <param name="connectors"></param>
-    /// <returns></returns>
-    private static Connector? GetFirstConnector( ConnectorSet connectors )
-    {
-      foreach ( Connector connector in connectors ) {
-        if ( 0 == connector.Id ) {
-          return connector ;
-        }
-      }
-
-      return null ;
-    }
-
-    /// <summary>
-    /// Return the last connector.
-    /// </summary>
-    /// <param name="connectors"></param>
-    /// <returns></returns>
-    private static Connector? GetLastConnector( ConnectorSet connectors )
-    {
-      int maxId = -1 ;
-      Connector? targetConnector = null ;
-      foreach ( Connector connector in connectors ) {
-        if ( connector.Id > maxId ) {
-          maxId = connector.Id ;
-          targetConnector = connector ;
-        }
-      }
-
-      return targetConnector ;
     }
 
     /// <summary>
@@ -363,55 +287,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return correctPath ;
-    }
-
-    /// <summary>
-    /// Check cable tray exists (same place)
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="familyInstance"></param>
-    /// <returns></returns>
-    public bool ExistsCableTray( Document document, FamilyInstance familyInstance )
-    {
-      return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
-        .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
-                     x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) ).Any() ;
-    }
-
-    /// <summary>
-    /// compare 2 locations
-    /// </summary>
-    /// <param name="location"></param>
-    /// <param name="otherLocation"></param>
-    /// <returns></returns>
-    public bool IsSameLocation( Location location, Location otherLocation )
-    {
-      if ( location is LocationPoint ) {
-        if ( ! ( otherLocation is LocationPoint ) ) {
-          return false ;
-        }
-
-        var locationPoint = ( location as LocationPoint )! ;
-        var otherLocationPoint = ( otherLocation as LocationPoint )! ;
-        return locationPoint.Point.DistanceTo( otherLocationPoint.Point) <= maxDistanceTolerance &&
-               locationPoint.Rotation == otherLocationPoint.Rotation ;
-      }
-      else if ( location is LocationCurve ) {
-        if ( ! ( otherLocation is LocationCurve ) ) {
-          return false ;
-        }
-
-        var locationCurve = ( location as LocationCurve )! ;
-        var line = ( locationCurve.Curve as Line )! ;
-
-        var otherLocationCurve = ( otherLocation as LocationCurve )! ;
-        var otherLine = ( otherLocationCurve.Curve as Line )! ;
-
-        return line.Origin.IsAlmostEqualTo( otherLine.Origin, maxDistanceTolerance ) &&
-               line.Direction == otherLine.Direction && line.Length == otherLine.Length ;
-      }
-
-      return location.Equals( otherLocation ) ;
     }
   }
 }
