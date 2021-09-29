@@ -126,14 +126,11 @@ namespace Arent3d.Architecture.Routing
 
     private static Segment? GetTargetSegment( this MEPCurveType type )
     {
-      Segment? targetSegment = null ;
-      var document = type.Document ;
-      IEnumerable<RoutingPreferenceRule> rules = type.RoutingPreferenceManager.GetRules( RoutingPreferenceRuleGroupType.Segments ) ;
-      foreach ( var rule in rules ) {
-        targetSegment = document.GetElementById<Segment>( rule.MEPPartId ) ;
-      }
+      if ( type.RoutingPreferenceManager is not { } manager ) return null ;
 
-      return targetSegment ;
+      var rules = manager.GetRules( RoutingPreferenceRuleGroupType.Segments ) ;
+      var document = type.Document ;
+      return rules.Select( rule => document.GetElementById<Segment>( rule.MEPPartId ) ).FirstOrDefault( segment => null != segment ) ;
     }
 
 

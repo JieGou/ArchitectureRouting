@@ -82,7 +82,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return ShowDialog( document, initValues, true, floorHeightConnector, ceilingHeightConnector, floorToHeightConnector, ceilingToHeightConnector, isDiffLevel ) ;
       }
 
-      return ShowDialog( document ) ;
+      return ShowDialog( document, GetAddInType() ) ;
     }
 
     private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, bool isPickRouting = false, double floorHeightConnector = 0, double ceilingHeightConnector = 0, double floorToHeightConnector = 0, double ceilingToHeightConnector = 0, bool isDiffLevel = false )
@@ -94,9 +94,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return sv ;
     }
-    private static RoutePropertyDialog ShowDialog( Document document )
+    private static RoutePropertyDialog ShowDialog( Document document, AddInType addInType )
     {
-      var routeChoiceSpec = new RoutePropertyTypeList( document ) ;
+      var routeChoiceSpec = new RoutePropertyTypeList( document, addInType ) ;
       var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ) ) ;
       sv.ShowDialog() ;
 
