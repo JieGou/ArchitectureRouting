@@ -33,6 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                 LineExternal? lineExternal = new LineExternal(uiApp);
                 try
                 {
+                    lineExternal.PickedPoints.Add(firstPoint);
                     var tmp = firstPoint;
                     while (firstPoint != nextPoint)
                     {
@@ -69,49 +70,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                                     "Dialog.Commands.Draw.Common.Body.Error".GetAppStringByKeyOrDefault("始点と終点が同じです。"));
                     return Result.Cancelled;
                 }
-
-                HeightSettingStorable heightSetting = document.GetHeightSettingStorable();
-                var levels = heightSetting.Levels.OrderBy(x => x.Elevation).ToList();
-                Level? lowestLevel = levels.FirstOrDefault();
-                Level? highestLevel = levels.LastOrDefault();
-                if (lowestLevel == null && highestLevel == null) return Result.Failed;
-
-                var result = document.Transaction("Create Arent Shaft", _ =>
+                if (pointsSelected.First().DistanceTo(pointsSelected.Last()) <= 0.1)
                 {
-                    CurveArray shaftProfile = app.Create.NewCurveArray();
-                    var firstP = pointsSelected[0];
-                    for (var i = 1; i < pointsSelected.Count; i++)
+                    HeightSettingStorable heightSetting = document.GetHeightSettingStorable();
+                    var levels = heightSetting.Levels.OrderBy(x => x.Elevation).ToList();
+                    Level? lowestLevel = levels.FirstOrDefault();
+                    Level? highestLevel = levels.LastOrDefault();
+                    if (lowestLevel == null && highestLevel == null) return Result.Failed;
+
+                    var result = document.Transaction("Create Arent Shaft", _ =>
                     {
-                        var nextP = pointsSelected[i];
-                        if (firstP.DistanceTo(nextP) > 0.001)
+                        CurveArray shaftProfile = app.Create.NewCurveArray();
+                        var firstP = pointsSelected[0];
+                        for (var i = 1; i < pointsSelected.Count; i++)
                         {
-                            Curve curve = Line.CreateBound(firstP, nextP);
-                            shaftProfile.Append(curve);
+                            var nextP = pointsSelected[i];
+                            if (firstP.DistanceTo(nextP) > 0.001)
+                            {
+                                Curve curve = Line.CreateBound(firstP, nextP);
+                                shaftProfile.Append(curve);
+                            }
+
+                            firstP = nextP;
                         }
+                        Opening shaftOpening = document.Create.NewOpening(lowestLevel, highestLevel, shaftProfile);
+                        shaftOpening.get_Parameter(BuiltInParameter.WALL_TOP_OFFSET).Set(0);
+                        shaftOpening.get_Parameter(BuiltInParameter.WALL_BASE_OFFSET).Set(0);
+                        shaftOpening.get_Parameter(BuiltInParameter.WALL_BASE_CONSTRAINT).Set(lowestLevel!.Id);
+                        shaftOpening.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE).Set(highestLevel!.Id);
 
-                        firstP = nextP;
-                    }
-                    Opening shaftOpening = document.Create.NewOpening(lowestLevel, highestLevel, shaftProfile);
-                    shaftOpening.get_Parameter(BuiltInParameter.WALL_TOP_OFFSET).Set(0);
-                    shaftOpening.get_Parameter(BuiltInParameter.WALL_BASE_OFFSET).Set(0);
-                    shaftOpening.get_Parameter(BuiltInParameter.WALL_BASE_CONSTRAINT).Set(lowestLevel!.Id);
-                    shaftOpening.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE).Set(highestLevel!.Id);
+                        return Result.Succeeded;
+                    });
 
-                    //double width = point1.DistanceTo(point2);
-                    //double height = point2.DistanceTo(point3);
-
-                    //FamilyInstance fi = document.AddRackGuid(midPoint);
-                    //fi.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0.0);
-                    //fi.get_Parameter(BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM).Set(0.0);
-                    //fi.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM).Set(lowestLevel!.Id);
-                    //fi.LookupParameter("幅").Set(width);
-                    //fi.LookupParameter("奥行き").Set(height);
-                    //fi.LookupParameter("高さ").Set(highestLevel!.Elevation);
-                    //fi.LookupParameter("Arent-Offset").Set(0.0);
-                    return Result.Succeeded;
-                });
-
-                return result;
+                    return result;
+                }
+                return Result.Succeeded;
             }
             catch (Autodesk.Revit.Exceptions.OperationCanceledException)
             {
@@ -119,7 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             }
             catch (Exception e)
             {
-                CommandUtils.DebugAlertException(e);
+                message = e.Message;
                 return Result.Failed;
             }
         }

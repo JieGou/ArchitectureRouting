@@ -21,7 +21,21 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             {
                 return;
             }
+            if (this.PickedPoints.Count > 1)
+            {
+                var firstP = this.PickedPoints[0];
+                for (var i = 1; i < this.PickedPoints.Count; i++)
+                {
+                    var nextP = this.PickedPoints[i];
+                    if (firstP.DistanceTo(nextP) > 0.001)
+                    {
+                        var line = Line.CreateBound(firstP, nextP);
+                        this.DrawingServer.LineList.Add(line);
+                    }
 
+                    firstP = nextP;
+                }
+            }
             this.DrawingServer.LineList.Add(Line.CreateBound(this.DrawingServer.BasePoint, this.DrawingServer.NextPoint));
         }
     }
