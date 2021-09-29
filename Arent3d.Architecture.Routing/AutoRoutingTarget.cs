@@ -38,9 +38,10 @@ namespace Arent3d.Architecture.Routing
 
     public AutoRoutingTarget( Document document, IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
     {
-      Routes = subRoutes.Select( subRoute => subRoute.Route ).Distinct().EnumerateAll() ;
+      if ( 0 == subRoutes.Count ) throw new ArgumentException() ;
 
-      Domain = Routes.Select( route => (Domain?) route.Domain ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      Routes = subRoutes.Select( subRoute => subRoute.Route ).Distinct().EnumerateAll() ;
+      Domain = Routes.Select( route => route.Domain ).First() ;
 
       var depths = GetDepths( subRoutes ) ;
 
@@ -55,6 +56,22 @@ namespace Arent3d.Architecture.Routing
       LineId = $"{firstSubRoute.Route.RouteName}@{firstSubRoute.SubRouteIndex}" ;
 
       Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ] ) ;
+    }
+
+    public AutoRoutingTarget( Document document, SubRoute subRoute, int priority, AutoRoutingEndPoint fromEndPoint, AutoRoutingEndPoint toEndPoint )
+    {
+      Routes = new[] { subRoute.Route } ;
+      Domain = subRoute.Route.Domain ;
+
+      _fromEndPoints = new[] { fromEndPoint } ;
+      _toEndPoints = new[] { toEndPoint } ;
+      _ep2SubRoute = new Dictionary<AutoRoutingEndPoint, SubRoute> { { fromEndPoint, subRoute }, { toEndPoint, subRoute } } ;
+
+      AutoRoutingEndPoint.ApplyDepths( _fromEndPoints, _toEndPoints ) ;
+
+      LineId = $"{subRoute.Route.RouteName}@{subRoute.SubRouteIndex}" ;
+
+      Condition = new AutoRoutingCondition( document, subRoute, priority ) ;
     }
 
     private static Dictionary<SubRoute, int> GetDepths( IReadOnlyCollection<SubRoute> subRoutes )
@@ -161,11 +178,9 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    public SubRoute GetSubRoute( IRouteEdge routeEdge )
+    public SubRoute? GetSubRoute( AutoRoutingEndPoint ep )
     {
-      if ( routeEdge.LineInfo is not AutoRoutingEndPoint ep ) throw new InvalidOperationException() ;
-
-      return _ep2SubRoute[ ep ] ;
+      return _ep2SubRoute.TryGetValue( ep, out var subRoute ) ? subRoute : null ;
     }
 
     public IEnumerable<SubRoute> GetAllSubRoutes()

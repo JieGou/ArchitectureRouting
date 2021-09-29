@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       var topLevel = opening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE )?.AsValueString() ?? string.Empty ;
       var bottomLevel = opening.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT )?.AsValueString() ?? string.Empty ;
 
-      var (x, y, z) = opening.BoundaryCurves.get_Item( 0 ).GetEndPoint( 0 ) ;
+      var (x, y, z) = opening.GetShaftPosition() ;
       return $"{opening.Name}: {bottomLevel}-{topLevel} (X: {x.RevitUnitsToMeters():0.000} m, Y: {y.RevitUnitsToMeters():0.000} m, Z: {z.RevitUnitsToMeters():0.000} m)" ;
     }
 
@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       var topLevel = opening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE )?.AsValueString() ?? string.Empty ;
       var bottomLevel = opening.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT )?.AsValueString() ?? string.Empty ;
 
-      var (x, y, z) = opening.BoundaryCurves.get_Item( 0 ).GetEndPoint( 0 ) ;
+      var (x, y, z) = opening.GetShaftPosition() ;
       return $"{opening.Name}: {bottomLevel}-{topLevel} (X: {FeetAndInches(x.RevitUnitsToFeet())}, Y: {FeetAndInches(y.RevitUnitsToFeet())}, Z: {FeetAndInches(z.RevitUnitsToFeet())})" ;
     }
 

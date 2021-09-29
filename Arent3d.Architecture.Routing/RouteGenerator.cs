@@ -22,13 +22,13 @@ namespace Arent3d.Architecture.Routing
     private readonly List<Connector[]> _badConnectors = new() ;
     private readonly PassPointConnectorMapper _globalPassPointConnectorMapper = new() ;
 
-    public RouteGenerator( IReadOnlyCollection<Route> routes, Document document, IFittingSizeCalculator fittingSizeCalculator, ICollisionCheckTargetCollector collector )
+    public RouteGenerator( Document document, IReadOnlyCollection<Route> routes, AutoRoutingTargetGenerator autoRoutingTargetGenerator, IFittingSizeCalculator fittingSizeCalculator, ICollisionCheckTargetCollector collector )
     {
       _document = document ;
 
       _routeConditions = CreateRouteConditions( document, routes, fittingSizeCalculator ) ;
-      var targets = AutoRoutingTargetGenerator.Run( _document, routes, _routeConditions ) ;
-      RoutingTargets = targets.EnumerateAll() ;
+      var targets = autoRoutingTargetGenerator.Create( routes, _routeConditions ) ;
+      RoutingTargetGroups = targets.ToList() ;
       ErasePreviousRoutes() ; // Delete before CollisionCheckTree is built.
 
       CollisionCheckTree = new CollisionTree.CollisionTree( document, collector, _routeConditions ) ;
@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing
 
     public IReadOnlyCollection<Connector[]> GetBadConnectorSet() => _badConnectors ;
 
-    protected override IReadOnlyCollection<AutoRoutingTarget> RoutingTargets { get ; }
+    protected override IReadOnlyList<IReadOnlyCollection<AutoRoutingTarget>> RoutingTargetGroups { get ; }
 
     protected override CollisionTree.CollisionTree CollisionCheckTree { get ; }
 
@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     private void ErasePreviousRoutes()
     {
-      EraseRoutes( _document, RoutingTargets.SelectMany( t => t.Routes ).Select( route => route.RouteName ), false ) ;
+      EraseRoutes( _document, RoutingTargetGroups.SelectMany( group => group ).SelectMany( t => t.Routes ).Select( route => route.RouteName ), false ) ;
     }
 
     public static void EraseRoutes( Document document, IEnumerable<string> routeNames, bool eraseRouteStoragesAndPassPoints )
@@ -111,13 +111,13 @@ namespace Arent3d.Architecture.Routing
       // TODO, if needed
     }
 
-    protected override void OnRoutingTargetProcessed( AutoRoutingTarget routingTarget, AutoRoutingResult result )
+    protected override void OnRoutingTargetProcessed( IReadOnlyCollection<AutoRoutingTarget> routingTargets, MergedAutoRoutingResult result )
     {
 #if DUMP_LOGS
       result.DebugExport( GetResultLogFileName( _document, routingTarget ) ) ;
 #endif
 
-      var mepSystemCreator = new MEPSystemCreator( _document, routingTarget, _routeConditions ) ;
+      var mepSystemCreator = new MEPSystemCreator( _document, routingTargets, _routeConditions ) ;
 
       foreach ( var routeVertex in result.RouteVertices ) {
         if ( routeVertex is not TerminalPoint ) continue ;
@@ -135,9 +135,9 @@ namespace Arent3d.Architecture.Routing
       RegisterBadConnectors( mepSystemCreator.GetBadConnectorSet() ) ;
     }
 
-    protected virtual IEnumerable<Element> CreateEdges( MEPSystemCreator mepSystemCreator, AutoRoutingResult result )
+    protected virtual IEnumerable<Element> CreateEdges( MEPSystemCreator mepSystemCreator, MergedAutoRoutingResult result )
     {
-      return result.RouteEdges.Select( routeEdge => mepSystemCreator.CreateEdgeElement( routeEdge, mepSystemCreator.AutoRoutingTarget.GetSubRoute( routeEdge ), result.GetPassingEndPointInfo( routeEdge ) ) ) ;
+      return result.RouteEdges.Select( routeEdge => mepSystemCreator.CreateEdgeElement( routeEdge, mepSystemCreator.GetSubRoute( routeEdge ), result.GetPassingEndPointInfo( routeEdge ) ) ) ;
     }
 
     private void RegisterBadConnectors( IEnumerable<Connector[]> badConnectorSet )

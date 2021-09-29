@@ -24,8 +24,6 @@ namespace Arent3d.Architecture.Routing
     /// <returns>True if all families and parameters are loaded.</returns>
     public static bool RoutingSettingsAreInitialized( this Document document )
     {
-      var family = document.AllRoutingFamiliesAreLoaded() ;
-      var param = document.AllRoutingParametersAreRegistered() ;
       return document.AllRoutingFamiliesAreLoaded() && document.AllRoutingParametersAreRegistered() ;
     }
 
@@ -226,7 +224,7 @@ namespace Arent3d.Architecture.Routing
       if ( string.IsNullOrEmpty( str ) ) return Array.Empty<IEndPoint>() ;
 
       var document = element.Document ;
-      return str!.Split( PassPointConnectorSeparator, StringSplitOptions.RemoveEmptyEntries ).Select( str => ConnectorEndPoint.ParseParameterString( document, str ) ).NonNull() ;
+      return str!.Split( PassPointConnectorSeparator, StringSplitOptions.RemoveEmptyEntries ).Select( s => ConnectorEndPoint.ParseParameterString( document, s ) ).NonNull() ;
     }
 
     public static bool IsPassPoint( this Element element )
@@ -678,6 +676,16 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_FlexPipeCurvesCenterLine,
     } ;
     private static readonly ElementFilter CenterLineFilter = new ElementMulticategoryFilter( CenterLineCategories ) ;
+
+    #endregion
+
+    #region Shafts
+
+    public static XYZ GetShaftPosition( this Opening shaft )
+    {
+      var box = shaft.get_BoundingBox( null ) ;
+      return ( box.Min + box.Max ) * 0.5 ;
+    }
 
     #endregion
 

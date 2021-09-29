@@ -16,23 +16,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     private readonly Dictionary<(IRouteVertex BaseVertex, Route Route), IRouteVertex> _splitVertices = new() ;
     private IReadOnlyDictionary<SubRoute, PassingBranchInfo>? _branchMap = null ;
 
-    public ElectricalRouteGenerator( IReadOnlyCollection<Route> routes, Document document, IFittingSizeCalculator fittingSizeCalculator, ICollisionCheckTargetCollector collector ) : base( routes, document, fittingSizeCalculator, collector )
+    public ElectricalRouteGenerator( Document document, IReadOnlyCollection<Route> routes, AutoRoutingTargetGenerator autoRoutingTargetGenerator, IFittingSizeCalculator fittingSizeCalculator, ICollisionCheckTargetCollector collector ) : base( document, routes, autoRoutingTargetGenerator, fittingSizeCalculator, collector )
     {
     }
 
     protected override void OnGenerationStarted()
     {
-      _branchMap = PassingBranchInfo.CreateBranchMap( RoutingTargets.SelectMany( target => target.Routes ).Distinct() ) ;
+      _branchMap = PassingBranchInfo.CreateBranchMap( RoutingTargetGroups.SelectMany( group => group ).SelectMany( target => target.Routes ).Distinct() ) ;
     }
 
-    protected override IEnumerable<Element> CreateEdges( MEPSystemCreator mepSystemCreator, AutoRoutingResult result )
+    protected override IEnumerable<Element> CreateEdges( MEPSystemCreator mepSystemCreator, MergedAutoRoutingResult result )
     {
       if ( null == _branchMap ) throw new InvalidOperationException() ;
 
-      var autoRoutingTarget = mepSystemCreator.AutoRoutingTarget ;
       foreach ( var routeEdge in result.RouteEdges ) {
         var passingEndPointInfo = result.GetPassingEndPointInfo( routeEdge ) ;
-        var representativeSubRoute = autoRoutingTarget.GetSubRoute( routeEdge ) ;
+        var representativeSubRoute = mepSystemCreator.GetSubRoute( routeEdge ) ;
         var representativeSubRouteInfo = new SubRouteInfo( representativeSubRoute ) ;
 
         var groupedSubRoutes = new List<SubRoute>() ;
