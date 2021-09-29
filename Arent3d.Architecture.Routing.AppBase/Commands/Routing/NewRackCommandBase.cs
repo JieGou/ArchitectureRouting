@@ -101,9 +101,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               var line = ( location.Curve as Line )! ;
 
               // Ignore the case of vertical conduits in the oz direction
-              if ( 1.0 == line.Direction.Z || -1.0 == line.Direction.Z ) {
-                continue ;
-              }
+              // if ( 1.0 == line.Direction.Z || -1.0 == line.Direction.Z ) {
+              //   continue ;
+              // }
 
               Connector firstConnector = GetFirstConnector( element.GetConnectorManager()!.Connectors )! ;
 
@@ -150,6 +150,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ),
                   Math.PI ) ;
+              }
+              else if ( 1.0 == line.Direction.Z ) {
+                ElementTransformUtils.RotateElement( document, instance.Id,
+                  Line.CreateBound(
+                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
+                    new XYZ( firstConnector.Origin.X , firstConnector.Origin.Y + 1, firstConnector.Origin.Z ) ),
+                  -Math.PI / 2 ) ;
+              }
+              else if ( -1.0 == line.Direction.Z ) {
+                ElementTransformUtils.RotateElement( document, instance.Id,
+                  Line.CreateBound(
+                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
+                    new XYZ( firstConnector.Origin.X , firstConnector.Origin.Y - 1, firstConnector.Origin.Z ) ),
+                  -Math.PI / 2 ) ;
               }
 
               // check cable tray exists
