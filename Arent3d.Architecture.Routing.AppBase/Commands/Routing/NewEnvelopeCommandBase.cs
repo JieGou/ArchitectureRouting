@@ -46,7 +46,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, 0 ), level, StructuralType.NonStructural ) ;
       instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-      var height = document.GetHeightSettingStorable()[ level ].HeightOfLevel.MillimetersToRevitUnits() ;
+
+      //Find above level
+      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ) ;
+      var aboveLevel = levels.Last() ;
+      if ( levels.Any() ) {
+        for ( int i = 0 ; i < levels.Count() ; i++ ) {
+          if ( levels.ElementAt( i ).Id == level.Id ) {
+            aboveLevel = levels.ElementAt( i + 1 ) ;
+            break ;
+          }
+        }
+      }
+
+      //Set Envelope Height
+      var height = aboveLevel.Elevation - level.Elevation ;
       instance.LookupParameter( "高さ" ).Set( height ) ;
     }
 
