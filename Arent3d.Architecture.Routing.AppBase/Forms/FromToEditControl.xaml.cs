@@ -460,10 +460,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CeilingFixedHeightOrg = properties.CeilingConnectorFixedHeight ;
       IsDifferentLevel = properties.IsDifferentLevel ;
 
-      ToUseFixedHeightOrg = properties.UseFixedHeight ;
+      ToUseFixedHeightOrg = properties.ToUseFixedHeight ;
       ToFixedHeightOrg = properties.IsPickRouting ? properties.FloorToConnectorFixedHeight : properties.ToFixedHeight ;
       ToCeilingFixedHeightOrg = properties.CeilingToConnectorFixedHeight ;
-      ToLocationTypeOrg = properties.LocationType ;
+      ToLocationTypeOrg = properties.ToLocationType ;
       if ( properties.IsDifferentLevel && properties.IsPickRouting ) {
         LbHeight2.Visibility = Visibility.Visible ;
         ToHeightSetting.Visibility = Visibility.Visible ;
@@ -483,11 +483,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       IsRouteOnPipeSpace = IsRouteOnPipeSpaceOrg ;
       UseFixedHeight = UseFixedHeightOrg ;
-      FixedHeight = FixedHeightOrg ;
+      FixedHeight = CeilingFixedHeightOrg ;
       AvoidType = AvoidTypeOrg ;
       CanApply = false ;
       LocationType = LocationTypeOrg ;
-      
+
       ToUseFixedHeight = ToUseFixedHeightOrg ;
       ToFixedHeight = ToFixedHeightOrg ;
       ToLocationType = ToLocationTypeOrg ;
