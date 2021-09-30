@@ -43,19 +43,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static void GenerateEnvelope( Document document, double originX, double originY, Level level )
     {
+      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ) ;
+      if ( levels == null || levels.Count() < 2 ) return ;
+
       var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, 0 ), level, StructuralType.NonStructural ) ;
       instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
 
       //Find above level
-      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ) ;
       var aboveLevel = levels.Last() ;
-      if ( levels.Any() ) {
-        for ( int i = 0 ; i < levels.Count() ; i++ ) {
-          if ( levels.ElementAt( i ).Id == level.Id ) {
-            aboveLevel = levels.ElementAt( i + 1 ) ;
-            break ;
-          }
+      for ( int i = 0 ; i < levels.Count() ; i++ ) {
+        if ( levels.ElementAt( i ).Id == level.Id ) {
+          aboveLevel = levels.ElementAt( i + 1 ) ;
+          break ;
         }
       }
 
