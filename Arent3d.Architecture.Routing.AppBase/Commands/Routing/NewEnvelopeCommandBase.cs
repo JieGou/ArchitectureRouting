@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -13,8 +14,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class NewEnvelopeCommandBase : IExternalCommand
   {
-    private static readonly double DefaultHighestLevelHeight = ( 3.0 ).MetersToRevitUnits() ;
-    private static readonly double DefaultEnvelopeSize = ( 0.5 ).MetersToRevitUnits() ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -22,12 +21,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       try {
         var (originX, originY, _) = uiDocument.Selection.PickPoint( "Envelopeの配置場所を選択して下さい。" ) ;
-        double sizeX = DefaultEnvelopeSize, sizeY = DefaultEnvelopeSize ;
 
         var result = document.Transaction(
           "TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault( "Import Pipe Spaces" ), _ =>
           {
-            GenerateEnvelope( document, originX, originY, sizeX, sizeY, uiDocument.ActiveView.GenLevel ) ;
+            GenerateEnvelope( document, originX, originY, uiDocument.ActiveView.GenLevel ) ;
 
             return Result.Succeeded ;
           } ) ;
@@ -43,11 +41,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void GenerateEnvelope( Document document, double originX, double originY, double sizeX, double sizeY,
-      Level level )
+    private static void GenerateEnvelope( Document document, double originX, double originY, Level level )
     {
       var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, 0 ), level, StructuralType.NonStructural ) ;
+      instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
+      var height = document.GetHeightSettingStorable()[ level ].HeightOfLevel.MillimetersToRevitUnits() ;
+      instance.LookupParameter( "高さ" ).Set( height ) ;
     }
 
     private static Level? GetUpperLevel( Level refRevel )
