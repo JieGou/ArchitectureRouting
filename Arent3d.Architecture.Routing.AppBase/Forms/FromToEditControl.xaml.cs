@@ -6,6 +6,7 @@ using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
 using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using ControlLib ;
@@ -197,13 +198,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
     private static int GetItemIndex<TElement>( IEnumerable<TElement> elements, TElement? value ) where TElement : Element
     {
-      if ( value is not { } item ) return -1 ;
+      var valueId = value.GetValidId() ;
+      if ( ElementId.InvalidElementId == valueId ) return -1 ;
 
-      return elements.FindIndex( elm => elm.Id == item.Id ) ;
+      return elements.FindIndex( elm => elm.Id == valueId ) ;
     }
     private static int GetShaftIndex( IEnumerable<OpeningProxy> elements, Opening? value )
     {
-      return elements.FindIndex( elm => elm.Value?.Id == value?.Id ) ;
+      var valueId = value.GetValidId() ;
+      return elements.FindIndex( elm => elm.Value?.Id == valueId ) ;
     }
 
     //Direct Info
@@ -346,14 +349,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private bool CheckIsChanged()
     {
-      if ( UseSystemType && SystemTypeOrg?.Id != SystemType?.Id ) return true ;
-      if ( UseCurveType && CurveTypeOrg?.Id != CurveType?.Id ) return true ;
+      if ( UseSystemType && SystemTypeOrg.GetValidId() != SystemType.GetValidId() ) return true ;
+      if ( UseCurveType && CurveTypeOrg.GetValidId() != CurveType.GetValidId() ) return true ;
       if ( false == LengthEquals( DiameterOrg, Diameter, VertexTolerance ) ) return true ;
       if ( IsRouteOnPipeSpace != IsRouteOnPipeSpaceOrg ) return true ;
       if ( UseFixedHeight != UseFixedHeightOrg ) return true ;
       if ( true == UseFixedHeight && false == LengthEquals( FixedHeightOrg, FixedHeight, VertexTolerance ) ) return true ;
       if ( AvoidTypeOrg != AvoidType ) return true ;
-      if ( UseShaft && ShaftOrg?.Id != Shaft?.Id ) return true ;
+      if ( UseShaft && ShaftOrg.GetValidId() != Shaft.GetValidId() ) return true ;
       if ( LocationTypeOrg != LocationType ) return true ;
 
       return false ;

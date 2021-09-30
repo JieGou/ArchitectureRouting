@@ -328,6 +328,11 @@ namespace Arent3d.Architecture.Routing
       return document.CreateFamilyInstance( RoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true ) ;
     }
 
+    public static FamilyInstance AddShaft( this Document document, XYZ position )
+    {
+      return document.CreateFamilyInstance( RoutingFamilyType.Shaft, position, StructuralType.NonStructural, true ) ;
+    }
+
     public static FamilyInstance AddCornPoint( this Document document, string routeName, XYZ position )
     {
       var instance = document.CreateFamilyInstance( RoutingFamilyType.CornPoint, position, StructuralType.NonStructural, true ) ;
