@@ -54,8 +54,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
       return new[]
       {
-        new AutoRoutingTarget( Document, subRoute, priority, fromAutoRoutingEndPoint, shaftAutoRoutingEndPoint1 ),
-        new AutoRoutingTarget( Document, subRoute, priority, shaftAutoRoutingEndPoint2, toAutoRoutingEndPoint ),
+        new AutoRoutingTarget( Document, subRoute, priority, fromAutoRoutingEndPoint, shaftAutoRoutingEndPoint1, true ),
+        new AutoRoutingTarget( Document, subRoute, priority, shaftAutoRoutingEndPoint2, toAutoRoutingEndPoint, false ),
       } ;
     }
 

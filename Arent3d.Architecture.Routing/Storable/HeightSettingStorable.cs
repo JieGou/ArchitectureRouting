@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.Storable
     /// Get Height settings data by Level object
     /// </summary>
     /// <param name="level"></param>
-    public HeightSettingModel this[ Level level ] => HeightSettingsData.GetOrDefault( level.Id.IntegerValue, new HeightSettingModel( level ) ) ;
+    public HeightSettingModel this[ Level level ] => HeightSettingsData.GetOrDefault( level.GetValidId().IntegerValue, () => new HeightSettingModel( level ) ) ;
 
     /// <summary>
     /// Get Height settings data by level Id.
@@ -33,8 +33,9 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       get
       {
-        var level = Levels.First( x => x.Id.IntegerValue == levelId ) ;
-        return HeightSettingsData.GetOrDefault( level.Id.IntegerValue, new HeightSettingModel( level ) ) ;
+        var levelIndex = Levels.FindIndex( x => x.GetValidId().IntegerValue == levelId ) ;
+        if ( levelIndex < 0 ) throw new KeyNotFoundException() ;
+        return this[ Levels[ levelIndex ] ] ;
       }
     }
 
@@ -42,14 +43,7 @@ namespace Arent3d.Architecture.Routing.Storable
     /// Get Height settings data by level Id.
     /// </summary>
     /// <param name="levelId"></param>
-    public HeightSettingModel this[ ElementId levelId ]
-    {
-      get
-      {
-        var level = Levels.First( x => x.Id == levelId ) ;
-        return HeightSettingsData.GetOrDefault( level.Id.IntegerValue, new HeightSettingModel( level ) ) ;
-      }
-    }
+    public HeightSettingModel this[ ElementId levelId ] => this[ levelId.IntegerValue ] ;
 
 
     /// <summary>
@@ -63,6 +57,11 @@ namespace Arent3d.Architecture.Routing.Storable
                                                              .OfType<Level>()
                                                              .ToList() ;
       HeightSettingsData = Levels.ToDictionary( x => x.Id.IntegerValue, x => new HeightSettingModel( x ) ) ;
+    }
+
+    public double GetAbsoluteHeight( ElementId levelId, FixedHeightType fixedHeightType, double fixedHeightHeight )
+    {
+      return this[ levelId ].Elevation.MillimetersToRevitUnits() + fixedHeightHeight ;
     }
 
     /// <summary>
@@ -85,12 +84,12 @@ namespace Arent3d.Architecture.Routing.Storable
       var dataSaved = reader.GetArray<HeightSettingModel>( HeightSettingField )
                             .ToDictionary( x => x.LevelId, x => x ) ;
 
-      HeightSettingsData = Levels.ToDictionary( x => x.Id.IntegerValue, x => dataSaved.GetOrDefault( x.Id.IntegerValue, new HeightSettingModel( x ) ) ) ;
+      HeightSettingsData = Levels.ToDictionary( x => x.Id.IntegerValue, x => dataSaved.GetOrDefault( x.Id.IntegerValue, () => new HeightSettingModel( x ) ) ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
-      HeightSettingsData = Levels.ToDictionary( x => x.Id.IntegerValue, x => HeightSettingsData.GetOrDefault( x.Id.IntegerValue, new HeightSettingModel( x ) ) ) ;
+      HeightSettingsData = Levels.ToDictionary( x => x.Id.IntegerValue, x => HeightSettingsData.GetOrDefault( x.Id.IntegerValue, () => new HeightSettingModel( x ) ) ) ;
 
       writer.SetArray( HeightSettingField, HeightSettingsData.Values.ToList() ) ;
     }
@@ -100,10 +99,10 @@ namespace Arent3d.Architecture.Routing.Storable
       generator.SetArray<HeightSettingModel>( HeightSettingField ) ;
     }
 
-    public bool Equals( HeightSettingStorable other )
+    public bool Equals( HeightSettingStorable? other )
     {
       if ( other == null ) return false ;
-      return Enumerable.SequenceEqual( HeightSettingsData.Values, other.HeightSettingsData.Values, new HeightSettingStorableComparer() ) ;
+      return HeightSettingsData.Values.SequenceEqual( other.HeightSettingsData.Values, new HeightSettingStorableComparer() ) ;
     }
   }
 

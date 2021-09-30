@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
@@ -55,10 +56,10 @@ namespace Arent3d.Architecture.Routing
       var firstSubRoute = subRoutes.First() ;
       LineId = $"{firstSubRoute.Route.RouteName}@{firstSubRoute.SubRouteIndex}" ;
 
-      Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ] ) ;
+      Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ], true ) ;
     }
 
-    public AutoRoutingTarget( Document document, SubRoute subRoute, int priority, AutoRoutingEndPoint fromEndPoint, AutoRoutingEndPoint toEndPoint )
+    public AutoRoutingTarget( Document document, SubRoute subRoute, int priority, AutoRoutingEndPoint fromEndPoint, AutoRoutingEndPoint toEndPoint, bool useFromFixedHeight )
     {
       Routes = new[] { subRoute.Route } ;
       Domain = subRoute.Route.Domain ;
@@ -71,7 +72,7 @@ namespace Arent3d.Architecture.Routing
 
       LineId = $"{subRoute.Route.RouteName}@{subRoute.SubRouteIndex}" ;
 
-      Condition = new AutoRoutingCondition( document, subRoute, priority ) ;
+      Condition = new AutoRoutingCondition( document, subRoute, priority, useFromFixedHeight ) ;
     }
 
     private static Dictionary<SubRoute, int> GetDepths( IReadOnlyCollection<SubRoute> subRoutes )
@@ -195,7 +196,7 @@ namespace Arent3d.Architecture.Routing
     {
       private readonly SubRoute _subRoute ;
 
-      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority )
+      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority, bool useFromFixedHeight )
       {
         var documentData = DocumentMapper.Get( document ) ;
 
@@ -203,7 +204,18 @@ namespace Arent3d.Architecture.Routing
         Priority = priority ;
         IsRoutingOnPipeRacks = ( 0 < documentData.RackCollection.RackCount ) && subRoute.IsRoutingOnPipeSpace ;
         AllowHorizontalBranches = documentData.AllowHorizontalBranches( subRoute ) ;
-        FixedBopHeight = subRoute.FixedBopHeight ;
+        FixedBopHeight = ToTrueFixedBopHeight( document, useFromFixedHeight, subRoute ) ;
+      }
+
+      private static double? ToTrueFixedBopHeight( Document document, bool useFromFixedHeight, SubRoute subRoute )
+      {
+        if ( ( useFromFixedHeight ? subRoute.FromFixedHeight : subRoute.ToFixedHeight ) is not { } fixedHeight ) return null ;
+
+        var levelId = ( useFromFixedHeight ? subRoute.FromEndPoints : subRoute.ToEndPoints ).Select( ep => ep.GetLevelId( document ) ).DefaultIfEmpty( ElementId.InvalidElementId ).First() ;
+        var heightSettings = document.GetHeightSettingStorable() ;
+        var height = heightSettings.GetAbsoluteHeight( levelId, fixedHeight.Type, fixedHeight.Height ) ;
+
+        return height - subRoute.GetDiameter() / 2 ;
       }
 
       public bool IsRoutingOnPipeRacks { get ; }

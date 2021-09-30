@@ -1,6 +1,10 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -19,12 +23,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public IList<MEPCurveType> CurveTypes { get ; }
     public IList<string>? StandardTypes { get ; }
 
+    public bool HasDifferentLevel { get ; }
+    public HeightSettingModel FromLevelSetting { get ; }
+    public HeightSettingModel ToLevelSetting { get ; }
+
     internal RoutePropertyTypeList( IReadOnlyCollection<SubRoute> subRoutes )
     {
       if ( 0 == subRoutes.Count ) throw new ArgumentException() ;
 
       var firstSubRoute = subRoutes.First() ;
       var document = firstSubRoute.Route.Document ;
+
+      var heightSettingStorable = document.GetHeightSettingStorable() ;
+      var fromLevelId = GetLevelId( document, firstSubRoute.FromEndPoints ) ;
+      var toLevelId = GetLevelId( document, firstSubRoute.ToEndPoints ) ;
+      HasDifferentLevel = ( fromLevelId != toLevelId ) ;
+      FromLevelSetting = heightSettingStorable[ fromLevelId ] ;
+      ToLevelSetting = ( HasDifferentLevel ? FromLevelSetting : heightSettingStorable[ toLevelId ] ) ;
 
       var systemClassification = firstSubRoute.Route.GetSystemClassificationInfo() ;
       if ( systemClassification.HasSystemType() ) {
@@ -37,10 +52,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       CurveTypes = GetCompatibleCurveTypes( document, firstSubRoute.GetMEPCurveType().GetType() ) ;
+
+      static ElementId GetLevelId( Document document, IEnumerable<IEndPoint> endPoints )
+      {
+        return endPoints.Select( ep => ep.GetLevelId( document ) ).FirstOrDefault( levelId => ElementId.InvalidElementId != levelId ) ?? ElementId.InvalidElementId ;
+      }
     }
 
-    public RoutePropertyTypeList( Document document, AddInType addInType )
+    public RoutePropertyTypeList( Document document, AddInType addInType, bool hasDiffLevel, HeightSettingModel fromLevelSetting, HeightSettingModel toLevelSetting )
     {
+      HasDifferentLevel = hasDiffLevel ;
+      FromLevelSetting = fromLevelSetting ;
+      ToLevelSetting = toLevelSetting ;
+
       ( SystemTypes, CurveTypes, StandardTypes, Shafts ) = addInType switch
       {
         AddInType.Electrical => GetElectricalTypeLists( document ),
@@ -64,8 +88,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return ( null, curveTypes, standardTypes, shafts ) ;
     }
 
-    public RoutePropertyTypeList( Document document, MEPSystemClassificationInfo classificationInfo )
+    public RoutePropertyTypeList( Document document, MEPSystemClassificationInfo classificationInfo, bool hasDiffLevel, HeightSettingModel fromLevelSetting, HeightSettingModel toLevelSetting )
     {
+      HasDifferentLevel = hasDiffLevel ;
+      FromLevelSetting = fromLevelSetting ;
+      ToLevelSetting = toLevelSetting ;
+
       if ( classificationInfo.HasSystemType() ) {
         SystemTypes = document.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList() ;
         CurveTypes = GetCompatibleCurveTypes( document, classificationInfo.GetCurveTypeClass() ) ;

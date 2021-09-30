@@ -9,9 +9,9 @@ namespace Arent3d.Architecture.Routing.Extensions
   public static class DictionaryExtensions
   {
 
-    public static TValue GetOrDefault<Tkey, TValue>( this Dictionary<Tkey, TValue> keyValues, Tkey key, TValue defaultValue )
+    public static TValue GetOrDefault<TKey, TValue>( this Dictionary<TKey, TValue> keyValues, TKey key, Func<TValue> defaultValue ) where TValue : class
     {
-      return keyValues.ContainsKey(key) ? keyValues[key] ?? defaultValue : defaultValue;
+      return ( keyValues.TryGetValue( key, out var value ) ? value : null ) ?? defaultValue() ;
     }
   }
 }

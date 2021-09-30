@@ -38,19 +38,28 @@ namespace Arent3d.Architecture.Routing.AppBase
     [Index( 9 ), Name( "Preferred Curve Type Name" )]
     public string CurveTypeName { get ; set ; } = string.Empty ;
 
-    [Index( 10 ), Name( "Preferred Height" )]
-    public double? FixedBopHeight { get ; set ; } = null ;
+    [Index( 10 ), Name( "From Preferred Height Type" )]
+    public string FromFixedHeightType { get ; set ; } = string.Empty ;
 
-    [Index( 11 ), Name( "Preferred AvoidType" )]
+    [Index( 11 ), Name( "From Preferred Height Value" )]
+    public double? FromFixedHeightValue { get ; set ; } = null ;
+
+    [Index( 12 ), Name( "To Preferred Height Type" )]
+    public string ToFixedHeightType { get ; set ; } = string.Empty ;
+
+    [Index( 13 ), Name( "To Preferred Height Value" )]
+    public double? ToFixedHeightValue { get ; set ; } = null ;
+
+    [Index( 14 ), Name( "Preferred AvoidType" )]
     public AvoidType AvoidType { get ; set ; } = AvoidType.Whichever ;
 
-    [Index( 12 ), Name( "MEP System Classification" )]
+    [Index( 15 ), Name( "MEP System Classification" )]
     public string SystemClassification { get ; set ; } = string.Empty ;
 
-    [Index( 13 ), Name( "MEP System Type Name" )]
+    [Index( 16 ), Name( "MEP System Type Name" )]
     public string SystemTypeName { get ; set ; } = string.Empty ;
 
-    [Index( 14 ), Name( "Shaft Element Id" )]
+    [Index( 17 ), Name( "Shaft Element Id" )]
     public int ShaftElementId { get ; set ; } = -1 ;
   }
 }
