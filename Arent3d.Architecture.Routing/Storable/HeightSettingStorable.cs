@@ -7,6 +7,7 @@ using System.Linq ;
 using System.Runtime.InteropServices ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
@@ -14,10 +15,13 @@ namespace Arent3d.Architecture.Routing.Storable
   [StorableVisibility( AppInfo.VendorId )]
   public sealed class HeightSettingStorable : StorableBase, IEquatable<HeightSettingStorable>
   {
+    public const string StorableName = "Height Setting" ;
+    private const double DefaultMaxLevelDistance = 100000 ; // max level distance
+    
     private const string HeightSettingField = "HeightSetting" ;
 
     public Dictionary<int, HeightSettingModel> HeightSettingsData { get ; private set ; }
-    public List<Level> Levels { get ; private set ; }
+    public IReadOnlyList<Level> Levels { get ; }
 
     /// <summary>
     /// Get Height settings data by Level object
@@ -52,16 +56,8 @@ namespace Arent3d.Architecture.Routing.Storable
     /// <param name="owner">Owner element.</param>
     private HeightSettingStorable( DataStorage owner ) : base( owner, false )
     {
-      Levels = new FilteredElementCollector( owner.Document ).OfClass( typeof( Level ) )
-                                                             .AsEnumerable()
-                                                             .OfType<Level>()
-                                                             .ToList() ;
-      HeightSettingsData = Levels.ToDictionary( x => x.Id.IntegerValue, x => new HeightSettingModel( x ) ) ;
-    }
-
-    public double GetAbsoluteHeight( ElementId levelId, FixedHeightType fixedHeightType, double fixedHeightHeight )
-    {
-      return this[ levelId ].Elevation.MillimetersToRevitUnits() + fixedHeightHeight ;
+      Levels = GetAllLevels( owner.Document ) ;
+      HeightSettingsData = new Dictionary<int, HeightSettingModel>() ;
     }
 
     /// <summary>
@@ -70,19 +66,35 @@ namespace Arent3d.Architecture.Routing.Storable
     /// <param name="document"></param>
     public HeightSettingStorable( Document document ) : base( document, false )
     {
-      Levels = new FilteredElementCollector( document ).OfClass( typeof( Level ) )
-                                                       .AsEnumerable()
-                                                       .OfType<Level>()
-                                                       .ToList() ;
+      Levels = GetAllLevels( document ) ;
       HeightSettingsData = Levels.ToDictionary( x => x.Id.IntegerValue, x => new HeightSettingModel( x ) ) ;
     }
 
-    public override string Name => "Height Setting" ;
+    private static IReadOnlyList<Level> GetAllLevels( Document document )
+    {
+      var levels = document.GetAllElements<Level>().ToList() ;
+      levels.Sort( ( a, b ) => a.Elevation.CompareTo( b.Elevation ) ) ;
+      return levels ;
+    }
+
+    public override string Name => StorableName ;
+
+    public double GetAbsoluteHeight( ElementId levelId, FixedHeightType fixedHeightType, double fixedHeightHeight )
+    {
+      return this[ levelId ].Elevation.MillimetersToRevitUnits() + fixedHeightHeight ;
+    }
+
+    public double GetDistanceToNextLevel( ElementId levelId )
+    {
+      var index = Levels.FindIndex( level => level.GetValidId() == levelId ) ;
+      if ( index < 0 || Levels.Count - 1 <= index ) return DefaultMaxLevelDistance ;
+
+      return this[ Levels[ index + 1 ] ].Elevation - this[ Levels[ index ] ].Elevation ;
+    }
 
     protected override void LoadAllFields( FieldReader reader )
     {
-      var dataSaved = reader.GetArray<HeightSettingModel>( HeightSettingField )
-                            .ToDictionary( x => x.LevelId, x => x ) ;
+      var dataSaved = reader.GetArray<HeightSettingModel>( HeightSettingField ).ToDictionary( x => x.LevelId ) ;
 
       HeightSettingsData = Levels.ToDictionary( x => x.Id.IntegerValue, x => dataSaved.GetOrDefault( x.Id.IntegerValue, () => new HeightSettingModel( x ) ) ) ;
     }
@@ -102,7 +114,7 @@ namespace Arent3d.Architecture.Routing.Storable
     public bool Equals( HeightSettingStorable? other )
     {
       if ( other == null ) return false ;
-      return HeightSettingsData.Values.SequenceEqual( other.HeightSettingsData.Values, new HeightSettingStorableComparer() ) ;
+      return HeightSettingsData.Values.OrderBy( x => x.LevelId ).SequenceEqual( other.HeightSettingsData.Values.OrderBy( x => x.LevelId ), new HeightSettingStorableComparer() ) ;
     }
   }
 

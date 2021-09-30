@@ -4,22 +4,18 @@ using System.Linq ;
 using System.Windows ;
 using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
-using System.Text.RegularExpressions ;
 using System.Windows.Controls ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using ControlLib ;
 using LengthConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters.LengthConverter ;
-using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class FromToEditControl : UserControl
   {
     private const string DefaultCurveTypeLabel = "Type" ;
-    private const double DefaultCurrentMinValue = -10000 ;
-    private const double DefaultCurrentMaxValue = 10000 ;
 
     public event EventHandler? ValueChanged ;
 
@@ -44,18 +40,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)true ) ) ;
     public static readonly DependencyProperty UseFromFixedHeightProperty = DependencyProperty.Register( "UseFromFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
     public static readonly DependencyProperty FromFixedHeightProperty = DependencyProperty.Register( "FromFixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, FromFixedHeight_Changed ) ) ;
-    public static readonly DependencyProperty FromLocationTypeIndexProperty = DependencyProperty.Register( "FromLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
+    public static readonly DependencyProperty FromLocationTypeIndexProperty = DependencyProperty.Register( "FromLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0, FromLocationTypeIndex_PropertyChanged ) ) ;
     public static readonly DependencyProperty UseToFixedHeightProperty = DependencyProperty.Register( "UseToFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
     public static readonly DependencyProperty ToFixedHeightProperty = DependencyProperty.Register( "ToFixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, ToFixedHeight_Changed ) ) ;
-    public static readonly DependencyProperty ToLocationTypeIndexProperty = DependencyProperty.Register( "ToLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
+    public static readonly DependencyProperty ToLocationTypeIndexProperty = DependencyProperty.Register( "ToLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0, ToLocationTypeIndex_PropertyChanged ) ) ;
     public static readonly DependencyProperty AvoidTypeIndexProperty = DependencyProperty.Register( "AvoidTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
-    public static readonly DependencyProperty CurrentMinValueProperty = DependencyProperty.Register( "CurrentMinValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMinValue ) ) ;
-    public static readonly DependencyProperty CurrentMaxValueProperty = DependencyProperty.Register( "CurrentMaxValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMaxValue ) ) ;
     private static readonly DependencyPropertyKey CanApplyPropertyKey = DependencyProperty.RegisterReadOnly( "CanApply", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
     private static readonly DependencyPropertyKey IsChangedPropertyKey = DependencyProperty.RegisterReadOnly( "IsChanged", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
     private static readonly DependencyPropertyKey IsDifferentLevelPropertyKey = DependencyProperty.RegisterReadOnly( "IsDifferentLevel", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
     public static readonly DependencyProperty AllowIndeterminateProperty = DependencyProperty.Register( "AllowIndeterminate", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( default( bool ) ) ) ;
     public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( FromToEditControl ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
+    private static readonly DependencyPropertyKey FromMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
 
     //Diameter Info
     private double VertexTolerance { get ; set ; }
@@ -265,16 +267,78 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       private set => SetValue( ToFixedHeightProperty, value ) ;
     }
 
-    public double CurrentMinValue
+    private double FromMinimumHeightAsFloorLevel
     {
-      get => (double)GetValue( CurrentMinValueProperty ) ;
-      private set => SetValue( CurrentMinValueProperty, value ) ;
+      get => (double)GetValue( FromMinimumHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( FromMinimumHeightAsFloorLevelPropertyKey, value ) ;
+    }
+    private double FromMaximumHeightAsFloorLevel
+    {
+      get => (double)GetValue( FromMaximumHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( FromMaximumHeightAsFloorLevelPropertyKey, value ) ;
+    }
+    private double FromMinimumHeightAsCeilingLevel
+    {
+      get => (double)GetValue( FromMinimumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( FromMinimumHeightAsCeilingLevelPropertyKey, value ) ;
+    }
+    private double FromMaximumHeightAsCeilingLevel
+    {
+      get => (double)GetValue( FromMaximumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( FromMaximumHeightAsCeilingLevelPropertyKey, value ) ;
+    }
+    private double ToMinimumHeightAsFloorLevel
+    {
+      get => (double)GetValue( ToMinimumHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( ToMinimumHeightAsFloorLevelPropertyKey, value ) ;
+    }
+    private double ToMaximumHeightAsFloorLevel
+    {
+      get => (double)GetValue( ToMaximumHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( ToMaximumHeightAsFloorLevelPropertyKey, value ) ;
+    }
+    private double ToMinimumHeightAsCeilingLevel
+    {
+      get => (double)GetValue( ToMinimumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( ToMinimumHeightAsCeilingLevelPropertyKey, value ) ;
+    }
+    private double ToMaximumHeightAsCeilingLevel
+    {
+      get => (double)GetValue( ToMaximumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( ToMaximumHeightAsCeilingLevelPropertyKey, value ) ;
     }
 
-    public double CurrentMaxValue
+    private static void FromLocationTypeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
-      get => (double)GetValue( CurrentMaxValueProperty ) ;
-      private set => SetValue( CurrentMaxValueProperty, value ) ;
+      ( d as FromToEditControl )?.OnFromLocationTypeChanged() ;
+    }
+    private static void ToLocationTypeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
+    {
+      ( d as FromToEditControl )?.OnToLocationTypeChanged() ;
+    }
+    private void OnFromLocationTypeChanged()
+    {
+      if ( FromLocationType is not { } locationType ) return ;
+
+      var minimumValue = ( locationType == FixedHeightType.Ceiling ? FromMinimumHeightAsCeilingLevel : FromMinimumHeightAsFloorLevel ) ;
+      var maximumValue = ( locationType == FixedHeightType.Ceiling ? FromMaximumHeightAsCeilingLevel : FromMaximumHeightAsFloorLevel ) ;
+      SetMinMax( FromFixedHeightNumericUpDown, locationType, minimumValue, maximumValue ) ;
+    }
+    private void OnToLocationTypeChanged()
+    {
+      if ( ToLocationType is not { } locationType ) return ;
+
+      var minimumValue = ( locationType == FixedHeightType.Ceiling ? ToMinimumHeightAsCeilingLevel : ToMinimumHeightAsFloorLevel ) ;
+      var maximumValue = ( locationType == FixedHeightType.Ceiling ? ToMaximumHeightAsCeilingLevel : ToMaximumHeightAsFloorLevel ) ;
+      SetMinMax( ToFixedHeightNumericUpDown, locationType, minimumValue, maximumValue ) ;
+    }
+
+    private void SetMinMax( NumericUpDown numericUpDown, FixedHeightType locationType, double minimumValue, double maximumValue )
+    {
+      var lengthConverter = GetLengthConverter( DisplayUnitSystem ) ;
+      numericUpDown.MinValue = Math.Round( lengthConverter.ConvertUnit( minimumValue ), 5, MidpointRounding.AwayFromZero ) ;
+      numericUpDown.MaxValue = Math.Round( lengthConverter.ConvertUnit( maximumValue ), 5, MidpointRounding.AwayFromZero ) ;
+      numericUpDown.Value = Math.Max( numericUpDown.MinValue, Math.Min( numericUpDown.Value, numericUpDown.MaxValue ) ) ;
     }
 
     //AvoidType
@@ -472,7 +536,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       IsDifferentLevel = propertyTypeList.HasDifferentLevel ;
 
-      // TODO: min/max value of levels
+      ( FromMinimumHeightAsFloorLevel, FromMaximumHeightAsFloorLevel ) = propertyTypeList.FromHeightRangeAsFloorLevel ;
+      ( FromMinimumHeightAsCeilingLevel, FromMaximumHeightAsCeilingLevel ) = propertyTypeList.FromHeightRangeAsCeilingLevel ;
+      ( ToMinimumHeightAsFloorLevel, ToMaximumHeightAsFloorLevel ) = propertyTypeList.ToHeightRangeAsFloorLevel ;
+      ( ToMinimumHeightAsCeilingLevel, ToMaximumHeightAsCeilingLevel ) = propertyTypeList.ToHeightRangeAsCeilingLevel ;
     }
 
     public void SetRouteProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
@@ -512,6 +579,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       UseToFixedHeight = UseToFixedHeightOrg ;
       ToLocationType = ToLocationTypeOrg ;
       ToFixedHeight = ToFixedHeightOrg ;
+
+      OnFromLocationTypeChanged() ;
+      OnToLocationTypeChanged() ;
 
       AvoidType = AvoidTypeOrg ;
 
@@ -598,7 +668,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void FromFixedHeightNumericUpDown_OnValueChanged( object sender, ValueChangedEventArgs e )
     {
       // Manually update FixedHeight because Value binding is not called.
-      FromFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( FixedHeightNumericUpDown.Value ) ;
+      FromFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( FromFixedHeightNumericUpDown.Value ) ;
 
       OnValueChanged( EventArgs.Empty ) ;
     }
@@ -616,7 +686,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( d is not FromToEditControl fromToEditControl ) return ;
       if ( e.NewValue is not double newValue ) return ;
 
-      fromToEditControl.FixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+      fromToEditControl.FromFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
     }
 
     private static void ToFixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )

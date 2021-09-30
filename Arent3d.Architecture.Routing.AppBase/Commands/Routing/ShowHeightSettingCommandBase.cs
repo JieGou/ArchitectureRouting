@@ -106,9 +106,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
         // Set Elevation for level
-        if ( level.Elevation != settingStorables[ level ].Elevation.MillimetersToRevitUnits() ) {
-          level.Elevation = settingStorables[ level ].Elevation.MillimetersToRevitUnits() ;
-        }
+        level.Elevation = settingStorables[ level ].Elevation.MillimetersToRevitUnits() ;
       }
 
       // Set height for Arent shaft
@@ -123,16 +121,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    public void SaveSetting( Document document, HeightSettingStorable newSettings )
+    private static void SaveSetting( Document document, HeightSettingStorable newSettings )
     {
       newSettings.Save() ;
     }
 
-    public bool ShouldApplySetting( Document document, HeightSettingStorable newSettings )
+    private static bool ShouldApplySetting( Document document, HeightSettingStorable newSettings )
     {
-      var old = document.GetAllStorables<HeightSettingStorable>().ToList() ;
-      if ( old == null || old.Count() == 0 ) return true ;
-      return ! newSettings.Equals( old[ 0 ] ) ;
+      var old = document.GetAllStorables<HeightSettingStorable>().FirstOrDefault() ;  // generates new instance from document
+      return ( false == newSettings.Equals( old ) ) ;
     }
   }
 }

@@ -24,8 +24,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public IList<string>? StandardTypes { get ; }
 
     public bool HasDifferentLevel { get ; }
-    public HeightSettingModel FromLevelSetting { get ; }
-    public HeightSettingModel ToLevelSetting { get ; }
+    public (double, double) FromHeightRangeAsFloorLevel { get ; private set ; }
+    public (double, double) FromHeightRangeAsCeilingLevel { get ; private set ; }
+    public (double, double) ToHeightRangeAsFloorLevel { get ; private set ; }
+    public (double, double) ToHeightRangeAsCeilingLevel { get ; private set ; }
+
+    private void SetFromLevelSetting( HeightSettingStorable settings, ElementId levelId )
+    {
+      ( FromHeightRangeAsFloorLevel, FromHeightRangeAsCeilingLevel ) = CalculateHeightRanges( settings, levelId ) ;
+
+    }
+    private void SetToLevelSetting( HeightSettingStorable settings, ElementId levelId )
+    {
+      ( ToHeightRangeAsFloorLevel, ToHeightRangeAsCeilingLevel ) = CalculateHeightRanges( settings, levelId ) ;
+    }
+
+    private static ((double, double), (double, double)) CalculateHeightRanges( HeightSettingStorable settings, ElementId levelId )
+    {
+      var level = settings[ levelId ] ;
+      var floorRange = ( level.Underfloor.MillimetersToRevitUnits(), 0d ) ;
+      var ceilingRange = ( 0d, settings.GetDistanceToNextLevel( levelId ).MillimetersToRevitUnits() ) ;
+      return ( floorRange, ceilingRange ) ;
+    }
 
     internal RoutePropertyTypeList( IReadOnlyCollection<SubRoute> subRoutes )
     {
@@ -38,8 +58,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var fromLevelId = GetLevelId( document, firstSubRoute.FromEndPoints ) ;
       var toLevelId = GetLevelId( document, firstSubRoute.ToEndPoints ) ;
       HasDifferentLevel = ( fromLevelId != toLevelId ) ;
-      FromLevelSetting = heightSettingStorable[ fromLevelId ] ;
-      ToLevelSetting = ( HasDifferentLevel ? FromLevelSetting : heightSettingStorable[ toLevelId ] ) ;
+      SetFromLevelSetting( heightSettingStorable, fromLevelId ) ;
+      SetToLevelSetting( heightSettingStorable, HasDifferentLevel ? fromLevelId : toLevelId ) ;
 
       var systemClassification = firstSubRoute.Route.GetSystemClassificationInfo() ;
       if ( systemClassification.HasSystemType() ) {
@@ -59,11 +79,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    public RoutePropertyTypeList( Document document, AddInType addInType, bool hasDiffLevel, HeightSettingModel fromLevelSetting, HeightSettingModel toLevelSetting )
+    public RoutePropertyTypeList( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
     {
-      HasDifferentLevel = hasDiffLevel ;
-      FromLevelSetting = fromLevelSetting ;
-      ToLevelSetting = toLevelSetting ;
+      HasDifferentLevel = ( fromLevelId != toLevelId ) ;
+      var heightSettingStorable = document.GetHeightSettingStorable() ;
+      SetFromLevelSetting( heightSettingStorable, fromLevelId ) ;
+      SetToLevelSetting( heightSettingStorable, HasDifferentLevel ? fromLevelId : toLevelId ) ;
 
       ( SystemTypes, CurveTypes, StandardTypes, Shafts ) = addInType switch
       {
@@ -88,11 +109,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return ( null, curveTypes, standardTypes, shafts ) ;
     }
 
-    public RoutePropertyTypeList( Document document, MEPSystemClassificationInfo classificationInfo, bool hasDiffLevel, HeightSettingModel fromLevelSetting, HeightSettingModel toLevelSetting )
+    public RoutePropertyTypeList( Document document, MEPSystemClassificationInfo classificationInfo, ElementId fromLevelId, ElementId toLevelId )
     {
-      HasDifferentLevel = hasDiffLevel ;
-      FromLevelSetting = fromLevelSetting ;
-      ToLevelSetting = toLevelSetting ;
+      HasDifferentLevel = ( fromLevelId != toLevelId ) ;
+      var heightSettingStorable = document.GetHeightSettingStorable() ;
+      SetFromLevelSetting( heightSettingStorable, fromLevelId ) ;
+      SetToLevelSetting( heightSettingStorable, HasDifferentLevel ? fromLevelId : toLevelId ) ;
 
       if ( classificationInfo.HasSystemType() ) {
         SystemTypes = document.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList() ;

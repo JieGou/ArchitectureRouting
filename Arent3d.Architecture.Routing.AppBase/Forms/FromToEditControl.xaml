@@ -196,13 +196,11 @@
                     </ComboBox.Style>
                 </ComboBox>
                 <!-- Manually update Value because binding is not called -->
-                <controlLib:NumericUpDown Name="FixedHeightNumericUpDown"
+                <controlLib:NumericUpDown Name="FromFixedHeightNumericUpDown"
                                           ValueChanged="FromFixedHeightNumericUpDown_OnValueChanged"
                                           VerticalAlignment="Center" HorizontalAlignment="Right"
                                           HorizontalContentAlignment="Right"
                                           Increment="100"
-                                          MaxValue="{Binding CurrentMaxValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
-                                          MinValue="{Binding CurrentMinValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                                           Width="80">
                     <controlLib:NumericUpDown.Style>
                         <Style TargetType="{x:Type controlLib:NumericUpDown}">
@@ -289,8 +287,6 @@
                                           VerticalAlignment="Center" HorizontalAlignment="Right"
                                           HorizontalContentAlignment="Right"
                                           Increment="100"
-                                          MaxValue="{Binding CurrentMaxValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
-                                          MinValue="{Binding CurrentMinValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                                           Width="80">
                     <controlLib:NumericUpDown.Style>
                         <Style TargetType="{x:Type controlLib:NumericUpDown}">

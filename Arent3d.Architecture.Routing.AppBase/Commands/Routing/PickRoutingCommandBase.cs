@@ -4,6 +4,7 @@ using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
@@ -55,18 +56,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private RoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
-      var heightSettingStorable = document.GetAllStorables<HeightSettingStorable>().DefaultIfEmpty( new HeightSettingStorable( document ) ).First() ;
       var fromLevelId = fromPickResult.GetLevelId() ;
       var toLevelId = toPickResult.GetLevelId() ;
-
-      var fromLevelSetting = heightSettingStorable[ fromLevelId ] ;
-      var toLevelSetting = heightSettingStorable[ toLevelId ] ;
-      var isDiffLevel = ( fromPickResult.GetLevelId() != toPickResult.GetLevelId() ) ;
 
       if ( ( fromPickResult.SubRoute ?? toPickResult.SubRoute ) is { } subRoute ) {
         var route = subRoute.Route ;
 
-        return ShowDialog( document, new DialogInitValues( route.GetSystemClassificationInfo(), route.GetMEPSystemType(), route.GetDefaultCurveType(), subRoute.GetDiameter() ), isDiffLevel, fromLevelSetting, toLevelSetting) ;
+        return ShowDialog( document, new DialogInitValues( route.GetSystemClassificationInfo(), route.GetMEPSystemType(), route.GetDefaultCurveType(), subRoute.GetDiameter() ), fromLevelId, toLevelId ) ;
       }
 
       if ( ( fromPickResult.PickedConnector ?? toPickResult.PickedConnector ) is { } connector ) {
@@ -74,24 +70,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         if ( CreateSegmentDialogDefaultValuesWithConnector( document, connector, classificationInfo ) is not { } initValues ) return null ;
 
-        return ShowDialog( document, initValues, isDiffLevel, fromLevelSetting, toLevelSetting ) ;
+        return ShowDialog( document, initValues, fromLevelId, toLevelId ) ;
       }
 
-      return ShowDialog( document, GetAddInType(), isDiffLevel, fromLevelSetting, toLevelSetting ) ;
+      return ShowDialog( document, GetAddInType(), fromLevelId, toLevelId ) ;
     }
 
-    private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, bool isDiffLevel, HeightSettingModel fromLevelSetting, HeightSettingModel toLevelSetting )
+    private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
     {
-      var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, isDiffLevel, fromLevelSetting, toLevelSetting ) ;
+      var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
       var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault() ) ) ;
 
       sv.ShowDialog() ;
 
       return sv ;
     }
-    private static RoutePropertyDialog ShowDialog( Document document, AddInType addInType, bool isDiffLevel, HeightSettingModel fromLevelSetting, HeightSettingModel toLevelSetting )
+    private static RoutePropertyDialog ShowDialog( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
     {
-      var routeChoiceSpec = new RoutePropertyTypeList( document, addInType, isDiffLevel, fromLevelSetting, toLevelSetting ) ;
+      var routeChoiceSpec = new RoutePropertyTypeList( document, addInType, fromLevelId, toLevelId ) ;
       var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ) ) ;
       sv.ShowDialog() ;
 
