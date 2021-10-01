@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class NewEnvelopeCommandBase : IExternalCommand
   {
-
+    private const double EnvelopHeightPlus = 1000;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static void GenerateEnvelope( Document document, double originX, double originY, Level level )
     {
       var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ) ;
-      if ( levels == null || levels.Count() < 2 ) return ;
+      if ( levels == null || levels.Count() < 1 ) return ;
 
       var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, 0 ), level, StructuralType.NonStructural ) ;
@@ -52,15 +52,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       //Find above level
       var aboveLevel = levels.Last() ;
-      for ( int i = 0 ; i < levels.Count() ; i++ ) {
-        if ( levels.ElementAt( i ).Id == level.Id ) {
-          aboveLevel = levels.ElementAt( i + 1 ) ;
-          break ;
-        }
+      if ( levels.Count() > 1 ) {
+        for ( int i = 0 ; i < levels.Count() -1 ; i++ ) {
+          if ( levels.ElementAt( i ).Id == level.Id ) {
+            aboveLevel = levels.ElementAt( i + 1 ) ;
+            break ;
+          }
+        }        
       }
 
       //Set Envelope Height
-      var height = aboveLevel.Elevation - level.Elevation ;
+      var height = level.Id == aboveLevel.Id ? (document.GetHeightSettingStorable()[ level ].HeightOfLevel + EnvelopHeightPlus).MillimetersToRevitUnits() : aboveLevel.Elevation - level.Elevation ;
       instance.LookupParameter( "高さ" ).Set( height ) ;
     }
 
