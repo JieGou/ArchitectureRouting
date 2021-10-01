@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
+    private readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
 
     protected abstract AddInType GetAddInType() ;
 
@@ -69,7 +69,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     continue ;
                   }
 
-                  Connector firstConnector = NewRackCommandBase.GetFirstConnector( element.GetConnectorManager()!.Connectors )! ;
+                  Connector firstConnector =
+                    NewRackCommandBase.GetFirstConnector( element.GetConnectorManager()!.Connectors )! ;
 
                   var length = conduit.ParametersMap
                     .get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document,
@@ -85,7 +86,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   // Create cable tray
                   var instance = symbol.Instantiate(
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
-                    uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                    level: null, StructuralType.NonStructural ) ;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
                   // set cable rack length
                   NewRackCommandBase.SetParameter( instance,
@@ -133,7 +136,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   var conduit = ( element as FamilyInstance )! ;
 
                   // Ignore the case of vertical conduits in the oz direction
-                  if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z) {
+                  if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z ||
+                       -1.0 == conduit.HandOrientation.Z || 1.0 == conduit.HandOrientation.Z ) {
                     continue ;
                   }
 
@@ -141,7 +145,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                   var length = conduit.ParametersMap
                     .get_Item( "Revit.Property.Builtin.NominalRadius".GetDocumentStringByKeyOrDefault( document,
-                      "電線管長さ") ).AsDouble() ;
+                      "電線管長さ" ) ).AsDouble() ;
                   var diameter = conduit.ParametersMap
                     .get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document,
                       "呼び径" ) ).AsDouble() ;
@@ -154,13 +158,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                       .CableTrayFitting )! ; // TODO may change in the future
 
                   var instance = symbol.Instantiate( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ),
-                    uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                    level: null, StructuralType.NonStructural ) ;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
                   // set cable tray Bend Radius
                   NewRackCommandBase.SetParameter( instance,
                     "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ),
-                    bendRadius / 2 ) ; // TODO may be must change when FamilyType change
-                          
+                    bendRadius / 2 +
+                    ( 20.5 ).MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
+
                   // set cable rack length
                   NewRackCommandBase.SetParameter( instance,
                     "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ),
@@ -210,7 +217,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var otherConnectors =
                   rackConnectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
                 if ( otherConnectors != null ) {
-                  var connectTo = NewRackCommandBase.GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
+                  var connectTo =
+                    NewRackCommandBase.GetConnectorClosestTo( otherConnectors, connector.Origin,
+                      maxDistanceTolerance ) ;
                   if ( connectTo != null ) {
                     connector.ConnectTo( connectTo ) ;
                   }

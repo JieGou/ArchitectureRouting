@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private static readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
+    private static readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
 
     private readonly BuiltInCategory[] ConduitBuiltInCategories =
     {
@@ -121,7 +121,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               // Create cable tray
               var instance = symbol.Instantiate(
                 new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
-                uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                level: null, StructuralType.NonStructural ) ;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
               // set cable rack length
               SetParameter( instance,
@@ -138,13 +140,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ),
                   Math.PI / 2 ) ;
-              } else if ( -1.0 == line.Direction.Y ) {
+              }
+              else if ( -1.0 == line.Direction.Y ) {
                 ElementTransformUtils.RotateElement( document, instance.Id,
                   Line.CreateBound(
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ),
                   Math.PI / 2 ) ;
-              } else if ( -1.0 == line.Direction.X ) {
+              }
+              else if ( -1.0 == line.Direction.X ) {
                 ElementTransformUtils.RotateElement( document, instance.Id,
                   Line.CreateBound(
                     new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
@@ -168,15 +172,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               var conduit = ( element as FamilyInstance )! ;
 
               // Ignore the case of vertical conduits in the oz direction
-              if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z) {
+              if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z ||
+                   -1.0 == conduit.HandOrientation.Z || 1.0 == conduit.HandOrientation.Z ) {
                 continue ;
               }
 
               var location = ( element.Location as LocationPoint )! ;
 
               var length = conduit.ParametersMap
-                .get_Item("Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ") )
-                .AsDouble() ;
+                .get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document,
+                  "電線管長さ" ) ).AsDouble() ;
               var diameter = conduit.ParametersMap
                 .get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document, "呼び径" ) )
                 .AsDouble() ;
@@ -189,13 +194,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   .CableTrayFitting )! ; // TODO may change in the future
 
               var instance = symbol.Instantiate( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ),
-                uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                level: null, StructuralType.NonStructural ) ;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
               // set cable tray Bend Radius
               SetParameter( instance,
                 "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ),
-                bendRadius / 2 ) ; // TODO may be must change when FamilyType change
-                            
+                bendRadius / 2 +
+                ( 20.5 ).MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
+
               // set cable rack length
               SetParameter( instance,
                 "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ),
@@ -222,7 +230,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
 
               // check cable tray exists
-              if ( ExistsCableTray(document, instance) ) {
+              if ( ExistsCableTray( document, instance ) ) {
                 transaction.RollBack() ;
                 continue ;
               }
@@ -305,7 +313,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
         .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
-                     x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) ).Any() ;
+                     x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) &&
+                     IsSameConnectors( x.GetConnectors(), familyInstance.GetConnectors() ) ).Any() ;
     }
 
     /// <summary>
@@ -323,7 +332,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var locationPoint = ( location as LocationPoint )! ;
         var otherLocationPoint = ( otherLocation as LocationPoint )! ;
-        return locationPoint.Point.DistanceTo( otherLocationPoint.Point) <= maxDistanceTolerance &&
+        return locationPoint.Point.DistanceTo( otherLocationPoint.Point ) <= maxDistanceTolerance &&
                locationPoint.Rotation == otherLocationPoint.Rotation ;
       }
       else if ( location is LocationCurve ) {
@@ -342,6 +351,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return location.Equals( otherLocation ) ;
+    }
+
+    public static bool IsSameConnectors( IEnumerable<Connector> connectors, IEnumerable<Connector> otherConnectors )
+    {
+      var isSameConnectors = true ;
+      foreach ( var connector in connectors ) {
+        if ( ! otherConnectors.Any( x => x.Origin.IsAlmostEqualTo( connector.Origin ) ) ) {
+          return false ;
+        }
+      }
+
+      return isSameConnectors ;
     }
   }
 }
