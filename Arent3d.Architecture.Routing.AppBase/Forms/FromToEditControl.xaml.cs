@@ -18,6 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     private const string DefaultCurveTypeLabel = "Type" ;
     private const double DefaultCurrentMinValue = -10000 ;
+    private const double CellingDefaultCurrentMinValue = 0 ;
     private const double DefaultCurrentMaxValue = 10000 ;
 
     public event EventHandler? ValueChanged ;
@@ -44,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public static readonly DependencyProperty UseFixedHeightProperty = DependencyProperty.Register( "UseFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
     public static readonly DependencyProperty FixedHeightProperty = DependencyProperty.Register( "FixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, FixedHeight_Changed ) ) ;
     public static readonly DependencyProperty AvoidTypeIndexProperty = DependencyProperty.Register( "AvoidTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
-    public static readonly DependencyProperty CurrentMinValueProperty = DependencyProperty.Register( "CurrentMinValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMinValue ) ) ;
+    public static readonly DependencyProperty CurrentMinValueProperty = DependencyProperty.Register( "CurrentMinValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( CellingDefaultCurrentMinValue ) ) ;
     public static readonly DependencyProperty CurrentMaxValueProperty = DependencyProperty.Register( "CurrentMaxValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMaxValue ) ) ;
     private static readonly DependencyPropertyKey CanApplyPropertyKey = DependencyProperty.RegisterReadOnly( "CanApply", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
     private static readonly DependencyPropertyKey IsChangedPropertyKey = DependencyProperty.RegisterReadOnly( "IsChanged", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
@@ -54,6 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public static readonly DependencyProperty ToFixedHeightProperty = DependencyProperty.Register( "ToFixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, ToFixedHeight_Changed ) ) ;
     public static readonly DependencyProperty ToUseFixedHeightProperty = DependencyProperty.Register( "ToUseFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
     public static readonly DependencyProperty ToLocationTypeIndexProperty = DependencyProperty.Register( "ToLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
+    public static readonly DependencyProperty ToCurrentMinValueProperty = DependencyProperty.Register( "ToCurrentMinValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMinValue ) ) ;
 
     //Diameter Info
     private double VertexTolerance { get ; set ; }
@@ -254,6 +256,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       get => (double) GetValue( CurrentMaxValueProperty ) ;
       private set => SetValue( CurrentMaxValueProperty, value ) ;
+    }
+    
+    public double ToCurrentMinValue
+    {
+      get => (double) GetValue( ToCurrentMinValueProperty ) ;
+      private set => SetValue( ToCurrentMinValueProperty, value ) ;
     }
 
     //AvoidType
@@ -557,10 +565,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       OnValueChanged( EventArgs.Empty ) ;
       if ( LocationTypeComboBox.SelectedIndex == 0 ) {
         LocationType = "Floor" ;
+        CurrentMinValue = DefaultCurrentMinValue ;
         FixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( FixedHeightOrg ) ;
       }
       else {
         LocationType = "Ceiling" ;
+        CurrentMinValue = CellingDefaultCurrentMinValue ;
         FixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( CeilingFixedHeightOrg ) ;
       }
     }
@@ -570,10 +580,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       OnValueChanged( EventArgs.Empty ) ;
       if ( ToLocationTypeComboBox.SelectedIndex == 0 ) {
         ToLocationType = "Floor" ;
+        ToCurrentMinValue = DefaultCurrentMinValue ;
         ToFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( ToFixedHeightOrg ) ;
       }
       else {
         ToLocationType = "Ceiling" ;
+        ToCurrentMinValue = CellingDefaultCurrentMinValue ;
         ToFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( ToCeilingFixedHeightOrg ) ;
       }
     }
