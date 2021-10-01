@@ -1,6 +1,7 @@
 using System ;
 using System.Globalization ;
 using System.Text ;
+using System.Windows ;
 using System.Windows.Data ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -14,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
     public object Convert( object[] values, Type targetType, object parameter, CultureInfo culture )
     {
-      if ( 2 != values.Length ) throw new ArgumentException() ;
+      if ( 2 != values.Length ) return DependencyProperty.UnsetValue ;
 
       if ( values[ 0 ] is not Opening opening ) return "Dialog.Electrical.Shaft.List.None".GetAppStringByKeyOrDefault( "(None)" ) ;
 

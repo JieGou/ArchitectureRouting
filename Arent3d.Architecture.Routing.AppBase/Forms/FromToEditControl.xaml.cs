@@ -39,10 +39,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
     public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)true ) ) ;
     public static readonly DependencyProperty UseFromFixedHeightProperty = DependencyProperty.Register( "UseFromFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
-    public static readonly DependencyProperty FromFixedHeightProperty = DependencyProperty.Register( "FromFixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, FromFixedHeight_Changed ) ) ;
+    public static readonly DependencyProperty FromFixedHeightProperty = DependencyProperty.Register( "FromFixedHeight", typeof( double? ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, FromFixedHeight_Changed ) ) ;
     public static readonly DependencyProperty FromLocationTypeIndexProperty = DependencyProperty.Register( "FromLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0, FromLocationTypeIndex_PropertyChanged ) ) ;
     public static readonly DependencyProperty UseToFixedHeightProperty = DependencyProperty.Register( "UseToFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
-    public static readonly DependencyProperty ToFixedHeightProperty = DependencyProperty.Register( "ToFixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, ToFixedHeight_Changed ) ) ;
+    public static readonly DependencyProperty ToFixedHeightProperty = DependencyProperty.Register( "ToFixedHeight", typeof( double? ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, ToFixedHeight_Changed ) ) ;
     public static readonly DependencyProperty ToLocationTypeIndexProperty = DependencyProperty.Register( "ToLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0, ToLocationTypeIndex_PropertyChanged ) ) ;
     public static readonly DependencyProperty AvoidTypeIndexProperty = DependencyProperty.Register( "AvoidTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
     private static readonly DependencyPropertyKey CanApplyPropertyKey = DependencyProperty.RegisterReadOnly( "CanApply", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
@@ -237,7 +237,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     //HeightSetting
     private bool? UseFromFixedHeightOrg { get ; set ; }
-    private double FromFixedHeightOrg { get ; set ; }
+    private double? FromFixedHeightOrg { get ; set ; }
 
     public bool? UseFromFixedHeight
     {
@@ -245,15 +245,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       private set => SetValue( UseFromFixedHeightProperty, value ) ;
     }
 
-    public double FromFixedHeight
+    public double? FromFixedHeight
     {
-      get => (double)GetValue( FromFixedHeightProperty ) ;
+      get => (double?)GetValue( FromFixedHeightProperty ) ;
       private set => SetValue( FromFixedHeightProperty, value ) ;
     }
 
     //ToHeightSetting
     private bool? UseToFixedHeightOrg { get ; set ; }
-    private double ToFixedHeightOrg { get ; set ; }
+    private double? ToFixedHeightOrg { get ; set ; }
 
     public bool? UseToFixedHeight
     {
@@ -261,9 +261,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       private set => SetValue( UseToFixedHeightProperty, value ) ;
     }
 
-    public double ToFixedHeight
+    public double? ToFixedHeight
     {
-      get => (double)GetValue( ToFixedHeightProperty ) ;
+      get => (double?)GetValue( ToFixedHeightProperty ) ;
       private set => SetValue( ToFixedHeightProperty, value ) ;
     }
 
@@ -339,6 +339,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       numericUpDown.MinValue = Math.Round( lengthConverter.ConvertUnit( minimumValue ), 5, MidpointRounding.AwayFromZero ) ;
       numericUpDown.MaxValue = Math.Round( lengthConverter.ConvertUnit( maximumValue ), 5, MidpointRounding.AwayFromZero ) ;
       numericUpDown.Value = Math.Max( numericUpDown.MinValue, Math.Min( numericUpDown.Value, numericUpDown.MaxValue ) ) ;
+      numericUpDown.ToolTip = $"{numericUpDown.MinValue} ～ {numericUpDown.MaxValue}" ;
     }
 
     //AvoidType
@@ -436,11 +437,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( null == IsRouteOnPipeSpace ) return false ;
         if ( null == UseFromFixedHeight ) return false ;
         if ( null == FromLocationType ) return false ;
-        if ( double.IsNaN( FromFixedHeight ) ) return false ;
+        if ( null == FromFixedHeight ) return false ;
         if ( IsDifferentLevel ) {
           if ( null == UseToFixedHeight ) return false ;
           if ( null == ToLocationType ) return false ;
-          if ( double.IsNaN( ToFixedHeight ) ) return false ;
+          if ( null == ToFixedHeight ) return false ;
         }
       }
 
@@ -555,11 +556,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       IsRouteOnPipeSpaceOrg = properties.IsRouteOnPipeSpace ;
 
       UseFromFixedHeightOrg = properties.UseFromFixedHeight ;
-      FromLocationTypeOrg = properties.FromFixedHeight?.Type ;
-      FromFixedHeightOrg = properties.FromFixedHeight?.Height ?? 0.0 ;
+      if ( null == UseFromFixedHeightOrg ) {
+        FromLocationTypeOrg = null ;
+        FromFixedHeightOrg = null ;
+      }
+      else {
+        FromLocationTypeOrg = properties.FromFixedHeight?.Type ?? FixedHeightType.Floor ;
+        FromFixedHeightOrg = properties.FromFixedHeight?.Height ?? 0.0 ;
+      }
+
       UseToFixedHeightOrg = properties.UseToFixedHeight ;
-      ToLocationTypeOrg = properties.ToFixedHeight?.Type ;
-      ToFixedHeightOrg = properties.ToFixedHeight?.Height ?? 0.0 ;
+      if ( null == UseToFixedHeightOrg ) {
+        ToLocationTypeOrg = null ;
+        ToFixedHeightOrg = null ;
+      }
+      else {
+        ToLocationTypeOrg = properties.ToFixedHeight?.Type ?? FixedHeightType.Floor ;
+        ToFixedHeightOrg = properties.ToFixedHeight?.Height ?? 0.0 ;
+      }
 
       AvoidTypeOrg = properties.AvoidType ;
     }
@@ -603,10 +617,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       UseFromFixedHeightOrg = false ;
       FromLocationTypeOrg = FixedHeightType.Floor ;
-      FromFixedHeight = 0.0 ;
+      FromFixedHeight = null ;
       UseToFixedHeightOrg = false ;
       ToLocationTypeOrg = FixedHeightType.Floor ;
-      ToFixedHeight = 0.0 ;
+      ToFixedHeight = null ;
 
       AvoidTypeOrg = Routing.AvoidType.Whichever ;
 
@@ -663,7 +677,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    private double ConvertValue( double oldFixedHeight, FixedHeightType oldValue, FixedHeightType newValue ) => oldFixedHeight ;  // TODO
+    private double? ConvertValue( double? oldFixedHeight, FixedHeightType oldValue, FixedHeightType newValue ) => oldFixedHeight ;  // TODO
 
     private void FromFixedHeightNumericUpDown_OnValueChanged( object sender, ValueChangedEventArgs e )
     {
@@ -684,17 +698,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static void FromFixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
       if ( d is not FromToEditControl fromToEditControl ) return ;
-      if ( e.NewValue is not double newValue ) return ;
 
-      fromToEditControl.FromFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+      if ( e.NewValue is not double newValue ) {
+        fromToEditControl.FromFixedHeightNumericUpDown.CanHaveNull = true ;
+        fromToEditControl.FromFixedHeightNumericUpDown.HasValidValue = false ;
+      }
+      else {
+        fromToEditControl.FromFixedHeightNumericUpDown.CanHaveNull = false ;
+        fromToEditControl.FromFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+      }
     }
 
     private static void ToFixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
       if ( d is not FromToEditControl fromToEditControl ) return ;
-      if ( e.NewValue is not double newValue ) return ;
 
-      fromToEditControl.ToFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+      if ( e.NewValue is not double newValue ) {
+        fromToEditControl.ToFixedHeightNumericUpDown.CanHaveNull = true ;
+        fromToEditControl.ToFixedHeightNumericUpDown.HasValidValue = false ;
+      }
+      else {
+        fromToEditControl.ToFixedHeightNumericUpDown.CanHaveNull = false ;
+        fromToEditControl.ToFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+      }
     }
 
     private static LengthConverter GetLengthConverter( DisplayUnit displayUnitSystem )

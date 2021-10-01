@@ -64,7 +64,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       //Height Info
       UseFromFixedHeight = ( firstSubRoute.FromFixedHeight != null ) ;
+      FromFixedHeight = firstSubRoute.FromFixedHeight ;
       UseToFixedHeight = ( firstSubRoute.ToFixedHeight != null ) ;
+      ToFixedHeight = firstSubRoute.ToFixedHeight ;
 
       //AvoidType Info
       AvoidType = firstSubRoute.AvoidType ;
@@ -73,19 +75,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         SetIndeterminateValues( firstSubRoute.Route ) ;
       }
 
-      if ( true == UseFromFixedHeight ) {
-        FromFixedHeight = firstSubRoute.FromFixedHeight ;
-      }
-      else {
-        FromFixedHeight = null ;
-        ToFixedHeight = null ;
-      }
-      if ( true == UseToFixedHeight ) {
-        ToFixedHeight = firstSubRoute.ToFixedHeight ;
-      }
-      else {
-        ToFixedHeight = null ;
-      }
       Shaft = document.GetElementById<Opening>( firstSubRoute.ShaftElementId ) ;
     }
 

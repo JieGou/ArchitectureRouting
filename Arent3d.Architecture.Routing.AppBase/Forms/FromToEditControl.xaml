@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
-             xmlns:controlLib="clr-namespace:ControlLib;assembly=NumericUpDown"
              xmlns:valueConverters="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters"
              mc:Ignorable="d"
              Background="White"
@@ -196,14 +195,13 @@
                     </ComboBox.Style>
                 </ComboBox>
                 <!-- Manually update Value because binding is not called -->
-                <controlLib:NumericUpDown Name="FromFixedHeightNumericUpDown"
-                                          ValueChanged="FromFixedHeightNumericUpDown_OnValueChanged"
-                                          VerticalAlignment="Center" HorizontalAlignment="Right"
-                                          HorizontalContentAlignment="Right"
-                                          Increment="100"
-                                          Width="80">
-                    <controlLib:NumericUpDown.Style>
-                        <Style TargetType="{x:Type controlLib:NumericUpDown}">
+                <local:NumericUpDownEx x:Name="FromFixedHeightNumericUpDown"
+                                       ValueChanged="FromFixedHeightNumericUpDown_OnValueChanged"
+                                       TextAlignment="Right"
+                                       Increment="100"
+                                       Width="80">
+                    <local:NumericUpDownEx.Style>
+                        <Style TargetType="{x:Type local:NumericUpDownEx}">
                             <Setter Property="Visibility" Value="Hidden"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsChecked, ElementName=FromHeightSetting}" Value="True">
@@ -211,8 +209,8 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </controlLib:NumericUpDown.Style>
-                </controlLib:NumericUpDown>
+                    </local:NumericUpDownEx.Style>
+                </local:NumericUpDownEx>
                 <Label Margin="0,0,0,0">
                     <Label.Style>
                         <Style TargetType="{x:Type Label}" BasedOn="{StaticResource LengthUnit}">
@@ -282,14 +280,13 @@
                     </ComboBox.Style>
                 </ComboBox>
                 <!-- Manually update Value because binding is not called -->
-                <controlLib:NumericUpDown Name="ToFixedHeightNumericUpDown"
-                                          ValueChanged="ToFixedHeightNumericUpDown_OnValueChanged"
-                                          VerticalAlignment="Center" HorizontalAlignment="Right"
-                                          HorizontalContentAlignment="Right"
-                                          Increment="100"
-                                          Width="80">
-                    <controlLib:NumericUpDown.Style>
-                        <Style TargetType="{x:Type controlLib:NumericUpDown}">
+                <local:NumericUpDownEx x:Name="ToFixedHeightNumericUpDown"
+                                       ValueChanged="ToFixedHeightNumericUpDown_OnValueChanged"
+                                       TextAlignment="Right"
+                                       Increment="100"
+                                       Width="80">
+                    <local:NumericUpDownEx.Style>
+                        <Style TargetType="{x:Type local:NumericUpDownEx}">
                             <Setter Property="Visibility" Value="Hidden"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsChecked, ElementName=ToHeightSetting}" Value="True">
@@ -297,8 +294,8 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </controlLib:NumericUpDown.Style>
-                </controlLib:NumericUpDown>
+                    </local:NumericUpDownEx.Style>
+                </local:NumericUpDownEx>
                 <Label Margin="0,0,0,0">
                     <Label.Style>
                         <Style TargetType="{x:Type Label}" BasedOn="{StaticResource LengthUnit}">
