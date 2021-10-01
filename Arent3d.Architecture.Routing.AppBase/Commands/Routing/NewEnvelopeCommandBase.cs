@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ) ;
       if ( levels == null || levels.Count() < 1 ) return ;
-
+      level ??= levels.First() ;
       var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, 0 ), level, StructuralType.NonStructural ) ;
       instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
