@@ -28,6 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     //HeightSetting
     public bool? UseFixedHeight { get ; private set ; }
+    public bool? ToUseFixedHeight { get ; private set ; }
     public double FixedHeight { get ; }
     public double ToFixedHeight { get ; }
     public double FloorConnectorFixedHeight { get ; }
@@ -38,8 +39,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public AvoidType? AvoidType { get ; private set ; }
 
     public string? StandardType { get ; }
-    
+
     public string? LocationType { get ; }
+    public string? ToLocationType { get ; }
     public bool IsDifferentLevel { get ; }
     public bool IsPickRouting { get ; }
 
@@ -81,8 +83,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       FixedHeight = ( true == UseFixedHeight ? GetDisplayFixedHeight( firstSubRoute ) : 0.0 ) ;
       Shaft = document.GetElementById<Opening>( firstSubRoute.ShaftElementId ) ;
-      
+
       LocationType = "Floor" ;
+      ToLocationType = "Floor" ;
     }
 
     public RouteProperties( Document document, RoutePropertyTypeList spec )
@@ -95,10 +98,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Diameter = null ;
 
       IsRouteOnPipeSpace = false ;
-      UseFixedHeight = false ;
+      UseFixedHeight = true ;
+      ToUseFixedHeight = false ;
       FixedHeight = 0.0 ;
       AvoidType = Routing.AvoidType.Whichever ;
       LocationType = "Floor" ;
+      ToLocationType = "Floor" ;
     }
 
     public RouteProperties( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, string? standardType, double floorHeightConnector = 0, double ceilingHeightConnector = 0, double floorToHeightConnector = 0, double ceilingToHeightConnector = 0, bool isDiffLevel = false, bool isPickRouting = false )
@@ -113,10 +118,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         CurveType = curveType ;
 
         IsRouteOnPipeSpace = false ;
-        UseFixedHeight = false ;
+        UseFixedHeight = true ;
+        ToUseFixedHeight = false ;
         FixedHeight = 0.0 ;
         AvoidType = Routing.AvoidType.Whichever ;
-        LocationType = "Floor" ;
+        LocationType = "Ceiling" ;
+        ToLocationType = "Floor" ;
       }
       else {
         //Diameter Info
@@ -126,10 +133,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         StandardType = standardType ;
 
         IsRouteOnPipeSpace = false ;
-        UseFixedHeight = false ;
+        UseFixedHeight = true ;
+        ToUseFixedHeight = false ;
         FixedHeight = 0.0 ;
         AvoidType = Routing.AvoidType.Whichever ;
-        LocationType = "Floor" ;
+        LocationType = "Ceiling" ;
+        ToLocationType = "Floor" ;
         ToFixedHeight = 0.0 ;
         FloorConnectorFixedHeight = floorHeightConnector ;
         CeilingConnectorFixedHeight = ceilingHeightConnector ;
@@ -158,6 +167,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       AvoidType = avoidType ;
       Shaft = shaft ;
       LocationType = "Floor" ;
+      ToLocationType = "Floor" ;
     }
 
     private void SetIndeterminateValues( Route route )
