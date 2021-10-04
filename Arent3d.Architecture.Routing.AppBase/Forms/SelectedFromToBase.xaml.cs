@@ -83,7 +83,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       var route = routePropertySource.TargetRoute ;
-      var routeProperties = new RouteProperties( route, FromToEdit.SystemType, FromToEdit.CurveType, FromToEdit.Diameter, FromToEdit.IsRouteOnPipeSpace, FromToEdit.UseFixedHeight, FromToEdit.FixedHeight, FromToEdit.AvoidType, FromToEdit.Shaft ) ;
+      var fromFixedHeight = FixedHeight.CreateOrNull( FromToEdit.FromLocationType, FromToEdit.FromFixedHeight ) ;
+      var toFixedHeight = FixedHeight.CreateOrNull( FromToEdit.ToLocationType, FromToEdit.ToFixedHeight ) ;
+      var routeProperties = new RouteProperties( route, FromToEdit.SystemType, FromToEdit.CurveType, FromToEdit.Diameter, FromToEdit.IsRouteOnPipeSpace, FromToEdit.UseFromFixedHeight, fromFixedHeight, FromToEdit.UseToFixedHeight, toFixedHeight, FromToEdit.AvoidType, FromToEdit.Shaft ) ;
       ParentFromToTree?.PostCommandExecutor.ApplySelectedFromToChangesCommand( route, routePropertySource.TargetSubRoutes, routeProperties ) ;
     }
 

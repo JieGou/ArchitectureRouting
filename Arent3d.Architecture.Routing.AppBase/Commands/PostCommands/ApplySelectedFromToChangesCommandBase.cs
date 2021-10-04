@@ -60,12 +60,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
         }
 
         //Change FixedHeight
-        if ( newProperties.UseFixedHeight is { } useFixedHeight ) {
-          if ( useFixedHeight ) {
-            subRoute.ChangeFixedBopHeight( newProperties.FixedHeight ) ;
+        if ( newProperties.UseFromFixedHeight is { } useFromFixedHeight ) {
+          if ( useFromFixedHeight ) {
+            subRoute.ChangeFromFixedHeight( newProperties.FromFixedHeight ) ;
           }
           else {
-            subRoute.ChangeFixedBopHeight( null ) ;
+            subRoute.ChangeFromFixedHeight( null ) ;
+          }
+        }
+        if ( newProperties.UseToFixedHeight is { } useToFixedHeight ) {
+          if ( useToFixedHeight ) {
+            subRoute.ChangeToFixedHeight( newProperties.ToFixedHeight ) ;
+          }
+          else {
+            subRoute.ChangeToFixedHeight( null ) ;
           }
         }
 

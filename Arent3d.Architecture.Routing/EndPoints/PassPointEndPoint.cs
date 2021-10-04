@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Diagnostics ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -114,22 +115,40 @@ namespace Arent3d.Architecture.Routing.EndPoints
       if ( passPoint.GetRouteName() is not { } routeName || false == RouteCache.Get( passPoint.Document ).TryGetValue( routeName, out var route ) ) return startPosition ;
 
       var segments = GetRelatedSegments( route, Key ) ;
-      var passPointZ = passPoint.GetTotalTransform().Origin.Z ;
-      if ( segments.FirstOrDefault( s => HasDifferentHeight( s.FixedBopHeight, passPointZ ) ) is not { } targetSegment ) return startPosition ;
-      if ( targetSegment.FixedBopHeight is not { } fixedBopHeight ) return startPosition ;
-      if ( targetSegment.PreferredNominalDiameter is not { } diameter ) return startPosition ;
+      var document = passPoint.Document ;
+      var targetLevelId = passPoint.LevelId ;
+      var segmentsAndFixedHeights = segments.Select( s => ( Segment: s, FixedHeight: GetForcedFixedHeight( document, targetLevelId, s ) ) ) ;
 
-      var fixedCenterHeight = fixedBopHeight + diameter / 2 ;
-      var difference = Math.Abs( fixedCenterHeight - passPointZ ) ;
-      if ( diameter <= difference ) return startPosition ;
+      foreach ( var (targetSegment, fixedHeight) in segmentsAndFixedHeights.Where( tuple => tuple.FixedHeight.HasValue ) ) {
+        if ( targetSegment.PreferredNominalDiameter is not { } diameter ) break ;
 
-      return new XYZ( startPosition.X, startPosition.Y, fixedCenterHeight ) ;
+        var fixedCenterHeight = fixedHeight!.Value + diameter / 2 ;
+        var passPointZ = passPoint.GetTotalTransform().Origin.Z ;
+        var difference = Math.Abs( fixedCenterHeight - passPointZ ) ;
+        if ( diameter <= difference ) break ;
+
+        return new XYZ( startPosition.X, startPosition.Y, fixedCenterHeight ) ;
+      }
+
+      return startPosition ;
     }
 
-    private static bool HasDifferentHeight( double? fixedBopHeight, double passPointZ )
+
+    private static double? GetForcedFixedHeight( Document document, ElementId levelId, RouteSegment segment )
     {
-      if ( fixedBopHeight is not { } height ) return false ;
-      return ( passPointZ != height ) ; // Explicit comparison
+      if ( null == segment.FromFixedHeight && null == segment.ToFixedHeight || ElementId.InvalidElementId == levelId ) return null ;
+
+      if ( segment.FromEndPoint.GetLevelId( document ) == levelId ) return GetForcedFixedHeight( document, segment.FromFixedHeight, levelId ) ;
+      if ( segment.ToEndPoint.GetLevelId( document ) == levelId ) return GetForcedFixedHeight( document, segment.ToFixedHeight, levelId ) ;
+
+      return null ;
+    }
+
+    private static double? GetForcedFixedHeight( Document document, FixedHeight? fixedHeight, ElementId levelId )
+    {
+      if ( null == fixedHeight ) return null ;
+
+      return document.GetHeightSettingStorable().GetAbsoluteHeight( levelId, fixedHeight.Value.Type, fixedHeight.Value.Height ) ;
     }
 
     private static IEnumerable<RouteSegment> GetRelatedSegments( Route route, EndPointKey pointKey )
