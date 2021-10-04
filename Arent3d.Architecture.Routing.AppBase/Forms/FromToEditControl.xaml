@@ -264,7 +264,7 @@
                                           HorizontalContentAlignment="Right"
                                           Increment="100"
                                           MaxValue="{Binding CurrentMaxValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
-                                          MinValue="{Binding ToCurrentMinValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                                          MinValue="{Binding CurrentMinValue, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                                           Width="80">
                     <controlLib:NumericUpDown.Style>
                         <Style TargetType="{x:Type controlLib:NumericUpDown}">
