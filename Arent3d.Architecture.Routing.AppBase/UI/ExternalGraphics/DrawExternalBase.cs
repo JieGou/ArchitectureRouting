@@ -43,14 +43,9 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
                 return;
             }
 
-            if (this.DrawingServer != null && e.KeyChar == 27 && this.DrawingServer.BasePoint != null)
+            if (this.DrawingServer != null && e.KeyChar == 27)
             {
-                this.DrawingServer.BasePoint = null;
-                this.DrawingServer.NextPoint = null;
                 this.UserInput = "";
-            }
-            else if (this.DrawingServer != null && e.KeyChar == 27)
-            {
                 StopExternal();
             }
             if (this.DrawingServer != null && e.KeyChar == 8 && this.UserInput.Length > 0)
@@ -81,12 +76,13 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             {
                 this.DrawingServer.BasePoint = null;
                 this.DrawingServer.NextPoint = null;
-
+               
                 var externalGraphics = new DrawingServerHost();
                 externalGraphics.UnRegisterServer(this.DrawingServer.Document);
 
                 this.DrawingServer = null!;
             }
+            UIApplication.ActiveUIDocument.RefreshActiveView();
         }
 
         public virtual void OnMouseActivity(object sender, MouseEventArgs e)
