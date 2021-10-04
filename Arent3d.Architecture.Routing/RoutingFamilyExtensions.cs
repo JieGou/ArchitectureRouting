@@ -43,13 +43,45 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit("電線管用ファミリ(片側のみ)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
     ConnectorOneSide,
+
+    [NameOnRevit("ダクト用湿度ｾﾝｻｰ(ロゴあり)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    HumiditySensorForDuctWithLogo,
+
+    [NameOnRevit("ダクト用湿度ｾﾝｻｰ(ロゴなし)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    HumiditySensorForDuctWithoutLogo,
+
+    [NameOnRevit("ダンパ操作器")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    DamperActuator,
+
+    [NameOnRevit("室内用湿度ｾﾝｻｰ(ロゴあり)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    IndoorHumiditySensorWithLogo,
+
+    [NameOnRevit("室内用湿度ｾﾝｻｰ(ロゴなし)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    IndoorHumiditySensorWithoutLogo,
+
+    [NameOnRevit("電動二方弁(ロゴあり)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    ElectricTwoWayValveWithLogo,
+
+    [NameOnRevit("電動二方弁(ロゴなし)")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
+    ElectricTwoWayValveWithoutLogo,
+
+    [NameOnRevit( "Routing Envelope" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Envelope,
     
-    [NameOnRevit("Cable Tray")]
-    [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
-     CableTray,
+    [NameOnRevit( "Cable Tray" )]
+    [FamilyCategory( BuiltInCategory.OST_CableTrayFitting )]
+    CableTray,
     
-    [NameOnRevit("Cable Tray Fitting")]
-    [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
+    [NameOnRevit( "Cable Tray Fitting" )]
+    [FamilyCategory( BuiltInCategory.OST_CableTrayFitting )]
     CableTrayFitting,
 
     [NameOnRevit("Cable Tray Reducer")]

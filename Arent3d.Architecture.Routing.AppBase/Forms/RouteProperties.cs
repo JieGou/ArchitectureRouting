@@ -3,15 +3,11 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Electrical ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public class RouteProperties
   {
-    //For experimental state
-    private static readonly bool UseExperimentalFeatures = true ;
-
     private Document Document { get ; }
     public double VertexTolerance => Document.Application.VertexTolerance ;
 
@@ -20,24 +16,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     //SystemType 
     public MEPSystemType? SystemType { get ; }
-    public IList<MEPSystemType>? SystemTypes { get ; }
+    
+    // Shaft 
+    public Opening? Shaft { get ; }    
 
     //CurveType
     public MEPCurveType? CurveType { get ; private set ; }
-    public IList<MEPCurveType> CurveTypes { get ; }
 
     //Direct
     public bool? IsRouteOnPipeSpace { get ; private set ; }
 
     //HeightSetting
     public bool? UseFixedHeight { get ; private set ; }
+    public bool? ToUseFixedHeight { get ; private set ; }
     public double FixedHeight { get ; }
+    public double ToFixedHeight { get ; }
+    public double FloorConnectorFixedHeight { get ; }
+    public double CeilingConnectorFixedHeight { get ; }
+    public double FloorToConnectorFixedHeight { get ; }
+    public double CeilingToConnectorFixedHeight { get ; }
 
     public AvoidType? AvoidType { get ; private set ; }
 
     public string? StandardType { get ; }
 
-    public IList<string>? StandardTypes { get ; }
+    public string? LocationType { get ; }
+    public string? ToLocationType { get ; }
+    public bool IsDifferentLevel { get ; }
+    public bool IsPickRouting { get ; }
 
     internal RouteProperties( IReadOnlyCollection<SubRoute> subRoutes )
     {
@@ -56,17 +62,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       //System Type Info(PipingSystemType in lookup)
       var systemClassification = firstSubRoute.Route.GetSystemClassificationInfo() ;
       if ( systemClassification.HasSystemType() ) {
-        SystemTypes = document.GetSystemTypes( systemClassification ).OrderBy( s => s.Name ).ToList() ;
         SystemType = firstSubRoute.Route.GetMEPSystemType() ;
       }
       else {
-        SystemTypes = null ;
         SystemType = null ;
       }
-
-      //CurveType Info
-      // _isExperimental is true while we treat only round shape
-      CurveTypes = UseExperimentalFeatures ? document.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : document.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
 
       //Direct Info
       IsRouteOnPipeSpace = firstSubRoute.IsRoutingOnPipeSpace ;
@@ -82,30 +82,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       FixedHeight = ( true == UseFixedHeight ? GetDisplayFixedHeight( firstSubRoute ) : 0.0 ) ;
+      Shaft = document.GetElementById<Opening>( firstSubRoute.ShaftElementId ) ;
+
+      LocationType = "Floor" ;
+      ToLocationType = "Floor" ;
     }
 
-    public RouteProperties( Document document )
+    public RouteProperties( Document document, RoutePropertyTypeList spec )
     {
       Document = document ;
-      
-      // Diameter
+
+      SystemType = spec.SystemTypes?.FirstOrDefault() ;
+      Shaft = spec.Shafts?.FirstOrDefault() ;
+      CurveType = spec.CurveTypes.FirstOrDefault() ;
       Diameter = null ;
 
-      //System Type Info(PipingSystemType in lookup)
-      SystemTypes = document.GetAllElements<MEPSystemType>().OrderBy( s => s.Name ).ToList() ;
-      SystemType = SystemTypes.FirstOrDefault() ;
-
-      //CurveType Info
-      CurveTypes = document.GetAllElements<MEPCurveType>().ToList() ;
-      CurveType = CurveTypes.FirstOrDefault() ;
-
       IsRouteOnPipeSpace = false ;
-      UseFixedHeight = false ;
+      UseFixedHeight = true ;
+      ToUseFixedHeight = false ;
       FixedHeight = 0.0 ;
       AvoidType = Routing.AvoidType.Whichever ;
+      LocationType = "Floor" ;
+      ToLocationType = "Floor" ;
     }
 
-    public RouteProperties( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType )
+    public RouteProperties( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, string? standardType, double floorHeightConnector = 0, double ceilingHeightConnector = 0, double floorToHeightConnector = 0, double ceilingToHeightConnector = 0, bool isDiffLevel = false, bool isPickRouting = false )
     {
       Document = document ;
       
@@ -113,51 +114,49 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       // For Conduit
       if ( classificationInfo.HasSystemType() ) {
-        //Diameter Info
+        SystemType = systemType ;
         CurveType = curveType ;
 
-        //System Type Info(PipingSystemType in lookup)
-        SystemTypes = document.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList() ;
-        SystemType = systemType ;
-
-        //CurveType Info
-        // _isExperimental is true while we treat only round shape
-        CurveTypes = UseExperimentalFeatures ? document.GetCurveTypes( CurveType ).Where( c => c.Shape == ConnectorProfileType.Round ).OrderBy( s => s.Name ).ToList() : document.GetCurveTypes( CurveType ).OrderBy( s => s.Name ).ToList() ;
-
         IsRouteOnPipeSpace = false ;
-        UseFixedHeight = false ;
+        UseFixedHeight = true ;
+        ToUseFixedHeight = false ;
         FixedHeight = 0.0 ;
         AvoidType = Routing.AvoidType.Whichever ;
+        LocationType = "Ceiling" ;
+        ToLocationType = "Floor" ;
       }
       else {
         //Diameter Info
         CurveType = curveType ;
 
         //Standard Type Info
-        StandardTypes = document.GetStandardTypes().ToList() ;
-        StandardType = StandardTypes[ 0 ] ;
-
-        //CurveType Info
-        // _isExperimental is true while we treat only round shape
-        CurveTypes = document.GetAllElements<MEPCurveType>().Where( c => c.GetType() == typeof( ConduitType ) ).OrderBy( c => c.Name ).ToList() ;
+        StandardType = standardType ;
 
         IsRouteOnPipeSpace = false ;
-        UseFixedHeight = false ;
+        UseFixedHeight = true ;
+        ToUseFixedHeight = false ;
         FixedHeight = 0.0 ;
         AvoidType = Routing.AvoidType.Whichever ;
+        LocationType = "Ceiling" ;
+        ToLocationType = "Floor" ;
+        ToFixedHeight = 0.0 ;
+        FloorConnectorFixedHeight = floorHeightConnector ;
+        CeilingConnectorFixedHeight = ceilingHeightConnector ;
+        FloorToConnectorFixedHeight = floorToHeightConnector ;
+        CeilingToConnectorFixedHeight = ceilingToHeightConnector ;
+        IsDifferentLevel = isDiffLevel ;
+        IsPickRouting = isPickRouting ;
       }
     }
 
-    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFixedHeight, double fixedHeight, AvoidType? avoidType )
+    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFixedHeight, double fixedHeight, AvoidType? avoidType, Opening? shaft )
     {
       Document = route.Document ;
 
       Diameter = diameter ;
 
-      CurveTypes = Array.Empty<MEPCurveType>() ;
       CurveType = curveType ;
 
-      SystemTypes = Array.Empty<MEPSystemType>() ;
       SystemType = systemType ;
 
       IsRouteOnPipeSpace = isRouteOnPipeSpace ;
@@ -165,7 +164,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( true == UseFixedHeight ) {
         FixedHeight = GetTrueFixedHeight( route, fixedHeight ) ;
       }
-      AvoidType = Routing.AvoidType.Whichever ;
+      AvoidType = avoidType ;
+      Shaft = shaft ;
+      LocationType = "Floor" ;
+      ToLocationType = "Floor" ;
     }
 
     private void SetIndeterminateValues( Route route )

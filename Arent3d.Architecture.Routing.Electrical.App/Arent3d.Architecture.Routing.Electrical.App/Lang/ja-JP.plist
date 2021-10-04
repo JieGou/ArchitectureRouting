@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
     <dict>
 
@@ -19,10 +19,14 @@
         <string>PS</string>
 
         <key>Electrical.App.Panels.Routing.Shafts</key>
-        <string>Shaft</string>
+        <string>シャフト</string>
       
         <key>Electrical.App.Panels.Routing.Monitor</key>
         <string>Monitor Selection</string>
+        
+        <key>Electrical.App.Panels.Routing.Connectors</key>
+        <string>Connectors</string>
+
 
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>
@@ -87,6 +91,9 @@
 
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>ラックを作成する&#xA;すべてのコンジット用</string>
+
+        <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
+        <string>Create Rack&#xA;From-To</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -153,6 +160,9 @@
         <key>TransactionName.Commands.Rack.CreateCableRackForAllRoute</key>
         <string>すべてのルートのケーブルラックを作成する</string>
 
+        <key>TransactionName.Commands.Rack.NewRackFromTo</key>
+        <string>Create Cable Rack From-To</string>
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>自動ルーティング初期化エラー</string>
@@ -218,6 +228,9 @@
         <key>Dialog.Forms.FromToTree.Title</key>
         <string>配線From-To</string>
 
+        <key>Dialog.Electrical.Shaft.List.None</key>
+        <string>(使用しない)</string>
+
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
@@ -250,6 +263,8 @@
         <string>長さ</string>
         <key>Revit.Property.Builtin.BendRadius</key>
         <string>曲げ半径</string>
+        <key>Revit.Property.Builtin.ConduitFitting.Length</key>
+        <string>電線管長さ</string>
     </dict>
 </plist>
 

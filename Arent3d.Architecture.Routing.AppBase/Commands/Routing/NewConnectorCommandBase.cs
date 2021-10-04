@@ -1,6 +1,6 @@
-using System ;
-using System.Collections.Generic;
+﻿using System ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -8,13 +8,11 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
-
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class NewConnectorCommandBase : IExternalCommand
   {
-    private static readonly double DefaultHighestLevelHeight = ( 3.0 ).MetersToRevitUnits() ;
-    private static readonly double DefaultConnectorSize = ( 0.5 ).MetersToRevitUnits() ;
+    protected abstract RoutingFamilyType RoutingFamilyType { get ; }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -22,16 +20,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       try {
         var (originX, originY, originZ) = uiDocument.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
-        double sizeX = DefaultConnectorSize, sizeY = DefaultConnectorSize;
 
         var result = document.Transaction( "TransactionName.Commands.Rack.Import".GetAppStringByKeyOrDefault( "Import Pipe Spaces" ), _ =>
         {
-            GenerateConnector(uiDocument, originX, originY, sizeX, sizeY, originZ, uiDocument.ActiveView.GenLevel);
+          var level = uiDocument.ActiveView.GenLevel ;
+          var heightOfConnector = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+          GenerateConnector( uiDocument, originX, originY, heightOfConnector, level ) ;
 
           return Result.Succeeded ;
-        });
+        } ) ;
 
-        return result;
+        return result ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
@@ -42,10 +41,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void GenerateConnector(UIDocument uiDocument, double originX, double originY, double originZ, double sizeX, double sizeY, Level level)
+    private void GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level )
     {
-        var symbol = uiDocument.Document.GetFamilySymbol(RoutingFamilyType.ConnectorOneSide)!;
-        var instance = symbol.Instantiate(new XYZ(originX, originY, originZ), level, StructuralType.NonStructural);
+      var symbol = uiDocument.Document.GetFamilySymbol( RoutingFamilyType )! ;
+      var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
     }
 
     private static Level? GetUpperLevel( Level refRevel )

@@ -27,7 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       {
         _editingSource = value ;
         if ( value is { } source ) {
-          FromToEdit.SetRouteProperties( source.Properties ) ;
+          FromToEdit.SetRouteProperties( new RoutePropertyTypeList( source.TargetSubRoutes ), source.Properties ) ;
           ResetDialog() ;
         }
         else {
@@ -54,14 +54,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( TargetFromToItem?.PropertySourceType is RoutePropertySource && TargetFromToItem.ItemTag == "Route" ) {
         FromToEdit.SystemTypeEditable = TargetFromToItem.IsRootRoute ;
         FromToEdit.CurveTypeEditable = TargetFromToItem.IsRootRoute ;
+        FromToEdit.ShaftEditable = true ;
       }
       else if ( TargetFromToItem?.PropertySourceType is RoutePropertySource && TargetFromToItem.ItemTypeName == "Section" ) {
         FromToEdit.SystemTypeEditable = false ;
         FromToEdit.CurveTypeEditable = true ;
+        FromToEdit.ShaftEditable = false ;
       }
       else if ( TargetFromToItem?.PropertySourceType is ConnectorPropertySource ) {
         FromToEdit.SystemTypeEditable = false ;
         FromToEdit.CurveTypeEditable = false ;
+        FromToEdit.ShaftEditable = false ;
+      }
+      else {
+        FromToEdit.SystemTypeEditable = false ;
+        FromToEdit.CurveTypeEditable = false ;
+        FromToEdit.ShaftEditable = false ;
       }
     }
 
@@ -75,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       var route = routePropertySource.TargetRoute ;
-      var routeProperties = new RouteProperties( route, FromToEdit.SystemType, FromToEdit.CurveType, FromToEdit.Diameter, FromToEdit.IsRouteOnPipeSpace, FromToEdit.UseFixedHeight, FromToEdit.FixedHeight, FromToEdit.AvoidType ) ;
+      var routeProperties = new RouteProperties( route, FromToEdit.SystemType, FromToEdit.CurveType, FromToEdit.Diameter, FromToEdit.IsRouteOnPipeSpace, FromToEdit.UseFixedHeight, FromToEdit.FixedHeight, FromToEdit.AvoidType, FromToEdit.Shaft ) ;
       ParentFromToTree?.PostCommandExecutor.ApplySelectedFromToChangesCommand( route, routePropertySource.TargetSubRoutes, routeProperties ) ;
     }
 

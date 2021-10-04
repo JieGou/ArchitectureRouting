@@ -10,13 +10,15 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using ControlLib ;
 using LengthConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters.LengthConverter ;
+using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class FromToEditControl : UserControl
   {
     private const string DefaultCurveTypeLabel = "Type" ;
-    private const double DefaultCurrentMinValue = 0 ;
+    private const double DefaultCurrentMinValue = -10000 ;
+    private const double CellingDefaultCurrentMinValue = 0 ;
     private const double DefaultCurrentMaxValue = 10000 ;
 
     public event EventHandler? ValueChanged ;
@@ -29,23 +31,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     public static readonly DependencyProperty SystemTypeEditableProperty = DependencyProperty.Register( "SystemTypeEditable", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty ShaftEditableProperty = DependencyProperty.Register( "ShaftEditable", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty CurveTypeEditableProperty = DependencyProperty.Register( "CurveTypeEditable", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty UseSystemTypeProperty = DependencyProperty.Register( "UseSystemType", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty UseShaftProperty = DependencyProperty.Register( "UseShaft", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty UseCurveTypeProperty = DependencyProperty.Register( "UseCurveType", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty DiameterIndexProperty = DependencyProperty.Register( "DiameterIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty SystemTypeIndexProperty = DependencyProperty.Register( "SystemTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty ShaftIndexProperty = DependencyProperty.Register( "ShaftIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty CurveTypeIndexProperty = DependencyProperty.Register( "CurveTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
     public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)true ) ) ;
     public static readonly DependencyProperty UseFixedHeightProperty = DependencyProperty.Register( "UseFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
     public static readonly DependencyProperty FixedHeightProperty = DependencyProperty.Register( "FixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, FixedHeight_Changed ) ) ;
     public static readonly DependencyProperty AvoidTypeIndexProperty = DependencyProperty.Register( "AvoidTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
-    public static readonly DependencyProperty CurrentMinValueProperty = DependencyProperty.Register( "CurrentMinValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMinValue ) ) ;
+    public static readonly DependencyProperty CurrentMinValueProperty = DependencyProperty.Register( "CurrentMinValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( CellingDefaultCurrentMinValue ) ) ;
     public static readonly DependencyProperty CurrentMaxValueProperty = DependencyProperty.Register( "CurrentMaxValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMaxValue ) ) ;
     private static readonly DependencyPropertyKey CanApplyPropertyKey = DependencyProperty.RegisterReadOnly( "CanApply", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
     private static readonly DependencyPropertyKey IsChangedPropertyKey = DependencyProperty.RegisterReadOnly( "IsChanged", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( false ) ) ;
     public static readonly DependencyProperty AllowIndeterminateProperty = DependencyProperty.Register( "AllowIndeterminate", typeof( bool ), typeof( FromToEditControl ), new PropertyMetadata( default( bool ) ) ) ;
     public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( FromToEditControl ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
+    public static readonly DependencyProperty LocationTypeIndexProperty = DependencyProperty.Register( "LocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
+    public static readonly DependencyProperty ToFixedHeightProperty = DependencyProperty.Register( "ToFixedHeight", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, ToFixedHeight_Changed ) ) ;
+    public static readonly DependencyProperty ToUseFixedHeightProperty = DependencyProperty.Register( "ToUseFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
+    public static readonly DependencyProperty ToLocationTypeIndexProperty = DependencyProperty.Register( "ToLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0 ) ) ;
+    public static readonly DependencyProperty ToCurrentMinValueProperty = DependencyProperty.Register( "ToCurrentMinValue", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurrentMinValue ) ) ;
 
     //Diameter Info
     private double VertexTolerance { get ; set ; }
@@ -88,8 +98,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private MEPSystemType? SystemTypeOrg { get ; set ; }
     public MEPSystemType? SystemType
     {
-      get => GetTypeOnIndex( SystemTypes, (int)GetValue( SystemTypeIndexProperty ) ) ;
-      private set => SetValue( SystemTypeIndexProperty, GetTypeIndex( SystemTypes, value ) ) ;
+      get => GetItemOnIndex( SystemTypes, (int)GetValue( SystemTypeIndexProperty ) ) ;
+      private set => SetValue( SystemTypeIndexProperty, GetItemIndex( SystemTypes, value ) ) ;
     }
     public bool SystemTypeEditable
     {
@@ -102,15 +112,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       set => SetValue( UseSystemTypeProperty, value ) ;
     }
 
+    //Shafts Info
+    public ObservableCollection<OpeningProxy> Shafts { get ; } = new ObservableCollection<OpeningProxy>() ;
+    private Opening? ShaftOrg { get ; set ; }
+    public Opening? Shaft
+    {
+      get => GetItemOnIndex( Shafts, (int)GetValue( ShaftIndexProperty ) )?.Value ;
+      private set => SetValue( ShaftIndexProperty, GetShaftIndex( Shafts, value ) ) ;
+    }
+
+    public bool ShaftEditable
+    {
+      get => (bool) GetValue( ShaftEditableProperty ) ;
+      set => SetValue( ShaftEditableProperty, value ) ;
+    }
+    private bool UseShaft
+    {
+      get => (bool) GetValue( UseShaftProperty ) ;
+      set => SetValue( UseShaftProperty, value ) ;
+    }
+    
     //CurveType Info
     public ObservableCollection<MEPCurveType> CurveTypes { get ; } = new ObservableCollection<MEPCurveType>() ;
     private MEPCurveType? CurveTypeOrg { get ; set ; }
     public MEPCurveType? CurveType
     {
-      get => GetTypeOnIndex( CurveTypes, (int)GetValue( CurveTypeIndexProperty ) ) ;
+      get => GetItemOnIndex( CurveTypes, (int)GetValue( CurveTypeIndexProperty ) ) ;
       private set
       {
-        SetValue( CurveTypeIndexProperty, GetTypeIndex( CurveTypes, value ) ) ;
+        SetValue( CurveTypeIndexProperty, GetItemIndex( CurveTypes, value ) ) ;
         if ( value is { } curveType ) {
           CurveTypeLabel = UIHelper.GetTypeLabel( curveType.GetType().Name ) ;
         }
@@ -162,16 +192,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       set => SetValue( UseCurveTypeProperty, value ) ;
     }
 
-    private static T? GetTypeOnIndex<T>( IReadOnlyList<T> values, int index ) where T : class
+    private static T? GetItemOnIndex<T>( IReadOnlyList<T> values, int index ) where T : class
     {
       if ( index < 0 || values.Count <= index ) return null ;
       return values[ index ] ;
     }
-    private static int GetTypeIndex<T>( IEnumerable<T> elementTypes, T? value ) where T : Element
+    private static int GetItemIndex<TElement>( IEnumerable<TElement> elements, TElement? value ) where TElement : Element
     {
-      if ( value is not { } elementType ) return -1 ;
+      if ( value is not { } item ) return -1 ;
 
-      return elementTypes.FindIndex( e => e.Id == elementType.Id ) ;
+      return elements.FindIndex( elm => elm.Id == item.Id ) ;
+    }
+    private static int GetShaftIndex( IEnumerable<OpeningProxy> elements, Opening? value )
+    {
+      return elements.FindIndex( elm => elm.Value?.Id == value?.Id ) ;
     }
 
     //Direct Info
@@ -185,6 +219,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     //HeightSetting
     private bool? UseFixedHeightOrg { get ; set ; }
     private double FixedHeightOrg { get ; set ; }
+    private double CeilingFixedHeightOrg { get ; set ; }
     public bool? UseFixedHeight
     {
       get => (bool?) GetValue( UseFixedHeightProperty ) ;
@@ -197,6 +232,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
     public double ConnectorFixedHeight => FixedHeight - ( ( Diameter ?? 0.0 ) / 2 ) ;
 
+    //ToHeightSetting
+    private bool? ToUseFixedHeightOrg { get ; set ; }
+    private double ToFixedHeightOrg { get ; set ; }
+    private double ToCeilingFixedHeightOrg { get ; set ; }
+    public bool? ToUseFixedHeight
+    {
+      get => (bool?) GetValue( ToUseFixedHeightProperty ) ;
+      private set => SetValue( ToUseFixedHeightProperty, value ) ;
+    }
+    public double ToFixedHeight
+    {
+      get => (double) GetValue( ToFixedHeightProperty ) ;
+      private set => SetValue( ToFixedHeightProperty, value ) ;
+    }
+    
     public double CurrentMinValue
     {
       get => (double) GetValue( CurrentMinValueProperty ) ;
@@ -206,6 +256,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       get => (double) GetValue( CurrentMaxValueProperty ) ;
       private set => SetValue( CurrentMaxValueProperty, value ) ;
+    }
+    
+    public double ToCurrentMinValue
+    {
+      get => (double) GetValue( ToCurrentMinValueProperty ) ;
+      private set => SetValue( ToCurrentMinValueProperty, value ) ;
     }
 
     //AvoidType
@@ -232,7 +288,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       [ Routing.AvoidType.AvoidAbove ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoDrainPocket".GetAppStringByKeyOrDefault( "Avoid on From-To" ),
       [ Routing.AvoidType.AvoidBelow ] = "Dialog.Forms.FromToEditControl.ProcessConstraints.NoVentPocket".GetAppStringByKeyOrDefault( "Avoid below From-To" ),
     } ;
+    
+    //LocationType
+    private string? LocationTypeOrg { get ; set ; }
+    public string? LocationType
+    {
+      get => GetLocationTypeOnIndex( LocationTypes.Keys, (int)GetValue( LocationTypeIndexProperty ) ) ;
+      private set => SetValue( LocationTypeIndexProperty, GetLocationTypeIndex( LocationTypes.Keys, value ) ) ;
+    }
+    private string? ToLocationTypeOrg { get ; set ; }
+    public string? ToLocationType
+    {
+      get => GetLocationTypeOnIndex( LocationTypes.Keys, (int)GetValue( ToLocationTypeIndexProperty ) ) ;
+      private set => SetValue( ToLocationTypeIndexProperty, GetLocationTypeIndex( LocationTypes.Keys, value ) ) ;
+    }
+    private static string? GetLocationTypeOnIndex( IEnumerable<string> locationTypes, int index )
+    {
+      if ( index < 0 ) return null ;
+      return locationTypes.ElementAtOrDefault( index ) ;
+    }
+    private static int GetLocationTypeIndex( IEnumerable<string> locationTypes, string? locationType )
+    {
+      return ( locationType is { } type ? locationTypes.IndexOf( type ) : -1 ) ;
+    }
 
+    public IReadOnlyDictionary<string, string> LocationTypes { get ; } = new Dictionary<string, string>
+    {
+      { "Floor", "FL" } ,
+      { "Ceiling", "CL" }
+    } ;
+    
+    public bool IsDifferentLevel { get ; set ; }
+    
     public bool CanApply
     {
       get => (bool)GetValue( CanApplyPropertyKey.DependencyProperty ) ;
@@ -274,6 +361,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( UseFixedHeight != UseFixedHeightOrg ) return true ;
       if ( true == UseFixedHeight && false == LengthEquals( FixedHeightOrg, FixedHeight, VertexTolerance ) ) return true ;
       if ( AvoidTypeOrg != AvoidType ) return true ;
+      if ( UseShaft && ShaftOrg?.Id != Shaft?.Id ) return true ;
+      if ( LocationTypeOrg != LocationType ) return true ;
 
       return false ;
     }
@@ -301,7 +390,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       OnValueChanged( EventArgs.Empty ) ;
     }
-
+    
+    private void ShaftComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+    }
+    
     private void CurveTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       OnValueChanged( EventArgs.Empty ) ;
@@ -314,18 +408,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     /// <summary>
-    /// Update Diameters, SystemTypes, and CurveTypes
+    /// Update Diameters, SystemTypes, Shafts and CurveTypes
     /// </summary>
     /// <param name="systemTypes"></param>
+    /// <param name="shafts"></param>
     /// <param name="curveTypes"></param>
-    /// <param name="vertexTolerance"></param>
-    private void SetAvailableParameterList( IList<MEPSystemType>? systemTypes, IList<MEPCurveType> curveTypes, double vertexTolerance )
+    private void SetAvailableParameterList( IList<MEPSystemType>? systemTypes, IList<Opening>? shafts, IList<MEPCurveType> curveTypes )
     {
-      VertexTolerance = vertexTolerance ;
       Diameters.Clear() ;
       SystemTypes.Clear() ;
       CurveTypes.Clear() ;
+      Shafts.Clear() ;
 
+      // System type
       if ( systemTypes != null ) {
         foreach ( var s in systemTypes ) {
           SystemTypes.Add( s ) ;
@@ -337,23 +432,54 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         UseSystemType = false ;
       }
 
+      Shafts.Add( new OpeningProxy( null ) ) ;
+      if ( null != shafts ) {
+        foreach ( var shaft in shafts ) {
+          Shafts.Add( new OpeningProxy( shaft ) ) ;
+        }
+
+        UseShaft = true ;
+      }
+      else {
+        UseShaft = false ;
+      }
+      
+      // Curve type
       foreach ( var c in curveTypes ) {
         CurveTypes.Add( c ) ;
       }
     }
 
-    public void SetRouteProperties( RouteProperties properties )
+    public void SetRouteProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
-      SetAvailableParameterList( properties.SystemTypes, properties.CurveTypes, properties.VertexTolerance ) ;
+      VertexTolerance = properties.VertexTolerance ;
+      SetAvailableParameterList( propertyTypeList.SystemTypes, propertyTypeList.Shafts, propertyTypeList.CurveTypes ) ;
 
       SystemTypeOrg = properties.SystemType ;
       CurveTypeOrg = properties.CurveType ;
       DiameterOrg = properties.Diameter ;
+      ShaftOrg = properties.Shaft ;
 
       IsRouteOnPipeSpaceOrg = properties.IsRouteOnPipeSpace ;
       UseFixedHeightOrg = properties.UseFixedHeight ;
-      FixedHeightOrg = properties.FixedHeight ;
+      FixedHeightOrg = properties.IsPickRouting ? properties.FloorConnectorFixedHeight : properties.FixedHeight ;
       AvoidTypeOrg = properties.AvoidType ;
+      LocationTypeOrg = properties.LocationType ;
+      CeilingFixedHeightOrg = properties.CeilingConnectorFixedHeight ;
+      IsDifferentLevel = properties.IsDifferentLevel ;
+
+      ToUseFixedHeightOrg = properties.ToUseFixedHeight ;
+      ToFixedHeightOrg = properties.IsPickRouting ? properties.FloorToConnectorFixedHeight : properties.ToFixedHeight ;
+      ToCeilingFixedHeightOrg = properties.CeilingToConnectorFixedHeight ;
+      ToLocationTypeOrg = properties.ToLocationType ;
+      if ( properties.IsDifferentLevel && properties.IsPickRouting ) {
+        LbHeight2.Visibility = Visibility.Visible ;
+        ToHeightSetting.Visibility = Visibility.Visible ;
+      }
+      else {
+        LbHeight2.Visibility = Visibility.Hidden ;
+        ToHeightSetting.Visibility = Visibility.Hidden ;
+      }
     }
 
     public void ResetDialog()
@@ -361,12 +487,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SystemType = SystemTypeOrg ;
       CurveType = CurveTypeOrg ;
       Diameter = DiameterOrg ;
+      Shaft = ShaftOrg ;
 
       IsRouteOnPipeSpace = IsRouteOnPipeSpaceOrg ;
       UseFixedHeight = UseFixedHeightOrg ;
-      FixedHeight = FixedHeightOrg ;
+      FixedHeight = CeilingFixedHeightOrg ;
       AvoidType = AvoidTypeOrg ;
       CanApply = false ;
+      LocationType = LocationTypeOrg ;
+
+      ToUseFixedHeight = ToUseFixedHeightOrg ;
+      ToFixedHeight = ToFixedHeightOrg ;
+      ToLocationType = ToLocationTypeOrg ;
     }
 
     public void ClearDialog()
@@ -378,12 +510,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DiameterOrg = null ;
       SystemTypeOrg = null ;
       CurveTypeOrg = null ;
+      ShaftOrg = null ;
 
       IsRouteOnPipeSpaceOrg = false ;
       UseFixedHeightOrg = false ;
       FixedHeightOrg = 0.0 ;
       AvoidTypeOrg = Routing.AvoidType.Whichever ;
+      LocationTypeOrg = "Floor" ;
 
+      ToUseFixedHeightOrg = false ;
+      ToFixedHeightOrg = 0.0 ;
+      ToLocationTypeOrg = "Floor" ;
+      
       ResetDialog() ;
     }
 
@@ -406,12 +544,52 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       OnValueChanged( EventArgs.Empty ) ;
     }
+    
+    private void ToHeight_OnChecked( object sender, RoutedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+    }
+
+    private void ToHeight_OnUnchecked( object sender, RoutedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+    }
 
     private void AvoidTypeComboBox_OnSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       OnValueChanged( EventArgs.Empty ) ;
     }
 
+    private void LocationTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+      if ( LocationTypeComboBox.SelectedIndex == 0 ) {
+        LocationType = "Floor" ;
+        CurrentMinValue = DefaultCurrentMinValue ;
+        FixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( FixedHeightOrg ) ;
+      }
+      else {
+        LocationType = "Ceiling" ;
+        CurrentMinValue = CellingDefaultCurrentMinValue ;
+        FixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( CeilingFixedHeightOrg ) ;
+      }
+    }
+    
+    private void ToLocationTypeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      OnValueChanged( EventArgs.Empty ) ;
+      if ( ToLocationTypeComboBox.SelectedIndex == 0 ) {
+        ToLocationType = "Floor" ;
+        ToCurrentMinValue = DefaultCurrentMinValue ;
+        ToFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( ToFixedHeightOrg ) ;
+      }
+      else {
+        ToLocationType = "Ceiling" ;
+        ToCurrentMinValue = CellingDefaultCurrentMinValue ;
+        ToFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( ToCeilingFixedHeightOrg ) ;
+      }
+    }
+    
     private KeyValuePair<AvoidType, string> GetAvoidTypeKeyValuePair( AvoidType avoidTypeKey )
     {
       return new KeyValuePair<AvoidType, string>( avoidTypeKey, AvoidTypes[ avoidTypeKey ] ) ;
@@ -424,6 +602,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       OnValueChanged( EventArgs.Empty ) ;
     }
+    
+    private void ToFixedHeightNumericUpDown_OnValueChanged( object sender, ValueChangedEventArgs e )
+    {
+      // Manually update FixedHeight because Value binding is not called.
+      ToFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( ToFixedHeightNumericUpDown.Value ) ;
+
+      OnValueChanged( EventArgs.Empty ) ;
+    }
 
     private static void FixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
@@ -431,6 +617,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( e.NewValue is not double newValue ) return ;
 
       fromToEditControl.FixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+    }
+    
+    private static void ToFixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
+    {
+      if ( d is not FromToEditControl fromToEditControl ) return ;
+      if ( e.NewValue is not double newValue ) return ;
+
+      fromToEditControl.ToFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( fromToEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
     }
 
     private static LengthConverter GetLengthConverter( DisplayUnit displayUnitSystem )
@@ -441,6 +635,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         DisplayUnit.IMPERIAL => LengthConverter.Inches,
         _ => LengthConverter.Default,
       } ;
+    }
+
+    public class OpeningProxy
+    {
+      internal OpeningProxy( Opening? opening )
+      {
+        Value = opening ;
+      }
+
+      public Opening? Value { get ; }
     }
   }
 }

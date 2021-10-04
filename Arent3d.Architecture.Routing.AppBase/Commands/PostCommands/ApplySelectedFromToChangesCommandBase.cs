@@ -73,6 +73,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
         if ( newProperties.AvoidType is { } avoidType ) {
           subRoute.ChangeAvoidType( avoidType ) ;
         }
+
+        subRoute.ChangeShaftElement( newProperties.Shaft ) ;
       }
 
       return route.CollectAllDescendantBranches().ToSegmentsWithName().EnumerateAll() ;

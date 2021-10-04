@@ -14,17 +14,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       InitializeComponent() ;
     }
 
-    public RoutePropertyDialog( Document document, RouteProperties properties )
+    public RoutePropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
       InitializeComponent() ;
-
+      WindowStartupLocation = WindowStartupLocation.CenterScreen ;
       FromToEdit.DisplayUnitSystem = document.DisplayUnitSystem ;
-      UpdateProperties( properties ) ;
+      UpdateProperties( propertyTypeList, properties ) ;
     }
 
-    private void UpdateProperties( RouteProperties properties )
+    private void UpdateProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
-      FromToEdit.SetRouteProperties( properties ) ;
+      FromToEdit.SetRouteProperties( propertyTypeList, properties ) ;
       FromToEdit.ResetDialog() ;
     }
 
@@ -54,13 +54,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( true != FromToEdit.UseFixedHeight ) return null ;
       return FromToEdit.FixedHeight ;
     }
+    
+    public double? GetToFixedHeight()
+    {
+      if ( true != FromToEdit.ToUseFixedHeight ) return null ;
+      return FromToEdit.ToFixedHeight ;
+    }
 
     public AvoidType GetSelectedAvoidType() => FromToEdit.AvoidType ?? throw new InvalidOperationException() ;
 
-    public ElementId GetShaftElementId()
+    public Opening? GetShaft()
     {
-      // TODO
-      return ElementId.InvalidElementId ;
+      return FromToEdit.Shaft ;
     }
   }
 }

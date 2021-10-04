@@ -1,13 +1,16 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Diagnostics ;
 using System.Linq ;
 using System.Windows.Controls.Ribbon ;
+using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.DB ;
 using Autodesk.Windows ;
+using RibbonSplitButton = Autodesk.Windows.RibbonSplitButton ;
 using RibbonTab = Autodesk.Windows.RibbonTab ;
 using TaskDialog = Autodesk.Revit.UI.TaskDialog ;
 
@@ -40,6 +43,28 @@ namespace Arent3d.Architecture.Routing.Electrical.App
                 continue ;
               }
             }
+          }
+          else if ( panel.Source.Title == "Electrical.App.Panels.Routing.Connectors".GetAppStringByKeyOrDefault( "Connectors" ) ) {
+            RibbonItem? newConnectorButton = null;
+            RibbonSplitButton ribbonSplitButton = new RibbonSplitButton
+            {
+              IsSplit = true,
+              Size = RibbonItemSize.Large,
+              IsSynchronizedWithCurrentItem = true,
+              Text = panel.Source.Items[ 1 ].Text,
+              ShowText = true,
+              LargeImage = new BitmapImage( new Uri( panel.Source.Items[ 1 ].LargeImage.ToString() ) ),
+              Image = new BitmapImage( new Uri( panel.Source.Items[ 1 ].Image.ToString() ) )
+            } ;
+            foreach ( var item in panel.Source.Items ) {
+              if ( item.Text == "New Connector" )
+                newConnectorButton = item ;
+              else 
+                ribbonSplitButton.Items.Add( item ) ;
+            }
+            panel.Source.Items.Clear() ;
+            if ( newConnectorButton != null ) panel.Source.Items.Add( newConnectorButton ) ;
+            panel.Source.Items.Add( ribbonSplitButton ) ;
           }
           else {
             continue;
