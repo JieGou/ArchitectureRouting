@@ -17,20 +17,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
-
-    private readonly BuiltInCategory[] CableTrayBuiltInCategories =
-    {
-      BuiltInCategory.OST_CableTray, BuiltInCategory.OST_CableTrayFitting
-    } ;
+    private readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
 
     private readonly int minNumberOfMultiplicity = 5 ;
     private readonly double minLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
 
     private readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
 
-    protected abstract AddInType GetAddInType() ;
     private Dictionary<ElementId, List<Connector>> elbowsToCreate = new Dictionary<ElementId, List<Connector>>() ;
+
+    private Dictionary<string, double> routeLengthCache = new Dictionary<string, double>() ;
+
+    private Dictionary<string, Dictionary<int, double>> routeMaxWidthCache =
+      new Dictionary<string, Dictionary<int, double>>() ;
+
+    protected abstract AddInType GetAddInType() ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -53,16 +54,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
             List<ElementId> ids = new List<ElementId>() ;
             foreach ( var elbow in elbowsToCreate ) {
-              if ( elbow.Value.Count == 2 ) {
-                //document.Create.NewElbowFitting(elbow.Value[0], elbow.Value[1]);
-                //elbow.Value[0].ConnectTo(elbow.Value[1]);
-              }
-
-              //ids.AddRange(elbow.Value.Select(y => y.Owner.Id).ToList());
               CreateElbow( uiDocument, elbow.Key, elbow.Value ) ;
             }
-            //uiDocument.Selection.SetElementIds(ids);
-            //uiDocument.ShowElements(ids);
 
             return Result.Succeeded ;
           } ) ;
@@ -104,7 +97,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             return ;
           }
 
-          Connector firstConnector = GetFirstConnector( conduit.GetConnectorManager()!.Connectors )! ;
+          Connector firstConnector =
+            NewRackCommandBase.GetFirstConnector( conduit.GetConnectorManager()!.Connectors )! ;
 
           var length = conduit.ParametersMap
             .get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) )
@@ -159,7 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           // check cable tray exists
-          if ( ExistsCableTray( document, instance ) ) {
+          if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
             transaction.RollBack() ;
             return ;
           }
@@ -168,14 +162,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             .Select( c => c.Owner ).OfType<FamilyInstance>() ;
           foreach ( var elbow in elbows ) {
             if ( elbowsToCreate.ContainsKey( elbow.Id ) ) {
-              elbowsToCreate[ elbow.Id ].Add( GetConnectorClosestTo( instance.GetConnectors().ToList(),
-                ( elbow.Location as LocationPoint )!.Point )! ) ;
+              elbowsToCreate[ elbow.Id ]
+                .Add( NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(),
+                  ( elbow.Location as LocationPoint )!.Point )! ) ;
             }
             else {
               elbowsToCreate.Add( elbow.Id,
                 new List<Connector>()
                 {
-                  GetConnectorClosestTo( instance.GetConnectors().ToList(),
+                  NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(),
                     ( elbow.Location as LocationPoint )!.Point )!
                 } ) ;
             }
@@ -190,10 +185,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     /// <summary>
-    /// Creat cable rack for route
+    /// Create elbow for 2 cable rack
     /// </summary>
     /// <param name="uiDocument"></param>
-    /// <param name="routeName"></param>
+    /// <param name="elementId"></param>
+    /// <param name="connectors"></param>
     private void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors )
     {
       var document = uiDocument.Document ;
@@ -257,7 +253,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
 
         // check cable tray exists
-        if ( ExistsCableTray( document, instance ) ) {
+        if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
           transaction.RollBack() ;
           return ;
         }
@@ -280,8 +276,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           firstCableRackWidth ) ; // TODO may be must change when FamilyType change
         foreach ( var connector in instance.GetConnectors() ) {
           var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
-          if ( otherConnectors != null ) {
-            var connectTo = GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
+          if ( null != otherConnectors ) {
+            var connectTo =
+              NewRackCommandBase.GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
             if ( connectTo != null ) {
               connector.ConnectTo( connectTo ) ;
             }
@@ -297,96 +294,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     /// <summary>
-    /// Return the connector in the set
-    /// closest to the given point.
-    /// </summary>
-    /// <param name="connectors"></param>
-    /// <param name="point"></param>
-    /// <param name="maxDistance"></param>
-    /// <returns></returns>
-    public static Connector? GetConnectorClosestTo( List<Connector> connectors, XYZ point,
-      double maxDistance = double.MaxValue )
-    {
-      double minDistance = double.MaxValue ;
-      Connector? targetConnector = null ;
-
-      foreach ( Connector connector in connectors ) {
-        double distance = connector.Origin.DistanceTo( point ) ;
-
-        if ( distance < minDistance && distance <= maxDistance ) {
-          targetConnector = connector ;
-          minDistance = distance ;
-        }
-      }
-
-      return targetConnector ;
-    }
-
-    /// <summary>
-    /// Return the first connector.
-    /// </summary>
-    /// <param name="connectors"></param>
-    /// <returns></returns>
-    public static Connector? GetFirstConnector( ConnectorSet connectors )
-    {
-      foreach ( Connector connector in connectors ) {
-        if ( 0 == connector.Id ) {
-          return connector ;
-        }
-      }
-
-      return null ;
-    }
-
-    /// <summary>
-    /// Check cable tray exists (same place)
+    /// Calculate cable rack width base on sum diameter of route
     /// </summary>
     /// <param name="document"></param>
-    /// <param name="familyInstance"></param>
+    /// <param name="subRoute"></param>
     /// <returns></returns>
-    private bool ExistsCableTray( Document document, FamilyInstance familyInstance )
-    {
-      return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
-        .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
-                     x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) ).Any() ;
-    }
-
-    /// <summary>
-    /// compare 2 locations
-    /// </summary>
-    /// <param name="location"></param>
-    /// <param name="otherLocation"></param>
-    /// <returns></returns>
-    bool IsSameLocation( Location location, Location otherLocation )
-    {
-      if ( location is LocationPoint ) {
-        if ( ! ( otherLocation is LocationPoint ) ) {
-          return false ;
-        }
-
-        var locationPoint = ( location as LocationPoint )! ;
-        var otherLocationPoint = ( otherLocation as LocationPoint )! ;
-        return locationPoint.Point.DistanceTo( otherLocationPoint.Point ) <= maxDistanceTolerance &&
-               locationPoint.Rotation == otherLocationPoint.Rotation ;
-      }
-      else if ( location is LocationCurve ) {
-        if ( ! ( otherLocation is LocationCurve ) ) {
-          return false ;
-        }
-
-        var locationCurve = ( location as LocationCurve )! ;
-        var line = ( locationCurve.Curve as Line )! ;
-
-        var otherLocationCurve = ( otherLocation as LocationCurve )! ;
-        var otherLine = ( otherLocationCurve.Curve as Line )! ;
-
-        return line.Origin.IsAlmostEqualTo( otherLine.Origin, maxDistanceTolerance ) &&
-               line.Direction == otherLine.Direction && line.Length == otherLine.Length ;
-      }
-
-      return location.Equals( otherLocation ) ;
-    }
-
     private double CalcCableRackWidth( Document document, SubRoute subRoute )
     {
       var routes = RouteCache.Get( document ) ;
@@ -403,6 +315,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return cableTraywidth!.Value ;
     }
 
+    /// <summary>
+    /// Calculate cable rack max width
+    /// </summary>
+    /// <param name="element"></param>
+    /// <param name="elements"></param>
+    /// <param name="document"></param>
+    /// <returns></returns>
     private double CalcCableRackMaxWidth( (MEPCurve, SubRoute) element, IEnumerable<(MEPCurve, SubRoute)> elements,
       Document document )
     {
@@ -414,14 +333,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           .Select( c => c.Owner ).OfType<FamilyInstance>() ;
         var straightsConnected = element.Item1.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd()
           .Select( c => c.Owner ).OfType<Conduit>() ;
-        if ( elbowsConnected.Any() && straightsConnected.Any() && element.Item2.PreviousSubRoute != null &&
+        if ( elbowsConnected.Any() && straightsConnected.Any() && null != element.Item2.PreviousSubRoute &&
              straightsConnected.First().GetSubRouteIndex()!.Value == element.Item2.PreviousSubRoute!.SubRouteIndex ) {
           var key = routeMaxWidthCache[ routeName ].Keys
             .Where( x => x <= element.Item2.PreviousSubRoute!.SubRouteIndex ).Max() ;
           return routeMaxWidthCache[ routeName ][ key ] ;
         }
         else if ( elbowsConnected.Any() &&
-                  ( element.Item2.PreviousSubRoute == null || ( element.Item2.PreviousSubRoute != null &&
+                  ( null == element.Item2.PreviousSubRoute || ( null != element.Item2.PreviousSubRoute &&
                                                                 straightsConnected.Any() &&
                                                                 straightsConnected.First().GetSubRouteIndex()!.Value !=
                                                                 element.Item2.PreviousSubRoute!.SubRouteIndex ) ) &&
@@ -450,11 +369,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private Dictionary<string, double> routeLengthCache = new Dictionary<string, double>() ;
-
-    private Dictionary<string, Dictionary<int, double>> routeMaxWidthCache =
-      new Dictionary<string, Dictionary<int, double>>() ;
-
+    /// <summary>
+    /// Calculate cable rack length
+    /// </summary>
+    /// <param name="routeName"></param>
+    /// <param name="elements"></param>
+    /// <param name="document"></param>
+    /// <returns></returns>
     private double RouteLength( string routeName, IEnumerable<(MEPCurve, SubRoute)> elements, Document document )
     {
       if ( routeLengthCache.ContainsKey( routeName ) ) {
