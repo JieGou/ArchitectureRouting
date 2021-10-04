@@ -28,23 +28,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public (double, double) FromHeightRangeAsCeilingLevel { get ; private set ; }
     public (double, double) ToHeightRangeAsFloorLevel { get ; private set ; }
     public (double, double) ToHeightRangeAsCeilingLevel { get ; private set ; }
+    public double FromDefaultHeightAsFloorLevel { get ; private set ; }
+    public double FromDefaultHeightAsCeilingLevel { get ; private set ; }
+    public double ToDefaultHeightAsFloorLevel { get ; private set ; }
+    public double ToDefaultHeightAsCeilingLevel { get ; private set ; }
 
     private void SetFromLevelSetting( HeightSettingStorable settings, ElementId levelId )
     {
-      ( FromHeightRangeAsFloorLevel, FromHeightRangeAsCeilingLevel ) = CalculateHeightRanges( settings, levelId ) ;
+      ( FromHeightRangeAsFloorLevel, FromDefaultHeightAsFloorLevel, FromHeightRangeAsCeilingLevel, FromDefaultHeightAsCeilingLevel ) = CalculateHeightRanges( settings, levelId ) ;
 
     }
     private void SetToLevelSetting( HeightSettingStorable settings, ElementId levelId )
     {
-      ( ToHeightRangeAsFloorLevel, ToHeightRangeAsCeilingLevel ) = CalculateHeightRanges( settings, levelId ) ;
+      ( ToHeightRangeAsFloorLevel, ToDefaultHeightAsFloorLevel, ToHeightRangeAsCeilingLevel, ToDefaultHeightAsCeilingLevel ) = CalculateHeightRanges( settings, levelId ) ;
     }
 
-    private static ((double, double), (double, double)) CalculateHeightRanges( HeightSettingStorable settings, ElementId levelId )
+    private static ((double FloorMin, double FloorMax), double FloorDefault, (double CeilingMin, double CeilingMax), double CeilingDefault) CalculateHeightRanges( HeightSettingStorable settings, ElementId levelId )
     {
       var level = settings[ levelId ] ;
-      var floorRange = ( level.Underfloor.MillimetersToRevitUnits(), 0d ) ;
-      var ceilingRange = ( 0d, settings.GetDistanceToNextLevel( levelId ).MillimetersToRevitUnits() ) ;
-      return ( floorRange, ceilingRange ) ;
+      var floorRange = ( Min: level.Underfloor.MillimetersToRevitUnits(), Max: 0d ) ;
+      var ceilingRange = ( Min: 0d, Max: settings.GetDistanceToNextLevel( levelId ).MillimetersToRevitUnits() ) ;
+      var floorDefault = floorRange.Min ;
+      var ceilingDefault = level.HeightOfLevel.MillimetersToRevitUnits() ;
+      return ( floorRange, floorDefault, ceilingRange, ceilingDefault ) ;
     }
 
     internal RoutePropertyTypeList( IReadOnlyCollection<SubRoute> subRoutes )

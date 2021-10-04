@@ -54,10 +54,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static readonly DependencyPropertyKey FromMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey FromMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey FromMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey ToMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey ToMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey ToMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey ToMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
 
     //Diameter Info
     private double VertexTolerance { get ; set ; }
@@ -287,6 +291,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       get => (double)GetValue( FromMaximumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
       set => SetValue( FromMaximumHeightAsCeilingLevelPropertyKey, value ) ;
     }
+    private double FromDefaultHeightAsFloorLevel
+    {
+      get => (double)GetValue( FromDefaultHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( FromDefaultHeightAsFloorLevelPropertyKey, value ) ;
+    }
+    private double FromDefaultHeightAsCeilingLevel
+    {
+      get => (double)GetValue( FromDefaultHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( FromDefaultHeightAsCeilingLevelPropertyKey, value ) ;
+    }
     private double ToMinimumHeightAsFloorLevel
     {
       get => (double)GetValue( ToMinimumHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
@@ -306,6 +320,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       get => (double)GetValue( ToMaximumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
       set => SetValue( ToMaximumHeightAsCeilingLevelPropertyKey, value ) ;
+    }
+    private double ToDefaultHeightAsFloorLevel
+    {
+      get => (double)GetValue( ToDefaultHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( ToDefaultHeightAsFloorLevelPropertyKey, value ) ;
+    }
+    private double ToDefaultHeightAsCeilingLevel
+    {
+      get => (double)GetValue( ToDefaultHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( ToDefaultHeightAsCeilingLevelPropertyKey, value ) ;
     }
 
     private static void FromLocationTypeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
@@ -539,8 +563,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       ( FromMinimumHeightAsFloorLevel, FromMaximumHeightAsFloorLevel ) = propertyTypeList.FromHeightRangeAsFloorLevel ;
       ( FromMinimumHeightAsCeilingLevel, FromMaximumHeightAsCeilingLevel ) = propertyTypeList.FromHeightRangeAsCeilingLevel ;
+      FromDefaultHeightAsFloorLevel = propertyTypeList.FromDefaultHeightAsFloorLevel ;
+      FromDefaultHeightAsCeilingLevel = propertyTypeList.FromDefaultHeightAsCeilingLevel ;
+
       ( ToMinimumHeightAsFloorLevel, ToMaximumHeightAsFloorLevel ) = propertyTypeList.ToHeightRangeAsFloorLevel ;
       ( ToMinimumHeightAsCeilingLevel, ToMaximumHeightAsCeilingLevel ) = propertyTypeList.ToHeightRangeAsCeilingLevel ;
+      ToDefaultHeightAsFloorLevel = propertyTypeList.ToDefaultHeightAsFloorLevel ;
+      ToDefaultHeightAsCeilingLevel = propertyTypeList.ToDefaultHeightAsCeilingLevel ;
     }
 
     public void SetRouteProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
@@ -561,8 +590,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         FromFixedHeightOrg = null ;
       }
       else {
-        FromLocationTypeOrg = properties.FromFixedHeight?.Type ?? FixedHeightType.Floor ;
-        FromFixedHeightOrg = properties.FromFixedHeight?.Height ?? 0.0 ;
+        FromLocationTypeOrg = properties.FromFixedHeight?.Type ?? FixedHeightType.Ceiling ;
+        FromFixedHeightOrg = properties.FromFixedHeight?.Height ?? GetFromDefaultHeight( FromLocationTypeOrg.Value ) ;
       }
 
       UseToFixedHeightOrg = properties.UseToFixedHeight ;
@@ -571,8 +600,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         ToFixedHeightOrg = null ;
       }
       else {
-        ToLocationTypeOrg = properties.ToFixedHeight?.Type ?? FixedHeightType.Floor ;
-        ToFixedHeightOrg = properties.ToFixedHeight?.Height ?? 0.0 ;
+        ToLocationTypeOrg = properties.ToFixedHeight?.Type ?? FixedHeightType.Ceiling ;
+        ToFixedHeightOrg = properties.ToFixedHeight?.Height ?? GetFromDefaultHeight( ToLocationTypeOrg.Value ) ;
       }
 
       AvoidTypeOrg = properties.AvoidType ;
@@ -666,18 +695,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       OnValueChanged( EventArgs.Empty ) ;
 
-      if ( e.RemovedItems.OfType<FixedHeightType?>().FirstOrDefault() is not { } oldValue || e.AddedItems.OfType<FixedHeightType?>().FirstOrDefault() is not { } newValue ) return ;
-      if ( oldValue == newValue ) return ;
+      if ( e.RemovedItems.OfType<KeyValuePair<FixedHeightType, string>?>().FirstOrDefault() is not { } oldValue || e.AddedItems.OfType<KeyValuePair<FixedHeightType, string>?>().FirstOrDefault() is not { } newValue ) return ;
+      if ( oldValue.Key == newValue.Key ) return ;
 
       if ( object.ReferenceEquals( sender, FromLocationTypeComboBox ) ) {
-        FromFixedHeight = ConvertValue( FromFixedHeight, oldValue, newValue ) ;
+        FromFixedHeight = GetFromDefaultHeight( newValue.Key ) ;
       }
       else {
-        ToFixedHeight = ConvertValue( ToFixedHeight, oldValue, newValue ) ;
+        ToFixedHeight = GetToDefaultHeight( newValue.Key ) ;
       }
     }
 
-    private double? ConvertValue( double? oldFixedHeight, FixedHeightType oldValue, FixedHeightType newValue ) => oldFixedHeight ;  // TODO
+    private double? GetFromDefaultHeight( FixedHeightType newValue )
+    {
+      return ( FixedHeightType.Ceiling == newValue ) ? FromDefaultHeightAsCeilingLevel : FromDefaultHeightAsFloorLevel ;
+    }
+    private double? GetToDefaultHeight( FixedHeightType newValue )
+    {
+      return ( FixedHeightType.Ceiling == newValue ) ? ToDefaultHeightAsCeilingLevel : ToDefaultHeightAsFloorLevel ;
+    }
 
     private void FromFixedHeightNumericUpDown_OnValueChanged( object sender, ValueChangedEventArgs e )
     {
