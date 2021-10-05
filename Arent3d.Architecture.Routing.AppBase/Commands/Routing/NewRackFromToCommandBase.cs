@@ -17,6 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
     private readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
+    private const double BendRadiusSettingForStandardFamilyType = 20.5;
 
     protected abstract AddInType GetAddInType() ;
 
@@ -80,15 +81,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                       "Outside Diameter" ) ).AsDouble() ;
 
                   var symbol =
-                    uiDocument.Document.GetFamilySymbol( RoutingFamilyType
-                      .CableTray )! ; // TODO may change in the future
+                    uiDocument.Document.GetFamilySymbol( RoutingFamilyType.CableTray )! ; // TODO may change in the future
 
                   // Create cable tray
-                  var instance = symbol.Instantiate(
-                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                    level: null, StructuralType.NonStructural ) ;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+                  if (false == symbol.IsActive) symbol.Activate();
+                  var instance = document.Create.NewFamilyInstance(firstConnector.Origin, symbol, null, StructuralType.NonStructural);
 
                   // set cable rack length
                   NewRackCommandBase.SetParameter( instance,
@@ -154,19 +151,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                       "Bend Radius" ) ).AsDouble() ;
 
                   var symbol =
-                    uiDocument.Document.GetFamilySymbol( RoutingFamilyType
-                      .CableTrayFitting )! ; // TODO may change in the future
+                    uiDocument.Document.GetFamilySymbol( RoutingFamilyType.CableTrayFitting )! ; // TODO may change in the future
 
-                  var instance = symbol.Instantiate( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ),
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                    level: null, StructuralType.NonStructural ) ;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+                  if (false == symbol.IsActive) symbol.Activate();
+                  var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
 
                   // set cable tray Bend Radius
                   NewRackCommandBase.SetParameter( instance,
                     "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ),
-                    bendRadius / 2 +
-                    ( 20.5 ).MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
+                    bendRadius / 2 + BendRadiusSettingForStandardFamilyType.MillimetersToRevitUnits()) ; // TODO may be must change when FamilyType change
 
                   // set cable rack length
                   NewRackCommandBase.SetParameter( instance,
