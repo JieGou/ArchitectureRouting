@@ -11,6 +11,7 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
     {
     }
 
+    private double MinimumStraightLength => ( 1d / 120d ) * 2 ; // minimum curve length * 2
     private static double GetStraightLineLength( double diameter ) => Math.Max( diameter * 50, 1 ) ; // diameter * 50 or 1ft (greater)
 
     protected override void GenerateFittingFromConnectors( IReadOnlyList<Connector> connectors )
@@ -21,9 +22,9 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
     }
 
     private double? _elbowSize ;
-    public double ElbowSize => _elbowSize ??= GetElbowSize( ConnectorPositions ) ;
+    public double ElbowSize => _elbowSize ??= Math.Max( GetElbowSize( ConnectorPositions ), MinimumStraightLength ) ;
 
-    private static double GetElbowSize( IReadOnlyList<XYZ>? connectorPositions )
+    private double GetElbowSize( IReadOnlyList<XYZ>? connectorPositions )
     {
       if ( null == connectorPositions || 2 != connectorPositions.Count ) return 0 ;
 

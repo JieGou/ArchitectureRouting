@@ -1,6 +1,7 @@
 using System ;
 using System.Globalization ;
 using System.Text ;
+using System.Windows ;
 using System.Windows.Data ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -14,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
     public object Convert( object[] values, Type targetType, object parameter, CultureInfo culture )
     {
-      if ( 2 != values.Length ) throw new ArgumentException() ;
+      if ( 2 != values.Length ) return DependencyProperty.UnsetValue ;
 
       if ( values[ 0 ] is not Opening opening ) return "Dialog.Electrical.Shaft.List.None".GetAppStringByKeyOrDefault( "(None)" ) ;
 
@@ -33,7 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       var topLevel = opening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE )?.AsValueString() ?? string.Empty ;
       var bottomLevel = opening.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT )?.AsValueString() ?? string.Empty ;
 
-      var (x, y, z) = opening.BoundaryCurves.get_Item( 0 ).GetEndPoint( 0 ) ;
+      var (x, y, z) = opening.GetShaftPosition() ;
       return $"{opening.Name}: {bottomLevel}-{topLevel} (X: {x.RevitUnitsToMeters():0.000} m, Y: {y.RevitUnitsToMeters():0.000} m, Z: {z.RevitUnitsToMeters():0.000} m)" ;
     }
 
@@ -42,7 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       var topLevel = opening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE )?.AsValueString() ?? string.Empty ;
       var bottomLevel = opening.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT )?.AsValueString() ?? string.Empty ;
 
-      var (x, y, z) = opening.BoundaryCurves.get_Item( 0 ).GetEndPoint( 0 ) ;
+      var (x, y, z) = opening.GetShaftPosition() ;
       return $"{opening.Name}: {bottomLevel}-{topLevel} (X: {FeetAndInches(x.RevitUnitsToFeet())}, Y: {FeetAndInches(y.RevitUnitsToFeet())}, Z: {FeetAndInches(z.RevitUnitsToFeet())})" ;
     }
 

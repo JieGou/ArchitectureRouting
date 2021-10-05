@@ -27,21 +27,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public bool? IsRouteOnPipeSpace { get ; private set ; }
 
     //HeightSetting
-    public bool? UseFixedHeight { get ; private set ; }
-    public double FixedHeight { get ; }
-    public double ToFixedHeight { get ; }
-    public double FloorConnectorFixedHeight { get ; }
-    public double CeilingConnectorFixedHeight { get ; }
-    public double FloorToConnectorFixedHeight { get ; }
-    public double CeilingToConnectorFixedHeight { get ; }
+    public bool? UseFromFixedHeight { get ; private set ; }
+    public FixedHeight? FromFixedHeight { get ; private set ; }
+    public bool? UseToFixedHeight { get ; private set ; }
+    public FixedHeight? ToFixedHeight { get ; private set ; }
 
     public AvoidType? AvoidType { get ; private set ; }
 
     public string? StandardType { get ; }
-    
-    public string? LocationType { get ; }
-    public bool IsDifferentLevel { get ; }
-    public bool IsPickRouting { get ; }
 
     internal RouteProperties( IReadOnlyCollection<SubRoute> subRoutes )
     {
@@ -70,7 +63,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       IsRouteOnPipeSpace = firstSubRoute.IsRoutingOnPipeSpace ;
 
       //Height Info
-      UseFixedHeight = ( firstSubRoute.FixedBopHeight != null ) ;
+      UseFromFixedHeight = ( firstSubRoute.FromFixedHeight != null ) ;
+      FromFixedHeight = firstSubRoute.FromFixedHeight ;
+      UseToFixedHeight = ( firstSubRoute.ToFixedHeight != null ) ;
+      ToFixedHeight = firstSubRoute.ToFixedHeight ;
 
       //AvoidType Info
       AvoidType = firstSubRoute.AvoidType ;
@@ -79,10 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         SetIndeterminateValues( firstSubRoute.Route ) ;
       }
 
-      FixedHeight = ( true == UseFixedHeight ? GetDisplayFixedHeight( firstSubRoute ) : 0.0 ) ;
       Shaft = document.GetElementById<Opening>( firstSubRoute.ShaftElementId ) ;
-      
-      LocationType = "Floor" ;
     }
 
     public RouteProperties( Document document, RoutePropertyTypeList spec )
@@ -95,52 +88,46 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Diameter = null ;
 
       IsRouteOnPipeSpace = false ;
-      UseFixedHeight = false ;
-      FixedHeight = 0.0 ;
+      UseFromFixedHeight = true ;
+      UseToFixedHeight = false ;
+      FromFixedHeight = null ;
+      ToFixedHeight = null ;
       AvoidType = Routing.AvoidType.Whichever ;
-      LocationType = "Floor" ;
     }
 
-    public RouteProperties( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, string? standardType, double floorHeightConnector = 0, double ceilingHeightConnector = 0, double floorToHeightConnector = 0, double ceilingToHeightConnector = 0, bool isDiffLevel = false, bool isPickRouting = false )
+    public RouteProperties( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, string? standardType )
     {
       Document = document ;
       
       Diameter = null ;
 
-      // For Conduit
       if ( classificationInfo.HasSystemType() ) {
+        // Mechanical
         SystemType = systemType ;
         CurveType = curveType ;
 
         IsRouteOnPipeSpace = false ;
-        UseFixedHeight = false ;
-        FixedHeight = 0.0 ;
+        UseFromFixedHeight = true ;
+        UseToFixedHeight = false ;
+        FromFixedHeight = null ;
+        ToFixedHeight = null ;
         AvoidType = Routing.AvoidType.Whichever ;
-        LocationType = "Floor" ;
       }
       else {
-        //Diameter Info
+        // Electrical
         CurveType = curveType ;
-
-        //Standard Type Info
         StandardType = standardType ;
 
         IsRouteOnPipeSpace = false ;
-        UseFixedHeight = false ;
-        FixedHeight = 0.0 ;
+        UseFromFixedHeight = true ;
+        UseToFixedHeight = false ;
+        FromFixedHeight = null ;
+        ToFixedHeight = null ;
         AvoidType = Routing.AvoidType.Whichever ;
-        LocationType = "Floor" ;
-        ToFixedHeight = 0.0 ;
-        FloorConnectorFixedHeight = floorHeightConnector ;
-        CeilingConnectorFixedHeight = ceilingHeightConnector ;
-        FloorToConnectorFixedHeight = floorToHeightConnector ;
-        CeilingToConnectorFixedHeight = ceilingToHeightConnector ;
-        IsDifferentLevel = isDiffLevel ;
-        IsPickRouting = isPickRouting ;
       }
     }
 
-    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFixedHeight, double fixedHeight, AvoidType? avoidType, Opening? shaft )
+    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFromFixedHeight, FixedHeight? fromFixedHeight, bool? useToFixedHeight,FixedHeight? toFixedHeight, AvoidType? avoidType, Opening? shaft )
     {
       Document = route.Document ;
 
@@ -151,13 +138,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SystemType = systemType ;
 
       IsRouteOnPipeSpace = isRouteOnPipeSpace ;
-      UseFixedHeight = useFixedHeight ;
-      if ( true == UseFixedHeight ) {
-        FixedHeight = GetTrueFixedHeight( route, fixedHeight ) ;
+      UseFromFixedHeight = useFromFixedHeight ;
+      if ( true == UseFromFixedHeight ) {
+        FromFixedHeight = fromFixedHeight ;
+      }
+      UseToFixedHeight = useToFixedHeight ;
+      if ( true == UseToFixedHeight ) {
+        ToFixedHeight = toFixedHeight ;
       }
       AvoidType = avoidType ;
       Shaft = shaft ;
-      LocationType = "Floor" ;
     }
 
     private void SetIndeterminateValues( Route route )
@@ -174,8 +164,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       IsRouteOnPipeSpace = route.UniqueIsRoutingOnPipeSpace ;
 
-      if ( IsUseFixedHeightMultiSelected( route ) ) {
-        UseFixedHeight = null ;
+      if ( IsUseFromFixedHeightMultiSelected( route ) ) {
+        UseFromFixedHeight = null ;
+        FromFixedHeight = null ;
+      }
+      if ( IsUseToFixedHeightMultiSelected( route ) ) {
+        UseToFixedHeight = null ;
+        ToFixedHeight = null ;
       }
 
       if ( IsAvoidTypeMultiSelected( route ) ) {
@@ -203,19 +198,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return ( null == route.UniqueDiameter ) ;
     }
 
-    private static bool IsUseFixedHeightMultiSelected( Route route )
+    private static bool IsUseFromFixedHeightMultiSelected( Route route )
     {
-      var allNull = true ;
-      foreach ( var subRoute in route.SubRoutes ) {
-        allNull = ( subRoute.FixedBopHeight == null ) ;
-      }
+      if ( route.SubRoutes.Any( subRoute => null != subRoute.FromFixedHeight ) ) return false ;
 
-      if ( allNull ) {
-        return false ;
-      }
-      else {
-        return ( null == route.UniqueFixedBopHeight ) ;
-      }
+      return ( null == route.UniqueFromFixedHeight ) ;
+    }
+    private static bool IsUseToFixedHeightMultiSelected( Route route )
+    {
+      if ( route.SubRoutes.Any( subRoute => null != subRoute.ToFixedHeight ) ) return false ;
+
+      return ( null == route.UniqueToFixedHeight ) ;
     }
 
     /// <summary>
@@ -226,79 +219,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static bool IsAvoidTypeMultiSelected( Route route )
     {
       return ( null == route.UniqueAvoidType ) ;
-    }
-    
-    
-
-    private static double GetDisplayFixedHeight( SubRoute subRoute )
-    {
-      var fromFloorHeight = 0.0 ;
-      if ( GetFloorHeight( subRoute.Route ) is { } floorHeight) {
-        fromFloorHeight = subRoute.FixedBopHeight!.Value - floorHeight + subRoute.GetDiameter() / 2 ;
-      }
-
-      return fromFloorHeight ;
-    }
-
-    // Use for max value of fixed height
-    private static double GetUpLevelHeightFromLevel( SubRoute subRoute )
-    {
-      return GetHeightFromLevel( subRoute, GetUpLevelTotalHeight( subRoute.Route ) ) ;
-    }
-
-    private static double GetHeightFromLevel( SubRoute subRoute, double bopHeight )
-    {
-      var fromFloorHeight = 0.0 ;
-      if ( GetFloorHeight( subRoute.Route ) is { } floorHeight ) {
-        fromFloorHeight = bopHeight - floorHeight ;
-      }
-
-      return fromFloorHeight ;
-    }
-
-    private static double GetUpLevelTotalHeight( Route route )
-    {
-      var level = GetConnectorLevel( route ) ;
-      var levels = GetAllFloors( route.Document ) ;
-      if ( level == null || levels == null ) return 0.0 ;
-      return levels.First( l => l.Elevation > level.Elevation ).Elevation ;
-    }
-
-    private static IOrderedEnumerable<Level>? GetAllFloors( Document? doc )
-    {
-      return doc?.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ) ;
-    }
-
-    private static double? GetFloorHeight( Route route )
-    {
-      return GetFloorHeight( GetConnectorLevel( route ) ) ;
-    }
-    private static double? GetFloorHeight( Level? level )
-    {
-      return level?.Elevation ;
-    }
-
-    private static Level? GetConnectorLevel( Route route )
-    {
-      var connector = route.FirstFromConnector()?.GetConnector()?.Owner ;
-      var level = connector?.Document.GetElement( connector.LevelId ) as Level ;
-
-      return level ;
-    }
-
-    private static double GetTrueFixedHeight( Route route, double fixedHeight )
-    {
-      return GetTrueFixedHeight( GetConnectorLevel( route ), route.GetSubRoute( 0 )?.GetDiameter(), fixedHeight ) ;
-    }
-
-    public static double GetTrueFixedHeight( Level? level, double? routeDiameter, double fixedHeight )
-    {
-      var targetHeight = 0.0 ;
-      if ( GetFloorHeight( level ) is { } floorHeight && routeDiameter is { } diameter ) {
-        targetHeight = fixedHeight + floorHeight - diameter / 2 ;
-      }
-
-      return targetHeight ;
     }
   }
 }

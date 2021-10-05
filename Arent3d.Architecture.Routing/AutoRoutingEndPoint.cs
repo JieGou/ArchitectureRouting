@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing
     /// <param name="priority">Priority (can be duplicated between end points in an <see cref="AutoRoutingTarget"/>).</param>
     /// <param name="edgeDiameter">Edge diameter.</param>
     /// <param name="routeCondition"></param>
-    internal AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, int priority, double edgeDiameter, MEPSystemRouteCondition routeCondition )
+    public AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, int priority, double edgeDiameter, MEPSystemRouteCondition routeCondition )
     {
       EndPoint = endPoint ;
       IsStart = isFrom ;

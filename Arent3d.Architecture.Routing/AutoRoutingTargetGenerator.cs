@@ -8,23 +8,17 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
 {
-  internal class AutoRoutingTargetGenerator
+  public abstract class AutoRoutingTargetGenerator
   {
-    public static IEnumerable<AutoRoutingTarget> Run( Document document, IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
-    {
-      return new AutoRoutingTargetGenerator( document ).Create( routes, routeConditionDictionary ) ;
-    }
-
-
-    private readonly Document _document ;
+    protected Document Document { get ; }
     private readonly Dictionary<(string, int), List<SubRoute>> _groups = new() ;
 
-    private AutoRoutingTargetGenerator( Document document )
+    protected AutoRoutingTargetGenerator( Document document )
     {
-      _document = document ;
+      Document = document ;
     }
 
-    private IEnumerable<AutoRoutingTarget> Create( IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
+    public IEnumerable<IReadOnlyCollection<AutoRoutingTarget>> Create( IReadOnlyCollection<Route> routes, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
     {
       var priorities = CollectPriorities( routes ) ;
 
@@ -67,10 +61,7 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    private AutoRoutingTarget GenerateAutoRoutingTarget( IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
-    {
-      return new AutoRoutingTarget( _document, subRoutes, priorities, routeConditionDictionary ) ;
-    }
+    protected abstract IReadOnlyCollection<AutoRoutingTarget> GenerateAutoRoutingTarget( IReadOnlyCollection<SubRoute> subRoutes, IReadOnlyDictionary<Route, int> priorities, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary ) ;
 
     private static IReadOnlyDictionary<Route, int> CollectPriorities( IReadOnlyCollection<Route> routes )
     {
