@@ -41,28 +41,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void GenerateEnvelope( Document document, double originX, double originY, Level level )
+    public static void GenerateEnvelope( Document document, double originX, double originY, Level level, bool isCeiling = false )
     {
       var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ) ;
       if ( levels == null || levels.Count() < 1 ) return ;
       level ??= levels.First() ;
+      var heightOfLevel = document.GetHeightSettingStorable()[ level ].HeightOfLevel.MillimetersToRevitUnits() ;
       var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
-      var instance = symbol.Instantiate( new XYZ( originX, originY, 0 ), level, StructuralType.NonStructural ) ;
+      var instance = isCeiling ? symbol.Instantiate( new XYZ( originX, originY, heightOfLevel ), level, StructuralType.NonStructural ) : symbol.Instantiate( new XYZ( originX, originY, 0 ), level, StructuralType.NonStructural ) ;
       instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
 
       //Find above level
       var aboveLevel = levels.Last() ;
       if ( levels.Count() > 1 ) {
-        for ( int i = 0 ; i < levels.Count() -1 ; i++ ) {
+        for ( int i = 0 ; i < levels.Count() - 1 ; i++ ) {
           if ( levels.ElementAt( i ).Id == level.Id ) {
             aboveLevel = levels.ElementAt( i + 1 ) ;
             break ;
           }
-        }        
+        }
       }
 
       //Set Envelope Height
-      var height = level.Id == aboveLevel.Id ? (document.GetHeightSettingStorable()[ level ].HeightOfLevel + EnvelopHeightPlus).MillimetersToRevitUnits() : aboveLevel.Elevation - level.Elevation ;
+      double height ;
+      if ( isCeiling )
+        height = level.Id == aboveLevel.Id ? EnvelopHeightPlus.MillimetersToRevitUnits() : aboveLevel.Elevation - ( heightOfLevel + level.Elevation ) ;
+      else
+        height = level.Id == aboveLevel.Id ? ( document.GetHeightSettingStorable()[ level ].HeightOfLevel + EnvelopHeightPlus ).MillimetersToRevitUnits() : aboveLevel.Elevation - level.Elevation ;
       instance.LookupParameter( "高さ" ).Set( height ) ;
     }
 
