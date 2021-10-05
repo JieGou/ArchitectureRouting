@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private readonly int minNumberOfMultiplicity = 5 ;
     private readonly double minLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
-    private readonly double cableTrayBendRadius = ( 16.0 ).MillimetersToRevitUnits() ;
+    private readonly double cableTrayDefaultBendRadius = ( 16.0 ).MillimetersToRevitUnits() ;
 
     private readonly double[] cableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
 
@@ -230,7 +230,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         // set cable tray Bend Radius
         SetParameter( instance,
           "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ),
-          cableTrayBendRadius ) ; // TODO may be must change when FamilyType change
+          cableTrayDefaultBendRadius ) ; // TODO may be must change when FamilyType change
 
         // set cable tray fitting direction
         if ( 1.0 == conduit.FacingOrientation.X ) {
