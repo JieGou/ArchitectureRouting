@@ -56,12 +56,20 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    public double? FixedBopHeight => Segments.First().FixedBopHeight ;
 
-    public void ChangeFixedBopHeight( double? value )
+    public FixedHeight? FromFixedHeight => Segments.First().FromFixedHeight ;
+    public FixedHeight? ToFixedHeight => Segments.First().ToFixedHeight ;
+
+    public void ChangeFromFixedHeight( FixedHeight? fixedHeight )
     {
       foreach ( var seg in Segments ) {
-        seg.FixedBopHeight = value ;
+        seg.FromFixedHeight = fixedHeight ;
+      }
+    }
+    public void ChangeToFixedHeight( FixedHeight? fixedHeight )
+    {
+      foreach ( var seg in Segments ) {
+        seg.ToFixedHeight = fixedHeight ;
       }
     }
 

@@ -55,6 +55,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button(typeof(NewEnvelopeCommand), OnlyInitialized = true)]
         private static class NewEnvelopeCommandButton { }
+        
+        [Button(typeof(CeilingEnvelopeCommand), OnlyInitialized = true)]
+        private static class CeilingEnvelopeCommandButton { }
                 
         [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
         private static class ShowHeightSettingCommandButton { }

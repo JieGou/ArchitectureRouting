@@ -17,6 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
     private static readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
+    private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
 
     private readonly BuiltInCategory[] ConduitBuiltInCategories =
     {
@@ -86,178 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var document = uiDocument.Document ;
         // get all elements in route
         var allElementsInRoute = document.GetAllElementsOfRouteName<Element>( routeName ) ;
-
-        var connectors = new List<Connector>() ;
-        // Browse each conduits and draw the cable tray below
-        foreach ( var element in allElementsInRoute ) {
-          using var transaction = new SubTransaction( document ) ;
-          try {
-            transaction.Start() ;
-            if ( element is Conduit ) // element is straight conduit
-            {
-              var conduit = ( element as Conduit )! ;
-
-              var location = ( element.Location as LocationCurve )! ;
-              var line = ( location.Curve as Line )! ;
-
-              // Ignore the case of vertical conduits in the oz direction
-              if ( 1.0 == line.Direction.Z || -1.0 == line.Direction.Z ) {
-                continue ;
-              }
-
-              Connector firstConnector = GetFirstConnector( element.GetConnectorManager()!.Connectors )! ;
-
-              var length = conduit.ParametersMap
-                .get_Item(
-                  "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) )
-                .AsDouble() ;
-              var diameter = conduit.ParametersMap
-                .get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document,
-                  "Outside Diameter" ) ).AsDouble() ;
-
-              var symbol =
-                uiDocument.Document.GetFamilySymbol( RoutingFamilyType.CableTray )! ; // TODO may change in the future
-
-              // Create cable tray
-              var instance = symbol.Instantiate(
-                new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                level: null, StructuralType.NonStructural ) ;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-
-              // set cable rack length
-              SetParameter( instance,
-                "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ),
-                length ) ; // TODO may be must change when FamilyType change
-
-              // move cable rack to under conduit
-              instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
-
-              // set cable tray direction
-              if ( 1.0 == line.Direction.Y ) {
-                ElementTransformUtils.RotateElement( document, instance.Id,
-                  Line.CreateBound(
-                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
-                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ),
-                  Math.PI / 2 ) ;
-              }
-              else if ( -1.0 == line.Direction.Y ) {
-                ElementTransformUtils.RotateElement( document, instance.Id,
-                  Line.CreateBound(
-                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
-                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ),
-                  Math.PI / 2 ) ;
-              }
-              else if ( -1.0 == line.Direction.X ) {
-                ElementTransformUtils.RotateElement( document, instance.Id,
-                  Line.CreateBound(
-                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
-                    new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ),
-                  Math.PI ) ;
-              }
-
-              // check cable tray exists
-              if ( ExistsCableTray( document, instance ) ) {
-                transaction.RollBack() ;
-                continue ;
-              }
-
-              // save connectors of cable rack
-              foreach ( Connector connector in instance.GetConnectorManager()!.Connectors ) {
-                connectors.Add( connector ) ;
-              }
-            }
-            else // element is conduit fitting
-            {
-              var conduit = ( element as FamilyInstance )! ;
-
-              // Ignore the case of vertical conduits in the oz direction
-              if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z ||
-                   -1.0 == conduit.HandOrientation.Z || 1.0 == conduit.HandOrientation.Z ) {
-                continue ;
-              }
-
-              var location = ( element.Location as LocationPoint )! ;
-
-              var length = conduit.ParametersMap
-                .get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document,
-                  "電線管長さ" ) ).AsDouble() ;
-              var diameter = conduit.ParametersMap
-                .get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document, "呼び径" ) )
-                .AsDouble() ;
-              var bendRadius = conduit.ParametersMap
-                .get_Item( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document,
-                  "Bend Radius" ) ).AsDouble() ;
-
-              var symbol =
-                uiDocument.Document.GetFamilySymbol( RoutingFamilyType
-                  .CableTrayFitting )! ; // TODO may change in the future
-
-              var instance = symbol.Instantiate( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ),
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                level: null, StructuralType.NonStructural ) ;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-
-              // set cable tray Bend Radius
-              SetParameter( instance,
-                "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ),
-                bendRadius / 2 +
-                ( 20.5 ).MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
-
-              // set cable rack length
-              SetParameter( instance,
-                "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ),
-                length ) ; // TODO may be must change when FamilyType change
-
-              // set cable tray fitting direction
-              if ( 1.0 == conduit.FacingOrientation.X ) {
-                instance.Location.Rotate(
-                  Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ),
-                    new XYZ( location.Point.X, location.Point.Y, location.Point.Z - 1 ) ), Math.PI / 2 ) ;
-              }
-              else if ( -1.0 == conduit.FacingOrientation.X ) {
-                instance.Location.Rotate(
-                  Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ),
-                    new XYZ( location.Point.X, location.Point.Y, location.Point.Z + 1 ) ), Math.PI / 2 ) ;
-              }
-              else if ( -1.0 == conduit.FacingOrientation.Y ) {
-                instance.Location.Rotate(
-                  Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ),
-                    new XYZ( location.Point.X, location.Point.Y, location.Point.Z + 1 ) ), Math.PI ) ;
-              }
-
-              // move cable rack to under conduit
-              instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
-
-              // check cable tray exists
-              if ( ExistsCableTray( document, instance ) ) {
-                transaction.RollBack() ;
-                continue ;
-              }
-
-              // save connectors of cable rack
-              connectors.AddRange( instance.GetConnectors() ) ;
-            }
-
-            transaction.Commit() ;
-          }
-          catch {
-            transaction.RollBack() ;
-          }
-        }
-
-        // connect all connectors
-        foreach ( Connector connector in connectors ) {
-          if ( ! connector.IsConnected ) {
-            var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
-            if ( otherConnectors != null ) {
-              var connectTo = GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
-              if ( connectTo != null ) {
-                connector.ConnectTo( connectTo ) ;
-              }
-            }
-          }
-        }
+        CreateRackForConduit( uiDocument, allElementsInRoute ) ;
       }
     }
 
@@ -314,7 +144,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
         .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
                      x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) &&
-                     IsSameConnectors( x.GetConnectors(), familyInstance.GetConnectors() ) ).Any() ;
+                     IsSameConnectors( x.GetConnectors(), familyInstance.GetConnectors() )).Any() ;
     }
 
     /// <summary>
@@ -332,7 +162,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var locationPoint = ( location as LocationPoint )! ;
         var otherLocationPoint = ( otherLocation as LocationPoint )! ;
-        return locationPoint.Point.DistanceTo( otherLocationPoint.Point ) <= maxDistanceTolerance &&
+        return locationPoint.Point.DistanceTo( otherLocationPoint.Point) <= maxDistanceTolerance &&
                locationPoint.Rotation == otherLocationPoint.Rotation ;
       }
       else if ( location is LocationCurve ) {
@@ -353,6 +183,159 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return location.Equals( otherLocation ) ;
     }
 
+    public static void CreateRackForConduit( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute )
+    {
+      var document = uiDocument.Document ;
+      var connectors = new List<Connector>() ;
+      foreach ( var element in allElementsInRoute ) {
+        using var transaction = new SubTransaction( uiDocument.Document ) ;
+        try {
+          transaction.Start() ;
+          if ( element is Conduit ) // element is straight conduit
+          {
+            var instance = CreateRackForStraightConduit( uiDocument, element ) ;
+
+            // check cable tray exists
+            if ( ExistsCableTray( document, instance ) ) {
+              transaction.RollBack() ;
+              continue ;
+            }
+
+            // save connectors of cable rack
+            foreach ( Connector connector in instance.GetConnectorManager()!.Connectors ) {
+              connectors.Add( connector ) ;
+            }
+          }
+          else // element is conduit fitting
+          {
+            var conduit = ( element as FamilyInstance )! ;
+
+            // Ignore the case of vertical conduits in the oz direction
+            if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.HandOrientation.Z || 1.0 == conduit.HandOrientation.Z) {
+              continue ;
+            }
+
+            var location = ( element.Location as LocationPoint )! ;
+
+            var instance = CreateRackForFittingConduit( uiDocument, conduit, location ) ;
+
+            // check cable tray exists
+            if ( ExistsCableTray( document, instance ) ) {
+              transaction.RollBack() ;
+              continue ;
+            }
+
+            // save connectors of cable rack
+            connectors.AddRange( instance.GetConnectors() ) ;
+          }
+
+          transaction.Commit() ;
+        }
+        catch {
+          transaction.RollBack() ;
+        }
+      }
+
+      // connect all connectors
+      foreach ( Connector connector in connectors ) {
+        if ( ! connector.IsConnected ) {
+          var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
+          if ( otherConnectors != null ) {
+            var connectTo = GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
+            if ( connectTo != null ) {
+              connector.ConnectTo( connectTo ) ;
+            }
+          }
+        }
+      }
+    }
+    
+    public static FamilyInstance CreateRackForStraightConduit( UIDocument uiDocument, Element element )
+    {
+      var document = uiDocument.Document ;
+      var conduit = ( element as Conduit )! ;
+
+      var location = ( element.Location as LocationCurve )! ;
+      var line = ( location.Curve as Line )! ;
+      
+      Connector firstConnector = GetFirstConnector( element.GetConnectorManager()!.Connectors )! ;
+
+      var length = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
+      var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document, "Outside Diameter" ) ).AsDouble() ;
+
+      var symbol = document.GetFamilySymbol( RoutingFamilyType.CableTray )! ; // TODO may change in the future
+
+      // Create cable tray
+      if (false == symbol.IsActive) symbol.Activate();
+      var instance = document.Create.NewFamilyInstance(firstConnector.Origin, symbol, null, StructuralType.NonStructural);
+
+      // set cable rack length
+      SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
+
+      // set cable tray direction
+      if ( 1.0 == line.Direction.Y ) {
+        ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ), Math.PI / 2 ) ;
+      }
+      else if ( -1.0 == line.Direction.Y ) {
+        ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ), Math.PI / 2 ) ;
+      }
+      else if ( -1.0 == line.Direction.X ) {
+        ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ), Math.PI ) ;
+      }
+      else if ( 1.0 == line.Direction.Z ) {
+        ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y - 1, firstConnector.Origin.Z ) ), Math.PI / 2 ) ;
+      }
+      else if ( -1.0 == line.Direction.Z ) {
+        ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y + 1, firstConnector.Origin.Z ) ), Math.PI / 2 ) ;
+      }
+      
+      if ( 1.0 == line.Direction.Z || -1.0 == line.Direction.Z ) {
+        // move cable rack to right of conduit
+        instance.Location.Move( new XYZ( 0, diameter, 0 ) ) ;
+      }
+      else {
+        // move cable rack to under conduit
+        instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
+      }
+
+      return instance ;
+    }
+    
+    public static FamilyInstance CreateRackForFittingConduit( UIDocument uiDocument, FamilyInstance conduit, LocationPoint location )
+    {
+      var document = uiDocument.Document ;
+      
+      var length = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ).AsDouble() ;
+      var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document, "呼び径" ) ).AsDouble() ;
+      var bendRadius = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ) ).AsDouble() ;
+
+      var symbol = uiDocument.Document.GetFamilySymbol( RoutingFamilyType.CableTrayFitting )! ; // TODO may change in the future
+
+      if (false == symbol.IsActive) symbol.Activate();
+      var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
+
+      // set cable tray Bend Radius
+      SetParameter( instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadius / 2 + BendRadiusSettingForStandardFamilyType.MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
+
+      // set cable rack length
+      SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
+
+      // set cable tray fitting direction
+      if ( 1.0 == conduit.FacingOrientation.X ) {
+        instance.Location.Rotate( Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ), new XYZ( location.Point.X, location.Point.Y, location.Point.Z - 1 ) ), Math.PI / 2 ) ;
+      }
+      else if ( -1.0 == conduit.FacingOrientation.X ) {
+        instance.Location.Rotate( Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ), new XYZ( location.Point.X , location.Point.Y, location.Point.Z + 1 ) ), Math.PI / 2 ) ;
+      }
+      else if ( -1.0 == conduit.FacingOrientation.Y ) {
+        instance.Location.Rotate( Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ), new XYZ( location.Point.X, location.Point.Y, location.Point.Z + 1 ) ), Math.PI ) ;
+      }
+      
+      // move cable rack to under conduit
+      instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
+
+      return instance ;
+    }
     public static bool IsSameConnectors( IEnumerable<Connector> connectors, IEnumerable<Connector> otherConnectors )
     {
       var isSameConnectors = true ;

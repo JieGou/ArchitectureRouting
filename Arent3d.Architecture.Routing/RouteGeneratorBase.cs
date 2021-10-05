@@ -1,6 +1,6 @@
 using System ;
 using System.Collections.Generic ;
-using Arent3d.Revit ;
+using System.Linq ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 
@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// When overridden in a derived class, returns routing targets to generate routes.
     /// </summary>
-    protected abstract IReadOnlyCollection<TAutoRoutingTarget> RoutingTargets { get ; }
+    protected abstract IReadOnlyList<IReadOnlyCollection<TAutoRoutingTarget>> RoutingTargetGroups { get ; }
 
     /// <summary>
     /// When overridden in a derived class, returns an collision check tree.
@@ -34,9 +34,9 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// When overridden in a derived class, this method is called after each routing result is processed.
     /// </summary>
-    /// <param name="routingTarget">Processed routing target, given by <see cref="RoutingTargets"/> property.</param>
+    /// <param name="routingTargets">Processed routing target, given by <see cref="RoutingTargetGroups"/> property.</param>
     /// <param name="result">Routing result.</param>
-    protected abstract void OnRoutingTargetProcessed( TAutoRoutingTarget routingTarget, AutoRoutingResult result ) ;
+    protected abstract void OnRoutingTargetProcessed( IReadOnlyCollection<TAutoRoutingTarget> routingTargets, MergedAutoRoutingResult result ) ;
 
     /// <summary>
     /// When overridden in a derived class, this method is called after all route generations. It is good to postprocess for an execution.
@@ -57,14 +57,27 @@ namespace Arent3d.Architecture.Routing
 
       progressData?.ThrowIfCanceled() ;
 
+      var targetToIndex = new Dictionary<TAutoRoutingTarget, int>() ;
+      var targetMergers = new List<AutoRoutingTargetMerger<TAutoRoutingTarget>>() ;
+      RoutingTargetGroups.ForEach( ( group, index ) =>
+      {
+        group.ForEach( target => targetToIndex.Add( target, index ) ) ;
+        targetMergers.Add( new AutoRoutingTargetMerger<TAutoRoutingTarget>( group.Count ) ) ;
+      } ) ;
+
       using ( var mainProgress = progressData?.Reserve( 0.9 ) ) {
-        mainProgress.ForEach( RoutingTargets.Count, ApiForAutoRouting.Execute( StructureGraph, RoutingTargets, CollisionCheckTree ), item =>
+        mainProgress.ForEach( targetToIndex.Count, ApiForAutoRouting.Execute( StructureGraph, RoutingTargetGroups.SelectMany( group => group ), CollisionCheckTree ), item =>
         {
           var (src, result) = item ;
-          if ( src is not TAutoRoutingTarget srcTarget ) return ;
+          if ( src is not TAutoRoutingTarget srcTarget ) throw new InvalidOperationException() ;
 
-          var wrapper = new AutoRoutingResult( result ) ;
-          OnRoutingTargetProcessed( srcTarget, wrapper ) ;
+          var merger = targetMergers[ targetToIndex[ srcTarget ] ] ;
+          if ( false == merger.Register( srcTarget, result ) ) throw new InvalidOperationException() ;
+
+          if ( merger.IsFullfilled ) {
+            OnRoutingTargetProcessed( merger.GetAutoRoutingTargets(), merger.GetAutoRoutingResult() ) ;
+          }
+
           progressData?.ThrowIfCanceled() ;
         } ) ;
       }

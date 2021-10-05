@@ -27,7 +27,10 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public static Level? GetLevel( this IEndPoint endPoint, Document document )
     {
-      return document.GetElementById<Level>( endPoint.GetLevelId( document ) ) ;
+      var levelId = endPoint.GetLevelId( document ) ;
+      if ( ElementId.InvalidElementId == levelId ) return null ;
+
+      return document.GetElementById<Level>( levelId ) ;
     }
 
 

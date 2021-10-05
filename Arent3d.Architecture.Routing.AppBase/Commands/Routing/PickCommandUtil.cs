@@ -147,12 +147,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           // split segment
           var diameter = segment.GetRealNominalDiameter() ?? segment.PreferredNominalDiameter ;
           var isRoutingOnPipeSpace = segment.IsRoutingOnPipeSpace ;
-          var fixeBopHeight = segment.FixedBopHeight ;
+          var fromFixedHeight = segment.FromFixedHeight ;
+          var toFixedHeight = segment.ToFixedHeight ;
           var avoidType = segment.AvoidType ;
           var shaft1 = ( segment.FromEndPoint.GetLevelId( subRoute.Route.Document ) != passPoint.GetLevelId( subRoute.Route.Document ) ) ? segment.ShaftElementId : ElementId.InvalidElementId ;
           var shaft2 = ( passPoint.GetLevelId( subRoute.Route.Document ) != segment.ToEndPoint.GetLevelId( subRoute.Route.Document ) ) ? segment.ShaftElementId : ElementId.InvalidElementId ;
-          yield return new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType, shaft1 ) ;
-          yield return new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fixeBopHeight, avoidType, shaft2 ) ;
+          yield return new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaft1 ) ;
+          yield return new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaft2 ) ;
         }
         else {
           yield return segment ;
@@ -245,6 +246,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       public IEnumerable<ElementId> GetAllRelatedElements() => Enumerable.Empty<ElementId>() ;
+      public ElementId GetLevelId() => _endPoint.GetLevelId( _subRoute.Route.Document ) ;
 
       public SubRoute? SubRoute { get ; }
       public EndPointKey? EndPointOverSubRoute { get ; }

@@ -50,8 +50,11 @@ namespace Arent3d.Architecture.Routing.AppBase
           curveType = GetCurveType( document, curveTypeClass, record.CurveTypeName ) ;
           if ( null != curveType ) continue ;
         }
+        
+        var fromFixedHeight=FixedHeight.CreateOrNull( record.FromFixedHeightType, record.FromFixedHeightValue );
+        var toFixedHeight=FixedHeight.CreateOrNull( record.ToFixedHeightType, record.ToFixedHeightValue );
 
-        yield return ( record.RouteName, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, record.NominalDiameter, record.IsRoutingOnPipeSpace, record.FixedBopHeight, record.AvoidType, ToElementId( record.ShaftElementId ) ) ) ;
+        yield return ( record.RouteName, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, record.NominalDiameter, record.IsRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, record.AvoidType, ToElementId( record.ShaftElementId ) ) ) ;
       }
     }
 
@@ -92,7 +95,10 @@ namespace Arent3d.Architecture.Routing.AppBase
           ToEndParams = toEndPoint.ParameterString,
           NominalDiameter = segment.PreferredNominalDiameter,
           CurveTypeName = GetCurveTypeName( segment.CurveType ),
-          FixedBopHeight = segment.FixedBopHeight,
+          FromFixedHeightType = segment.FromFixedHeight?.Type.ToString() ?? string.Empty,
+          FromFixedHeightValue = segment.FromFixedHeight?.Height,
+          ToFixedHeightType = segment.ToFixedHeight?.Type.ToString() ?? string.Empty,
+          ToFixedHeightValue = segment.ToFixedHeight?.Height,
           AvoidType = segment.AvoidType,
           SystemClassification = segment.SystemClassificationInfo.Serialize(),
           SystemTypeName = GetSystemTypeName( segment.SystemType ),

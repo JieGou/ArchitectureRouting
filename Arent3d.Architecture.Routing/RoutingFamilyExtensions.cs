@@ -12,6 +12,10 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     RackGuide,
 
+    [NameOnRevit( "Routing Shaft" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Shaft,
+
     [NameOnRevit( "Routing Pass Point" )]
     [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
     PassPoint,

@@ -20,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     public interface IPickResult
     {
       IEnumerable<ElementId> GetAllRelatedElements() ;
+      ElementId GetLevelId() ;
       SubRoute? SubRoute { get ; }
       EndPointKey? EndPointOverSubRoute { get ; }
       Element PickedElement { get ; }
@@ -151,6 +152,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         yield return _element.Id ;
       }
+      public ElementId GetLevelId() => _element.LevelId ;
 
       public bool IsCompatibleTo( Connector connector ) => _connector.IsCompatibleTo( connector ) ;
       public bool IsCompatibleTo( Element element ) => null == _routeName || _routeName != element.GetRouteName() ;
@@ -265,6 +267,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         return _pickedElement.Document.GetAllElementsOfSubRoute<Element>( _subRoute.Route.RouteName, _subRoute.SubRouteIndex ).Select( e => e.Id ) ;
       }
+      public ElementId GetLevelId() => _pickedElement.LevelId ;
 
       public static SubRoutePickResult? Create( RoutingExecutor? routingExecutor, Element element, XYZ pickPosition )
       {
@@ -308,6 +311,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         return _element.Document.GetAllElementsOfPassPoint( _element.GetPassPointId() ?? _element.Id.IntegerValue ).Select( e => e.Id ) ;
       }
+      public ElementId GetLevelId() => _element.LevelId ;
 
       public static IPickResult? Create( Element element )
       {
@@ -348,6 +352,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         yield return _element.Id ;
       }
+      public ElementId GetLevelId() => _element.LevelId ;
 
       public bool IsCompatibleTo( Connector connector ) => true ;
 

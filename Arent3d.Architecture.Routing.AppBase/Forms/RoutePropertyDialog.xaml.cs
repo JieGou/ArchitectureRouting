@@ -49,16 +49,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public bool GetRouteOnPipeSpace() => FromToEdit.IsRouteOnPipeSpace ?? throw new InvalidOperationException() ;
 
-    public double? GetFixedHeight()
+    public FixedHeight? GetFromFixedHeight()
     {
-      if ( true != FromToEdit.UseFixedHeight ) return null ;
-      return FromToEdit.FixedHeight ;
+      if ( true != FromToEdit.UseFromFixedHeight ) return null ;
+      return FixedHeight.CreateOrNull( FromToEdit.FromLocationType, FromToEdit.FromFixedHeight ) ;
     }
     
-    public double? GetToFixedHeight()
+    public FixedHeight? GetToFixedHeight()
     {
-      if ( true != FromToEdit.ToUseFixedHeight ) return null ;
-      return FromToEdit.ToFixedHeight ;
+      if ( true != FromToEdit.UseToFixedHeight ) return null ;
+      return FixedHeight.CreateOrNull( FromToEdit.ToLocationType, FromToEdit.ToFixedHeight ) ;
     }
 
     public AvoidType GetSelectedAvoidType() => FromToEdit.AvoidType ?? throw new InvalidOperationException() ;

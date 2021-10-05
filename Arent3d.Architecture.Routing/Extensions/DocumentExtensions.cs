@@ -1,7 +1,7 @@
-﻿using System.Linq ;
-using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Revit ;
+﻿using Arent3d.Architecture.Routing.Storable ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.Exceptions ;
+
 namespace Arent3d.Architecture.Routing.Extensions
 {
   public static class DocumentExtensions
@@ -11,14 +11,15 @@ namespace Arent3d.Architecture.Routing.Extensions
     /// If there is no data, it is returned default settings
     /// </summary>
     /// <param name="document">current document of Revit</param>
-    /// <returns>Height settings data was storaged in snoop DB</returns>
+    /// <returns>Height settings data was stored in snoop DB</returns>
     public static HeightSettingStorable GetHeightSettingStorable( this Document document )
     {
-      return document.GetAllStorables<HeightSettingStorable>()
-                     .AsEnumerable()
-                     .DefaultIfEmpty( new HeightSettingStorable( document ) )
-                     .First() ;
+      try {
+        return HeightSettingStorableCache.Get( document ).FindOrCreate( HeightSettingStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new HeightSettingStorable( document ) ;
+      }
     }
-
   }
 }

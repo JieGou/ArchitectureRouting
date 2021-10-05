@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
     protected override RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector )
     {
-      return new RouteGenerator( routes, document, GetFittingSizeCalculator(), collector ) ;
+      return new RouteGenerator( document, routes, new MechanicalAutoRoutingTargetGenerator( document ), GetFittingSizeCalculator(), collector ) ;
     }
 
     protected override ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )
