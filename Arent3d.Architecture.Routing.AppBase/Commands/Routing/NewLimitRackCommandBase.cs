@@ -21,8 +21,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private readonly int minNumberOfMultiplicity = 5 ;
     private readonly double minLengthOfConduit = ( 3.0 ).MetersToRevitUnits() ;
+    private readonly double cableTrayBendRadius = ( 16.0 ).MillimetersToRevitUnits() ;
 
-    private readonly double[] CableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
+    private readonly double[] cableTrayWidthMapping = { 200.0, 300.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0 } ;
 
     private Dictionary<ElementId, List<Connector>> elbowsToCreate = new Dictionary<ElementId, List<Connector>>() ;
 
@@ -52,7 +53,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               }
             }
 
-            List<ElementId> ids = new List<ElementId>() ;
             foreach ( var elbow in elbowsToCreate ) {
               CreateElbow( uiDocument, elbow.Key, elbow.Value ) ;
             }
@@ -114,11 +114,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           var symbol =
             uiDocument.Document.GetFamilySymbol( RoutingFamilyType.CableTray )! ; // TODO may change in the future
-
+          if ( false == symbol.IsActive ) symbol.Activate() ;
           // Create cable tray
-          var instance = symbol.Instantiate(
-            new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
-            uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+          var instance =
+            document.Create.NewFamilyInstance( firstConnector.Origin, symbol, null, StructuralType.NonStructural ) ;
 
           // set cable rack length
           SetParameter( instance,
@@ -218,9 +217,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var symbol =
           uiDocument.Document.GetFamilySymbol( RoutingFamilyType.CableTrayFitting )! ; // TODO may change in the future
+        if ( false == symbol.IsActive ) symbol.Activate() ;
 
-        var instance = symbol.Instantiate( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ),
-          uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+        var instance = document.Create.NewFamilyInstance( location.Point, symbol, uiDocument.ActiveView.GenLevel,
+          StructuralType.NonStructural ) ;
 
         // set cable rack length
         SetParameter( instance,
@@ -230,7 +230,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         // set cable tray Bend Radius
         SetParameter( instance,
           "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ),
-          ( 16.0 ).MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
+          cableTrayBendRadius ) ; // TODO may be must change when FamilyType change
 
         // set cable tray fitting direction
         if ( 1.0 == conduit.FacingOrientation.X ) {
@@ -263,71 +263,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var firstCableRackWidth = firstCableRack.ParametersMap
           .get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) )
           .AsDouble() ; // TODO may be must change when FamilyType change
+
         var secondCableRack = connectors.Last().Owner ;
         // get cable rack width
         var secondCableRackWidth = secondCableRack.ParametersMap
           .get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) )
           .AsDouble() ; // TODO may be must change when FamilyType change
 
-        if ( firstCableRackWidth == secondCableRackWidth ) {
-          // set cable rack length
-          SetParameter( instance,
-            "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ),
-            firstCableRackWidth ) ; // TODO may be must change when FamilyType change
-          foreach ( var connector in instance.GetConnectors() ) {
-            var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
-            if ( null != otherConnectors ) {
-              var connectTo =
-                NewRackCommandBase.GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
-              if ( connectTo != null ) {
-                connector.ConnectTo( connectTo ) ;
-              }
+        // set cable rack length
+        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ),
+          firstCableRackWidth >= secondCableRackWidth
+            ? firstCableRackWidth
+            : secondCableRackWidth ) ; // TODO may be must change when FamilyType change
+
+        foreach ( var connector in instance.GetConnectors() ) {
+          var otherConnectors = connectors.FindAll( x => ! x.IsConnected && x.Owner.Id != connector.Owner.Id ) ;
+          if ( null != otherConnectors ) {
+            var connectTo =
+              NewRackCommandBase.GetConnectorClosestTo( otherConnectors, connector.Origin, maxDistanceTolerance ) ;
+            if ( connectTo != null ) {
+              connector.ConnectTo( connectTo ) ;
             }
           }
         }
-        else {
-          var smallerCableRack = firstCableRackWidth < secondCableRackWidth ? firstCableRack : secondCableRack ;
-          var mainConnector = connectors.FirstOrDefault( x => x.Owner.Id == smallerCableRack.Id ) ;
-
-          // set cable rack length
-          SetParameter( instance,
-            "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ),
-            firstCableRackWidth ) ; // TODO may be must change when FamilyType change
-          var symbolCableTrayReducer =
-            uiDocument.Document.GetFamilySymbol( RoutingFamilyType
-              .CableTrayReducer )! ; // TODO may change in the future
-
-          // create cable rack reducer
-          var cableTrayReducer = symbolCableTrayReducer.Instantiate( mainConnector.Origin,
-            uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
-
-          // set cable tray fitting direction
-          if ( 1.0 == conduit.FacingOrientation.X ) {
-            cableTrayReducer.Location.Rotate(
-              Line.CreateBound( mainConnector.Origin,
-                new XYZ( mainConnector.Origin.X, mainConnector.Origin.Y, mainConnector.Origin.Z + 1 ) ), Math.PI / 2 ) ;
-          }
-          else if ( -1.0 == conduit.FacingOrientation.X ) {
-            cableTrayReducer.Location.Rotate(
-              Line.CreateBound( mainConnector.Origin,
-                new XYZ( mainConnector.Origin.X, mainConnector.Origin.Y, mainConnector.Origin.Z - 1 ) ), Math.PI / 2 ) ;
-          }
-          else if ( -1.0 == conduit.FacingOrientation.Y ) {
-            cableTrayReducer.Location.Rotate(
-              Line.CreateBound( mainConnector.Origin,
-                new XYZ( mainConnector.Origin.X, mainConnector.Origin.Y, mainConnector.Origin.Z + 1 ) ), Math.PI ) ;
-          }
-
-          //SetParameter(cableTrayReducer, "Revit.Property.Builtin.CableTrayReducer.TrayWidth1".GetDocumentStringByKeyOrDefault(document, "トレイ幅 1"),
-          //    firstCableRackWidth < secondCableRackWidth ? secondCableRackWidth / 2 : firstCableRackWidth / 2); // TODO may be must change when FamilyType change
-
-          //SetParameter(cableTrayReducer, "Revit.Property.Builtin.CableTrayReducer.TrayWidth2".GetDocumentStringByKeyOrDefault(document, "トレイ幅 2"),
-          //    firstCableRackWidth < secondCableRackWidth ? firstCableRackWidth / 2 : secondCableRackWidth / 2); // TODO may be must change when FamilyType change
-          // set cable rack length
-          //SetParameter(cableTrayReducer, "Revit.Property.Builtin.CableTrayReducer.TrayOffsetWidth".GetDocumentStringByKeyOrDefault(document, "OffsetWidth"),
-          //    firstCableRackWidth < secondCableRackWidth? secondCableRackWidth/2 : firstCableRackWidth / 2); // TODO may be must change when FamilyType change
-        }
-
 
         transaction.Commit() ;
       }
@@ -348,7 +306,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var sumDiameter = subRoute.GetSubRouteGroup()
         .Sum( s => routes.GetSubRoute( s )?.GetDiameter().RevitUnitsToMillimeters() + 10 ) + 120 ;
       var cableTraywidth = 0.6 * sumDiameter ;
-      foreach ( var width in CableTrayWidthMapping ) {
+      foreach ( var width in cableTrayWidthMapping ) {
         if ( cableTraywidth <= width ) {
           cableTraywidth = width ;
           return cableTraywidth!.Value ;
