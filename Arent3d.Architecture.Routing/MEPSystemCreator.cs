@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing
     private readonly Document _document ;
     private readonly RouteVertexToConnectorMapper _connectorMapper ;
 
-    public AutoRoutingTarget AutoRoutingTarget { get ; }
+    private IReadOnlyCollection<AutoRoutingTarget> _routingTargets ;
 
     /// <summary>
     /// Returns pass-point-to-connector relation manager.
@@ -34,26 +34,26 @@ namespace Arent3d.Architecture.Routing
 
     private readonly List<Connector[]> _badConnectors = new() ;
 
-    public MEPSystemCreator( Document document, AutoRoutingTarget autoRoutingTarget, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
+    public MEPSystemCreator( Document document, IReadOnlyCollection<AutoRoutingTarget> routingTargets, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditionDictionary )
     {
       _document = document ;
-      AutoRoutingTarget = autoRoutingTarget ;
-      _level = GetLevel( document, autoRoutingTarget ) ;
+      _routingTargets = routingTargets ;
+      _level = GetLevel( document, routingTargets ) ;
       _routeConditionDictionary = routeConditionDictionary ;
       _connectorMapper = new RouteVertexToConnectorMapper() ;
     }
 
-    private static Level GetLevel( Document document, AutoRoutingTarget autoRoutingTarget )
+    private static Level GetLevel( Document document, IReadOnlyCollection<AutoRoutingTarget> routingTargets )
     {
-      var level = autoRoutingTarget.EndPoints.Select( endPoint => endPoint.GetEndPoint()?.GetLevel( document ) ).FirstOrDefault( l => l != null && l.IsValidObject ) ;
+      var level = routingTargets.SelectMany( target => target.EndPoints ).Select( endPoint => endPoint.GetEndPoint()?.GetLevel( document ) ).FirstOrDefault( l => l != null && l.IsValidObject ) ;
       return level ?? Level.Create( document, 0.0 ) ;
     }
 
-    private static Level? GetLevel( Document document, AutoRoutingEndPoint endPoint )
+    public SubRoute GetSubRoute( IRouteEdge routeEdge )
     {
-      if ( endPoint.EndPoint.GetReferenceConnector() is not { } connector ) return null ;
+      if ( routeEdge.LineInfo is not AutoRoutingEndPoint ep ) throw new InvalidOperationException() ;
 
-      return document.GetElementById<Level>( connector.Owner.LevelId ) ;
+      return _routingTargets.Select( target => target.GetSubRoute( ep ) ).FirstOrDefault( subRoute => null != subRoute ) ?? throw new KeyNotFoundException() ;
     }
 
     public IReadOnlyCollection<Connector[]> GetBadConnectorSet() => _badConnectors ;
@@ -106,7 +106,7 @@ namespace Arent3d.Architecture.Routing
 
       var routeMepSystem = _routeConditionDictionary[ new SubRouteInfo( subRoute ) ].Spec.RouteMEPSystem ;
 
-      var element = AutoRoutingTarget.Domain switch
+      var element = _routingTargets.First().Domain switch
       {
         Domain.DomainHvac => CreateDuct( startPos, endPos, routeMepSystem ),
         Domain.DomainPiping => CreatePipe( startPos, endPos, routeMepSystem ),
