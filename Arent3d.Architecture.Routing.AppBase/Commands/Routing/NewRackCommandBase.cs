@@ -11,6 +11,7 @@ using System.Collections.Generic ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
   public abstract class NewRackCommandBase : IExternalCommand
   {
     /// <summary>
@@ -86,7 +87,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var document = uiDocument.Document ;
         // get all elements in route
         var allElementsInRoute = document.GetAllElementsOfRouteName<Element>( routeName ) ;
-
         var connectors = new List<Connector>() ;
         // Browse each conduits and draw the cable tray below
         foreach ( var element in allElementsInRoute ) {
@@ -121,9 +121,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               // Create cable tray
               var instance = symbol.Instantiate(
                 new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 level: null, StructuralType.NonStructural ) ;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
               // set cable rack length
               SetParameter( instance,
@@ -194,15 +192,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   .CableTrayFitting )! ; // TODO may change in the future
 
               var instance = symbol.Instantiate( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ),
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 level: null, StructuralType.NonStructural ) ;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
               // set cable tray Bend Radius
+              var bendRadiusCable = ( 4.45 * diameter.RevitUnitsToMillimeters() + 20.5 - diameter.RevitUnitsToMillimeters() ).MillimetersToRevitUnits() ;
               SetParameter( instance,
-                "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ),
-                bendRadius / 2 +
-                ( 20.5 ).MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
+                "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadiusCable ) ; // TODO may be must change when FamilyType change
 
               // set cable rack length
               SetParameter( instance,
