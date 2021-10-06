@@ -44,6 +44,10 @@
     <None Update="Assets\Families\2021\Routing Shaft.rfa">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+
+    <None Update="Assets\Families\2021\Routing Rack Space.rfa">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

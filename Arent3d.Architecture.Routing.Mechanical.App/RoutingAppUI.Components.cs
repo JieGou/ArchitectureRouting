@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         [Button( typeof( EraseAllRacksCommand ), OnlyInitialized = true )]
         private static class EraseAllRacksCommandButton { }
 
-        [Button( typeof( RackGuidCommand ), OnlyInitialized = true )]
+        [Button( typeof( RackGuideCommand ), OnlyInitialized = true )]
         private static class RackGuidCommandButton { }
       }
 

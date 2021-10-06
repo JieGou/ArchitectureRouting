@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App
@@ -11,6 +12,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
   {
     public MechanicalRoutingExecutor( Document document, View view, IFittingSizeCalculator fittingSizeCalculator ) : base( document, view, fittingSizeCalculator )
     {
+    }
+
+    protected override IEnumerable<FamilyInstance> GetRackFamilyInstances()
+    {
+      return Document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ;
     }
 
     protected override RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector )
