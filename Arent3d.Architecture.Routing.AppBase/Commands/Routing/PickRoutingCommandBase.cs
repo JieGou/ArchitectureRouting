@@ -56,8 +56,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private RoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
-      var fromLevelId = fromPickResult.GetLevelId() ;
-      var toLevelId = toPickResult.GetLevelId() ;
+      var fromLevelId = GetTrueLevelId( document, fromPickResult ) ;
+      var toLevelId = GetTrueLevelId( document, toPickResult ) ;
 
       if ( ( fromPickResult.SubRoute ?? toPickResult.SubRoute ) is { } subRoute ) {
         var route = subRoute.Route ;
@@ -74,6 +74,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return ShowDialog( document, GetAddInType(), fromLevelId, toLevelId ) ;
+    }
+
+    private static ElementId GetTrueLevelId( Document document, ConnectorPicker.IPickResult pickResult )
+    {
+      var levelId = pickResult.GetLevelId() ;
+      if ( ElementId.InvalidElementId != levelId ) return levelId ;
+
+      return document.GuessLevel( pickResult.GetOrigin() ).Id ;
     }
 
     private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
