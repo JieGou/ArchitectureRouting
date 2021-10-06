@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
+    private readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
 
     protected abstract AddInType GetAddInType() ;
 

@@ -1,4 +1,5 @@
 using Arent3d.Architecture.Routing.Electrical.App.Commands ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Demo ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing ;
@@ -68,6 +69,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( NewRackFromToCommand ), OnlyInitialized = true )]
         private static class NewRackFromToCommandButton { }
+
+        [Button( typeof( NewLimitRackCommand ), OnlyInitialized = true )]
+        private static class NewLimitRackCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors")]
@@ -130,6 +134,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( MonitorSelectionCommand ), AvailabilityType = typeof( Commands.Enabler.MonitorSelectionCommandEnabler ) )]
         private static class MonitorSelectionCommandButton { }
+      }
+
+      [Panel( "arent3d.architecture.routing.demo", TitleKey = "Electrical.App.Panels.Routing.Demo" )]
+      private static class DemoPanel
+      {
+        [Button( typeof( Demo_DeleteAllRoutedElements ) )]
+        private static class Demo_DeleteAllRoutedElementsCommandButton { }
       }
     }
   }
