@@ -92,11 +92,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var location = ( conduit.Location as LocationCurve )! ;
           var line = ( location.Curve as Line )! ;
 
-          // Ignore the case of vertical conduits in the oz direction
-          if ( 1.0 == line.Direction.Z || -1.0 == line.Direction.Z ) {
-            return ;
-          }
-
           Connector firstConnector =
             NewRackCommandBase.GetFirstConnector( conduit.GetConnectorManager()!.Connectors )! ;
 
@@ -129,9 +124,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ),
             cableRackWidth.MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
 
-          // move cable rack to under conduit
-          instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
-
           // set cable tray direction
           if ( 1.0 == line.Direction.Y ) {
             ElementTransformUtils.RotateElement( document, instance.Id,
@@ -150,6 +142,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ),
                 new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z - 1 ) ), Math.PI ) ;
           }
+          else if ( 1.0 == line.Direction.Z ) {
+            ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y - 1, firstConnector.Origin.Z ) ), Math.PI / 2 ) ;
+          }
+          else if ( -1.0 == line.Direction.Z ) {
+            ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y + 1, firstConnector.Origin.Z ) ), Math.PI / 2 ) ;
+          }
+      
+          if ( 1.0 == line.Direction.Z || -1.0 == line.Direction.Z ) {
+            // move cable rack to right of conduit
+            instance.Location.Move( new XYZ( 0, diameter, 0 ) ) ;
+          }
+          else {
+            // move cable rack to under conduit
+            instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
+          }
 
           // check cable tray exists
           if ( NewRackCommandBase.ExistsCableTray( document, instance ) ) {
@@ -157,21 +164,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             return ;
           }
 
-          var elbows = conduit.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd()
-            .Select( c => c.Owner ).OfType<FamilyInstance>() ;
-          foreach ( var elbow in elbows ) {
-            if ( elbowsToCreate.ContainsKey( elbow.Id ) ) {
-              elbowsToCreate[ elbow.Id ]
-                .Add( NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(),
-                  ( elbow.Location as LocationPoint )!.Point )! ) ;
-            }
-            else {
-              elbowsToCreate.Add( elbow.Id,
-                new List<Connector>()
-                {
-                  NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(),
-                    ( elbow.Location as LocationPoint )!.Point )!
-                } ) ;
+          if ( 1.0 != line.Direction.Z && -1.0 != line.Direction.Z ) {
+            var elbows = conduit.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd()
+              .Select( c => c.Owner ).OfType<FamilyInstance>() ;
+            foreach ( var elbow in elbows ) {
+              if ( elbowsToCreate.ContainsKey( elbow.Id ) ) {
+                elbowsToCreate[ elbow.Id ]
+                  .Add( NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(),
+                    ( elbow.Location as LocationPoint )!.Point )! ) ;
+              }
+              else {
+                elbowsToCreate.Add( elbow.Id,
+                  new List<Connector>()
+                  {
+                    NewRackCommandBase.GetConnectorClosestTo( instance.GetConnectors().ToList(),
+                      ( elbow.Location as LocationPoint )!.Point )!
+                  } ) ;
+              }
             }
           }
 
@@ -198,7 +207,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var conduit = document.GetElementById<FamilyInstance>( elementId )! ;
 
         // Ignore the case of vertical conduits in the oz direction
-        if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z ) {
+        if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.HandOrientation.Z || 1.0 == conduit.HandOrientation.Z) {
           return ;
         }
 
