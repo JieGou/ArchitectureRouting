@@ -16,7 +16,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <summary>
     /// Max Distance Tolerance when find Connector Closest
     /// </summary>
-    private static readonly double maxDistanceTolerance = ( 10.0 ).MillimetersToRevitUnits() ;
+    private static readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
+    private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
 
     private readonly BuiltInCategory[] ConduitBuiltInCategories =
     {
@@ -142,7 +143,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
         .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
-                     x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) ).Any() ;
+                     x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) &&
+                     IsSameConnectors( x.GetConnectors(), familyInstance.GetConnectors() )).Any() ;
     }
 
     /// <summary>
@@ -209,7 +211,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var conduit = ( element as FamilyInstance )! ;
 
             // Ignore the case of vertical conduits in the oz direction
-            if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z ) {
+            if ( 1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.FacingOrientation.Z || -1.0 == conduit.HandOrientation.Z || 1.0 == conduit.HandOrientation.Z) {
               continue ;
             }
 
@@ -264,7 +266,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var symbol = document.GetFamilySymbol( RoutingFamilyType.CableTray )! ; // TODO may change in the future
 
       // Create cable tray
-      var instance = symbol.Instantiate( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+      if (false == symbol.IsActive) symbol.Activate();
+      var instance = document.Create.NewFamilyInstance(firstConnector.Origin, symbol, null, StructuralType.NonStructural);
 
       // set cable rack length
       SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
@@ -312,10 +315,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var symbol = uiDocument.Document.GetFamilySymbol( RoutingFamilyType.CableTrayFitting )! ; // TODO may change in the future
 
-      var instance = symbol.Instantiate( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ), uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+      if (false == symbol.IsActive) symbol.Activate();
+      var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
 
       // set cable tray Bend Radius
-      bendRadius = cableTrayDefaultBendRadius == 0 ? bendRadius / 2 : cableTrayDefaultBendRadius ;
+      bendRadius = cableTrayDefaultBendRadius == 0 ? bendRadius / 2 + BendRadiusSettingForStandardFamilyType.MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
       SetParameter( instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadius ) ; // TODO may be must change when FamilyType change
 
       // set cable rack length
@@ -336,6 +340,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
 
       return instance ;
+    }
+
+    public static bool IsSameConnectors( IEnumerable<Connector> connectors, IEnumerable<Connector> otherConnectors )
+    {
+      var isSameConnectors = true ;
+      foreach ( var connector in connectors ) {
+        if ( ! otherConnectors.Any( x => x.Origin.IsAlmostEqualTo( connector.Origin ) ) ) {
+          return false ;
+        }
+      }
+
+      return isSameConnectors ;
     }
   }
 }
