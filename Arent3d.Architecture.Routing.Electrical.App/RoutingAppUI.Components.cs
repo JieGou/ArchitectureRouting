@@ -67,6 +67,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( NewRackFromToCommand ), OnlyInitialized = true )]
         private static class NewRackFromToCommandButton { }
+
+        [Button( typeof( NewLimitRackCommand ), OnlyInitialized = true )]
+        private static class NewLimitRackCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors")]
