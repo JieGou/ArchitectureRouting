@@ -11,6 +11,7 @@ using System.Collections.Generic ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
   public abstract class NewRackCommandBase : IExternalCommand
   {
     /// <summary>
@@ -18,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     private static readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
     private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
+    private const double RATIO_BEND_RADIUS = 3.45 ;
 
     private readonly BuiltInCategory[] ConduitBuiltInCategories =
     {
@@ -314,8 +316,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if (false == symbol.IsActive) symbol.Activate();
       var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
 
-      // set cable tray Bend Radius
-      SetParameter( instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadius / 2 + BendRadiusSettingForStandardFamilyType.MillimetersToRevitUnits() ) ; // TODO may be must change when FamilyType change
+       // set cable tray Bend Radius
+      var bendRadiusCable = ( RATIO_BEND_RADIUS * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() ;
+      SetParameter( instance,
+        "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadiusCable ) ; // TODO may be must change when FamilyType change
 
       // set cable rack length
       SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
