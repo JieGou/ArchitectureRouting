@@ -138,7 +138,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var minimumLength = document.Application.ShortCurveTolerance ;
       if ( curveLength <= minimumLength * 2 ) return subRoutePos ; // Cannot modify: too short to modify
       routeDir /= curveLength ;
-      if ( false == ArePerpendicular( connectorDir, routeDir, document.Application.AngleTolerance ) ) return subRoutePos ;  // Cannot modify: not perpendicular
+      if ( false == connectorDir.IsPerpendicularTo( routeDir, document.Application.AngleTolerance ) ) return subRoutePos ;  // Cannot modify: not perpendicular
 
       var mepSystem = new RouteMEPSystem( document, routeProperty.GetSystemType(), routeProperty.GetCurveType() ) ;
       var edgeDiameter = routeProperty.GetDiameter() ;
@@ -159,11 +159,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( mepCurve.GetRoutingConnectors( isFrom ).UniqueOrDefault() is not { } commonConnector ) return ( null, null ) ;
         if ( mepCurve.GetRoutingConnectors( false == isFrom ).UniqueOrDefault() is not { } anotherConnector ) return ( null, null ) ;
         return ( commonConnector.Origin, anotherConnector.Origin ) ;
-      }
-
-      static bool ArePerpendicular( XYZ dir1, XYZ dir2, double angleTolerance )
-      {
-        return Math.Abs( Math.PI / 2 - dir1.AngleTo( dir2 ) ) < angleTolerance ;
       }
     }
 
