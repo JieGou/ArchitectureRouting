@@ -5,7 +5,6 @@ using Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing.Connectors ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Rack ;
-using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing.Connectors ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft;
 using Arent3d.Revit.UI.Attributes ;
 
