@@ -728,7 +728,9 @@ namespace Arent3d.Architecture.Routing
       {
         var startLevelId = GetParamLevelId( element, startParameter ) ;
         var endLevelId = GetParamLevelId( element, endParameter ) ;
-        return ( ElementId.InvalidElementId != startLevelId && startLevelId == endLevelId ) ? startLevelId : ElementId.InvalidElementId ;
+        if ( ElementId.InvalidElementId == startLevelId ) return ElementId.InvalidElementId ; // No levels
+        if ( ElementId.InvalidElementId != endLevelId && startLevelId != endLevelId ) return ElementId.InvalidElementId ; // Different levels
+        return startLevelId ;
       }
 
       static ElementId GetParamLevelId( Element element, BuiltInParameter builtInParameter )
