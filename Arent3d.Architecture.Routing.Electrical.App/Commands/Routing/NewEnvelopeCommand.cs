@@ -6,8 +6,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Routing.NewEnvelopeCommand", DefaultString = "New Envelope\nPS" )]
-  [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
-  [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
+  [Image("resources/new_envelope.png")]
   public class NewEnvelopeCommand : NewEnvelopeCommandBase
   {
   }
