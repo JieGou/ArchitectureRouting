@@ -95,6 +95,9 @@
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
 
+        <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
+        <string>円柱シャフト作成</string>
+        
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>

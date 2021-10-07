@@ -107,17 +107,34 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
             return new List<Line>();
         }
 
+        public virtual List<Arc> ArcPrepareProfile()
+        {
+            return new List<Arc>() ;
+        }
+
         public virtual void CreateBufferStorageForElement(DisplayStyle displayStyle, View view)
         {
             this._edgeBufferStorage = new RenderingPassBufferStorage(displayStyle);
 
             var lines = this.PrepareProfile();
-            foreach (var edge in lines)
-            {
-                var xyzs = edge.Tessellate();
-                this._edgeBufferStorage.VertexBufferCount += xyzs.Count;
-                this._edgeBufferStorage.PrimitiveCount += xyzs.Count - 1;
-                this._edgeBufferStorage.EdgeXYZs.Add(xyzs);
+            var circles = this.ArcPrepareProfile() ;
+            if ( circles.Count > 0 ) {
+                foreach (var edge in circles)
+                {
+                    var xyzs = edge.Tessellate();
+                    this._edgeBufferStorage.VertexBufferCount += xyzs.Count;
+                    this._edgeBufferStorage.PrimitiveCount += xyzs.Count - 1;
+                    this._edgeBufferStorage.EdgeXYZs.Add(xyzs);
+                }
+            }
+            else {
+                foreach (var edge in lines)
+                {
+                    var xyzs = edge.Tessellate();
+                    this._edgeBufferStorage.VertexBufferCount += xyzs.Count;
+                    this._edgeBufferStorage.PrimitiveCount += xyzs.Count - 1;
+                    this._edgeBufferStorage.EdgeXYZs.Add(xyzs);
+                }
             }
 
             this.ProcessEdges(this._edgeBufferStorage);

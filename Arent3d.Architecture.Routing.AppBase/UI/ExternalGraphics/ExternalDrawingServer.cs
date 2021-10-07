@@ -6,9 +6,11 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
     public class ExternalDrawingServer : DrawingServer
     {
         public List<Line> LineList { get; set; }
+        public List<Arc> ArcList { get; set; }
         public ExternalDrawingServer(Document doc) : base(doc)
         {
             this.LineList = new List<Line>();
+            this.ArcList = new List<Arc>() ;
         }
 
         public override string GetName()
@@ -28,6 +30,11 @@ namespace Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics
         public override List<Line> PrepareProfile()
         {
             return LineList;
+        }
+        
+        public override List<Arc> ArcPrepareProfile()
+        {
+            return ArcList;
         }
 
         public override bool CanExecute(View view)
