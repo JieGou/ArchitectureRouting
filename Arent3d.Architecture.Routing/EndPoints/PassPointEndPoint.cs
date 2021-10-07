@@ -130,7 +130,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       foreach ( var (targetSegment, fixedHeight) in segmentsAndFixedHeights.Where( tuple => tuple.FixedHeight.HasValue ) ) {
         if ( targetSegment.PreferredNominalDiameter is not { } diameter ) break ;
 
-        var fixedCenterHeight = fixedHeight!.Value + diameter / 2 ;
+        var fixedCenterHeight = fixedHeight!.Value ;
         var passPointZ = passPoint.GetTotalTransform().Origin.Z ;
         var difference = Math.Abs( fixedCenterHeight - passPointZ ) ;
         if ( diameter <= difference ) break ;
