@@ -8,8 +8,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
 {
     [Transaction(TransactionMode.Manual)]
     [DisplayNameKey("Electrical.App.Commands.Shaft.CreateArentShaftCommand", DefaultString = "Create\nArent Shaft")]
-    [Image("resources/Initialize-16.bmp", ImageType = ImageType.Normal)]
-    [Image("resources/Initialize-32.bmp", ImageType = ImageType.Large)]
+    [Image("resources/shaft_02.png")]
     public class CreateArentShaftCommand : CreateArentShaftCommandBase
     {
     }
