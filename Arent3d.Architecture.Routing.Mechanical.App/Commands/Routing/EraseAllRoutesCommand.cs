@@ -9,9 +9,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Image( "resources/DeleteAllFrom-To.png" )]
   public class EraseAllRoutesCommand : EraseAllRoutesCommandBase
   {
-    protected override AddInType GetAddInType()
-    {
-      return AddInType.Mechanical ;
-    }
+    protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
   }
 }

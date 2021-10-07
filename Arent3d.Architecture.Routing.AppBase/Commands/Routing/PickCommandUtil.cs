@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -88,14 +89,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new RouteEndPoint( routePickResult.SubRoute! ) ;
     }
 
-    public static (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateBranchingRouteEndPoint( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool isFrom )
+    public static (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateBranchingRouteEndPoint( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, IFittingSizeCalculator fittingSizeCalculator, bool isFrom )
     {
       var element = routePickResult.GetOriginElement() ;
       var document = element.Document ;
-      var pos = routePickResult.GetOrigin() ;
+      var subRoute = GetRepresentativeSubRoute( element ) ?? routePickResult.SubRoute! ;
+      var pos = GetAdjustedOrigin( document, routePickResult, anotherPickResult, routeProperty, classificationInfo, fittingSizeCalculator, isFrom ) ;
 
       // Create Pass Point
-      var subRoute = GetRepresentativeSubRoute( element ) ?? routePickResult.SubRoute! ;
       var routeName = subRoute.Route.Name ;
       if ( InsertBranchingPassPointElement( document, subRoute, element, pos ) is not { } passPointElement ) throw new InvalidOperationException() ;
       var otherSegments = GetNewSegmentList( subRoute, element, passPointElement ).Select( segment => ( routeName, segment ) ).EnumerateAll() ;
@@ -112,6 +113,58 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ( element.GetRepresentativeSubRoute() ?? element.GetSubRouteInfo() ) is not { } subRouteInfo ) return null ;
 
       return RouteCache.Get( element.Document ).GetSubRoute( subRouteInfo ) ;
+    }
+
+    private static XYZ GetAdjustedOrigin( Document document, ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, IFittingSizeCalculator fittingSizeCalculator, bool isFrom )
+    {
+      var subRoutePos = routePickResult.GetOrigin() ;
+      if ( routePickResult.PickedElement is not MEPCurve routeMepCurve ) return subRoutePos ; // Not a modification target 
+
+      var connectorPos = anotherPickResult.GetOrigin() ;
+      if ( anotherPickResult.GetMEPCurveDirection( false == isFrom ) is not { } connectorDir ) return subRoutePos ; // Not a modification target
+
+      var (curveCommonSidePos, curveAnotherSidePos) = GetConnectorPositions( routeMepCurve, isFrom ) ;
+      if ( null == curveCommonSidePos || null == curveAnotherSidePos || curveCommonSidePos.IsAlmostEqualTo( curveAnotherSidePos ) ) return subRoutePos ;  // Bad connector information
+      if ( connectorDir.IsZeroLength() ) {
+        // Guess connector direction from curve direction
+        connectorDir = GetPreferredDirection( connectorPos, subRoutePos ) ;
+      }
+      else {
+        connectorDir = connectorDir.Normalize() ;
+      }
+
+      var routeDir = curveAnotherSidePos - curveCommonSidePos ;
+      var curveLength = routeDir.GetLength() ;
+      var minimumLength = document.Application.ShortCurveTolerance ;
+      if ( curveLength <= minimumLength * 2 ) return subRoutePos ; // Cannot modify: too short to modify
+      routeDir /= curveLength ;
+      if ( false == ArePerpendicular( connectorDir, routeDir, document.Application.AngleTolerance ) ) return subRoutePos ;  // Cannot modify: not perpendicular
+
+      var mepSystem = new RouteMEPSystem( document, routeProperty.GetSystemType(), routeProperty.GetCurveType() ) ;
+      var edgeDiameter = routeProperty.GetDiameter() ;
+      var spec = new MEPSystemPipeSpec( mepSystem, fittingSizeCalculator ) ;
+      var elbowSize = spec.GetLongElbowSize( edgeDiameter.DiameterValueToPipeDiameter() ) ;
+
+      var pickPointDir = subRoutePos - connectorPos ;
+      var distance = connectorDir.DotProduct( pickPointDir ) ;
+      if ( distance <= elbowSize ) return subRoutePos ; // Cannot modify: not distant enough
+
+      var adjustedPosParam = routeDir.DotProduct( connectorPos - curveCommonSidePos ) - ( elbowSize + minimumLength ) ;
+      if ( adjustedPosParam <= minimumLength || curveLength - minimumLength <= adjustedPosParam ) return subRoutePos ;  // Cannot modify: out of range
+
+      return curveCommonSidePos + adjustedPosParam * routeDir ;
+
+      static (XYZ? CommonSide, XYZ? AnotherSide) GetConnectorPositions( MEPCurve mepCurve, bool isFrom )
+      {
+        if ( mepCurve.GetRoutingConnectors( isFrom ).UniqueOrDefault() is not { } commonConnector ) return ( null, null ) ;
+        if ( mepCurve.GetRoutingConnectors( false == isFrom ).UniqueOrDefault() is not { } anotherConnector ) return ( null, null ) ;
+        return ( commonConnector.Origin, anotherConnector.Origin ) ;
+      }
+
+      static bool ArePerpendicular( XYZ dir1, XYZ dir2, double angleTolerance )
+      {
+        return Math.Abs( Math.PI / 2 - dir1.AngleTo( dir2 ) ) < angleTolerance ;
+      }
     }
 
     private static Instance? InsertBranchingPassPointElement( Document document, SubRoute subRoute, Element routingElement, XYZ pos )
@@ -253,6 +306,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       public Element PickedElement => throw new InvalidOperationException() ;
       public Connector? PickedConnector => ( _endPoint as ConnectorEndPoint )?.GetConnector() ?? _subRoute.GetReferenceConnector() ;
       public XYZ GetOrigin() => _endPoint.RoutingStartPosition ;
+      public XYZ? GetMEPCurveDirection( bool isFrom ) => _endPoint.GetRoutingDirection( isFrom ) * ( isFrom ? 1.0 : -1.0 ) ;
       public Element GetOriginElement() => throw new InvalidOperationException() ;
 
       public bool IsCompatibleTo( Connector connector )

@@ -9,9 +9,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image("resources/rack.png")]
   public class NewRackCommand : NewRackCommandBase
   {
-    protected override AddInType GetAddInType()
-    {
-      return AddInType.Electrical ;
-    }
+    protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
   }
 }

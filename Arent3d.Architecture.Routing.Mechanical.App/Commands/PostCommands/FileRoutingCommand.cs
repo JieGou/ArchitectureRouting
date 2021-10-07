@@ -12,9 +12,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.PostCommands
   {
     private const string Guid = "F27CF6F7-F9FC-4E04-8D80-C404FE0ADCA6" ;
 
-    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )
-    {
-      return new MechanicalRoutingExecutor( document, view ) ;
-    }
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
   }
 }

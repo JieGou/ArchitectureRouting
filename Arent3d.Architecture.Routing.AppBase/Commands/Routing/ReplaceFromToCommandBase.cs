@@ -40,7 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       IEndPoint newEndPoint ;
       IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? otherSegments ;
       if ( null != newPickResult.SubRoute ) {
-        ( newEndPoint, otherSegments ) = CreateEndPointOnSubRoute( newPickResult, anotherPickResult, anotherPickIsFrom ) ;
+        ( newEndPoint, otherSegments ) = CreateEndPointOnSubRoute( route, newPickResult, anotherPickResult, anotherPickIsFrom ) ;
       }
       else {
         newEndPoint = PickCommandUtil.GetEndPoint( newPickResult, anotherPickResult ) ;
@@ -111,7 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( segment.ToEndPoint.IsReplaceable ) yield return segment.ToEndPoint ;
     }
 
-    protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom ) ;
+    protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( Route route, ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, bool newPickIsFrom ) ;
 
     private Route GetReplacingRoute( UIDocument uiDocument )
     {

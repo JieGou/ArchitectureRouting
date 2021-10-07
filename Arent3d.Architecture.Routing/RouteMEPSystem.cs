@@ -23,7 +23,11 @@ namespace Arent3d.Architecture.Routing
     public MEPSystem? MEPSystem { get ; }
     public MEPCurveType CurveType { get ; }
 
-    public RouteMEPSystem( Document document, SubRoute subRoute )
+    public RouteMEPSystem( Document document, SubRoute subRoute ) : this( document, subRoute.Route.GetMEPSystemType(), subRoute.GetMEPCurveType() ?? throw new InvalidOperationException() )
+    {
+    }
+
+    public RouteMEPSystem( Document document, MEPSystemType? mepSystemType, MEPCurveType curveType )
     {
       Document = document ;
 
@@ -32,11 +36,11 @@ namespace Arent3d.Architecture.Routing
       AngleTolerance = app.AngleTolerance ;
       ShortCurveTolerance = app.ShortCurveTolerance ;
 
-      MEPSystemType = subRoute.Route.GetMEPSystemType() ;
+      MEPSystemType = mepSystemType ;
       //MEPSystem = CreateMEPSystem( document, connector, allConnectors ) ;
       MEPSystem = null ;
 
-      CurveType = subRoute.GetMEPCurveType() ?? throw new InvalidOperationException() ;
+      CurveType = curveType ;
     }
 
     #region Get MEPSystemType

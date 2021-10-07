@@ -9,15 +9,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 {
   public class ElectricalRoutingExecutor : RoutingExecutor
   {
-    public ElectricalRoutingExecutor( Document document, View view ) : base( document, view )
+    public ElectricalRoutingExecutor( Document document, View view, IFittingSizeCalculator fittingSizeCalculator ) : base( document, view, fittingSizeCalculator )
     {
     }
 
-    protected override IFittingSizeCalculator GetFittingSizeCalculator() => DefaultFittingSizeCalculator.Instance ;
-
     protected override RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector )
     {
-      return new ElectricalRouteGenerator( document, routes, new ElectricalAutoRoutingTargetGenerator( document ), GetFittingSizeCalculator(), collector ) ;
+      return new ElectricalRouteGenerator( document, routes, new ElectricalAutoRoutingTargetGenerator( document ), FittingSizeCalculator, collector ) ;
     }
 
     protected override ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )

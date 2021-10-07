@@ -121,6 +121,7 @@ namespace Arent3d.Architecture.Routing
     public FixedHeight? UniqueFromFixedHeight => SubRoutes.Select( subRoute => subRoute.FromFixedHeight ).Distinct().UniqueOrDefault() ;
     public FixedHeight? UniqueToFixedHeight => SubRoutes.Select( subRoute => subRoute.ToFixedHeight ).Distinct().UniqueOrDefault() ;
     public AvoidType? UniqueAvoidType => SubRoutes.Select( subRoute => subRoute.AvoidType ).Distinct().Select( at => (AvoidType?)at ).UniqueOrDefault() ;
+    public ElementId? UniqueShaftElementId => SubRoutes.Select( subRoute => subRoute.ShaftElementId ).Distinct().UniqueOrDefault() ;
 
     /// <summary>
     /// for loading from storage.
