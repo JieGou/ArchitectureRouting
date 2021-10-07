@@ -56,10 +56,11 @@ namespace Arent3d.Architecture.Routing
       var firstSubRoute = subRoutes.First() ;
       LineId = $"{firstSubRoute.Route.RouteName}@{firstSubRoute.SubRouteIndex}" ;
 
-      Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ], FixedHeightUsage.Default ) ;
+      var trueFixedBopHeight = firstSubRoute.GetTrueFixedBopHeight( FixedHeightUsage.Default ) ;
+      Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ], trueFixedBopHeight ) ;
     }
 
-    public AutoRoutingTarget( Document document, SubRoute subRoute, int priority, AutoRoutingEndPoint fromEndPoint, AutoRoutingEndPoint toEndPoint, FixedHeightUsage fixedHeightMode )
+    public AutoRoutingTarget( Document document, SubRoute subRoute, int priority, AutoRoutingEndPoint fromEndPoint, AutoRoutingEndPoint toEndPoint, double? forcedFixedHeight )
     {
       Routes = new[] { subRoute.Route } ;
       Domain = subRoute.Route.Domain ;
@@ -72,7 +73,7 @@ namespace Arent3d.Architecture.Routing
 
       LineId = $"{subRoute.Route.RouteName}@{subRoute.SubRouteIndex}" ;
 
-      Condition = new AutoRoutingCondition( document, subRoute, priority, fixedHeightMode ) ;
+      Condition = new AutoRoutingCondition( document, subRoute, priority, forcedFixedHeight ) ;
     }
 
     private static Dictionary<SubRoute, int> GetDepths( IReadOnlyCollection<SubRoute> subRoutes )
@@ -196,7 +197,7 @@ namespace Arent3d.Architecture.Routing
     {
       private readonly SubRoute _subRoute ;
 
-      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority, FixedHeightUsage fixedHeightMode )
+      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority, double? forcedFixedHeight )
       {
         var documentData = DocumentMapper.Get( document ) ;
 
@@ -204,55 +205,7 @@ namespace Arent3d.Architecture.Routing
         Priority = priority ;
         IsRoutingOnPipeRacks = ( 0 < documentData.RackCollection.RackCount ) && subRoute.IsRoutingOnPipeSpace ;
         AllowHorizontalBranches = documentData.AllowHorizontalBranches( subRoute ) ;
-        FixedBopHeight = ToTrueFixedBopHeight( document, fixedHeightMode, subRoute ) ;
-      }
-
-      private static double? ToTrueFixedBopHeight( Document document, FixedHeightUsage fixedHeightMode, SubRoute subRoute )
-      {
-        if ( GetFixedHeight( subRoute, fixedHeightMode ) is not { } fixedHeight ) return null ;
-
-        var levelId = GetEndPoints( subRoute, fixedHeightMode ).Select( ep => ep.GetLevelId( document ) ).DefaultIfEmpty( ElementId.InvalidElementId ).First() ;
-        var heightSettings = document.GetHeightSettingStorable() ;
-        var height = heightSettings.GetAbsoluteHeight( levelId, fixedHeight.Type, fixedHeight.Height ) ;
-
-        var angleTolerance = document.Application.AngleTolerance ;
-        var pipeRadius = subRoute.GetDiameter() / 2 ;
-        var minHeightDiff = double.MaxValue ;
-        var nearestZ = height ;
-        foreach ( var ep in GetEndPoints( subRoute, fixedHeightMode ) ) {
-          if ( false == ep.GetRoutingDirection( true ).IsPerpendicularTo( XYZ.BasisZ, angleTolerance ) ) continue ;
-          var z = ep.RoutingStartPosition.Z ;
-          var diff = Math.Abs( z - height ) ;
-          if ( pipeRadius <= diff ) continue ;
-          if ( minHeightDiff <= diff ) continue ;
-
-          minHeightDiff = diff ;  // update nearest
-          nearestZ = z ;
-        }
-
-        return nearestZ - pipeRadius ;
-
-        static FixedHeight? GetFixedHeight( SubRoute subRoute, FixedHeightUsage fixedHeightMode )
-        {
-          return fixedHeightMode switch
-          {
-            FixedHeightUsage.Default => subRoute.FromFixedHeight,
-            FixedHeightUsage.UseFromSideOnly => subRoute.FromFixedHeight,
-            FixedHeightUsage.UseToSideOnly => subRoute.ToFixedHeight,
-            _ => throw new ArgumentOutOfRangeException( nameof( fixedHeightMode ), fixedHeightMode, null ),
-          } ;
-        }
-
-        static IEnumerable<IEndPoint> GetEndPoints( SubRoute subRoute, FixedHeightUsage fixedHeightMode )
-        {
-          return fixedHeightMode switch
-          {
-            FixedHeightUsage.Default => subRoute.AllEndPoints,
-            FixedHeightUsage.UseFromSideOnly => subRoute.FromEndPoints,
-            FixedHeightUsage.UseToSideOnly => subRoute.ToEndPoints,
-            _ => throw new ArgumentOutOfRangeException( nameof( fixedHeightMode ), fixedHeightMode, null ),
-          } ;
-        }
+        FixedBopHeight = forcedFixedHeight ;
       }
 
       public bool IsRoutingOnPipeRacks { get ; }

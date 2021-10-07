@@ -36,8 +36,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         return GenerateNormalAutoRoutingTarget( subRoutes, priorities, routeConditionDictionary ) ;
       }
 
-      var startZ = fromEndPoint.RoutingStartPosition.Z ;
-      var endZ = toEndPoint.RoutingStartPosition.Z ;
+      var trueFromFixedBopHeight = subRoute.GetTrueFixedBopHeight( FixedHeightUsage.UseFromSideOnly ) ;
+      var trueToFixedBopHeight = subRoute.GetTrueFixedBopHeight( FixedHeightUsage.UseToSideOnly ) ;
+      var startZ = trueFromFixedBopHeight ?? fromEndPoint.RoutingStartPosition.Z ;
+      var endZ = trueToFixedBopHeight ?? toEndPoint.RoutingStartPosition.Z ;
       var shaftPosition = opening.GetShaftPosition().To3dRaw().ChangeZ( ( startZ + endZ ) * 0.5 ) ;
 
       var priority = priorities[ subRoute.Route ] ;
@@ -54,8 +56,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
       return new[]
       {
-        new AutoRoutingTarget( Document, subRoute, priority, fromAutoRoutingEndPoint, shaftAutoRoutingEndPoint1, FixedHeightUsage.UseFromSideOnly ),
-        new AutoRoutingTarget( Document, subRoute, priority, shaftAutoRoutingEndPoint2, toAutoRoutingEndPoint, FixedHeightUsage.UseToSideOnly ),
+        new AutoRoutingTarget( Document, subRoute, priority, fromAutoRoutingEndPoint, shaftAutoRoutingEndPoint1, trueFromFixedBopHeight ),
+        new AutoRoutingTarget( Document, subRoute, priority, shaftAutoRoutingEndPoint2, toAutoRoutingEndPoint, trueToFixedBopHeight ),
       } ;
     }
 

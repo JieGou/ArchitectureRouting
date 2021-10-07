@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Diagnostics ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -151,6 +152,55 @@ namespace Arent3d.Architecture.Routing
     public Connector GetReferenceConnector()
     {
       return GetReferenceConnectorInSubRoute() ?? Route.GetReferenceConnector() ;
+    }
+
+    public double? GetTrueFixedBopHeight( FixedHeightUsage fixedHeightMode )
+    {
+      var document = this.Route.Document ;
+      if ( GetFixedHeight( this, fixedHeightMode ) is not { } fixedHeight ) return null ;
+
+      var levelId = GetEndPoints( this, fixedHeightMode ).Select( ep => ep.GetLevelId( document ) ).DefaultIfEmpty( ElementId.InvalidElementId ).First() ;
+      var heightSettings = document.GetHeightSettingStorable() ;
+      var height = heightSettings.GetAbsoluteHeight( levelId, fixedHeight.Type, fixedHeight.Height ) ;
+
+      var angleTolerance = document.Application.AngleTolerance ;
+      var pipeRadius = GetDiameter() / 2 ;
+      var minHeightDiff = double.MaxValue ;
+      var nearestZ = height ;
+      foreach ( var ep in GetEndPoints( this, fixedHeightMode ) ) {
+        if ( false == ep.GetRoutingDirection( true ).IsPerpendicularTo( XYZ.BasisZ, angleTolerance ) ) continue ;
+        var z = ep.RoutingStartPosition.Z ;
+        var diff = Math.Abs( z - height ) ;
+        if ( pipeRadius <= diff ) continue ;
+        if ( minHeightDiff <= diff ) continue ;
+
+        minHeightDiff = diff ; // update nearest
+        nearestZ = z ;
+      }
+
+      return nearestZ - pipeRadius ;
+
+      static FixedHeight? GetFixedHeight( SubRoute subRoute, FixedHeightUsage fixedHeightMode )
+      {
+        return fixedHeightMode switch
+        {
+          FixedHeightUsage.Default => subRoute.FromFixedHeight,
+          FixedHeightUsage.UseFromSideOnly => subRoute.FromFixedHeight,
+          FixedHeightUsage.UseToSideOnly => subRoute.ToFixedHeight,
+          _ => throw new ArgumentOutOfRangeException( nameof( fixedHeightMode ), fixedHeightMode, null ),
+        } ;
+      }
+
+      static IEnumerable<IEndPoint> GetEndPoints( SubRoute subRoute, FixedHeightUsage fixedHeightMode )
+      {
+        return fixedHeightMode switch
+        {
+          FixedHeightUsage.Default => subRoute.AllEndPoints,
+          FixedHeightUsage.UseFromSideOnly => subRoute.FromEndPoints,
+          FixedHeightUsage.UseToSideOnly => subRoute.ToEndPoints,
+          _ => throw new ArgumentOutOfRangeException( nameof( fixedHeightMode ), fixedHeightMode, null ),
+        } ;
+      }
     }
   }
 }
