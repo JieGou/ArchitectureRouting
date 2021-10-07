@@ -150,7 +150,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static Level? GetLevel( Document document, IEndPoint endPoint )
     {
-      if ( endPoint.GetReferenceConnector()?.Owner.LevelId is not { } levelId ) return null ;
+      if ( endPoint.GetReferenceConnector()?.Owner.GetLevelId() is not { } levelId ) return null ;
 
       return document.GetElementById<Level>( levelId ) ;
     }

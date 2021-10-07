@@ -120,7 +120,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( routingElement.GetRoutingConnectors( false ).FirstOrDefault() is not { } toConnector ) return null ;
 
       var dir = ( toConnector.Origin - fromConnector.Origin ).Normalize() ;
-      return document.AddPassPoint( subRoute.Route.RouteName, pos, dir, subRoute.GetDiameter() * 0.5 ) ;
+      return document.AddPassPoint( subRoute.Route.RouteName, pos, dir, subRoute.GetDiameter() * 0.5, routingElement.GetLevelId() ) ;
     }
 
     private const double HalfPI = Math.PI / 2 ;

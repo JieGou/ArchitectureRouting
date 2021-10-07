@@ -22,6 +22,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       Diameter,
       Position,
       Direction,
+      Level,
     }
 
     public static PassPointEndPoint? ParseParameterString( Document document, string str )
@@ -33,7 +34,12 @@ namespace Arent3d.Architecture.Routing.EndPoints
       if ( deserializer.GetXYZ( SerializeField.Position ) is not { } position ) return null ;
       if ( deserializer.GetXYZ( SerializeField.Direction ) is not { } direction ) return null ;
 
-      return new PassPointEndPoint( document, passPointId, position, direction, diameter * 0.5 ) ;
+      Level? level = null ;
+      if ( deserializer.GetString( SerializeField.Level ) is { } levelName ) {
+        level = document.GetAllElements<Level>().FirstOrDefault( elm => elm.Name == levelName ) ;
+      }
+
+      return new PassPointEndPoint( document, passPointId, position, direction, diameter * 0.5, level ) ;
     }
 
     public string ParameterString
@@ -46,6 +52,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
         stringifier.Add( SerializeField.Diameter, GetDiameter() ) ;
         stringifier.AddNonNull( SerializeField.Position, RoutingStartPosition ) ;
         stringifier.AddNonNull( SerializeField.Direction, Direction ) ;
+        stringifier.AddNullable( SerializeField.Level, Document.GetElementById<Level>( PreferredLevelId )?.Name ) ;
 
         return stringifier.ToString() ;
       }
@@ -84,8 +91,9 @@ namespace Arent3d.Architecture.Routing.EndPoints
     private XYZ PreferredDirection { get ; set ; } = XYZ.Zero ;
     public XYZ Direction => GetPassPoint()?.GetTotalTransform().BasisX ?? PreferredDirection ;
     private double? PreferredRadius { get ; set ; } = 0 ;
+    public ElementId PreferredLevelId { get ; }
 
-    public ElementId GetLevelId( Document document ) => GetPassPoint()?.LevelId ?? document.GuessLevelId( PreferredPosition ) ;
+    public ElementId GetLevelId( Document document ) => GetPassPoint()?.GetLevelId() ?? ( ElementId.InvalidElementId != PreferredLevelId ? PreferredLevelId : document.GuessLevelId( PreferredPosition ) ) ;
 
     public void UpdatePreferredParameters()
     {
@@ -116,7 +124,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       var segments = GetRelatedSegments( route, Key ) ;
       var document = passPoint.Document ;
-      var targetLevelId = passPoint.LevelId ;
+      var targetLevelId = passPoint.GetLevelId() ;
       var segmentsAndFixedHeights = segments.Select( s => ( Segment: s, FixedHeight: GetForcedFixedHeight( document, targetLevelId, s ) ) ) ;
 
       foreach ( var (targetSegment, fixedHeight) in segmentsAndFixedHeights.Where( tuple => tuple.FixedHeight.HasValue ) ) {
@@ -160,11 +168,12 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       Document = instance.Document ;
       PassPointId = instance.Id ;
+      PreferredLevelId = instance.GetLevelId() ;
 
       SetPreferredParameters( instance ) ;
     }
 
-    public PassPointEndPoint( Document document, ElementId passPointId, XYZ preferredPosition, XYZ preferredDirection, double? preferredRadius )
+    public PassPointEndPoint( Document document, ElementId passPointId, XYZ preferredPosition, XYZ preferredDirection, double? preferredRadius, Level? level )
     {
       Document = document ;
       PassPointId = passPointId ;
@@ -172,6 +181,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       PreferredPosition = preferredPosition ;
       PreferredDirection = ( preferredDirection.IsZeroLength() ? XYZ.BasisX : preferredDirection.Normalize() ) ;
       PreferredRadius = preferredRadius ;
+      PreferredLevelId = level?.LevelId ?? ElementId.InvalidElementId ;
       UpdatePreferredParameters() ;
     }
 
@@ -191,7 +201,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       if ( null != GetPassPoint() ) return true ;
 
-      PassPointId = Document.AddPassPoint( routeName, PreferredPosition, PreferredDirection, PreferredRadius ).Id ;
+      PassPointId = Document.AddPassPoint( routeName, PreferredPosition, PreferredDirection, PreferredRadius, PreferredLevelId ).Id ;
       return false ;
     }
 

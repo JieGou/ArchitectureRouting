@@ -94,7 +94,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private double? PreferredRadius { get ; set ; }
 
-    public ElementId GetLevelId( Document document ) => GetPassPoint()?.LevelId ?? ElementId.InvalidElementId ;
+    public ElementId GetLevelId( Document document ) => GetPassPoint()?.GetLevelId() ?? ElementId.InvalidElementId ;
 
     public void UpdatePreferredParameters()
     {
@@ -122,7 +122,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       var segments = GetRelatedSegments( route, Key ) ;
       var document = passPoint.Document ;
-      var targetLevelId = passPoint.LevelId ;
+      var targetLevelId = passPoint.GetLevelId() ;
       var segmentsAndFixedHeights = segments.Select( s => ( Segment: s, FixedHeight: GetForcedFixedHeight( document, targetLevelId, s ) ) ) ;
 
       foreach ( var (targetSegment, fixedHeight) in segmentsAndFixedHeights.Where( tuple => tuple.FixedHeight.HasValue ) ) {

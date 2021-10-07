@@ -251,9 +251,9 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius )
+    public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId elementId )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true ) ;
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( elementId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
@@ -377,9 +377,9 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    public static FamilyInstance AddTerminatePoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius )
+    public static FamilyInstance AddTerminatePoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.TerminatePoint, position, StructuralType.NonStructural, true ) ;
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.TerminatePoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
@@ -696,24 +696,49 @@ namespace Arent3d.Architecture.Routing
 
     #region General
 
-    private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool autoLevelDetection )
+    private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level = null )
     {
       var symbol = document.GetFamilySymbol( familyType )! ;
       if ( false == symbol.IsActive ) {
         symbol.Activate() ;
       }
 
-      if ( false == autoLevelDetection ) {
+      if ( false == useLevel ) {
         return document.Create.NewFamilyInstance( position, symbol, structuralType ) ;
       }
 
-      var level = document.GuessLevel( position ) ;
+      level ??= document.GuessLevel( position ) ;
       var instance = document.Create.NewFamilyInstance( position, symbol, level, structuralType ) ;
       instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
       document.Regenerate() ;
       ElementTransformUtils.MoveElement( document, instance.Id, position - instance.GetTotalTransform().Origin ) ;
 
       return instance ;
+    }
+
+    private static readonly (BuiltInParameter, BuiltInParameter)[] LevelBuiltInParameterPairs = { ( BuiltInParameter.RBS_START_LEVEL_PARAM, BuiltInParameter.RBS_END_LEVEL_PARAM ) } ;
+    public static ElementId GetLevelId( this Element element )
+    {
+      var levelId = element.LevelId ;
+      if ( ElementId.InvalidElementId != levelId ) return levelId ;
+
+      return LevelBuiltInParameterPairs.Select( tuple => GetUniqueParamLevelId( element, tuple.Item1, tuple.Item2 ) ).FirstOrDefault( paramLevelId => ElementId.InvalidElementId != paramLevelId ) ?? ElementId.InvalidElementId ;
+
+      static ElementId GetUniqueParamLevelId( Element element, BuiltInParameter startParameter, BuiltInParameter endParameter )
+      {
+        var startLevelId = GetParamLevelId( element, startParameter ) ;
+        var endLevelId = GetParamLevelId( element, endParameter ) ;
+        return ( ElementId.InvalidElementId != startLevelId && startLevelId == endLevelId ) ? startLevelId : ElementId.InvalidElementId ;
+      }
+
+      static ElementId GetParamLevelId( Element element, BuiltInParameter builtInParameter )
+      {
+        if ( element.get_Parameter( builtInParameter ) is not { StorageType: StorageType.ElementId, HasValue: true } param ) return ElementId.InvalidElementId ;
+        var elmId = param.AsElementId() ?? ElementId.InvalidElementId ;
+        if ( ElementId.InvalidElementId == elmId ) return ElementId.InvalidElementId ;
+
+        return element.Document.GetElementById<Level>( elmId )?.Id ?? ElementId.InvalidElementId ;
+      }
     }
 
     public static ElementId GuessLevelId( this Document document, XYZ position )
