@@ -3,6 +3,7 @@ using Arent3d.Architecture.Routing.Electrical.App.Commands.Demo ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing.Connectors ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Rack ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing.Connectors ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft;
@@ -79,6 +80,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button(typeof(NewConnectorCommand), OnlyInitialized = true)]
         private static class NewConnectorCommandButton { }
+        
+        [Button(typeof(NewConnectorBsCommand), OnlyInitialized = true)]
+        private static class NewConnectorBsCommandButton { }
 
         [Button(typeof(NewDamperActuatorCommand), OnlyInitialized = true)]
         private static class NewDamperActuatorCommandButton { }
