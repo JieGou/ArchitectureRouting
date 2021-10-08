@@ -9,15 +9,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 {
   public class MechanicalRoutingExecutor : RoutingExecutor
   {
-    public MechanicalRoutingExecutor( Document document, View view ) : base( document, view )
+    public MechanicalRoutingExecutor( Document document, View view, IFittingSizeCalculator fittingSizeCalculator ) : base( document, view, fittingSizeCalculator )
     {
     }
 
-    protected override IFittingSizeCalculator GetFittingSizeCalculator() => DefaultFittingSizeCalculator.Instance ;
-
     protected override RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector )
     {
-      return new RouteGenerator( document, routes, new MechanicalAutoRoutingTargetGenerator( document ), GetFittingSizeCalculator(), collector ) ;
+      return new RouteGenerator( document, routes, new MechanicalAutoRoutingTargetGenerator( document ), FittingSizeCalculator, collector ) ;
     }
 
     protected override ICollisionCheckTargetCollector CreateCollisionCheckTargetCollector( Domain domain, IReadOnlyCollection<Route> routesInType )

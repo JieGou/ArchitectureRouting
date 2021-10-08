@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       Element PickedElement { get ; }
       Connector? PickedConnector { get ; }
       XYZ GetOrigin() ;
+      XYZ? GetMEPCurveDirection( bool isFrom ) ;
       Element GetOriginElement() ;
       bool IsCompatibleTo( Connector connector ) ;
       bool IsCompatibleTo( Element element ) ;
@@ -139,6 +140,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public Connector? PickedConnector => _connector ;
 
       public XYZ GetOrigin() => _connector.Origin ;
+      public XYZ? GetMEPCurveDirection( bool isFrom ) => _connector.CoordinateSystem.BasisZ ;
       public Element GetOriginElement() => PickedElement ;
 
       public ConnectorPickResult( Element element, Connector connector )
@@ -152,7 +154,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         yield return _element.Id ;
       }
-      public ElementId GetLevelId() => _element.LevelId ;
+      public ElementId GetLevelId() => _element.GetLevelId() ;
 
       public bool IsCompatibleTo( Connector connector ) => _connector.IsCompatibleTo( connector ) ;
       public bool IsCompatibleTo( Element element ) => null == _routeName || _routeName != element.GetRouteName() ;
@@ -173,6 +175,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public Connector? PickedConnector => null ;
 
       public XYZ GetOrigin() => (_pickPositionOnCenterline ??= GetPickPositionOnCenterline()).Item2 ;
+      public XYZ? GetMEPCurveDirection( bool isFrom ) => null ;
       public Element GetOriginElement() => (_pickPositionOnCenterline ??= GetPickPositionOnCenterline()).Item1 ;
 
       private (Element, XYZ) GetPickPositionOnCenterline()
@@ -267,7 +270,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         return _pickedElement.Document.GetAllElementsOfSubRoute<Element>( _subRoute.Route.RouteName, _subRoute.SubRouteIndex ).Select( e => e.Id ) ;
       }
-      public ElementId GetLevelId() => _pickedElement.LevelId ;
+      public ElementId GetLevelId() => _pickedElement.GetLevelId() ;
 
       public static SubRoutePickResult? Create( RoutingExecutor? routingExecutor, Element element, XYZ pickPosition )
       {
@@ -296,6 +299,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public Connector? PickedConnector => null ;
 
       public XYZ GetOrigin() => GetCenter( _element ) ;
+      public XYZ? GetMEPCurveDirection( bool isFrom ) => null ;
       public Element GetOriginElement() => PickedElement ;
 
       private PassPointPickResult( Element element )
@@ -311,7 +315,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         return _element.Document.GetAllElementsOfPassPoint( _element.GetPassPointId() ?? _element.Id.IntegerValue ).Select( e => e.Id ) ;
       }
-      public ElementId GetLevelId() => _element.LevelId ;
+      public ElementId GetLevelId() => _element.GetLevelId() ;
 
       public static IPickResult? Create( Element element )
       {
@@ -340,6 +344,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public Connector? PickedConnector => null ;
 
       public XYZ GetOrigin() => GetCenter( _element ) ;
+      public XYZ? GetMEPCurveDirection( bool isFrom ) => XYZ.Zero ;
       public Element GetOriginElement() => PickedElement ;
 
       public OriginPickResult( Element element, AddInType addInType )
@@ -352,7 +357,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         yield return _element.Id ;
       }
-      public ElementId GetLevelId() => _element.LevelId ;
+      public ElementId GetLevelId() => _element.GetLevelId() ;
 
       public bool IsCompatibleTo( Connector connector ) => true ;
 

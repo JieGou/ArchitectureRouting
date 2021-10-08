@@ -205,7 +205,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           var connector = connectorEndPoint.GetConnector() ;
           if ( connector?.Owner is FamilyInstance familyInstance ) {
             var connectorItem = new ConnectorItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, connector, fromToItemsUiBase.FromToTreeIcons?[ "ConnectorItem" ] ) { ItemTypeName = familyInstance.Symbol.Family.Name + ":" + connector.Owner.Name, ElementId = connectorEndPoint.EquipmentId, ItemTag = "Connector", } ;
-            var level = routeItem.Doc.GetElementById<Level>( familyInstance.LevelId ) ;
+            var level = routeItem.Doc.GetElementById<Level>( familyInstance.GetLevelId() ) ;
             connectorItem.ItemFloor = "(" + level?.Name + ")" ;
             if ( routeItem.Doc.GetElementById<ViewFamilyType>( routeItem.Doc.ActiveView.GetTypeId() ) is { } vft && ! vft.Name.Contains( "3D" ) ) {
               string viewLevelName = routeItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL ).AsString() ;

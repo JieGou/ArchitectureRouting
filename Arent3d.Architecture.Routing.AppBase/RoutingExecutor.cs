@@ -20,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase
   {
     private readonly PipeSpecDictionary _pipeSpecDictionary ;
     protected Document Document { get ; }
+    public IFittingSizeCalculator FittingSizeCalculator { get ; }
     private readonly List<Connector[]> _badConnectors = new() ;
 
     /// <summary>
@@ -27,14 +28,14 @@ namespace Arent3d.Architecture.Routing.AppBase
     /// </summary>
     /// <param name="document"></param>
     /// <param name="view"></param>
-    public RoutingExecutor( Document document, View view )
+    /// <param name="fittingSizeCalculator"></param>
+    protected RoutingExecutor( Document document, View view, IFittingSizeCalculator fittingSizeCalculator )
     {
       Document = document ;
-      _pipeSpecDictionary = new PipeSpecDictionary( document, GetFittingSizeCalculator() ) ;
+      FittingSizeCalculator = fittingSizeCalculator ;
+      _pipeSpecDictionary = new PipeSpecDictionary( document, fittingSizeCalculator ) ;
       CollectRacks( document, view ) ;
     }
-
-    protected abstract IFittingSizeCalculator GetFittingSizeCalculator() ;
 
     private static void CollectRacks( Document document, View view )
     {

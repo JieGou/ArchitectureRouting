@@ -12,10 +12,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Image( "resources/From-ToWindow.png" )]
   public class ShowFrom_ToWindowCommand : ShowFrom_ToWindowCommandBase
   {
-    protected override AddInType GetAddInType()
-    {
-      return AddInType.Mechanical ;
-    }
+    protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
 
     protected override FromToWindowBase CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindowBase.FromToItems> fromToItemsList )
     {

@@ -66,7 +66,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       ElementMulticategoryFilter filterConnectors = new ElementMulticategoryFilter( builtInCats ) ;
       connectorCollector.WherePasses( filterConnectors ) ;
       var allConnectors = connectorCollector.OfType<FamilyInstance>() ;
-      var connectors = allConnectors.GroupBy( x => x.LevelId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      var connectors = allConnectors.GroupBy( x => x.GetLevelId() ).ToDictionary( g => g.Key, g => g.ToList() ) ;
 
 
       var allConduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )

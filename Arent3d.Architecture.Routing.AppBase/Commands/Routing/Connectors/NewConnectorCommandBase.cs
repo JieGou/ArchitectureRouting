@@ -8,7 +8,8 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
+
+namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
 {
   public abstract class NewConnectorCommandBase : IExternalCommand
   {

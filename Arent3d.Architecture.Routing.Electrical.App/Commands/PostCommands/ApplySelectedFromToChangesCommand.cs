@@ -15,9 +15,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.PostCommands
     private const string Guid = "C21F26D7-B7DD-4612-9341-3B69A9C53664" ;
     protected override string GetTransactionNameKey() => "TransactionName.Commands.PostCommands.ApplySelectedFromToChangesCommand" ;
 
-    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )
-    {
-      return new ElectricalRoutingExecutor( document, view ) ;
-    }
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
   }
 }

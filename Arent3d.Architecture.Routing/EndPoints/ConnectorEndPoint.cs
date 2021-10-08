@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public XYZ RoutingStartPosition => GetConnector()?.Origin ?? XYZ.Zero ;
 
-    public ElementId GetLevelId( Document document ) => GetOwnerElement()?.LevelId ?? ElementId.InvalidElementId ;
+    public ElementId GetLevelId( Document document ) => GetOwnerElement()?.GetLevelId() ?? ElementId.InvalidElementId ;
 
     public ConnectorEndPoint( Connector connector )
     {

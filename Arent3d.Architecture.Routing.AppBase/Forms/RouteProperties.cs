@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public MEPSystemType? SystemType { get ; }
     
     // Shaft 
-    public Opening? Shaft { get ; }    
+    public Opening? Shaft { get ; private set ; }    
 
     //CurveType
     public MEPCurveType? CurveType { get ; private set ; }
@@ -176,6 +176,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( IsAvoidTypeMultiSelected( route ) ) {
         AvoidType = null ;
       }
+
+      if ( IsShaftMultiSelected( route ) ) {
+        Shaft = null ;
+      }
     }
 
     /// <summary>
@@ -219,6 +223,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static bool IsAvoidTypeMultiSelected( Route route )
     {
       return ( null == route.UniqueAvoidType ) ;
+    }
+
+    /// <summary>
+    /// Get Shaft's multi selected state
+    /// </summary>
+    /// <param name="route"></param>
+    /// <returns></returns>
+    private static bool IsShaftMultiSelected( Route route )
+    {
+      return ( null == route.UniqueShaftElementId ) ;
     }
   }
 }

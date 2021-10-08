@@ -81,7 +81,12 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public XYZ Direction => GetTerminatePoint()?.GetTotalTransform().BasisX ?? PreferredDirection ;
     private double? PreferredRadius { get ; set ; } = 0 ;
 
-    public ElementId GetLevelId( Document document ) => GetTerminatePoint()?.LevelId ?? document.GuessLevelId( PreferredPosition ) ;
+    public ElementId GetLevelId( Document document ) => GetTerminatePoint()?.GetLevelId() ?? GetElementLevelId( document, LinkedInstanceId ) ?? document.GuessLevelId( PreferredPosition ) ;
+
+    private static ElementId? GetElementLevelId( Document document, ElementId linkedInstanceId )
+    {
+      return document.GetElementById<Element>( linkedInstanceId )?.GetLevelId() ;
+    }
 
     public void UpdatePreferredParameters()
     {
@@ -135,7 +140,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       if ( null != GetTerminatePoint() ) return false ;
 
-      TerminatePointId = _document.AddTerminatePoint( routeName, PreferredPosition, PreferredDirection, PreferredRadius ).Id ;
+      TerminatePointId = _document.AddTerminatePoint( routeName, PreferredPosition, PreferredDirection, PreferredRadius, GetLevelId( _document ) ).Id ;
 
         Element elemTerP = _document.GetElement( TerminatePointId );
         Element elemOrg = _document.GetElement( LinkedInstanceId );

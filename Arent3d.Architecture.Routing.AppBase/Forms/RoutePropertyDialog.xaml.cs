@@ -7,7 +7,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   /// <summary>
   /// SetProperty.xaml の相互作用ロジック
   /// </summary>
-  public partial class RoutePropertyDialog : Window
+  public partial class RoutePropertyDialog : Window, IRouteProperty
   {
     public RoutePropertyDialog()
     {
@@ -41,11 +41,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.Close() ;
     }
 
-    public MEPSystemType? GetSelectSystemType() => FromToEdit.SystemType ;
+    public MEPSystemType? GetSystemType() => FromToEdit.SystemType ;
 
-    public MEPCurveType GetSelectCurveType() => FromToEdit.CurveType ?? throw new InvalidOperationException() ;
+    public MEPCurveType GetCurveType() => FromToEdit.CurveType ?? throw new InvalidOperationException() ;
 
-    public double GetSelectDiameter() => FromToEdit.Diameter ?? throw new InvalidOperationException() ;
+    public double GetDiameter() => FromToEdit.Diameter ?? throw new InvalidOperationException() ;
 
     public bool GetRouteOnPipeSpace() => FromToEdit.IsRouteOnPipeSpace ?? throw new InvalidOperationException() ;
 
@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return FixedHeight.CreateOrNull( FromToEdit.ToLocationType, FromToEdit.ToFixedHeight ) ;
     }
 
-    public AvoidType GetSelectedAvoidType() => FromToEdit.AvoidType ?? throw new InvalidOperationException() ;
+    public AvoidType GetAvoidType() => FromToEdit.AvoidType ?? throw new InvalidOperationException() ;
 
     public Opening? GetShaft()
     {

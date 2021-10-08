@@ -14,14 +14,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.PassPoint.Insert" ;
 
-    protected override AddInType GetAddInType()
-    {
-      return AddInType.Mechanical ;
-    }
+    protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
 
-    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )
-    {
-      return new MechanicalRoutingExecutor( document, view ) ;
-    }
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
   }
 }

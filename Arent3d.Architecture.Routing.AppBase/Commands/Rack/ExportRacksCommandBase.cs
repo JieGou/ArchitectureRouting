@@ -60,7 +60,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Rack
 
     private static string GetLevelName( Document document, FamilyInstance familyInstance )
     {
-      return document.GetElementById<Level>( familyInstance.LevelId )?.Name ?? string.Empty ;
+      return document.GetElementById<Level>( familyInstance.GetLevelId() )?.Name ?? string.Empty ;
     }
   }
 }

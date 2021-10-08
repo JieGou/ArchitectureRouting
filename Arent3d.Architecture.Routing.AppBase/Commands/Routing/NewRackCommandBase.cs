@@ -252,7 +252,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
     
-    public static FamilyInstance CreateRackForStraightConduit( UIDocument uiDocument, Element element )
+    public static FamilyInstance CreateRackForStraightConduit( UIDocument uiDocument, Element element, double cableRackWidth = 0 )
     {
       var document = uiDocument.Document ;
       var conduit = ( element as Conduit )! ;
@@ -274,6 +274,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // set cable rack length
       SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
 
+      // set cable rack length
+      if ( cableRackWidth > 0 )
+        SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), cableRackWidth.MillimetersToRevitUnits() ) ;
+      
       // set cable tray direction
       if ( 1.0 == line.Direction.Y ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ), Math.PI / 2 ) ;
@@ -303,7 +307,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return instance ;
     }
     
-    public static FamilyInstance CreateRackForFittingConduit( UIDocument uiDocument, FamilyInstance conduit, LocationPoint location )
+    public static FamilyInstance CreateRackForFittingConduit( UIDocument uiDocument, FamilyInstance conduit, LocationPoint location, double cableTrayDefaultBendRadius = 0)
     {
       var document = uiDocument.Document ;
       
@@ -316,10 +320,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if (false == symbol.IsActive) symbol.Activate();
       var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
 
-       // set cable tray Bend Radius
-      var bendRadiusCable = ( RATIO_BEND_RADIUS * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() ;
-      SetParameter( instance,
-        "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadiusCable ) ; // TODO may be must change when FamilyType change
+      // set cable tray Bend Radius
+      bendRadius = cableTrayDefaultBendRadius == 0 ? ( RATIO_BEND_RADIUS * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
+      SetParameter( instance, "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ), bendRadius ) ; // TODO may be must change when FamilyType change
 
       // set cable rack length
       SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
@@ -340,6 +343,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return instance ;
     }
+    
     public static bool IsSameConnectors( IEnumerable<Connector> connectors, IEnumerable<Connector> otherConnectors )
     {
       var isSameConnectors = true ;
