@@ -510,7 +510,7 @@ namespace Arent3d.Architecture.Routing.AppBase
           MEPCurve => AllowRoute,
           FamilyInstance fi => IsEquipment( fi ) || ( AllowRoute && elem.IsAutoRoutingGeneratedElement() ),
           _ => false,
-        } ;
+        } && PointOnRouteFilters.RepresentativeElement( elem ) ;
       }
 
       private static bool IsEquipment( FamilyInstance fi )

@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
     /// <returns>Routing from-to records.</returns>
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Dialog.Commands.PassPoint.Insert.Pick".GetAppStringByKeyOrDefault( null ), GetAddInType() ) ;
+      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Dialog.Commands.PassPoint.Insert.Pick".GetAppStringByKeyOrDefault( null ), GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
       return ( true, pickInfo ) ;
     }
 

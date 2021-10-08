@@ -66,13 +66,13 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
 
-    public static PickInfo PickRoute( UIDocument uiDocument, bool mepCurveOnly, string message, AddInType addInType, string? firstRouteId = null )
+    public static PickInfo PickRoute( UIDocument uiDocument, bool mepCurveOnly, string message, AddInType addInType, Predicate<Element>? elementFilter = null )
     {
       var document = uiDocument.Document ;
 
       var dic = RouteCache.Get( document ) ;
       AddInType = addInType ;
-      var filter = new RouteFilter( dic, mepCurveOnly, ( null == firstRouteId ) ? null : elm => ( firstRouteId == elm.GetRouteName() ) ) ;
+      var filter = new RouteFilter( dic, mepCurveOnly, elementFilter ) ;
 
 
       while ( true ) {

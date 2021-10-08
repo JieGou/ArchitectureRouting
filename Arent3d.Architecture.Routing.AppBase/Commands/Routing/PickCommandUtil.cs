@@ -150,7 +150,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( distance <= elbowSize ) return subRoutePos ; // Cannot modify: not distant enough
 
       var adjustedPosParam = routeDir.DotProduct( connectorPos - curveCommonSidePos ) - ( elbowSize + minimumLength ) ;
-      if ( adjustedPosParam <= minimumLength || curveLength - minimumLength <= adjustedPosParam ) return subRoutePos ;  // Cannot modify: out of range
+      if ( curveLength - minimumLength <= adjustedPosParam ) {
+        // Cannot modify: out of range
+        // TODO: seek connecting conduit
+        adjustedPosParam = curveLength - minimumLength ;
+      }
+      if ( adjustedPosParam <= minimumLength ) {
+        // Cannot modify: out of range
+        // TODO: seek connecting conduit
+        return subRoutePos ;
+      }
 
       return curveCommonSidePos + adjustedPosParam * routeDir ;
 
