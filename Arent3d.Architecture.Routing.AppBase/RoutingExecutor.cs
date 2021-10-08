@@ -34,10 +34,12 @@ namespace Arent3d.Architecture.Routing.AppBase
       Document = document ;
       FittingSizeCalculator = fittingSizeCalculator ;
       _pipeSpecDictionary = new PipeSpecDictionary( document, fittingSizeCalculator ) ;
-      CollectRacks( document, view ) ;
+      CollectRacks( document, view, GetRackFamilyInstances() ) ;
     }
 
-    private static void CollectRacks( Document document, View view )
+    protected abstract IEnumerable<FamilyInstance> GetRackFamilyInstances() ;
+
+    private static void CollectRacks( Document document, View view, IEnumerable<FamilyInstance> rackFamilyInstances )
     {
       const double beamInterval = 6.0 ; // TODO
       const double sideBeamWidth = 0.2 ; // TODO
@@ -45,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       var racks = DocumentMapper.Get( document ).RackCollection ;
 
       racks.Clear() ;
-      foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
+      foreach ( var familyInstance in rackFamilyInstances ) {
         var (min, max) = familyInstance.get_BoundingBox( view ).To3dRaw() ;
 
         racks.AddRack( new Rack.Rack( new Box3d( min, max ), beamInterval, sideBeamWidth, sideBeamHeight ) { IsMainRack = true } ) ;

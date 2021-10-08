@@ -251,9 +251,9 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId elementId )
+    public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( elementId ) ) ;
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
@@ -278,7 +278,7 @@ namespace Arent3d.Architecture.Routing
         _ => RoutingFamilyType.ConnectorPoint,
       } ;
 
-      var instance = document.CreateFamilyInstance( routingFamilyType, position, StructuralType.NonStructural, true ) ;
+      var instance = document.CreateFamilyInstance( routingFamilyType, position, StructuralType.NonStructural, true, document.GetElementById<Level>( conn.Owner.LevelId ) ) ;
       var id = conn.Id ;
 
       instance.SetProperty( RoutingFamilyLinkedParameter.RouteConnectorRelationIds, id ) ;
@@ -323,19 +323,24 @@ namespace Arent3d.Architecture.Routing
       return instance ;
     }
 
-    public static FamilyInstance AddRackGuid( this Document document, XYZ position )
+    public static FamilyInstance AddRackGuide( this Document document, XYZ position, Level? level )
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true ) ;
+      return document.CreateFamilyInstance( RoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true, level ) ;
     }
 
-    public static FamilyInstance AddShaft( this Document document, XYZ position )
+    public static FamilyInstance AddRackSpace( this Document document, XYZ position, Level level )
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.Shaft, position, StructuralType.NonStructural, true ) ;
+      return document.CreateFamilyInstance( RoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
     }
 
-    public static FamilyInstance AddCornPoint( this Document document, string routeName, XYZ position )
+    public static FamilyInstance AddShaft( this Document document, XYZ position, Level? level )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.CornPoint, position, StructuralType.NonStructural, true ) ;
+      return document.CreateFamilyInstance( RoutingFamilyType.Shaft, position, StructuralType.NonStructural, true, level ) ;
+    }
+
+    public static FamilyInstance AddCornPoint( this Document document, string routeName, XYZ position, Level? level )
+    {
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.CornPoint, position, StructuralType.NonStructural, true, level ) ;
       instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
 
       return instance ;
@@ -696,7 +701,7 @@ namespace Arent3d.Architecture.Routing
 
     #region General
 
-    private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level = null )
+    private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
     {
       var symbol = document.GetFamilySymbol( familyType )! ;
       if ( false == symbol.IsActive ) {

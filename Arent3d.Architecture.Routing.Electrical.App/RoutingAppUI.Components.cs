@@ -117,7 +117,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [Button( typeof( EraseAllRacksCommand ), OnlyInitialized = true )]
         private static class EraseAllRacksCommandButton { }
 
-        [Button( typeof( RackGuidCommand ), OnlyInitialized = true )]
+        [Button( typeof( RackSpaceCommand ), OnlyInitialized = true )]
         private static class RackGuidCommandButton { }
       }
       [Panel( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Shafts" )]

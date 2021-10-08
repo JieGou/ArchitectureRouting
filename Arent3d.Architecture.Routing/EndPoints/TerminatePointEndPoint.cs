@@ -142,23 +142,24 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       TerminatePointId = _document.AddTerminatePoint( routeName, PreferredPosition, PreferredDirection, PreferredRadius, GetLevelId( _document ) ).Id ;
 
-        Element elemTerP = _document.GetElement( TerminatePointId );
-        Element elemOrg = _document.GetElement( LinkedInstanceId );
+      Element elemTerP = _document.GetElement( TerminatePointId ) ;
+      Element elemOrg = _document.GetElement( LinkedInstanceId ) ;
 
-        foreach ( Parameter parameter in elemTerP.Parameters ) {
-            if ( parameter.Definition.Name == "LinkedInstanceId" ) {
-                parameter.Set( LinkedInstanceId.ToString() );
-            }
-            if ( parameter.Definition.Name == "LinkedInstanceXYZ" ) {
-                LocationPoint? Lp = elemOrg.Location as LocationPoint;
-                XYZ? ElementPoint = Lp?.Point;
-                XYZ addPoint = PreferredPosition - ElementPoint;
-
-                parameter.Set( addPoint.ToString().Substring(1,addPoint.ToString().Length -1 ) );
-            }
+      foreach ( Parameter parameter in elemTerP.Parameters ) {
+        if ( parameter.Definition.Name == "LinkedInstanceId" ) {
+          parameter.Set( LinkedInstanceId.ToString() ) ;
         }
 
-        return true ;
+        if ( parameter.Definition.Name == "LinkedInstanceXYZ" ) {
+          LocationPoint? Lp = elemOrg.Location as LocationPoint ;
+          XYZ? ElementPoint = Lp?.Point ;
+          XYZ addPoint = PreferredPosition - ElementPoint ;
+
+          parameter.Set( addPoint.ToString().Substring( 1, addPoint.ToString().Length - 1 ) ) ;
+        }
+      }
+
+      return true ;
     }
 
     public bool EraseInstance()
