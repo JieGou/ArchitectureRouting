@@ -19,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       Document document = uiDocument.Document ;
       Application app = uiApp.Application ;
       Selection selection = uiDocument.Selection ;
+      bool checkEx = false ;
       try {
         // Pick first point 
         XYZ firstPoint = selection.PickPoint( "Pick first point" ) ;
@@ -37,14 +38,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           secondPoint = selection.PickPoint( "Pick next point" ) ;
         }
         catch ( Exception ) {
+          checkEx = true ;
         }
         finally {
           // End to render guide line
           circleExternal.Dispose() ;
         }
 
-        // If next point is null. Return success to end command
-        if ( secondPoint == null ) return Result.Succeeded ;
+        // If second point is null. Return failed to end command
+        if ( secondPoint == null || checkEx ) return Result.Failed ;
         
         // Get height setting
         HeightSettingStorable heightSetting = document.GetHeightSettingStorable() ;
