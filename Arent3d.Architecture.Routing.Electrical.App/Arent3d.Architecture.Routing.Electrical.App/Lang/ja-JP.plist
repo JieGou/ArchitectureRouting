@@ -98,6 +98,9 @@
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
         <string>コネクターを追加する&#xA;( 両方 )</string>        
 
+        <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
+        <string>円柱シャフト作成</string>
+        
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
