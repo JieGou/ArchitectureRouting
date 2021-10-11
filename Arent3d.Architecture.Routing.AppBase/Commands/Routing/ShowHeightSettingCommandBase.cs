@@ -15,10 +15,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class ShowHeightSettingCommandBase : IExternalCommand
   {
+    protected UIDocument UiDocument { get ; private set ; } = null! ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      UIDocument uIDocument = commandData.Application.ActiveUIDocument ;
-      Document document = uIDocument.Document ;
+      UiDocument = commandData.Application.ActiveUIDocument ;
+      Document document = UiDocument.Document ;
 
       // get data of height setting from snoop DB
       HeightSettingStorable settingStorables = document.GetHeightSettingStorable() ;
@@ -44,6 +45,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             using ( progress?.Reserve( 0.5 ) ) {
               SaveSetting( document, settingStorables ) ;
             }
+
+            AfterApplySetting() ;
           }
 
           return Result.Succeeded ;
@@ -70,9 +73,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
 
       var allConduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
-                                                                .OfCategory( BuiltInCategory.OST_Conduit )
-                                                                .AsEnumerable()
-                                                                .OfType<Conduit>() ;
+        .OfCategory( BuiltInCategory.OST_Conduit )
+        .AsEnumerable()
+        .OfType<Conduit>() ;
       var conduits = allConduits.GroupBy( x => x.ReferenceLevel.Id ).ToDictionary( g => g.Key, g => g.ToList() ) ;
 
       var totalProgress = 0.00 + allConnectors.Count() + allConduits.Count() ;
@@ -92,35 +95,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             } ) ;
           }
         }
-        // Set Top Elevation for conduit
-        if ( conduits.ContainsKey( level.Id ) ) {
-          using ( var p = progressData?.Reserve( conduits[ level.Id ].Count / totalProgress ) ) {
-            p.ForEach( conduits[ level.Id ].Count, conduits[ level.Id ], conduit =>
-            {
-              var elevationFromFloor = conduit.get_Parameter( BuiltInParameter.RBS_CTC_BOTTOM_ELEVATION ).AsDouble() ;
-              if ( elevationFromFloor != heightConnector ) {
-                conduit.get_Parameter( BuiltInParameter.RBS_CTC_BOTTOM_ELEVATION ).Set( heightConnector ) ;
-              }
-            } ) ;
-          }
-        }
 
         // Set Elevation for level
         level.Elevation = settingStorables[ level ].Elevation.MillimetersToRevitUnits() ;
       }
 
       // Set height for Arent shaft
-      var arentShafts = document.GetAllFamilyInstances(RoutingFamilyType.Shaft);
-      var levels = settingStorables.Levels.OrderBy(x => x.Elevation).ToList();
-      Level? lowestLevel = levels.FirstOrDefault();
-      Level? highestLevel = levels.LastOrDefault();
-      if(lowestLevel != null && highestLevel != null) { 
-        foreach (FamilyInstance shaft in arentShafts) {
-          shaft.LookupParameter("高さ").Set(highestLevel!.Elevation);
+      var arentShafts = document.GetAllFamilyInstances( RoutingFamilyType.Shaft ) ;
+      var levels = settingStorables.Levels.OrderBy( x => x.Elevation ).ToList() ;
+      Level? lowestLevel = levels.FirstOrDefault() ;
+      Level? highestLevel = levels.LastOrDefault() ;
+      if ( lowestLevel != null && highestLevel != null ) {
+        foreach ( FamilyInstance shaft in arentShafts ) {
+          shaft.LookupParameter( "高さ" ).Set( highestLevel!.Elevation ) ;
         }
       }
     }
-
+    protected virtual void AfterApplySetting()
+    {
+      // TODO after apply height setting
+    }
     private static void SaveSetting( Document document, HeightSettingStorable newSettings )
     {
       newSettings.Save() ;
@@ -128,7 +122,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static bool ShouldApplySetting( Document document, HeightSettingStorable newSettings )
     {
-      var old = document.GetAllStorables<HeightSettingStorable>().FirstOrDefault() ;  // generates new instance from document
+      var old = document.GetAllStorables<HeightSettingStorable>().FirstOrDefault() ; // generates new instance from document
       return ( false == newSettings.Equals( old ) ) ;
     }
   }
