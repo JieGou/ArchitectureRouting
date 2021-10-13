@@ -31,6 +31,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       BuiltInCategory.OST_CableTray, BuiltInCategory.OST_CableTrayFitting
     } ;
 
+    public static IReadOnlyDictionary<byte, string> RackTypes { get ; } = new Dictionary<byte, string>
+    {
+      { 0, "Normal Rack" },
+      { 1, "Limit Rack" }
+    } ;
+    
     protected abstract AddInType GetAddInType() ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
