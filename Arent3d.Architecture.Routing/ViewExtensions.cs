@@ -23,32 +23,36 @@ namespace Arent3d.Architecture.Routing
     {
       var floorPlanFamily = document.GetAllElements<ViewFamilyType>().FirstOrDefault( viewFamilyType => viewFamilyType.ViewFamily == ViewFamily.FloorPlan ) ?? throw new InvalidOperationException() ;
       var views = document.GetAllElements<View>() ;
+      var viewNames = views.Select( x => x.Name ).ToList() ;
 
       foreach ( var (id, name) in levels ) {
-        var view = ViewPlan.Create( document, floorPlanFamily.Id, id ) ;
-        foreach ( Category cat in view.Document.Settings.Categories ) {
-          if ( cat.get_AllowsVisibilityControl( view ) ) {
-            cat.set_Visible( view, IsViewable( cat ) ) ;
+        var viewName = $"{name} - {RoutingViewPostFix}" ;
+        if ( ! viewNames.Contains( viewName ) ) {
+          var view = ViewPlan.Create( document, floorPlanFamily.Id, id ) ;
+          foreach ( Category cat in view.Document.Settings.Categories ) {
+            if ( cat.get_AllowsVisibilityControl( view ) ) {
+              cat.set_Visible( view, IsViewable( cat ) ) ;
+            }
           }
+
+          view.Name = viewName ;
+          view.ViewTemplateId = ElementId.InvalidElementId ;
+          view.get_Parameter( BuiltInParameter.VIEW_DISCIPLINE ).Set( 4095 ) ;
+
+          var pvr = view.GetViewRange() ;
+
+          // pvr.SetLevelId(PlanViewPlane.TopClipPlane, vp.LevelId);
+          pvr.SetOffset( PlanViewPlane.TopClipPlane, 4000.0 / 304.8 ) ;
+
+          pvr.SetOffset( PlanViewPlane.CutPlane, 3000.0 / 304.8 ) ;
+
+          // pvr.SetLevelId(PlanViewPlane.BottomClipPlane, vp.LevelId);
+          pvr.SetOffset( PlanViewPlane.BottomClipPlane, 0.0 ) ;
+          view.SetViewRange( pvr ) ;
         }
-
-        view.Name = $"{name} - {RoutingViewPostFix}" ;
-        view.ViewTemplateId = ElementId.InvalidElementId ;
-        view.get_Parameter( BuiltInParameter.VIEW_DISCIPLINE ).Set( 4095 ) ;
-
-        var pvr = view.GetViewRange() ;
-
-        // pvr.SetLevelId(PlanViewPlane.TopClipPlane, vp.LevelId);
-        pvr.SetOffset( PlanViewPlane.TopClipPlane, 4000.0 / 304.8 ) ;
-
-        pvr.SetOffset( PlanViewPlane.CutPlane, 3000.0 / 304.8 ) ;
-
-        // pvr.SetLevelId(PlanViewPlane.BottomClipPlane, vp.LevelId);
-        pvr.SetOffset( PlanViewPlane.BottomClipPlane, 0.0 ) ;
-        view.SetViewRange( pvr ) ;
       }
 
-      var filter = CreateElementFilter<RoutingFamilyType>( document, "RoutingModels" ) ;
+      var filter = CreateElementFilter<RoutingFamilyType>( document, "RoutingModels" + DateTime.Now.ToString( "hhmmss" ) ) ;
 
       foreach ( View v in views ) {
         if ( NotContain( v.Name, RoutingViewPostFix ) ) {
