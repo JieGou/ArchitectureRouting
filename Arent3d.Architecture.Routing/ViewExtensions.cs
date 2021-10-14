@@ -145,6 +145,7 @@ namespace Arent3d.Architecture.Routing
 
           view.Name = viewName ;
           view.ViewTemplateId = ElementId.InvalidElementId ;
+          view.DisplayStyle = DisplayStyle.FlatColors ;
           view.get_Parameter( BuiltInParameter.VIEW_DISCIPLINE ).Set( 4095 ) ;
 
           // Create a new BoundingBoxXYZ to define a 3D rectangular space
