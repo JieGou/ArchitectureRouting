@@ -100,6 +100,9 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>Create&#xA;Cylindrical Shaft</string>
 
+        <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
+        <string>Show 3D View&#xA;For Each Floor</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
