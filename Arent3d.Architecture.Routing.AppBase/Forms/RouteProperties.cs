@@ -95,11 +95,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       AvoidType = Routing.AvoidType.Whichever ;
     }
 
-    public RouteProperties( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, string? standardType )
+    public RouteProperties( Document document, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, string? standardType, double? diameter )
     {
       Document = document ;
       
-      Diameter = null ;
+      Diameter = diameter ;
 
       if ( classificationInfo.HasSystemType() ) {
         // Mechanical
@@ -127,7 +127,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFromFixedHeight, FixedHeight? fromFixedHeight, bool? useToFixedHeight,FixedHeight? toFixedHeight, AvoidType? avoidType, Opening? shaft )
+    public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFromFixedHeight, FixedHeight? fromFixedHeight, bool? useToFixedHeight, FixedHeight? toFixedHeight, AvoidType? avoidType, Opening? shaft )
     {
       Document = route.Document ;
 
