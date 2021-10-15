@@ -134,7 +134,11 @@ namespace Arent3d.Architecture.Routing
 
     public static void Create3DView( this Document document, IReadOnlyCollection<(ElementId Id, string Name)> levels )
     {
+      if ( levels == null || levels.Count < 1 ) return ;
+
       HeightSettingStorable settingStorables = document.GetHeightSettingStorable() ;
+      if ( settingStorables == null ) return ;
+
       var allLevels = settingStorables.Levels.OrderBy( x => x.Elevation ).ToList() ;
 
       var viewFamilyType = document.GetAllElements<ViewFamilyType>().FirstOrDefault( viewFamilyType => viewFamilyType.ViewFamily == ViewFamily.ThreeDimensional ) ?? throw new InvalidOperationException() ;
