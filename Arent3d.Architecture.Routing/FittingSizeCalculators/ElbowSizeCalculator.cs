@@ -7,24 +7,31 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
 {
   internal abstract class ElbowSizeCalculator : SizeCalculatorBase
   {
+    private readonly double _diameter ;
+
     protected ElbowSizeCalculator( Document document, IMEPCurveGenerator mepCurveGenerator, double diameter ) : base( document, mepCurveGenerator, GetStraightLineLength( diameter ) )
     {
+      _diameter = diameter ;
+
+      CalculateConnectorPositions() ;
     }
 
-    private double MinimumStraightLength => ( 1d / 120d ) * 2 ; // minimum curve length * 2
     private static double GetStraightLineLength( double diameter ) => Math.Max( diameter * 50, 1 ) ; // diameter * 50 or 1ft (greater)
 
     protected override void GenerateFittingFromConnectors( IReadOnlyList<Connector> connectors )
     {
       if ( 2 != connectors.Count ) return ;
 
+      SetDiameter( connectors[ 0 ], _diameter ) ;
+      SetDiameter( connectors[ 1 ], _diameter ) ;
+
       Document.Create.NewElbowFitting( connectors[ 0 ], connectors[ 1 ] ) ;
     }
 
     private double? _elbowSize ;
-    public double ElbowSize => _elbowSize ??= Math.Max( GetElbowSize( ConnectorPositions ), MinimumStraightLength ) ;
+    public double ElbowSize => _elbowSize ??= GetElbowSize( ConnectorPositions ) ;
 
-    private double GetElbowSize( IReadOnlyList<XYZ>? connectorPositions )
+    private static double GetElbowSize( IReadOnlyList<XYZ>? connectorPositions )
     {
       if ( null == connectorPositions || 2 != connectorPositions.Count ) return 0 ;
 
