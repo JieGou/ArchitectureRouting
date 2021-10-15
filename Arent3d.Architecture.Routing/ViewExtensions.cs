@@ -142,7 +142,7 @@ namespace Arent3d.Architecture.Routing
       var viewNames = views.Select( x => x.Name ).ToList() ;
 
       foreach ( var level in levels ) {
-        var viewName = $"{View3DName} - {level.Name}" ;
+        var viewName = $"{View3DName}{level.Name}" ;
         if ( ! viewNames.Contains( viewName ) ) {
           var elevation = allLevels.FirstOrDefault( x => x.Id == level.Id ).Elevation ;
           View3D view = View3D.CreateIsometric( document, viewFamilyType.Id ) ;
@@ -158,7 +158,7 @@ namespace Arent3d.Architecture.Routing
           // Set the lower left bottom corner of the box
           // Use the Z of the current level.
           // X & Y values have been hardcoded based on this RVT geometry
-          boundingBoxXYZ.Min = new XYZ( -50, -50, elevation ) ;
+          boundingBoxXYZ.Min = new XYZ( -50, -50, elevation - 5 ) ;
 
           // Determine the height of the bounding box
           double zOffset = 0 ;
