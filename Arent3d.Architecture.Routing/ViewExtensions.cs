@@ -137,9 +137,7 @@ namespace Arent3d.Architecture.Routing
       if ( levels == null || levels.Count < 1 ) return ;
 
       HeightSettingStorable settingStorables = document.GetHeightSettingStorable() ;
-      if ( settingStorables == null ) return ;
-
-      var allLevels = settingStorables.Levels.OrderBy( x => x.Elevation ).ToList() ;
+      var allLevels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
 
       var viewFamilyType = document.GetAllElements<ViewFamilyType>().FirstOrDefault( viewFamilyType => viewFamilyType.ViewFamily == ViewFamily.ThreeDimensional ) ?? throw new InvalidOperationException() ;
       var views = document.GetAllElements<View>() ;
@@ -149,7 +147,7 @@ namespace Arent3d.Architecture.Routing
         var viewName = $"{View3DName}{level.Name}" ;
         if ( ! viewNames.Contains( viewName ) ) {
           var currentLevel = allLevels.FirstOrDefault( x => x.Id == level.Id ) ;
-          var underFloor = settingStorables[ currentLevel ].Underfloor.MillimetersToRevitUnits() ;
+          var underFloor = settingStorables == null ? 0 : settingStorables[ currentLevel ].Underfloor.MillimetersToRevitUnits() ;
           View3D view = View3D.CreateIsometric( document, viewFamilyType.Id ) ;
 
           view.Name = viewName ;
