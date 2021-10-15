@@ -114,8 +114,6 @@
 
         <key>TransactionName.Commands.Routing.Common.Routing</key>
         <string>ルーティング</string>
-        <key>TransactionName.Commands.Routing.Common.SetupParameters</key>
-        <string>パラメータ追加</string>
 
         <key>TransactionName.Commands.Routing.Common.ChangeColor</key>
         <string>ハイライト用色変更</string>
