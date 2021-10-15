@@ -19,6 +19,7 @@ namespace Arent3d.Architecture.Routing
     private const string RoutingSharedParameterFileName = "RoutingSharedParameters.txt" ;
     private const string PassPointSharedParameterFileName = "PassPointSharedParameters.txt" ;
     private const string RoutingElementSharedParameterFileName = "RoutingElementSharedParameters.txt";
+    private const string ConnectorSharedParameterFileName = "ConnectorSharedParameters.txt" ;
 
     private static readonly string AssetPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "Assets" ) ;
 
@@ -41,7 +42,10 @@ namespace Arent3d.Architecture.Routing
     {
         return GetPath( SettingFolderName, RoutingElementSharedParameterFileName );
     }
-
+    public static string GetConnectorSharedParameterPath()
+    {
+      return GetPath( SettingFolderName, ConnectorSharedParameterFileName );
+    }
     private static string GetPath( string folderName, string fileName )
     {
       return Path.Combine( AssetPath, folderName, fileName ) ;
