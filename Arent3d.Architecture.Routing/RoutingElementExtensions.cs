@@ -4,6 +4,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -36,9 +37,21 @@ namespace Arent3d.Architecture.Routing
       document.MakeCertainAllRoutingFamilies() ;
       document.MakeCertainAllRoutingParameters() ;
 
+      //Add connector type value
+      var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ) ;
+      foreach ( var connector in connectorOneSide ) {
+        SetParameter( connector, "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( document, "Connector Type" ), RouteConnectorType[ 1 ] ) ;
+      }
+
       return document.RoutingSettingsAreInitialized() ;
     }
 
+    private static void SetParameter( FamilyInstance instance, string parameterName, string value )
+    {
+      instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
+    }
+
+    private static IReadOnlyDictionary<byte, string> RouteConnectorType { get ; } = new Dictionary<byte, string> { { 0, "Power" }, { 1, "Sensor" } } ;    
     #endregion
 
     #region Connectors (General)
