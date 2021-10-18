@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var parameterName = document.GetParameterName( RoutingParameter.RouteName ) ;
             if ( null == parameterName ) return Result.Failed ;
 
-            var filter =
+              var filter =
               new ElementParameterFilter(
                 ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
@@ -278,12 +278,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var symbol = document.GetFamilySymbol( RoutingFamilyType.CableTray )! ; // TODO may change in the future
 
-      // Create cable tray
-      if (false == symbol.IsActive) symbol.Activate();
+            /*var paramRackType = document.GetParameterName(RoutingParameter.RackType);
+
+            Category cableTray = document.Settings.Categories.get_Item(BuiltInCategory.OST_CableTray);
+            CategorySet categories = document.Application.Create.NewCategorySet();
+            categories.Insert(cableTray);
+
+            Autodesk.Revit.ApplicationServices.Application.SharedParametersFilename = AssetManager.GetPassPointSharedParameterPath();
+
+            ExternalDefinition extention_df = document.GetSharedParameterElement(RoutingParameter.RackType);//create here
+
+
+            //Create an instance of InstanceBinding
+            InstanceBinding instanceBinding = document.Application.Create.NewInstanceBinding(categories);
+            // Get the BingdingMap of current document.
+            BindingMap bindingMap = document.ParameterBindings;
+
+            // Bind the definitions to the document
+            bool instanceBindOK = bindingMap.Insert(extention_df,
+                                            instanceBinding, BuiltInParameterGroup.PG_IDENTITY_DATA);*/
+
+            // Create cable tray
+            if (false == symbol.IsActive) symbol.Activate();
       var instance = document.Create.NewFamilyInstance(firstConnector.Origin, symbol, null, StructuralType.NonStructural);
 
-      // set cable rack length
-      SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
+            // set cable rack length
+            SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
 
       // set cable rack length
       if ( cableRackWidth > 0 )
@@ -291,9 +311,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       // set cable rack comments
       SetParameter( instance, "Revit.Property.Builtin.Comments".GetDocumentStringByKeyOrDefault( document, "Comments" ), cableRackWidth == 0 ? RackTypes[0] : RackTypes[1] ) ;
-     
-      // set cable tray direction
-      if ( 1.0 == line.Direction.Y ) {
+      SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type"), cableRackWidth == 0 ? RackTypes[0] : RackTypes[1] ) ;
+
+            // set cable tray direction
+            if ( 1.0 == line.Direction.Y ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ), Math.PI / 2 ) ;
       }
       else if ( -1.0 == line.Direction.Y ) {
