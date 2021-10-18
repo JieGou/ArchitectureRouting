@@ -311,7 +311,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       // set cable rack comments
       SetParameter( instance, "Revit.Property.Builtin.Comments".GetDocumentStringByKeyOrDefault( document, "Comments" ), cableRackWidth == 0 ? RackTypes[0] : RackTypes[1] ) ;
-      SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type"), cableRackWidth == 0 ? RackTypes[0] : RackTypes[1] ) ;
+      //SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type"), cableRackWidth == 0 ? RackTypes[0] : RackTypes[1] ) ;
 
             // set cable tray direction
             if ( 1.0 == line.Direction.Y ) {
