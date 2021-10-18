@@ -8,7 +8,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public class EraseAllLimitRackCommandBase: IExternalCommand
+  public class EraseAllLimitRackCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -22,14 +22,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var cableTrayFittings = document.GetAllFamilyInstances( RoutingFamilyType.CableTrayFitting ) ;
           var allLimitRack = new List<ElementId>() ;
           foreach ( var cableTray in cableTrays ) {
-            var comment = cableTray.ParametersMap.get_Item("Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type") ).AsString() ;
-            if ( comment == NewRackCommandBase.RackTypes[1] )
-               allLimitRack.Add( cableTray.Id ) ;
+            var comment = cableTray.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ) ).AsString() ;
+            if ( comment == NewRackCommandBase.RackTypes[ 1 ] )
+              allLimitRack.Add( cableTray.Id ) ;
           }
 
           foreach ( var cableTrayFitting in cableTrayFittings ) {
-            var comment = cableTrayFitting.ParametersMap.get_Item("Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type") ).AsString() ;
-            if ( comment == NewRackCommandBase.RackTypes[1] )
+            var comment = cableTrayFitting.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ) ).AsString() ;
+            if ( comment == NewRackCommandBase.RackTypes[ 1 ] )
               allLimitRack.Add( cableTrayFitting.Id ) ;
           }
 

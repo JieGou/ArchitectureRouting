@@ -10,6 +10,5 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class EraseAllLimitRackCommand : EraseAllLimitRackCommandBase
   {
-    
   }
 }
