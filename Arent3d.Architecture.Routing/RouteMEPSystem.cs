@@ -15,7 +15,6 @@ namespace Arent3d.Architecture.Routing
   {
     public double DiameterTolerance { get ; }
     public double AngleTolerance { get ; }
-    public double ShortCurveTolerance { get ; }
 
     public Document Document { get ; }
 
@@ -34,7 +33,6 @@ namespace Arent3d.Architecture.Routing
       var app = document.Application ;
       DiameterTolerance = app.VertexTolerance ;
       AngleTolerance = app.AngleTolerance ;
-      ShortCurveTolerance = app.ShortCurveTolerance ;
 
       MEPSystemType = mepSystemType ;
       //MEPSystem = CreateMEPSystem( document, connector, allConnectors ) ;
