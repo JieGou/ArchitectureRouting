@@ -8,6 +8,8 @@ namespace Arent3d.Architecture.Routing
 {
   public class MEPSystemPipeSpec : IPipeSpec
   {
+    private const double MinimumShortCurveLength = ( 1.0 / 120 ) * 2 ; // twice of the minimum curve length.
+
     private readonly IFittingSizeCalculator _fittingSizeCalculator ;
     private Document Document => RouteMEPSystem.Document ;
 
@@ -75,10 +77,7 @@ namespace Arent3d.Architecture.Routing
       return ( _reducerLength ??= new SizeTable<(double, double), double>( CalculateReducerLength ) ).Get( ( diameter1, diameter2 ) ) ;
     }
 
-    public double GetWeldMinDistance( IPipeDiameter diameter )
-    {
-      return RouteMEPSystem.ShortCurveTolerance ;
-    }
+    public double GetWeldMinDistance( IPipeDiameter diameter ) => 0 ;
 
 
     private IMEPCurveGenerator? _mepCurveGenerator = null ;
@@ -86,22 +85,23 @@ namespace Arent3d.Architecture.Routing
 
     private double Calculate90ElbowSize( double diameter )
     {
-      return _fittingSizeCalculator.Calc90ElbowSize( Document, MEPCurveGenerator, diameter ) ;
+      return _fittingSizeCalculator.Calc90ElbowSize( Document, MEPCurveGenerator, diameter ) + MinimumShortCurveLength ;
     }
 
     private double Calculate45ElbowSize( double diameter )
     {
-      return _fittingSizeCalculator.Calc45ElbowSize( Document, MEPCurveGenerator, diameter ) ;
+      return _fittingSizeCalculator.Calc45ElbowSize( Document, MEPCurveGenerator, diameter ) + MinimumShortCurveLength ;
     }
 
     private (double Header, double Branch) CalculateTeeLengths( ( double HeaderDiameter, double BranchDiameter) value )
     {
-      return _fittingSizeCalculator.CalculateTeeLengths( Document, MEPCurveGenerator, value.HeaderDiameter, value.BranchDiameter ) ;
+      var tuple = _fittingSizeCalculator.CalculateTeeLengths( Document, MEPCurveGenerator, value.HeaderDiameter, value.BranchDiameter ) ;
+      return ( tuple.Header + MinimumShortCurveLength, tuple.Branch + MinimumShortCurveLength ) ;
     }
 
     private double CalculateReducerLength( (double, double) value )
     {
-      return _fittingSizeCalculator.CalculateReducerLength( Document, MEPCurveGenerator, value.Item1, value.Item2 ) ;
+      return _fittingSizeCalculator.CalculateReducerLength( Document, MEPCurveGenerator, value.Item1, value.Item2 ) + ( MinimumShortCurveLength * 2 ) ;
     }
   }
 }

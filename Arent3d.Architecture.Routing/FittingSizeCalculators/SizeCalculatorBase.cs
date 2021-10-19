@@ -11,18 +11,23 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
   {
     protected Document Document { get ; }
     private IMEPCurveGenerator FittingGenerator { get ; }
-    protected IReadOnlyList<XYZ>? ConnectorPositions { get ; }
+    protected IReadOnlyList<XYZ>? ConnectorPositions { get ; private set ; }
+    private readonly double _straitLineLength ;
 
     protected SizeCalculatorBase( Document document, IMEPCurveGenerator mepCurveGenerator, double straitLineLength )
     {
       Document = document ;
       FittingGenerator = mepCurveGenerator ;
+      _straitLineLength = straitLineLength ;
+    }
 
+    protected void CalculateConnectorPositions()
+    {
       using var transaction = new SubTransaction( Document ) ;
       try {
         transaction.Start() ;
 
-        var (curves, connectors) = CreateMEPCurvesToConnect( straitLineLength ) ;
+        var (curves, connectors) = CreateMEPCurvesToConnect( _straitLineLength ) ;
 
         if ( null != connectors ) {
           ConnectorPositions = GenerateFitting( curves, connectors ) ;
@@ -57,6 +62,13 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
     }
 
     protected abstract IReadOnlyList<XYZ> EndDirections { get ; }
+
+    protected static void SetDiameter( Connector connector, double diameter )
+    {
+      foreach ( var c in connector.Owner.GetConnectors().OfEnd() ) {
+        c.SetDiameter( diameter ) ;
+      }
+    }
 
     private IReadOnlyList<XYZ> GenerateFitting( IReadOnlyList<MEPCurve> curves, IReadOnlyList<Connector> connectors )
     {

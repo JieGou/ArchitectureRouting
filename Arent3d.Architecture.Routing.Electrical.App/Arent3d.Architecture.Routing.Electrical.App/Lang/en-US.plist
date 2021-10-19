@@ -116,8 +116,6 @@
 
         <key>TransactionName.Commands.Routing.Common.Routing</key>
         <string>Routing</string>
-        <key>TransactionName.Commands.Routing.Common.SetupParameters</key>
-        <string>Setup Parameters</string>
 
         <key>TransactionName.Commands.Routing.Common.ChangeColor</key>
         <string>Change Color for Highlighting</string>

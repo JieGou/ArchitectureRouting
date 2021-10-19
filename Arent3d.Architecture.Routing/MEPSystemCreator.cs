@@ -232,9 +232,27 @@ namespace Arent3d.Architecture.Routing
         // Connection between DomainElectrical & dummy conduit
         return ( true, null ) ;
       }
-      
+
+      var dir1 = connector1.CoordinateSystem.BasisZ ;
+      var dir2 = connector2.CoordinateSystem.BasisZ ;
+      var angle = dir1.AngleTo( dir2 ) ;
+      var angleTolerance = document.Application.AngleTolerance ;
+      var isOnSameLine = ( angle < angleTolerance || Math.PI - angleTolerance < angle ) ;
+
       using var connectorTransaction = new SubTransaction( document ) ;
       try {
+        if ( isOnSameLine ) {
+          // opposite or direct
+          if ( connector1.Owner is MEPCurve ) {
+            // move connector1 to another
+            MoveConnectorPositionInto( connector1, connector2.Origin ) ;
+          }
+          else if ( connector2.Owner is MEPCurve ) {
+            // move connector2 to another
+            MoveConnectorPositionInto( connector2, connector1.Origin ) ;
+          }
+        }
+
         connectorTransaction.Start() ;
         connector1.ConnectTo( connector2 ) ;
         connectorTransaction.Commit() ;
@@ -244,11 +262,8 @@ namespace Arent3d.Architecture.Routing
         return ( false, null ) ;
       }
 
-      var dir1 = connector1.CoordinateSystem.BasisZ.To3dRaw() ;
-      var dir2 = connector2.CoordinateSystem.BasisZ.To3dRaw() ;
-
-      if ( 0.9 < Math.Abs( Vector3d.Dot( dir1, dir2 ) ) ) {
-        // Connect directly(-1) or bad connection(+1)
+      if ( isOnSameLine ) {
+        // opposite or direct
         return ( true, null ) ;
       }
       else {
@@ -267,6 +282,11 @@ namespace Arent3d.Architecture.Routing
           return ( false, null ) ;
         }
       }
+    }
+
+    private static void MoveConnectorPositionInto( Connector connector, XYZ position )
+    {
+      connector.Origin = position ;
     }
 
     /// <summary>
