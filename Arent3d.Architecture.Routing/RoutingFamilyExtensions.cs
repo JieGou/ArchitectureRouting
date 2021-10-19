@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     ConnectorOutPoint,
 
-    [NameOnRevit("電線管用ファミリ")]
+    [NameOnRevit("電線管用ファミリ_ver1.0")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
     ConnectorTwoSide,
     
