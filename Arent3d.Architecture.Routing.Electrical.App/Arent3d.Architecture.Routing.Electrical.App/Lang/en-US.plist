@@ -101,7 +101,7 @@
         <string>Create&#xA;Cylindrical Shaft</string>
 
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
-        <string>Show 3D View&#xA;For Each Floor</string>
+        <string>Create 3D&#xA;Floor Views</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
