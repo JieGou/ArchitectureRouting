@@ -47,6 +47,10 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "9e825887-84fe-474d-ac2e-c683f7376647" ), NameOnRevit( "Representative SubRoute Index" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RoutingBuiltInCategorySet ) )]
     RepresentativeSubRouteIndex,
+
+    [ParameterGuid("7632D393-DADE-437A-96A7-C4D508383012"), NameOnRevit("Rack Type")]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RackTypeBuiltInCategorySet ) )]
+    RackType,
   }
 
   public enum PassPointParameter
@@ -69,7 +73,12 @@ namespace Arent3d.Architecture.Routing
 
   public static class RoutingPropertyExtensions
   {
-    internal static readonly BuiltInCategory[] PipeRoutingBuiltInCategorySet =
+     internal static readonly BuiltInCategory[] RackTypeBuiltInCategorySet =
+    {
+      BuiltInCategory.OST_CableTray,
+      BuiltInCategory.OST_CableTrayFitting,
+    };
+        internal static readonly BuiltInCategory[] PipeRoutingBuiltInCategorySet =
     {
       BuiltInCategory.OST_FlexPipeCurves,
       BuiltInCategory.OST_PipeFitting,
