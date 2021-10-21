@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing
       instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
     }
 
-    private static IReadOnlyDictionary<byte, string> RouteConnectorType { get ; } = new Dictionary<byte, string> { { 0, "Power" }, { 1, "Sensor" } } ;    
+    public static IReadOnlyDictionary<byte, string> RouteConnectorType { get ; } = new Dictionary<byte, string> { { 0, "Power" }, { 1, "Sensor" } } ;    
     #endregion
 
     #region Connectors (General)
