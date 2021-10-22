@@ -64,6 +64,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return new TerminatePointEndPoint( element.Document, ElementId.InvalidElementId, pos, dir, preferredRadius, element.Id ) ;
     }
+    
+    public static IEndPoint GetEndPointConnector( Element pickResult, Element anotherResult )
+    {
+      var pickConnector = pickResult.GetConnectors().First() ;
+      var anotherConnector = anotherResult.GetConnectors().First() ;
+      var pos = pickConnector.Origin ;
+      var anotherPos = anotherConnector.Origin ;
+      var dir = GetPreferredDirection( pos, anotherPos ) ;
+      var preferredRadius = ( pickConnector ?? anotherConnector )?.Radius ;
+
+      return new TerminatePointEndPoint( pickResult.Document, ElementId.InvalidElementId, pos, dir, preferredRadius, pickResult.Id ) ;
+    }
 
     private static XYZ GetPreferredDirection( XYZ pos, XYZ anotherPos )
     {

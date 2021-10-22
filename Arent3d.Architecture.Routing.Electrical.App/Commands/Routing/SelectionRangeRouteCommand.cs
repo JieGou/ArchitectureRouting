@@ -1,6 +1,9 @@
-﻿using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+﻿using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
+using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -10,5 +13,24 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class SelectionRangeRouteCommand : SelectionRangeRouteCommandBase
   {
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.SelectionRangeRoute" ;
+    
+    protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
+
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
+    
+    protected override DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo )
+    {
+      var curveType = RouteMEPSystem.GetMEPCurveType( document, new[] { connector }, null ) ;
+
+      return new DialogInitValues( classificationInfo, RouteMEPSystem.GetSystemType( document, connector ), curveType, connector.GetDiameter() ) ;
+    }
+
+    protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => curveType.Category.Name ;
+
+    protected override MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType )
+    {
+      return MEPSystemClassificationInfo.CableTrayConduit ;
+    }
   }
 }
