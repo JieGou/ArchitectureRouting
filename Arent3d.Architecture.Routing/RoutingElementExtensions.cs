@@ -281,6 +281,22 @@ namespace Arent3d.Architecture.Routing
 
       return instance ;
     }
+    
+    public static FamilyInstance AddPassPointSelectRange( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
+    {
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
+      if ( radius.HasValue ) {
+        instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
+      }
+      
+      var rotationAngle = Math.Atan2( direction.X, direction.Y ) ;
+      
+      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
+
+      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
+
+      return instance ;
+    }
 
     public static FamilyInstance AddConnectorFamily( this Document document, Connector conn, string routeName, FlowDirectionType directionType, XYZ position, XYZ direction, double? radius )
     {

@@ -12,6 +12,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class RoutingCommandBase : IExternalCommand
   {
+    public record SelectRangeState( SelectionRangeRouteCommandBase.SelectState SelectState, IReadOnlyCollection<Route> Routes) ;
+    
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -38,6 +40,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           AppendParametersToRevitGeneratedElements( uiDocument, executor, executionResult ) ;
 
+          // var selectState = state as SelectionRangeRouteCommandBase.SelectState ?? throw new InvalidOperationException() ;
+          // if ( selectState != null ) {
+          //   var routes = executionResult.GeneratedRoutes ;
+          //   var selectRangeState = new SelectRangeState( selectState, routes ) ;
+          //   var routingResult = GenerateRoutes( document, executor, selectRangeState ) ;
+          //
+          //   AppendParametersToRevitGeneratedElements( uiDocument, executor, routingResult ) ;
+          // }
+          
           return Result.Succeeded ;
         } ) ;
 
