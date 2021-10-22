@@ -1,7 +1,9 @@
 using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
@@ -21,13 +23,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       //Call Open UI dialog
       var property = ShowDialog(document) ;
       if ( true != property?.DialogResult  ) return Result.Succeeded ;
-      var value = property.OffsetNumeric ;
+      var value = property.OffsetNumeric.Value ;
       try {
         // get all envelop
-        
-        
-        // add new obj transparent
-        
+        var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
+        foreach ( var envelop in envelops ) {
+          //add border transparent
+        }
         
         
         return Result.Succeeded ;
