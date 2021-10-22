@@ -23,6 +23,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( ShowRoutingViewsCommand ), OnlyInitialized = true )]
         private static class ShowRoutingViewsCommandButton { }
+        
+        [Button( typeof( Show3DViewsCommand ), OnlyInitialized = true )]
+        private static class Show3DViewsCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.routing", TitleKey = "Electrical.App.Panels.Routing.Routing" )]
@@ -75,6 +78,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( NewLimitRackCommand ), OnlyInitialized = true )]
         private static class NewLimitRackCommandButton { }
+        
+        [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
+        private static class EraseAllLimitRackCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors")]
