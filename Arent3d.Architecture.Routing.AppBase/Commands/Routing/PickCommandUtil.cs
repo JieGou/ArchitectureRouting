@@ -67,8 +67,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     public static IEndPoint GetEndPointConnector( Element pickResult, Element anotherResult )
     {
-      var pickConnector = pickResult.GetConnectors().First() ;
-      var anotherConnector = anotherResult.GetConnectors().First() ;
+      var pickConnector = pickResult.GetTopConnectors() ;
+      var anotherConnector = anotherResult.GetTopConnectors() ;
       var pos = pickConnector.Origin ;
       var anotherPos = anotherConnector.Origin ;
       var dir = GetPreferredDirection( pos, anotherPos ) ;

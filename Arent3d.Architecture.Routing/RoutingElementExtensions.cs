@@ -51,7 +51,8 @@ namespace Arent3d.Architecture.Routing
       instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
     }
 
-    public static IReadOnlyDictionary<byte, string> RouteConnectorType { get ; } = new Dictionary<byte, string> { { 0, "Power" }, { 1, "Sensor" } } ;    
+    public static IReadOnlyDictionary<byte, string> RouteConnectorType { get ; } = new Dictionary<byte, string> { { 0, "Power" }, { 1, "Sensor" } } ;
+
     #endregion
 
     #region Connectors (General)
@@ -108,7 +109,7 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsAnyEnd( this Connector conn )
     {
-      return 0 != ( (int) conn.ConnectorType & (int) ConnectorType.AnyEnd ) ;
+      return 0 != ( (int)conn.ConnectorType & (int)ConnectorType.AnyEnd ) ;
     }
 
     public static IEnumerable<Connector> GetOtherConnectorsInOwner( this Connector connector )
@@ -124,11 +125,11 @@ namespace Arent3d.Architecture.Routing
     {
       return conn.Domain switch
       {
-        Domain.DomainPiping => (int) conn.PipeSystemType,
-        Domain.DomainHvac => (int) conn.DuctSystemType,
-        Domain.DomainElectrical => (int) conn.ElectricalSystemType,
-        Domain.DomainCableTrayConduit => (int) MEPSystemClassification.CableTrayConduit,
-        _ => (int) MEPSystemClassification.UndefinedSystemClassification,
+        Domain.DomainPiping => (int)conn.PipeSystemType,
+        Domain.DomainHvac => (int)conn.DuctSystemType,
+        Domain.DomainElectrical => (int)conn.ElectricalSystemType,
+        Domain.DomainCableTrayConduit => (int)MEPSystemClassification.CableTrayConduit,
+        _ => (int)MEPSystemClassification.UndefinedSystemClassification,
       } ;
     }
 
@@ -148,6 +149,17 @@ namespace Arent3d.Architecture.Routing
     private static bool IsCompatibleToPowerCircuit( MEPSystemClassification systemClassification )
     {
       return ( systemClassification == MEPSystemClassification.PowerBalanced || systemClassification == MEPSystemClassification.PowerUnBalanced ) ;
+    }
+
+    public static IConnector GetTopConnectors( this Element elm )
+    {
+      if ( elm.GetConnectors().Count() > 1 ) {
+        var maxHeight = elm.GetConnectors().Max( conn => conn.Height ) ;
+        return elm.GetConnectors().FirstOrDefault( conn => conn.Height == maxHeight ) ;
+      }
+      else {
+        return elm.GetConnectors().First() ;
+      }
     }
 
     #endregion
@@ -281,16 +293,16 @@ namespace Arent3d.Architecture.Routing
 
       return instance ;
     }
-    
+
     public static FamilyInstance AddPassPointSelectRange( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
     {
       var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
-      
+
       var rotationAngle = Math.Atan2( direction.X, direction.Y ) ;
-      
+
       ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
 
       instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
@@ -314,8 +326,8 @@ namespace Arent3d.Architecture.Routing
 
 
       var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
-      Color colorIn = new Autodesk.Revit.DB.Color( (byte) 255, (byte) 0, (byte) 0 ) ;
-      Color colorOut = new Autodesk.Revit.DB.Color( (byte) 0, (byte) 0, (byte) 255 ) ;
+      Color colorIn = new Autodesk.Revit.DB.Color( (byte)255, (byte)0, (byte)0 ) ;
+      Color colorOut = new Autodesk.Revit.DB.Color( (byte)0, (byte)0, (byte)255 ) ;
       OverrideGraphicSettings ogsIn = new OverrideGraphicSettings() ;
       OverrideGraphicSettings ogsOut = new OverrideGraphicSettings() ;
       ogsIn.SetProjectionLineColor( colorIn ) ;
@@ -580,7 +592,7 @@ namespace Arent3d.Architecture.Routing
       if ( multiplicity < 2 ) throw new ArgumentOutOfRangeException( nameof( multiplicity ) ) ;
 
       var routes = RouteCache.Get( document ) ;
-      
+
       foreach ( var mepCurve in document.GetAllElementsOfRoute<MEPCurve>() ) {
         if ( mepCurve.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
         if ( mepCurve.GetRepresentativeSubRoute() != subRouteInfo ) continue ;
@@ -693,7 +705,7 @@ namespace Arent3d.Architecture.Routing
 
       return new SubRouteInfo( routeName, subRouteIndex ) ;
     }
-    
+
     #endregion
 
     #region Center Lines
@@ -704,16 +716,7 @@ namespace Arent3d.Architecture.Routing
       return element.GetDependentElements( CenterLineFilter ).Select( document.GetElement ).Where( e => e.IsValidObject ) ;
     }
 
-    private static readonly BuiltInCategory[] CenterLineCategories =
-    {
-      BuiltInCategory.OST_CenterLines,
-      BuiltInCategory.OST_DuctCurvesCenterLine,
-      BuiltInCategory.OST_DuctFittingCenterLine,
-      BuiltInCategory.OST_FlexDuctCurvesCenterLine,
-      BuiltInCategory.OST_PipeCurvesCenterLine,
-      BuiltInCategory.OST_PipeFittingCenterLine,
-      BuiltInCategory.OST_FlexPipeCurvesCenterLine,
-    } ;
+    private static readonly BuiltInCategory[] CenterLineCategories = { BuiltInCategory.OST_CenterLines, BuiltInCategory.OST_DuctCurvesCenterLine, BuiltInCategory.OST_DuctFittingCenterLine, BuiltInCategory.OST_FlexDuctCurvesCenterLine, BuiltInCategory.OST_PipeCurvesCenterLine, BuiltInCategory.OST_PipeFittingCenterLine, BuiltInCategory.OST_FlexPipeCurvesCenterLine, } ;
     private static readonly ElementFilter CenterLineFilter = new ElementMulticategoryFilter( CenterLineCategories ) ;
 
     #endregion
@@ -751,6 +754,7 @@ namespace Arent3d.Architecture.Routing
     }
 
     private static readonly (BuiltInParameter, BuiltInParameter)[] LevelBuiltInParameterPairs = { ( BuiltInParameter.RBS_START_LEVEL_PARAM, BuiltInParameter.RBS_END_LEVEL_PARAM ) } ;
+
     public static ElementId GetLevelId( this Element element )
     {
       var levelId = element.LevelId ;

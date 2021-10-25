@@ -16,8 +16,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class SelectionRangeRouteCommandBase : RoutingCommandBase
   {
     private readonly double distanceToPower = ( 600.0 ).MillimetersToRevitUnits() ;
-    private readonly double xDistanceToSensor = ( 100.0 ).MillimetersToRevitUnits() ;
-    private readonly double yDistanceToSensor = ( 200.0 ).MillimetersToRevitUnits() ;
+    private readonly double xDistanceToSensor = ( 600.0 ).MillimetersToRevitUnits() ;
+    private readonly double yDistanceToSensor = ( 600.0 ).MillimetersToRevitUnits() ;
     
     public record SelectState( Element PowerConnector, Element LastSensorConnector, List<Element> SensorConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
     
@@ -48,39 +48,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var selectedElements = iuDocument.Selection.PickElementsByRectangle( "ドラックで複数コネクタを選択して下さい。" ) ;
 
+      Element? powerConnector = null;
       List<Element> sensorConnectors = new List<Element>() ;
       foreach ( var element in selectedElements ) {
-        if ( element.Category.Name == "Electrical Fixtures" )
+        if ( element.Category.Name != "Electrical Fixtures" ) continue ;
+        if ( element.ParametersMap.get_Item( "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( iuDocument.Document, "Connector Type" ) ).AsString() == RoutingElementExtensions.RouteConnectorType[ 0 ] ) {
+          powerConnector = element ;
+        }
+        else {
           sensorConnectors.Add( element ) ;
+        }
       }
 
-      Element? powerConnector = null;
+      Element? lastSensorConnector = null ;
+      if ( powerConnector == null || sensorConnectors.Count <= 0 ) return ( powerConnector, lastSensorConnector, sensorConnectors ) ;
+      var powerPoint = powerConnector!.GetTopConnectors().Origin ;
+      var maxDistance = sensorConnectors[ 0 ].GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
       if ( sensorConnectors.Count > 0 ) {
         foreach ( var element in sensorConnectors ) {
-          if ( element.ParametersMap.get_Item( "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( iuDocument.Document, "Connector Type" ) ).AsString() == RoutingElementExtensions.RouteConnectorType[0] ) {
-            powerConnector = element ;
-            sensorConnectors.Remove( element ) ;
-            break ;
-          }
+          var distance = element.GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
+          if ( ! ( distance > maxDistance ) ) continue ;
+          lastSensorConnector = element ;
+          maxDistance = distance ;
         }
       }
 
-      Element? lastSensorConnector = null;
-      if ( powerConnector != null && sensorConnectors.Count > 0 ) {
-        var powerPoint = powerConnector!.GetConnectors().First().Origin ;
-        var maxDistan = sensorConnectors[ 0 ].GetConnectors().First().Origin.DistanceTo( powerPoint ) ;
-        if ( sensorConnectors.Count > 0 ) {
-          foreach ( var element in sensorConnectors ) {
-            var distance = element.GetConnectors().First().Origin.DistanceTo( powerPoint ) ;
-            if ( distance > maxDistan ) {
-              lastSensorConnector = element ;
-              maxDistan = distance ;
-            }
-          }
-        }
-        sensorConnectors.Remove( lastSensorConnector! ) ;
-      }
-      
+      sensorConnectors.Remove( lastSensorConnector! ) ;
+
       return ( powerConnector, lastSensorConnector, sensorConnectors ) ;
     }
     
@@ -137,8 +131,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     private FamilyInstance InsertPassPointElement( Document document, string RouteName, Element fromPickElement, Element toPickElement, double Xdistance, double Ydistance, bool isFrom )
     {
-      var fromConnector = fromPickElement.GetConnectors().First() ;
-      var toConnector = toPickElement.GetConnectors().First() ;
+      var fromConnector = fromPickElement.GetTopConnectors() ;
+      var toConnector = toPickElement.GetTopConnectors() ;
       var firstXCoordinate = isFrom ? fromConnector.Origin.X : toConnector.Origin.X ;
       var firstYCoordinate = isFrom ? fromConnector.Origin.Y : toConnector.Origin.Y ;
       var xPoint = fromConnector.Origin.X - toConnector.Origin.X > 0 ? firstXCoordinate - Xdistance : firstXCoordinate + Xdistance ;
