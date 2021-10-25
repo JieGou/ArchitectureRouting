@@ -12,6 +12,7 @@ using Autodesk.Revit.UI.Selection ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB.Architecture ;
+using Autodesk.Revit.DB.Electrical ;
 
 namespace Arent3d.Architecture.Routing.AppBase
 {
@@ -66,6 +67,22 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         return new OriginPickResult( element, addInType ) ;
       }
+    }
+    
+    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, Element element, bool pickingFromSide )
+    {
+      if ( element is Conduit ) {
+        if ( SubRoutePickResult.Create( routingExecutor, element, element.GetConnectors().First().Origin) is { } srResult ) {
+          if ( PickEndPointOverSubRoute( uiDocument, srResult, pickingFromSide ) is { } endPoint )
+            return srResult.ApplyEndPointOverSubRoute( endPoint.Key ) ;
+        }
+      }
+      else {
+        var connector = element.GetConnectors().First() ;
+        return new ConnectorPickResult( element, connector ) ;
+      }
+      
+      return new OriginPickResult( element, AddInType.Electrical ) ;
     }
 
     private static IEndPoint? PickEndPointOverSubRoute( UIDocument uiDocument, SubRoutePickResult pickResult, bool pickingFromSide )

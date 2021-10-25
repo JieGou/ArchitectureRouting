@@ -1,11 +1,14 @@
 using System ;
 using System.Collections.Generic ;
+using System.Linq ;
 using System.Threading ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -37,6 +40,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var executionResult = GenerateRoutes( document, executor, state ) ;
           if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
           if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
+          
+          var selectState = state as SelectionRangeRouteCommandBase.SelectState ;
+          if ( selectState != null ) {
+            int index = 9 ;
+            int count = 0 ;
+            var routes = executionResult.GeneratedRoutes ;
+            ConnectorPicker.IPickResult fromPickResult ;
+            ConnectorPicker.IPickResult toPickResult ;
+
+            foreach ( var sensorConnector in selectState.SensorConnectors ) {
+              toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
+              
+              var conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
+              fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduits.ElementAt( index ), false ) ;
+              
+              var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
+              var routingResult = GenerateRoutes( document, executor, pickState ) ;
+              if ( RoutingExecutionResultType.Cancel == routingResult.Type ) return Result.Cancelled ;
+              if ( RoutingExecutionResultType.Failure == routingResult.Type ) return Result.Failed ;
+              
+              index += 1 ;
+              count++ ;
+              if (count == 7) break;
+            }
+          }
 
           return Result.Succeeded ;
         } ) ;

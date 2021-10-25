@@ -31,6 +31,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
     
+    protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom ) ;
+    
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       var (powerConnector, lastSensorConnector, sensorConnectors) = SelectionRangeRoute( uiDocument ) ;
@@ -128,11 +130,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
-      var selectState = state as SelectState ?? throw new InvalidOperationException() ;
-      var (powerConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo) = selectState ;
-      var segmentList = CreateNewSegmentList( document, powerConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo ) ;
-
-      return segmentList ;
+      if ( state is PickRoutingCommandBase.PickState ) {
+        var pickState = state as PickRoutingCommandBase.PickState ?? throw new InvalidOperationException() ;
+        var (fromPickResult, toPickResult, routeProperty, classificationInfo) = pickState ;
+        return CreateNewSegmentListForRoutePick( fromPickResult,toPickResult, true, routeProperty, classificationInfo ) ;
+      }
+      else {
+        var selectState = state as SelectState ?? throw new InvalidOperationException() ;
+        var (powerConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo) = selectState ;
+        return CreateNewSegmentList( document, powerConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo ) ;
+      }
     }
     
     private FamilyInstance InsertPassPointElement( Document document, string RouteName, Element fromPickElement, Element toPickElement, double Xdistance, double Ydistance, bool isFrom )
@@ -185,6 +192,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return routeSegments ;
     }
     
+    private (string RouteName, RouteSegment Segment) CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    {
+      var systemType = routeProperty.GetSystemType() ;
+      var curveType = routeProperty.GetCurveType() ;
+
+      var routes = RouteCache.Get( document ) ;
+      var nameBase = GetNameBase( systemType, curveType ) ;
+      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
+      var name = nameBase + "_" + nextIndex ;
+      routes.FindOrCreate( name ) ;
+
+      var diameter = routeProperty.GetDiameter() ;
+      var isRoutingOnPipeSpace = routeProperty.GetRouteOnPipeSpace() ;
+      var fromFixedHeight = routeProperty.GetFromFixedHeight() ;
+      var toFixedHeight = routeProperty.GetToFixedHeight() ;
+      var avoidType = routeProperty.GetAvoidType() ;
+      var shaftElementId = routeProperty.GetShaft()?.Id ?? ElementId.InvalidElementId ;
+
+      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ;
+    }
+    
     private static int GetRouteNameIndex( RouteCache routes, string? targetName )
     {
       string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
@@ -193,6 +221,71 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
 
       return lastIndex + 1 ;
+    }
+    
+     public IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    {
+      return CreateSubBranchRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide, routeProperty, classificationInfo ).EnumerateAll() ;
+    }
+
+    private IEnumerable<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    {
+      var affectedRoutes = new List<Route>() ;
+      var (routeEndPoint, otherSegments1) = CreateEndPointOnSubRoute( routePickResult, anotherPickResult, routeProperty, classificationInfo, true ) ;
+
+      IEndPoint anotherEndPoint ;
+      IReadOnlyCollection<( string RouteName, RouteSegment Segment )>? otherSegments2 = null ;
+      if ( null != anotherPickResult.SubRoute ) {
+        ( anotherEndPoint, otherSegments2 ) = CreateEndPointOnSubRoute( anotherPickResult, routePickResult, routeProperty, classificationInfo, false ) ;
+      }
+      else {
+        anotherEndPoint = PickCommandUtil.GetEndPoint( anotherPickResult, routePickResult ) ;
+      }
+
+      var fromEndPoint = anotherIndicatorIsFromSide ? anotherEndPoint : routeEndPoint ;
+      var toEndPoint = anotherIndicatorIsFromSide ? routeEndPoint : anotherEndPoint ;
+
+      var document = routePickResult.SubRoute!.Route.Document ;
+      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo ) ;
+
+      // Inserted segment
+      yield return ( name, segment ) ;
+
+      // Routes where pass points are inserted
+      var routes = RouteCache.Get( routePickResult.SubRoute!.Route.Document ) ;
+      var changedRoutes = new HashSet<Route>() ;
+      if ( null != otherSegments1 ) {
+        foreach ( var tuple in otherSegments1 ) {
+          yield return tuple ;
+
+          if ( routes.TryGetValue( tuple.RouteName, out var route ) ) {
+            changedRoutes.Add( route ) ;
+          }
+        }
+      }
+      if ( null != otherSegments2 ) {
+        foreach ( var tuple in otherSegments2 ) {
+          yield return tuple ;
+
+          if ( routes.TryGetValue( tuple.RouteName, out var route ) ) {
+            changedRoutes.Add( route ) ;
+          }
+        }
+      }
+
+      // Affected routes
+      if ( 0 != affectedRoutes.Count ) {
+        var affectedRouteSet = new HashSet<Route>() ;
+        foreach ( var route in affectedRoutes ) {
+          affectedRouteSet.Add( route ) ;
+          affectedRouteSet.UnionWith( route.CollectAllDescendantBranches() ) ;
+        }
+        affectedRouteSet.ExceptWith( changedRoutes ) ;
+
+        foreach ( var tuple in affectedRouteSet.ToSegmentsWithName() ) {
+          yield return tuple ;
+        }
+      }
     }
   }
 }
