@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Numerics ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
@@ -10,6 +11,7 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using MathLib ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -18,8 +20,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private readonly double distanceToPower = ( 600.0 ).MillimetersToRevitUnits() ;
     private readonly double xDistanceToSensor = ( 600.0 ).MillimetersToRevitUnits() ;
     private readonly double yDistanceToSensor = ( 600.0 ).MillimetersToRevitUnits() ;
-    
-    public record SelectState( Element PowerConnector, Element LastSensorConnector, List<Element> SensorConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
+
+    public record SelectState( Element PowerConnector, Element FirstSensorConnector, Element LastSensorConnector, List<Element> SensorConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
     
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
     
@@ -33,18 +35,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      var (powerConnector, lastSensorConnector, sensorConnectors) = SelectionRangeRoute( uiDocument ) ;
-      if (powerConnector == null || lastSensorConnector == null || sensorConnectors.Count < 1 ) return ( false, null ) ;
+      var (powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors) = SelectionRangeRoute( uiDocument ) ;
+      if ( powerConnector == null || firstSensorConnector == null || lastSensorConnector == null || sensorConnectors.Count < 1 ) return ( false, null ) ;
       
       var property = ShowPropertyDialog( uiDocument.Document, powerConnector, lastSensorConnector ) ;
       if ( true != property?.DialogResult ) return ( false, null ) ;
 
       if ( GetMEPSystemClassificationInfo( powerConnector, lastSensorConnector, property.GetSystemType() ) is not { } classificationInfo ) return ( false, null ) ;
 
-      return ( true, new SelectState( powerConnector, lastSensorConnector, sensorConnectors, property, classificationInfo ) ) ;
+      return ( true, new SelectState( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, property, classificationInfo ) ) ;
     }
 
-    private ( Element? powerConnector, Element? lastSensorConnector, List<Element> sensorConnectors ) SelectionRangeRoute( UIDocument iuDocument )
+    private ( Element? powerConnector, Element? firstSensorConnector, Element? lastSensorConnector, List<Element> sensorConnectors ) SelectionRangeRoute( UIDocument iuDocument )
     {
       var selectedElements = iuDocument.Selection.PickElementsByRectangle( "ドラックで複数コネクタを選択して下さい。" ) ;
 
@@ -55,27 +57,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( element.ParametersMap.get_Item( "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( iuDocument.Document, "Connector Type" ) ).AsString() == RoutingElementExtensions.RouteConnectorType[ 0 ] ) {
           powerConnector = element ;
         }
-        else {
+        else if ( element.ParametersMap.get_Item( "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( iuDocument.Document, "Connector Type" ) ).AsString() == RoutingElementExtensions.RouteConnectorType[ 1 ] ) {
           sensorConnectors.Add( element ) ;
         }
       }
 
       Element? lastSensorConnector = null ;
-      if ( powerConnector == null || sensorConnectors.Count <= 0 ) return ( powerConnector, lastSensorConnector, sensorConnectors ) ;
+      Element? firstSensorConnector = null ;
+      if ( powerConnector == null || sensorConnectors.Count < 1 ) return ( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors ) ;
       var powerPoint = powerConnector!.GetTopConnectors().Origin ;
       var maxDistance = sensorConnectors[ 0 ].GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
+      var minDistance = maxDistance ;
       if ( sensorConnectors.Count > 0 ) {
+        // 一番遠いコネクタ
         foreach ( var element in sensorConnectors ) {
           var distance = element.GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
           if ( ! ( distance > maxDistance ) ) continue ;
           lastSensorConnector = element ;
           maxDistance = distance ;
         }
+
+        // 一番近いコネクタ
+        foreach ( var element in sensorConnectors ) {
+          var distance = element.GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
+          if ( ! ( distance < minDistance ) ) continue ;
+          firstSensorConnector = element ;
+          minDistance = distance ;
+        }        
       }
 
       sensorConnectors.Remove( lastSensorConnector! ) ;
 
-      return ( powerConnector, lastSensorConnector, sensorConnectors ) ;
+      return ( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors ) ;
     }
     
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( Element fromPickElement, Element toPickElement, MEPSystemType? systemType )
@@ -123,32 +136,54 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var selectState = state as SelectState ?? throw new InvalidOperationException() ;
-      var (powerConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo) = selectState ;
-      var segmentList = CreateNewSegmentList( document, powerConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo ) ;
+      var (powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo) = selectState ;
+      var segmentList = CreateNewSegmentList( document, powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo ) ;
 
       return segmentList ;
     }
-    
-    private FamilyInstance InsertPassPointElement( Document document, string RouteName, Element fromPickElement, Element toPickElement, double Xdistance, double Ydistance, bool isFrom )
+
+    private static FamilyInstance InsertPassPointElement( Document document, string routeName, Element fromPickElement, Element firstSensor, Element toPickElement, bool isFirst, FixedHeight? fromFixedHeight )
     {
       var fromConnector = fromPickElement.GetTopConnectors() ;
       var toConnector = toPickElement.GetTopConnectors() ;
-      var firstXCoordinate = isFrom ? fromConnector.Origin.X : toConnector.Origin.X ;
-      var firstYCoordinate = isFrom ? fromConnector.Origin.Y : toConnector.Origin.Y ;
-      var xPoint = fromConnector.Origin.X - toConnector.Origin.X > 0 ? firstXCoordinate - Xdistance : firstXCoordinate + Xdistance ;
-      var yPoint = fromConnector.Origin.Y - toConnector.Origin.Y > 0 ? firstYCoordinate - Ydistance : firstYCoordinate + Ydistance ;
-      var position = new XYZ( xPoint, yPoint, fromConnector.Origin.Z);
-      var direction = toConnector.Origin.To3dRaw() - fromConnector.Origin.To3dRaw() ;  
-      return document.AddPassPointSelectRange( RouteName, position, direction.normalized.ToXYZRaw(), fromConnector.Radius, fromPickElement.GetLevelId() ) ;
+      var firstConnector = firstSensor.GetTopConnectors() ;
+      IList<Element> levels = new FilteredElementCollector( document ).OfClass( typeof( Level ) ).ToElements() ;
+      if ( levels.FirstOrDefault( level => level.Id == fromPickElement.GetLevelId() ) == null ) throw new InvalidOperationException() ;
+      var level = levels.FirstOrDefault( level => level.Id == fromPickElement.GetLevelId() ) as Level ;
+      var height = fromFixedHeight?.Height ?? 0 ;
+      height += level!.Elevation ;
+      XYZ position ;
+      Vector3d direction ;
+      if ( isFirst ) {
+        var xPoint = ( fromConnector.Origin.X + toConnector.Origin.X ) * 0.5 ;
+        var yPoint = ( fromConnector.Origin.Y + firstConnector.Origin.Y ) * 0.5 ;
+
+        var cornerPointRight = new Vector2d( fromConnector.Origin.X, yPoint ) ;
+        var cornerPointLeft = new Vector2d( toConnector.Origin.X, yPoint ) ;
+
+        position = new XYZ( xPoint, yPoint, height ) ;
+        direction = new Vector3d( cornerPointRight.y - cornerPointLeft.y, cornerPointLeft.x - cornerPointRight.x, height ) ;
+      }
+      else {
+        var xPoint = ( firstConnector.Origin.X + toConnector.Origin.X ) * 0.5 ;
+        var yPoint = ( fromConnector.Origin.Y + toConnector.Origin.Y ) * 0.5 ;
+
+        var cornerPointBack = new Vector2d( xPoint, firstConnector.Origin.Y ) ;
+        var cornerPointFront = new Vector2d( xPoint, toConnector.Origin.Y ) ;
+        position = new XYZ( xPoint, toConnector.Origin.Y, height ) ;
+        direction = new Vector3d( cornerPointFront.y - cornerPointBack.y, cornerPointBack.x - cornerPointFront.x, height ) ;
+      }
+
+      return document.AddPassPointSelectRange( routeName, position, direction.normalized.ToXYZRaw(), fromConnector.Radius, fromPickElement.GetLevelId() ) ;
     }
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, Element powerConnector, Element lastSensorConnector, List<Element> sensorConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, Element powerConnector, Element firstSensorConnector, Element lastSensorConnector, List<Element> sensorConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
-      List<(string RouteName, RouteSegment Segment)> listSegment = CreateSegmentOfNewRoute( document, powerConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo ) ;
+      List<(string RouteName, RouteSegment Segment)> listSegment = CreateSegmentOfNewRoute( document, powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo ) ;
       return listSegment ;
     }
 
-    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, Element powerConnector, Element lastSensorConnector, List<Element> sensorConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, Element powerConnector, Element firstSensorConnector, Element lastSensorConnector, List<Element> sensorConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
       var fromEndPoint = PickCommandUtil.GetEndPointConnector( powerConnector, lastSensorConnector ) ;
       var toEndPoint = PickCommandUtil.GetEndPointConnector( lastSensorConnector, powerConnector ) ;
@@ -168,9 +203,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var toFixedHeight = routeProperty.GetToFixedHeight() ;
       var avoidType = routeProperty.GetAvoidType() ;
       var shaftElementId = routeProperty.GetShaft()?.Id ?? ElementId.InvalidElementId ;
-      
-      var firstPassPoint = new PassPointEndPoint ( InsertPassPointElement( document, name, powerConnector, lastSensorConnector, distanceToPower, distanceToPower, true ) ) ;
-      var secondPassPoint = new PassPointEndPoint ( InsertPassPointElement( document, name, powerConnector, lastSensorConnector, -xDistanceToSensor, -yDistanceToSensor,false ) ) ;
+      var firstPassPoint = new PassPointEndPoint( InsertPassPointElement( document, name, powerConnector, firstSensorConnector, lastSensorConnector, true, fromFixedHeight ) ) ;
+      var secondPassPoint = new PassPointEndPoint( InsertPassPointElement( document, name, powerConnector, firstSensorConnector, lastSensorConnector, false, fromFixedHeight ) ) ;
       List<(string RouteName, RouteSegment Segment)> routeSegments = new List<(string RouteName, RouteSegment Segment)>() ;
       routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, firstPassPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) );
       routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, firstPassPoint, secondPassPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) );
