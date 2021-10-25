@@ -153,13 +153,8 @@ namespace Arent3d.Architecture.Routing
 
     public static IConnector GetTopConnectors( this Element elm )
     {
-      if ( elm.GetConnectors().Count() > 1 ) {
-        var maxHeight = elm.GetConnectors().Max( conn => conn.Height ) ;
-        return elm.GetConnectors().FirstOrDefault( conn => conn.Height == maxHeight ) ;
-      }
-      else {
-        return elm.GetConnectors().First() ;
-      }
+      var topItem = elm.GetConnectors().MaxItemOrDefault( conn => conn.Origin.Z ) ;
+      return topItem ?? elm.GetConnectors().First() ;
     }
 
     #endregion
