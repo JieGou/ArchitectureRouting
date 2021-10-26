@@ -100,6 +100,9 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>Create&#xA;Cylindrical Shaft</string>
 
+        <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
+        <string>Create 3D&#xA;Floor Views</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
@@ -113,8 +116,6 @@
 
         <key>TransactionName.Commands.Routing.Common.Routing</key>
         <string>Routing</string>
-        <key>TransactionName.Commands.Routing.Common.SetupParameters</key>
-        <string>Setup Parameters</string>
 
         <key>TransactionName.Commands.Routing.Common.ChangeColor</key>
         <string>Change Color for Highlighting</string>

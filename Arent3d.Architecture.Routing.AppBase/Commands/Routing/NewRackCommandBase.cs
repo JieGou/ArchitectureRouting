@@ -30,6 +30,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       BuiltInCategory.OST_CableTray, BuiltInCategory.OST_CableTrayFitting
     } ;
+    
+    public static IReadOnlyDictionary<byte, string> RackTypes { get ; } = new Dictionary<byte, string> { { 0, "Normal Rack" }, { 1, "Limit Rack" } } ;
 
     protected abstract AddInType GetAddInType() ;
 
@@ -74,6 +76,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     public static void SetParameter( FamilyInstance instance, string parameterName, double value )
+    {
+      instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
+    }
+    
+    private static void SetParameter( FamilyInstance instance, string parameterName, string value )
     {
       instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
     }
@@ -278,6 +285,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( cableRackWidth > 0 )
         SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), cableRackWidth.MillimetersToRevitUnits() ) ;
       
+      // set cable rack comments
+      SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
+
       // set cable tray direction
       if ( 1.0 == line.Direction.Y ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ), Math.PI / 2 ) ;
@@ -326,6 +336,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // set cable rack length
       SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
+
+      // set cable rack comments
+      SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableTrayDefaultBendRadius == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
       // set cable tray fitting direction
       if ( 1.0 == conduit.FacingOrientation.X ) {

@@ -39,8 +39,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
           if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
 
-          AppendParametersToRevitGeneratedElements( uiDocument, executor, executionResult ) ;
-
           return Result.Succeeded ;
         } ) ;
 
@@ -79,6 +77,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var segments = GetRouteSegments( document, state ) ;
           var result = executor.Run( segments, progress ) ;
 
+          if ( RoutingExecutionResultType.Success == result.Type ) {
+            executor.RunPostProcess( result ) ;
+          }
+
           return result.Type switch
           {
             RoutingExecutionResultType.Success => ( Result.Succeeded, result ),
@@ -90,15 +92,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           return ( Result.Cancelled, RoutingExecutionResult.Cancel ) ;
         }
       }, RoutingExecutionResult.Cancel ) ;
-    }
-
-    private void AppendParametersToRevitGeneratedElements( UIDocument uiDocument, RoutingExecutor executor, RoutingExecutionResult result )
-    {
-      uiDocument.Document.Transaction( "TransactionName.Commands.Routing.Common.SetupParameters".GetAppStringByKeyOrDefault( "Setup Parameter" ), _ =>
-      {
-        executor.RunPostProcess( result ) ;
-        return Result.Succeeded ;
-      } ) ;
     }
 
 
