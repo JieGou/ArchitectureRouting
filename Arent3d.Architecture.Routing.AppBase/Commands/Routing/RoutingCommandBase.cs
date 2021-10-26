@@ -15,8 +15,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class RoutingCommandBase : IExternalCommand
   {
-    public record SelectRangeState( SelectionRangeRouteCommandBase.SelectState SelectState, IReadOnlyCollection<Route> Routes) ;
-    
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -43,16 +41,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           
           var selectState = state as SelectionRangeRouteCommandBase.SelectState ;
           if ( selectState != null ) {
-            int index = 9 ;
-            int count = 0 ;
-            var routes = executionResult.GeneratedRoutes ;
             ConnectorPicker.IPickResult fromPickResult ;
             ConnectorPicker.IPickResult toPickResult ;
+            var routes = executionResult.GeneratedRoutes ;
+            var conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
+            var index = SelectCenterConduitIndex( conduits, selectState.SensorConnectors.ElementAt( 0 ) ) ;
 
             foreach ( var sensorConnector in selectState.SensorConnectors ) {
               toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
               
-              var conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
+              conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
               fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduits.ElementAt( index ), false ) ;
               
               var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
@@ -61,8 +59,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               if ( RoutingExecutionResultType.Failure == routingResult.Type ) return Result.Failed ;
               
               index += 1 ;
-              count++ ;
-              if (count == 7) break;
             }
           }
 
@@ -149,6 +145,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected virtual IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       return Array.Empty<(string RouteName, RouteSegment Segment)>() ;
+    }
+
+    private int SelectCenterConduitIndex( IEnumerable<Conduit> conduits, Element? sensorConnector )
+    {
+      double minDistance = 1000 ;
+      var index = 0 ;
+      var count = 0 ;
+      foreach ( var conduit in conduits ) {
+        var location = ( conduit.Location as LocationCurve )! ;
+        var line = ( location.Curve as Line )! ;
+        var distance = sensorConnector!.GetTopConnectors().Origin.DistanceTo( line.Origin ) ;
+        if ( distance < minDistance ) {
+          minDistance = distance ;
+          index = count ;
+        }
+
+        count++ ;
+      }
+
+      return index ;
     }
   }
 }

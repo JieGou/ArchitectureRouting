@@ -72,14 +72,14 @@ namespace Arent3d.Architecture.Routing.AppBase
     public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, Element element, bool pickingFromSide )
     {
       if ( element is Conduit ) {
-        if ( SubRoutePickResult.Create( routingExecutor, element, element.GetConnectors().First().Origin) is { } srResult ) {
+        if ( SubRoutePickResult.Create( routingExecutor, element, element.GetTopConnectors().Origin) is { } srResult ) {
           if ( PickEndPointOverSubRoute( uiDocument, srResult, pickingFromSide ) is { } endPoint )
             return srResult.ApplyEndPointOverSubRoute( endPoint.Key ) ;
         }
       }
       else {
-        var connector = element.GetConnectors().First() ;
-        return new ConnectorPickResult( element, connector ) ;
+        var connector = element.GetTopConnectors() as Connector ;
+        return new ConnectorPickResult( element, connector! ) ;
       }
       
       return new OriginPickResult( element, AddInType.Electrical ) ;
