@@ -172,6 +172,9 @@
         <key>TransactionName.Commands.Rack.NewRackFromTo</key>
         <string>Create Cable Rack From-To</string>
 
+        <key>TransactionName.Commands.Routing.OffsetSetting</key>
+        <string>Offset Setting</string>        
+
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
         <string>Routing Setup Error</string>
