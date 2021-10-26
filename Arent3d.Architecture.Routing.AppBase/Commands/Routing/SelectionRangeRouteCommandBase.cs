@@ -49,7 +49,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       Element? powerConnector = null ;
       List<Element> sensorConnectors = new List<Element>() ;
       foreach ( var element in selectedElements ) {
-        if ( element.Category.Name != "Electrical Fixtures" ) continue ;
+        if ( element.Category.Name != "Electrical Fixtures" && element.Category.Name != "電気器具" ) continue ;
         if ( element.ParametersMap.get_Item( "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( iuDocument.Document, "Connector Type" ) ).AsString() == RoutingElementExtensions.RouteConnectorType[ 0 ] ) {
           powerConnector = element ;
         }
