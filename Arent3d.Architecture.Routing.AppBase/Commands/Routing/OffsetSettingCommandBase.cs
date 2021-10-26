@@ -1,11 +1,6 @@
 using System ;
-using System.Collections.Generic ;
-using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
-using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -17,21 +12,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var cache = RouteCache.Get( document ) ;
-      var hashSet = commandData.Application.ActiveUIDocument.Document.CollectRoutes( GetAddInType() ).Select( route => route.RouteName ).ToHashSet() ;
 
       //Call Open UI dialog
-      var property = ShowDialog(document) ;
-      if ( true != property?.DialogResult  ) return Result.Succeeded ;
+      var property = ShowDialog( document ) ;
+      if ( true != property?.DialogResult ) return Result.Succeeded ;
       var value = property.OffsetNumeric.Value ;
       try {
         // get all envelop
         var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
         foreach ( var envelop in envelops ) {
-          //add border transparent
         }
-        
-        
+
+
         return Result.Succeeded ;
       }
       catch ( Exception e ) {
@@ -39,18 +31,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return Result.Failed ;
       }
     }
-    
+
     /// <summary>
-    /// Show dialog Offset Setting
+    ///   Show dialog Offset Setting
     /// </summary>
-    /// <param name="document"></param>
-    /// <returns></returns>
-    private OffsetSetting ShowDialog( Document document)
+    private static OffsetSetting ShowDialog( Document document )
     {
       var sv = new OffsetSetting( document ) ;
       sv.ShowDialog() ;
       return sv ;
     }
-    protected abstract AddInType GetAddInType() ;
   }
 }

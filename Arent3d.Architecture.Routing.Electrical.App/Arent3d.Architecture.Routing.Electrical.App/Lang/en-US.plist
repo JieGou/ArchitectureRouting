@@ -103,6 +103,9 @@
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>Create 3D&#xA;Floor Views</string>
 
+        <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
+        <string>Offset&#xA;Setting</string>        
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>

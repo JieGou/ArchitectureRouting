@@ -1,11 +1,10 @@
-﻿using System ;
+﻿using System.Windows ;
 using Autodesk.Revit.DB ;
-using System.Windows ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   /// <summary>
-  /// SetProperty.xaml の相互作用ロジック
+  ///   SetProperty.xaml の相互作用ロジック
   /// </summary>
   public partial class OffsetSetting : Window
   {
@@ -14,24 +13,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       InitializeComponent() ;
     }
 
-    public OffsetSetting(Document document)
+    public OffsetSetting( Document document )
     {
       InitializeComponent() ;
       WindowStartupLocation = WindowStartupLocation.CenterScreen ;
-      
     }
-    
+
     private void OffsetButtons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
-      this.DialogResult = true ;
-      this.Close() ;
+      DialogResult = true ;
+      Close() ;
     }
 
     private void OffsetButtons_OnRightOnClick( object sender, RoutedEventArgs e )
     {
-      this.DialogResult = false ;
-      this.Close() ;
+      DialogResult = false ;
+      Close() ;
     }
-
   }
 }
