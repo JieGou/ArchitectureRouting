@@ -1,12 +1,10 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Numerics ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
-using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -67,17 +65,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var maxDistance = sensorConnectors[ 0 ].GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
       var minDistance = maxDistance ;
       if ( sensorConnectors.Count > 0 ) {
-        // 一番遠いコネクタ
+        
         foreach ( var element in sensorConnectors ) {
           var distance = element.GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
-          if ( ! ( distance > maxDistance ) ) continue ;
-          lastSensorConnector = element ;
-          maxDistance = distance ;
-        }
-
-        // 一番近いコネクタ
-        foreach ( var element in sensorConnectors ) {
-          var distance = element.GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
+          
+          // 一番遠いコネクタ
+          if ( distance > maxDistance ) {
+            lastSensorConnector = element ;
+            maxDistance = distance ;            
+          }
+          
+          // 一番近いコネクタ
           if ( ! ( distance < minDistance ) ) continue ;
           firstSensorConnector = element ;
           minDistance = distance ;
