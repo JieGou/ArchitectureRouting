@@ -1,5 +1,7 @@
-﻿using Arent3d.Architecture.Routing.AppBase ;
+﻿using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -43,6 +45,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType )
     {
       return MEPSystemClassificationInfo.CableTrayConduit ;
+    }
+    protected override (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom )
+    {
+      return PickCommandUtil.CreateBranchingRouteEndPoint( newPickResult, anotherPickResult, routeProperty, classificationInfo, AppCommandSettings.FittingSizeCalculator, newPickIsFrom ) ;
     }
   }
 }

@@ -1,19 +1,20 @@
 using System ;
 using System.Collections.Generic ;
+using System.Linq ;
 using System.Threading ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class RoutingCommandBase : IExternalCommand
   {
-    public record SelectRangeState( SelectionRangeRouteCommandBase.SelectState SelectState, IReadOnlyCollection<Route> Routes) ;
-    
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -37,6 +38,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var executionResult = GenerateRoutes( document, executor, state ) ;
           if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
           if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
+          
+          var selectState = state as SelectionRangeRouteCommandBase.SelectState ;
+          if ( selectState != null ) {
+            ConnectorPicker.IPickResult fromPickResult ;
+            ConnectorPicker.IPickResult toPickResult ;
+            var routes = executionResult.GeneratedRoutes ;
+            var conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
+            var index = SelectCenterConduitIndex( conduits, selectState.SensorConnectors.ElementAt( 0 ) ) ;
+
+            foreach ( var sensorConnector in selectState.SensorConnectors ) {
+              toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
+              
+              conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
+              fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduits.ElementAt( index ), false ) ;
+              
+              var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
+              var routingResult = GenerateRoutes( document, executor, pickState ) ;
+              if ( RoutingExecutionResultType.Cancel == routingResult.Type ) return Result.Cancelled ;
+              if ( RoutingExecutionResultType.Failure == routingResult.Type ) return Result.Failed ;
+              
+              index++ ;
+            }
+          }
 
           return Result.Succeeded ;
         } ) ;
@@ -121,6 +145,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected virtual IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       return Array.Empty<(string RouteName, RouteSegment Segment)>() ;
+    }
+
+    private int SelectCenterConduitIndex( IEnumerable<Conduit> conduits, Element? sensorConnector )
+    {
+      double minDistance = Double.MaxValue ;
+      var index = 0 ;
+      var count = 0 ;
+      foreach ( var conduit in conduits ) {
+        var location = ( conduit.Location as LocationCurve )! ;
+        var line = ( location.Curve as Line )! ;
+        var distance = sensorConnector!.GetTopConnectors().Origin.DistanceTo( line.Origin ) ;
+        if ( distance < minDistance ) {
+          minDistance = distance ;
+          index = count ;
+        }
+
+        count++ ;
+      }
+
+      return index ;
     }
   }
 }
