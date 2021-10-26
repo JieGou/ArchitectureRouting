@@ -58,7 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               if ( RoutingExecutionResultType.Cancel == routingResult.Type ) return Result.Cancelled ;
               if ( RoutingExecutionResultType.Failure == routingResult.Type ) return Result.Failed ;
               
-              index += 1 ;
+              index++ ;
             }
           }
 
@@ -149,7 +149,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private int SelectCenterConduitIndex( IEnumerable<Conduit> conduits, Element? sensorConnector )
     {
-      double minDistance = 1000 ;
+      double minDistance = Double.MaxValue ;
       var index = 0 ;
       var count = 0 ;
       foreach ( var conduit in conduits ) {

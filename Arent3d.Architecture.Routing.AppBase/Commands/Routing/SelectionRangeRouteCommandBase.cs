@@ -182,11 +182,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, Element powerConnector, Element firstSensorConnector, Element lastSensorConnector, List<Element> sensorConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
-      List<(string RouteName, RouteSegment Segment)> listSegment = CreateSegmentOfNewRoute( document, powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo ) ;
+      List<(string RouteName, RouteSegment Segment)> listSegment = CreateSegmentOfNewRoute( document, powerConnector, firstSensorConnector, lastSensorConnector, routeProperty, classificationInfo ) ;
       return listSegment ;
     }
 
-    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, Element powerConnector, Element firstSensorConnector, Element lastSensorConnector, List<Element> sensorConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, Element powerConnector, Element firstSensorConnector, Element lastSensorConnector, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
       var fromEndPoint = PickCommandUtil.GetEndPointConnector( powerConnector, lastSensorConnector ) ;
       var toEndPoint = PickCommandUtil.GetEndPointConnector( lastSensorConnector, powerConnector ) ;
