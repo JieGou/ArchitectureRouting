@@ -26,7 +26,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         bool success ;
         ( success, state ) = OperateUI( uiDocument, executor ) ;
-        if ( false == success ) return Result.Cancelled ;
+        if ( false == success && state is string ) {
+          TaskDialog.Show( "Error Message", state as string ) ;
+          return Result.Cancelled ;
+        }
+        else if ( false == success ) {
+          return Result.Cancelled ;
+        }
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
