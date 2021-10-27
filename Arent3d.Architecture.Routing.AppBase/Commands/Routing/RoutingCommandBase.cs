@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
@@ -50,21 +51,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             ConnectorPicker.IPickResult fromPickResult ;
             ConnectorPicker.IPickResult toPickResult ;
             var routes = executionResult.GeneratedRoutes ;
-            var conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
-            var index = SelectCenterConduitIndex( conduits, selectState.SensorConnectors.ElementAt( 0 ) ) ;
+            var routeName = routes.First().RouteName ;
+            List<XYZ> passPoints = new List<XYZ>() ;
+            foreach ( var route in routes.ToSegmentsWithName() ) {
+              passPoints.Add( route.Segment.FromEndPoint.RoutingStartPosition );
+            }
+            var passPoint = passPoints.Last() ;
 
             foreach ( var sensorConnector in selectState.SensorConnectors ) {
               toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
               
-              conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
-              fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduits.ElementAt( index ), false ) ;
+              var conduit = SelectCenterConduitIndex( document, routeName, passPoint ) ;
+              fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false ) ;
               
               var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
               var routingResult = GenerateRoutes( document, executor, pickState ) ;
               if ( RoutingExecutionResultType.Cancel == routingResult.Type ) return Result.Cancelled ;
               if ( RoutingExecutionResultType.Failure == routingResult.Type ) return Result.Failed ;
-              
-              index++ ;
+
+              routes = routingResult.GeneratedRoutes ;
+              passPoint = FindPassPoint( routes, routeName, passPoints ) ;
             }
           }
 
@@ -153,24 +159,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return Array.Empty<(string RouteName, RouteSegment Segment)>() ;
     }
 
-    private int SelectCenterConduitIndex( IEnumerable<Conduit> conduits, Element? sensorConnector )
+    private Conduit SelectCenterConduitIndex( Document document, string routeName, XYZ passPoint )
     {
-      double minDistance = Double.MaxValue ;
-      var index = 0 ;
-      var count = 0 ;
+      int count = 0 ;
+      var conduits = document.GetAllElementsOfRouteName<Conduit>( routeName ) ;
+      var centerConduit = conduits.First() ;
       foreach ( var conduit in conduits ) {
         var location = ( conduit.Location as LocationCurve )! ;
         var line = ( location.Curve as Line )! ;
-        var distance = sensorConnector!.GetTopConnectors().Origin.DistanceTo( line.Origin ) ;
-        if ( distance < minDistance ) {
-          minDistance = distance ;
-          index = count ;
+        var conduitEndPoint = line.GetEndPoint( 0 ) ;
+        if ( passPoint.DistanceTo( conduitEndPoint ) == 0 ) {
+          centerConduit = conduits.ElementAt( count - 1 ) ; 
+          break ;
         }
 
         count++ ;
       }
 
-      return index ;
+      return centerConduit ;
+    }
+
+    private XYZ FindPassPoint( IReadOnlyCollection<Route> routes, string routeName, List<XYZ> passPoints )
+    {
+      XYZ passPoint = XYZ.Zero ;
+      var routeSegment = routes.ToSegmentsWithName().Where( x => x.RouteName == routeName ) ;
+      foreach ( var route in routeSegment ) {
+        var toEndPoint = route.Segment.ToEndPoint ;
+        var position = toEndPoint.RoutingStartPosition ;
+        if ( toEndPoint is PassPointEndPoint && passPoints.FirstOrDefault( point => point.X == position.X && point.Y == position.Y && point.Z == position.Z ) == null ) {
+          passPoints.Add( position ) ;
+          passPoint = position ;
+        }
+      }
+
+      return passPoint ;
     }
   }
 }

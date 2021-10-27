@@ -93,7 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       sensorConnectors.Remove( lastSensorConnector! ) ;
 
-      var sensorConnectorList = from sensorConnector in sensorConnectors orderby sensorConnector.GetConnectors().First().Origin.Y descending select sensorConnector ;
+      var sensorConnectorList = from sensorConnector in sensorConnectors orderby sensorConnector.GetConnectors().First().Origin.Y ascending select sensorConnector ;
 
       return ( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectorList.ToList() ) ;
     }
