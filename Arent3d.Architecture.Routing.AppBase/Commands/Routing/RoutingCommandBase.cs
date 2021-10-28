@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
@@ -26,7 +27,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         bool success ;
         ( success, state ) = OperateUI( uiDocument, executor ) ;
-        if ( false == success ) return Result.Cancelled ;
+        if ( false == success && state is string ) {
+          TaskDialog.Show( "Error Message", state as string ) ;
+          return Result.Cancelled ;
+        }
+        else if ( false == success ) {
+          return Result.Cancelled ;
+        }
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
@@ -38,29 +45,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var executionResult = GenerateRoutes( document, executor, state ) ;
           if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
           if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
-          
-          var selectState = state as SelectionRangeRouteCommandBase.SelectState ;
-          if ( selectState != null ) {
-            ConnectorPicker.IPickResult fromPickResult ;
-            ConnectorPicker.IPickResult toPickResult ;
-            var routes = executionResult.GeneratedRoutes ;
-            var conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
-            var index = SelectCenterConduitIndex( conduits, selectState.SensorConnectors.ElementAt( 0 ) ) ;
 
-            foreach ( var sensorConnector in selectState.SensorConnectors ) {
-              toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
-              
-              conduits = document.GetAllElementsOfRouteName<Conduit>( routes.First().RouteName )  ;
-              fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduits.ElementAt( index ), false ) ;
-              
-              var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
-              var routingResult = GenerateRoutes( document, executor, pickState ) ;
-              if ( RoutingExecutionResultType.Cancel == routingResult.Type ) return Result.Cancelled ;
-              if ( RoutingExecutionResultType.Failure == routingResult.Type ) return Result.Failed ;
-              
-              index++ ;
-            }
-          }
+          // Generate selection range route command
+          var afterExecutionResult = AfterExeCute( uiDocument, executor, executionResult, state ) ;
+          if ( RoutingExecutionResultType.Cancel == afterExecutionResult) return Result.Cancelled ;
+          if ( RoutingExecutionResultType.Failure == afterExecutionResult ) return Result.Failed ;
 
           return Result.Succeeded ;
         } ) ;
@@ -147,24 +136,72 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return Array.Empty<(string RouteName, RouteSegment Segment)>() ;
     }
 
-    private int SelectCenterConduitIndex( IEnumerable<Conduit> conduits, Element? sensorConnector )
+    private Conduit SelectCenterConduitIndex( Document document, string routeName, XYZ passPoint )
     {
-      double minDistance = Double.MaxValue ;
-      var index = 0 ;
-      var count = 0 ;
+      var conduits = document.GetAllElementsOfRouteName<Conduit>( routeName ) ;
+      var centerConduit = conduits.First() ;
       foreach ( var conduit in conduits ) {
         var location = ( conduit.Location as LocationCurve )! ;
         var line = ( location.Curve as Line )! ;
-        var distance = sensorConnector!.GetTopConnectors().Origin.DistanceTo( line.Origin ) ;
-        if ( distance < minDistance ) {
-          minDistance = distance ;
-          index = count ;
+        var conduitEndPoint = line.GetEndPoint( 0 ) ;
+        if ( passPoint.DistanceTo( conduitEndPoint ) == 0 ) {
+          centerConduit = conduit ; 
+          break ;
         }
-
-        count++ ;
       }
 
-      return index ;
+      return centerConduit ;
+    }
+
+    private XYZ FindPassPoint( IReadOnlyCollection<Route> routes, string routeName, List<XYZ> passPoints )
+    {
+      XYZ passPoint = XYZ.Zero ;
+      var routeSegment = routes.ToSegmentsWithName().Where( x => x.RouteName == routeName ) ;
+      foreach ( var route in routeSegment ) {
+        var toEndPoint = route.Segment.ToEndPoint ;
+        var position = toEndPoint.RoutingStartPosition ;
+        if ( toEndPoint is PassPointEndPoint && passPoints.FirstOrDefault( point => point.X == position.X && point.Y == position.Y && point.Z == position.Z ) == null ) {
+          passPoints.Add( position ) ;
+          passPoint = position ;
+          break ;
+        }
+      }
+
+      return passPoint ;
+    }
+
+    private RoutingExecutionResultType AfterExeCute( UIDocument uiDocument, RoutingExecutor executor, RoutingExecutionResult executionResult, object? state)
+    {
+      var document = uiDocument.Document ;
+      var selectState = state as SelectionRangeRouteCommandBase.SelectState ;
+      if ( selectState != null ) {
+        ConnectorPicker.IPickResult fromPickResult ;
+        ConnectorPicker.IPickResult toPickResult ;
+        var routes = executionResult.GeneratedRoutes ;
+        var routeName = routes.First().RouteName ;
+        List<XYZ> passPoints = new List<XYZ>() ;
+        foreach ( var route in routes.ToSegmentsWithName() ) {
+          passPoints.Add( route.Segment.ToEndPoint.RoutingStartPosition ) ;
+        }
+        var passPoint = passPoints.First() ;
+
+        foreach ( var sensorConnector in selectState.SensorConnectors ) {
+          toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
+
+          var conduit = SelectCenterConduitIndex( document, routeName, passPoint ) ;
+          fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false, sensorConnector ) ;
+
+          var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
+          var routingResult = GenerateRoutes( document, executor, pickState ) ;
+          if ( RoutingExecutionResultType.Cancel == routingResult.Type ) return RoutingExecutionResultType.Cancel ;
+          if ( RoutingExecutionResultType.Failure == routingResult.Type ) return RoutingExecutionResultType.Failure ;
+
+          routes = routingResult.GeneratedRoutes ;
+          passPoint = FindPassPoint( routes, routeName, passPoints ) ;
+        }
+      }
+      
+      return RoutingExecutionResultType.Success ;
     }
   }
 }

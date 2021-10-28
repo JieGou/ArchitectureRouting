@@ -15,6 +15,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class SelectionRangeRouteCommandBase : RoutingCommandBase
   {
+    private const string errorMessNoPowerConnector = "No power connector selected." ;
+    
+    private const string errorMessNoSensorConnector = "No sensor connector selected." ;
+    
+    private const string errorMessSensorConnector = "At least 2 sensor connectors must be selected." ;
+    
     public record SelectState( Element PowerConnector, Element FirstSensorConnector, Element LastSensorConnector, List<Element> SensorConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
@@ -32,7 +38,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       var (powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors) = SelectionRangeRoute( uiDocument ) ;
-      if ( powerConnector == null || firstSensorConnector == null || lastSensorConnector == null || sensorConnectors.Count < 1 ) return ( false, null ) ;
+      if ( powerConnector == null ) return ( false, errorMessNoPowerConnector ) ;
+      if ( firstSensorConnector == null || lastSensorConnector == null ) return ( false, errorMessNoSensorConnector ) ;
+      if ( sensorConnectors.Count < 1 ) return ( false, errorMessSensorConnector ) ;
 
       var property = ShowPropertyDialog( uiDocument.Document, powerConnector, lastSensorConnector ) ;
       if ( true != property?.DialogResult ) return ( false, null ) ;
@@ -62,10 +70,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       Element? firstSensorConnector = null ;
       if ( powerConnector == null || sensorConnectors.Count < 1 ) return ( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors ) ;
       var powerPoint = powerConnector!.GetTopConnectors().Origin ;
+      lastSensorConnector = sensorConnectors[ 0 ] ;
+      firstSensorConnector = sensorConnectors[ 0 ] ;
       var maxDistance = sensorConnectors[ 0 ].GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
       var minDistance = maxDistance ;
       if ( sensorConnectors.Count > 0 ) {
-        
         foreach ( var element in sensorConnectors ) {
           var distance = element.GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
           
@@ -84,7 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       sensorConnectors.Remove( lastSensorConnector! ) ;
 
-      var sensorConnectorList = from sensorConnector in sensorConnectors orderby sensorConnector.GetConnectors().First().Origin.Y descending select sensorConnector ;
+      var sensorConnectorList = from sensorConnector in sensorConnectors orderby sensorConnector.GetConnectors().First().Origin.Y ascending select sensorConnector ;
 
       return ( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectorList.ToList() ) ;
     }
@@ -165,7 +174,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var cornerPointLeft = new Vector2d( toConnector.Origin.X, yPoint ) ;
 
         position = new XYZ( xPoint, yPoint, height ) ;
-        direction = new Vector3d( cornerPointRight.y - cornerPointLeft.y, cornerPointLeft.x - cornerPointRight.x, height ) ;
+        direction = new Vector3d( cornerPointLeft.y - cornerPointRight.y, cornerPointRight.x - cornerPointLeft.x, height ) ;
       }
       else {
         var xPoint = ( firstConnector.Origin.X + toConnector.Origin.X ) * 0.5 ;
@@ -174,7 +183,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var cornerPointBack = new Vector2d( xPoint, firstConnector.Origin.Y ) ;
         var cornerPointFront = new Vector2d( xPoint, toConnector.Origin.Y ) ;
         position = new XYZ( xPoint, toConnector.Origin.Y, height ) ;
-        direction = new Vector3d( cornerPointFront.y - cornerPointBack.y, cornerPointBack.x - cornerPointFront.x, height ) ;
+        direction = new Vector3d( cornerPointBack.y - cornerPointFront.y, cornerPointFront.x - cornerPointBack.x, height ) ;
       }
 
       return document.AddPassPointSelectRange( routeName, position, direction.normalized.ToXYZRaw(), fromConnector.Radius, fromPickElement.GetLevelId() ) ;
@@ -209,9 +218,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var firstPassPoint = new PassPointEndPoint( InsertPassPointElement( document, name, powerConnector, firstSensorConnector, lastSensorConnector, true, fromFixedHeight ) ) ;
       var secondPassPoint = new PassPointEndPoint( InsertPassPointElement( document, name, powerConnector, firstSensorConnector, lastSensorConnector, false, fromFixedHeight ) ) ;
       List<(string RouteName, RouteSegment Segment)> routeSegments = new List<(string RouteName, RouteSegment Segment)>() ;
-      routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, firstPassPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
-      routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, firstPassPoint, secondPassPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
-      routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, secondPassPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
+      routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, toEndPoint, secondPassPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
+      routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, secondPassPoint, firstPassPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
+      routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, firstPassPoint, fromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
 
       return routeSegments ;
     }
