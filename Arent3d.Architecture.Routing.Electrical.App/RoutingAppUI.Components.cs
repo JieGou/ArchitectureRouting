@@ -57,6 +57,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
         private static class ShowFromToTreeCommandButton { }
+        
+        [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
+        private static class SelectionRangeRouteCommandButton { }                
 
         [Button(typeof(NewEnvelopeCommand), OnlyInitialized = true)]
         private static class NewEnvelopeCommandButton { }
