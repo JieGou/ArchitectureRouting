@@ -46,33 +46,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
           if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
 
-          var selectState = state as SelectionRangeRouteCommandBase.SelectState ;
-          if ( selectState != null ) {
-            ConnectorPicker.IPickResult fromPickResult ;
-            ConnectorPicker.IPickResult toPickResult ;
-            var routes = executionResult.GeneratedRoutes ;
-            var routeName = routes.First().RouteName ;
-            List<XYZ> passPoints = new List<XYZ>() ;
-            foreach ( var route in routes.ToSegmentsWithName() ) {
-              passPoints.Add( route.Segment.ToEndPoint.RoutingStartPosition ) ;
-            }
-            var passPoint = passPoints.First() ;
-
-            foreach ( var sensorConnector in selectState.SensorConnectors ) {
-              toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
-
-              var conduit = SelectCenterConduitIndex( document, routeName, passPoint ) ;
-              fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false, sensorConnector ) ;
-
-              var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
-              var routingResult = GenerateRoutes( document, executor, pickState ) ;
-              if ( RoutingExecutionResultType.Cancel == routingResult.Type ) return Result.Cancelled ;
-              if ( RoutingExecutionResultType.Failure == routingResult.Type ) return Result.Failed ;
-
-              routes = routingResult.GeneratedRoutes ;
-              passPoint = FindPassPoint( routes, routeName, passPoints ) ;
-            }
-          }
+          // Generate selection range route command
+          var afterExecutionResult = AfterExeCute( uiDocument, executor, executionResult, state ) ;
+          if ( RoutingExecutionResultType.Cancel == afterExecutionResult) return Result.Cancelled ;
+          if ( RoutingExecutionResultType.Failure == afterExecutionResult ) return Result.Failed ;
 
           return Result.Succeeded ;
         } ) ;
@@ -186,10 +163,45 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( toEndPoint is PassPointEndPoint && passPoints.FirstOrDefault( point => point.X == position.X && point.Y == position.Y && point.Z == position.Z ) == null ) {
           passPoints.Add( position ) ;
           passPoint = position ;
+          break ;
         }
       }
 
       return passPoint ;
+    }
+
+    private RoutingExecutionResultType AfterExeCute( UIDocument uiDocument, RoutingExecutor executor, RoutingExecutionResult executionResult, object? state)
+    {
+      var document = uiDocument.Document ;
+      var selectState = state as SelectionRangeRouteCommandBase.SelectState ;
+      if ( selectState != null ) {
+        ConnectorPicker.IPickResult fromPickResult ;
+        ConnectorPicker.IPickResult toPickResult ;
+        var routes = executionResult.GeneratedRoutes ;
+        var routeName = routes.First().RouteName ;
+        List<XYZ> passPoints = new List<XYZ>() ;
+        foreach ( var route in routes.ToSegmentsWithName() ) {
+          passPoints.Add( route.Segment.ToEndPoint.RoutingStartPosition ) ;
+        }
+        var passPoint = passPoints.First() ;
+
+        foreach ( var sensorConnector in selectState.SensorConnectors ) {
+          toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
+
+          var conduit = SelectCenterConduitIndex( document, routeName, passPoint ) ;
+          fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false, sensorConnector ) ;
+
+          var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
+          var routingResult = GenerateRoutes( document, executor, pickState ) ;
+          if ( RoutingExecutionResultType.Cancel == routingResult.Type ) return RoutingExecutionResultType.Cancel ;
+          if ( RoutingExecutionResultType.Failure == routingResult.Type ) return RoutingExecutionResultType.Failure ;
+
+          routes = routingResult.GeneratedRoutes ;
+          passPoint = FindPassPoint( routes, routeName, passPoints ) ;
+        }
+      }
+      
+      return RoutingExecutionResultType.Success ;
     }
   }
 }
