@@ -15,6 +15,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class SelectionRangeRouteCommandBase : RoutingCommandBase
   {
+    private const string errorMessNoPowerAndSensorConnector = "No power connector and sensor connector selected." ;
+    
     private const string errorMessNoPowerConnector = "No power connector selected." ;
     
     private const string errorMessNoSensorConnector = "No sensor connector selected." ;
@@ -38,6 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       var (powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors) = SelectionRangeRoute( uiDocument ) ;
+      if ( powerConnector == null && ( firstSensorConnector == null || lastSensorConnector == null ) ) return ( false, errorMessNoPowerAndSensorConnector ) ;
       if ( powerConnector == null ) return ( false, errorMessNoPowerConnector ) ;
       if ( firstSensorConnector == null || lastSensorConnector == null ) return ( false, errorMessNoSensorConnector ) ;
       if ( sensorConnectors.Count < 1 ) return ( false, errorMessSensorConnector ) ;
@@ -66,12 +69,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      Element? lastSensorConnector = null ;
-      Element? firstSensorConnector = null ;
+      Element? lastSensorConnector = sensorConnectors.Count < 1 ? null : sensorConnectors.First() ;
+      Element? firstSensorConnector = sensorConnectors.Count < 1 ? null : sensorConnectors.First() ;
       if ( powerConnector == null || sensorConnectors.Count < 1 ) return ( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors ) ;
       var powerPoint = powerConnector!.GetTopConnectors().Origin ;
-      lastSensorConnector = sensorConnectors[ 0 ] ;
-      firstSensorConnector = sensorConnectors[ 0 ] ;
       var maxDistance = sensorConnectors[ 0 ].GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
       var minDistance = maxDistance ;
       if ( sensorConnectors.Count > 0 ) {
