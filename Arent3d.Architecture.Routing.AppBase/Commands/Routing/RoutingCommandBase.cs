@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var executionResult = GenerateRoutes( document, executor, state ) ;
           if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
           if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
-          
+
           var selectState = state as SelectionRangeRouteCommandBase.SelectState ;
           if ( selectState != null ) {
             ConnectorPicker.IPickResult fromPickResult ;
@@ -54,16 +54,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var routeName = routes.First().RouteName ;
             List<XYZ> passPoints = new List<XYZ>() ;
             foreach ( var route in routes.ToSegmentsWithName() ) {
-              passPoints.Add( route.Segment.FromEndPoint.RoutingStartPosition );
+              passPoints.Add( route.Segment.ToEndPoint.RoutingStartPosition ) ;
             }
-            var passPoint = passPoints.Last() ;
+            var passPoint = passPoints.First() ;
 
             foreach ( var sensorConnector in selectState.SensorConnectors ) {
               toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
-              
+
               var conduit = SelectCenterConduitIndex( document, routeName, passPoint ) ;
-              fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false ) ;
-              
+              fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false, sensorConnector ) ;
+
               var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
               var routingResult = GenerateRoutes( document, executor, pickState ) ;
               if ( RoutingExecutionResultType.Cancel == routingResult.Type ) return Result.Cancelled ;
@@ -161,7 +161,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private Conduit SelectCenterConduitIndex( Document document, string routeName, XYZ passPoint )
     {
-      int count = 0 ;
       var conduits = document.GetAllElementsOfRouteName<Conduit>( routeName ) ;
       var centerConduit = conduits.First() ;
       foreach ( var conduit in conduits ) {
@@ -169,11 +168,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var line = ( location.Curve as Line )! ;
         var conduitEndPoint = line.GetEndPoint( 0 ) ;
         if ( passPoint.DistanceTo( conduitEndPoint ) == 0 ) {
-          centerConduit = conduits.ElementAt( count - 1 ) ; 
+          centerConduit = conduit ; 
           break ;
         }
-
-        count++ ;
       }
 
       return centerConduit ;

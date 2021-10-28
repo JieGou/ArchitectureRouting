@@ -68,11 +68,11 @@ namespace Arent3d.Architecture.Routing.AppBase
         return new OriginPickResult( element, addInType ) ;
       }
     }
-    
-    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, Element element, bool pickingFromSide )
+
+    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, Element element, bool pickingFromSide, Element? sensorConnector = null )
     {
       if ( element is Conduit ) {
-        if ( SubRoutePickResult.Create( routingExecutor, element, element.GetTopConnectors().Origin) is { } srResult ) {
+        if ( SubRoutePickResult.Create( routingExecutor, element, sensorConnector!.GetTopConnectors().Origin ) is { } srResult ) {
           if ( PickEndPointOverSubRoute( uiDocument, srResult, pickingFromSide ) is { } endPoint )
             return srResult.ApplyEndPointOverSubRoute( endPoint.Key ) ;
         }
@@ -81,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         var connector = element.GetTopConnectors() as Connector ;
         return new ConnectorPickResult( element, connector! ) ;
       }
-      
+
       return new OriginPickResult( element, AddInType.Electrical ) ;
     }
 
