@@ -65,16 +65,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new TerminatePointEndPoint( element.Document, ElementId.InvalidElementId, pos, dir, preferredRadius, element.Id ) ;
     }
     
-    public static IEndPoint GetEndPointConnector( Element pickResult, Element anotherResult )
+    public static IEndPoint GetEndPointConnector( Element pickResult )
     {
-      var pickConnector = pickResult.GetTopConnectors() ;
-      var anotherConnector = anotherResult.GetTopConnectors() ;
-      var pos = pickConnector.Origin ;
-      var anotherPos = anotherConnector.Origin ;
-      var dir = GetPreferredDirection( pos, anotherPos ) ;
-      var preferredRadius = ( pickConnector ?? anotherConnector )?.Radius ;
-
-      return new TerminatePointEndPoint( pickResult.Document, ElementId.InvalidElementId, pos, dir, preferredRadius, pickResult.Id ) ;
+      var connector = pickResult.GetTopConnectors() as Connector ;
+      return new ConnectorEndPoint( connector! ) ;
     }
 
     private static XYZ GetPreferredDirection( XYZ pos, XYZ anotherPos )

@@ -198,8 +198,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, Element powerConnector, Element firstSensorConnector, Element lastSensorConnector, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
-      var fromEndPoint = PickCommandUtil.GetEndPointConnector( powerConnector, lastSensorConnector ) ;
-      var toEndPoint = PickCommandUtil.GetEndPointConnector( lastSensorConnector, powerConnector ) ;
+      var fromEndPoint = PickCommandUtil.GetEndPointConnector( powerConnector ) ;
+      var toEndPoint = PickCommandUtil.GetEndPointConnector( lastSensorConnector ) ;
 
       var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
