@@ -21,5 +21,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new HeightSettingStorable( document ) ;
       }
     }
+
+    /// <summary>
+    /// Get Offset settings data from snoop DB.
+    /// </summary>
+    public static OffsetSettingStorable GetOffsetSettingStorable( this Document document )
+    {
+      try {
+        return OffsetSettingStorableCache.Get( document ).FindOrCreate( OffsetSettingStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new OffsetSettingStorable( document ) ;
+      }
+    }
   }
 }

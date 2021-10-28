@@ -1,4 +1,5 @@
 ﻿using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -12,12 +13,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       InitializeComponent() ;
     }
-
-    public OffsetSetting( Document document )
+    
+    public OffsetSetting( OffsetSettingViewModel viewModel)
     {
-      InitializeComponent() ;
+      InitializeComponent();
+      this.DataContext = viewModel;
       WindowStartupLocation = WindowStartupLocation.CenterScreen ;
-    }
+    }    
 
     private void OffsetButtons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
