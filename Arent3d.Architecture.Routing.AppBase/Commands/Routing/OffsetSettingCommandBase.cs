@@ -1,9 +1,13 @@
-using System ;
 using System.Linq ;
+using System.Threading ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Revit.UI.Forms ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
@@ -16,46 +20,63 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      //Call Open UI dialog
-      var property = ShowDialog( document ) ;
-      if ( true != property?.DialogResult ) return Result.Succeeded ;
-      var value = property.OffsetNumeric.Value ;      
-      try {
-        var result = document.Transaction(
-          "TransactionName.Commands.Routing.OffsetSetting".GetAppStringByKeyOrDefault( "Offset Setting" ), _ =>
-          {
-            // get all envelop
-            var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
-            var familyInstances = envelops as FamilyInstance[] ?? envelops.ToArray() ;            
-            foreach ( var envelop in familyInstances ) {
-                GenerateEnvelope( document, envelop, uiDocument.ActiveView.GenLevel ) ;
+
+      // get data of height setting from snoop DB
+      OffsetSettingStorable settingStorable = document.GetOffsetSettingStorable() ;
+
+      var viewModel = new ViewModel.OffsetSettingViewModel( settingStorable ) ;
+      var dialog = new OffsetSettingDialog( viewModel ) ;
+      dialog.ShowDialog() ;
+      if ( dialog.DialogResult ?? false ) {
+        return document.Transaction( "TransactionName.Commands.Routing.OffsetSetting".GetAppStringByKeyOrDefault( "Offset Setting" ), _ =>
+        {
+          var newStorage = viewModel.SettingStorable ;
+          if ( ShouldApplySetting( document, settingStorable ) ) {
+            var tokenSource = new CancellationTokenSource() ;
+            using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
+            progress.Message = "Offset Setting..." ;
+
+            using ( var p = progress?.Reserve( 0.5 ) ) {
+              ApplySetting( uiDocument, newStorage, p ) ;
             }
 
-            return Result.Succeeded ;
-          } ) ;
+            using ( progress?.Reserve( 0.5 ) ) {
+              SaveSetting( settingStorable ) ;
+            }
+          }
 
-        return result ;
+          return Result.Succeeded ;
+        } ) ;
       }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      else {
         return Result.Cancelled ;
       }
-      catch ( Exception e ) {
-        CommandUtils.DebugAlertException( e ) ;
-        return Result.Failed ;
-      }      
     }
 
-    /// <summary>
-    ///   Show dialog Offset Setting
-    /// </summary>
-    private static OffsetSetting ShowDialog( Document document )
+    private static void ApplySetting( UIDocument uiDocument, OffsetSettingStorable settingStorable, IProgressData? progressData = null )
     {
-      var sv = new OffsetSetting( document ) ;
-      sv.ShowDialog() ;
-      return sv ;
+      if ( settingStorable == null ) return ;
+      var document = uiDocument.Document ;
+      // get all envelop
+      var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
+      var familyInstances = envelops as FamilyInstance[] ?? envelops.ToArray() ;
+      foreach ( var envelop in familyInstances ) {
+        GenerateEnvelope( document, envelop, uiDocument.ActiveView.GenLevel, settingStorable.OffsetSettingsData.Offset ) ;
+      }
     }
-    
-    public static void GenerateEnvelope( Document document, FamilyInstance envelope, Level level, bool isCeiling = false )
+
+    private static void SaveSetting( StorableBase newSettings )
+    {
+      newSettings.Save() ;
+    }
+
+    private static bool ShouldApplySetting( Document document, OffsetSettingStorable newSettings )
+    {
+      var old = document.GetAllStorables<OffsetSettingStorable>().FirstOrDefault() ; // generates new instance from document
+      return ( false == newSettings.Equals( old ) ) ;
+    }
+
+    public static void GenerateEnvelope( Document document, FamilyInstance envelope, Level level, double offset )
     {
       double originX = 0 ;
       double originY = 0 ;
@@ -65,21 +86,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         originY = location.Point.Y ;
         originZ = location.Point.Z ;
       }
-      
+
       var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
       instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-      const double offSet = 1000 ;
-      var backSize = envelope == null? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + offSet.MillimetersToRevitUnits() ;
-      var widthSize = envelope == null? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + offSet.MillimetersToRevitUnits() ;
-      var height = envelope == null? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + offSet.MillimetersToRevitUnits();
+      var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + offset.MetersToRevitUnits() ;
+      var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + offset.MetersToRevitUnits() ;
+      var height = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + offset.MetersToRevitUnits() ;
       instance.LookupParameter( "奥行き" ).Set( backSize ) ;
       instance.LookupParameter( "幅" ).Set( widthSize ) ;
       instance.LookupParameter( "高さ" ).Set( height ) ;
 
       var ogs = new OverrideGraphicSettings() ;
       ogs.SetSurfaceTransparency( 100 ) ;
-      document.ActiveView.SetElementOverrides( instance.Id, ogs ) ;   
-    }    
+      document.ActiveView.SetElementOverrides( instance.Id, ogs ) ;
+    }
   }
 }
