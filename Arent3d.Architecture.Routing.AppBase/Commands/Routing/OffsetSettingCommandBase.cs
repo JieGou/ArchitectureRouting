@@ -95,9 +95,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var backSize = envelope == null? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + offSet.MillimetersToRevitUnits() ;
       var widthSize = envelope == null? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + offSet.MillimetersToRevitUnits() ;
       var height = envelope == null? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + offSet.MillimetersToRevitUnits();
+      var parentEnvelopeId = envelope == null ? string.Empty : envelope!.Id.ToString() ;
       instance.LookupParameter( "奥行き" ).Set( backSize ) ;
       instance.LookupParameter( "幅" ).Set( widthSize ) ;
       instance.LookupParameter( "高さ" ).Set( height ) ;
+      instance.LookupParameter( "Parent Envelope Id" ).Set( parentEnvelopeId ) ;
 
       var ogs = new OverrideGraphicSettings() ;
       ogs.SetSurfaceTransparency( 100 ) ;
