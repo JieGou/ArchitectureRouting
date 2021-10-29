@@ -1,6 +1,5 @@
 ﻿using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -17,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public OffsetSetting( OffsetSettingViewModel viewModel)
     {
       InitializeComponent();
-      this.DataContext = viewModel;
+      DataContext = viewModel;
       WindowStartupLocation = WindowStartupLocation.CenterScreen ;
     }    
 

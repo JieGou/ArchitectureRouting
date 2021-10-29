@@ -11,11 +11,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     private enum SerializeField
     {
       LevelId,
-      LevelName,
-      Elevation,
-      Underfloor,
-      HeightOfLevel,
-      HeightOfConnectors
+      Offset
     }
 
     protected override OffsetSettingModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -23,13 +19,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
       var levelId = deserializer.GetInt( SerializeField.LevelId ) ;
-      var levelName = deserializer.GetString( SerializeField.LevelName ) ;
-      var elevation = deserializer.GetDouble( SerializeField.Elevation ) ;
-      var underfloor = deserializer.GetDouble( SerializeField.Underfloor ) ;
-      var heightOfLevel = deserializer.GetDouble( SerializeField.HeightOfLevel ) ;
-      var heightOfConnectors = deserializer.GetDouble( SerializeField.HeightOfConnectors ) ;
+      var offset = deserializer.GetDouble( SerializeField.Offset ) ;
 
-      return new OffsetSettingModel( levelId, levelName, elevation, underfloor, heightOfLevel, heightOfConnectors ) ;
+      return new OffsetSettingModel( levelId, offset ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, OffsetSettingModel customTypeValue )
@@ -37,9 +29,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var serializerObject = new SerializerObject<SerializeField>() ;
 
       serializerObject.Add( SerializeField.LevelId, customTypeValue.LevelId ) ;
-      serializerObject.Add( SerializeField.Underfloor, customTypeValue.Underfloor ) ;
-      serializerObject.Add( SerializeField.HeightOfLevel, customTypeValue.HeightOfLevel ) ;
-      serializerObject.Add( SerializeField.HeightOfConnectors, customTypeValue.HeightOfConnectors ) ;
+      serializerObject.Add( SerializeField.Offset, customTypeValue.Offset ) ;
 
       return serializerObject ;
     }

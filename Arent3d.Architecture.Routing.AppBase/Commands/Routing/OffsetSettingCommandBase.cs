@@ -74,8 +74,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var old = document.GetAllStorables<OffsetSettingStorable>().FirstOrDefault() ; // generates new instance from document
       if ( old == null ) return true ;
       // Todo check apply
-      return true ;
-      // return ( false == newSettings.Equals( old ) ) ;
+      // return true ;
+      return ( false == newSettings.Equals( old ) ) ;
     }
     public static void GenerateEnvelope( Document document, FamilyInstance envelope, Level level, bool isCeiling = false )
     {

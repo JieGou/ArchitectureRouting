@@ -24,15 +24,8 @@
                VerticalAlignment="Center" />
         <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right"
                     Orientation="Horizontal">
-            <local:NumericUpDownEx x:Name="OffsetNumeric"
-                                   Value="1"
-                                   TextAlignment="Right"
-                                   Increment="1"
-                                   Width="130" Height="27">
-                <local:NumericUpDownEx.Style>
-                    <Style TargetType="{x:Type local:NumericUpDownEx}" />
-                </local:NumericUpDownEx.Style>
-            </local:NumericUpDownEx>
+            <TextBox Name="Offset" DataContext="{Binding OffsetSettingModels}" Text="{Binding Offset}" TextAlignment="Right" Width="130" Height="27">
+            </TextBox>
         </StackPanel>
         <local:Dialog2Buttons Grid.Column="1" Grid.Row="1" Margin="0,15,0,0"
                               LeftButton="OK"
