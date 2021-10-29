@@ -5,18 +5,15 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
-using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "83A448F4-E120-44E0-A220-F2D3F11B6A09" )]
+  [Guid( "b20a515e-8f67-450e-b312-c5f0ee87b474" )]
   [StorableVisibility( AppInfo.VendorId )]
   public sealed class OffsetSettingStorable : StorableBase, IEquatable<OffsetSettingStorable>
   {
     public const string StorableName = "Offset Setting" ;
-    private const double DefaultMaxLevelDistance = 100000 ; // max level distance
     
     private const string OffsetSettingField = "OffsetSetting" ;
 
@@ -44,14 +41,12 @@ namespace Arent3d.Architecture.Routing.Storable
 
     protected override void LoadAllFields( FieldReader reader )
     {
-      // var dataSaved = reader.GetArray<OffsetSettingModel>( OffsetSettingField ).ToDictionary( x => x.LevelId ) ;
-      
-      // OffsetSettingsData = Levels.ToDictionary( x => x.Id.IntegerValue, x => dataSaved.GetOrDefault( x.Id.IntegerValue, () => new OffsetSettingModel( x ) ) ) ;
+      OffsetSettingsData[0] = reader.GetArray<OffsetSettingModel>( OffsetSettingField ).FirstOrDefault() ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
-      OffsetSettingsData[0] = new OffsetSettingModel( 10 ) ;
+      OffsetSettingsData[0] = new OffsetSettingModel( 0 ) ;
       writer.SetArray( OffsetSettingField, OffsetSettingsData.Values.ToList() ) ;
     }
 
