@@ -7,14 +7,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class OffsetSettingViewModel : ViewModelBase
   {
-    public List<OffsetSettingModel> OffsetSettinggModels { get ; }
+    private List<OffsetSettingModel> OffsetSettingModels { get ; }
 
     public OffsetSettingStorable SettingStorable { get ; }
 
-    public OffsetSettingViewModel( OffsetSettingStorable settingStorables )
+    public OffsetSettingViewModel( OffsetSettingStorable settingStorable )
     {
-      SettingStorable = settingStorables ;
-      OffsetSettinggModels = settingStorables.OffsetSettingsData.Values.ToList() ;
+      SettingStorable = settingStorable ;
+      OffsetSettingModels = settingStorable.OffsetSettingsData.Values.ToList() ;
     }
   }
 }

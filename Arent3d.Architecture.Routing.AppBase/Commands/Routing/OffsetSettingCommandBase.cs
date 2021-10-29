@@ -22,51 +22,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       
       // get data of height setting from snoop DB
-      OffsetSettingStorable settingStorables = document.GetOffsetSettingStorable() ;
+      OffsetSettingStorable settingStorable = document.GetOffsetSettingStorable() ;
 
-      var viewModel = new ViewModel.OffsetSettingViewModel( settingStorables ) ;
+      var viewModel = new ViewModel.OffsetSettingViewModel( settingStorable ) ;
       var dialog = new OffsetSetting( viewModel ) ;
       dialog.ShowDialog() ;
-      
-      // try {
-      //   var result = document.Transaction(
-      //     "TransactionName.Commands.Routing.OffsetSetting".GetAppStringByKeyOrDefault( "Offset Setting" ), _ =>
-      //     {
-      //       // get all envelop
-      //       var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
-      //       var familyInstances = envelops as FamilyInstance[] ?? envelops.ToArray() ;            
-      //       foreach ( var envelop in familyInstances ) {
-      //           GenerateEnvelope( document, envelop, uiDocument.ActiveView.GenLevel ) ;
-      //       }
-      //
-      //       return Result.Succeeded ;
-      //     } ) ;
-      //
-      //   return result ;
-      // }
-      // catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-      //   return Result.Cancelled ;
-      // }
-      // catch ( Exception e ) {
-      //   CommandUtils.DebugAlertException( e ) ;
-      //   return Result.Failed ;
-      // }
-      
       if ( dialog.DialogResult ?? false ) {
         return document.Transaction( "TransactionName.Commands.Routing.OffsetSetting".GetAppStringByKeyOrDefault( "Offset Setting" ), _ =>
         {
           var newStorage = viewModel.SettingStorable ;
-          if ( ShouldApplySetting( document, settingStorables ) ) {
+          if ( ShouldApplySetting( document, settingStorable ) ) {
             var tokenSource = new CancellationTokenSource() ;
             using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
-            progress.Message = "Height Setting..." ;
+            progress.Message = "Offset Setting..." ;
 
             using ( var p = progress?.Reserve( 0.5 ) ) {
               ApplySetting( uiDocument, newStorage, p ) ;
             }
 
             using ( progress?.Reserve( 0.5 ) ) {
-              SaveSetting( document, settingStorables ) ;
+              SaveSetting( settingStorable ) ;
             }
           }
 
@@ -78,8 +53,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }      
     }
 
-    public void ApplySetting( UIDocument uiDocument, OffsetSettingStorable settingStorables, IProgressData? progressData = null )
+    private static void ApplySetting( UIDocument uiDocument, OffsetSettingStorable settingStorable, IProgressData? progressData = null )
     {
+      if ( settingStorable == null ) return ;
       var document = uiDocument.Document ;
       // get all envelop
       var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
@@ -88,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           GenerateEnvelope( document, envelop, uiDocument.ActiveView.GenLevel ) ;
       }      
     }
-    private static void SaveSetting( Document document, OffsetSettingStorable newSettings )
+    private static void SaveSetting( StorableBase newSettings )
     {
       newSettings.Save() ;
     }
@@ -96,7 +72,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static bool ShouldApplySetting( Document document, OffsetSettingStorable newSettings )
     {
       var old = document.GetAllStorables<OffsetSettingStorable>().FirstOrDefault() ; // generates new instance from document
-      return ( false == newSettings.Equals( old ) ) ;
+      if ( old == null ) return true ;
+      // Todo check apply
+      return true ;
+      // return ( false == newSettings.Equals( old ) ) ;
     }
     public static void GenerateEnvelope( Document document, FamilyInstance envelope, Level level, bool isCeiling = false )
     {
