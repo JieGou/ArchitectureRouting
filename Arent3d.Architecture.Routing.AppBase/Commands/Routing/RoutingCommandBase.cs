@@ -189,7 +189,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
 
           var conduit = SelectCenterConduitIndex( document, routeName, passPoint ) ;
-          fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false, sensorConnector ) ;
+          fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false, sensorConnector, selectState.SensorConnectors.Count ) ;
 
           var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
           var routingResult = GenerateRoutes( document, executor, pickState ) ;
