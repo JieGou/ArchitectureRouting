@@ -69,10 +69,13 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
 
-    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, Element element, bool pickingFromSide, Element? sensorConnector = null )
+    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, Element element, bool pickingFromSide, Element? sensorConnector = null, int countSensorConnector = 0 )
     {
       if ( element is Conduit ) {
-        if ( SubRoutePickResult.Create( routingExecutor, element, sensorConnector!.GetTopConnectors().Origin ) is { } srResult ) {
+        const double plusY = 1.0 ;
+        var originPoint = sensorConnector!.GetTopConnectors().Origin ;
+        XYZ globalPoint = countSensorConnector == 1 ? new XYZ( originPoint.X, originPoint.Y + plusY, originPoint.Z ) : originPoint ;
+        if ( SubRoutePickResult.Create( routingExecutor, element, globalPoint ) is { } srResult ) {
           if ( PickEndPointOverSubRoute( uiDocument, srResult, pickingFromSide ) is { } endPoint )
             return srResult.ApplyEndPointOverSubRoute( endPoint.Key ) ;
         }
