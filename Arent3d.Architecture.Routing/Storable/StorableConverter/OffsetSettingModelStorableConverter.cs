@@ -10,7 +10,6 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
   {
     private enum SerializeField
     {
-      LevelId,
       Offset
     }
 
@@ -18,17 +17,15 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
-      var levelId = deserializer.GetInt( SerializeField.LevelId ) ;
       var offset = deserializer.GetDouble( SerializeField.Offset ) ;
 
-      return new OffsetSettingModel( levelId, offset ) ;
+      return new OffsetSettingModel( offset ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, OffsetSettingModel customTypeValue )
     {
       var serializerObject = new SerializerObject<SerializeField>() ;
 
-      serializerObject.Add( SerializeField.LevelId, customTypeValue.LevelId ) ;
       serializerObject.Add( SerializeField.Offset, customTypeValue.Offset ) ;
 
       return serializerObject ;

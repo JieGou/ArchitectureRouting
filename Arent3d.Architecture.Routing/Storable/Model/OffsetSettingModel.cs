@@ -1,34 +1,23 @@
-﻿using System ;
-using Autodesk.Revit.DB ;
-
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
-  public class OffsetSettingModel : IEquatable<OffsetSettingModel>
+  public class OffsetSettingModel
   {
-    private const double DEFAULT_OFFSET = 1000 ;
-
-    public int LevelId { get ; set ; }
+    private const double DEFAULT_OFFSET = 1 ;
     public double Offset { get ; set ; }
 
-    public OffsetSettingModel( int levelId )
+    public OffsetSettingModel()
     {
-      LevelId = levelId ;
       Offset = DEFAULT_OFFSET ;
     }
 
-    public OffsetSettingModel( Level levels, double offset )
+    public OffsetSettingModel( double? offset )
     {
-      Offset = Math.Round( offset ) ;
+      Offset = offset ?? 0 ;
     }
 
-    public OffsetSettingModel( int? levelId, double? offset )
+    public bool CheckEquals( OffsetSettingModel other )
     {
-      Offset = Math.Round( offset ?? DEFAULT_OFFSET ) ;
-    }
-
-    public bool Equals( OffsetSettingModel other )
-    {
-      return other != null && LevelId == other.LevelId && Offset == other.Offset ;
+      return other != null && Offset == other.Offset ;
     }
   }
 }

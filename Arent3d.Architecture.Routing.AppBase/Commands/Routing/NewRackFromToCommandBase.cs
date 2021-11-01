@@ -6,8 +6,6 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Autodesk.Revit.DB.Electrical ;
-using Autodesk.Revit.DB.Structure ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
