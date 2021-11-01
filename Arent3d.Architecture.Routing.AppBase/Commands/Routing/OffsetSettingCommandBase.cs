@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       newSettings.Save() ;
     }
 
-    public static void GenerateEnvelope( Document document, FamilyInstance envelope, Level level, double offset, FamilyInstance? childrenEnvelop )
+    private static void GenerateEnvelope( Document document, Element envelope, Level level, double offset, Element? childrenEnvelop )
     {
       // Get parent position
       double originX = 0 ;
@@ -80,19 +80,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( envelope?.Location is LocationPoint location ) {
         originX = location.Point.X ;
         originY = location.Point.Y ;
-        originZ = location.Point.Z - offset.MetersToRevitUnits();
+        var zOffset = level != null ? offset.MetersToRevitUnits() - level.Elevation : location.Point.Z - offset.MetersToRevitUnits() ;
+        originZ = location.Point.Z - zOffset ;
       }
-      
-      var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + offset.MetersToRevitUnits() ;
-      var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + offset.MetersToRevitUnits() ;
+
+      var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
+      var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
       var height = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
       var parentEnvelopeId = envelope == null ? string.Empty : envelope!.Id.ToString() ;
 
       // Create new envelope
       if ( childrenEnvelop == null ) {
         var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
-        var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
-        
+        var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level!, StructuralType.NonStructural ) ;
+
         // Change envelope size
         instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
         instance.LookupParameter( "奥行き" ).Set( backSize ) ;
@@ -100,10 +101,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         instance.LookupParameter( "高さ" ).Set( height ) ;
         instance.LookupParameter( "Parent Envelope Id" ).Set( parentEnvelopeId ) ;
 
-        // Change transparency value;
+        // Change transparency value for all view
         var ogs = new OverrideGraphicSettings() ;
         ogs.SetSurfaceTransparency( 100 ) ;
-        document.ActiveView.SetElementOverrides( instance.Id, ogs ) ;
+        var allView = document.GetAllElements<View>() ;
+        foreach ( var view in allView ) {
+          try {
+            view.SetElementOverrides( instance.Id, ogs ) ;
+          }
+          catch {
+            // Todo catch handle
+          }
+        }
       }
       // Correct children envelope
       else {
