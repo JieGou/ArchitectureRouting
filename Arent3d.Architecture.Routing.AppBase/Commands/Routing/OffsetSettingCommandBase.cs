@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static void ApplySetting( UIDocument uiDocument, OffsetSettingStorable settingStorable, IProgressData? progressData = null )
     {
       var document = uiDocument.Document ;
-      
+
       // Get all envelop
       var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
       var familyInstances = envelops as FamilyInstance[] ?? envelops.ToArray() ;
@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       newSettings.Save() ;
     }
 
-    private static void GenerateEnvelope( Document document, FamilyInstance envelope, Level level, double offset )
+    private static void GenerateEnvelope( Document document, Element envelope, Level level, double offset )
     {
       // Get parent position
       double originX = 0 ;
@@ -77,26 +77,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( envelope?.Location is LocationPoint location ) {
         originX = location.Point.X ;
         originY = location.Point.Y ;
-        originZ = location.Point.Z - offset.MetersToRevitUnits();
+        var zOffset = level != null ? offset.MetersToRevitUnits() - level.Elevation : location.Point.Z - offset.MetersToRevitUnits() ;
+        originZ = location.Point.Z - zOffset ;
       }
 
       // Create new envelope
       var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
-      var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
-      
+      var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level!, StructuralType.NonStructural ) ;
+
       // Change envelope size
       instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-      var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + offset.MetersToRevitUnits() ;
-      var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + offset.MetersToRevitUnits() ;
+      var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
+      var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
       var height = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
       instance.LookupParameter( "奥行き" ).Set( backSize ) ;
       instance.LookupParameter( "幅" ).Set( widthSize ) ;
       instance.LookupParameter( "高さ" ).Set( height ) ;
 
-      // Change transparency value;
+      // Change transparency value for all view
       var ogs = new OverrideGraphicSettings() ;
       ogs.SetSurfaceTransparency( 100 ) ;
-      document.ActiveView.SetElementOverrides( instance.Id, ogs ) ;
+      var allView = document.GetAllElements<View>() ;
+      foreach ( var view in allView ) {
+        try {
+          view.SetElementOverrides( instance.Id, ogs ) ;
+        }
+        catch {
+          // Todo catch handle
+        }
+      }
     }
   }
 }
