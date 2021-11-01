@@ -80,7 +80,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( envelope?.Location is LocationPoint location ) {
         originX = location.Point.X ;
         originY = location.Point.Y ;
-        var zOffset = level != null ? offset.MetersToRevitUnits() - level.Elevation : location.Point.Z - offset.MetersToRevitUnits() ;
+        var zOffset = level != null ? offset.MetersToRevitUnits() + level.Elevation : offset.MetersToRevitUnits() ;
         originZ = location.Point.Z - zOffset ;
       }
 
