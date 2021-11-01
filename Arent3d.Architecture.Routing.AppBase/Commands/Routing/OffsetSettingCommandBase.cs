@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static void ApplySetting( UIDocument uiDocument, OffsetSettingStorable settingStorable, IProgressData? progressData = null )
     {
       var document = uiDocument.Document ;
-      
+
       // Get all envelop
       var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
       var familyInstances = envelops as FamilyInstance[] ?? envelops.ToArray() ;
@@ -107,6 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       // Correct children envelope
       else {
+        // Change envelope size
         childrenEnvelop.LookupParameter( "奥行き" ).Set( backSize ) ;
         childrenEnvelop.LookupParameter( "幅" ).Set( widthSize ) ;
         childrenEnvelop.LookupParameter( "高さ" ).Set( height ) ;
