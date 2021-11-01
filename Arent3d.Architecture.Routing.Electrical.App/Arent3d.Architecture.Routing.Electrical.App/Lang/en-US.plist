@@ -100,6 +100,9 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>Create&#xA;Cylindrical Shaft</string>
 
+        <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
+        <string>Selection Range&#xA;Route</string>        
+
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>Create 3D&#xA;Floor Views</string>
 
@@ -171,6 +174,9 @@
 
         <key>TransactionName.Commands.Rack.NewRackFromTo</key>
         <string>Create Cable Rack From-To</string>
+
+        <key>TransactionName.Commands.Routing.SelectionRangeRoute</key>
+        <string>Selection Range Route</string>        
 
         <key>TransactionName.Commands.Routing.OffsetSetting</key>
         <string>Offset Setting</string>        

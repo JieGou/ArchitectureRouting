@@ -101,6 +101,9 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>円柱シャフト作成</string>
 
+        <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
+        <string>選択範囲配線</string>
+
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>階ごとの3dビュー作成</string>
 
@@ -175,6 +178,9 @@
         
         <key>TransactionName.Commands.Routing.OffsetSetting</key>
         <string>オフセット設定</string>
+
+        <key>TransactionName.Commands.Routing.SelectRangeRoute</key>
+        <string>選択範囲配線</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>

@@ -12,6 +12,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Arent3d.Architecture.Routing.AppBase\Arent3d.Architecture.Routing.AppBase.csproj" />
+        <ProjectReference Include="..\Arent3d.Architecture.Routing.Electrical.App\Arent3d.Architecture.Routing.Electrical.App.csproj" />
         <ProjectReference Include="..\Arent3d.Architecture.Routing\Arent3d.Architecture.Routing.csproj" />
     </ItemGroup>
 
