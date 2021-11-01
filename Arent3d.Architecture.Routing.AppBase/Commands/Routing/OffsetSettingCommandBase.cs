@@ -84,7 +84,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( envelope?.Location is LocationPoint location ) {
         originX = location.Point.X ;
         originY = location.Point.Y ;
-        originZ = location.Point.Z ;
+        originZ = location.Point.Z - offset.MetersToRevitUnits();
       }
 
       var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
@@ -92,7 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
       var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + offset.MetersToRevitUnits() ;
       var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + offset.MetersToRevitUnits() ;
-      var height = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + offset.MetersToRevitUnits() ;
+      var height = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
       instance.LookupParameter( "奥行き" ).Set( backSize ) ;
       instance.LookupParameter( "幅" ).Set( widthSize ) ;
       instance.LookupParameter( "高さ" ).Set( height ) ;
