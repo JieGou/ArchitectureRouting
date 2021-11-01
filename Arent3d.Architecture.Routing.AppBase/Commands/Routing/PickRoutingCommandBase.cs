@@ -103,6 +103,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var pickState = state as PickState ?? throw new InvalidOperationException() ;
       var (fromPickResult, toPickResult, routeProperty, classificationInfo) = pickState ;
+      
+      RouteGenerator.CorrectEnvelopes( document ) ;
 
       if ( null != fromPickResult.SubRoute ) {
         return CreateNewSegmentListForRoutePick( fromPickResult, toPickResult, false, routeProperty, classificationInfo ) ;

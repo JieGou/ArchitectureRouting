@@ -6,6 +6,7 @@ using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -181,6 +182,30 @@ namespace Arent3d.Architecture.Routing
     private static string GetResultLogFileName( Document document, AutoRoutingTarget routingTarget )
     {
       return Path.Combine( GetLogDirectoryName( document ), routingTarget.LineId + ".log" ) ;
+    }
+    
+    public static void CorrectEnvelopes( Document document )
+    {
+      // get all envelope
+      var envelopes = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
+      if ( envelopes.Count() > 0 ) {
+        var parentEnvelopes = envelopes.Where( f => string.IsNullOrEmpty( f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ).ToList() ;
+        if ( parentEnvelopes.Count > 0 ) {
+          var childrenEnvelopes = envelopes.Where( f => ! string.IsNullOrEmpty( f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ).ToList() ;
+          if ( childrenEnvelopes.Count > 0 ) {
+            foreach ( var parentEnvelope in parentEnvelopes ) {
+              var parentLocation = parentEnvelope.Location as LocationPoint ;
+              foreach ( var childrenEnvelope in childrenEnvelopes ) {
+                var parentEnvelopeId = childrenEnvelope.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ;
+                if ( parentEnvelopeId == parentEnvelope.Id.ToString() ) {
+                  var childrenLocation = childrenEnvelope.Location as LocationPoint ;
+                  childrenLocation!.Point = parentLocation!.Point ;
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
