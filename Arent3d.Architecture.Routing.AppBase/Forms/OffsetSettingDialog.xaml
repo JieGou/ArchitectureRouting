@@ -4,16 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
-        xmlns:HeightSettingsRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.HeightSettingsRules" 
+        xmlns:offsetSettingsRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.OffsetSettingsRules" 
         x:Class="Arent3d.Architecture.Routing.AppBase.Forms.OffsetSettingDialog"
         mc:Ignorable="d"
-        Height="150" Width="270" Background="White"
+        Height="150" Width="290" Background="White"
         WindowStartupLocation="CenterOwner"
         Title="Offset Setting Dialog">
 
   <Grid Background="White" Margin="10">
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="100" />
+      <ColumnDefinition Width="120" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
@@ -28,7 +28,7 @@
       <TextBox DataContext="{Binding OffsetSettingModels}" TextAlignment="Right" Width="130" Height="27">
         <Binding Path="Offset" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True">
           <Binding.ValidationRules>
-            <HeightSettingsRules:ElevationValidationRule />
+            <offsetSettingsRules:OffsetSettingValidationRule />
           </Binding.ValidationRules>
         </Binding>
       </TextBox>

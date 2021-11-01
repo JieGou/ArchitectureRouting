@@ -14,10 +14,5 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     {
       Offset = offset ?? 0 ;
     }
-
-    public bool CheckEquals( OffsetSettingModel other )
-    {
-      return other != null && Offset == other.Offset ;
-    }
   }
 }
