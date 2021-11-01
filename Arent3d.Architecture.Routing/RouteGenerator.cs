@@ -191,15 +191,12 @@ namespace Arent3d.Architecture.Routing
       if ( ! envelopes.Any() ) return ;
       var parentEnvelopes = envelopes.Where( f => string.IsNullOrEmpty( f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ).ToList() ;
       if ( ! parentEnvelopes.Any() ) return ;
-      {
-        var childrenEnvelopes = envelopes.Where( f => ! string.IsNullOrEmpty( f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ).ToList() ;
-        if ( ! childrenEnvelopes.Any() ) return ;
-        foreach ( var parentEnvelope in parentEnvelopes ) {
-          var parentLocation = parentEnvelope.Location as LocationPoint ;
-          foreach ( var childrenLocation in from childrenEnvelope in childrenEnvelopes let parentEnvelopeId = childrenEnvelope.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() where parentEnvelopeId == parentEnvelope.Id.ToString() select childrenEnvelope.Location as LocationPoint ) {
-            childrenLocation!.Point = parentLocation!.Point ;
-          }
-        }
+      foreach ( var parentEnvelope in parentEnvelopes ) {
+        var parentLocation = parentEnvelope.Location as LocationPoint ;
+        var childrenEnvelope = envelopes.FirstOrDefault( f => f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() == parentEnvelope.Id.ToString() ) ;
+        if ( childrenEnvelope == null ) continue ;
+        var childrenLocation = childrenEnvelope.Location as LocationPoint ;
+        childrenLocation!.Point = parentLocation!.Point ;
       }
     }
   }
