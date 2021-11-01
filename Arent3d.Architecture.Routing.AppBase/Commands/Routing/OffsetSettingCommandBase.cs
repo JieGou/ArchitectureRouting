@@ -61,7 +61,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
       var familyInstances = envelops as FamilyInstance[] ?? envelops.ToArray() ;
       foreach ( var envelop in familyInstances ) {
-        GenerateEnvelope( document, envelop, uiDocument.ActiveView.GenLevel, settingStorable.OffsetSettingsData.Offset ) ;
+        if ( string.IsNullOrEmpty( envelop.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ) {
+          var childrenEnvelope = familyInstances.FirstOrDefault( f => f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() == envelop.Id.ToString() ) ;
+          GenerateEnvelope( document, envelop, uiDocument.ActiveView.GenLevel, settingStorable.OffsetSettingsData.Offset, childrenEnvelope ) ;
+        }
       }
     }
 
@@ -76,7 +79,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( false == newSettings.Equals( old ) ) ;
     }
 
-    public static void GenerateEnvelope( Document document, FamilyInstance envelope, Level level, double offset )
+    public static void GenerateEnvelope( Document document, FamilyInstance envelope, Level level, double offset, FamilyInstance? childrenEnvelop )
     {
       double originX = 0 ;
       double originY = 0 ;
@@ -86,22 +89,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         originY = location.Point.Y ;
         originZ = location.Point.Z ;
       }
-
-      var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
-      var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
-      instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
+      
       var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + offset.MetersToRevitUnits() ;
       var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + offset.MetersToRevitUnits() ;
       var height = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + offset.MetersToRevitUnits() ;
       var parentEnvelopeId = envelope == null ? string.Empty : envelope!.Id.ToString() ;
-      instance.LookupParameter( "奥行き" ).Set( backSize ) ;
-      instance.LookupParameter( "幅" ).Set( widthSize ) ;
-      instance.LookupParameter( "高さ" ).Set( height ) ;
-      instance.LookupParameter( "Parent Envelope Id" ).Set( parentEnvelopeId ) ;
 
-      var ogs = new OverrideGraphicSettings() ;
-      ogs.SetSurfaceTransparency( 100 ) ;
-      document.ActiveView.SetElementOverrides( instance.Id, ogs ) ;
+      // Add new envelope
+      if ( childrenEnvelop == null ) {
+        var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
+        var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+        instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
+        instance.LookupParameter( "奥行き" ).Set( backSize ) ;
+        instance.LookupParameter( "幅" ).Set( widthSize ) ;
+        instance.LookupParameter( "高さ" ).Set( height ) ;
+        instance.LookupParameter( "Parent Envelope Id" ).Set( parentEnvelopeId ) ;
+
+        var ogs = new OverrideGraphicSettings() ;
+        ogs.SetSurfaceTransparency( 100 ) ;
+        document.ActiveView.SetElementOverrides( instance.Id, ogs ) ;
+      }
+      // Correct children envelope
+      else {
+        childrenEnvelop.LookupParameter( "奥行き" ).Set( backSize ) ;
+        childrenEnvelop.LookupParameter( "幅" ).Set( widthSize ) ;
+        childrenEnvelop.LookupParameter( "高さ" ).Set( height ) ;
+      }
     }
   }
 }
