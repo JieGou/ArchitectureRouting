@@ -9,25 +9,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.OffsetSetti
 
     public override ValidationResult Validate( object value, CultureInfo cultureInfo )
     {
-      if ( value == null || string.IsNullOrWhiteSpace( value.ToString() ) ) {
+      if ( string.IsNullOrWhiteSpace( value.ToString() ) ) {
         return new ValidationResult( false, "Value is required." ) ;
       }
 
-      double proposedValue ;
-      if ( ! double.TryParse( value.ToString(), out proposedValue ) ) {
+      if ( ! double.TryParse( value.ToString(), out var proposedValue ) ) {
         return new ValidationResult( false, "Value must be an integer value." ) ;
       }
 
-      if ( proposedValue < 0 ) {
-        return new ValidationResult( false, "Value must be greater than or equal to 0." ) ;
-      }
-
-      if ( proposedValue > MAX_VALUE ) {
-        return new ValidationResult( false, $"Value must be less than or equal to {MAX_VALUE}." ) ;
-      }
-
-
-      return ValidationResult.ValidResult ;
+      return proposedValue switch
+      {
+        < 0 => new ValidationResult( false, "Value must be greater than or equal to 0." ),
+        > MAX_VALUE => new ValidationResult( false, $"Value must be less than or equal to {MAX_VALUE}." ),
+        _ => ValidationResult.ValidResult
+      } ;
     }
   }
 }

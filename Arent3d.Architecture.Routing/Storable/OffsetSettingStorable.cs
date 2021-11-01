@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.Storable
 {
   [Guid( "7941878b-c02e-4694-856c-0dd67655a76e" )]
   [StorableVisibility( AppInfo.VendorId )]
-  public sealed class OffsetSettingStorable : StorableBase, IEquatable<OffsetSettingStorable>
+  public sealed class OffsetSettingStorable : StorableBase
   {
     public const string StorableName = "Offset Setting" ;
     private const string OffsetSettingField = "OffsetSetting" ;
@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Storable
 
 
     /// <summary>
-    /// for loading from storage.
+    /// For loading from storage.
     /// </summary>
     private OffsetSettingStorable( DataStorage owner ) : base( owner, false )
     {
@@ -51,12 +51,6 @@ namespace Arent3d.Architecture.Routing.Storable
     protected override void SetupAllFields( FieldGenerator generator )
     {
       generator.SetSingle<OffsetSettingModel>( OffsetSettingField ) ;
-    }
-
-    public bool Equals( OffsetSettingStorable? other )
-    {
-      if ( other == null ) return false ;
-      return OffsetSettingsData.CheckEquals( other.OffsetSettingsData ) ;
     }
   }
 }
