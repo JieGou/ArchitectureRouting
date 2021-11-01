@@ -3,7 +3,9 @@ using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CollisionTree ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -191,12 +193,16 @@ namespace Arent3d.Architecture.Routing
       if ( ! envelopes.Any() ) return ;
       var parentEnvelopes = envelopes.Where( f => string.IsNullOrEmpty( f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ).ToList() ;
       if ( ! parentEnvelopes.Any() ) return ;
+      
+      // get offset value
+      OffsetSettingStorable settingStorable = document.GetOffsetSettingStorable() ;
+      var offset = settingStorable.OffsetSettingsData.Offset.MetersToRevitUnits() ;
       foreach ( var parentEnvelope in parentEnvelopes ) {
         var parentLocation = parentEnvelope.Location as LocationPoint ;
         var childrenEnvelope = envelopes.FirstOrDefault( f => f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() == parentEnvelope.Id.ToString() ) ;
         if ( childrenEnvelope == null ) continue ;
         var childrenLocation = childrenEnvelope.Location as LocationPoint ;
-        childrenLocation!.Point = parentLocation!.Point ;
+        childrenLocation!.Point = new XYZ( parentLocation!.Point.X, parentLocation!.Point.Y, parentLocation!.Point.Z - offset ) ;
       }
     }
   }
