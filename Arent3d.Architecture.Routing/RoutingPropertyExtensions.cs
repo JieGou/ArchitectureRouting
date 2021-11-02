@@ -51,6 +51,10 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid("7632D393-DADE-437A-96A7-C4D508383012"), NameOnRevit("Rack Type")]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.RackTypeBuiltInCategorySet ) )]
     RackType,
+    
+    [ParameterGuid( "f208f9ab-b763-4b2a-afc9-0b2a22936dab" ), NameOnRevit( "Parent Envelope Id" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( RoutingPropertyExtensions ), nameof( RoutingPropertyExtensions.CommonRoutingRoutingBuiltInCategorySet ) )]
+    ParentEnvelopeId,
   }
 
   public enum PassPointParameter

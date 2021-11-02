@@ -18,6 +18,9 @@
         <key>Electrical.App.Panels.Routing.Racks</key>
         <string>Pipe Spaces</string>
 
+        <key>Electrical.App.Panels.Routing.Envelope</key>
+        <string>Envelope</string>
+        
         <key>Electrical.App.Panels.Routing.Shafts</key>
         <string>Shaft</string>
       
@@ -106,6 +109,9 @@
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>Create 3D&#xA;Floor Views</string>
 
+        <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
+        <string>Offset&#xA;Setting</string>        
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
@@ -174,6 +180,9 @@
 
         <key>TransactionName.Commands.Routing.SelectionRangeRoute</key>
         <string>Selection Range Route</string>        
+
+        <key>TransactionName.Commands.Routing.OffsetSetting</key>
+        <string>Offset Setting</string>        
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
