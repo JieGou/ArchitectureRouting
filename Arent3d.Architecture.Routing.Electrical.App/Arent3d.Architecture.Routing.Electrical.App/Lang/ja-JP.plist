@@ -18,6 +18,9 @@
         <key>Electrical.App.Panels.Routing.Racks</key>
         <string>PS</string>
 
+        <key>Electrical.App.Panels.Routing.Envelope</key>
+        <string>Envelope</string>        
+
         <key>Electrical.App.Panels.Routing.Shafts</key>
         <string>シャフト</string>
       

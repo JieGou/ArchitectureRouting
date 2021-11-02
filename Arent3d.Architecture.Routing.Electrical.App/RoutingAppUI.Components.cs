@@ -59,14 +59,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         private static class ShowFromToTreeCommandButton { }
         
         [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
-        private static class SelectionRangeRouteCommandButton { }                
+        private static class SelectionRangeRouteCommandButton { }
 
-        [Button(typeof(NewEnvelopeCommand), OnlyInitialized = true)]
-        private static class NewEnvelopeCommandButton { }
-        
-        [Button(typeof(CeilingEnvelopeCommand), OnlyInitialized = true)]
-        private static class CeilingEnvelopeCommandButton { }
-                
         [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
         private static class ShowHeightSettingCommandButton { }
 
@@ -81,9 +75,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
         private static class EraseAllLimitRackCommandButton { }
-        
-        [Button( typeof( OffsetSettingCommand ), OnlyInitialized = true )]
-        private static class OffsetSettingCommandButton { }        
       }
 
       [Panel("arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors")]
@@ -132,6 +123,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [Button( typeof( RackSpaceCommand ), OnlyInitialized = true )]
         private static class RackGuidCommandButton { }
       }
+
+      [Panel( "arent3d.architecture.routing.envelope", TitleKey = "Electrical.App.Panels.Routing.Envelope" )]
+      private static class EnvelopPanel
+      {
+        [Button(typeof(NewEnvelopeCommand), OnlyInitialized = true)]
+        private static class NewEnvelopeCommandButton { }
+        
+        [Button(typeof(CeilingEnvelopeCommand), OnlyInitialized = true)]
+        private static class CeilingEnvelopeCommandButton { }        
+        
+        [Button( typeof( OffsetSettingCommand ), OnlyInitialized = true )]
+        private static class OffsetSettingCommandButton { }   
+      }
+      
       [Panel( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Shafts" )]
       private static class ShaftPanel
       {
