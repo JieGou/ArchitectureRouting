@@ -82,20 +82,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       totalProgress = totalProgress == 0 ? 1.00 : totalProgress ;
 
       foreach ( Level level in settingStorables.Levels ) {
-        var heightConnector = settingStorables[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        // Set Elevation from floor for all connector on this floor
-        if ( connectors.ContainsKey( level.Id ) ) {
-          using ( var p = progressData?.Reserve( connectors[ level.Id ].Count / totalProgress ) ) {
-            p.ForEach( connectors[ level.Id ].Count, connectors[ level.Id ], connector =>
-            {
-              var elevationFromFloor = connector.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).AsDouble() ;
-              if ( elevationFromFloor != heightConnector ) {
-                connector.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( heightConnector ) ;
-              }
-            } ) ;
-          }
-        }
-
         // Set Elevation for level
         level.Elevation = settingStorables[ level ].Elevation.MillimetersToRevitUnits() ;
       }
