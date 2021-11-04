@@ -185,11 +185,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
         var passPoint = passPoints.First() ;
 
+        Element? beforeConnector = null ;
         foreach ( var sensorConnector in selectState.SensorConnectors ) {
-          toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false ) ;
+          toPickResult = ConnectorPicker.GetConnector( uiDocument, executor, sensorConnector, false, beforeConnector ) ;
 
           var conduit = SelectCenterConduitIndex( document, routeName, passPoint ) ;
-          fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false, sensorConnector, selectState.SensorConnectors.Count ) ;
+          fromPickResult = ConnectorPicker.GetConnector( uiDocument, executor, conduit, false, beforeConnector, sensorConnector, selectState.SensorConnectors.Count ) ;
 
           var pickState = new PickRoutingCommandBase.PickState( fromPickResult, toPickResult, selectState.PropertyDialog, selectState.ClassificationInfo ) ;
           var routingResult = GenerateRoutes( document, executor, pickState ) ;
@@ -198,6 +199,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           routes = routingResult.GeneratedRoutes ;
           passPoint = FindPassPoint( routes, routeName, passPoints ) ;
+          beforeConnector = sensorConnector ;
         }
       }
       

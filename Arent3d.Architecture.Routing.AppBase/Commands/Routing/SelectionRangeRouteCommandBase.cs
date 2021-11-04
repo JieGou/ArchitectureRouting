@@ -160,7 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static FamilyInstance InsertPassPointElement( Document document, string routeName, Element fromPickElement, Element firstSensor, Element toPickElement, bool isFirst, FixedHeight? fromFixedHeight, int countSensorConnector, Element farthestSensor )
     {
       const double plusYOneSensor = 0.5 ;
-      const double plusY = 0.1 ;
+      const double plusY = 1.2 ;
       var fromConnector = fromPickElement.GetTopConnectors() ;
       var toConnector = toPickElement.GetTopConnectors() ;
       var firstConnector = firstSensor.GetTopConnectors() ;
@@ -184,7 +184,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       else {
         var xPoint = ( firstConnector.Origin.X + farthestConnector.Origin.X ) * 0.5 ;
-        var yPoint = countSensorConnector == 1 ? toConnector.Origin.Y + plusYOneSensor : toConnector.Origin.Y - plusY ;
+        var yPoint = countSensorConnector == 1 ? toConnector.Origin.Y + plusYOneSensor : toConnector.Origin.Y + plusY ;
 
         var cornerPointBack = new Vector2d( xPoint, firstConnector.Origin.Y ) ;
         var cornerPointFront = new Vector2d( xPoint, farthestConnector.Origin.Y ) ;
