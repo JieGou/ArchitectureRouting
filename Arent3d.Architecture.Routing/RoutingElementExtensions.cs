@@ -221,7 +221,7 @@ namespace Arent3d.Architecture.Routing
       var instance = document.GetElementById<FamilyInstance>( elementId ) ;
       if ( null == instance ) return null ;
 
-      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.PassPoint )?.Id ) {
+      if ( instance.Symbol.Id != document.GetFamilySymbols( RoutingFamilyType.PassPoint ).FirstOrDefault().GetValidId() ) {
         // Family instance is not a pass point.
         return null ;
       }
@@ -391,7 +391,7 @@ namespace Arent3d.Architecture.Routing
       var instance = document.GetElementById<FamilyInstance>( elementId ) ;
       if ( null == instance ) return null ;
 
-      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.TerminatePoint )?.Id ) {
+      if ( instance.Symbol.Id != document.GetFamilySymbols( RoutingFamilyType.TerminatePoint ).FirstOrDefault()?.Id ) {
         // Family instance is not a pass point.
         return null ;
       }
@@ -730,7 +730,7 @@ namespace Arent3d.Architecture.Routing
 
     private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
     {
-      var symbol = document.GetFamilySymbol( familyType )! ;
+      var symbol = document.GetFamilySymbols( familyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       if ( false == symbol.IsActive ) {
         symbol.Activate() ;
       }
