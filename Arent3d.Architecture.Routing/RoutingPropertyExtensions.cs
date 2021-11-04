@@ -189,10 +189,10 @@ namespace Arent3d.Architecture.Routing
 
     public static void MakeCertainAllRoutingParameters( this Document document )
     {
-      document.LoadAllAllParametersFromFile<RoutingParameter>( AssetManager.GetRoutingSharedParameterPath() ) ;
-      document.LoadAllAllParametersFromFile<PassPointParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
-      document.LoadAllAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() );
-      document.LoadAllAllParametersFromFile<ConnectorParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
+      document.LoadAllParametersFromFile<RoutingParameter>( AssetManager.GetRoutingSharedParameterPath() ) ;
+      document.LoadAllParametersFromFile<PassPointParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
+      document.LoadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() );
+      document.LoadAllParametersFromFile<ConnectorParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
     }
   }
 }

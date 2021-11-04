@@ -17,7 +17,6 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     private readonly ICollisionCheckTargetCollector _collector ;
     private readonly IReadOnlyCollection<ElementFilter> _filters ;
     private readonly BuiltInCategory[] _categoriesOnRack ;
-    private readonly ElementParameterFilter _hasRouteNameFilter ;
     private readonly IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> _routeConditions ;
 
     public CollisionTree( Document document, ICollisionCheckTargetCollector collector, IReadOnlyDictionary<SubRouteInfo, MEPSystemRouteCondition> routeConditions )
@@ -27,46 +26,9 @@ namespace Arent3d.Architecture.Routing.CollisionTree
       _filters = collector.CreateElementFilters().EnumerateAll() ;
       _categoriesOnRack = collector.GetCategoriesOfRoutes() ;
       _routeConditions = routeConditions ;
-
-      _hasRouteNameFilter = CreateHasRouteNameFilter( document ) ;
     }
 
-    private static ElementParameterFilter CreateHasRouteNameFilter( Document document )
-    {
-      var parameter = GetSharedParameterElement( document, RoutingParameter.RouteName ) ?? throw new InvalidOperationException() ;
-      var parameterValueProvider = new ParameterValueProvider( parameter.Id ) ;
-#if REVIT2022
-      return new ElementParameterFilter( new FilterStringRule( parameterValueProvider, new FilterStringEquals(), "" ), true ) ;
-#else
-      return new ElementParameterFilter( new FilterStringRule( parameterValueProvider, new FilterStringEquals(), "", true ), true ) ;
-#endif
-    }
-
-    private static SharedParameterElement? GetSharedParameterElement<TPropertyEnum>( Document document, TPropertyEnum propertyEnum ) where TPropertyEnum : Enum
-    {
-      var fieldInfo = typeof( TPropertyEnum ).GetField( propertyEnum.ToString() ) ;
-      var attr = fieldInfo?.GetCustomAttribute<ParameterGuidAttribute>() ;
-      if ( null == attr ) return null ;
-
-      return SharedParameterElement.Lookup( document, attr.Guid ) ;
-    }
-
-    public IEnumerable<Box3d> GetCollidedBoxes( Box3d box )
-    {
-      var min = box.Min.ToXYZRaw() ;
-      var max = box.Max.ToXYZRaw() ;
-      if ( IsTooSmall( max - min, _document.Application.ShortCurveTolerance ) ) return Enumerable.Empty<Box3d>() ;
-      
-      var boxFilter = new BoundingBoxIntersectsFilter( new Outline( min, max ) ) ;
-      var geometryFilter = new ElementIntersectsSolidFilter( CreateBoundingBoxSolid( min, max ) ) ;
-      var elements = _document.GetAllElements<Element>().Where( boxFilter ) ;
-      return _filters.Aggregate( elements, ( current, filter ) => current.Where( filter ) ).Where( geometryFilter ).Where( _collector.IsCollisionCheckElement ).Select( GetBoundingBox ) ;
-
-      static bool IsTooSmall( XYZ size, double tolerance )
-      {
-        return ( size.X <= tolerance || size.Y <= tolerance || size.Z <= tolerance ) ;
-      }
-    }
+    public IEnumerable<Box3d> GetCollidedBoxes( Box3d box ) => Enumerable.Empty<Box3d>() ;
 
     private static Solid CreateBoundingBoxSolid( XYZ min, XYZ max )
     {
@@ -87,16 +49,37 @@ namespace Arent3d.Architecture.Routing.CollisionTree
       return element.get_BoundingBox( null ).To3dRaw() ;
     }
 
-    public IEnumerable<(Box3d, IRouteCondition, bool)> GetCollidedBoxesAndConditions( Box3d box, bool bIgnoreStructure = false )
+    public IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesAndConditions( in Box3d box, CollisionCheckStructureOption option = CollisionCheckStructureOption.CheckAll )
     {
-      var boxFilter = new BoundingBoxIntersectsFilter( new Outline( box.Min.ToXYZRaw(), box.Max.ToXYZRaw() ) ) ;
-      var elements = _document.GetAllElements<Element>().OfCategory( _categoriesOnRack ).Where( boxFilter ).Where( _hasRouteNameFilter ) ;
-      foreach ( var element in elements ) {
-        if ( element.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
-        if ( false == _routeConditions.TryGetValue( subRouteInfo, out var routeCondition ) ) continue ;
+      var min = box.Min.ToXYZRaw() ;
+      var max = box.Max.ToXYZRaw() ;
 
-        yield return ( GetBoundingBox( element ), routeCondition, false ) ;
+      if ( IsTooSmall( max - min, _document.Application.ShortCurveTolerance ) ) return Enumerable.Empty<(Box3d, IRouteCondition?, bool)>() ;
+
+      var boxFilter = new BoundingBoxIntersectsFilter( new Outline( min, max ) ) ;
+      var geometryFilter = new ElementIntersectsSolidFilter( CreateBoundingBoxSolid( min, max ) ) ;
+      var elements = _document.GetAllElements<Element>().Where( boxFilter ) ;
+      var targets = _filters.Aggregate( elements, ( current, filter ) => current.Where( filter ) ).Where( geometryFilter ).Where( _collector.IsCollisionCheckElement ) ;
+      return GetCollidedBoxesAndConditionsImpl( targets ) ;
+
+      static bool IsTooSmall( XYZ size, double tolerance )
+      {
+        return ( size.X <= tolerance || size.Y <= tolerance || size.Z <= tolerance ) ;
       }
+    }
+
+    private IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesAndConditionsImpl( IEnumerable<Element> elements )
+    {
+      return elements.Select( element => ( GetBoundingBox( element ), GetRouteCondition( element ), false ) ) ;
+    }
+
+    private IRouteCondition? GetRouteCondition( Element element )
+    {
+      if ( Array.IndexOf( _categoriesOnRack, element.GetBuiltInCategory() ) < 0 ) return null ; // Not a routing element.
+      if ( element.GetSubRouteInfo() is not { } subRouteInfo ) return null ;  // Not a routing element
+      if ( false == _routeConditions.TryGetValue( subRouteInfo, out var routeCondition ) ) return null ;
+
+      return routeCondition ;
     }
 
     public IEnumerable<(Box3d, IRouteCondition, bool)> GetCollidedBoxesInDetailToRack( Box3d box ) => Enumerable.Empty<(Box3d, IRouteCondition, bool)>() ;
