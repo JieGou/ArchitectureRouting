@@ -1,11 +1,8 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase.Manager ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Updater
 {
@@ -27,10 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
       return filter ;
     }
 
-    public IEnumerable<ParameterProxy> GetListeningParameters()
-    {
-      throw new NotImplementedException() ;
-    }
+    public IEnumerable<ParameterProxy> GetListeningParameters() => throw new NotSupportedException() ;
 
     public RoutingUpdateListener( IUIApplicationHolder holder )
     {

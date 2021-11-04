@@ -88,20 +88,11 @@ namespace Arent3d.Architecture.Routing
         list = list.Where( p => false == ( p is FamilyInstance fi && ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint )) ) );
       }
 
-      document.Delete( list.SelectMany( SelectAllRelatedElements ).Select( elm => elm.Id ).Distinct().ToArray() ) ;
+      document.Delete( list.Select( elm => elm.Id ).Distinct().ToArray() ) ;
 
       if ( eraseRouteStoragesAndPassPoints ) {
         // erase routes, too.
         RouteCache.Get( document ).Drop( hashSet ) ;
-      }
-    }
-
-    private static IEnumerable<Element> SelectAllRelatedElements( Element elm )
-    {
-      yield return elm ;
-
-      foreach ( var neighborElement in elm.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).Select( c => c.Owner ) ) {
-        if ( neighborElement.IsFittingElement() ) yield return neighborElement ;
       }
     }
 

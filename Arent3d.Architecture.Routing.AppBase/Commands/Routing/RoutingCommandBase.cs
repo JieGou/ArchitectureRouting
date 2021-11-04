@@ -89,10 +89,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var segments = GetRouteSegments( document, state ) ;
           var result = executor.Run( segments, progress ) ;
 
-          if ( RoutingExecutionResultType.Success == result.Type ) {
-            executor.RunPostProcess( result ) ;
-          }
-
           return result.Type switch
           {
             RoutingExecutionResultType.Success => ( Result.Succeeded, result ),
