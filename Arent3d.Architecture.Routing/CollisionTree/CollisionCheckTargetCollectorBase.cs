@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 
     public IEnumerable<ElementFilter> CreateElementFilters()
     {
-      yield return new ElementMulticategoryFilter( RoutingPropertyExtensions.RoutingCollisionBuiltInCategorySet ) ;
+      yield return new ElementMulticategoryFilter( BuiltInCategorySets.Obstacles ) ;
     }
 
     public abstract bool IsCollisionCheckElement( Element element ) ;

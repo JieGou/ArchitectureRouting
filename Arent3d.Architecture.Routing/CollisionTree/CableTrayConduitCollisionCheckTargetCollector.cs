@@ -11,7 +11,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     {
     }
 
-    public override BuiltInCategory[] GetCategoriesOfRoutes() => (BuiltInCategory[])RoutingPropertyExtensions.ElectricalRoutingBuiltInCategorySet.Clone() ;
+    public override BuiltInCategory[] GetCategoriesOfRoutes() => (BuiltInCategory[])BuiltInCategorySets.ElectricalRoutingElements.Clone() ;
 
     public override bool IsCollisionCheckElement( Element elm )
     {
@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
 
     private static bool IsConduit( Element elm )
     {
-      return RoutingPropertyExtensions.ElectricalRoutingBuiltInCategorySet.Contains( elm.GetBuiltInCategory() ) ;
+      return BuiltInCategorySets.ElectricalRoutingElements.Contains( elm.GetBuiltInCategory() ) ;
     }
   }
 }

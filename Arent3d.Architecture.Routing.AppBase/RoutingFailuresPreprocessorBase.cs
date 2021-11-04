@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
       if ( 0 < elementsToDelete.Count ) {
-        elementsToDelete.ForEach( _executor.RegisterDeletedElement ) ;
+        _executor.HasDeletedElements = true ;
         failuresAccessor.DeleteElements( elementsToDelete.ToList() ) ;
 
         return FailureProcessingResult.ProceedWithCommit ;
