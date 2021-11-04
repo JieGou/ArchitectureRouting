@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
       [Panel("arent3d.architecture.routing.routing", TitleKey = "Mechanical.App.Panels.Routing.Routing" )]
       private static class RoutingPanel
       {
-        [Button( typeof( PickRoutingCommand ), OnlyInitialized = true )]
+        [Button( typeof( PickRoutingCommandForTTE ), OnlyInitialized = true )]
         private static class PickRoutingCommandButton { }
 
         [Button( typeof( PickAndReRouteCommand ), OnlyInitialized = true )]

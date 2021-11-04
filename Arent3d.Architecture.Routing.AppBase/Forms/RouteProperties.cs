@@ -149,6 +149,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       AvoidType = avoidType ;
       Shaft = shaft ;
     }
+    public RouteProperties( Document document, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFromFixedHeight, FixedHeight? fromFixedHeight, bool? useToFixedHeight, FixedHeight? toFixedHeight, AvoidType? avoidType, Opening? shaft )
+    {
+      Document = document ;
+
+      Diameter = diameter ;
+
+      CurveType = curveType ;
+
+      SystemType = systemType ;
+
+      IsRouteOnPipeSpace = isRouteOnPipeSpace ;
+      UseFromFixedHeight = useFromFixedHeight ;
+      if ( true == UseFromFixedHeight ) {
+        FromFixedHeight = fromFixedHeight ;
+      }
+      UseToFixedHeight = useToFixedHeight ;
+      if ( true == UseToFixedHeight ) {
+        ToFixedHeight = toFixedHeight ;
+      }
+      AvoidType = avoidType ;
+      Shaft = shaft ;
+    }
 
     private void SetIndeterminateValues( Route route )
     {
