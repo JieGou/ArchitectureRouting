@@ -12,7 +12,7 @@ using Autodesk.Revit.DB ;
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.App.Commands.Routing.PickRoutingCommandForTTE", DefaultString = "Pick\nFrom-To" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Routing.PickRoutingCommandForTTE", DefaultString = "Pick\nFrom-To for TTE" )]
   [Image( "resources/PickFrom-To.png" )]
   public class PickRoutingCommandForTTE : PickRoutingCommandBase
   {

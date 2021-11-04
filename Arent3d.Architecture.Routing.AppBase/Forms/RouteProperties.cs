@@ -128,27 +128,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     public RouteProperties( Route route, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFromFixedHeight, FixedHeight? fromFixedHeight, bool? useToFixedHeight, FixedHeight? toFixedHeight, AvoidType? avoidType, Opening? shaft )
-    {
-      Document = route.Document ;
-
-      Diameter = diameter ;
-
-      CurveType = curveType ;
-
-      SystemType = systemType ;
-
-      IsRouteOnPipeSpace = isRouteOnPipeSpace ;
-      UseFromFixedHeight = useFromFixedHeight ;
-      if ( true == UseFromFixedHeight ) {
-        FromFixedHeight = fromFixedHeight ;
-      }
-      UseToFixedHeight = useToFixedHeight ;
-      if ( true == UseToFixedHeight ) {
-        ToFixedHeight = toFixedHeight ;
-      }
-      AvoidType = avoidType ;
-      Shaft = shaft ;
-    }
+      : this( route.Document, systemType, curveType, diameter, isRouteOnPipeSpace, useFromFixedHeight, fromFixedHeight, useToFixedHeight, toFixedHeight, avoidType, shaft ){}
     public RouteProperties( Document document, MEPSystemType? systemType, MEPCurveType? curveType, double? diameter, bool? isRouteOnPipeSpace, bool? useFromFixedHeight, FixedHeight? fromFixedHeight, bool? useToFixedHeight, FixedHeight? toFixedHeight, AvoidType? avoidType, Opening? shaft )
     {
       Document = document ;
