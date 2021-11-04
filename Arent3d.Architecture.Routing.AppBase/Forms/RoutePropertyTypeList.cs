@@ -64,8 +64,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var fromLevelId = GetLevelId( document, firstSubRoute.FromEndPoints ) ;
       var toLevelId = GetLevelId( document, firstSubRoute.ToEndPoints ) ;
       HasDifferentLevel = ( fromLevelId != toLevelId ) ;
-      SetFromLevelSetting( heightSettingStorable, fromLevelId ) ;
-      SetToLevelSetting( heightSettingStorable, HasDifferentLevel ? fromLevelId : toLevelId ) ;
+      SetFromLevelSetting( heightSettingStorable, fromLevelId != ElementId.InvalidElementId ? fromLevelId : toLevelId ) ;
+      SetToLevelSetting( heightSettingStorable, toLevelId != ElementId.InvalidElementId ? toLevelId : fromLevelId ) ;
 
       var systemClassification = firstSubRoute.Route.GetSystemClassificationInfo() ;
       if ( systemClassification.HasSystemType() ) {
@@ -90,7 +90,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       HasDifferentLevel = ( fromLevelId != toLevelId ) ;
       var heightSettingStorable = document.GetHeightSettingStorable() ;
       SetFromLevelSetting( heightSettingStorable, fromLevelId ) ;
-      SetToLevelSetting( heightSettingStorable, HasDifferentLevel ? fromLevelId : toLevelId ) ;
+      SetToLevelSetting( heightSettingStorable, toLevelId ) ;
 
       ( SystemTypes, CurveTypes, StandardTypes, Shafts ) = addInType switch
       {
@@ -120,7 +120,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       HasDifferentLevel = ( fromLevelId != toLevelId ) ;
       var heightSettingStorable = document.GetHeightSettingStorable() ;
       SetFromLevelSetting( heightSettingStorable, fromLevelId ) ;
-      SetToLevelSetting( heightSettingStorable, HasDifferentLevel ? fromLevelId : toLevelId ) ;
+      SetToLevelSetting( heightSettingStorable, toLevelId ) ;
 
       if ( classificationInfo.HasSystemType() ) {
         SystemTypes = document.GetSystemTypes( classificationInfo ).OrderBy( s => s.Name ).ToList() ;
