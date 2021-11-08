@@ -1,0 +1,58 @@
+﻿<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:ImportCnsRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.ImportCnsRules"
+    x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsImportDialog"
+    mc:Ignorable="d"
+    d:DesignHeight="600" d:DesignWidth="500" Width="500" Height="600">
+    <DockPanel Margin="5">
+        <StackPanel DockPanel.Dock="Left" Width="350">
+            <Label Margin="2,15,2,10">未付加の部品は1行目の工事項目名称で拾われます</Label>
+            <Grid Width="350" Height="570" Margin="0" DockPanel.Dock="Top">
+                <DataGrid x:Name="grdCategories"
+                          ItemsSource="{Binding CnsImportModels}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          Margin="2,0,2,40">
+
+                    <DataGrid.Resources>
+                        <Style x:Key="errorStyle" TargetType="{x:Type TextBox}">
+                            <Setter Property="Padding" Value="-2" />
+                            <Style.Triggers>
+                                <Trigger Property="Validation.HasError" Value="True">
+                                    <Setter Property="ToolTip"
+                                            Value="{Binding RelativeSource={RelativeSource Self},
+                  Path=(Validation.Errors)[0].ErrorContent}" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.Resources>
+
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="" Binding="{Binding Sequen}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="工事項目名称" Width="280" EditingElementStyle="{StaticResource errorStyle}">
+                            <DataGridTextColumn.Binding>
+                                <Binding  Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="LostFocus" Mode="TwoWay" >
+                                    <Binding.ValidationRules>
+                                        <ImportCnsRules:ImportCnslValidationRule />
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </DataGridTextColumn.Binding>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Right" Width="100">
+            <Button Content="行追加" Height="32" Click="AddRow_Click" Margin="0,10,0,0" />
+            <Button Content="行削除" Height="32" Click="DeleteRow_Click" Margin="0,10,0,0" />
+            <Button Content="編集" Height="32" Click="Update_Click" Margin="0,10,0,0" />
+            <Button Content="ハイライト" IsEnabled="False" Height="32" Margin="0,10,0,0" />
+            <Button Content="読込み" Click="ReadCNS_Click" Height="32" Margin="0,10,0,0" />
+            <Button Content="書出し" Click="WriteCNS_Click" Height="32" Margin="0,10,0,0" />
+            <Button Content="終了" Click="Close_Click" Height="32" Margin="0,10,0,0" />
+        </StackPanel>
+    </DockPanel>
+</Window>

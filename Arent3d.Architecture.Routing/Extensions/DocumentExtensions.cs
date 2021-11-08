@@ -34,5 +34,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new OffsetSettingStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get CNS Category Name data from snoop DB.
+    /// </summary>
+    public static CnsImportStorable GetCnsImportStorable( this Document document )
+    {
+      try {
+        return CnsImportStorableCache.Get( document ).FindOrCreate( CnsImportStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new CnsImportStorable( document ) ;
+      }
+    }
   }
 }

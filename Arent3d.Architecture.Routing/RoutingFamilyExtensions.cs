@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit("電線管用ファミリ(片側のみ)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
     ConnectorOneSide,
-
+    
     [NameOnRevit("ダクト用湿度ｾﾝｻｰ(ロゴあり)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
     HumiditySensorForDuctWithLogo,

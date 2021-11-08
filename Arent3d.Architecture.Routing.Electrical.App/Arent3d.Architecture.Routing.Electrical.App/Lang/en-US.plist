@@ -88,6 +88,9 @@
         <key>Electrical.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change&#xA;FixedBopHeight</string>
 
+        <key>Electrical.App.Commands.Routing.CnsImportCommand</key>
+        <string>Import CNS</string>
+        
 		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
 		<string>Height Setting</string>
 
@@ -96,7 +99,7 @@
 
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
-
+        
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
         <string>New Connector&#xA;(Both Sides)</string>
 
