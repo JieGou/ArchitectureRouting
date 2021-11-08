@@ -46,6 +46,11 @@ namespace Arent3d.Architecture.Routing
     {
       return GetPath( SettingFolderName, ConnectorSharedParameterFileName );
     }
+
+    public static string GetCeeDModelPath( string ceeDFileName )
+    {
+      return GetPath( SettingFolderName, ceeDFileName + ".xlsx" ) ;
+    }
     private static string GetPath( string folderName, string fileName )
     {
       return Path.Combine( AssetPath, folderName, fileName ) ;
