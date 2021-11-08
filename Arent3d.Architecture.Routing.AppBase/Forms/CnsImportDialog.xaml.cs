@@ -10,14 +10,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public partial class CnsImportDialog : Window
     {
         private CnsImportViewModel model;
-        private string path;
 
-        public CnsImportDialog(CnsImportViewModel viewModel, string cnsFilePath)
+        public CnsImportDialog(CnsImportViewModel viewModel)
         {
             InitializeComponent();
             model = viewModel;
-            path = cnsFilePath; 
-            this.DataContext = model;
+            DataContext = model;
         }
 
         private void AddRow_Click(object sender, RoutedEventArgs e)
@@ -62,9 +60,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 var inputData = System.IO.File.ReadLines(filename);
                 foreach (string line in inputData)
                 {
-                    if (!string.IsNullOrEmpty(line))
+                    if (!string.IsNullOrWhiteSpace(line))
                     {
-                        model.CnsImportModels.Add(new CnsImportModel(index, line));
+                        model.CnsImportModels.Add(new CnsImportModel(index, line.Trim()));
                         index++;
                     }
                 }
@@ -74,15 +72,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         private void WriteCNS_Click(object sender, RoutedEventArgs e)
         {
-            string createText = "";
-            foreach (var item in model.CnsImportModels)
+            // Configure open file dialog box
+            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            dlg.FileName = "Document"; // Default file name
+            dlg.DefaultExt = ".txt"; // Default file extension
+            dlg.Filter = "CNS files (.cns)|*.cns"; // Filter files by extension
+
+            // Show open file dialog box
+            Nullable<bool> result = dlg.ShowDialog();
+
+            // Process open file dialog box results
+            if (result == true)
             {
-                if (!string.IsNullOrEmpty(item.CategoryName))
+                string createText = "";
+                foreach (var item in model.CnsImportModels)
                 {
-                    createText += item.CategoryName + Environment.NewLine + Environment.NewLine;
+                    if (!string.IsNullOrEmpty(item.CategoryName))
+                    {
+                        createText += item.CategoryName.Trim() + Environment.NewLine + Environment.NewLine;
+                    }
                 }
+                File.WriteAllText(dlg.FileName, createText.Trim());
             }
-            File.WriteAllText(path, createText.Trim());
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)

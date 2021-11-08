@@ -1,9 +1,11 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Arent3d.Architecture.Routing.AppBase.Forms;
 using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using Arent3d.Architecture.Routing.Extensions;
 using Arent3d.Architecture.Routing.Storable;
+using Arent3d.Architecture.Routing.Storable.Model;
 using Arent3d.Revit;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
@@ -15,7 +17,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class CnsImportCommandBase : IExternalCommand
   {
     protected UIDocument UiDocument { get ; private set ; } = null! ;
-    private const string CnsFilePath = @"c:\data\test.cns";
+
+    private CnsImportViewModel _viewModel { get; set; } = null!;
     
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -24,15 +27,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // get data of Cns Category from snoop DB
       CnsImportStorable cnsStorables = document.GetCnsImportStorable() ;
-      var viewModel = new CnsImportViewModel( cnsStorables ) ;
-      var dialog = new CnsImportDialog(viewModel, CnsFilePath) ;
+      _viewModel = new CnsImportViewModel( cnsStorables ) ;
+      var dialog = new CnsImportDialog(_viewModel) ;
 
       dialog.ShowDialog() ;
-
       if ( dialog.DialogResult ?? false ) {
         return document.Transaction( "TransactionName.Commands.Routing.CNSImport", _ =>
         {
-          var newStorage = viewModel.CnsImportModels ;
           if ( ShouldSaveCnsList( document, cnsStorables ) ) {
             var tokenSource = new CancellationTokenSource() ;
             using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
@@ -59,5 +60,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var old = document.GetAllStorables<CnsImportStorable>().FirstOrDefault() ; // generates new instance from document
       return ( false == newSettings.Equals( old ) ) ;
     }
+
   }
 }

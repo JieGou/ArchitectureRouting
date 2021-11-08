@@ -4,6 +4,7 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq ;
 using System.Runtime.InteropServices ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -14,7 +15,7 @@ namespace Arent3d.Architecture.Routing.Storable
 {
   [Guid( "A52AB9F8-1EB5-4BEF-9B7E-DC8CA228C12D" )]
   [StorableVisibility( AppInfo.VendorId )]
-  public sealed class CnsImportStorable : StorableBase
+  public sealed class CnsImportStorable : StorableBase, IEquatable<CnsImportStorable>
   {
     public const string StorableName = "Cns Import" ;
     private const string CnsImportField = "CnsImport" ;
@@ -48,14 +49,38 @@ namespace Arent3d.Architecture.Routing.Storable
 
     protected override void SaveAllFields( FieldWriter writer )
     {
-      writer.SetSingle( CnsImportField, CnsImportData ) ;
+      string someText = "";
+      foreach (var item in CnsImportData)
+      {
+        someText += item.CategoryName;
+      }
+      File.WriteAllText(@"C:\Temp\csc.txt", someText);  
+      writer.SetArray( CnsImportField, CnsImportData ) ;
     }
 
     protected override void SetupAllFields(FieldGenerator generator)
     {
       generator.SetArray<CnsImportModel>( CnsImportField ) ;
     }
+
+    
+    public bool Equals(CnsImportStorable other)
+    {
+      if ( other == null ) return false ;
+      return CnsImportData.SequenceEqual( other.CnsImportData, new CnsImportStorableComparer() ) ;
+    }
   }
-  
+  public class CnsImportStorableComparer : IEqualityComparer<CnsImportModel>
+  {
+    public bool Equals( CnsImportModel x, CnsImportModel y )
+    {
+      return x.Equals( y ) ;
+    }
+
+    public int GetHashCode( CnsImportModel obj )
+    {
+      return obj.GetHashCode() ;
+    }
+  }
 
 }
