@@ -6,7 +6,7 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 {
-  internal abstract class LengthToStringConverter : IValueConverter
+  public abstract class LengthToStringConverter : IValueConverter
   {
     public static LengthToStringConverter Millimeters { get ; } = new MillimetersLengthToStringConverter() ;
     public static LengthToStringConverter Inches { get ; } = new InchesLengthToStringConverter() ;
