@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.Storable
   {
     public const string StorableName = "Cns Import" ;
     private const string CnsImportField = "CnsImport" ;
-    public List<CnsImportModel> CnsImportData { get ; private set ; }
+    public ObservableCollection<CnsImportModel> CnsImportData { get ; set ; }
     
     /// <summary>
     /// for loading from storage.
@@ -27,7 +27,7 @@ namespace Arent3d.Architecture.Routing.Storable
     /// <param name="owner">Owner element.</param>
     private CnsImportStorable( DataStorage owner ) : base( owner, false )
     {
-      CnsImportData = new List<CnsImportModel>();
+      CnsImportData = new ObservableCollection<CnsImportModel>();
     }
 
     /// <summary>
@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing.Storable
     /// <param name="document"></param>
     public CnsImportStorable( Document document ) : base( document, false )
     {
-      CnsImportData = new List<CnsImportModel>();
+      CnsImportData = new ObservableCollection<CnsImportModel>();
     }
 
     public override string Name => StorableName ;
@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing.Storable
     protected override void LoadAllFields( FieldReader reader )
     {
       var dataSaved = reader.GetArray<CnsImportModel>( CnsImportField ) ;
-      CnsImportData = dataSaved.ToList() ;
+      CnsImportData = new ObservableCollection<CnsImportModel>(dataSaved);
     }
 
     protected override void SaveAllFields( FieldWriter writer )

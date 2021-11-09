@@ -57,8 +57,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     private static bool ShouldSaveCnsList( Document document, CnsImportStorable newSettings )
     {
-      var old = document.GetAllStorables<CnsImportStorable>().FirstOrDefault() ; // generates new instance from document
-      return ( false == newSettings.Equals( old ) ) ;
+      // var old = document.GetAllStorables<CnsImportStorable>().FirstOrDefault() ; // generates new instance from document
+      // return ( false == newSettings.Equals( old ) ) ;
+      return true;
     }
 
   }
