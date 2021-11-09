@@ -7,7 +7,5 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   public class ViewModelBase
   {
     protected static RevitDialog? OpenedDialog { get ; set ; }
-    
-    
   }
 }

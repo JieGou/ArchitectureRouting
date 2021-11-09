@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing;
+using Arent3d.Utility;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -14,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
         public ObservableCollection<CnsImportModel> CnsImportModels { get; set; }
 
-        public CnsImportStorable CnsImportStorable { get; set; }
+        public CnsImportStorable CnsImportStorable { get; }
 
         public CnsImportViewModel(CnsImportStorable cnsStorables)
         {
@@ -24,22 +25,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 (p) => true, // CanExecute()
                 (p) => { ReadFile(); } // Execute()
             );
-            
+
             WriteFileCommand = new RelayCommand<object>(
                 (p) => true, // CanExecute()
                 (p) => { WriteFile(); } // Execute()
             );
-            
+
             AddRowCommand = new RelayCommand<object>(
                 (p) => true, // CanExecute()
                 (p) => { AddRow(); } // Execute()
             );
-            
+
             DeleteRowCommand = new RelayCommand<int>(
                 (p) => true, // CanExecute()
-                (p) => { DeleteRow(p);} // Execute()
+                DeleteRow // Execute()
             );
-            
+
             SaveCommand = new RelayCommand<object>(
                 (p) => true, // CanExecute()
                 (p) => { cnsStorables.CnsImportData = CnsImportModels; } // Execute()
@@ -61,7 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             dlg.Filter = "CNS files (.cns)|*.cns"; // Filter files by extension
 
             // Show open file dialog box
-            Nullable<bool> result = dlg.ShowDialog();
+            bool? result = dlg.ShowDialog();
 
             // Process open file dialog box results
             if (result == true)
@@ -85,17 +86,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         private void AddRow()
         {
             CnsImportModels.Add(new CnsImportModel(CnsImportModels.Count + 1, ""));
-        } 
-        
+        }
+
         private void DeleteRow(int index)
         {
-            if (index != -1)
-            {
-                CnsImportModels.RemoveAt(index);
-                UpdateSequen();
-            }
+            if (index == -1) return;
+            CnsImportModels.RemoveAt(index);
+            UpdateSequen();
         }
-        
+
         private void WriteFile()
         {
             // Configure open file dialog box
@@ -105,7 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             dlg.Filter = "CNS files (.cns)|*.cns"; // Filter files by extension
 
             // Show open file dialog box
-            Nullable<bool> result = dlg.ShowDialog();
+            bool? result = dlg.ShowDialog();
 
             // Process open file dialog box results
             if (result == true)
@@ -118,15 +117,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                         createText += item.CategoryName.Trim() + Environment.NewLine + Environment.NewLine;
                     }
                 }
+
                 File.WriteAllText(dlg.FileName, createText.Trim());
             }
         }
-        
+
         private void UpdateSequen()
         {
-            for (int i = 1; i < CnsImportModels.Count; i++)
+            for (int i = 0; i < CnsImportModels.Count; i++)
             {
-                CnsImportModels[i].Sequen = i;
+                CnsImportModels[i].Sequen = i + 1;
             }
         }
     }

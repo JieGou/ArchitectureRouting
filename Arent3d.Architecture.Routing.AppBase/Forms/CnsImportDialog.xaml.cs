@@ -29,5 +29,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             DialogResult = true;
             Close();
         }
+
+        private void GrdCategories_OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            grdCategories.Items.Refresh();
+        }
     }
 }
