@@ -11,7 +11,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
         private enum SerializeField
         {
-            Senquen,
+            Sequence,
             CategoryName
         }
 
@@ -19,17 +19,17 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
         {
             var deserializer = deserializerObject.Of<SerializeField>();
 
-            int sequen = Convert.ToInt32(deserializer.GetInt(SerializeField.Senquen));
+            int sequence = Convert.ToInt32(deserializer.GetInt(SerializeField.Sequence));
             string categoryName = deserializer.GetString(SerializeField.CategoryName)?.ToString() ?? string.Empty;
 
-            return new CnsImportModel(sequen, categoryName);
+            return new CnsImportModel(sequence, categoryName);
         }
 
         protected override ISerializerObject Serialize(Element storedElement, CnsImportModel customTypeValue)
         {
             var serializerObject = new SerializerObject<SerializeField>();
 
-            serializerObject.Add(SerializeField.Senquen, customTypeValue.Sequen);
+            serializerObject.Add(SerializeField.Sequence, customTypeValue.Sequence);
             serializerObject.AddNonNull(SerializeField.CategoryName, customTypeValue.CategoryName);
             
             return serializerObject;

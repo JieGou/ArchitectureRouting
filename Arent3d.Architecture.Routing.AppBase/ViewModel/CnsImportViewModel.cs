@@ -3,6 +3,7 @@ using Arent3d.Architecture.Routing.Storable;
 using Arent3d.Architecture.Routing.Storable.Model;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
@@ -92,7 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         {
             if (index == -1) return;
             CnsImportModels.RemoveAt(index);
-            UpdateSequen();
+            UpdateSequence();
         }
 
         private void WriteFile()
@@ -122,12 +123,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
         }
 
-        private void UpdateSequen()
+        private void UpdateSequence()
         {
             for (int i = 0; i < CnsImportModels.Count; i++)
             {
-                CnsImportModels[i].Sequen = i + 1;
+                CnsImportModels[i].Sequence = i + 1;
             }
         }
+        
     }
 }
