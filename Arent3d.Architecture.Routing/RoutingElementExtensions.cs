@@ -2,6 +2,8 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -42,6 +44,9 @@ namespace Arent3d.Architecture.Routing
       foreach ( var connector in connectorOneSide ) {
         SetParameter( connector, "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( document, "Connector Type" ), RouteConnectorType[ 1 ] ) ;
       }
+
+      CeedStorable ceedStorable = document.GetCeeDStorable() ;
+      ceedStorable.Save();
 
       return document.RoutingSettingsAreInitialized() ;
     }
