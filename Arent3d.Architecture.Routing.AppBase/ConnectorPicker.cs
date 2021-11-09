@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase
           }
         }
         else {
-          if ( SubRoutePickResult.Create( null, element, pickedObject.GlobalPoint ) is { } srResult ) return srResult ;
+          if ( SubRoutePickResult.Create( element, pickedObject.GlobalPoint ) is { } srResult ) return srResult ;
         }
 
         var conn = compatiblePickResult?.SubRoute?.GetReferenceConnector() ?? compatiblePickResult?.PickedConnector ;
@@ -67,33 +67,6 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         return new OriginPickResult( element, addInType ) ;
       }
-    }
-
-    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, Element element, bool pickingFromSide, Element? beforeConnector, Element? sensorConnector = null, int countSensorConnector = 0 )
-    {
-      if ( element is Conduit ) {
-        const double plusY = 1.0 ;
-        var originPoint = sensorConnector!.GetTopConnectors().Origin ;
-
-        var location = ( element.Location as LocationCurve )! ;
-        var line = ( location.Curve as Line )! ;
-        var conduitEndPoint = line.GetEndPoint( 0 ) ;
-        var beforeConnectorPos = beforeConnector?.Location as LocationPoint ;
-
-        var lenSubConduit = beforeConnectorPos == null ? 0.5 : Math.Abs( originPoint.Y - beforeConnectorPos.Point.Y ) ;
-        if ( lenSubConduit < 0.1 ) lenSubConduit = 0.1 ;
-        XYZ globalPoint = countSensorConnector == 1 ? new XYZ( originPoint.X, originPoint.Y + plusY, originPoint.Z ) : new XYZ( conduitEndPoint.X, conduitEndPoint.Y + lenSubConduit, conduitEndPoint.Z ) ;
-        if ( SubRoutePickResult.Create( routingExecutor, element, globalPoint ) is { } srResult ) {
-          if ( PickEndPointOverSubRoute( uiDocument, srResult, pickingFromSide ) is { } endPoint )
-            return srResult.ApplyEndPointOverSubRoute( endPoint.Key ) ;
-        }
-      }
-      else {
-        var connector = element.GetTopConnectors() as Connector ;
-        return new ConnectorPickResult( element, connector! ) ;
-      }
-
-      return new OriginPickResult( element, AddInType.Electrical ) ;
     }
 
     private static IEndPoint? PickEndPointOverSubRoute( UIDocument uiDocument, SubRoutePickResult pickResult, bool pickingFromSide )
@@ -300,12 +273,25 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
       public ElementId GetLevelId() => _pickedElement.GetLevelId() ;
 
-      public static SubRoutePickResult? Create( RoutingExecutor? routingExecutor, Element element, XYZ pickPosition )
+      public static SubRoutePickResult? Create( Element element, XYZ pickPosition )
+      {
+        return Create( (MEPSystemPipeSpec)null!, element, pickPosition ) ;
+      }
+
+      public static SubRoutePickResult? Create( RoutingExecutor routingExecutor, Element element, XYZ pickPosition )
       {
         if ( element.GetSubRouteInfo() is not { } subRouteInfo ) return null ;
         if ( RouteCache.Get( element.Document ).GetSubRoute( subRouteInfo ) is not { } subRoute ) return null ;
 
-        return new SubRoutePickResult( routingExecutor?.GetMEPSystemPipeSpec( subRoute ), element, subRoute, pickPosition ) ;
+        return new SubRoutePickResult( routingExecutor.GetMEPSystemPipeSpec( subRoute ), element, subRoute, pickPosition ) ;
+      }
+
+      public static SubRoutePickResult? Create( MEPSystemPipeSpec pipeSpec, Element element, XYZ pickPosition )
+      {
+        if ( element.GetSubRouteInfo() is not { } subRouteInfo ) return null ;
+        if ( RouteCache.Get( element.Document ).GetSubRoute( subRouteInfo ) is not { } subRoute ) return null ;
+
+        return new SubRoutePickResult( pipeSpec, element, subRoute, pickPosition ) ;
       }
 
       public bool IsCompatibleTo( Connector connector ) => _subRoute.GetReferenceConnector().IsCompatibleTo( connector ) ;

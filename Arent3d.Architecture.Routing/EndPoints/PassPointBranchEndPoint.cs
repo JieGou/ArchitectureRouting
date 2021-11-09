@@ -105,7 +105,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private void SetPreferredParameters( Instance passPoint )
     {
-      PreferredRadius = passPoint.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() ;
+      PreferredRadius = passPoint.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() * 0.5 ;
     }
 
     /// <summary>

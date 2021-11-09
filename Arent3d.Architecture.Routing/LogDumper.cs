@@ -197,6 +197,8 @@ namespace Arent3d.Architecture.Routing
     private class DumpedCommonRoutingCondition : ICommonRoutingCondition
     {
       public bool IsRoutingOnPipeRacks { get ; set ; }
+      public bool IsCrossingPipeRacks => false ;
+      public bool IsRouteMergeEnabled => false ;
       public LineType Type { get ; set ; }
       public int Priority { get ; set ; }
       public LoopType LoopType { get ; set ; }
@@ -251,12 +253,14 @@ namespace Arent3d.Architecture.Routing
     {
       public Vector3d Position { get ; set ; }
       public Vector3d Direction { get ; set ; }
+      public Vector3d? PositionConstraint => null ;
       public IRouteCondition? PipeCondition { get ; set ; }
       public bool IsStart { get ; set ; }
       public int Depth { get ; set ; }
       public RoutingPointType PointType { get ; set ; }
       public ILayerStack? LinkedRack => null ;
       public bool AllowHorizontalBranches { get ; set ; }
+      public bool IsDirect => false ;
       public bool AllowThroughBatteryLimit { get ; set ; }
     }
     private static IAutoRoutingEndPoint ReadEndPoint( XmlReader reader )
@@ -360,17 +364,22 @@ namespace Arent3d.Architecture.Routing
         }
       }
 
-      public IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesAndConditions( Box3d box, bool bIgnoreStructure )
+      public IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesAndConditions( in Box3d box, CollisionCheckStructureOption option = CollisionCheckStructureOption.CheckAll )
       {
-        var tuples = this._treeBody.GetIntersectAndRoutingCondition( GetGeometryBodyBox( box ) ) ;
-        foreach ( var tuple in tuples ) {
-          if ( null != tuple.cond ) {
-            yield return ( tuple.body.GetGlobalGeometryBox(), tuple.cond, false ) ;
-            continue ;
-          }
+        return GetCollidedBoxesAndConditionsImpl( box, option ) ;
 
-          foreach ( var geo in tuple.Item1.GetGlobalGeometries() ) {
-            yield return ( geo.GetBounds(), null, tuple.isStructure ) ;
+        IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesAndConditionsImpl( Box3d box, CollisionCheckStructureOption option )
+        {
+          var tuples = this._treeBody.GetIntersectAndRoutingCondition( GetGeometryBodyBox( box ) ) ;
+          foreach ( var (body, cond, isStructure) in tuples ) {
+            if ( null != cond ) {
+              yield return ( body.GetGlobalGeometryBox(), cond, false ) ;
+              continue ;
+            }
+
+            foreach ( var geo in body.GetGlobalGeometries() ) {
+              yield return ( geo.GetBounds(), null, isStructure ) ;
+            }
           }
         }
       }
@@ -456,6 +465,9 @@ namespace Arent3d.Architecture.Routing
       public double GetTeeHeaderLength( IPipeDiameter header, IPipeDiameter branch ) => GetTeeHeaderLength( header.Outside, branch.Outside ) ;
 
       public double GetWeldMinDistance( IPipeDiameter diameter ) => GetWeldMinDistance( diameter.Outside ) ;
+      public double GetConcentricReducerCombinationLength( IPipeDiameter largeDiameter, IPipeDiameter smallDiameter ) => GetReducerLength( largeDiameter.Outside, smallDiameter.Outside ) ;
+
+      public double GetEccentricReducerCombinationLength( IPipeDiameter largeDiameter, IPipeDiameter smallDiameter ) => GetReducerLength( largeDiameter.Outside, smallDiameter.Outside ) ;
 
       public string Name => "default" ;
 
@@ -500,7 +512,7 @@ namespace Arent3d.Architecture.Routing
 
       private double GetWeldMinDistance( double diameter )
       {
-        return 1.0 / 120 ;  // 1/10 inches.
+        return MEPSystemPipeSpec.MinimumShortCurveLength ;  // 1/10 inches.
       }
     }
 
