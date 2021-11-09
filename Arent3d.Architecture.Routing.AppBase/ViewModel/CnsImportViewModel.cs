@@ -1,14 +1,10 @@
 ﻿using System;
 using Arent3d.Architecture.Routing.Storable;
 using Arent3d.Architecture.Routing.Storable.Model;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.IO;
-using System.Linq;
 using System.Windows.Input;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing;
-using Arent3d.Utility;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {

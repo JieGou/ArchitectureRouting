@@ -1,12 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using Arent3d.Architecture.Routing.AppBase.Forms;
 using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using Arent3d.Architecture.Routing.Extensions;
 using Arent3d.Architecture.Routing.Storable;
-using Arent3d.Architecture.Routing.Storable.Model;
-using Arent3d.Revit;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
 using Autodesk.Revit.DB ;
@@ -18,8 +14,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     protected UIDocument UiDocument { get ; private set ; } = null! ;
 
-    private CnsImportViewModel _viewModel { get; set; } = null!;
-    
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       UiDocument = commandData.Application.ActiveUIDocument ;
@@ -27,8 +21,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // get data of Cns Category from snoop DB
       CnsImportStorable cnsStorables = document.GetCnsImportStorable() ;
-      _viewModel = new CnsImportViewModel( cnsStorables ) ;
-      var dialog = new CnsImportDialog(_viewModel) ;
+      CnsImportViewModel viewModel = new CnsImportViewModel( cnsStorables ) ;
+      var dialog = new CnsImportDialog(viewModel) ;
 
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {
