@@ -99,7 +99,7 @@
 
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
-        
+
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
         <string>New Connector&#xA;(Both Sides)</string>
 
