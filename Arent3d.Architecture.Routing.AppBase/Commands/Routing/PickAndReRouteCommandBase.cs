@@ -28,6 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
+      RouteGenerator.CorrectEnvelopes( document ) ;
 
       return Route.GetAllRelatedBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
     }

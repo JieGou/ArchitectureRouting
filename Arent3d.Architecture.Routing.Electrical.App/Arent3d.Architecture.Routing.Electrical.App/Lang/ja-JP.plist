@@ -18,6 +18,9 @@
         <key>Electrical.App.Panels.Routing.Racks</key>
         <string>PS</string>
 
+        <key>Electrical.App.Panels.Routing.Envelope</key>
+        <string>Envelope</string>        
+
         <key>Electrical.App.Panels.Routing.Shafts</key>
         <string>シャフト</string>
       
@@ -106,7 +109,10 @@
 
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>階ごとの3dビュー作成</string>
-        
+
+        <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
+        <string>オフセット設定</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
@@ -172,6 +178,9 @@
 
         <key>TransactionName.Commands.Rack.NewRackFromTo</key>
         <string>Create Cable Rack From-To</string>
+        
+        <key>TransactionName.Commands.Routing.OffsetSetting</key>
+        <string>オフセット設定</string>
 
         <key>TransactionName.Commands.Routing.SelectRangeRoute</key>
         <string>選択範囲配線</string>

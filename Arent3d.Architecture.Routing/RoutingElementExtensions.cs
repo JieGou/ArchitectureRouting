@@ -221,7 +221,7 @@ namespace Arent3d.Architecture.Routing
       var instance = document.GetElementById<FamilyInstance>( elementId ) ;
       if ( null == instance ) return null ;
 
-      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.PassPoint )?.Id ) {
+      if ( instance.Symbol.Id != document.GetFamilySymbols( RoutingFamilyType.PassPoint ).FirstOrDefault().GetValidId() ) {
         // Family instance is not a pass point.
         return null ;
       }
@@ -391,7 +391,7 @@ namespace Arent3d.Architecture.Routing
       var instance = document.GetElementById<FamilyInstance>( elementId ) ;
       if ( null == instance ) return null ;
 
-      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.TerminatePoint )?.Id ) {
+      if ( instance.Symbol.Id != document.GetFamilySymbols( RoutingFamilyType.TerminatePoint ).FirstOrDefault()?.Id ) {
         // Family instance is not a pass point.
         return null ;
       }
@@ -463,27 +463,12 @@ namespace Arent3d.Architecture.Routing
 
     private static bool IsFittingCategory( BuiltInCategory category )
     {
-      return category switch
-      {
-        BuiltInCategory.OST_DuctFitting => true,
-        BuiltInCategory.OST_PipeFitting => true,
-        BuiltInCategory.OST_CableTrayFitting => true,
-        BuiltInCategory.OST_ConduitFitting => true,
-        _ => false,
-      } ;
+      return ( 0 <= Array.IndexOf( BuiltInCategorySets.Fittings, category ) ) ;
     }
 
     #endregion
 
     #region Routing (Route Names)
-
-    private static readonly BuiltInCategory[] RoutingBuiltInCategories =
-    {
-      BuiltInCategory.OST_DuctFitting, BuiltInCategory.OST_DuctCurves, BuiltInCategory.OST_FlexDuctCurves, BuiltInCategory.OST_PipeFitting, BuiltInCategory.OST_PipeCurves, BuiltInCategory.OST_FlexPipeCurves, BuiltInCategory.OST_MechanicalEquipment, // pass point
-
-      //Electrical
-      BuiltInCategory.OST_Conduit, BuiltInCategory.OST_ConduitFitting, BuiltInCategory.OST_ConduitRun, BuiltInCategory.OST_CableTray, BuiltInCategory.OST_ElectricalEquipment, BuiltInCategory.OST_ElectricalFixtures
-    } ;
 
     public static IEnumerable<TElement> GetAllElementsOfRoute<TElement>( this Document document ) where TElement : Element
     {
@@ -492,7 +477,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ) ;
+      return document.GetAllElementsOfRouteName<TElement>( BuiltInCategorySets.RoutingElements, filter ) ;
     }
 
     public static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, string routeName ) where TElement : Element
@@ -502,7 +487,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRouteName() == routeName ) ;
+      return document.GetAllElementsOfRouteName<TElement>( BuiltInCategorySets.RoutingElements, filter ).Where( e => e.GetRouteName() == routeName ) ;
     }
 
     public static IEnumerable<TElement> GetAllElementsOfRepresentativeRouteName<TElement>( this Document document, string routeName ) where TElement : Element
@@ -512,7 +497,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRepresentativeRouteName() == routeName ) ;
+      return document.GetAllElementsOfRouteName<TElement>( BuiltInCategorySets.RoutingElements, filter ).Where( e => e.GetRepresentativeRouteName() == routeName ) ;
     }
 
     public static IEnumerable<TElement> GetAllElementsOfSubRoute<TElement>( this Document document, string routeName, int subRouteIndex ) where TElement : Element
@@ -525,7 +510,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( new[] { ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( routeNameParameterName ), ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( subRouteIndexParameterName ), } ) ;
 
-      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRouteName() == routeName ).Where( e => e.GetSubRouteIndex() == subRouteIndex ) ;
+      return document.GetAllElementsOfRouteName<TElement>( BuiltInCategorySets.RoutingElements, filter ).Where( e => e.GetRouteName() == routeName ).Where( e => e.GetSubRouteIndex() == subRouteIndex ) ;
     }
 
     private static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, BuiltInCategory[] builtInCategories, ElementFilter filter ) where TElement : Element
@@ -544,7 +529,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      foreach ( var e in document.GetAllElements<Element>().OfCategory( RoutingBuiltInCategories ).OfNotElementType().Where( filter ).OfType<FamilyInstance>() ) {
+      foreach ( var e in document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PassPoints ).OfNotElementType().Where( filter ).OfType<FamilyInstance>() ) {
         if ( e.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) continue ;
         if ( e.TryGetProperty( RoutingParameter.RelatedPassPointId, out int id ) && id == passPointId ) yield return e ;
       }
@@ -705,14 +690,13 @@ namespace Arent3d.Architecture.Routing
 
     #region Center Lines
 
+    private static readonly ElementFilter CenterLineFilter = new ElementMulticategoryFilter( BuiltInCategorySets.CenterLineCategories ) ;
+
     public static IEnumerable<Element> GetCenterLine( this Element element )
     {
       var document = element.Document ;
       return element.GetDependentElements( CenterLineFilter ).Select( document.GetElement ).Where( e => e.IsValidObject ) ;
     }
-
-    private static readonly BuiltInCategory[] CenterLineCategories = { BuiltInCategory.OST_CenterLines, BuiltInCategory.OST_DuctCurvesCenterLine, BuiltInCategory.OST_DuctFittingCenterLine, BuiltInCategory.OST_FlexDuctCurvesCenterLine, BuiltInCategory.OST_PipeCurvesCenterLine, BuiltInCategory.OST_PipeFittingCenterLine, BuiltInCategory.OST_FlexPipeCurvesCenterLine, } ;
-    private static readonly ElementFilter CenterLineFilter = new ElementMulticategoryFilter( CenterLineCategories ) ;
 
     #endregion
 
@@ -730,7 +714,7 @@ namespace Arent3d.Architecture.Routing
 
     private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
     {
-      var symbol = document.GetFamilySymbol( familyType )! ;
+      var symbol = document.GetFamilySymbols( familyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       if ( false == symbol.IsActive ) {
         symbol.Activate() ;
       }

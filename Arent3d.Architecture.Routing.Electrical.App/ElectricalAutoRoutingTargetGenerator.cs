@@ -49,10 +49,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       var shaftEndPoint = new DummyBreakEndPoint( shaftPosition, new Vector3d( 0, 0, ( startZ < endZ ) ? +1 : -1 ), _nextShaftEndPointIndex ) ;
       ++_nextShaftEndPointIndex ;
 
-      var fromAutoRoutingEndPoint = new AutoRoutingEndPoint( fromEndPoint, true, priority, diameter, routeCondition ) ;
-      var shaftAutoRoutingEndPoint1 = new AutoRoutingEndPoint( shaftEndPoint, false, priority, diameter, routeCondition ) ;
-      var shaftAutoRoutingEndPoint2 = new AutoRoutingEndPoint( shaftEndPoint, true, priority, diameter, routeCondition ) ;
-      var toAutoRoutingEndPoint = new AutoRoutingEndPoint( toEndPoint, false, priority, diameter, routeCondition ) ;
+      var isDirect = ( false == subRoute.IsRoutingOnPipeSpace ) ;
+      var fromAutoRoutingEndPoint = new AutoRoutingEndPoint( fromEndPoint, true, priority, diameter, isDirect, routeCondition ) ;
+      var shaftAutoRoutingEndPoint1 = new AutoRoutingEndPoint( shaftEndPoint, false, priority, diameter, isDirect, routeCondition ) ;
+      var shaftAutoRoutingEndPoint2 = new AutoRoutingEndPoint( shaftEndPoint, true, priority, diameter, isDirect, routeCondition ) ;
+      var toAutoRoutingEndPoint = new AutoRoutingEndPoint( toEndPoint, false, priority, diameter, isDirect, routeCondition ) ;
 
       return new[]
       {

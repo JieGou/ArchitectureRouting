@@ -1,5 +1,4 @@
 using System ;
-using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
@@ -9,7 +8,6 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
@@ -29,11 +27,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Routing.RackSpaceCommand", DefaultString = "Rack Space" )]
   [Image( "resources/PickFrom-To.png" )]
-  public class RackSpaceCommand : ExternalCommandBase<RackSpacePickRange>
+  public class RackSpaceCommand : RoutingExternalAppCommandBase<RackSpacePickRange>
   {
     protected override string GetTransactionName() => "TransactionName.Commands.Routing.RackSpace".GetAppStringByKeyOrDefault(" ") ;
 
-    protected override RackSpacePickRange OperateUI( ExternalCommandData commandData, ref string message, ElementSet elements )
+    protected override OperationResult<RackSpacePickRange> OperateUI( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiApp = commandData.Application ;
       var uiDocument = uiApp.ActiveUIDocument ;
@@ -53,7 +51,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return new RackSpacePickRange( firstPoint, secondPoint ) ;
     }
 
-    protected override Result Execute( Document document, Transaction transaction, RackSpacePickRange range )
+    protected override Result Execute( Document document, TransactionWrapper transaction, RackSpacePickRange range )
     {
       var (x1, y1, z1) = range.Point1 ;
       var (x2, y2, _) = range.Point2 ;

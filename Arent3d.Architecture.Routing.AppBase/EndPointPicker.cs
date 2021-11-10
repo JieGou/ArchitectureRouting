@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -23,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       _uiDocument = uiDocument ;
 
       var document = uiDocument.Document ;
-      var symbol = document.GetFamilySymbol( RoutingFamilyType.ConnectorPoint )! ;
+      var symbol = document.GetFamilySymbols( RoutingFamilyType.ConnectorPoint ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       _routeTempColor = new TempColor( uiDocument.ActiveView, new Color( 0, 0, 255 ) ) ;
       _endPointsTempColor = new TempColor( uiDocument.ActiveView, new Color( 255, 0, 255 ) ) ;
       document.Transaction( "TransactionName.Commands.Routing.Common.PickEndPointOverSubRoute".GetAppStringByKeyOrDefault( null ), t =>

@@ -3,9 +3,12 @@ using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.CollisionTree ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -85,20 +88,11 @@ namespace Arent3d.Architecture.Routing
         list = list.Where( p => false == ( p is FamilyInstance fi && ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint )) ) );
       }
 
-      document.Delete( list.SelectMany( SelectAllRelatedElements ).Select( elm => elm.Id ).Distinct().ToArray() ) ;
+      document.Delete( list.Select( elm => elm.Id ).Distinct().ToArray() ) ;
 
       if ( eraseRouteStoragesAndPassPoints ) {
         // erase routes, too.
         RouteCache.Get( document ).Drop( hashSet ) ;
-      }
-    }
-
-    private static IEnumerable<Element> SelectAllRelatedElements( Element elm )
-    {
-      yield return elm ;
-
-      foreach ( var neighborElement in elm.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).Select( c => c.Owner ) ) {
-        if ( neighborElement.IsFittingElement() ) yield return neighborElement ;
       }
     }
 
@@ -181,6 +175,26 @@ namespace Arent3d.Architecture.Routing
     private static string GetResultLogFileName( Document document, AutoRoutingTarget routingTarget )
     {
       return Path.Combine( GetLogDirectoryName( document ), routingTarget.LineId + ".log" ) ;
+    }
+
+    public static void CorrectEnvelopes( Document document )
+    {
+      // get all envelope
+      var envelopes = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ).ToList() ;
+      if ( ! envelopes.Any() ) return ;
+      var parentEnvelopes = envelopes.Where( f => string.IsNullOrEmpty( f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ).ToList() ;
+      if ( ! parentEnvelopes.Any() ) return ;
+      
+      // get offset value
+      OffsetSettingStorable settingStorable = document.GetOffsetSettingStorable() ;
+      var offset = settingStorable.OffsetSettingsData.Offset.MetersToRevitUnits() ;
+      foreach ( var parentEnvelope in parentEnvelopes ) {
+        var parentLocation = parentEnvelope.Location as LocationPoint ;
+        var childrenEnvelope = envelopes.FirstOrDefault( f => f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() == parentEnvelope.Id.ToString() ) ;
+        if ( childrenEnvelope == null ) continue ;
+        var childrenLocation = childrenEnvelope.Location as LocationPoint ;
+        childrenLocation!.Point = new XYZ( parentLocation!.Point.X, parentLocation!.Point.Y, parentLocation!.Point.Z - offset ) ;
+      }
     }
   }
 }

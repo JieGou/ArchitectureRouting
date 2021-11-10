@@ -10,6 +10,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
+      RouteGenerator.CorrectEnvelopes( document ) ;
       return document.CollectRoutes( GetAddInType() ).ToSegmentsWithName().EnumerateAll() ;
     }
   }
