@@ -43,7 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     {
                         var tokenSource = new CancellationTokenSource();
                         using var progress = ProgressBar.ShowWithNewThread(tokenSource);
-                        progress.Message = "Importing CNS...";
+                        progress.Message = "Saving CNS Setting...";
                         using (progress?.Reserve(0.5))
                         {
                             SaveCnsList(document, cnsStorables);
