@@ -11,8 +11,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-
-      // get data of height setting from snoop DB
+      
       CeedStorable ceedStorable = document.GetCeeDStorable() ;
 
       var viewModel = new ViewModel.CeedViewModel( ceedStorable ) ;

@@ -31,23 +31,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Button_Reset( object sender, RoutedEventArgs e )
     {
       this.DataContext = _allCeeDModels ;
-    }
-
-    private void CmbCeeDModelNumbers_SelectionChanged( object sender, SelectionChangedEventArgs e )
-    {
-      _ceeDModelNumberSearch = CmbCeeDModelNumbers.SelectedValue.ToString() ;
+      CmbCeeDModelNumbers.SelectedIndex = -1 ;
+      CmbCeeDModelNumbers.Text = "" ;
     }
 
     private void CmbCeeDModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
     {
-      _ceeDModelNumberSearch = CmbCeeDModelNumbers.Text ;
+      _ceeDModelNumberSearch = ! string.IsNullOrEmpty( CmbCeeDModelNumbers.Text ) ? CmbCeeDModelNumbers.Text : string.Empty ;
     }
 
     private void Button_Search( object sender, RoutedEventArgs e )
     {
-      var ceeDModels = _allCeeDModels.CeedModels.Where( c => c.CeeDModelNumber.Contains( _ceeDModelNumberSearch ) ).ToList() ;
-      CeedViewModel ceeDModelsSearch = new CeedViewModel( _allCeeDModels.CeedStorable, ceeDModels, _ceeDModelNumberSearch ) ;
-      this.DataContext = ceeDModelsSearch ;
+      if ( ! string.IsNullOrEmpty( _ceeDModelNumberSearch ) ) {
+        var ceeDModels = _allCeeDModels.CeedModels.Where( c => c.CeeDModelNumber.Contains( _ceeDModelNumberSearch ) ).ToList() ;
+        CeedViewModel ceeDModelsSearch = new CeedViewModel( _allCeeDModels.CeedStorable, ceeDModels, _ceeDModelNumberSearch ) ;
+        this.DataContext = ceeDModelsSearch ;
+      }
+      else {
+        this.DataContext = _allCeeDModels ;
+      }
     }
   }
 }

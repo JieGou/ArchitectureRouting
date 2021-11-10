@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
-        Title="CeeDModelDialog" Height="700" Width="750">
+        Title="CeeD Models" Height="700" Width="900">
     <Grid>
         <Grid.RowDefinitions>
       <RowDefinition Height="50"/>
@@ -14,8 +14,8 @@
     </Grid.RowDefinitions>
       
       <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" >
-        <Label Content="CeeDセットコード" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5"/>
-        <ComboBox Name="CmbCeeDModelNumbers" IsEditable="True" Width="300" Height="27" SelectionChanged="CmbCeeDModelNumbers_SelectionChanged" TextBoxBase.TextChanged="CmbCeeDModelNumbers_TextChanged" />
+        <Label Content="CeeD型番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5"/>
+        <ComboBox Name="CmbCeeDModelNumbers" IsEditable="True" Width="300" Height="27" TextBoxBase.TextChanged="CmbCeeDModelNumbers_TextChanged" />
         <Button x:Name="BtnSearch"
                 Content="Search"
                 Click="Button_Search"
@@ -44,9 +44,9 @@
 
           <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeeDModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="150" />
 
-          <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
+          <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="250" />
 
-          <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
+          <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="200" />
 
           <DataGridTextColumn Header="平面図" Binding="{Binding FloorPlanSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
 

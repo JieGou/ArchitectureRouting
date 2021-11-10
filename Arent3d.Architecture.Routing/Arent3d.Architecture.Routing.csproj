@@ -48,6 +48,10 @@
     <None Update="Assets\Families\2021\Routing Rack Space.rfa">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+
+    <None Update="Assets\SharedParameterFile\CeeDModelList.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
