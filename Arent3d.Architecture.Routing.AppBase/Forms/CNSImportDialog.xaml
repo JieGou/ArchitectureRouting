@@ -6,6 +6,7 @@
     xmlns:ImportCnsRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.ImportCnsRules"
     x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsImportDialog"
     mc:Ignorable="d"
+    WindowStartupLocation="CenterScreen"
     d:DesignHeight="600" d:DesignWidth="500" Width="500" Height="600">
     <DockPanel Margin="5">
         <StackPanel DockPanel.Dock="Left" Width="350">
