@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             // Configure open file dialog box
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.FileName = "Document"; // Default file name
-            dlg.DefaultExt = ".txt"; // Default file extension
+            dlg.DefaultExt = ".cns"; // Default file extension
             dlg.Filter = "CNS files (.cns)|*.cns"; // Filter files by extension
 
             // Show open file dialog box

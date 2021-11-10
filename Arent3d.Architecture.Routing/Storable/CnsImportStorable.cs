@@ -49,12 +49,6 @@ namespace Arent3d.Architecture.Routing.Storable
 
     protected override void SaveAllFields( FieldWriter writer )
     {
-      string someText = "";
-      foreach (var item in CnsImportData)
-      {
-        someText += item.CategoryName;
-      }
-      File.WriteAllText(@"C:\Temp\csc.txt", someText);  
       writer.SetArray( CnsImportField, CnsImportData ) ;
     }
 
@@ -64,7 +58,7 @@ namespace Arent3d.Architecture.Routing.Storable
     }
 
     
-    public bool Equals(CnsImportStorable other)
+    public bool Equals(CnsImportStorable? other)
     {
       if ( other == null ) return false ;
       return CnsImportData.SequenceEqual( other.CnsImportData, new CnsImportStorableComparer() ) ;
