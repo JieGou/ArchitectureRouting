@@ -15,63 +15,63 @@ namespace Arent3d.Architecture.Routing.Storable
 {
   [Guid( "A52AB9F8-1EB5-4BEF-9B7E-DC8CA228C12D" )]
   [StorableVisibility( AppInfo.VendorId )]
-  public sealed class CnsImportStorable : StorableBase, IEquatable<CnsImportStorable>
+  public sealed class CnsSettingStorable : StorableBase, IEquatable<CnsSettingStorable>
   {
-    public const string StorableName = "Cns Import" ;
-    private const string CnsImportField = "CnsImport" ;
-    public ObservableCollection<CnsImportModel> CnsImportData { get ; set ; }
+    public const string StorableName = "Cns Setting" ;
+    private const string CnsSettingField = "CnsSetting" ;
+    public ObservableCollection<CnsSettingModel> CnsSettingData { get ; set ; }
     
     /// <summary>
     /// for loading from storage.
     /// </summary>
     /// <param name="owner">Owner element.</param>
-    private CnsImportStorable( DataStorage owner ) : base( owner, false )
+    private CnsSettingStorable( DataStorage owner ) : base( owner, false )
     {
-      CnsImportData = new ObservableCollection<CnsImportModel>();
+      CnsSettingData = new ObservableCollection<CnsSettingModel>();
     }
 
     /// <summary>
     /// Called by RouteCache.
     /// </summary>
     /// <param name="document"></param>
-    public CnsImportStorable( Document document ) : base( document, false )
+    public CnsSettingStorable( Document document ) : base( document, false )
     {
-      CnsImportData = new ObservableCollection<CnsImportModel>();
+      CnsSettingData = new ObservableCollection<CnsSettingModel>();
     }
 
     public override string Name => StorableName ;
 
     protected override void LoadAllFields( FieldReader reader )
     {
-      var dataSaved = reader.GetArray<CnsImportModel>( CnsImportField ) ;
-      CnsImportData = new ObservableCollection<CnsImportModel>(dataSaved);
+      var dataSaved = reader.GetArray<CnsSettingModel>( CnsSettingField ) ;
+      CnsSettingData = new ObservableCollection<CnsSettingModel>(dataSaved);
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
-      writer.SetArray( CnsImportField, CnsImportData ) ;
+      writer.SetArray( CnsSettingField, CnsSettingData ) ;
     }
 
     protected override void SetupAllFields(FieldGenerator generator)
     {
-      generator.SetArray<CnsImportModel>( CnsImportField ) ;
+      generator.SetArray<CnsSettingModel>( CnsSettingField ) ;
     }
 
     
-    public bool Equals(CnsImportStorable? other)
+    public bool Equals(CnsSettingStorable? other)
     {
       if ( other == null ) return false ;
-      return CnsImportData.SequenceEqual( other.CnsImportData, new CnsImportStorableComparer() ) ;
+      return CnsSettingData.SequenceEqual( other.CnsSettingData, new CnsSettingStorableComparer() ) ;
     }
   }
-  public class CnsImportStorableComparer : IEqualityComparer<CnsImportModel>
+  public class CnsSettingStorableComparer : IEqualityComparer<CnsSettingModel>
   {
-    public bool Equals( CnsImportModel x, CnsImportModel y )
+    public bool Equals( CnsSettingModel x, CnsSettingModel y )
     {
       return x.Equals( y ) ;
     }
 
-    public int GetHashCode( CnsImportModel obj )
+    public int GetHashCode( CnsSettingModel obj )
     {
       return obj.GetHashCode() ;
     }

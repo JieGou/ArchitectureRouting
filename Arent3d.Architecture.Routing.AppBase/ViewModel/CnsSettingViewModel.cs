@@ -8,16 +8,16 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Routing;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
-    public class CnsImportViewModel : ViewModelBase
+    public class CnsSettingViewModel : ViewModelBase
     {
-        public ObservableCollection<CnsImportModel> CnsImportModels { get; set; }
+        public ObservableCollection<CnsSettingModel> CnsSettingModels { get; set; }
 
-        public CnsImportStorable CnsImportStorable { get; }
+        public CnsSettingStorable CnsSettingStorable { get; }
 
-        public CnsImportViewModel(CnsImportStorable cnsStorables)
+        public CnsSettingViewModel(CnsSettingStorable cnsStorables)
         {
-            CnsImportStorable = cnsStorables;
-            CnsImportModels = new ObservableCollection<CnsImportModel>(cnsStorables.CnsImportData);
+            CnsSettingStorable = cnsStorables;
+            CnsSettingModels = new ObservableCollection<CnsSettingModel>(cnsStorables.CnsSettingData);
             ReadFileCommand = new RelayCommand<object>(
                 (p) => true, // CanExecute()
                 (p) => { ReadFile(); } // Execute()
@@ -40,7 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
             SaveCommand = new RelayCommand<object>(
                 (p) => true, // CanExecute()
-                (p) => { cnsStorables.CnsImportData = CnsImportModels; } // Execute()
+                (p) => { cnsStorables.CnsSettingData = CnsSettingModels; } // Execute()
             );
         }
 
@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.FileName = "Document"; // Default file name
             dlg.DefaultExt = ".cns"; // Default file extension
-            dlg.Filter = "CNS files (.cns)|*.cns"; // Filter files by extension
+            dlg.Filter = "CNS files|*.cns"; // Filter files by extension
 
             // Show open file dialog box
             bool? result = dlg.ShowDialog();
@@ -66,14 +66,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             {
                 // Open document
                 string filename = dlg.FileName;
-                CnsImportModels.Clear();
+                CnsSettingModels.Clear();
                 var index = 1;
                 var inputData = System.IO.File.ReadLines(filename);
                 foreach (string line in inputData)
                 {
                     if (!string.IsNullOrWhiteSpace(line))
                     {
-                        CnsImportModels.Add(new CnsImportModel(index, line.Trim()));
+                        CnsSettingModels.Add(new CnsSettingModel(index, line.Trim()));
                         index++;
                     }
                 }
@@ -82,13 +82,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         private void AddRow()
         {
-            CnsImportModels.Add(new CnsImportModel(CnsImportModels.Count + 1, ""));
+            CnsSettingModels.Add(new CnsSettingModel(CnsSettingModels.Count + 1, ""));
         }
 
         private void DeleteRow(int index)
         {
             if (index == -1) return;
-            CnsImportModels.RemoveAt(index);
+            CnsSettingModels.RemoveAt(index);
             UpdateSequence();
         }
 
@@ -98,7 +98,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
             dlg.FileName = ""; // Default file name
             dlg.DefaultExt = ".cns"; // Default file extension
-            dlg.Filter = "CNS files (.cns)|*.cns"; // Filter files by extension
+            dlg.Filter = "CNS files|*.cns"; // Filter files by extension
 
             // Show open file dialog box
             bool? result = dlg.ShowDialog();
@@ -107,7 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if (result == true)
             {
                 string createText = "";
-                foreach (var item in CnsImportModels)
+                foreach (var item in CnsSettingModels)
                 {
                     if (!string.IsNullOrEmpty(item.CategoryName))
                     {
@@ -121,9 +121,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         private void UpdateSequence()
         {
-            for (int i = 0; i < CnsImportModels.Count; i++)
+            for (int i = 0; i < CnsSettingModels.Count; i++)
             {
-                CnsImportModels[i].Sequence = i + 1;
+                CnsSettingModels[i].Sequence = i + 1;
             }
         }
         

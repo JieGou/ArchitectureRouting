@@ -7,9 +7,9 @@ using Arent3d.Architecture.Routing.Storable.Model;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-    public partial class CnsImportDialog : Window
+    public partial class CnsSettingDialog : Window
     {
-        public CnsImportDialog(CnsImportViewModel viewModel)
+        public CnsSettingDialog(CnsSettingViewModel viewModel)
         {
             InitializeComponent();
             DataContext = viewModel;

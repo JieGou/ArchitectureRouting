@@ -12,7 +12,7 @@ using Autodesk.Revit.UI;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-    public abstract class CnsImportCommandBase : IExternalCommand
+    public abstract class CnsSettingCommandBase : IExternalCommand
     {
         protected UIDocument UiDocument { get; private set; } = null!;
 
@@ -22,20 +22,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             Document document = UiDocument.Document;
 
             // get data of Cns Category from snoop DB
-            CnsImportStorable cnsStorables = document.GetCnsImportStorable();
-            CnsImportViewModel viewModel = new CnsImportViewModel(cnsStorables);
-            var dialog = new CnsImportDialog(viewModel);
+            CnsSettingStorable cnsStorables = document.GetCnsSettingStorable();
+            CnsSettingViewModel viewModel = new CnsSettingViewModel(cnsStorables);
+            var dialog = new CnsSettingDialog(viewModel);
 
             dialog.ShowDialog();
             if (dialog.DialogResult ?? false)
             {
-                return document.Transaction("TransactionName.Commands.Routing.CNSImport", _ =>
+                return document.Transaction("TransactionName.Commands.Routing.CnsSetting", _ =>
                 {
-                    foreach (var item in cnsStorables.CnsImportData.ToList())
+                    foreach (var item in cnsStorables.CnsSettingData.ToList())
                     {
                         if (string.IsNullOrWhiteSpace(item.CategoryName.Trim()))
                         {
-                            cnsStorables.CnsImportData.Remove(item);
+                            cnsStorables.CnsSettingData.Remove(item);
                         }
                     }
 
@@ -59,14 +59,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
         }
 
-        private static void SaveCnsList(Document document, CnsImportStorable list)
+        private static void SaveCnsList(Document document, CnsSettingStorable list)
         {
             list.Save();
         }
 
-        private static bool ShouldSaveCnsList(Document document, CnsImportStorable newSettings)
+        private static bool ShouldSaveCnsList(Document document, CnsSettingStorable newSettings)
         {
-            var old = document.GetAllStorables<CnsImportStorable>().FirstOrDefault(); // generates new instance from document
+            var old = document.GetAllStorables<CnsSettingStorable>().FirstOrDefault(); // generates new instance from document
             return old == null || !newSettings.Equals(old);
         }
     }

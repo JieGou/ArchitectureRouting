@@ -36,15 +36,15 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
     
     /// <summary>
-    /// Get CNS Category Name data from snoop DB.
+    /// Get CNS Setting data from snoop DB.
     /// </summary>
-    public static CnsImportStorable GetCnsImportStorable( this Document document )
+    public static CnsSettingStorable GetCnsSettingStorable( this Document document )
     {
       try {
-        return CnsImportStorableCache.Get( document ).FindOrCreate( CnsImportStorable.StorableName ) ;
+        return CnsSettingStorableCache.Get( document ).FindOrCreate( CnsSettingStorable.StorableName ) ;
       }
       catch ( InvalidOperationException ) {
-        return new CnsImportStorable( document ) ;
+        return new CnsSettingStorable( document ) ;
       }
     }
   }

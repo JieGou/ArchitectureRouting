@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
-  public class CnsImportModel : INotifyPropertyChanged
+  public class CnsSettingModel : INotifyPropertyChanged
   {
     private int _sequence;
     public int Sequence 
@@ -18,13 +18,13 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     public string CategoryName { get; set; }
 
-    public CnsImportModel(int sequence, string categoryName)
+    public CnsSettingModel(int sequence, string categoryName)
     {
       _sequence = sequence;
       CategoryName = categoryName;
     }
     
-    public bool Equals( CnsImportModel other )
+    public bool Equals( CnsSettingModel other )
     {
       return other != null &&
              Sequence == other.Sequence &&

@@ -3,8 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:ImportCnsRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.ImportCnsRules"
-    x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsImportDialog"
+    xmlns:CnsSettingRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.CnsSettingRules"
+    x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingDialog"
     mc:Ignorable="d"
     WindowStartupLocation="CenterScreen"
     d:DesignHeight="600" d:DesignWidth="500" Width="500" Height="600">
@@ -13,7 +13,7 @@
             <Label Margin="2,15,2,10">未付加の部品は1行目の工事項目名称で拾われます</Label>
             <Grid Width="350" Height="570" Margin="0" DockPanel.Dock="Top">
                 <DataGrid x:Name="grdCategories"
-                          ItemsSource="{Binding CnsImportModels}"
+                          ItemsSource="{Binding CnsSettingModels}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           Margin="2,0,2,40">
@@ -41,7 +41,7 @@
                             <DataGridTextColumn.Binding>
                                 <Binding  Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" >
                                     <Binding.ValidationRules>
-                                        <ImportCnsRules:ImportCnslValidationRule />
+                                        <CnsSettingRules:CnsSettingValidationRule />
                                     </Binding.ValidationRules>
                                 </Binding>
                             </DataGridTextColumn.Binding>

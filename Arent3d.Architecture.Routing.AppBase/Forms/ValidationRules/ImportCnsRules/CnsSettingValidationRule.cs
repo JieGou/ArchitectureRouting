@@ -1,9 +1,9 @@
 ﻿using System.Globalization ;
 using System.Windows.Controls ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.ImportCnsRules
+namespace Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.CnsSettingRules
 {
-  public class ImportCnslValidationRule : ValidationRule
+  public class CnsSettingValidationRule : ValidationRule
   {
     public override ValidationResult Validate( object value, CultureInfo cultureInfo )
     {

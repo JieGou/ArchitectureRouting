@@ -89,7 +89,7 @@
         <key>Electrical.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change&#xA;FixedBopHeight</string>
 
-        <key>Electrical.App.Commands.Routing.CnsImportCommand</key>
+        <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>工事区分設定</string>
         
 		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>

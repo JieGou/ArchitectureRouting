@@ -5,9 +5,9 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.CnsImportCommand", DefaultString = "Import CNS" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.CnsSettingCommand", DefaultString = "CNS Setting" )]
   [Image("resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class CnsImportCommand : CnsImportCommandBase
+  public class CnsSettingCommand : CnsSettingCommandBase
   {
     
   }

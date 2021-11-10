@@ -6,8 +6,8 @@ using Autodesk.Revit.DB;
 
 namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 {
-    [StorableConverterOf(typeof(CnsImportModel))]
-    internal class CNSImportModelStorableConverter : StorableConverterBase<CnsImportModel>
+    [StorableConverterOf(typeof(CnsSettingModel))]
+    internal class CnsSettingModelStorableConverter : StorableConverterBase<CnsSettingModel>
     {
         private enum SerializeField
         {
@@ -15,17 +15,17 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
             CategoryName
         }
 
-        protected override CnsImportModel Deserialize(Element storedElement, IDeserializerObject deserializerObject)
+        protected override CnsSettingModel Deserialize(Element storedElement, IDeserializerObject deserializerObject)
         {
             var deserializer = deserializerObject.Of<SerializeField>();
 
             int sequence = Convert.ToInt32(deserializer.GetInt(SerializeField.Sequence));
             string categoryName = deserializer.GetString(SerializeField.CategoryName)?.ToString() ?? string.Empty;
 
-            return new CnsImportModel(sequence, categoryName);
+            return new CnsSettingModel(sequence, categoryName);
         }
 
-        protected override ISerializerObject Serialize(Element storedElement, CnsImportModel customTypeValue)
+        protected override ISerializerObject Serialize(Element storedElement, CnsSettingModel customTypeValue)
         {
             var serializerObject = new SerializerObject<SerializeField>();
 
