@@ -113,6 +113,9 @@
         <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
         <string>オフセット設定</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowCeeDModelsCommand</key>
+        <string>セットコード表示</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
