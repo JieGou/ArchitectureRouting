@@ -30,7 +30,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       XPlus,
       YPlus,
     }
-    
+
+    private static readonly double DefaultFootLengthMeters = 1.5.MetersToRevitUnits() ;
+    private const double DefaultFootLengthFeet = 5.0 ;
+
+    private static double GetFootLength( DisplayUnit displayUnitSystem ) =>
+      displayUnitSystem switch
+      {
+        DisplayUnit.METRIC => DefaultFootLengthMeters,
+        DisplayUnit.IMPERIAL => DefaultFootLengthFeet,
+        _ => throw new ArgumentOutOfRangeException( nameof( displayUnitSystem ), displayUnitSystem, null ),
+      } ;
+
     private record SelectState( FamilyInstance PowerConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SensorArrayDirection SensorDirection, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
@@ -204,7 +215,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var nextIndex = GetRouteNameIndex( RouteCache.Get( document ), nameBase ) ;
       var routeName = nameBase + "_" + nextIndex ;
 
-      var passPoints = CreatePassPoints( routeName, powerConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
+      var (footPassPoint, passPoints) = CreatePassPoints( routeName, powerConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
 
       var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 1 ) ;
@@ -213,7 +224,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
       var powerConnectorEndPointKey = powerConnectorEndPoint.Key ;
       {
-        var secondFromEndPoints = EliminateSamePassPoints( passPoints ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
+        var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
         var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( sensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
         var firstToEndPoint = secondFromEndPoints[ 0 ] ;
 
@@ -237,9 +248,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return result ;
 
-      static IEnumerable<FamilyInstance> EliminateSamePassPoints( IEnumerable<FamilyInstance> passPoints )
+      static IEnumerable<FamilyInstance> EliminateSamePassPoints( FamilyInstance? firstPassPoint, IEnumerable<FamilyInstance> passPoints )
       {
-        var lastId = ElementId.InvalidElementId ;
+        if ( null != firstPassPoint ) yield return firstPassPoint ;
+
+        var lastId = firstPassPoint?.Id ?? ElementId.InvalidElementId ;
         foreach ( var passPoint in passPoints ) {
           if ( passPoint.Id == lastId ) continue ;
           lastId = passPoint.Id ;
@@ -248,7 +261,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static IReadOnlyList<FamilyInstance> CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, MEPSystemPipeSpec pipeSpec )
+    private static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, MEPSystemPipeSpec pipeSpec )
     {
       var document = powerConnector.Document ;
       var levelId = powerConnector.LevelId ;
@@ -267,24 +280,62 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         _ => throw new ArgumentOutOfRangeException( nameof( sensorDirection ), sensorDirection, null )
       } ;
 
-      var lastPos = XYZ.Zero ;
-      FamilyInstance? lastFamilyInstance = null ;
-      return passPointPositions.ConvertAll( pos =>
-      {
-        if ( null != lastFamilyInstance && AreTooClose( lastPos, pos, MEPSystemPipeSpec.MinimumShortCurveLength ) ) {
-          // reuse last family instance
-          return lastFamilyInstance ;
-        }
+      var passPoints = new List<FamilyInstance>( passPointPositions.Count + 1 ) ;
+      var footPassPoint = CreateFootPassPoint( routeName, powerConnector, passPointPositions[ 0 ], sensorDirection, bendingRadius, diameter * 0.5, levelId ) ;
 
-        lastPos = pos ;
-        lastFamilyInstance = document.AddPassPoint( routeName, pos, passPointDirection, diameter * 0.5, levelId ) ;
-        return lastFamilyInstance ;
-      } ) ;
+      var lastPos = footPassPoint?.GetTotalTransform().Origin ;
+      var lastFamilyInstance = footPassPoint ;
+      foreach ( var pos in passPointPositions ) {
+        if ( null != lastFamilyInstance && AreTooClose( lastPos!, pos, MEPSystemPipeSpec.MinimumShortCurveLength ) ) {
+          // reuse last family instance
+          passPoints.Add( lastFamilyInstance ) ;
+        }
+        else {
+          // create new family instance
+          lastPos = pos ;
+          lastFamilyInstance = document.AddPassPoint( routeName, pos, passPointDirection, diameter * 0.5, levelId ) ;
+          passPoints.Add( lastFamilyInstance ) ;
+        }
+      }
+
+      return ( footPassPoint, passPoints ) ;
 
       static bool AreTooClose( XYZ lastPos, XYZ nextPos, double shortCurveLength )
       {
         var manhattanDistance = Math.Abs( lastPos.X - nextPos.X ) + Math.Abs( lastPos.Y - nextPos.Y ) ;
         return ( manhattanDistance < shortCurveLength ) ;
+      }
+
+      static FamilyInstance? CreateFootPassPoint( string routeName, FamilyInstance powerConnector, XYZ firstPassPosition, SensorArrayDirection sensorDirection, double bendingRadius, double radius, ElementId levelId )
+      {
+        var document = powerConnector.Document ;
+        var footLength = GetFootLength( document.DisplayUnitSystem ) ;
+        var powerPosition = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
+
+        var (sensorDirDistance, anotherDistance) = sensorDirection switch
+        {
+          SensorArrayDirection.XMinus => ( powerPosition.X - firstPassPosition.X, ( firstPassPosition.Y - powerPosition.Y ) ),
+          SensorArrayDirection.YMinus => ( powerPosition.Y - firstPassPosition.Y, ( firstPassPosition.X - powerPosition.X ) ),
+          SensorArrayDirection.XPlus => ( firstPassPosition.X - powerPosition.X, ( firstPassPosition.Y - powerPosition.Y ) ),
+          SensorArrayDirection.YPlus => ( firstPassPosition.Y - powerPosition.Y, ( firstPassPosition.X - powerPosition.X ) ),
+          _ => throw new ArgumentOutOfRangeException( nameof( sensorDirection ), sensorDirection, null ),
+        } ;
+
+        if ( sensorDirDistance <= bendingRadius * 2 ) return null ; // cannot insert foot pass point
+        if ( Math.Abs( anotherDistance ) <= bendingRadius * 2 ) return null ; // cannot insert foot pass point
+        var sensorDirPos = ( sensorDirDistance <= bendingRadius + footLength ) ? sensorDirDistance * 0.5 : footLength ;
+
+        var (passPointPos, passPointDir) = sensorDirection switch
+        {
+          SensorArrayDirection.XMinus => (new XYZ( powerPosition.X - sensorDirPos, ( powerPosition.Y + firstPassPosition.Y ) * 0.5, firstPassPosition.Z ), XYZ.BasisY),
+          SensorArrayDirection.YMinus => (new XYZ( ( powerPosition.X + firstPassPosition.X ) * 0.5, powerPosition.Y - sensorDirPos, firstPassPosition.Z ), XYZ.BasisX),
+          SensorArrayDirection.XPlus => (new XYZ( powerPosition.X + sensorDirPos, ( powerPosition.Y + firstPassPosition.Y ) * 0.5, firstPassPosition.Z ), XYZ.BasisY),
+          SensorArrayDirection.YPlus => (new XYZ( ( powerPosition.X + firstPassPosition.X ) * 0.5, powerPosition.Y + sensorDirPos, firstPassPosition.Z ), XYZ.BasisX),
+          _ => throw new ArgumentOutOfRangeException( nameof( sensorDirection ), sensorDirection, null ),
+        } ;
+        passPointDir *= Math.Sign( anotherDistance ) ;
+
+        return document.AddPassPoint( routeName, passPointPos, passPointDir, radius, levelId ) ;
       }
 
       static IReadOnlyList<XYZ> GetPassPointPositions( FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, FamilyInstance lastSensorConnector, SensorArrayDirection sensorDirection, double? forcedFixedHeight, double bendingRadius )
