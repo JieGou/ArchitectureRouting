@@ -56,22 +56,24 @@ namespace Arent3d.Architecture.Routing.Storable
       Excel.Workbook workBook = app.Workbooks.Open( path, 0, true, 5, "", "", true, Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0 ) ;
       Excel.Worksheet workSheet = (Excel.Worksheet) workBook.Sheets[ 2 ] ;
       const int startRow = 8 ;
-      const int endRow = 2900 ;
+      var endRow = workSheet.Cells.SpecialCells( Excel.XlCellType.xlCellTypeLastCell, Type.Missing ).Row ;
       try {
-        for ( int i = startRow ; i < endRow ; i++ ) {
+        for ( int i = startRow ; i <= endRow ; i++ ) {
           List<string> ceeDModelNumbers = new List<string>() ;
           List<string> ceeDSetCodes = new List<string>() ;
           List<string> modelNumbers = new List<string>() ;
           string generalDisplayDeviceSymbols = string.Empty ;
           string floorPlanSymbol = string.Empty ;
 
-          var name = ( (Excel.Range) workSheet.Cells[ i, 4 ] ).Value2 ;
+          var record = (Excel.Range) workSheet.Cells[ i, 4 ] ;
+          if ( record.Rows.Hidden.Equals( true ) ) continue ;
+          var name = record.Value2 ;
           if ( name != null ) {
             var firstIndexGroup = i ;
-            var nextName = ( (Excel.Range) workSheet.Cells[ i, 4 ] ).Value2 ;
+            var nextName = record.Value2 ;
             do {
               i++ ;
-              if ( i == endRow ) break ;
+              if ( i > endRow ) break ;
               name = nextName ;
               nextName = ( (Excel.Range) workSheet.Cells[ i, 4 ] ).Value2 ;
             } while ( ! ( name == null && nextName != null ) ) ;
