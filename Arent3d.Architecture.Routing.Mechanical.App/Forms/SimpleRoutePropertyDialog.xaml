@@ -1,4 +1,4 @@
-﻿<Window x:Class="Arent3d.Architecture.Routing.Mechanical.App.Forms.RoutePropertyDialogForTTE"
+﻿<Window x:Class="Arent3d.Architecture.Routing.Mechanical.App.Forms.SimpleRoutePropertyDialog"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -16,7 +16,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <forms:FromToEditControlForTTE x:Name="FromToEdit" Grid.Row="0" Width="Auto" />
+        <forms:SimpleFromToEditControl x:Name="FromToEdit" Grid.Row="0" Width="Auto" />
 
         <forms1:Dialog2Buttons Grid.Row="1" Margin="-2,5,0,0"
                                   LeftButton="OK"

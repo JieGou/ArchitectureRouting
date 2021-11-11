@@ -28,8 +28,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         [Button( typeof( PickRoutingCommand ), OnlyInitialized = true )]
         private static class PickRoutingCommandButton { }
         
-        [Button( typeof( PickRoutingCommandForTTE ), OnlyInitialized = true )]
-        private static class PickRoutingCommandButtonForTte { }
+        [Button( typeof( SimplePickRoutingCommand ), OnlyInitialized = true )]
+        private static class SimplePickRoutingCommandButton { }
 
         [Button( typeof( PickAndReRouteCommand ), OnlyInitialized = true )]
         private static class PickAndReRouteCommandButton { }

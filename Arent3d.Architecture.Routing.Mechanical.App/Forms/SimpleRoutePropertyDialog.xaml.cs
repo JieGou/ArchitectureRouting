@@ -8,14 +8,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Forms
   /// <summary>
   /// SetProperty.xaml の相互作用ロジック
   /// </summary>
-  public partial class RoutePropertyDialogForTTE : Window, IRoutePropertyDialog
+  public partial class SimpleRoutePropertyDialog : Window, IRoutePropertyDialog
   {
-    public RoutePropertyDialogForTTE()
+    public SimpleRoutePropertyDialog()
     {
       InitializeComponent() ;
     }
 
-    public RoutePropertyDialogForTTE( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
+    public SimpleRoutePropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
       InitializeComponent() ;
       WindowStartupLocation = WindowStartupLocation.CenterScreen ;
