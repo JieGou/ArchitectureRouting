@@ -4,6 +4,7 @@ using Arent3d.Architecture.Routing.AppBase.Forms;
 using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using Arent3d.Architecture.Routing.Extensions;
 using Arent3d.Architecture.Routing.Storable;
+using Arent3d.Architecture.Routing.Storable.Model;
 using Arent3d.Revit;
 using Arent3d.Revit.UI;
 using Arent3d.Revit.UI.Forms;
@@ -31,14 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             {
                 return document.Transaction("TransactionName.Commands.Routing.CnsSetting", _ =>
                 {
-                    foreach (var item in cnsStorables.CnsSettingData.ToList())
-                    {
-                        if (string.IsNullOrWhiteSpace(item.CategoryName.Trim()))
-                        {
-                            cnsStorables.CnsSettingData.Remove(item);
-                        }
-                    }
-
+                    DataProcessBeforeSave(cnsStorables);
                     if (ShouldSaveCnsList(document, cnsStorables))
                     {
                         var tokenSource = new CancellationTokenSource();
@@ -68,6 +62,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         {
             var old = document.GetAllStorables<CnsSettingStorable>().FirstOrDefault(); // generates new instance from document
             return old == null || !newSettings.Equals(old);
+        }
+
+        private static void DataProcessBeforeSave( CnsSettingStorable cnsSettings)
+        {
+            bool hadUpdating = false;
+            // Remove empty row
+            foreach (var item in cnsSettings.CnsSettingData.ToList())
+            {
+                if (string.IsNullOrWhiteSpace(item.CategoryName.Trim()))
+                {
+                    cnsSettings.CnsSettingData.Remove(item);
+                    hadUpdating = true;
+                }
+            }
+
+            if (cnsSettings.CnsSettingData.Count == 0)
+            {
+                // Add default value if list empty
+                cnsSettings.CnsSettingData.Add(new CnsSettingModel(sequence: 1, categoryName: "未設定"));
+            } else if (hadUpdating)
+            {
+                // Set sequence if list was changed
+                for (int i = 0; i < cnsSettings.CnsSettingData.Count; i++)
+                {
+                    cnsSettings.CnsSettingData[i].Sequence = i + 1;
+                }
+            }
         }
     }
 }

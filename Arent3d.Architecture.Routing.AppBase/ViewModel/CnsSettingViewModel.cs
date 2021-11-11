@@ -18,6 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         {
             CnsSettingStorable = cnsStorables;
             CnsSettingModels = new ObservableCollection<CnsSettingModel>(cnsStorables.CnsSettingData);
+            AddDefaultValue();
             ReadFileCommand = new RelayCommand<object>(
                 (p) => true, // CanExecute()
                 (p) => { ReadFile(); } // Execute()
@@ -45,10 +46,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         public ICommand ReadFileCommand { get; set; }
+        public ICommand WriteFileCommand { get; set; }
         public ICommand AddRowCommand { get; set; }
         public ICommand DeleteRowCommand { get; set; }
         public ICommand SaveCommand { get; set; }
-        public ICommand WriteFileCommand { get; set; }
 
         private void ReadFile()
         {
@@ -80,18 +81,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
         }
 
-        private void AddRow()
-        {
-            CnsSettingModels.Add(new CnsSettingModel(CnsSettingModels.Count + 1, ""));
-        }
-
-        private void DeleteRow(int index)
-        {
-            if (index == -1) return;
-            CnsSettingModels.RemoveAt(index);
-            UpdateSequence();
-        }
-
         private void WriteFile()
         {
             // Configure open file dialog box
@@ -119,6 +108,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
         }
 
+        private void AddRow()
+        {
+            CnsSettingModels.Add(new CnsSettingModel(CnsSettingModels.Count + 1, ""));
+        }
+
+        private void DeleteRow(int index)
+        {
+            if (index == -1) return;
+            CnsSettingModels.RemoveAt(index);
+            AddDefaultValue();
+            UpdateSequence();
+        }
+
         private void UpdateSequence()
         {
             for (int i = 0; i < CnsSettingModels.Count; i++)
@@ -126,6 +128,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 CnsSettingModels[i].Sequence = i + 1;
             }
         }
-        
+
+        private void AddDefaultValue()
+        {
+            if (CnsSettingModels.Count == 0)
+            {
+                CnsSettingModels.Add(new CnsSettingModel(sequence: 1, categoryName: "未設定"));
+            }
+        }
     }
 }
