@@ -15,7 +15,7 @@ using LengthConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverte
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Forms
 {
-  public partial class FromToEditControlForTTE : UserControl
+  public partial class SimpleFromToEditControl : UserControl
   {
     private const string DefaultCurveTypeLabel = "Type" ;
 
@@ -28,42 +28,42 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Forms
       ValueChanged?.Invoke( this, e ) ;
     }
 
-    public static readonly DependencyProperty SystemTypeEditableProperty = DependencyProperty.Register( "SystemTypeEditable", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty ShaftEditableProperty = DependencyProperty.Register( "ShaftEditable", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty CurveTypeEditableProperty = DependencyProperty.Register( "CurveTypeEditable", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty UseSystemTypeProperty = DependencyProperty.Register( "UseSystemType", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty UseShaftProperty = DependencyProperty.Register( "UseShaft", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty UseCurveTypeProperty = DependencyProperty.Register( "UseCurveType", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty DiameterIndexProperty = DependencyProperty.Register( "DiameterIndex", typeof( int ), typeof( FromToEditControlForTTE ), new PropertyMetadata( -1 ) ) ;
-    public static readonly DependencyProperty SystemTypeIndexProperty = DependencyProperty.Register( "SystemTypeIndex", typeof( int ), typeof( FromToEditControlForTTE ), new PropertyMetadata( -1 ) ) ;
-    public static readonly DependencyProperty ShaftIndexProperty = DependencyProperty.Register( "ShaftIndex", typeof( int ), typeof( FromToEditControlForTTE ), new PropertyMetadata( -1 ) ) ;
-    public static readonly DependencyProperty CurveTypeIndexProperty = DependencyProperty.Register( "CurveTypeIndex", typeof( int ), typeof( FromToEditControlForTTE ), new PropertyMetadata( -1 ) ) ;
-    public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( FromToEditControlForTTE ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
-    public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( FromToEditControlForTTE ), new PropertyMetadata( (bool?)true ) ) ;
-    public static readonly DependencyProperty UseFromFixedHeightProperty = DependencyProperty.Register( "UseFromFixedHeight", typeof( bool? ), typeof( FromToEditControlForTTE ), new PropertyMetadata( (bool?)false ) ) ;
-    public static readonly DependencyProperty FromFixedHeightProperty = DependencyProperty.Register( "FromFixedHeight", typeof( double? ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0, FromFixedHeight_Changed ) ) ;
-    public static readonly DependencyProperty FromLocationTypeIndexProperty = DependencyProperty.Register( "FromLocationTypeIndex", typeof( int ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0, FromLocationTypeIndex_PropertyChanged ) ) ;
-    public static readonly DependencyProperty UseToFixedHeightProperty = DependencyProperty.Register( "UseToFixedHeight", typeof( bool? ), typeof( FromToEditControlForTTE ), new PropertyMetadata( (bool?)false ) ) ;
-    public static readonly DependencyProperty ToFixedHeightProperty = DependencyProperty.Register( "ToFixedHeight", typeof( double? ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0, ToFixedHeight_Changed ) ) ;
-    public static readonly DependencyProperty ToLocationTypeIndexProperty = DependencyProperty.Register( "ToLocationTypeIndex", typeof( int ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0, ToLocationTypeIndex_PropertyChanged ) ) ;
-    public static readonly DependencyProperty AvoidTypeIndexProperty = DependencyProperty.Register( "AvoidTypeIndex", typeof( int ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0 ) ) ;
-    private static readonly DependencyPropertyKey CanApplyPropertyKey = DependencyProperty.RegisterReadOnly( "CanApply", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( false ) ) ;
-    private static readonly DependencyPropertyKey IsChangedPropertyKey = DependencyProperty.RegisterReadOnly( "IsChanged", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( false ) ) ;
-    private static readonly DependencyPropertyKey IsDifferentLevelPropertyKey = DependencyProperty.RegisterReadOnly( "IsDifferentLevel", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( false ) ) ;
-    public static readonly DependencyProperty AllowIndeterminateProperty = DependencyProperty.Register( "AllowIndeterminate", typeof( bool ), typeof( FromToEditControlForTTE ), new PropertyMetadata( default( bool ) ) ) ;
-    public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( FromToEditControlForTTE ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
-    private static readonly DependencyPropertyKey FromMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsFloorLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsFloorLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControlForTTE ), new PropertyMetadata( 0.0 ) ) ;
+    public static readonly DependencyProperty SystemTypeEditableProperty = DependencyProperty.Register( "SystemTypeEditable", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty ShaftEditableProperty = DependencyProperty.Register( "ShaftEditable", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty CurveTypeEditableProperty = DependencyProperty.Register( "CurveTypeEditable", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty UseSystemTypeProperty = DependencyProperty.Register( "UseSystemType", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty UseShaftProperty = DependencyProperty.Register( "UseShaft", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty UseCurveTypeProperty = DependencyProperty.Register( "UseCurveType", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty DiameterIndexProperty = DependencyProperty.Register( "DiameterIndex", typeof( int ), typeof( SimpleFromToEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty SystemTypeIndexProperty = DependencyProperty.Register( "SystemTypeIndex", typeof( int ), typeof( SimpleFromToEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty ShaftIndexProperty = DependencyProperty.Register( "ShaftIndex", typeof( int ), typeof( SimpleFromToEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty CurveTypeIndexProperty = DependencyProperty.Register( "CurveTypeIndex", typeof( int ), typeof( SimpleFromToEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( SimpleFromToEditControl ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
+    public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( SimpleFromToEditControl ), new PropertyMetadata( (bool?)true ) ) ;
+    public static readonly DependencyProperty UseFromFixedHeightProperty = DependencyProperty.Register( "UseFromFixedHeight", typeof( bool? ), typeof( SimpleFromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
+    public static readonly DependencyProperty FromFixedHeightProperty = DependencyProperty.Register( "FromFixedHeight", typeof( double? ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0, FromFixedHeight_Changed ) ) ;
+    public static readonly DependencyProperty FromLocationTypeIndexProperty = DependencyProperty.Register( "FromLocationTypeIndex", typeof( int ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0, FromLocationTypeIndex_PropertyChanged ) ) ;
+    public static readonly DependencyProperty UseToFixedHeightProperty = DependencyProperty.Register( "UseToFixedHeight", typeof( bool? ), typeof( SimpleFromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
+    public static readonly DependencyProperty ToFixedHeightProperty = DependencyProperty.Register( "ToFixedHeight", typeof( double? ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0, ToFixedHeight_Changed ) ) ;
+    public static readonly DependencyProperty ToLocationTypeIndexProperty = DependencyProperty.Register( "ToLocationTypeIndex", typeof( int ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0, ToLocationTypeIndex_PropertyChanged ) ) ;
+    public static readonly DependencyProperty AvoidTypeIndexProperty = DependencyProperty.Register( "AvoidTypeIndex", typeof( int ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0 ) ) ;
+    private static readonly DependencyPropertyKey CanApplyPropertyKey = DependencyProperty.RegisterReadOnly( "CanApply", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( false ) ) ;
+    private static readonly DependencyPropertyKey IsChangedPropertyKey = DependencyProperty.RegisterReadOnly( "IsChanged", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( false ) ) ;
+    private static readonly DependencyPropertyKey IsDifferentLevelPropertyKey = DependencyProperty.RegisterReadOnly( "IsDifferentLevel", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( false ) ) ;
+    public static readonly DependencyProperty AllowIndeterminateProperty = DependencyProperty.Register( "AllowIndeterminate", typeof( bool ), typeof( SimpleFromToEditControl ), new PropertyMetadata( default( bool ) ) ) ;
+    public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( SimpleFromToEditControl ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
+    private static readonly DependencyPropertyKey FromMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsFloorLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsFloorLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsCeilingLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsCeilingLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsFloorLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsCeilingLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsFloorLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsFloorLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsCeilingLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsCeilingLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsFloorLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey ToDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsCeilingLevel", typeof( double ), typeof( SimpleFromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
 
     //Diameter Info
     private double VertexTolerance { get ; set ; }
@@ -336,11 +336,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Forms
 
     private static void FromLocationTypeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
-      ( d as FromToEditControlForTTE )?.OnFromLocationTypeChanged() ;
+      ( d as SimpleFromToEditControl )?.OnFromLocationTypeChanged() ;
     }
     private static void ToLocationTypeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
-      ( d as FromToEditControlForTTE )?.OnToLocationTypeChanged() ;
+      ( d as SimpleFromToEditControl )?.OnToLocationTypeChanged() ;
     }
     private void OnFromLocationTypeChanged()
     {
@@ -497,7 +497,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Forms
       return false ;
     }
 
-    public FromToEditControlForTTE()
+    public SimpleFromToEditControl()
     {
       InitializeComponent() ;
 
@@ -735,7 +735,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Forms
 
     private static void FromFixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
-      if ( d is not FromToEditControlForTTE fromToEditControl ) return ;
+      if ( d is not SimpleFromToEditControl fromToEditControl ) return ;
 
       if ( e.NewValue is not double newValue ) {
         fromToEditControl.FromFixedHeightNumericUpDown.CanHaveNull = true ;
@@ -749,7 +749,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Forms
 
     private static void ToFixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
-      if ( d is not FromToEditControlForTTE fromToEditControl ) return ;
+      if ( d is not SimpleFromToEditControl fromToEditControl ) return ;
 
       if ( e.NewValue is not double newValue ) {
         fromToEditControl.ToFixedHeightNumericUpDown.CanHaveNull = true ;

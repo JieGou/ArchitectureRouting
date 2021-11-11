@@ -12,9 +12,9 @@ using Autodesk.Revit.DB ;
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.App.Commands.Routing.PickRoutingCommandForTTE", DefaultString = "Pick\nFrom-To for TTE" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Routing.SimplePickRoutingCommand", DefaultString = "Simple\nPick From-To" )]
   [Image( "resources/PickFrom-To.png" )]
-  public class PickRoutingCommandForTTE : PickRoutingCommandBase
+  public class SimplePickRoutingCommand : PickRoutingCommandBase
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickRouting" ;
 
@@ -58,7 +58,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
       var routeProperty = new RouteProperties( document, initValues.SystemType, initValues.CurveType,
         initValues.Diameter, false, false, null, false, null, AvoidType.Whichever, null ) ;
-      var sv = new RoutePropertyDialogForTTE( document, routeChoiceSpec, routeProperty ) ;
+      var sv = new SimpleRoutePropertyDialog( document, routeChoiceSpec, routeProperty ) ;
 
       sv.ShowDialog() ;
 
