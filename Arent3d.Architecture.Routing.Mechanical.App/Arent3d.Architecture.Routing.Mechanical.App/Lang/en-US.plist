@@ -80,6 +80,8 @@
         <key>Mechanical.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change&#xA;FixedBopHeight</string>
 
+        <key>Mechanical.App.Commands.Routing.CreateAutoFasuGuideCommand</key>
+        <string>Create Auto&#xA;FASU</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

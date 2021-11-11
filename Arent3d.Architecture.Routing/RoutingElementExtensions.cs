@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.FASU ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -363,7 +364,12 @@ namespace Arent3d.Architecture.Routing
     {
       return document.CreateFamilyInstance( RoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true, level ) ;
     }
-
+    
+    public static FamilyInstance AddFASU(this Document document, FASUType type, XYZ position, Level? level)
+    {
+      return document.CreateFamilyInstance( FASUUtility.GetFamilyType( type ), position, StructuralType.NonStructural, true, level ) ;
+    }
+    
     public static FamilyInstance AddRackSpace( this Document document, XYZ position, Level level )
     {
       return document.CreateFamilyInstance( RoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;

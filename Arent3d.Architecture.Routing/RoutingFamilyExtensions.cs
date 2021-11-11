@@ -95,6 +95,10 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit("Cable Tray Reducer")]
     [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
     CableTrayReducer,
+    
+    [NameOnRevit( "FASU(F8-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F8_150_250Phi,
   }
 
   public static class RoutingFamilyExtensions

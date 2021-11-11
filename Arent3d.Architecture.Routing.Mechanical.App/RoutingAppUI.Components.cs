@@ -67,6 +67,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
         [Button( typeof( RackGuideCommand ), OnlyInitialized = true )]
         private static class RackGuidCommandButton { }
+        
+        [Button( typeof( CreateAutoFasuGuideCommand ), OnlyInitialized = true )]
+        private static class CreateAutoFasuGuideCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Mechanical.App.Panels.Routing.Monitor" )]
