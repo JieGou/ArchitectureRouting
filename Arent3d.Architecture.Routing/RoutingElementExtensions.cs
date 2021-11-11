@@ -375,6 +375,8 @@ namespace Arent3d.Architecture.Routing
     {
       FamilyInstance instance = document.CreateFamilyInstance( VAVUtility.GetFamilyType( type ), position, StructuralType.NonStructural, true, level ) ;
       ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), angle ) ;
+      BoundingBoxXYZ box = instance.get_BoundingBox(document.ActiveView);
+      distance += (box.Max.X - box.Min.X) / 8;
       ElementTransformUtils.MoveElement(document, instance.Id, new XYZ(distance, 0, 0));
       return instance;
     }

@@ -12,6 +12,9 @@ using Arent3d.Revit;
 using Autodesk.Revit.DB.Mechanical;
 using Autodesk.Revit.DB.Structure ;
 
+using Arent3d.Revit.I18n ;
+
+
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
     [Transaction( TransactionMode.Manual )]
@@ -39,16 +42,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
                     if (boxSpace != null)
                     {
                         // Fasu object
-                        var locationFasu = new XYZ((boxSpace.Max.X + boxSpace.Min.X) / 2, (boxSpace.Max.Y + boxSpace.Min.Y) / 2, (boxSpace.Max.Z + boxSpace.Min.Z) / 2);
-                        var familyInstance = document.AddFASU(FASUType.F8_150_250Phi, locationFasu, null, Math.PI/2);
+                        var locationFasu = new XYZ((boxSpace.Max.X + boxSpace.Min.X) / 2, (boxSpace.Max.Y + boxSpace.Min.Y) / 2, (boxSpace.Max.Z + boxSpace.Min.Z));
+                        var fasuInstance = document.AddFASU(FASUType.F8_150_250Phi, locationFasu, null, Math.PI/2);
 
                         // Vav object 
-                        BoundingBoxXYZ boxFasu = familyInstance.get_BoundingBox(document.ActiveView);
+                        BoundingBoxXYZ boxFasu = fasuInstance.get_BoundingBox(document.ActiveView);
                         if (boxFasu != null)
                         {
                             var locVav = new XYZ((boxFasu.Max.X + boxFasu.Min.X) / 2, (boxFasu.Max.Y + boxFasu.Min.Y) / 2, (boxFasu.Max.Z + boxFasu.Min.Z) / 2);
                             double distance = (boxFasu.Max.X - boxFasu.Min.X) / 2;
-                            document.AddVAV(VAVType.TTE_VAV_Maru, locVav, null, distance);
+                            FamilyInstance vavInstance = document.AddVAV(VAVType.TTE_VAV_Maru, locVav, null, distance);
                         }
                     }
                 } 
@@ -63,6 +66,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             FilteredElementCollector collector = new FilteredElementCollector(document);
             IList<Element> spaces = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
             return spaces;
+        }
+        private static void SetVavWidth( FamilyInstance familyInstance, double xWidth)
+        {
+            var document = familyInstance.Document ;
+            SetValue( familyInstance, "Revit.Property.Duct.Size".GetDocumentStringByKeyOrDefault( document, null ), xWidth ) ;
+        }
+        private static void SetValue( FamilyInstance familyInstance, string parameterName, double value )
+        {
+            if ( familyInstance.LookupParameter( parameterName ) is not { } parameter ) return ;
+            if ( StorageType.Double != parameter.StorageType ) return ;
+
+            parameter.Set( value ) ;
         }
     }
 }
