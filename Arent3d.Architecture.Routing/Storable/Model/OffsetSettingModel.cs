@@ -2,7 +2,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class OffsetSettingModel
   {
-    private const double DEFAULT_OFFSET = 1 ;
+    private const double DEFAULT_OFFSET = 600 ;
     public double Offset { get ; set ; }
 
     public OffsetSettingModel()
