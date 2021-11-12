@@ -2,8 +2,6 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.FASU ;
-using Arent3d.Architecture.Routing.VAV ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -364,21 +362,6 @@ namespace Arent3d.Architecture.Routing
     public static FamilyInstance AddRackGuide( this Document document, XYZ position, Level? level )
     {
       return document.CreateFamilyInstance( RoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true, level ) ;
-    }
-    public static FamilyInstance AddFASU(this Document document, FASUType type, XYZ position, Level? level, double angle = Math.PI/2)
-    {
-      FamilyInstance instance = document.CreateFamilyInstance( FASUUtility.GetFamilyType( type ), position, StructuralType.NonStructural, true, level ) ;
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), angle ) ; 
-      return instance;
-    }
-    public static FamilyInstance AddVAV(this Document document, VAVType type, XYZ position, Level? level, double distance, double angle = 0)
-    {
-      FamilyInstance instance = document.CreateFamilyInstance( VAVUtility.GetFamilyType( type ), position, StructuralType.NonStructural, true, level ) ;
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), angle ) ;
-      BoundingBoxXYZ box = instance.get_BoundingBox(document.ActiveView);
-      distance += (box.Max.X - box.Min.X) / 8;
-      ElementTransformUtils.MoveElement(document, instance.Id, new XYZ(distance, 0, 0));
-      return instance;
     }
     public static FamilyInstance AddRackSpace( this Document document, XYZ position, Level level )
     {
