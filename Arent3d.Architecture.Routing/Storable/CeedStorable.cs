@@ -47,10 +47,10 @@ namespace Arent3d.Architecture.Routing.Storable
 
     public override string Name => StorableName ;
 
-    private static List<CeedModel> GetAllCeeDModelNumber( string ceedFileName )
+    private static List<CeedModel> GetAllCeeDModelNumber( string ceeDFileName )
     {
       List<CeedModel> ceedModelData = new List<CeedModel>() ;
-      var path = AssetManager.GetCeeDModelPath( ceedFileName ) ;
+      var path = AssetManager.GetCeeDModelPath( ceeDFileName ) ;
 
       Excel.ApplicationClass app = new Excel.ApplicationClass() ;
       Excel.Workbook workBook = app.Workbooks.Open( path, 0, true, 5, "", "", true, Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0 ) ;
@@ -98,14 +98,14 @@ namespace Arent3d.Architecture.Routing.Storable
 
             var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
             if ( ! ceeDModelNumbers.Any() ) {
-              CeedModel ceedModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol ) ;
-              ceedModelData.Add( ceedModel ) ;
+              CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol ) ;
+              ceedModelData.Add( ceeDModel ) ;
             }
             else {
               for ( int k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
                 var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
-                CeedModel ceedModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol ) ;
-                ceedModelData.Add( ceedModel ) ;
+                CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol ) ;
+                ceedModelData.Add( ceeDModel ) ;
               }
             }
           }

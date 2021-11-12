@@ -15,6 +15,7 @@ namespace Arent3d.Architecture.Routing
     private const string FamilyFolderName = @"Families\2022" ;
 #endif
     private const string SettingFolderName = "SharedParameterFile" ;
+    private const string CsvFolderName = "CsvFolder" ;
 
     private const string RoutingSharedParameterFileName = "RoutingSharedParameters.txt" ;
     private const string PassPointSharedParameterFileName = "PassPointSharedParameters.txt" ;
@@ -49,7 +50,7 @@ namespace Arent3d.Architecture.Routing
 
     public static string GetCeeDModelPath( string ceeDFileName )
     {
-      return GetPath( SettingFolderName, ceeDFileName + ".xlsx" ) ;
+      return GetPath( CsvFolderName, ceeDFileName + ".xlsx" ) ;
     }
     private static string GetPath( string folderName, string fileName )
     {

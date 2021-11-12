@@ -4,12 +4,14 @@ using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class CeeDModelDialog : Window
   {
+    private CeedStorable? _oldCeeDStorable ;
     private CeedViewModel? _allCeeDModels ;
     private string _ceeDModelNumberSearch ;
     private Document _document ;
@@ -18,8 +20,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       InitializeComponent() ;
       _document = document ;
+      _oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       _allCeeDModels = null ;
       _ceeDModelNumberSearch = string.Empty ;
+      
+      if ( _oldCeeDStorable != null ) {
+        LoadData( _oldCeeDStorable );
+      }
     }
 
     private void Button_Click( object sender, RoutedEventArgs e )
@@ -58,20 +65,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
-        var viewModel = new ViewModel.CeedViewModel( ceeDStorable ) ;
-        this.DataContext = viewModel ;
-        _allCeeDModels = viewModel ;
-        _ceeDModelNumberSearch = viewModel.CeeDNumberSearch ;
-        CmbCeeDModelNumbers.ItemsSource = viewModel.CeeDModelNumbers ;
-        try {
-          using Transaction t = new Transaction( _document, "Save data" ) ;
-          t.Start() ;
-          ceeDStorable.Save() ;
-          t.Commit() ;
-        }
-        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        LoadData( ceeDStorable ) ;
+        if ( _oldCeeDStorable == null ) {
+          try {
+            using Transaction t = new Transaction( _document, "Save data" ) ;
+            t.Start() ;
+            ceeDStorable.Save() ;
+            t.Commit() ;
+          }
+          catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+          }
         }
       }
+    }
+
+    private void LoadData( CeedStorable ceeDStorable )
+    {
+      var viewModel = new ViewModel.CeedViewModel( ceeDStorable ) ;
+      this.DataContext = viewModel ;
+      _allCeeDModels = viewModel ;
+      _ceeDModelNumberSearch = viewModel.CeeDNumberSearch ;
+      CmbCeeDModelNumbers.ItemsSource = viewModel.CeeDModelNumbers ;
     }
   }
 }

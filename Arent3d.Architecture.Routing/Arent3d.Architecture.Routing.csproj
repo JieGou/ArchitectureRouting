@@ -49,7 +49,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
 
-    <None Update="Assets\SharedParameterFile\CeeDModelList.xlsx">
+    <None Update="Assets\CsvFolder\CeeDModelList.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
