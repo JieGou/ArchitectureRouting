@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             var uiDocument = commandData.Application.ActiveUIDocument;
             var document = uiDocument.Document;
 
-            //Get all the spaces in the document
+            // Get all the spaces in the document
             IList<Element> spaces = FasuApi.GetAllSpaces(document);
 
             // Get all the group in the document
@@ -47,7 +47,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
                                 XYZ location =
                                     new XYZ((boxSpace.Max.X + boxSpace.Min.X) / 2, (boxSpace.Max.Y + boxSpace.Min.Y) / 2, locationPoint.Point.Z) -
                                     new XYZ(locationPoint.Point.X, locationPoint.Point.Y, 0);
-                                ElementTransformUtils.CopyElement(document, group.GetValidId(), location);
+                                ICollection<ElementId> ids = ElementTransformUtils.CopyElement(document, group.GetValidId(), location);
+
+                                foreach (var id in ids)
+                                {
+                                    // Nếu quay thì quay ở đây là OK
+                                    //ElementTransformUtils.RotateElement();
+                                }
                             }
                         } 
                         tr.Commit();
