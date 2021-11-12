@@ -13,6 +13,7 @@ using Autodesk.Revit.DB.Mechanical;
 using Autodesk.Revit.DB.Structure ;
 
 using Arent3d.Revit.I18n ;
+using Arent3d.Utility;
 
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
@@ -27,9 +28,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         {
             var uiDocument = commandData.Application.ActiveUIDocument;
             var document = uiDocument.Document;
-            
+
             //Get all the spaces in the document
             IList<Element> spaces = GetSpaces(document);
+            
+            // Get fasu height
+            double heightFasu = 0;
+            bool bHeightFasu = GetHeightFasu(document, ref heightFasu);
 
             // Start Transaction
             using (Transaction tr = new Transaction(document))
@@ -42,14 +47,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
                     if (boxSpace != null)
                     {
                         // Fasu object
-                        var locationFasu = new XYZ((boxSpace.Max.X + boxSpace.Min.X) / 2, (boxSpace.Max.Y + boxSpace.Min.Y) / 2, (boxSpace.Max.Z + boxSpace.Min.Z));
+                        if (!bHeightFasu) heightFasu = (boxSpace.Max.Z + boxSpace.Min.Z) / 2;
+                        var locationFasu = new XYZ((boxSpace.Max.X + boxSpace.Min.X) / 2, (boxSpace.Max.Y + boxSpace.Min.Y) / 2, heightFasu);
                         var fasuInstance = document.AddFASU(FASUType.F8_150_250Phi, locationFasu, null, Math.PI/2);
 
                         // Vav object 
                         BoundingBoxXYZ boxFasu = fasuInstance.get_BoundingBox(document.ActiveView);
                         if (boxFasu != null)
                         {
-                            var locVav = new XYZ((boxFasu.Max.X + boxFasu.Min.X) / 2, (boxFasu.Max.Y + boxFasu.Min.Y) / 2, (boxFasu.Max.Z + boxFasu.Min.Z) / 2);
+                            if (!bHeightFasu) heightFasu = (boxFasu.Max.Z + boxFasu.Min.Z) / 2;
+                            var locVav = new XYZ((boxFasu.Max.X + boxFasu.Min.X) / 2, (boxFasu.Max.Y + boxFasu.Min.Y) / 2, heightFasu);
+                            //var locationPoint = ( fasuInstance.Location as LocationPoint )! ;
                             double distance = (boxFasu.Max.X - boxFasu.Min.X) / 2;
                             FamilyInstance vavInstance = document.AddVAV(VAVType.TTE_VAV_Maru, locVav, null, distance);
                         }
@@ -66,6 +74,25 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             FilteredElementCollector collector = new FilteredElementCollector(document);
             IList<Element> spaces = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
             return spaces;
+        }
+        private bool GetHeightFasu(Document document, ref double height)
+        {
+            bool brc = false;
+            ElementCategoryFilter filter = new ElementCategoryFilter(BuiltInCategory.OST_DuctAccessory);
+            FilteredElementCollector collector = new FilteredElementCollector(document);
+            IList<Element> ducts = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
+            foreach (var duct in ducts)
+            {
+                if (duct.Name.IndexOf("FASU", 0) != -1)
+                {
+                    var locationPoint = ( duct.Location as LocationPoint )! ;
+                    height = locationPoint.Point.Z;
+                    brc = true;
+                    break;
+                }
+            }
+
+            return brc;
         }
         private static void SetVavWidth( FamilyInstance familyInstance, double xWidth)
         {
