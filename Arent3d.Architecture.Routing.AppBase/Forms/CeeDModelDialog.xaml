@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
         Title="CeeD Models" Height="700" Width="900">
     <Grid>
         <Grid.RowDefinitions>
@@ -16,7 +17,9 @@
       
       <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" >
         <Label Content="CeeD型番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5" Width="60"/>
-        <ComboBox Name="CmbCeeDModelNumbers" IsEditable="True" Width="300" Height="27" TextBoxBase.TextChanged="CmbCeeDModelNumbers_TextChanged" />
+        <ComboBox Name="CmbCeeDModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeeDModelNumbers_TextChanged" />
+        <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,10,5" Width="60"/>
+        <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" />        
         <Button x:Name="BtnSearch"
                 Content="Search"
                 Click="Button_Search"
@@ -31,11 +34,6 @@
               Margin="10,5,10,5"
               HorizontalAlignment="Right"
               Width="100" />
-      
-      <StackPanel Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" >
-        <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,10,5" Width="60"/>
-        <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="300" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" />
-      </StackPanel>
       
       <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
         <DataGrid.Resources>
