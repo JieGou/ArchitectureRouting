@@ -16,8 +16,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
     {
       if ( UiApp is not { } uiApp ) return ;
 
-      CommandParameterStorage.Set( new ApplyChangeRouteNameCommandParameter( route, newName ) ) ;
-      uiApp.PostCommand<ApplyChangeRouteNameCommand>() ;
+      uiApp.PostCommand<ApplyChangeRouteNameCommand, ApplyChangeRouteNameCommandParameter>( new ApplyChangeRouteNameCommandParameter( route, newName ) ) ;
     }
 
     public void ApplySelectedFromToChangesCommand( Route route, IReadOnlyCollection<SubRoute> subRoutes, RouteProperties properties )

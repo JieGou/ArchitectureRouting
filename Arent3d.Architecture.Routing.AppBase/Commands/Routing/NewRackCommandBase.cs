@@ -21,16 +21,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
     private const double RATIO_BEND_RADIUS = 3.45 ;
 
-    private readonly BuiltInCategory[] ConduitBuiltInCategories =
-    {
-      BuiltInCategory.OST_Conduit, BuiltInCategory.OST_ConduitFitting, BuiltInCategory.OST_ConduitRun
-    } ;
-
-    private static readonly BuiltInCategory[] CableTrayBuiltInCategories =
-    {
-      BuiltInCategory.OST_CableTray, BuiltInCategory.OST_CableTrayFitting
-    } ;
-    
     public static IReadOnlyDictionary<byte, string> RackTypes { get ; } = new Dictionary<byte, string> { { 0, "Normal Rack" }, { 1, "Limit Rack" } } ;
 
     protected abstract AddInType GetAddInType() ;
@@ -52,9 +42,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
             // get all route names
-            var routeNames = document.GetAllElements<Element>().OfCategory( ConduitBuiltInCategories )
+            var routeNames = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
               .OfNotElementType().Where( filter ).OfType<Element>()
-              .Select( x => RoutingElementExtensions.GetRouteName( x ) ).Distinct() ;
+              .Select( x => x.GetRouteName() ).Distinct() ;
 
             // create cable rack for each route
             foreach ( var routeName in routeNames ) {
@@ -150,10 +140,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <returns></returns>
     public static bool ExistsCableTray( Document document, FamilyInstance familyInstance )
     {
-      return document.GetAllElements<FamilyInstance>().OfCategory( CableTrayBuiltInCategories ).OfNotElementType()
-        .Where( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
+      return document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.CableTrays ).OfNotElementType()
+        .Any( x => IsSameLocation( x.Location, familyInstance.Location ) && x.Id != familyInstance.Id &&
                      x.FacingOrientation.IsAlmostEqualTo( familyInstance.FacingOrientation ) &&
-                     IsSameConnectors( x.GetConnectors(), familyInstance.GetConnectors() )).Any() ;
+                     IsSameConnectors( x.GetConnectors(), familyInstance.GetConnectors() )) ;
     }
 
     /// <summary>
@@ -272,7 +262,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var length = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( document, "Length" ) ).AsDouble() ;
       var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document, "Outside Diameter" ) ).AsDouble() ;
 
-      var symbol = document.GetFamilySymbol( RoutingFamilyType.CableTray )! ; // TODO may change in the future
+      var symbol = document.GetFamilySymbols( RoutingFamilyType.CableTray ).FirstOrDefault() ?? throw new InvalidOperationException() ; // TODO may change in the future
 
       // Create cable tray
       if (false == symbol.IsActive) symbol.Activate();
@@ -325,7 +315,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document, "呼び径" ) ).AsDouble() ;
       var bendRadius = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ) ).AsDouble() ;
 
-      var symbol = uiDocument.Document.GetFamilySymbol( RoutingFamilyType.CableTrayFitting )! ; // TODO may change in the future
+      var symbol = uiDocument.Document.GetFamilySymbols( RoutingFamilyType.CableTrayFitting ).FirstOrDefault() ?? throw new InvalidOperationException() ; // TODO may change in the future
 
       if (false == symbol.IsActive) symbol.Activate();
       var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);

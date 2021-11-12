@@ -70,7 +70,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       if ( false == int.TryParse( param, out var passPointId ) ) return null ;
       if ( document.GetElementById<FamilyInstance>( passPointId ) is not { } instance ) return null ;
-      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.PassPoint )?.Id ) return null ;
+      if ( instance.Symbol.Id != document.GetFamilySymbols( RoutingFamilyType.PassPoint ).FirstOrDefault()?.Id ) return null ;
 
       return new PassPointEndPoint( instance ) ;
     }
