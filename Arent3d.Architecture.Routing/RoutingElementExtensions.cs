@@ -367,7 +367,14 @@ namespace Arent3d.Architecture.Routing
     {
       return document.CreateFamilyInstance( RoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
     }
-
+    public static FamilyInstance AddFasu(this Document document, XYZ position, Level? level)
+    {
+      return document.CreateFamilyInstance( RoutingFamilyType.FASU_F8_150_250Phi, position, StructuralType.NonStructural, true, level ) ;
+    }
+    public static FamilyInstance AddVav(this Document document, XYZ position, Level? level)
+    {
+      return document.CreateFamilyInstance( RoutingFamilyType.TTE_VAV_Maru, position, StructuralType.NonStructural, true, level ) ;
+    }
     public static FamilyInstance AddShaft( this Document document, XYZ position, Level? level )
     {
       return document.CreateFamilyInstance( RoutingFamilyType.Shaft, position, StructuralType.NonStructural, true, level ) ;

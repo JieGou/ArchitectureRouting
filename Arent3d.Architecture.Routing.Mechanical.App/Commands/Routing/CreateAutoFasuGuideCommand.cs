@@ -5,6 +5,7 @@ using Autodesk.Revit.UI ;
 using System.Collections.Generic;
 using FasuApi = Arent3d.Architecture.Routing.AppBase.FasuAutoCreateApi;
 using ImageType = Arent3d.Revit.UI.ImageType ;
+using System;
 using Arent3d.Revit;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
@@ -22,44 +23,43 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
             // Get all the spaces in the document
             IList<Element> spaces = FasuApi.GetAllSpaces(document);
-
-            // Get all the group in the document
-            IList<Element> groups = FasuApi.GetAllGroups(document);
-
-            // Find group fasu_vav
-            foreach (var group in groups)
+            
+            // Get fasu height
+            double heightFasu = 0;
+            bool bHeightFasu = FasuApi.GetHeightFasu(document, "FASU", ref heightFasu);
+            
+            // Start Transaction
+            using (Transaction tr = new Transaction(document))
             {
-                if (group.Name == "fasu_vav")
+                tr.Start( "Create Auto Fasu and Vav Guide" );
+                foreach (var space in spaces)
                 {
-                    // Get the group's oz axis coordinates 
-                    LocationPoint locationPoint = (group.Location as LocationPoint)!;
-
-                    // Start Transaction
-                    using (Transaction tr = new Transaction(document))
+                    // Add object to the document
+                    BoundingBoxXYZ boxSpace = space.get_BoundingBox(document.ActiveView);
+                    if (boxSpace != null)
                     {
-                        tr.Start( "Add fasu_vav group to document" );
-                        foreach (var space in spaces)
-                        {
-                            // Add object to the document
-                            BoundingBoxXYZ boxSpace = space.get_BoundingBox(document.ActiveView);
-                            if (boxSpace != null)
-                            {
-                                XYZ location =
-                                    new XYZ((boxSpace.Max.X + boxSpace.Min.X) / 2, (boxSpace.Max.Y + boxSpace.Min.Y) / 2, locationPoint.Point.Z) -
-                                    new XYZ(locationPoint.Point.X, locationPoint.Point.Y, 0);
-                                ICollection<ElementId> ids = ElementTransformUtils.CopyElement(document, group.GetValidId(), location);
+                        // Fasu object
+                        if (!bHeightFasu) heightFasu = (boxSpace.Max.Z + boxSpace.Min.Z) / 2;
+                        var locationFasu = new XYZ((boxSpace.Max.X + boxSpace.Min.X) / 2, (boxSpace.Max.Y + boxSpace.Min.Y) / 2, heightFasu);
+                        var fasuInstance = document.AddFasu(locationFasu, null);
+                        ElementTransformUtils.RotateElement( document, fasuInstance.Id, Line.CreateBound( locationFasu, locationFasu + XYZ.BasisZ ), Math.PI/2 ) ;
 
-                                foreach (var id in ids)
-                                {
-                                    // Nếu quay thì quay ở đây là OK
-                                    //ElementTransformUtils.RotateElement();
-                                }
-                            }
-                        } 
-                        tr.Commit();
+                        // Vav object 
+                        BoundingBoxXYZ boxFasu = fasuInstance.get_BoundingBox(document.ActiveView);
+                        if (boxFasu != null)
+                        {
+                            if (!bHeightFasu) heightFasu = (boxFasu.Max.Z + boxFasu.Min.Z) / 2;
+                            var locVav = new XYZ((boxFasu.Max.X + boxFasu.Min.X) / 2, (boxFasu.Max.Y + boxFasu.Min.Y) / 2, heightFasu);
+                            double distance = (boxFasu.Max.X - boxFasu.Min.X) / 2;
+                            FamilyInstance vavInstance = document.AddVav(locVav, null);
+
+                            BoundingBoxXYZ box = vavInstance.get_BoundingBox(document.ActiveView);
+                            distance += (box.Max.X - box.Min.X) / 8;
+                            ElementTransformUtils.MoveElement(document, vavInstance.Id, new XYZ(distance, 0, 0));
+                        }
                     }
-                    break;
-                }
+                } 
+                tr.Commit();
             }
 
             return Result.Succeeded;
