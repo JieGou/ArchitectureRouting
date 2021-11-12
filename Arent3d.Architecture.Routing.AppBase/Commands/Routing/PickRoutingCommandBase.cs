@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return GetMEPSystemClassificationInfoFromSystemType( systemType ) ;
     }
 
-    private RoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    private IRoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
       var fromLevelId = GetTrueLevelId( document, fromPickResult ) ;
       var toLevelId = GetTrueLevelId( document, toPickResult ) ;
@@ -81,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return document.GuessLevel( pickResult.GetOrigin() ).Id ;
     }
 
-    private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
+    protected virtual IRoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
       var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ) ;
