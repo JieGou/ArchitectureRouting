@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing
     private const string FamilyFolderName = @"Families\2022" ;
 #endif
     private const string SettingFolderName = "SharedParameterFile" ;
-    private const string CsvFolderName = "CsvFolder" ;
+    private const string CsvFolderName = "CsvFiles" ;
 
     private const string RoutingSharedParameterFileName = "RoutingSharedParameters.txt" ;
     private const string PassPointSharedParameterFileName = "PassPointSharedParameters.txt" ;
