@@ -187,7 +187,7 @@ namespace Arent3d.Architecture.Routing
       
       // get offset value
       OffsetSettingStorable settingStorable = document.GetOffsetSettingStorable() ;
-      var offset = settingStorable.OffsetSettingsData.Offset.MetersToRevitUnits() ;
+      var offset = settingStorable.OffsetSettingsData.Offset.MillimetersToRevitUnits() ;
       foreach ( var parentEnvelope in parentEnvelopes ) {
         var parentLocation = parentEnvelope.Location as LocationPoint ;
         var childrenEnvelope = envelopes.FirstOrDefault( f => f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() == parentEnvelope.Id.ToString() ) ;
