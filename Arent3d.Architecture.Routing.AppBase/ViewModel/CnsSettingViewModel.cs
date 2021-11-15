@@ -104,6 +104,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                     }
                 }
 
+                if (createText.Trim() == "未設定")
+                {
+                    createText = "";
+                }
+
                 File.WriteAllText(dlg.FileName, createText.Trim());
             }
         }
