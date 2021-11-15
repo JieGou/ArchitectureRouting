@@ -17,20 +17,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
     }
   }
 
-  public abstract class ApplyChangeRouteNameCommandBase : IExternalCommand
+  public abstract class ApplyChangeRouteNameCommandBase : RoutingExternalAppCommandBaseWithParam<ApplyChangeRouteNameCommandParameter>
   {
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
+    protected override string GetTransactionName() => "TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand".GetAppStringByKeyOrDefault( " Rename RouteName" ) ;
+
+    protected override Result Execute( Document document, ApplyChangeRouteNameCommandParameter param, TransactionWrapper transaction )
     {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
-
-      if ( CommandParameterStorage.Pop<ApplyChangeRouteNameCommandParameter>() is not { } arg ) return Result.Cancelled ;
-
-      return document.Transaction( "TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand".GetAppStringByKeyOrDefault( " Rename RouteName" ), t =>
-      {
-        arg.Route.Rename( arg.NewName ) ;
-        return Result.Succeeded ;
-      } ) ;
+      param.Route.Rename( param.NewName ) ;
+      return Result.Succeeded ;
     }
   }
 }

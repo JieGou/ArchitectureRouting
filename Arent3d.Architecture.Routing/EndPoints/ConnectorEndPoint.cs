@@ -14,9 +14,9 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public static EndPointKey GenerateKey( Connector connector ) => GenerateKey( connector.Owner.Id, connector.Id ) ;
     private static EndPointKey GenerateKey( ElementId equipmentId, int connectorIndex )
     {
-      return new EndPointKey( Type, BuildParameterString( equipmentId, connectorIndex ) ) ;
+      return new EndPointKey( Type, BuildParameterString( equipmentId, connectorIndex, null ) ) ;
     }
-    public static string BuildParameterString( Connector connector ) => BuildParameterString( connector.Owner.Id, connector.Id ) ;
+    public static string BuildParameterString( Connector connector ) => BuildParameterString( connector.Owner.Id, connector.Id, null ) ;
 
     internal static ConnectorEndPoint? FromKeyParam( Document document, string param ) => ParseParameterString( document, param ) ;
 
@@ -24,14 +24,16 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       ElementId,
       ConnectorIndex,
+      PreferredRadius,
     }
 
-    private static string BuildParameterString( ElementId equipmentId, int connectorIndex )
+    private static string BuildParameterString( ElementId equipmentId, int connectorIndex, double? preferredRadius )
     {
       var stringifier = new SerializerObject<SerializeField>() ;
 
       stringifier.Add( SerializeField.ElementId, equipmentId ) ;
       stringifier.Add( SerializeField.ConnectorIndex, connectorIndex ) ;
+      stringifier.Add( SerializeField.PreferredRadius, preferredRadius ) ;
 
       return stringifier.ToString() ;
     }
@@ -42,8 +44,9 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       if ( deserializer.GetElementId( SerializeField.ElementId ) is not { } elementId ) return null ;
       if ( deserializer.GetInt( SerializeField.ConnectorIndex ) is not { } connectorIndex ) return null ;
+      var preferredRadius = deserializer.GetDouble( SerializeField.PreferredRadius ) ;
 
-      return new ConnectorEndPoint( document, elementId, connectorIndex ) ;
+      return new ConnectorEndPoint( document, elementId, connectorIndex, preferredRadius ) ;
     }
 
 
@@ -60,26 +63,29 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public ElementId EquipmentId { get ; }
     public int ConnectorIndex { get ; }
+    public double? PreferredRadius { get ; }
 
     public Element? GetOwnerElement() => _document.GetElementById<Instance>( EquipmentId ) ;
     public Connector? GetConnector() => GetOwnerElement()?.GetConnectorManager()?.Lookup( ConnectorIndex ) ;
 
-    public string ParameterString => BuildParameterString( EquipmentId, ConnectorIndex ) ;
+    public string ParameterString => BuildParameterString( EquipmentId, ConnectorIndex, PreferredRadius ) ;
 
     public XYZ RoutingStartPosition => GetConnector()?.Origin ?? XYZ.Zero ;
 
     public ElementId GetLevelId( Document document ) => GetOwnerElement()?.GetLevelId() ?? ElementId.InvalidElementId ;
 
-    public ConnectorEndPoint( Connector connector )
+    public ConnectorEndPoint( Connector connector, double? preferredRadius )
     {
       _document = connector.Owner.Document ;
+      PreferredRadius = preferredRadius ;
       EquipmentId = connector.Owner.Id ;
       ConnectorIndex = connector.Id ;
     }
 
-    public ConnectorEndPoint( Document document, ElementId equipmentId, int connectorIndex )
+    private ConnectorEndPoint( Document document, ElementId equipmentId, int connectorIndex, double? preferredRadius )
     {
       _document = document ;
+      PreferredRadius = preferredRadius ;
       EquipmentId = equipmentId ;
       ConnectorIndex = connectorIndex ;
     }
@@ -93,7 +99,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public Connector? GetReferenceConnector() => GetConnector() ;
 
-    public double? GetDiameter() => GetConnector()?.GetDiameter() ;
+    public double? GetDiameter() => PreferredRadius * 2 ?? GetConnector()?.GetDiameter() ;
 
     public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 

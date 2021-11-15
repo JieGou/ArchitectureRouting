@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Routing ;
 using MathLib ;
 
@@ -50,7 +51,11 @@ namespace Arent3d.Architecture.Routing.Rack
         Layers = new ILayerProperty[] { new LayerProperty( rack ) } ;
       }
 
+      public (ILayerProperty?, ILayerProperty?) GetRelation( ILayerProperty l ) => ( null, null ) ;
+
       public IEnumerable<ILayerProperty> Layers { get ; }
+      public IEnumerable<double> FloorHeightHavingLayerSequence => Layers.Select( layer => layer.RackHeight ) ;
+      public IEnumerable<double> FloorHeightSequence => FloorHeightHavingLayerSequence ;
     }
     
     private class LayerProperty : ILayerProperty
@@ -63,9 +68,11 @@ namespace Arent3d.Architecture.Routing.Rack
         PipingProperties = new[] { new PipingProperty( this ) } ;
       }
 
+      public int LayerGroupSequenceNumber => 0 ;
       public Vector3d Center => _rack.Center ;
       public Vector3d Size => _rack.Size ;
       public double ConnectionHeight => Center.z - Size.z * 0.5 ;
+      public double RackHeight => 0 ;
       public double MinimumRouteLength => _rack.MinimumRouteLength ;
       public double SideBeamHeightLength => _rack.SideBeamHeightLength ;
       public double SideBeamWidth => _rack.SideBeamWidth ;
@@ -100,6 +107,7 @@ namespace Arent3d.Architecture.Routing.Rack
 
       public LineType PrimaryPipingType => LineType.Utility ;
       public IReadOnlyCollection<LineType> ExtraPipingTypes => Array.Empty<LineType>() ;
+      public (bool lower, bool upper) NeedClearance => ( false, false ) ;
     }
 
     private static bool IsXDirectionBox( Box3d box )

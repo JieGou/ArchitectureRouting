@@ -25,13 +25,15 @@ namespace Arent3d.Architecture.Routing
     /// <param name="isFrom">True if this end point represents a from-side end point.</param>
     /// <param name="priority">Priority (can be duplicated between end points in an <see cref="AutoRoutingTarget"/>).</param>
     /// <param name="edgeDiameter">Edge diameter.</param>
+    /// <param name="isDirect">Whether use direct routing or not.</param>
     /// <param name="routeCondition"></param>
-    public AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, int priority, double edgeDiameter, MEPSystemRouteCondition routeCondition )
+    public AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, int priority, double edgeDiameter, bool isDirect, MEPSystemRouteCondition routeCondition )
     {
       EndPoint = endPoint ;
       IsStart = isFrom ;
       Priority = priority ;
       Depth = priority ;
+      IsDirect = isDirect ;
 
       var pipeSpec = routeCondition.Spec ;
       _minimumStraightLength = pipeSpec.GetReducerLength( (endPoint.GetDiameter() ?? -1).DiameterValueToPipeDiameter(), edgeDiameter.DiameterValueToPipeDiameter() ) + EndPoint.GetMinimumStraightLength( edgeDiameter, IsStart ) ;
@@ -43,6 +45,7 @@ namespace Arent3d.Architecture.Routing
     public Vector3d Position => EndPoint.RoutingStartPosition.To3dRaw() + _minimumStraightLength * Direction.ForEndPointType( IsStart ) ;
 
     public Vector3d Direction => Sanitize( EndPoint.GetRoutingDirection( IsStart ).To3dRaw() ) ;
+    public Vector3d? PositionConstraint => null ;
 
     private static readonly Vector3d[] SanitizationDirections =
     {
@@ -81,6 +84,7 @@ namespace Arent3d.Architecture.Routing
     public int Depth { get ; private set ; }
 
     public bool AllowHorizontalBranches => true ;
+    public bool IsDirect { get ; private set ; }
     public bool AllowThroughBatteryLimit => false ;
 
     /// <summary>

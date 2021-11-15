@@ -3,27 +3,46 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
-using Arent3d.Revit.I18n ;
+using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using MathLib ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class SelectionRangeRouteCommandBase : RoutingCommandBase
   {
-    private const string errorMessNoPowerAndSensorConnector = "No power connector and sensor connector selected." ;
-    
-    private const string errorMessNoPowerConnector = "No power connector selected." ;
-    
-    private const string errorMessNoSensorConnector = "No sensor connector selected." ;
-    
-    private const string errorMessSensorConnector = "At least 2 sensor connectors must be selected." ;
-    
-    public record SelectState( Element PowerConnector, Element FirstSensorConnector, Element LastSensorConnector, List<Element> SensorConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, Element FarthestSensorConnector ) ;
+    private const string ErrorMessageNoPowerAndSensorConnector = "No power connectors and sensor connectors are selected." ;
+    private const string ErrorMessageNoPowerConnector = "No power connectors are selected." ;
+    private const string ErrorMessageTwoOrMorePowerConnector = "Two or more power connectors are selected." ;
+    private const string ErrorMessageNoSensorConnector = "No sensor connectors are selected on the power connector level." ;
+    private const string ErrorMessageSensorConnector = "At least two sensor connectors on the power connector level must be selected." ;
+    private const string ErrorMessageCannotDetermineSensorConnectorArrayDirection = "Couldn't determine sensor array direction" ;
+
+    private enum SensorArrayDirection
+    {
+      Invalid,
+      XMinus,
+      YMinus,
+      XPlus,
+      YPlus,
+    }
+
+    private static readonly double DefaultFootLengthMeters = 1.5.MetersToRevitUnits() ;
+    private const double DefaultFootLengthFeet = 5.0 ;
+
+    private static double GetFootLength( DisplayUnit displayUnitSystem ) =>
+      displayUnitSystem switch
+      {
+        DisplayUnit.METRIC => DefaultFootLengthMeters,
+        DisplayUnit.IMPERIAL => DefaultFootLengthFeet,
+        _ => throw new ArgumentOutOfRangeException( nameof( displayUnitSystem ), displayUnitSystem, null ),
+      } ;
+
+    private record SelectState( FamilyInstance PowerConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SensorArrayDirection SensorDirection, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
@@ -39,66 +58,104 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      var (powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, farthestSensorConnector) = SelectionRangeRoute( uiDocument ) ;
-      if ( powerConnector == null && ( firstSensorConnector == null || lastSensorConnector == null || farthestSensorConnector == null ) ) return ( false, errorMessNoPowerAndSensorConnector ) ;
-      if ( powerConnector == null ) return ( false, errorMessNoPowerConnector ) ;
-      if ( firstSensorConnector == null || lastSensorConnector == null || farthestSensorConnector == null ) return ( false, errorMessNoSensorConnector ) ;
-      if ( sensorConnectors.Count < 1 ) return ( false, errorMessSensorConnector ) ;
+      var (powerConnector, sensorConnectors, sensorDirection, errorMessage ) = SelectionRangeRoute( uiDocument ) ;
+      if ( null != errorMessage ) return ( false, errorMessage ) ;
 
-      var property = ShowPropertyDialog( uiDocument.Document, powerConnector, lastSensorConnector ) ;
+      var farthestSensorConnector = sensorConnectors.Last() ;
+      var property = ShowPropertyDialog( uiDocument.Document, powerConnector!, farthestSensorConnector ) ;
       if ( true != property?.DialogResult ) return ( false, null ) ;
 
-      if ( GetMEPSystemClassificationInfo( powerConnector, lastSensorConnector, property.GetSystemType() ) is not { } classificationInfo ) return ( false, null ) ;
+      if ( GetMEPSystemClassificationInfo( powerConnector!, farthestSensorConnector, property.GetSystemType() ) is not { } classificationInfo ) return ( false, null ) ;
 
-      return ( true, new SelectState( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, property, classificationInfo, farthestSensorConnector ) ) ;
+      var pipeSpec = new MEPSystemPipeSpec( new RouteMEPSystem( uiDocument.Document, property.GetSystemType(), property.GetCurveType() ), routingExecutor.FittingSizeCalculator ) ;
+
+      return ( true, new SelectState( powerConnector!, sensorConnectors, sensorDirection, property, classificationInfo, pipeSpec ) ) ;
     }
 
-    private ( Element? powerConnector, Element? firstSensorConnector, Element? lastSensorConnector, List<Element> sensorConnectors, Element? farthestSensorConnector ) SelectionRangeRoute( UIDocument iuDocument )
+    private static ( FamilyInstance? PowerConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SensorArrayDirection SensorDirection, string? ErrorMessage ) SelectionRangeRoute( UIDocument iuDocument )
     {
-      var selectedElements = iuDocument.Selection.PickElementsByRectangle( "ドラックで複数コネクタを選択して下さい。" ) ;
+      var selectedElements = iuDocument.Selection.PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コネクタを選択して下さい。" ).OfType<FamilyInstance>() ;
 
-      Element? powerConnector = null ;
-      List<Element> sensorConnectors = new List<Element>() ;
+      FamilyInstance? powerConnector = null ;
+      var sensorConnectors = new List<FamilyInstance>() ;
       foreach ( var element in selectedElements ) {
-        if ( !element.ParametersMap.Contains( "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( iuDocument.Document, "Connector Type" ) )) continue ;
-        if ( element.ParametersMap.get_Item( "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( iuDocument.Document, "Connector Type" ) ).AsString() == RoutingElementExtensions.RouteConnectorType[ 0 ] ) {
+        if ( element.GetConnectorFamilyType() is not { } connectorFamilyType ) continue ;
+
+        if ( connectorFamilyType == ConnectorFamilyType.Power ) {
+          if ( null != powerConnector ) return ( null!, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageTwoOrMorePowerConnector ) ;
           powerConnector = element ;
         }
-        else if ( element.ParametersMap.get_Item( "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( iuDocument.Document, "Connector Type" ) ).AsString() == RoutingElementExtensions.RouteConnectorType[ 1 ] ) {
+        else if ( connectorFamilyType == ConnectorFamilyType.Sensor ) {
           sensorConnectors.Add( element ) ;
         }
       }
 
-      Element? lastSensorConnector = sensorConnectors.Count < 1 ? null : sensorConnectors.First() ;
-      Element? firstSensorConnector = sensorConnectors.Count < 1 ? null : sensorConnectors.First() ;
-      Element? farthestSensorConnector = sensorConnectors.Count < 1 ? null : sensorConnectors.First() ;
-      if ( powerConnector == null || sensorConnectors.Count < 1 ) return ( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, farthestSensorConnector ) ;
-      var powerPoint = powerConnector!.GetTopConnectors().Origin ;
-      var maxDistance = sensorConnectors[ 0 ].GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
-      var minDistance = maxDistance ;
-      if ( sensorConnectors.Count > 0 ) {
-        foreach ( var element in sensorConnectors ) {
-          var distance = element.GetTopConnectors().Origin.DistanceTo( powerPoint ) ;
-          
-          // 一番遠いコネクタ
-          if ( distance > maxDistance ) {
-            farthestSensorConnector = element ;
-            maxDistance = distance ;            
-          }
-          
-          // 一番近いコネクタ
-          if ( ! ( distance < minDistance ) ) continue ;
-          firstSensorConnector = element ;
-          minDistance = distance ;
-        }
+      if ( powerConnector == null && 0 == sensorConnectors.Count ) return ( null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPowerAndSensorConnector ) ;
+      if ( powerConnector == null ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageNoPowerConnector ) ;
+
+      var powerLevel = powerConnector.LevelId ;
+      sensorConnectors.RemoveAll( fi => fi.LevelId != powerLevel ) ;
+
+      if ( 0 == sensorConnectors.Count ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageNoSensorConnector ) ;
+      if ( 1 == sensorConnectors.Count ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageSensorConnector ) ;
+
+      var sensorDirection = SortSensorConnectors( powerConnector, sensorConnectors ) ;
+      if ( SensorArrayDirection.Invalid == sensorDirection ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;
+
+      return ( powerConnector, sensorConnectors, sensorDirection, null ) ;
+    }
+
+    private static SensorArrayDirection SortSensorConnectors( FamilyInstance powerConnector, List<FamilyInstance> sensorConnectors )
+    {
+      var powerPoint = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
+
+      double minX = double.MaxValue, minY = double.MaxValue ;
+      double maxX = -double.MaxValue, maxY = -double.MaxValue ;
+
+      var sensorToOrigin = new Dictionary<FamilyInstance, XYZ>( sensorConnectors.Count ) ;
+      foreach ( var sensor in sensorConnectors ) {
+        var origin = sensor.GetTopConnectorOfConnectorFamily().Origin ;
+        sensorToOrigin.Add( sensor, origin ) ;
+
+        var (x, y, _) = origin ;
+        if ( x < minX ) minX = x ;
+        if ( y < minY ) minY = y ;
+        if ( maxX < x ) maxX = x ;
+        if ( maxY < y ) maxY = y ;
       }
 
-      var sensorConnectorList = from sensorConnector in sensorConnectors orderby sensorConnector.GetTopConnectors().Origin.Y ascending select sensorConnector ;
-      sensorConnectors = sensorConnectorList.ToList() ;
-      lastSensorConnector = sensorConnectors.First().GetTopConnectors().Origin.Y <= farthestSensorConnector!.GetTopConnectors().Origin.Y ? sensorConnectors.First() : farthestSensorConnector ; 
-      sensorConnectors.Remove( lastSensorConnector! ) ;
+      var (powerX, powerY, _) = powerPoint ;
 
-      return ( powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, farthestSensorConnector ) ;
+      var xRange = GetRange( minX, maxX, powerX ) ;
+      var yRange = GetRange( minY, maxY, powerY ) ;
+      if ( xRange < 0 && yRange < 0 ) return SensorArrayDirection.Invalid ;
+
+      SensorArrayDirection dir ;
+      if ( yRange <= xRange ) {
+        dir = ( maxX < powerX ) ? SensorArrayDirection.XMinus : SensorArrayDirection.XPlus ;
+      }
+      else {
+        dir = ( maxY < powerY ) ? SensorArrayDirection.YMinus : SensorArrayDirection.YPlus ;
+      }
+
+      sensorConnectors.Sort( ( a, b ) => Compare( sensorToOrigin, a, b, dir ) ) ;
+      return dir ;
+
+      static double GetRange( double min, double max, double refPos )
+      {
+        if ( min <= refPos && refPos <= max ) return -1.0 ;  // cannot use
+        return max - min ;
+      }
+
+      static int Compare( Dictionary<FamilyInstance, XYZ> sensorToOrigin, FamilyInstance a, FamilyInstance b, SensorArrayDirection dir ) =>
+        dir switch
+        {
+          SensorArrayDirection.XMinus => sensorToOrigin[ b ].X.CompareTo( sensorToOrigin[ a ].X ),
+          SensorArrayDirection.YMinus => sensorToOrigin[ b ].Y.CompareTo( sensorToOrigin[ a ].Y ),
+          SensorArrayDirection.XPlus => sensorToOrigin[ a ].X.CompareTo( sensorToOrigin[ b ].X ),
+          SensorArrayDirection.YPlus => sensorToOrigin[ a ].Y.CompareTo( sensorToOrigin[ b ].Y ),
+          _ => throw new ArgumentOutOfRangeException( nameof( dir ), dir, null )
+        } ;
     }
 
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( Element fromPickElement, Element toPickElement, MEPSystemType? systemType )
@@ -145,111 +202,295 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
-      if ( state is PickRoutingCommandBase.PickState ) {
-        var pickState = state as PickRoutingCommandBase.PickState ?? throw new InvalidOperationException() ;
-        var (fromPickResult, toPickResult, routeProperty, classificationInfo) = pickState ;
-        return CreateNewSegmentListForRoutePick( fromPickResult, toPickResult, true, routeProperty, classificationInfo ) ;
-      }
-      else {
-        var selectState = state as SelectState ?? throw new InvalidOperationException() ;
-        var (powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo, fasthestSensorConnector) = selectState ;
-        return CreateNewSegmentList( document, powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo, fasthestSensorConnector ) ;
-      }
-    }
-
-    private static FamilyInstance InsertPassPointElement( Document document, string routeName, Element fromPickElement, Element firstSensor, Element toPickElement, bool isFirst, FixedHeight? fromFixedHeight, int countSensorConnector, Element farthestSensor )
-    {
-      const double plusYOneSensor = 0.5 ;
-      const double plusY = 0.1 ;
-      var fromConnector = fromPickElement.GetTopConnectors() ;
-      var toConnector = toPickElement.GetTopConnectors() ;
-      var firstConnector = firstSensor.GetTopConnectors() ;
-      var farthestConnector = farthestSensor.GetTopConnectors() ;
-      IList<Element> levels = new FilteredElementCollector( document ).OfClass( typeof( Level ) ).ToElements() ;
-      if ( levels.FirstOrDefault( level => level.Id == fromPickElement.GetLevelId() ) == null ) throw new InvalidOperationException() ;
-      var level = levels.FirstOrDefault( level => level.Id == fromPickElement.GetLevelId() ) as Level ;
-      var height = fromFixedHeight?.Height ?? 0 ;
-      height += level!.Elevation ;
-      XYZ position ;
-      Vector3d direction ;
-      if ( isFirst ) {
-        var xPoint = ( fromConnector.Origin.X + farthestConnector.Origin.X ) * 0.5 ;
-        var yPoint = ( fromConnector.Origin.Y + firstConnector.Origin.Y ) * 0.5 ;
-
-        var cornerPointRight = new Vector2d( fromConnector.Origin.X, yPoint ) ;
-        var cornerPointLeft = new Vector2d( farthestConnector.Origin.X, yPoint ) ;
-
-        position = new XYZ( xPoint, yPoint, height ) ;
-        direction = new Vector3d( cornerPointLeft.y - cornerPointRight.y, cornerPointRight.x - cornerPointLeft.x, height ) ;
-      }
-      else {
-        var xPoint = ( firstConnector.Origin.X + farthestConnector.Origin.X ) * 0.5 ;
-        var yPoint = countSensorConnector == 1 ? toConnector.Origin.Y + plusYOneSensor : toConnector.Origin.Y - plusY ;
-
-        var cornerPointBack = new Vector2d( xPoint, firstConnector.Origin.Y ) ;
-        var cornerPointFront = new Vector2d( xPoint, farthestConnector.Origin.Y ) ;
-        position = new XYZ( xPoint, yPoint, height ) ;
-        direction = new Vector3d( cornerPointBack.y - cornerPointFront.y, cornerPointFront.x - cornerPointBack.x, height ) ;
-      }
-
-      return document.AddPassPointSelectRange( routeName, position, direction.normalized.ToXYZRaw(), fromConnector.Radius, fromPickElement.GetLevelId() ) ;
-    }
-
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, Element powerConnector, Element firstSensorConnector, Element lastSensorConnector, List<Element> sensorConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, Element farthestSensorConnector )
-    {
-      List<(string RouteName, RouteSegment Segment)> listSegment = CreateSegmentOfNewRoute( document, powerConnector, firstSensorConnector, lastSensorConnector, sensorConnectors, routeProperty, classificationInfo, farthestSensorConnector ) ;
-      return listSegment ;
-    }
-
-    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, Element powerConnector, Element firstSensorConnector, Element lastSensorConnector, List<Element> sensorConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, Element farthestSensorConnector )
-    {
-      var fromEndPoint = PickCommandUtil.GetEndPointConnector( powerConnector ) ;
-      var toEndPoint = PickCommandUtil.GetEndPointConnector( lastSensorConnector ) ;
+      var selectState = state as SelectState ?? throw new InvalidOperationException() ;
+      var (powerConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec) = selectState ;
 
       var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
-
-      var routes = RouteCache.Get( document ) ;
-      var nameBase = GetNameBase( systemType, curveType ) ;
-      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
-      var name = nameBase + "_" + nextIndex ;
-      routes.FindOrCreate( name ) ;
-
-      var diameter = routeProperty.GetDiameter() ;
-      var isRoutingOnPipeSpace = routeProperty.GetRouteOnPipeSpace() ;
-      var fromFixedHeight = routeProperty.GetFromFixedHeight() ;
-      var toFixedHeight = routeProperty.GetToFixedHeight() ;
+      var sensorFixedHeight = routeProperty.GetFromFixedHeight() ;
       var avoidType = routeProperty.GetAvoidType() ;
-      var shaftElementId = routeProperty.GetShaft()?.Id ?? ElementId.InvalidElementId ;
-      var firstPassPoint = new PassPointEndPoint( InsertPassPointElement( document, name, powerConnector, firstSensorConnector, lastSensorConnector, true, fromFixedHeight, sensorConnectors.Count, farthestSensorConnector ) ) ;
-      var secondPassPoint = new PassPointEndPoint( InsertPassPointElement( document, name, powerConnector, firstSensorConnector, lastSensorConnector, false, fromFixedHeight, sensorConnectors.Count, farthestSensorConnector ) ) ;
-      List<(string RouteName, RouteSegment Segment)> routeSegments = new List<(string RouteName, RouteSegment Segment)>() ;
-      routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, toEndPoint, secondPassPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
-      routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, secondPassPoint, firstPassPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
-      routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, firstPassPoint, fromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
+      var diameter = routeProperty.GetDiameter() ;
+      var radius = diameter * 0.5 ;
+      var nameBase = GetNameBase( systemType, curveType ) ;
+      var nextIndex = GetRouteNameIndex( RouteCache.Get( document ), nameBase ) ;
+      var routeName = nameBase + "_" + nextIndex ;
 
-      return routeSegments ;
+      var (footPassPoint, passPoints) = CreatePassPoints( routeName, powerConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
+      document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
+
+      var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 1 ) ;
+
+      // main route
+      var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
+      var powerConnectorEndPointKey = powerConnectorEndPoint.Key ;
+      {
+        var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
+        var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( sensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
+        var firstToEndPoint = secondFromEndPoints[ 0 ] ;
+
+        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
+        result.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
+        {
+          var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+          return ( routeName, segment ) ;
+        } ) ) ;
+      }
+
+      // branch routes
+      result.AddRange( passPoints.Zip( sensorConnectors.Take( passPoints.Count ), ( pp, sensor ) =>
+      {
+        var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
+        var branchEndPoint = new PassPointBranchEndPoint( document, pp.Id, radius, powerConnectorEndPointKey ) ;
+        var connectorEndPoint = new ConnectorEndPoint( sensor.GetTopConnectorOfConnectorFamily(), radius ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+        return ( subRouteName, segment ) ;
+      } ) ) ;
+
+      return result ;
+
+      static IEnumerable<FamilyInstance> EliminateSamePassPoints( FamilyInstance? firstPassPoint, IEnumerable<FamilyInstance> passPoints )
+      {
+        if ( null != firstPassPoint ) yield return firstPassPoint ;
+
+        var lastId = firstPassPoint?.Id ?? ElementId.InvalidElementId ;
+        foreach ( var passPoint in passPoints ) {
+          if ( passPoint.Id == lastId ) continue ;
+          lastId = passPoint.Id ;
+          yield return passPoint ;
+        }
+      }
     }
 
-    private (string RouteName, RouteSegment Segment) CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    private static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, MEPSystemPipeSpec pipeSpec )
     {
-      var systemType = routeProperty.GetSystemType() ;
-      var curveType = routeProperty.GetCurveType() ;
-
-      var routes = RouteCache.Get( document ) ;
-      var nameBase = GetNameBase( systemType, curveType ) ;
-      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
-      var name = nameBase + "_" + nextIndex ;
-      routes.FindOrCreate( name ) ;
-
+      var document = powerConnector.Document ;
+      var levelId = powerConnector.LevelId ;
       var diameter = routeProperty.GetDiameter() ;
-      var isRoutingOnPipeSpace = routeProperty.GetRouteOnPipeSpace() ;
-      var fromFixedHeight = routeProperty.GetFromFixedHeight() ;
-      var toFixedHeight = routeProperty.GetToFixedHeight() ;
-      var avoidType = routeProperty.GetAvoidType() ;
-      var shaftElementId = routeProperty.GetShaft()?.Id ?? ElementId.InvalidElementId ;
+      var bendingRadius = pipeSpec.GetLongElbowSize( diameter.DiameterValueToPipeDiameter() ) ;
+      var forcedFixedHeight = PassPointEndPoint.GetForcedFixedHeight( document, routeProperty.GetFromFixedHeight(), levelId ) ;
+      var sensorConnectorsWithoutLast = sensorConnectors.Take( sensorConnectors.Count - 1 ).ToReadOnlyCollection( sensorConnectors.Count - 1 ) ;
+      var passPointPositions = GetPassPointPositions( powerConnector, sensorConnectorsWithoutLast, sensorConnectors.Last(), sensorDirection, forcedFixedHeight, bendingRadius ) ;
 
-      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ;
+      var passPointDirection = sensorDirection switch
+      {
+        SensorArrayDirection.XMinus => -XYZ.BasisX,
+        SensorArrayDirection.YMinus => -XYZ.BasisY,
+        SensorArrayDirection.XPlus => XYZ.BasisX,
+        SensorArrayDirection.YPlus => XYZ.BasisY,
+        _ => throw new ArgumentOutOfRangeException( nameof( sensorDirection ), sensorDirection, null )
+      } ;
+
+      var passPoints = new List<FamilyInstance>( passPointPositions.Count + 1 ) ;
+      var footPassPoint = CreateFootPassPoint( routeName, powerConnector, passPointPositions[ 0 ], sensorDirection, bendingRadius, diameter * 0.5, levelId ) ;
+
+      var lastPos = footPassPoint?.GetTotalTransform().Origin ;
+      var lastFamilyInstance = footPassPoint ;
+      foreach ( var pos in passPointPositions ) {
+        if ( null != lastFamilyInstance && AreTooClose( lastPos!, pos, MEPSystemPipeSpec.MinimumShortCurveLength ) ) {
+          // reuse last family instance
+          passPoints.Add( lastFamilyInstance ) ;
+        }
+        else {
+          // create new family instance
+          lastPos = pos ;
+          lastFamilyInstance = document.AddPassPoint( routeName, pos, passPointDirection, diameter * 0.5, levelId ) ;
+          passPoints.Add( lastFamilyInstance ) ;
+        }
+      }
+
+      return ( footPassPoint, passPoints ) ;
+
+      static bool AreTooClose( XYZ lastPos, XYZ nextPos, double shortCurveLength )
+      {
+        var manhattanDistance = Math.Abs( lastPos.X - nextPos.X ) + Math.Abs( lastPos.Y - nextPos.Y ) ;
+        return ( manhattanDistance < shortCurveLength ) ;
+      }
+
+      static FamilyInstance? CreateFootPassPoint( string routeName, FamilyInstance powerConnector, XYZ firstPassPosition, SensorArrayDirection sensorDirection, double bendingRadius, double radius, ElementId levelId )
+      {
+        var document = powerConnector.Document ;
+        var footLength = GetFootLength( document.DisplayUnitSystem ) ;
+        var powerPosition = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
+
+        var (sensorDirDistance, anotherDistance) = sensorDirection switch
+        {
+          SensorArrayDirection.XMinus => ( powerPosition.X - firstPassPosition.X, ( firstPassPosition.Y - powerPosition.Y ) ),
+          SensorArrayDirection.YMinus => ( powerPosition.Y - firstPassPosition.Y, ( firstPassPosition.X - powerPosition.X ) ),
+          SensorArrayDirection.XPlus => ( firstPassPosition.X - powerPosition.X, ( firstPassPosition.Y - powerPosition.Y ) ),
+          SensorArrayDirection.YPlus => ( firstPassPosition.Y - powerPosition.Y, ( firstPassPosition.X - powerPosition.X ) ),
+          _ => throw new ArgumentOutOfRangeException( nameof( sensorDirection ), sensorDirection, null ),
+        } ;
+
+        if ( sensorDirDistance <= bendingRadius * 2 ) return null ; // cannot insert foot pass point
+        if ( Math.Abs( anotherDistance ) <= bendingRadius * 2 ) return null ; // cannot insert foot pass point
+        var sensorDirPos = ( sensorDirDistance <= bendingRadius + footLength ) ? sensorDirDistance * 0.5 : footLength ;
+
+        var (passPointPos, passPointDir) = sensorDirection switch
+        {
+          SensorArrayDirection.XMinus => (new XYZ( powerPosition.X - sensorDirPos, ( powerPosition.Y + firstPassPosition.Y ) * 0.5, firstPassPosition.Z ), XYZ.BasisY),
+          SensorArrayDirection.YMinus => (new XYZ( ( powerPosition.X + firstPassPosition.X ) * 0.5, powerPosition.Y - sensorDirPos, firstPassPosition.Z ), XYZ.BasisX),
+          SensorArrayDirection.XPlus => (new XYZ( powerPosition.X + sensorDirPos, ( powerPosition.Y + firstPassPosition.Y ) * 0.5, firstPassPosition.Z ), XYZ.BasisY),
+          SensorArrayDirection.YPlus => (new XYZ( ( powerPosition.X + firstPassPosition.X ) * 0.5, powerPosition.Y + sensorDirPos, firstPassPosition.Z ), XYZ.BasisX),
+          _ => throw new ArgumentOutOfRangeException( nameof( sensorDirection ), sensorDirection, null ),
+        } ;
+        passPointDir *= Math.Sign( anotherDistance ) ;
+
+        return document.AddPassPoint( routeName, passPointPos, passPointDir, radius, levelId ) ;
+      }
+
+      static IReadOnlyList<XYZ> GetPassPointPositions( FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, FamilyInstance lastSensorConnector, SensorArrayDirection sensorDirection, double? forcedFixedHeight, double bendingRadius )
+      {
+        var powerPosition = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
+        var sensorPositions = sensorConnectors.ConvertAll( sensorConnector => sensorConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
+        var lastSensorPosition = lastSensorConnector.GetTopConnectorOfConnectorFamily().Origin ;
+
+        var fixedHeight = forcedFixedHeight ?? GetPreferredRouteHeight( powerPosition, sensorPositions, lastSensorPosition, bendingRadius ) ;
+        var (sensorLineX, sensorLineY, sensorLineZ) = GetSensorLine( powerPosition, sensorPositions, lastSensorPosition, sensorDirection, bendingRadius, fixedHeight ) ;
+
+        var passPointOffset = bendingRadius + MEPSystemPipeSpec.MinimumShortCurveLength ;
+        return sensorPositions.ConvertAll( pos => sensorDirection switch
+        {
+          SensorArrayDirection.XMinus => new XYZ( pos.X + passPointOffset, sensorLineY, sensorLineZ ),
+          SensorArrayDirection.YMinus => new XYZ( sensorLineX, pos.Y + passPointOffset, sensorLineZ ),
+          SensorArrayDirection.XPlus => new XYZ( pos.X - passPointOffset, sensorLineY, sensorLineZ ),
+          SensorArrayDirection.YPlus => new XYZ( sensorLineX, pos.Y - passPointOffset, sensorLineZ ),
+          _ => throw new ArgumentOutOfRangeException( nameof( sensorDirection ), sensorDirection, null )
+        } ) ;
+      }
+
+      static XYZ GetSensorLine( XYZ powerPosition, IReadOnlyList<XYZ> sensorPositions, XYZ lastSensorPosition, SensorArrayDirection sensorDirection, double bendingRadius, double fixedHeight )
+      {
+        var groups = CreateDirectionGroupRanges( sensorPositions, sensorDirection, bendingRadius * 2 ) ;
+        var powerPosValue = EvaluatePosition( powerPosition, sensorDirection ) ;
+        var lastSensorPosValue = EvaluatePosition( lastSensorPosition, sensorDirection ) ;
+        var linePosValue = GetLinePosition( groups, powerPosValue, lastSensorPosValue, bendingRadius ) ;
+        return sensorDirection switch
+        {
+          SensorArrayDirection.XMinus => new XYZ( powerPosition.X, linePosValue, fixedHeight ),
+          SensorArrayDirection.YMinus => new XYZ( linePosValue, powerPosition.Y, fixedHeight ),
+          SensorArrayDirection.XPlus => new XYZ( powerPosition.X, linePosValue, fixedHeight ),
+          SensorArrayDirection.YPlus => new XYZ( linePosValue, powerPosition.Y, fixedHeight ),
+          _ => throw new ArgumentOutOfRangeException( nameof( sensorDirection ), sensorDirection, null )
+        } ;
+
+        static double EvaluatePosition( XYZ pos, SensorArrayDirection sensorDirection )
+        {
+          return sensorDirection switch
+          {
+            SensorArrayDirection.XMinus => pos.Y,
+            SensorArrayDirection.YMinus => pos.X,
+            SensorArrayDirection.XPlus => pos.Y,
+            SensorArrayDirection.YPlus => pos.X,
+            _ => throw new ArgumentOutOfRangeException( nameof( sensorDirection ), sensorDirection, null )
+          } ;
+        }
+
+        static List<(double Min, double Max)> CreateDirectionGroupRanges( IEnumerable<XYZ> sensorPositions, SensorArrayDirection sensorDirection, double bendingRadius )
+        {
+          var list = new List<(double Min, double Max)>() ;
+          foreach ( var pos in sensorPositions ) {
+            var p = EvaluatePosition( pos, sensorDirection ) - bendingRadius ;
+            var index = list.BinarySearch( ( p, p ), SensorRangeComparer.Instance ) ;
+            if ( 0 <= index ) continue ;
+
+            index = ~index ;
+            var canMergeIntoPrev = ( 0 < index ) && ( p <= list[ index - 1 ].Max ) ;
+            var canMergeIntoNext = ( index < list.Count ) && ( list[ index ].Min <= p + bendingRadius * 2 ) ;
+            if ( canMergeIntoPrev && canMergeIntoNext ) {
+              list[ index - 1 ] = ( list[ index - 1 ].Min, list[ index ].Max ) ;
+              list.RemoveAt( index ) ;
+            }
+            else if ( canMergeIntoPrev ) {
+              var (min, max) = list[ index - 1 ] ;
+              list[ index - 1 ] = ( min, Math.Max( max, p + bendingRadius * 2 ) ) ;
+            }
+            else if ( canMergeIntoNext ) {
+              var (min, max) = list[ index ] ;
+              list[ index ] = ( Math.Min( min, p ), max ) ;
+            }
+            else {
+              list.Insert( index, ( p, p + bendingRadius * 2 ) ) ;
+            }
+          }
+
+          return list ;
+        }
+
+        static double GetLinePosition( List<(double Min, double Max)> groups, double powerPosValue, double lastSensorPosValue, double bendingRadius )
+        {
+          var gapPos = groups.BinarySearch( ( lastSensorPosValue, lastSensorPosValue ), SensorRangeComparer.Instance ) ;
+          var insertPos = ~gapPos ;
+          if ( 0 < insertPos && lastSensorPosValue <= groups[ insertPos - 1 ].Max ) {
+            // in sensor positions: find best gap
+            var prevBendPos = lastSensorPosValue - bendingRadius ;
+            var nextBendPos = lastSensorPosValue + bendingRadius ;
+            var beforeGroupIndex = GetBeforeGroupIndex( groups, insertPos - 1, prevBendPos ) ;
+            var afterGroupIndex = GetAfterGroupIndex( groups, insertPos, nextBendPos ) ;
+            var beforeMid = Math.Min( prevBendPos, ( 0 < beforeGroupIndex ? ( groups[ beforeGroupIndex - 1 ].Max + groups[ beforeGroupIndex ].Min ) * 0.5 : groups[ beforeGroupIndex ].Min ) ) ;
+            var afterMid = Math.Max( nextBendPos, ( afterGroupIndex < groups.Count ? ( groups[ afterGroupIndex - 1 ].Max + groups[ afterGroupIndex ].Min ) * 0.5 : groups[ afterGroupIndex - 1 ].Max ) ) ;
+
+            // Use nearer position (except too near to power)
+            var prevToPower = Math.Abs( beforeMid - powerPosValue ) ;
+            if ( prevToPower < bendingRadius ) return afterMid ;
+
+            var nextToPower = Math.Abs( afterMid - powerPosValue ) ;
+            if ( nextToPower < bendingRadius ) return beforeMid ;
+
+            return ( prevToPower < nextToPower ) ? beforeMid : afterMid ;
+          }
+          else {
+            // in gap: can use lastSensorPosValue
+            return lastSensorPosValue ;
+          }
+
+          static int GetBeforeGroupIndex( IReadOnlyList<(double Min, double Max)> groups, int beforeGroupIndex, double prevBendPos )
+          {
+            // if the next gap is nearer than powerPosValue - bendingRadius, find the previous gap
+            while ( 0 < beforeGroupIndex && prevBendPos < groups[ beforeGroupIndex - 1 ].Max ) {
+              --beforeGroupIndex ;
+            }
+
+            return beforeGroupIndex ;
+          }
+
+          static int GetAfterGroupIndex( IReadOnlyList<(double Min, double Max)> groups, int afterGroupIndex, double nextBendPos )
+          {
+            // if the next gap is nearer than powerPosValue + bendingRadius, find the next gap
+            var n = groups.Count ;
+            while ( afterGroupIndex < n && groups[ afterGroupIndex ].Min < nextBendPos ) {
+              ++afterGroupIndex ;
+            }
+
+            return afterGroupIndex ;
+          }
+        }
+      }
+    }
+
+    private class SensorRangeComparer : IComparer<(double Min, double Max)>
+    {
+      public static IComparer<(double Min, double Max)> Instance { get ; } = new SensorRangeComparer() ;
+
+      private SensorRangeComparer()
+      {
+      }
+
+      public int Compare( (double Min, double Max) x, (double Min, double Max) y )
+      {
+        return x.Min.CompareTo( y.Min ) ;
+      }
+    }
+
+    private static double GetPreferredRouteHeight( XYZ powerPosition, IEnumerable<XYZ> sensorPositions, XYZ lastSensorPosition, double bendingRadius )
+    {
+      var sensorHeight = sensorPositions.Append( lastSensorPosition ).Max( pos => pos.Z ) ;
+      var powerHeight = powerPosition.Z ;
+      if ( powerHeight < sensorHeight + bendingRadius ) {
+        return powerHeight + bendingRadius ;
+      }
+      else {
+        return sensorHeight + bendingRadius ;
+      }
     }
 
     private static int GetRouteNameIndex( RouteCache routes, string? targetName )
@@ -260,73 +501,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
 
       return lastIndex + 1 ;
-    }
-
-    public IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult sensorConnectorPickResult, bool anotherIndicatorIsFromSide, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
-    {
-      return CreateSubBranchRoute( routePickResult, sensorConnectorPickResult, anotherIndicatorIsFromSide, routeProperty, classificationInfo ).EnumerateAll() ;
-    }
-
-    private IEnumerable<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult sensorConnectorPickResult, bool anotherIndicatorIsFromSide, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
-    {
-      var affectedRoutes = new List<Route>() ;
-      var (routeEndPoint, otherSegments1) = CreateEndPointOnSubRoute( routePickResult, sensorConnectorPickResult, routeProperty, classificationInfo, true ) ;
-
-      IEndPoint sensorConnectorEndPoint ;
-      IReadOnlyCollection<( string RouteName, RouteSegment Segment )>? otherSegments2 = null ;
-      if ( null != sensorConnectorPickResult.SubRoute ) {
-        ( sensorConnectorEndPoint, otherSegments2 ) = CreateEndPointOnSubRoute( sensorConnectorPickResult, routePickResult, routeProperty, classificationInfo, false ) ;
-      }
-      else {
-        sensorConnectorEndPoint = PickCommandUtil.GetEndPoint( sensorConnectorPickResult, routePickResult ) ;
-      }
-
-      var fromEndPoint = anotherIndicatorIsFromSide ? sensorConnectorEndPoint : routeEndPoint ;
-      var toEndPoint = anotherIndicatorIsFromSide ? routeEndPoint : sensorConnectorEndPoint ;
-
-      var document = routePickResult.SubRoute!.Route.Document ;
-      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo ) ;
-
-      // Inserted segment
-      yield return ( name, segment ) ;
-
-      // Routes where pass points are inserted
-      var routes = RouteCache.Get( routePickResult.SubRoute!.Route.Document ) ;
-      var changedRoutes = new HashSet<Route>() ;
-      if ( null != otherSegments1 ) {
-        foreach ( var tuple in otherSegments1 ) {
-          yield return tuple ;
-
-          if ( routes.TryGetValue( tuple.RouteName, out var route ) ) {
-            changedRoutes.Add( route ) ;
-          }
-        }
-      }
-
-      if ( null != otherSegments2 ) {
-        foreach ( var tuple in otherSegments2 ) {
-          yield return tuple ;
-
-          if ( routes.TryGetValue( tuple.RouteName, out var route ) ) {
-            changedRoutes.Add( route ) ;
-          }
-        }
-      }
-
-      // Affected routes
-      if ( 0 != affectedRoutes.Count ) {
-        var affectedRouteSet = new HashSet<Route>() ;
-        foreach ( var route in affectedRoutes ) {
-          affectedRouteSet.Add( route ) ;
-          affectedRouteSet.UnionWith( route.CollectAllDescendantBranches() ) ;
-        }
-
-        affectedRouteSet.ExceptWith( changedRoutes ) ;
-
-        foreach ( var tuple in affectedRouteSet.ToSegmentsWithName() ) {
-          yield return tuple ;
-        }
-      }
     }
   }
 }

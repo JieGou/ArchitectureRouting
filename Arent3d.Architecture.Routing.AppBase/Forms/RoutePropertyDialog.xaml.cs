@@ -7,7 +7,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   /// <summary>
   /// SetProperty.xaml の相互作用ロジック
   /// </summary>
-  public partial class RoutePropertyDialog : Window, IRouteProperty
+  public partial class RoutePropertyDialog : Window, IRoutePropertyDialog
   {
     public RoutePropertyDialog()
     {

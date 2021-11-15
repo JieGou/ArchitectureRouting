@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             UIDocument uiDocument = uiApp.ActiveUIDocument;
             Document document = uiDocument.Document;
             Application app = uiApp.Application;
-            Selection selection = uiDocument.Selection;
+            var selection = uiDocument.Selection;
             try
             {
                 // Store selected points

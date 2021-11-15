@@ -1,4 +1,5 @@
 using System.Diagnostics ;
+using System.Linq ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility.Serialization ;
@@ -58,7 +59,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       if ( false == int.TryParse( param, out var terminatePointId ) ) return null ;
       if ( document.GetElementById<FamilyInstance>( terminatePointId ) is not { } instance ) return null ;
-      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.TerminatePoint )?.Id ) return null ;
+      if ( instance.Symbol.Id != document.GetFamilySymbols( RoutingFamilyType.TerminatePoint ).FirstOrDefault()?.Id ) return null ;
 
       return new TerminatePointEndPoint( instance, null ) ;
     }
@@ -100,7 +101,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       var transform = terminatePoint.GetTotalTransform() ;
       PreferredPosition = transform.Origin ;
       PreferredDirection = transform.BasisX ;
-      PreferredRadius = terminatePoint.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() ;
+      PreferredRadius = terminatePoint.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() * 0.5 ;
     }
 
     public TerminatePointEndPoint( Instance instance, Instance? linkedInstance )

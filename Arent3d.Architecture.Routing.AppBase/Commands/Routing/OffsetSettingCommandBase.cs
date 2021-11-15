@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // Create new envelope
       if ( childrenEnvelop == null ) {
-        var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
+        var symbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new System.InvalidOperationException() ;
         var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level!, StructuralType.NonStructural ) ;
 
         // Change envelope size
