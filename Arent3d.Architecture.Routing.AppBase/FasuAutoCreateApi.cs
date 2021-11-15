@@ -1,4 +1,4 @@
-﻿using Autodesk.Revit.DB ;
+﻿using Autodesk.Revit.DB;
 using System.Collections.Generic;
 
 namespace Arent3d.Architecture.Routing.AppBase
@@ -12,6 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase
             IList<Element> spaces = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
             return spaces;
         }
+
         public static IList<Element> GetAllGroups(Document document)
         {
             ElementCategoryFilter filter = new ElementCategoryFilter(BuiltInCategory.OST_IOSModelGroups);
@@ -19,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase
             IList<Element> groups = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
             return groups;
         }
+
         public static bool GetHeightFasu(Document document, string nameFasu, ref double height)
         {
             bool brc = false;
@@ -29,7 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase
             {
                 if (duct.Name.IndexOf(nameFasu, 0) != -1)
                 {
-                    var locationPoint = ( duct.Location as LocationPoint )! ;
+                    var locationPoint = (duct.Location as LocationPoint)!;
                     height = locationPoint.Point.Z;
                     brc = true;
                     break;
