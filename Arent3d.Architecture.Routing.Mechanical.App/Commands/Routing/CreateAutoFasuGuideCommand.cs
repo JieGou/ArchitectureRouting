@@ -55,6 +55,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
                             double distance = (boxFasu.Max.X - boxFasu.Min.X) / 2;
                             FamilyInstance vavInstance = document.AddVav(locVav, null);
                             vavInstance.LookupParameter("ダクト径").SetValueString("250");
+                            vavInstance.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).SetValueString("3250");
                             BoundingBoxXYZ box = vavInstance.get_BoundingBox(document.ActiveView);
                             distance += (box.Max.X - box.Min.X) / 8;
                             ElementTransformUtils.MoveElement(document, vavInstance.Id, new XYZ(distance, 0, 0));
