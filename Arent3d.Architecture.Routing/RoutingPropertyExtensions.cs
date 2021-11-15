@@ -74,12 +74,13 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ElementsUsedForUI ) )]
     RouteConnectorRelationIds,
   }
-  public enum ConnectorParameter
+  public enum ConnectorFamilyParameter
   {
     [ParameterGuid( "442b05ee-df38-4595-93c9-e2d7cfa227e9" ), NameOnRevit( "Connector Type" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
-    ConnectorIds,
+    ConnectorType,
   }
+
   public static class RoutingPropertyExtensions
   {
     public static bool AllRoutingParametersAreRegistered( this Document document )
@@ -92,7 +93,7 @@ namespace Arent3d.Architecture.Routing
       document.LoadAllParametersFromFile<RoutingParameter>( AssetManager.GetRoutingSharedParameterPath() ) ;
       document.LoadAllParametersFromFile<PassPointParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
       document.LoadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() );
-      document.LoadAllParametersFromFile<ConnectorParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
+      document.LoadAllParametersFromFile<ConnectorFamilyParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
     }
   }
 }

@@ -107,7 +107,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       var transform = passPoint.GetTotalTransform() ;
       PreferredPosition = transform.Origin ;
       PreferredDirection = transform.BasisX ;
-      PreferredRadius = passPoint.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() ;
+      PreferredRadius = passPoint.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() * 0.5 ;
     }
 
     /// <summary>
@@ -152,7 +152,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       return null ;
     }
 
-    private static double? GetForcedFixedHeight( Document document, FixedHeight? fixedHeight, ElementId levelId )
+    public static double? GetForcedFixedHeight( Document document, FixedHeight? fixedHeight, ElementId levelId )
     {
       if ( null == fixedHeight ) return null ;
 

@@ -7,13 +7,13 @@
         xmlns:offsetSettingsRules="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValidationRules.OffsetSettingsRules" 
         x:Class="Arent3d.Architecture.Routing.AppBase.Forms.OffsetSettingDialog"
         mc:Ignorable="d"
-        Height="150" Width="290" Background="White"
+        Height="150" Width="300" Background="White"
         WindowStartupLocation="CenterOwner"
         Title="Offset Setting Dialog">
 
   <Grid Background="White" Margin="10">
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="120" />
+      <ColumnDefinition Width="130" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
@@ -21,7 +21,7 @@
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
 
-    <Label Grid.Row="0" Grid.Column="0" Content="Envelope Offset (m)"
+    <Label Grid.Row="0" Grid.Column="0" Content="Envelope Offset (mm)"
            HorizontalAlignment="Left"
            VerticalAlignment="Center" />
     <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal">
