@@ -18,6 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private record PickState( Route Route, ConnectorPicker.IPickResult AnotherPickResult, bool AnotherPickIsFrom, IEndPoint OldEndPoint, ConnectorPicker.IPickResult NewPickResult ) ;
 
     protected abstract AddInType GetAddInType() ;
+    private bool UseConnectorDiameter() => ( AddInType.Electrical != GetAddInType() ) ;
 
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
@@ -42,7 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         ( newEndPoint, otherSegments ) = CreateEndPointOnSubRoute( route, newPickResult, anotherPickResult, anotherPickIsFrom ) ;
       }
       else {
-        newEndPoint = PickCommandUtil.GetEndPoint( newPickResult, anotherPickResult ) ;
+        newEndPoint = PickCommandUtil.GetEndPoint( newPickResult, anotherPickResult, UseConnectorDiameter() ) ;
         otherSegments = null ;
       }
 

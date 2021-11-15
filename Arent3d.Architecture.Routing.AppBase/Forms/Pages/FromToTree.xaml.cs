@@ -451,7 +451,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           selectedItem.ItemTypeName = tb.Text ;
           tb.Text = "" ;
           if ( ( selectedItem.PropertySourceType as RoutePropertySource )?.TargetRoute is { } route ) {
-            PostCommandExecutor.ChangeRouteNameCommand( route, tb.Text ) ;
+            PostCommandExecutor.ChangeRouteNameCommand( route, selectedItem.ItemTypeName ) ;
           }
         }
       }
@@ -502,7 +502,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         selectedItem.ItemTypeName = tb.Text ;
         tb.Text = "" ;
         if ( ( selectedItem.PropertySourceType as RoutePropertySource )?.TargetRoute is { } route ) {
-          PostCommandExecutor.ChangeRouteNameCommand( route, tb.Text ) ;
+          PostCommandExecutor.ChangeRouteNameCommand( route, selectedItem.ItemTypeName ) ;
         }
       }
     }

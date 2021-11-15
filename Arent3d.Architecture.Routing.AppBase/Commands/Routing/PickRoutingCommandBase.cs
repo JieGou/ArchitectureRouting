@@ -19,6 +19,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
     protected abstract AddInType GetAddInType() ;
+    private bool UseConnectorDiameter() => ( AddInType.Electrical != GetAddInType() ) ;
+
 
     protected abstract DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo ) ;
     protected abstract MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType ) ;
@@ -51,7 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return GetMEPSystemClassificationInfoFromSystemType( systemType ) ;
     }
 
-    private RoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    private IRoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
     {
       var fromLevelId = GetTrueLevelId( document, fromPickResult ) ;
       var toLevelId = GetTrueLevelId( document, toPickResult ) ;
@@ -81,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return document.GuessLevel( pickResult.GetOrigin() ).Id ;
     }
 
-    private static RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
+    protected virtual IRoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
       var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ) ;
@@ -118,8 +120,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
-      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult ) ;
-      var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult ) ;
+      var useConnectorDiameter = UseConnectorDiameter() ;
+      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter ) ;
+      var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult, useConnectorDiameter ) ;
 
       var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo ) ;
 
@@ -171,7 +174,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         ( anotherEndPoint, otherSegments2 ) = CreateEndPointOnSubRoute( anotherPickResult, routePickResult, routeProperty, classificationInfo, false ) ;
       }
       else {
-        anotherEndPoint = PickCommandUtil.GetEndPoint( anotherPickResult, routePickResult ) ;
+        anotherEndPoint = PickCommandUtil.GetEndPoint( anotherPickResult, routePickResult, UseConnectorDiameter() ) ;
       }
 
       var fromEndPoint = anotherIndicatorIsFromSide ? anotherEndPoint : routeEndPoint ;
@@ -220,11 +223,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide )
     {
       var route = routePickResult.SubRoute!.Route ;
       var segments = route.ToSegmentsWithNameList() ;
-      var anotherEndPoint = PickCommandUtil.GetEndPoint( anotherPickResult, routePickResult ) ;
+      var anotherEndPoint = PickCommandUtil.GetEndPoint( anotherPickResult, routePickResult, UseConnectorDiameter() ) ;
       var segment = CreateNewSegment( routePickResult.SubRoute!, routePickResult.EndPointOverSubRoute, routePickResult, anotherEndPoint, anotherIndicatorIsFromSide ) ;
       segment.ApplyRealNominalDiameter() ;
       segments.Add( ( route.RouteName, segment ) ) ;

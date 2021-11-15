@@ -40,24 +40,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    public static void GenerateEnvelope( Document document, double originX, double originY, Level level, bool isCeiling = false )
+    public static void GenerateEnvelope( Document document, double originX, double originY, Level? level, bool isCeiling = false )
     {
-      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ) ;
-      if ( levels == null || levels.Count() < 1 ) return ;
+      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
+      if ( false == levels.Any() ) return ;
       level ??= levels.First() ;
+
       var heightOfLevel = document.GetHeightSettingStorable()[ level ].HeightOfLevel.MillimetersToRevitUnits() ;
-      var symbol = document.GetFamilySymbol( RoutingFamilyType.Envelope )! ;
+      var symbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = isCeiling ? symbol.Instantiate( new XYZ( originX, originY, heightOfLevel ), level, StructuralType.NonStructural ) : symbol.Instantiate( new XYZ( originX, originY, 0 ), level, StructuralType.NonStructural ) ;
       instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
 
       //Find above level
       var aboveLevel = levels.Last() ;
-      if ( levels.Count() > 1 ) {
-        for ( int i = 0 ; i < levels.Count() - 1 ; i++ ) {
-          if ( levels.ElementAt( i ).Id == level.Id ) {
-            aboveLevel = levels.ElementAt( i + 1 ) ;
-            break ;
-          }
+      for ( int i = 0 ; i < levels.Count - 1 ; i++ ) {
+        if ( levels[ i ].Id == level.Id ) {
+          aboveLevel = levels[ i + 1 ] ;
+          break ;
         }
       }
 

@@ -8,7 +8,7 @@ namespace Arent3d.Architecture.Routing
 {
   public class MEPSystemPipeSpec : IPipeSpec
   {
-    private const double MinimumShortCurveLength = ( 1.0 / 120 ) * 2 ; // twice of the minimum curve length.
+    public const double MinimumShortCurveLength = ( 1.0 / 120 ) * 2 ; // twice of the minimum curve length.
 
     private readonly IFittingSizeCalculator _fittingSizeCalculator ;
     private Document Document => RouteMEPSystem.Document ;
@@ -64,6 +64,9 @@ namespace Arent3d.Architecture.Routing
     }
 
 
+    double IPipeSpec.GetConcentricReducerCombinationLength( IPipeDiameter largeDiameter, IPipeDiameter smallDiameter ) => GetReducerLength( largeDiameter, smallDiameter ) ;
+    double IPipeSpec.GetEccentricReducerCombinationLength( IPipeDiameter largeDiameter, IPipeDiameter smallDiameter ) => GetReducerLength( largeDiameter, smallDiameter ) ;
+
     public double GetReducerLength( IPipeDiameter pipe1, IPipeDiameter pipe2 )
     {
       double diameter1 = pipe1.Outside, diameter2 = pipe2.Outside ;
@@ -74,7 +77,7 @@ namespace Arent3d.Architecture.Routing
         ( diameter1, diameter2 ) = ( diameter2, diameter1 ) ;
       }
 
-      return ( _reducerLength ??= new SizeTable<(double, double), double>( CalculateReducerLength ) ).Get( ( diameter1, diameter2 ) ) ;
+      return ( _reducerLength ??= new SizeTable<(double, double), double>( CalculateConcentricReducerLength ) ).Get( ( diameter1, diameter2 ) ) ;
     }
 
     public double GetWeldMinDistance( IPipeDiameter diameter ) => 0 ;
@@ -99,7 +102,7 @@ namespace Arent3d.Architecture.Routing
       return ( tuple.Header + MinimumShortCurveLength, tuple.Branch + MinimumShortCurveLength ) ;
     }
 
-    private double CalculateReducerLength( (double, double) value )
+    private double CalculateConcentricReducerLength( (double, double) value )
     {
       return _fittingSizeCalculator.CalculateReducerLength( Document, MEPCurveGenerator, value.Item1, value.Item2 ) + ( MinimumShortCurveLength * 2 ) ;
     }

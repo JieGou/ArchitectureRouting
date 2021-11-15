@@ -4,7 +4,6 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -36,22 +35,33 @@ namespace Arent3d.Architecture.Routing
     {
       document.MakeCertainAllRoutingFamilies() ;
       document.MakeCertainAllRoutingParameters() ;
+      AddArentConduitType( document ) ;
 
       //Add connector type value
-      var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ) ;
+      var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Connectors ) ;
       foreach ( var connector in connectorOneSide ) {
-        SetParameter( connector, "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( document, "Connector Type" ), RouteConnectorType[ 1 ] ) ;
+        connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
       }
 
       return document.RoutingSettingsAreInitialized() ;
     }
-
-    private static void SetParameter( FamilyInstance instance, string parameterName, string value )
+    
+    private static void AddArentConduitType( Document document )
     {
-      instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
+      const string conduitTypeName = "Arent電線" ;
+      var sizes = ConduitSizeSettings.GetConduitSizeSettings( document ) ;
+      var standards = document.GetStandardTypes().ToList() ;
+      var conduitStandard = sizes.CreateConduitStandardTypeFromExisingStandardType( document, conduitTypeName, standards.Last() ) ;
+      if ( conduitStandard ) {
+        ConduitSize sizeInfo = new ConduitSize( ( 1.0 ).MillimetersToRevitUnits(), ( 0.8 ).MillimetersToRevitUnits(), ( 1.2 ).MillimetersToRevitUnits(), ( 16.0 ).MillimetersToRevitUnits(), true, true ) ;
+        sizes.AddSize( standards.Last(), sizeInfo );
+        sizes.AddSize( conduitTypeName, sizeInfo );
+      }
+      var curveTypes = document.GetAllElements<ConduitType>().Where( c => c.LookupParameter("Standard").AsValueString() == standards.Last() ).OfType<MEPCurveType>().ToList() ;
+      foreach ( var curveType in curveTypes ) {
+        curveType.Duplicate( conduitTypeName ) ;
+      }
     }
-
-    public static IReadOnlyDictionary<byte, string> RouteConnectorType { get ; } = new Dictionary<byte, string> { { 0, "Power" }, { 1, "Sensor" } } ;
 
     #endregion
 
@@ -151,7 +161,7 @@ namespace Arent3d.Architecture.Routing
       return ( systemClassification == MEPSystemClassification.PowerBalanced || systemClassification == MEPSystemClassification.PowerUnBalanced ) ;
     }
 
-    public static IConnector GetTopConnectors( this Element elm )
+    public static Connector GetTopConnectorOfConnectorFamily( this FamilyInstance elm )
     {
       var topItem = elm.GetConnectors().MaxItemOrDefault( conn => conn.Origin.Z ) ;
       return topItem ?? elm.GetConnectors().First() ;
@@ -221,7 +231,7 @@ namespace Arent3d.Architecture.Routing
       var instance = document.GetElementById<FamilyInstance>( elementId ) ;
       if ( null == instance ) return null ;
 
-      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.PassPoint )?.Id ) {
+      if ( instance.Symbol.Id != document.GetFamilySymbols( RoutingFamilyType.PassPoint ).FirstOrDefault().GetValidId() ) {
         // Family instance is not a pass point.
         return null ;
       }
@@ -273,32 +283,10 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, direction, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
-
-      var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
-      var rotationAngle = Math.Atan2( direction.Y, direction.X ) ;
-
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
-
-      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
-
-      return instance ;
-    }
-
-    public static FamilyInstance AddPassPointSelectRange( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
-    {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
-      if ( radius.HasValue ) {
-        instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
-      }
-
-      var rotationAngle = Math.Atan2( direction.X, direction.Y ) ;
-
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
 
       instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
 
@@ -391,7 +379,7 @@ namespace Arent3d.Architecture.Routing
       var instance = document.GetElementById<FamilyInstance>( elementId ) ;
       if ( null == instance ) return null ;
 
-      if ( instance.Symbol.Id != document.GetFamilySymbol( RoutingFamilyType.TerminatePoint )?.Id ) {
+      if ( instance.Symbol.Id != document.GetFamilySymbols( RoutingFamilyType.TerminatePoint ).FirstOrDefault()?.Id ) {
         // Family instance is not a pass point.
         return null ;
       }
@@ -420,16 +408,10 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddTerminatePoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.TerminatePoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.TerminatePoint, position, direction, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
-
-      var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
-      var rotationAngle = Math.Atan2( direction.Y, direction.X ) ;
-
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
 
       instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
 
@@ -463,27 +445,12 @@ namespace Arent3d.Architecture.Routing
 
     private static bool IsFittingCategory( BuiltInCategory category )
     {
-      return category switch
-      {
-        BuiltInCategory.OST_DuctFitting => true,
-        BuiltInCategory.OST_PipeFitting => true,
-        BuiltInCategory.OST_CableTrayFitting => true,
-        BuiltInCategory.OST_ConduitFitting => true,
-        _ => false,
-      } ;
+      return ( 0 <= Array.IndexOf( BuiltInCategorySets.Fittings, category ) ) ;
     }
 
     #endregion
 
     #region Routing (Route Names)
-
-    private static readonly BuiltInCategory[] RoutingBuiltInCategories =
-    {
-      BuiltInCategory.OST_DuctFitting, BuiltInCategory.OST_DuctCurves, BuiltInCategory.OST_FlexDuctCurves, BuiltInCategory.OST_PipeFitting, BuiltInCategory.OST_PipeCurves, BuiltInCategory.OST_FlexPipeCurves, BuiltInCategory.OST_MechanicalEquipment, // pass point
-
-      //Electrical
-      BuiltInCategory.OST_Conduit, BuiltInCategory.OST_ConduitFitting, BuiltInCategory.OST_ConduitRun, BuiltInCategory.OST_CableTray, BuiltInCategory.OST_ElectricalEquipment, BuiltInCategory.OST_ElectricalFixtures
-    } ;
 
     public static IEnumerable<TElement> GetAllElementsOfRoute<TElement>( this Document document ) where TElement : Element
     {
@@ -492,7 +459,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ) ;
+      return document.GetAllElementsOfRouteName<TElement>( BuiltInCategorySets.RoutingElements, filter ) ;
     }
 
     public static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, string routeName ) where TElement : Element
@@ -502,7 +469,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRouteName() == routeName ) ;
+      return document.GetAllElementsOfRouteName<TElement>( BuiltInCategorySets.RoutingElements, filter ).Where( e => e.GetRouteName() == routeName ) ;
     }
 
     public static IEnumerable<TElement> GetAllElementsOfRepresentativeRouteName<TElement>( this Document document, string routeName ) where TElement : Element
@@ -512,7 +479,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRepresentativeRouteName() == routeName ) ;
+      return document.GetAllElementsOfRouteName<TElement>( BuiltInCategorySets.RoutingElements, filter ).Where( e => e.GetRepresentativeRouteName() == routeName ) ;
     }
 
     public static IEnumerable<TElement> GetAllElementsOfSubRoute<TElement>( this Document document, string routeName, int subRouteIndex ) where TElement : Element
@@ -525,7 +492,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( new[] { ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( routeNameParameterName ), ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( subRouteIndexParameterName ), } ) ;
 
-      return document.GetAllElementsOfRouteName<TElement>( RoutingBuiltInCategories, filter ).Where( e => e.GetRouteName() == routeName ).Where( e => e.GetSubRouteIndex() == subRouteIndex ) ;
+      return document.GetAllElementsOfRouteName<TElement>( BuiltInCategorySets.RoutingElements, filter ).Where( e => e.GetRouteName() == routeName ).Where( e => e.GetSubRouteIndex() == subRouteIndex ) ;
     }
 
     private static IEnumerable<TElement> GetAllElementsOfRouteName<TElement>( this Document document, BuiltInCategory[] builtInCategories, ElementFilter filter ) where TElement : Element
@@ -544,7 +511,7 @@ namespace Arent3d.Architecture.Routing
 
       var filter = new ElementParameterFilter( ParameterFilterRuleFactory.CreateSharedParameterApplicableRule( parameterName ) ) ;
 
-      foreach ( var e in document.GetAllElements<Element>().OfCategory( RoutingBuiltInCategories ).OfNotElementType().Where( filter ).OfType<FamilyInstance>() ) {
+      foreach ( var e in document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PassPoints ).OfNotElementType().Where( filter ).OfType<FamilyInstance>() ) {
         if ( e.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) continue ;
         if ( e.TryGetProperty( RoutingParameter.RelatedPassPointId, out int id ) && id == passPointId ) yield return e ;
       }
@@ -705,14 +672,13 @@ namespace Arent3d.Architecture.Routing
 
     #region Center Lines
 
+    private static readonly ElementFilter CenterLineFilter = new ElementMulticategoryFilter( BuiltInCategorySets.CenterLineCategories ) ;
+
     public static IEnumerable<Element> GetCenterLine( this Element element )
     {
       var document = element.Document ;
       return element.GetDependentElements( CenterLineFilter ).Select( document.GetElement ).Where( e => e.IsValidObject ) ;
     }
-
-    private static readonly BuiltInCategory[] CenterLineCategories = { BuiltInCategory.OST_CenterLines, BuiltInCategory.OST_DuctCurvesCenterLine, BuiltInCategory.OST_DuctFittingCenterLine, BuiltInCategory.OST_FlexDuctCurvesCenterLine, BuiltInCategory.OST_PipeCurvesCenterLine, BuiltInCategory.OST_PipeFittingCenterLine, BuiltInCategory.OST_FlexPipeCurvesCenterLine, } ;
-    private static readonly ElementFilter CenterLineFilter = new ElementMulticategoryFilter( CenterLineCategories ) ;
 
     #endregion
 
@@ -730,7 +696,12 @@ namespace Arent3d.Architecture.Routing
 
     private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
     {
-      var symbol = document.GetFamilySymbol( familyType )! ;
+      return document.CreateFamilyInstance( familyType, position, null, structuralType, useLevel, level ) ;
+    }
+
+    private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, XYZ? direction, StructuralType structuralType, bool useLevel, Level? level )
+    {
+      var symbol = document.GetFamilySymbols( familyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       if ( false == symbol.IsActive ) {
         symbol.Activate() ;
       }
@@ -742,6 +713,15 @@ namespace Arent3d.Architecture.Routing
       level ??= document.GuessLevel( position ) ;
       var instance = document.Create.NewFamilyInstance( position, symbol, level, structuralType ) ;
       instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
+
+      if ( null != direction ) {
+        var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
+        var rotationAngle = Math.Atan2( direction.Y, direction.X ) ;
+
+        ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
+        ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
+      }
+
       document.Regenerate() ;
       ElementTransformUtils.MoveElement( document, instance.Id, position - instance.GetTotalTransform().Origin ) ;
 

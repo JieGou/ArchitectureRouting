@@ -1,3 +1,5 @@
+using System ;
+
 namespace Arent3d.Architecture.Routing.AppBase
 {
   public static class CommandParameterStorage

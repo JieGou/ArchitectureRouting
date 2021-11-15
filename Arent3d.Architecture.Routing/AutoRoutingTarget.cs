@@ -140,13 +140,13 @@ namespace Arent3d.Architecture.Routing
     private static IEnumerable<AutoRoutingEndPoint> GetFromEndPoints( SubRoute subRoute, int depth, MEPSystemRouteCondition routeCondition )
     {
       var endPoints = subRoute.FromEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth, subRoute.GetDiameter(), routeCondition ) ) ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth, subRoute.GetDiameter(), ( false == subRoute.IsRoutingOnPipeSpace ), routeCondition ) ) ;
     }
 
     private static IEnumerable<AutoRoutingEndPoint> GetToEndPoints( SubRoute subRoute, int depth, MEPSystemRouteCondition routeCondition )
     {
       var endPoints = subRoute.ToEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, subRoute.GetDiameter(), routeCondition ) ) ;
+      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, subRoute.GetDiameter(), ( false == subRoute.IsRoutingOnPipeSpace ), routeCondition ) ) ;
     }
 
     private static bool IsRoutingTargetEnd( IEndPoint ep )
@@ -209,6 +209,8 @@ namespace Arent3d.Architecture.Routing
       }
 
       public bool IsRoutingOnPipeRacks { get ; }
+      public bool IsCrossingPipeRacks => false ;
+      public bool IsRouteMergeEnabled => true ;
       public LineType Type => _subRoute.Route.ServiceType ;
       public int Priority { get ; }
       public LoopType LoopType => LoopType.Non ;
