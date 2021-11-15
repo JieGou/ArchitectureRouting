@@ -36,7 +36,6 @@ namespace Arent3d.Architecture.Routing
       document.MakeCertainAllRoutingFamilies() ;
       document.MakeCertainAllRoutingParameters() ;
       AddArentConduitType( document ) ;
-      AddArentConduitType( document ) ;
 
       //Add connector type value
       var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Connectors ) ;
@@ -49,7 +48,7 @@ namespace Arent3d.Architecture.Routing
     
     private static void AddArentConduitType( Document document )
     {
-      const string elbowTypeName = "M_電線管エルボ - 鉄鋼" ; 
+      const string elbowTypeName = "M_電線管エルボ - 鉄鋼" ;
       const string conduitTypeName = "Arent電線" ;
       var sizes = ConduitSizeSettings.GetConduitSizeSettings( document ) ;
       var standards = document.GetStandardTypes().ToList() ;
@@ -57,19 +56,19 @@ namespace Arent3d.Architecture.Routing
         var conduitStandard = sizes.CreateConduitStandardTypeFromExisingStandardType( document, conduitTypeName, standards.Last() ) ;
         if ( conduitStandard ) {
           ConduitSize sizeInfo = new ConduitSize( ( 1.0 ).MillimetersToRevitUnits(), ( 0.8 ).MillimetersToRevitUnits(), ( 1.2 ).MillimetersToRevitUnits(), ( 16.0 ).MillimetersToRevitUnits(), true, true ) ;
-          sizes.AddSize( standards.Last(), sizeInfo );
-          sizes.AddSize( conduitTypeName, sizeInfo );
+          sizes.AddSize( standards.Last(), sizeInfo ) ;
+          sizes.AddSize( conduitTypeName, sizeInfo ) ;
         }
       }
 
       var elbowCurveType = document.GetAllElements<FamilySymbol>().OfCategory( BuiltInCategory.OST_ConduitFitting ).FirstOrDefault( x => x.FamilyName == elbowTypeName ) ;
-      var curveTypes = document.GetAllElements<ConduitType>().Where( c => c.LookupParameter("Standard").AsValueString() == standards.Last() ).OfType<MEPCurveType>().ToList() ;
+      var curveTypes = document.GetAllElements<ConduitType>().Where( c => c.LookupParameter( "Standard" ).AsValueString() == standards.Last() ).OfType<MEPCurveType>().ToList() ;
       foreach ( var curveType in curveTypes ) {
         var arentConduitType = document.GetAllElements<ConduitType>().FirstOrDefault( c => c.Name == conduitTypeName && c.FamilyName == curveType.FamilyName ) ;
         if ( arentConduitType != null ) continue ;
         var arentCurveType = curveType.Duplicate( conduitTypeName ) ;
-        var arentBend = arentCurveType.LookupParameter("Bend").Element as ConduitType ;
-        arentBend!.Elbow = elbowCurveType;
+        var arentBend = arentCurveType.LookupParameter( "Bend" ).Element as ConduitType ;
+        arentBend!.Elbow = elbowCurveType ;
       }
     }
 
