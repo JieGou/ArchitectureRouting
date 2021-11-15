@@ -52,15 +52,19 @@ namespace Arent3d.Architecture.Routing
       const string conduitTypeName = "Arent電線" ;
       var sizes = ConduitSizeSettings.GetConduitSizeSettings( document ) ;
       var standards = document.GetStandardTypes().ToList() ;
-      var conduitStandard = sizes.CreateConduitStandardTypeFromExisingStandardType( document, conduitTypeName, standards.Last() ) ;
-      if ( conduitStandard ) {
-        ConduitSize sizeInfo = new ConduitSize( ( 1.0 ).MillimetersToRevitUnits(), ( 0.8 ).MillimetersToRevitUnits(), ( 1.2 ).MillimetersToRevitUnits(), ( 16.0 ).MillimetersToRevitUnits(), true, true ) ;
-        sizes.AddSize( standards.Last(), sizeInfo );
-        sizes.AddSize( conduitTypeName, sizeInfo );
+      if ( ! standards.Contains( conduitTypeName ) ) {
+        var conduitStandard = sizes.CreateConduitStandardTypeFromExisingStandardType( document, conduitTypeName, standards.Last() ) ;
+        if ( conduitStandard ) {
+          ConduitSize sizeInfo = new ConduitSize( ( 1.0 ).MillimetersToRevitUnits(), ( 0.8 ).MillimetersToRevitUnits(), ( 1.2 ).MillimetersToRevitUnits(), ( 16.0 ).MillimetersToRevitUnits(), true, true ) ;
+          sizes.AddSize( standards.Last(), sizeInfo );
+          sizes.AddSize( conduitTypeName, sizeInfo );
+        }
       }
       var curveTypes = document.GetAllElements<ConduitType>().Where( c => c.LookupParameter("Standard").AsValueString() == standards.Last() ).OfType<MEPCurveType>().ToList() ;
       foreach ( var curveType in curveTypes ) {
-        curveType.Duplicate( conduitTypeName ) ;
+        var arentCurveType = document.GetAllElements<ConduitType>().FirstOrDefault( c => c.Name == conduitTypeName && c.FamilyName == curveType.FamilyName ) ;
+        if ( arentCurveType == null )
+          curveType.Duplicate( conduitTypeName ) ;
       }
     }
 
