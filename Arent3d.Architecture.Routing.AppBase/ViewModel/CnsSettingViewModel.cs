@@ -78,6 +78,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                         index++;
                     }
                 }
+
+                AddDefaultValue();
             }
         }
 
@@ -104,12 +106,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                     }
                 }
 
-                if (createText.Trim() == "未設定")
+                if (!string.IsNullOrWhiteSpace(createText.Trim()) && createText.Trim() != "未設定")
                 {
-                    createText = "";
+                    File.WriteAllText(dlg.FileName, createText.Trim());
                 }
-
-                File.WriteAllText(dlg.FileName, createText.Trim());
             }
         }
 
