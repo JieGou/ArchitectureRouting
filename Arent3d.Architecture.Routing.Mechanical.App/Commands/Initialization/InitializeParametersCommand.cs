@@ -9,7 +9,7 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.App.Commands.Initialization.InitializeParametersCommand", DefaultString = "Initialize Parameters" )]
+  [DisplayNameKey( "Mechanical.App.Commands.Initialization.InitializeParametersCommand", DefaultString = "Initialize\n Parameters" )]
   [Image( "resources/Initialize.png", ImageType = ImageType.Large )]
   public class InitializeParametersCommand : IExternalCommand
   {
