@@ -168,7 +168,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       var oldRoutes = RouteCache.Get( Document ) ;
 
-      var dic = new Dictionary<string, Route>() ;
+      var dic = new Dictionary<string, (Route, List<RouteSegment>)>() ;
       var result = new List<Route>() ;
 
       var parents = new HashSet<Route>() ;
@@ -176,11 +176,11 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         var (routeName, segment) = tuple ;
 
-        if ( false == dic.TryGetValue( routeName, out var route ) ) {
-          route = oldRoutes.FindOrCreate( routeName ) ;
-          route.Clear() ;
+        if ( false == dic.TryGetValue( routeName, out var routeAndNewSegments ) ) {
+          var route = oldRoutes.FindOrCreate( routeName ) ;
 
-          dic.Add( routeName, route ) ;
+          routeAndNewSegments = ( route, new List<RouteSegment>() ) ;
+          dic.Add( routeName, routeAndNewSegments ) ;
           result.Add( route ) ;
         }
 
@@ -192,10 +192,15 @@ namespace Arent3d.Architecture.Routing.AppBase
           parents.UnionWith( toParent.GetAllRelatedBranches() ) ;
         }
 
-        route.RegisterSegment( segment ) ;
+        routeAndNewSegments.Item2.Add( segment ) ;
 
         progressData?.ThrowIfCanceled() ;
       } ) ;
+
+      foreach ( var (route, segments) in dic.Values ) {
+        route.Clear() ;
+        segments.ForEach( segment => route.RegisterSegment( segment ) ) ;
+      }
 
       result.AddRange( parents.Where( p => false == dic.ContainsKey( p.RouteName ) ) ) ;
 

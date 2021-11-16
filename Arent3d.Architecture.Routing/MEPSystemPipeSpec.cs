@@ -8,7 +8,7 @@ namespace Arent3d.Architecture.Routing
 {
   public class MEPSystemPipeSpec : IPipeSpec
   {
-    private const double MinimumShortCurveLength = ( 1.0 / 120 ) * 2 ; // twice of the minimum curve length.
+    public const double MinimumShortCurveLength = ( 1.0 / 120 ) * 2 ; // twice of the minimum curve length.
 
     private readonly IFittingSizeCalculator _fittingSizeCalculator ;
     private Document Document => RouteMEPSystem.Document ;

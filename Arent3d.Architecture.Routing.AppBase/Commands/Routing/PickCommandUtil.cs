@@ -52,24 +52,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    public static IEndPoint GetEndPoint( ConnectorPicker.IPickResult pickResult, ConnectorPicker.IPickResult anotherResult )
+    public static IEndPoint GetEndPoint( ConnectorPicker.IPickResult pickResult, ConnectorPicker.IPickResult anotherResult, bool useConnectorDiameter )
     {
-      if ( pickResult.PickedConnector is { } connector ) return new ConnectorEndPoint( connector ) ;
+      var preferredRadius = ( pickResult.PickedConnector ?? anotherResult.PickedConnector )?.Radius ;
+      if ( pickResult.PickedConnector is { } connector ) return new ConnectorEndPoint( connector, useConnectorDiameter ? null : preferredRadius ) ;
 
       var element = pickResult.PickedElement ;
       var pos = pickResult.GetOrigin() ;
       var anotherPos = anotherResult.GetOrigin() ;
       var dir = GetPreferredDirection( pos, anotherPos ) ;
-      var preferredRadius = ( pickResult.PickedConnector ?? anotherResult.PickedConnector )?.Radius ;
 
       return new TerminatePointEndPoint( element.Document, ElementId.InvalidElementId, pos, dir, preferredRadius, element.Id ) ;
     }
     
-    public static IEndPoint GetEndPointConnector( Element pickResult )
-    {
-      var connector = pickResult.GetTopConnectors() as Connector ;
-      return new ConnectorEndPoint( connector! ) ;
-    }
 
     private static XYZ GetPreferredDirection( XYZ pos, XYZ anotherPos )
     {

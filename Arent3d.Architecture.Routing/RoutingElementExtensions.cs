@@ -4,7 +4,6 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -36,22 +35,42 @@ namespace Arent3d.Architecture.Routing
     {
       document.MakeCertainAllRoutingFamilies() ;
       document.MakeCertainAllRoutingParameters() ;
+      AddArentConduitType( document ) ;
 
       //Add connector type value
-      var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ) ;
+      var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Connectors ) ;
       foreach ( var connector in connectorOneSide ) {
-        SetParameter( connector, "Revit.Property.Builtin.Connector Type".GetDocumentStringByKeyOrDefault( document, "Connector Type" ), RouteConnectorType[ 1 ] ) ;
+        connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
       }
 
       return document.RoutingSettingsAreInitialized() ;
     }
-
-    private static void SetParameter( FamilyInstance instance, string parameterName, string value )
+    
+    private static void AddArentConduitType( Document document )
     {
-      instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
-    }
+      const string elbowTypeName = "M_電線管エルボ - 鉄鋼" ;
+      const string conduitTypeName = "Arent電線" ;
+      var sizes = ConduitSizeSettings.GetConduitSizeSettings( document ) ;
+      var standards = document.GetStandardTypes().ToList() ;
+      if ( ! standards.Contains( conduitTypeName ) ) {
+        var conduitStandard = sizes.CreateConduitStandardTypeFromExisingStandardType( document, conduitTypeName, standards.Last() ) ;
+        if ( conduitStandard ) {
+          ConduitSize sizeInfo = new ConduitSize( ( 1.0 ).MillimetersToRevitUnits(), ( 0.8 ).MillimetersToRevitUnits(), ( 1.2 ).MillimetersToRevitUnits(), ( 16.0 ).MillimetersToRevitUnits(), true, true ) ;
+          sizes.AddSize( standards.Last(), sizeInfo ) ;
+          sizes.AddSize( conduitTypeName, sizeInfo ) ;
+        }
+      }
 
-    public static IReadOnlyDictionary<byte, string> RouteConnectorType { get ; } = new Dictionary<byte, string> { { 0, "Power" }, { 1, "Sensor" } } ;
+      var elbowCurveType = document.GetAllElements<FamilySymbol>().OfCategory( BuiltInCategory.OST_ConduitFitting ).FirstOrDefault( x => x.FamilyName == elbowTypeName ) ;
+      var curveTypes = document.GetAllElements<ConduitType>().Where( c => c.LookupParameter( "Standard" ).AsValueString() == standards.Last() ).OfType<MEPCurveType>().ToList() ;
+      foreach ( var curveType in curveTypes ) {
+        var arentConduitType = document.GetAllElements<ConduitType>().FirstOrDefault( c => c.Name == conduitTypeName && c.FamilyName == curveType.FamilyName ) ;
+        if ( arentConduitType != null ) continue ;
+        var arentCurveType = curveType.Duplicate( conduitTypeName ) ;
+        var arentBend = arentCurveType.LookupParameter( "Bend" ).Element as ConduitType ;
+        arentBend!.Elbow = elbowCurveType ;
+      }
+    }
 
     #endregion
 
@@ -151,7 +170,7 @@ namespace Arent3d.Architecture.Routing
       return ( systemClassification == MEPSystemClassification.PowerBalanced || systemClassification == MEPSystemClassification.PowerUnBalanced ) ;
     }
 
-    public static IConnector GetTopConnectors( this Element elm )
+    public static Connector GetTopConnectorOfConnectorFamily( this FamilyInstance elm )
     {
       var topItem = elm.GetConnectors().MaxItemOrDefault( conn => conn.Origin.Z ) ;
       return topItem ?? elm.GetConnectors().First() ;
@@ -273,32 +292,10 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, direction, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
-
-      var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
-      var rotationAngle = Math.Atan2( direction.Y, direction.X ) ;
-
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
-
-      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
-
-      return instance ;
-    }
-
-    public static FamilyInstance AddPassPointSelectRange( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
-    {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
-      if ( radius.HasValue ) {
-        instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
-      }
-
-      var rotationAngle = Math.Atan2( direction.X, direction.Y ) ;
-
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
 
       instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
 
@@ -426,16 +423,10 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddTerminatePoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.TerminatePoint, position, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
+      var instance = document.CreateFamilyInstance( RoutingFamilyType.TerminatePoint, position, direction, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
-
-      var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
-      var rotationAngle = Math.Atan2( direction.Y, direction.X ) ;
-
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
-      ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
 
       instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
 
@@ -720,6 +711,13 @@ namespace Arent3d.Architecture.Routing
 
     private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
     {
+
+      return document.CreateFamilyInstance( familyType, position, null, structuralType, useLevel, level ) ;
+    }
+
+    private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, XYZ? direction, StructuralType structuralType, bool useLevel, Level? level )
+    {
+
       var symbol = document.GetFamilySymbols( familyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       if ( false == symbol.IsActive ) {
         symbol.Activate() ;
@@ -732,6 +730,15 @@ namespace Arent3d.Architecture.Routing
       level ??= document.GuessLevel( position ) ;
       var instance = document.Create.NewFamilyInstance( position, symbol, level, structuralType ) ;
       instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
+
+      if ( null != direction ) {
+        var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
+        var rotationAngle = Math.Atan2( direction.Y, direction.X ) ;
+
+        ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisY ), -elevationAngle ) ;
+        ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( position, position + XYZ.BasisZ ), rotationAngle ) ;
+      }
+
       document.Regenerate() ;
       ElementTransformUtils.MoveElement( document, instance.Id, position - instance.GetTotalTransform().Origin ) ;
 

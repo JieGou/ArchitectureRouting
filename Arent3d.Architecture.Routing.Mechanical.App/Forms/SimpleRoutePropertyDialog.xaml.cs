@@ -1,20 +1,21 @@
 ﻿using System ;
 using Autodesk.Revit.DB ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase.Forms;
 
-namespace Arent3d.Architecture.Routing.AppBase.Forms
+namespace Arent3d.Architecture.Routing.Mechanical.App.Forms
 {
   /// <summary>
   /// SetProperty.xaml の相互作用ロジック
   /// </summary>
-  public partial class RoutePropertyDialog : Window, IRoutePropertyDialog
+  public partial class SimpleRoutePropertyDialog : Window, IRoutePropertyDialog
   {
-    public RoutePropertyDialog()
+    public SimpleRoutePropertyDialog()
     {
       InitializeComponent() ;
     }
 
-    public RoutePropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
+    public SimpleRoutePropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
       InitializeComponent() ;
       WindowStartupLocation = WindowStartupLocation.CenterScreen ;
@@ -67,5 +68,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       return FromToEdit.Shaft ;
     }
+    
   }
 }

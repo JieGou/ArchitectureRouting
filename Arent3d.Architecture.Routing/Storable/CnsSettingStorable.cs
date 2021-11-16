@@ -1,0 +1,80 @@
+﻿using Arent3d.Revit ;
+using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
+using System ;
+using System.Collections.Generic ;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq ;
+using System.Runtime.InteropServices ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Utility ;
+
+namespace Arent3d.Architecture.Routing.Storable
+{
+  [Guid( "A52AB9F8-1EB5-4BEF-9B7E-DC8CA228C12D" )]
+  [StorableVisibility( AppInfo.VendorId )]
+  public sealed class CnsSettingStorable : StorableBase, IEquatable<CnsSettingStorable>
+  {
+    public const string StorableName = "Cns Setting" ;
+    private const string CnsSettingField = "CnsSetting" ;
+    public ObservableCollection<CnsSettingModel> CnsSettingData { get ; set ; }
+    
+    /// <summary>
+    /// for loading from storage.
+    /// </summary>
+    /// <param name="owner">Owner element.</param>
+    private CnsSettingStorable( DataStorage owner ) : base( owner, false )
+    {
+      CnsSettingData = new ObservableCollection<CnsSettingModel>();
+    }
+
+    /// <summary>
+    /// Called by RouteCache.
+    /// </summary>
+    /// <param name="document"></param>
+    public CnsSettingStorable( Document document ) : base( document, false )
+    {
+      CnsSettingData = new ObservableCollection<CnsSettingModel>();
+    }
+
+    public override string Name => StorableName ;
+
+    protected override void LoadAllFields( FieldReader reader )
+    {
+      var dataSaved = reader.GetArray<CnsSettingModel>( CnsSettingField ) ;
+      CnsSettingData = new ObservableCollection<CnsSettingModel>(dataSaved);
+    }
+
+    protected override void SaveAllFields( FieldWriter writer )
+    {
+      writer.SetArray( CnsSettingField, CnsSettingData ) ;
+    }
+
+    protected override void SetupAllFields(FieldGenerator generator)
+    {
+      generator.SetArray<CnsSettingModel>( CnsSettingField ) ;
+    }
+
+    
+    public bool Equals(CnsSettingStorable? other)
+    {
+      if ( other == null ) return false ;
+      return CnsSettingData.SequenceEqual( other.CnsSettingData, new CnsSettingStorableComparer() ) ;
+    }
+  }
+  public class CnsSettingStorableComparer : IEqualityComparer<CnsSettingModel>
+  {
+    public bool Equals( CnsSettingModel x, CnsSettingModel y )
+    {
+      return x.Equals( y ) ;
+    }
+
+    public int GetHashCode( CnsSettingModel obj )
+    {
+      return obj.GetHashCode() ;
+    }
+  }
+
+}

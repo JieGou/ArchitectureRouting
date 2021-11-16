@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( string.IsNullOrEmpty( envelop.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ) {
           var childrenEnvelope = familyInstances.FirstOrDefault( f => f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() == envelop.Id.ToString() ) ;
           // Create new envelop
-          GenerateEnvelope( document, envelop, uiDocument.ActiveView.GenLevel, settingStorable.OffsetSettingsData.Offset, childrenEnvelope ) ;
+          GenerateEnvelope( document, envelop, uiDocument.ActiveView.GenLevel, settingStorable.OffsetSettingsData.Offset.MillimetersToRevitUnits(), childrenEnvelope ) ;
         }
       }
     }
@@ -80,13 +80,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( envelope?.Location is LocationPoint location ) {
         originX = location.Point.X ;
         originY = location.Point.Y ;
-        var zOffset = level != null ? offset.MetersToRevitUnits() + level.Elevation : offset.MetersToRevitUnits() ;
+        var zOffset = level != null ? offset + level.Elevation : offset ;
         originZ = location.Point.Z - zOffset ;
       }
 
-      var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
-      var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
-      var height = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + 2 * offset.MetersToRevitUnits() ;
+      var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + 2 * offset ;
+      var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + 2 * offset ;
+      var height = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + 2 * offset ;
       var parentEnvelopeId = envelope == null ? string.Empty : envelope!.Id.ToString() ;
 
       // Create new envelope

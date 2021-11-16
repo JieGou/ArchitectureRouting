@@ -101,7 +101,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       var transform = terminatePoint.GetTotalTransform() ;
       PreferredPosition = transform.Origin ;
       PreferredDirection = transform.BasisX ;
-      PreferredRadius = terminatePoint.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() ;
+      PreferredRadius = terminatePoint.LookupParameter( "Arent-RoundDuct-Diameter" )?.AsDouble() * 0.5 ;
     }
 
     public TerminatePointEndPoint( Instance instance, Instance? linkedInstance )
