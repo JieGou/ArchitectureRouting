@@ -127,7 +127,23 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [Button( typeof( OffsetSettingCommand ), OnlyInitialized = true )]
         private static class OffsetSettingCommandButton { }   
       }
-      
+
+      [Panel( "arent3d.architecture.routing.rackcommand", TitleKey = "Electrical.App.Panels.Routing.RackCommand" )]
+      private static class RackCommandPanel
+      {
+        [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
+        private static class NewRackCommandButton { }
+
+        [Button( typeof( NewRackFromToCommand ), OnlyInitialized = true )]
+        private static class NewRackFromToCommandButton { }
+
+        [Button( typeof( NewLimitRackCommand ), OnlyInitialized = true )]
+        private static class NewLimitRackCommandButton { }
+
+        [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
+        private static class EraseAllLimitRackCommandButton { }
+      }
+
       [Panel( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Shafts" )]
       private static class ShaftPanel
       {
@@ -152,22 +168,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( Demo_DeleteAllRoutedElements ) )]
         private static class Demo_DeleteAllRoutedElementsCommandButton { }
-      }
-
-      [Panel( "arent3d.architecture.routing.rackcommand", TitleKey = "Electrical.App.Panels.Routing.RackCommand" )]
-      private static class RackCommandPanel
-      {
-        [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
-        private static class NewRackCommandButton { }
-
-        [Button( typeof( NewRackFromToCommand ), OnlyInitialized = true )]
-        private static class NewRackFromToCommandButton { }
-
-        [Button( typeof( NewLimitRackCommand ), OnlyInitialized = true )]
-        private static class NewLimitRackCommandButton { }
-
-        [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
-        private static class EraseAllLimitRackCommandButton { }
       }
     }
   }
