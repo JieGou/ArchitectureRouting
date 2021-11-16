@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
       var document = uiDocument.Document;
       using Transaction tr = new Transaction( document ) ;
       tr.Start( "Add Space Parameters" );
-      document.LoadAllParametersFromFile(BuiltInCategorySets.SpaceElements, AssetManager.GetSpaceSharedParameterPath() ) ;
+      document.MakeBranchNumberParameter() ;
       tr.Commit();
       return Result.Succeeded;
     }
