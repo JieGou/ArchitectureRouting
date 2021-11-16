@@ -47,5 +47,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new CnsSettingStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get wires and cables data from snoop DB.
+    /// </summary>
+    public static WiresAndCablesStorable GetWiresAndCablesStorable( this Document document )
+    {
+      try {
+        return WiresAndCablesStorableCache.Get( document ).FindOrCreate( WiresAndCablesStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new WiresAndCablesStorable( document ) ;
+      }
+    }
   }
 }
