@@ -30,6 +30,8 @@
         <key>Electrical.App.Panels.Routing.Connectors</key>
         <string>Connectors</string>
 
+        <key>Electrical.App.Panels.Routing.RackCommand</key>
+        <string>ラック</string>
 
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>
@@ -97,9 +99,6 @@
 
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>ラックを作成する&#xA;すべてのコンジット用</string>
-
-        <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
-        <string>Create Rack&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
         <string>コネクターを追加する&#xA;( 両方 )</string>        

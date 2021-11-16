@@ -66,18 +66,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
         private static class ShowHeightSettingCommandButton { }
-
-        [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
-        private static class NewRackCommandButton { }
-
-        [Button( typeof( NewRackFromToCommand ), OnlyInitialized = true )]
-        private static class NewRackFromToCommandButton { }
-
-        [Button( typeof( NewLimitRackCommand ), OnlyInitialized = true )]
-        private static class NewLimitRackCommandButton { }
-
-        [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
-        private static class EraseAllLimitRackCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors")]
@@ -164,6 +152,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( Demo_DeleteAllRoutedElements ) )]
         private static class Demo_DeleteAllRoutedElementsCommandButton { }
+      }
+
+      [Panel( "arent3d.architecture.routing.rackcommand", TitleKey = "Electrical.App.Panels.Routing.RackCommand" )]
+      private static class RackCommandPanel
+      {
+        [Button( typeof( NewRackCommand ), OnlyInitialized = true )]
+        private static class NewRackCommandButton { }
+
+        [Button( typeof( NewRackFromToCommand ), OnlyInitialized = true )]
+        private static class NewRackFromToCommandButton { }
+
+        [Button( typeof( NewLimitRackCommand ), OnlyInitialized = true )]
+        private static class NewLimitRackCommandButton { }
+
+        [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
+        private static class EraseAllLimitRackCommandButton { }
       }
     }
   }
