@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
             // Get fasu height
             double heightFasu = 0;
-            bool bHeightFasu = GetHeightFasu(document, "FASU", ref heightFasu);
+            bool bHeightFasu = GetHeightFasu(document, "Common 45 deg", ref heightFasu);
 
             // Start Transaction
             using (Transaction tr = new Transaction(document))
@@ -43,6 +43,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
                         var fasuInstance = document.AddFasu(locationFasu, null);
                         ElementTransformUtils.RotateElement(document, fasuInstance.Id,
                             Line.CreateBound(locationFasu, locationFasu + XYZ.BasisZ), Math.PI / 2);
+                        fasuInstance.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).SetValueString("3100");
 
                         // Vav object 
                         BoundingBoxXYZ boxFasu = fasuInstance.get_BoundingBox(document.ActiveView);
@@ -75,7 +76,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         private bool GetHeightFasu(Document document, string nameFasu, ref double height)
         {
             bool brc = false;
-            ElementCategoryFilter filter = new(BuiltInCategory.OST_DuctAccessory);
+            ElementCategoryFilter filter = new(BuiltInCategory.OST_DuctFitting);
             FilteredElementCollector collector = new(document);
             IList<Element> ducts = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
             foreach (var duct in ducts)
