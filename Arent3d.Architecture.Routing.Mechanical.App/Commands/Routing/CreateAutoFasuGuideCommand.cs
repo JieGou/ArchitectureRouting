@@ -3,7 +3,6 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using System.Collections.Generic;
-using FasuApi = Arent3d.Architecture.Routing.AppBase.FasuAutoCreateApi;
 using ImageType = Arent3d.Revit.UI.ImageType;
 using System;
 
@@ -21,11 +20,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             var document = uiDocument.Document;
 
             // Get all the spaces in the document
-            IList<Element> spaces = FasuApi.GetAllSpaces(document);
+            IList<Element> spaces = GetAllSpaces(document);
 
             // Get fasu height
             double heightFasu = 0;
-            bool bHeightFasu = FasuApi.GetHeightFasu(document, "FASU", ref heightFasu);
+            bool bHeightFasu = GetHeightFasu(document, "FASU", ref heightFasu);
 
             // Start Transaction
             using (Transaction tr = new Transaction(document))
@@ -55,9 +54,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
                             double distance = (boxFasu.Max.X - boxFasu.Min.X) / 2;
                             FamilyInstance vavInstance = document.AddVav(locVav, null);
                             vavInstance.LookupParameter("ダクト径").SetValueString("250");
-                            vavInstance.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).SetValueString("3250");
                             BoundingBoxXYZ box = vavInstance.get_BoundingBox(document.ActiveView);
-                            distance += (box.Max.X - box.Min.X) / 8;
+                            distance += (box.Max.X - box.Min.X) / 4;
                             ElementTransformUtils.MoveElement(document, vavInstance.Id, new XYZ(distance, 0, 0));
                         }
                     }
@@ -65,8 +63,30 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
                 tr.Commit();
             }
-
             return Result.Succeeded;
+        }
+        private IList<Element> GetAllSpaces(Document document)
+        {
+            ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces);
+            FilteredElementCollector collector = new(document);
+            IList<Element> spaces = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
+            return spaces;
+        }
+        private bool GetHeightFasu(Document document, string nameFasu, ref double height)
+        {
+            bool brc = false;
+            ElementCategoryFilter filter = new(BuiltInCategory.OST_DuctAccessory);
+            FilteredElementCollector collector = new(document);
+            IList<Element> ducts = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
+            foreach (var duct in ducts)
+            {
+                if (duct.Name.IndexOf(nameFasu, 0, StringComparison.Ordinal) == -1) continue;
+                var locationPoint = (duct.Location as LocationPoint)!;
+                height = locationPoint.Point.Z;
+                brc = true;
+                break;
+            }
+            return brc;
         }
     }
 }

@@ -373,7 +373,7 @@ namespace Arent3d.Architecture.Routing
     }
     public static FamilyInstance AddVav(this Document document, XYZ position, Level? level)
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.TTE_VAV_Maru, position, StructuralType.NonStructural, true, level ) ;
+      return document.CreateFamilyInstance( RoutingFamilyType.TTE_VAV_140, position, StructuralType.NonStructural, true, level ) ;
     }
     public static FamilyInstance AddShaft( this Document document, XYZ position, Level? level )
     {

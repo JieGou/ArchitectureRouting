@@ -103,6 +103,10 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "TTE_VAV_丸" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     TTE_VAV_Maru,
+    
+    [NameOnRevit( "140_VAV_変風量ユニット_丸ダクト用" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    TTE_VAV_140,
   }
 
   public static class RoutingFamilyExtensions
