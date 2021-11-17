@@ -99,11 +99,7 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "FASU(F8-150 250Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F8_150_250Phi,
-    
-    [NameOnRevit( "TTE_VAV_丸" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    TTE_VAV_Maru,
-    
+
     [NameOnRevit( "140_VAV_変風量ユニット_丸ダクト用" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     TTE_VAV_140,

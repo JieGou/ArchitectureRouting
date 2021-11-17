@@ -364,13 +364,13 @@ namespace Arent3d.Architecture.Routing
     {
       return document.CreateFamilyInstance( RoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
     }
-    public static FamilyInstance AddFasu(this Document document, XYZ position, Level? level)
+    public static FamilyInstance AddFASU(this Document document, XYZ position, ElementId levelId)
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.FASU_F8_150_250Phi, position, StructuralType.NonStructural, true, level ) ;
+      return document.CreateFamilyInstance( RoutingFamilyType.FASU_F8_150_250Phi, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
     }
-    public static FamilyInstance AddVav(this Document document, XYZ position, Level? level)
+    public static FamilyInstance AddVAV(this Document document, XYZ position, ElementId levelId)
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.TTE_VAV_140, position, StructuralType.NonStructural, true, level ) ;
+      return document.CreateFamilyInstance( RoutingFamilyType.TTE_VAV_140, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
     }
     public static FamilyInstance AddShaft( this Document document, XYZ position, Level? level )
     {
