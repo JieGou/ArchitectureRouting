@@ -79,8 +79,8 @@
         <key>Mechanical.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change&#xA;FixedBopHeight</string>
 
-        <key>Mechanical.App.Commands.Routing.CreateFASUAndVAVAutomaticallyGuideCommand</key>
-        <string>自動生成&#xA;FASU</string>
+        <key>Mechanical.App.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand</key>
+        <string>自動生成&#xA;FASUとVAV</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

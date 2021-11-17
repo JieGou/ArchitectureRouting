@@ -9,10 +9,10 @@ using System;
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
     [Transaction(TransactionMode.Manual)]
-    [DisplayNameKey("Mechanical.App.Commands.Routing.CreateFASUAndVAVAutomaticallyGuideCommand", DefaultString = "Create Auto\nFASU")]
+    [DisplayNameKey("Mechanical.App.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand", DefaultString = "Create FASU\nAnd VAV")]
     [Image("resources/Initialize-16.bmp", ImageType = ImageType.Normal)]
     [Image("resources/Initialize-32.bmp", ImageType = ImageType.Large)]
-    public class CreateFASUAndVAVAutomaticallyGuideCommand : IExternalCommand
+    public class CreateFASUAndVAVAutomaticallyCommand : IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -23,39 +23,37 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             IList<Element> spaces = GetAllSpaces(document);
 
             // Get FASU height
-            double heightOfFASU = 0;
-            bool bHeightOfFASU = GetHeightFASU(document, "Common 45 deg", ref heightOfFASU);
-            if (!bHeightOfFASU) heightOfFASU = 385;
+            double heightOfFASU = GetHeightFASU(document, "Common 45 deg") ?? 385;
 
-                // Start Transaction
+            // Start Transaction
             using (Transaction tr = new Transaction(document))
             {
                 tr.Start("Create FASU and VAV Automatically Guide Command");
                 foreach (var space in spaces)
                 {
                     // Add object to the document
-                    BoundingBoxXYZ boxSpace = space.get_BoundingBox(document.ActiveView);
-                    if (boxSpace == null) continue;
+                    BoundingBoxXYZ boxOfSpace = space.get_BoundingBox(document.ActiveView);
+                    if (boxOfSpace == null) continue;
                     
                     // FASU object
-                    var locationFASU = new XYZ((boxSpace.Max.X + boxSpace.Min.X) / 2,
-                        (boxSpace.Max.Y + boxSpace.Min.Y) / 2, heightOfFASU);
-                    var fasuInstance = document.AddFASU(locationFASU, space.LevelId);
+                    var locationOfFASU = new XYZ((boxOfSpace.Max.X + boxOfSpace.Min.X) / 2,
+                        (boxOfSpace.Max.Y + boxOfSpace.Min.Y) / 2, heightOfFASU);
+                    var fasuInstance = document.AddFASU(locationOfFASU, space.LevelId);
                     ElementTransformUtils.RotateElement(document, fasuInstance.Id,
-                        Line.CreateBound(locationFASU, locationFASU + XYZ.BasisZ), Math.PI / 2);
+                        Line.CreateBound(locationOfFASU, locationOfFASU + XYZ.BasisZ), Math.PI / 2);
                     fasuInstance.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).SetValueString("3100");
 
                     // VAV object 
-                    BoundingBoxXYZ boxFASU = fasuInstance.get_BoundingBox(document.ActiveView);
-                    if (boxFASU == null) continue;
+                    BoundingBoxXYZ boxOfFASU = fasuInstance.get_BoundingBox(document.ActiveView);
+                    if (boxOfFASU == null) continue;
                     
-                    var locVAV = new XYZ((boxFASU.Max.X + boxFASU.Min.X) / 2,
-                        (boxFASU.Max.Y + boxFASU.Min.Y) / 2, heightOfFASU);
-                    double distance = (boxFASU.Max.X - boxFASU.Min.X) / 2;
-                    FamilyInstance vavInstance = document.AddVAV(locVAV, space.LevelId);
+                    var locationOfVAV = new XYZ((boxOfFASU.Max.X + boxOfFASU.Min.X) / 2,
+                        (boxOfFASU.Max.Y + boxOfFASU.Min.Y) / 2, heightOfFASU);
+                    double distance = (boxOfFASU.Max.X - boxOfFASU.Min.X) / 2;
+                    FamilyInstance vavInstance = document.AddVAV(locationOfVAV, space.LevelId);
                     vavInstance.LookupParameter("ダクト径").SetValueString("250");
-                    BoundingBoxXYZ box = vavInstance.get_BoundingBox(document.ActiveView);
-                    distance += (box.Max.X - box.Min.X) / 4;
+                    BoundingBoxXYZ boxOfVAV = vavInstance.get_BoundingBox(document.ActiveView);
+                    distance += (boxOfVAV.Max.X - boxOfVAV.Min.X) / 4;
                     ElementTransformUtils.MoveElement(document, vavInstance.Id, new XYZ(distance, 0, 0));
                 }
 
@@ -70,19 +68,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             IList<Element> spaces = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
             return spaces;
         }
-        private static bool GetHeightFASU(Document document, string nameFASU, ref double heightOfFASU)
+        private static double? GetHeightFASU(Document document, string nameOfFASU)
         {
             ElementCategoryFilter filter = new(BuiltInCategory.OST_DuctFitting);
             FilteredElementCollector collector = new(document);
             IList<Element> ducts = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
             foreach (var duct in ducts)
             {
-                if (duct.Name.IndexOf(nameFASU, 0, StringComparison.Ordinal) == -1) continue;
+                if (duct.Name.IndexOf(nameOfFASU, 0, StringComparison.Ordinal) == -1) continue;
                 var locationPoint = (duct.Location as LocationPoint)!;
-                heightOfFASU = locationPoint.Point.Z;
-                return true;
+                return locationPoint.Point.Z;
             }
-            return false;
+            return null;
         }
     }
 }
