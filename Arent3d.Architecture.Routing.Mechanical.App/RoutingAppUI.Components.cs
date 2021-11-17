@@ -17,6 +17,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
       {
         [Button( typeof( InitializeCommand ), InitializeButton = true )]
         private static class InitializeCommandButton { }
+        
+        [Button( typeof( InitializeParametersCommand ), OnlyInitialized = true )]
+        private static class InitializeParametersCommandButton { }
 
         [Button( typeof( ShowRoutingViewsCommand ), OnlyInitialized = true )]
         private static class ShowRoutingViewsCommandButton { }
