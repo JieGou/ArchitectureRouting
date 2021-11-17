@@ -26,6 +26,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
         [Button( typeof( Show3DViewsCommand ), OnlyInitialized = true )]
         private static class Show3DViewsCommandButton { }
+        
+        [Button(typeof(CnsSettingCommand), OnlyInitialized = true)]
+        private static class CnsSettingCommandButton { }
+        
+        [Button( typeof( ShowCeeDModelsCommand ), OnlyInitialized = true )]
+        private static class ShowCeeDModelsCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.routing", TitleKey = "Electrical.App.Panels.Routing.Routing" )]

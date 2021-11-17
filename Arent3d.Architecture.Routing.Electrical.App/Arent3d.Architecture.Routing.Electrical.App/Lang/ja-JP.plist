@@ -88,7 +88,10 @@
 
         <key>Electrical.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change&#xA;FixedBopHeight</string>
-		
+
+        <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
+        <string>工事区分設定</string>
+        
 		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
 		<string>Height Setting</string>
 
@@ -112,6 +115,9 @@
 
         <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
         <string>オフセット設定</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowCeeDModelsCommand</key>
+        <string>セットコード表示</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

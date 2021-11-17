@@ -34,5 +34,31 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new OffsetSettingStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get CNS Setting data from snoop DB.
+    /// </summary>
+    public static CnsSettingStorable GetCnsSettingStorable( this Document document )
+    {
+      try {
+        return CnsSettingStorableCache.Get( document ).FindOrCreate( CnsSettingStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new CnsSettingStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get Ceed Model data from snoop DB.
+    /// </summary>
+    public static CeedStorable GetCeeDStorable( this Document document )
+    {
+      try {
+        return CeedStorableCache.Get( document ).FindOrCreate( CeedStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new CeedStorable( document ) ;
+      }
+    }
   }
 }
