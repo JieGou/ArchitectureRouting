@@ -17,7 +17,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return Result.Succeeded ;
       }
       else {
-        message = "Save CSV Files Failed." ;
         return Result.Cancelled ;
       }
     }

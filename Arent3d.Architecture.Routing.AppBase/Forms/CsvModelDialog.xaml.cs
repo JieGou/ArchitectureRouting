@@ -65,6 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           t.Commit() ;
         }
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+          MessageBox.Show( "Save CSV Files Failed.", "Error Message" ) ;
           DialogResult = false ;
         }
       }
