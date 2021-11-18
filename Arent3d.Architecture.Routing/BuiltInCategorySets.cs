@@ -126,6 +126,11 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_PipeFittingCenterLine,
       BuiltInCategory.OST_FlexPipeCurvesCenterLine,
     } ;
+    
+    public static readonly BuiltInCategory[] SpaceElements =
+    {
+      BuiltInCategory.OST_MEPSpaces
+    } ;
 
 
 

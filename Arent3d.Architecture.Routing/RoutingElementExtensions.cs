@@ -62,12 +62,16 @@ namespace Arent3d.Architecture.Routing
       }
 
       var elbowCurveType = document.GetAllElements<FamilySymbol>().OfCategory( BuiltInCategory.OST_ConduitFitting ).FirstOrDefault( x => x.FamilyName == elbowTypeName ) ;
-      var curveTypes = document.GetAllElements<ConduitType>().Where( c => c.LookupParameter( "Standard" ).AsValueString() == standards.Last() ).OfType<MEPCurveType>().ToList() ;
+      
+      // Get type by "Standard" parameter
+      var curveTypes = document.GetAllElements<ConduitType>().Where( c => c.get_Parameter( BuiltInParameter.CONDUIT_STANDARD_TYPE_PARAM ).AsValueString() == standards.Last() ).OfType<MEPCurveType>().ToList() ;
       foreach ( var curveType in curveTypes ) {
         var arentConduitType = document.GetAllElements<ConduitType>().FirstOrDefault( c => c.Name == conduitTypeName && c.FamilyName == curveType.FamilyName ) ;
         if ( arentConduitType != null ) continue ;
         var arentCurveType = curveType.Duplicate( conduitTypeName ) ;
-        var arentBend = arentCurveType.LookupParameter( "Bend" ).Element as ConduitType ;
+        
+        // Change "Bend" value
+        var arentBend = arentCurveType.get_Parameter( BuiltInParameter.RBS_CURVETYPE_DEFAULT_BEND_PARAM ).Element as ConduitType ;
         arentBend!.Elbow = elbowCurveType ;
       }
     }
