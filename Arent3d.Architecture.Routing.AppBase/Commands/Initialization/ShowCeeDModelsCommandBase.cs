@@ -1,4 +1,5 @@
-﻿using System.Windows ;
+﻿using System.Collections.Generic;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -49,10 +50,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           // opts.Rotation = Math.PI / 4;
           var (x, y, z) = ( element.Location as LocationPoint )!.Point ;
           var txtPosition = new XYZ( x - 2, y + 1.5, z ) ;
-          TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeeDModel.SelectedSetCode, opts ) ;
+          var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeeDModel.SelectedSetCode, opts ) ;
+
+          // create group of selected element and new text note
+          ICollection<ElementId> groupIds = new List<ElementId>();
+          groupIds.Add(element.Id);
+          groupIds.Add(textNote.Id);
+          doc.Create.NewGroup(groupIds);
 
           return Result.Succeeded ;
-        } ) ;
+        }) ;
       return Result.Cancelled ;
     }
   }
