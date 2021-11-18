@@ -150,12 +150,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var rotationCommon = ( element.Location as LocationPoint )!.Rotation ;
       int axisOfRotation = GetAxisRotation( rotationCommon ) ;
 
-      // Process by group BranchnNmber
+      // Process by group BranchNumber
       foreach ( var branchNumber in listAllOfBranchNumber.Select( ( value, index ) => new { value, index } ) ) {
         List<int> groupOfBranchNumberSpaces = GetBranchNumberSpaces( listAllOfBranchNumber, branchNumber.index ) ;
         if ( groupOfBranchNumberSpaces.Count == 0 ) continue ;
         
-        // Get min max of group BranchnNmber
+        // Separate handling for BranchNumber = 0
+        if ( branchNumber.index == 0 ) {
+          foreach ( var branchNumberSpace in groupOfBranchNumberSpaces.Select( ( value, index ) => new { value, index } ) ) {
+            XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumberSpace.value ] ) ;
+            listAllRotationOfSpaces[ branchNumberSpace.value ] =
+              GetRotationSpace( ( element.Location as LocationPoint )!.Point, centerOfSpace, axisOfRotation ) ;
+          }
+
+          continue ;
+        }
+
+        // Get min max of group BranchNumber
         XYZ maxOfSpaces = new XYZ(), minOfSpaces = new XYZ() ;
         foreach ( var branchNumberSpace in groupOfBranchNumberSpaces.Select( ( value, index ) => new { value, index } ) ) {
           XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumberSpace.value ] ) ;
@@ -185,7 +196,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         // Calculate rotation angle of FASA and VAV in each space
         foreach ( var branchNumberSpace in groupOfBranchNumberSpaces.Select( ( value, index ) => new { value, index } ) ) {
           XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumberSpace.value ] ) ;
-          listAllRotationOfSpaces[ branchNumberSpace.value ] = GetRotationSpace( centerOfGroupSpaces, centerOfSpace, axisOfRotation ) ;
+          listAllRotationOfSpaces[ branchNumberSpace.value ] = GetRotationSpace( centerOfGroupSpaces, centerOfSpace, axisOfRotation) ;
         }
       }
 
@@ -229,11 +240,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         return 1 ;
       }
     }
-
-    private static double GetRotationSpace( XYZ centerOfBlock, XYZ centerOfSpce, int axisOfRotation )
+    
+    private static double GetRotationSpace( XYZ centerOfGroupSpaces, XYZ centerOfSpace, int axisOfRotation)
     {
       if ( axisOfRotation == 0 ) {
-        if ( centerOfBlock.X <= centerOfSpce.X ) {
+        if ( centerOfGroupSpaces.X <= centerOfSpace.X ) {
           return Math.PI ;
         }
         else {
@@ -241,7 +252,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
       else {
-        if ( centerOfBlock.Y <= centerOfSpce.Y ) {
+        if ( centerOfGroupSpaces.Y <= centerOfSpace.Y ) {
           return 1.5 * Math.PI ;
         }
         else {
