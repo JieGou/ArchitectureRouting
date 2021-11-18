@@ -113,7 +113,10 @@
         <string>Create 3D&#xA;Floor Views</string>
 
         <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
-        <string>Offset&#xA;Setting</string>        
+        <string>Offset&#xA;Setting</string>
+
+        <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
+        <string>Save&#xA;Csv Files</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

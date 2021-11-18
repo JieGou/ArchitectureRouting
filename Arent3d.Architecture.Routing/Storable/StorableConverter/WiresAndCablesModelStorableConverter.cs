@@ -12,28 +12,32 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
       WireType,
       DiameterOrNominal,
-      DOrANumberOfHeartsOrLogarithm,
-      COrPCrossSectionalArea,
+      DOrA,
+      NumberOfHeartsOrLogarithm,
+      COrP,
+      CrossSectionalArea,
       Name,
       Classification,
       FinishedOuterDiameter,
       NumberOfConnections
     }
-    
+
     protected override WiresAndCablesModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
       var wireType = deserializer.GetString( SerializeField.WireType ) ;
       var diameterOrNominal = deserializer.GetString( SerializeField.DiameterOrNominal ) ;
-      var dOrANumberOfHeartsOrLogarithm = deserializer.GetString( SerializeField.DOrANumberOfHeartsOrLogarithm ) ;
-      var cOrPCrossSectionalArea = deserializer.GetString( SerializeField.COrPCrossSectionalArea ) ;
+      var dOrA = deserializer.GetString( SerializeField.DOrA ) ;
+      var numberOfHeartsOrLogarithm = deserializer.GetString( SerializeField.NumberOfHeartsOrLogarithm ) ;
+      var cOrP = deserializer.GetString( SerializeField.COrP ) ;
+      var crossSectionalArea = deserializer.GetString( SerializeField.CrossSectionalArea ) ;
       var name = deserializer.GetString( SerializeField.Name ) ;
       var classification = deserializer.GetString( SerializeField.Classification ) ;
       var finishedOuterDiameter = deserializer.GetString( SerializeField.FinishedOuterDiameter ) ;
       var numberOfConnections = deserializer.GetString( SerializeField.NumberOfConnections ) ;
 
-      return new WiresAndCablesModel( wireType!, diameterOrNominal!, dOrANumberOfHeartsOrLogarithm!, cOrPCrossSectionalArea!, name!, classification!, finishedOuterDiameter!, numberOfConnections! ) ;
+      return new WiresAndCablesModel( wireType, diameterOrNominal, dOrA, numberOfHeartsOrLogarithm, cOrP, crossSectionalArea, name, classification, finishedOuterDiameter, numberOfConnections ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, WiresAndCablesModel customTypeValue )
@@ -42,8 +46,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 
       serializerObject.AddNonNull( SerializeField.WireType, customTypeValue.WireType ) ;
       serializerObject.AddNonNull( SerializeField.DiameterOrNominal, customTypeValue.DiameterOrNominal ) ;
-      serializerObject.AddNonNull( SerializeField.DOrANumberOfHeartsOrLogarithm, customTypeValue.DOrANumberOfHeartsOrLogarithm ) ;
-      serializerObject.AddNonNull( SerializeField.COrPCrossSectionalArea, customTypeValue.COrPCrossSectionalArea ) ;
+      serializerObject.AddNonNull( SerializeField.DOrA, customTypeValue.DOrA ) ;
+      serializerObject.AddNonNull( SerializeField.NumberOfHeartsOrLogarithm, customTypeValue.NumberOfHeartsOrLogarithm ) ;
+      serializerObject.AddNonNull( SerializeField.COrP, customTypeValue.COrP ) ;
+      serializerObject.AddNonNull( SerializeField.CrossSectionalArea, customTypeValue.CrossSectionalArea ) ;
       serializerObject.AddNonNull( SerializeField.Name, customTypeValue.Name ) ;
       serializerObject.AddNonNull( SerializeField.Classification, customTypeValue.Classification ) ;
       serializerObject.AddNonNull( SerializeField.FinishedOuterDiameter, customTypeValue.FinishedOuterDiameter ) ;

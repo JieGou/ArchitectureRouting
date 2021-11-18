@@ -116,6 +116,9 @@
         <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
         <string>オフセット設定</string>
 
+        <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
+        <string>読み込みdb保存</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>

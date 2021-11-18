@@ -29,6 +29,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
         [Button(typeof(CnsSettingCommand), OnlyInitialized = true)]
         private static class CnsSettingCommandButton { }
+        
+        [Button(typeof(LoadCsvFilesCommand), OnlyInitialized = true)]
+        private static class LoadCsvFilesCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.routing", TitleKey = "Electrical.App.Panels.Routing.Routing" )]
