@@ -16,8 +16,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   public class CreateFASUAndVAVAutomaticallyCommand : IExternalCommand
   {
     private const double distanceBetweenFASUAndVAV = 0.25;
-    private const string hightOfFASU = "3100" ;
-    private const string hightOfVAV = "3275" ;
+    private const string heightOfFASU = "3100" ;
+    private const string heightOfVAV = "3275" ;
     private const string diameterOfVAV = "250" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -41,25 +41,25 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
 
           // Add FASU to document
-          var fasuInstance = document.AddFASU( positionOfFASUAndVAV, space.LevelId ) ;
-          ElementTransformUtils.RotateElement( document, fasuInstance.Id,
+          var instanceOfFASU = document.AddFASU( positionOfFASUAndVAV, space.LevelId ) ;
+          ElementTransformUtils.RotateElement( document, instanceOfFASU.Id,
             Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI / 2 ) ;
-          fasuInstance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).SetValueString( hightOfFASU ) ;
+          instanceOfFASU.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).SetValueString( heightOfFASU ) ;
           
           // Add VAV to document
-          var vavInstance = document.AddVAV( positionOfFASUAndVAV, space.LevelId ) ;
-          vavInstance.LookupParameter( "ダクト径" ).SetValueString( diameterOfVAV ) ;
-          vavInstance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).SetValueString( hightOfVAV ) ;
+          var instanceOfVAV = document.AddVAV( positionOfFASUAndVAV, space.LevelId ) ;
+          instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( diameterOfVAV ) ;
+          instanceOfVAV.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).SetValueString( heightOfVAV ) ;
           
           // Get BoundingBox of FASU and VAV
-          BoundingBoxXYZ boxOfFASU = fasuInstance.get_BoundingBox( document.ActiveView ) ;
+          BoundingBoxXYZ boxOfFASU = instanceOfFASU.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfFASU == null ) continue ;
-          BoundingBoxXYZ boxOfVAV = vavInstance.get_BoundingBox( document.ActiveView ) ;
+          BoundingBoxXYZ boxOfVAV = instanceOfVAV.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfVAV == null ) continue ;
 
           // Move VAV
-          double distanceBetweenBox = ( boxOfFASU.Max.X - boxOfFASU.Min.X ) / 2 + ( boxOfVAV.Max.X - boxOfVAV.Min.X ) / 2 ;
-          ElementTransformUtils.MoveElement( document, vavInstance.Id, new XYZ( distanceBetweenBox + distanceBetweenFASUAndVAV, 0, 0 ) ) ;
+          double totalOfBoxHalfWidth = ( boxOfFASU.Max.X - boxOfFASU.Min.X ) / 2 + ( boxOfVAV.Max.X - boxOfVAV.Min.X ) / 2 ;
+          ElementTransformUtils.MoveElement( document, instanceOfVAV.Id, new XYZ( totalOfBoxHalfWidth + distanceBetweenFASUAndVAV, 0, 0 ) ) ;
         }
 
         tr.Commit() ;
