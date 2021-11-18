@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public CsvModelDialog( Document document )
     {
       InitializeComponent() ;
-      
+
       _document = document ;
       _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
       _allConduitModels = new List<ConduitsModel>() ;
@@ -73,7 +73,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DialogResult = true ;
       Close() ;
     }
-
 
     private void Button_LoadWiresAndCablesData( object sender, RoutedEventArgs e )
     {

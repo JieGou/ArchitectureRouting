@@ -1,6 +1,4 @@
-﻿using System ;
-
-namespace Arent3d.Architecture.Routing.Storable.Model
+﻿namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class HiroiSetCdMasterModel
   {

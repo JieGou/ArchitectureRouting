@@ -122,7 +122,7 @@
         <string>View&#xA;Set Code</string>
 
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
-        <string>Save&#xA;Csv Files</string>
+        <string>Load&#xA;Save To DB</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
