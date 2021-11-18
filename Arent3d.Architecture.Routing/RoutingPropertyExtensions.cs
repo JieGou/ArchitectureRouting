@@ -81,6 +81,15 @@ namespace Arent3d.Architecture.Routing
     ConnectorType,
   }
 
+  public enum BranchNumberParameter
+  {
+    [ParameterGuid( "01c73735-4b79-4729-91af-3dede453c482" ), NameOnRevit( "BranchNumber" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ),
+      nameof( BuiltInCategorySets.SpaceElements ) )]
+    BranchNumber
+  }
+  
+
   public static class RoutingPropertyExtensions
   {
     public static bool AllRoutingParametersAreRegistered( this Document document )
@@ -94,6 +103,11 @@ namespace Arent3d.Architecture.Routing
       document.LoadAllParametersFromFile<PassPointParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
       document.LoadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() );
       document.LoadAllParametersFromFile<ConnectorFamilyParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
+    }
+
+    public static void MakeBranchNumberParameter( this Document document )
+    {
+      document.LoadAllParametersFromFile<BranchNumberParameter>(AssetManager.GetSpaceSharedParameterPath()) ;
     }
   }
 }

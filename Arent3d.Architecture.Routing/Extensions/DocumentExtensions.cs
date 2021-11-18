@@ -49,6 +49,19 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
+    /// Get Ceed Model data from snoop DB.
+    /// </summary>
+    public static CeedStorable GetCeeDStorable( this Document document )
+    {
+      try {
+        return CeedStorableCache.Get( document ).FindOrCreate( CeedStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new CeedStorable( document ) ;
+      }
+    }
+
+    /// <summary>
     /// Get csv data from snoop DB.
     /// </summary>
     public static CsvStorable GetCsvStorable( this Document document )

@@ -30,6 +30,8 @@
         <key>Electrical.App.Panels.Routing.Connectors</key>
         <string>Connectors</string>
 
+        <key>Electrical.App.Panels.Routing.RackCommand</key>
+        <string>ラック</string>
 
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>
@@ -115,6 +117,9 @@
 
         <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
         <string>オフセット設定</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowCeeDModelsCommand</key>
+        <string>セットコード表示</string>
 
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>読み込みdb保存</string>

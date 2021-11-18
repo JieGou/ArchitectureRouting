@@ -30,6 +30,9 @@
         <key>Electrical.App.Panels.Routing.Connectors</key>
         <string>Connectors</string>
 
+        <key>Electrical.App.Panels.Routing.RackCommand</key>
+        <string>Rack</string>
+
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>
         <string>Insert&#xA;Branch Point</string>
@@ -90,15 +93,15 @@
 
         <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>CNS Setting</string>
-        
-		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
-		<string>Height Setting</string>
 
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>Create Rack&#xA;For All</string>
 
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
+
+		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
+		<string>Height Setting</string>
 
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
         <string>New Connector&#xA;(Both Sides)</string>
@@ -114,6 +117,9 @@
 
         <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
         <string>Offset&#xA;Setting</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowCeeDModelsCommand</key>
+        <string>View&#xA;Set Code</string>
 
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>Save&#xA;Csv Files</string>
