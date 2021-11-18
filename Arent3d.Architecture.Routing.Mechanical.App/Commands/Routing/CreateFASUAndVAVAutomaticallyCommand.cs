@@ -58,8 +58,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           if ( boxOfVAV == null ) continue ;
 
           // Move VAV
-          double totalOfBoxHalfWidth = ( boxOfFASU.Max.X - boxOfFASU.Min.X ) / 2 + ( boxOfVAV.Max.X - boxOfVAV.Min.X ) / 2 ;
-          ElementTransformUtils.MoveElement( document, instanceOfVAV.Id, new XYZ( totalOfBoxHalfWidth + distanceBetweenFASUAndVAV, 0, 0 ) ) ;
+          double distanceBetweenFASUCenterAndVAVCenter = ( boxOfFASU.Max.X - boxOfFASU.Min.X ) / 2 +
+                                                         ( boxOfVAV.Max.X - boxOfVAV.Min.X ) / 2 +
+                                                         distanceBetweenFASUAndVAV ;
+          ElementTransformUtils.MoveElement( document, instanceOfVAV.Id, new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
         }
 
         tr.Commit() ;
