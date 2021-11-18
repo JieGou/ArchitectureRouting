@@ -80,7 +80,7 @@
         <string>Change&#xA;FixedBopHeight</string>
 
         <key>Mechanical.App.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand</key>
-        <string>自動生成&#xA;FASUとVAV</string>
+        <string>Create&#xA;FASUsAndVAVs</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

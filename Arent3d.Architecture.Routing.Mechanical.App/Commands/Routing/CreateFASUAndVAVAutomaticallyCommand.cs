@@ -30,7 +30,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       // Start Transaction
       using ( Transaction tr = new Transaction( document ) ) {
-        tr.Start( "Create FASU and VAV Automatically Command" ) ;
+        tr.Start( "Create FASUs and VAVs Automatically Command" ) ;
         foreach ( var space in spaces ) {
           // Add object to the document
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
