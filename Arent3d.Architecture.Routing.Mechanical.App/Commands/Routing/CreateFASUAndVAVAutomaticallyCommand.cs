@@ -166,7 +166,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           continue ;
         }
 
-        // Get min max of group BranchNumber
+        // Get min-max of group BranchNumber
         XYZ maxOfSpaces = new XYZ(), minOfSpaces = new XYZ() ;
         foreach ( var branchNumberSpace in groupOfBranchNumberSpaces.Select( ( value, index ) => new { value, index } ) ) {
           XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumberSpace.value ] ) ;
@@ -193,7 +193,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         XYZ centerOfGroupSpaces = new XYZ( ( maxOfSpaces.X + minOfSpaces.X ) / 2, ( maxOfSpaces.Y + minOfSpaces.Y ) / 2,
           ( maxOfSpaces.Z + minOfSpaces.Z ) / 2 ) ;
 
-        // Calculate rotation angle of FASA and VAV in each space
+        // Calculate rotation angle of FASU and VAV in each space
         foreach ( var branchNumberSpace in groupOfBranchNumberSpaces.Select( ( value, index ) => new { value, index } ) ) {
           XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumberSpace.value ] ) ;
           listAllRotationOfSpaces[ branchNumberSpace.value ] = GetRotationSpace( centerOfGroupSpaces, centerOfSpace, axisOfRotation) ;
@@ -233,7 +233,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static int GetAxisRotation( double rotation )
     {
-      if ( Math.Abs( Math.Cos( rotation ) ) >= Math.Cos( 0.25 * Math.PI ) ) {
+      if ( Math.Abs( Math.Cos( rotation ) ) >= Math.Cos( Math.PI / 4 ) ) {
         return 0 ;
       }
       else {
@@ -256,7 +256,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           return 1.5 * Math.PI ;
         }
         else {
-          return 0.5 * Math.PI ;
+          return Math.PI / 2 ;
         }
       }
     }
