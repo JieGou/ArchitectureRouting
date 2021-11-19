@@ -123,6 +123,9 @@
 
         <key>Electrical.App.Commands.Initialization.ShowDisplayInformationCommand</key>
         <string>拾い情報表示</string>
+        
+        <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
+        <string>読み込みdb保存</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
