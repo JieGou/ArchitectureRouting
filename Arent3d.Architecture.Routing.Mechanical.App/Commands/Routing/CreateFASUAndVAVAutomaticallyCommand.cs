@@ -24,6 +24,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string heightOfFASU = "3100" ;
     private const string heightOfVAV = "3275" ;
     private const string diameterOfVAV = "250" ;
+    private const int rootBranchNumber = 0 ;
 
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
@@ -76,20 +77,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       IList<Element> spaces = GetAllSpaces( document ) ;
       
       // Get branch number in spaces
-      List<int> listAllOfBranchNumber = new List<int>() ;
-      foreach ( var space in spaces ) {
-        if ( space.HasParameter( BranchNumberParameter.BranchNumber ) ) {
-          if ( space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) )
-            listAllOfBranchNumber.Add( branchNumber ) ;
-          else {
-            listAllOfBranchNumber.Add( -1 ) ;
-          }
-        }
-        else {
-          listAllOfBranchNumber.Add( -1 ) ;
-        }
-      }
-
+      IList<int> listAllOfBranchNumber = spaces.Select( space =>
+        space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ? branchNumber : -1 ).ToArray() ;
+      
       // Calculation rotation of all spaces
       List<double> listAllRotationOfSpaces = CalculationSpaceRotation(document, spaces, listAllOfBranchNumber, element);
 
@@ -127,9 +117,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           ElementTransformUtils.MoveElement( document, instanceOfVAV.Id, new XYZ( totalOfBoxHalfWidth + distanceBetweenFASUAndVAV, 0, 0 ) ) ;
 
           // Rotate FASU and VAV
-          List<ElementId> idOfFASUAndVAV = new List<ElementId>();
-          idOfFASUAndVAV.Add(instanceOfFASU.Id);
-          idOfFASUAndVAV.Add(instanceOfVAV.Id);
+          List<ElementId> idOfFASUAndVAV = new List<ElementId>() ;
+          idOfFASUAndVAV.Add( instanceOfFASU.Id ) ;
+          idOfFASUAndVAV.Add( instanceOfVAV.Id ) ;
           ElementTransformUtils.RotateElements(document, idOfFASUAndVAV, Line.CreateBound(positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ), listAllRotationOfSpaces[space.index]);
         }
 
@@ -151,52 +141,28 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       int axisOfRotation = GetAxisRotation( rotationCommon ) ;
 
       // Process by group BranchNumber
-      foreach ( var branchNumber in listAllOfBranchNumber.Select( ( value, index ) => new { value, index } ) ) {
-        List<int> groupOfBranchNumberSpaces = GetBranchNumberSpaces( listAllOfBranchNumber, branchNumber.index ) ;
-        if ( groupOfBranchNumberSpaces.Count == 0 ) continue ;
+      foreach ( var handleBranchNumber in listAllOfBranchNumber.Select( ( value, index ) => new { value, index } ) ) {
+        List<int> branchNumbers = GetBranchNumbers( listAllOfBranchNumber, handleBranchNumber.index ) ;
+        if ( branchNumbers.Count == 0 ) continue ;
         
-        // Separate handling for BranchNumber = 0
-        if ( branchNumber.index == 0 ) {
-          foreach ( var branchNumberSpace in groupOfBranchNumberSpaces.Select( ( value, index ) => new { value, index } ) ) {
-            XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumberSpace.value ] ) ;
-            listAllRotationOfSpaces[ branchNumberSpace.value ] =
+        // Separate handling for rootBranchNumber (default value == 0)
+        if ( handleBranchNumber.index == rootBranchNumber ) {
+          foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
+            XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
+            listAllRotationOfSpaces[ branchNumber.value ] =
               GetRotationSpace( ( element.Location as LocationPoint )!.Point, centerOfSpace, axisOfRotation ) ;
           }
 
           continue ;
         }
 
-        // Get min-max of group BranchNumber
-        XYZ maxOfSpaces = new XYZ(), minOfSpaces = new XYZ() ;
-        foreach ( var branchNumberSpace in groupOfBranchNumberSpaces.Select( ( value, index ) => new { value, index } ) ) {
-          XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumberSpace.value ] ) ;
-          if (branchNumberSpace.index == 0){
-            maxOfSpaces = centerOfSpace ;
-            minOfSpaces = centerOfSpace ;
-          }
-          else {
-            if ( maxOfSpaces.X < centerOfSpace.X )
-              maxOfSpaces = new XYZ( centerOfSpace.X, maxOfSpaces.Y, maxOfSpaces.Z ) ;
-            if ( maxOfSpaces.Y < centerOfSpace.Y )
-              maxOfSpaces = new XYZ( maxOfSpaces.X, centerOfSpace.Y, maxOfSpaces.Z ) ;
-            if ( maxOfSpaces.Z < centerOfSpace.Z )
-              maxOfSpaces = new XYZ( maxOfSpaces.X, maxOfSpaces.Y, centerOfSpace.Z ) ;
-            if ( minOfSpaces.X > centerOfSpace.X )
-              minOfSpaces = new XYZ( centerOfSpace.X, minOfSpaces.Y, minOfSpaces.Z ) ;
-            if ( minOfSpaces.Y > centerOfSpace.Y )
-              minOfSpaces = new XYZ( minOfSpaces.X, centerOfSpace.Y, minOfSpaces.Z ) ;
-            if ( minOfSpaces.Z > centerOfSpace.Z )
-              minOfSpaces = new XYZ( minOfSpaces.X, minOfSpaces.Y, centerOfSpace.Z ) ;
-          }
-        }
-
-        XYZ centerOfGroupSpaces = new XYZ( ( maxOfSpaces.X + minOfSpaces.X ) / 2, ( maxOfSpaces.Y + minOfSpaces.Y ) / 2,
-          ( maxOfSpaces.Z + minOfSpaces.Z ) / 2 ) ;
+        // Get center of spaces group
+        XYZ centerPointOfSpacesGroup = GetCenterSpacesGroup( document, spaces, branchNumbers ) ;
 
         // Calculate rotation angle of FASU and VAV in each space
-        foreach ( var branchNumberSpace in groupOfBranchNumberSpaces.Select( ( value, index ) => new { value, index } ) ) {
-          XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumberSpace.value ] ) ;
-          listAllRotationOfSpaces[ branchNumberSpace.value ] = GetRotationSpace( centerOfGroupSpaces, centerOfSpace, axisOfRotation) ;
+        foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
+          XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
+          listAllRotationOfSpaces[ branchNumber.value ] = GetRotationSpace( centerPointOfSpacesGroup, centerOfSpace, axisOfRotation) ;
         }
       }
 
@@ -211,7 +177,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return spaces ;
     }
     
-    private static List<int> GetBranchNumberSpaces( IList<int> listAllBranchNumber, int valueOfBranchNumber )
+    private static List<int> GetBranchNumbers( IList<int> listAllBranchNumber, int valueOfBranchNumber )
     {
       List<int> groupOfBranchNumberSpaces = new List<int>() ;
       foreach ( var branchNumberOfSpace in listAllBranchNumber.Select( ( value, index ) => new { value, index } ) ) {
@@ -223,6 +189,37 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return groupOfBranchNumberSpaces ;
     }
 
+    private static XYZ GetCenterSpacesGroup(Document document, IList<Element> spaces, List<int> branchNumbers)
+    {
+      XYZ maxOfSpaces = new XYZ(), minOfSpaces = new XYZ() ;
+      foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
+        XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
+        if (branchNumber.index == 0){
+          maxOfSpaces = centerOfSpace ;
+          minOfSpaces = centerOfSpace ;
+        }
+        else {
+          if ( maxOfSpaces.X < centerOfSpace.X )
+            maxOfSpaces = new XYZ( centerOfSpace.X, maxOfSpaces.Y, maxOfSpaces.Z ) ;
+          if ( maxOfSpaces.Y < centerOfSpace.Y )
+            maxOfSpaces = new XYZ( maxOfSpaces.X, centerOfSpace.Y, maxOfSpaces.Z ) ;
+          if ( maxOfSpaces.Z < centerOfSpace.Z )
+            maxOfSpaces = new XYZ( maxOfSpaces.X, maxOfSpaces.Y, centerOfSpace.Z ) ;
+          if ( minOfSpaces.X > centerOfSpace.X )
+            minOfSpaces = new XYZ( centerOfSpace.X, minOfSpaces.Y, minOfSpaces.Z ) ;
+          if ( minOfSpaces.Y > centerOfSpace.Y )
+            minOfSpaces = new XYZ( minOfSpaces.X, centerOfSpace.Y, minOfSpaces.Z ) ;
+          if ( minOfSpaces.Z > centerOfSpace.Z )
+            minOfSpaces = new XYZ( minOfSpaces.X, minOfSpaces.Y, centerOfSpace.Z ) ;
+        }
+      }
+
+      XYZ  centerPointOfSpacesGroup = new XYZ( ( maxOfSpaces.X + minOfSpaces.X ) / 2,
+                                               ( maxOfSpaces.Y + minOfSpaces.Y ) / 2,
+                                               ( maxOfSpaces.Z + minOfSpaces.Z ) / 2 ) ;
+      return  centerPointOfSpacesGroup ;
+    }
+    
     private static XYZ GetCenterSpace( Document document, Element space )
     {
       BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
@@ -256,7 +253,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           return 1.5 * Math.PI ;
         }
         else {
-          return Math.PI / 2 ;
+          return 0.5 * Math.PI;
         }
       }
     }
