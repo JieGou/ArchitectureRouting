@@ -30,9 +30,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else if ( false == success ) {
           return Result.Cancelled ;
         }
-        else if ( true == success && state as string == "Result.Succeeded" ) {
-          return Result.Succeeded ;
-        }
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;

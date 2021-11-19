@@ -68,22 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         return new OriginPickResult( element, addInType ) ;
       }
     }
-    
-    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, string elementName, IPickResult? compatiblePickResult, AddInType addInType )
-    {
-      var document = uiDocument.Document ;
-      var filter = ( null == compatiblePickResult )
-        ? FamilyInstanceWithConnectorFilter.GetInstance( addInType )
-        : new FamilyInstanceCompatibleToTargetConnectorFilter( compatiblePickResult, addInType ) ;
 
-      while ( true ) {
-        var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, filter, elementName ) ;
-        var element = document.GetElement( pickedObject.ElementId ) ;
-        if ( null == element || element.Name.IndexOf( elementName ) == -1 ) continue ;
-        return new OriginPickResult( element, addInType ) ;
-      }
-    }
-    
     private static IEndPoint? PickEndPointOverSubRoute( UIDocument uiDocument, SubRoutePickResult pickResult, bool pickingFromSide )
     {
       var endPoints = new Dictionary<EndPointKey, IEndPoint>() ;
