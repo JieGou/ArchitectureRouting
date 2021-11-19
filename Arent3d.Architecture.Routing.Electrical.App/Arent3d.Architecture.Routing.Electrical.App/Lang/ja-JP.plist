@@ -121,6 +121,9 @@
         <key>Electrical.App.Commands.Initialization.ShowCeeDModelsCommand</key>
         <string>セットコード表示</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
+        <string>拾い</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
