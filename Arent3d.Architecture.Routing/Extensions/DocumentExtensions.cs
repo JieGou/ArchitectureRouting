@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new CnsSettingStorable( document ) ;
       }
     }
-    
+
     /// <summary>
     /// Get Ceed Model data from snoop DB.
     /// </summary>
@@ -58,6 +58,19 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new CeedStorable( document ) ;
+      }
+    }
+
+    /// <summary>
+    /// Get csv data from snoop DB.
+    /// </summary>
+    public static CsvStorable GetCsvStorable( this Document document )
+    {
+      try {
+        return CsvStorableCache.Get( document ).FindOrCreate( CsvStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new CsvStorable( document ) ;
       }
     }
   }

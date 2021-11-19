@@ -121,6 +121,9 @@
         <key>Electrical.App.Commands.Initialization.ShowCeeDModelsCommand</key>
         <string>View&#xA;Set Code</string>
 
+        <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
+        <string>Load&#xA;Save To DB</string>
+
         <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
         <string>Pick Up</string>
 
