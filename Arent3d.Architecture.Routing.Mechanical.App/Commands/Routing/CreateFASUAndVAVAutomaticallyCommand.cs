@@ -76,7 +76,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       IList<Element> spaces = GetAllSpaces( document ) ;
       
       // Get branch number in spaces
-      IList<int> listAllOfBranchNumber = new List<int>() ;
+      List<int> listAllOfBranchNumber = new List<int>() ;
       foreach ( var space in spaces ) {
         if ( space.HasParameter( BranchNumberParameter.BranchNumber ) ) {
           if ( space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) )
