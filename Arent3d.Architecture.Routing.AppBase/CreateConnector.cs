@@ -77,7 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     public static bool IsEnabledConnector( Connector connector, Connector? firstConnector )
     {
-      return ( false == connector.IsConnected ) && ( ( null == firstConnector ) || ( HasCompatibleType( connector, firstConnector ) && firstConnector.HasSameShape( connector ) ) ) ;
+      return ( false == connector.IsConnected ) && ( ( null == firstConnector ) || ( HasCompatibleType( connector, firstConnector ) && firstConnector.HasCompatibleShape( connector ) ) ) ;
     }
 
     private static bool HasCompatibleType( Connector connector1, Connector connector2 )
