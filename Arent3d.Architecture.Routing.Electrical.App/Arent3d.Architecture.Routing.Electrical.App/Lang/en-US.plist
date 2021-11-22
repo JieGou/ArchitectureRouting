@@ -121,7 +121,7 @@
         <key>Electrical.App.Commands.Initialization.ShowCeeDModelsCommand</key>
         <string>View&#xA;Set Code</string>
 
-        <key>Electrical.App.Commands.Initialization.ShowDisplayInformationCommand</key>
+        <key>Electrical.App.Commands.Initialization.ShowCeeDDetailInformationCommand</key>
         <string>Pickup Display&#xA;Information</string>
         
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>

@@ -5,9 +5,9 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Initialization.ShowDisplayInformationCommand", DefaultString = "Pickup Display\nInformation" )]
+  [DisplayNameKey( "Electrical.App.Commands.Initialization.ShowCeeDDetailInformationCommand", DefaultString = "Pickup Display\nInformation" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class ShowDisplayInformationCommand :  ShowDisplayInformationCommandBase
+  public class ShowCeeDDetailInformationCommand :  ShowCeeDDetailInformationCommandBase
   {
   }
 }
