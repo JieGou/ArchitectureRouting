@@ -1,9 +1,10 @@
-﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.DisplayInformationDialog"
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CeedDetailInformationDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         Title="セットコード登録" Height="600" Width="900">
@@ -26,20 +27,21 @@
                 <ColumnDefinition Width="90" />
                 <ColumnDefinition Width="200" />
             </Grid.ColumnDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right" Content="セット コー" Margin="10,5,10,5" />
-            <TextBox Grid.Row="0" Grid.Column="1" Name="CmbCeeDModelNumbers" Width="200" Height="27"/>
+            <Label Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right" Content="セットコード" Margin="10,5,10,5" />
+            <TextBox Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center" Name="txtSetCode" TextChanged="TxtSetCode_OnTextChanged" Width="200" Height="27">
+            </TextBox>
             <Label Grid.Row="0" Grid.Column="2" HorizontalAlignment="Right" Content="略名コード" Margin="20,5,5,5" />
-            <TextBox Grid.Row="0" Grid.Column="3" Name="CmbModelNumbers" Width="200" Height="27"/>
+            <TextBox Grid.Row="0" Grid.Column="3" Name="txtAbbreviationCode" VerticalContentAlignment="Center"  Width="200" Height="27"/>
             <Label Grid.Row="0" Grid.Column="4" HorizontalAlignment="Right" Content="部材コード" Margin="20,5,5,5" />
-            <TextBox Grid.Row="0" Grid.Column="5" Name="CmbNumber" Width="200" Height="27"/>
+            <TextBox Grid.Row="0" Grid.Column="5" VerticalContentAlignment="Center"  Name="txtMaterialCode" Width="200" Height="27"/>
 
             <Label Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" Content="施工区分" Margin="10,5,10,5" />
-            <ComboBox Grid.Row="1" Grid.Column="1" Width="200" Margin="0,5,0,5" HorizontalAlignment="Left" VerticalAlignment="Top" Name="CmbSelect" IsEditable="True" Height="27" />
-            <Image Grid.Row="1" Grid.Column="4" Width="100" Height="100" HorizontalAlignment="Right" Source="{Binding DisplayInformationModel.SymbolImage}" />
-            <Button Grid.Row="1" Grid.Column="5" HorizontalAlignment="Left" VerticalAlignment="Top" x:Name="BtnLoadData" Content="シンボル変更" Margin="10,15,0,10" Height="27" Width="150" />
+            <ComboBox Grid.Row="1" Grid.Column="1" Width="200" VerticalContentAlignment="Center"  Margin="0,5,0,5" HorizontalAlignment="Left" VerticalAlignment="Top" Name="CmbSelect" IsEditable="True" Height="27" />
+            <Image Grid.Row="1" Grid.Column="4" Width="100" Height="100" HorizontalAlignment="Right" Source="{Binding CeeDDetailInformationModel.SymbolImage}" />
+            <Button Grid.Row="1" Grid.Column="5" HorizontalAlignment="Left" VerticalAlignment="Top" x:Name="btnChangeImage" Command="{Binding ChangeImageCommand}" Content="シンボル変更" Margin="10,15,0,10" Height="27" Width="150" />
         </Grid>
 
-        <DataGrid x:Name="DtGrid" Width="850" HorizontalAlignment="Left" Margin="10 5 5 5" Grid.ColumnSpan="1" Grid.Row="1" ItemsSource="{Binding Path=DisplayInformationModel}" CanUserAddRows="False" AutoGenerateColumns="False">
+        <DataGrid x:Name="DtGrid" Width="850" HorizontalAlignment="Left" Margin="10 5 5 5" Grid.ColumnSpan="1" Grid.Row="1" ItemsSource="{Binding CeeDDetailInformationModel.QueryData}" CanUserAddRows="False" AutoGenerateColumns="False">
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
                     <Setter Property="Padding" Value="-2" />
@@ -55,13 +57,19 @@
 
             <DataGrid.Columns>
 
-                <DataGridTextColumn Header="品名コード" Binding="{Binding QueryDatas.ProductCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
+                <DataGridTextColumn Header="品名コード" Width="150" Binding="{Binding ProductCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/>
 
-                <DataGridTextColumn Header="品名" Binding="{Binding QueryDatas.ProductName, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="150" />
+                <DataGridTextColumn Header="品名" Width="250" Binding="{Binding ProductName, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" />
 
-                <DataGridTextColumn Header="規格" Binding="{Binding QueryDatas.Standard, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="250" />
+                <DataGridTextColumn Header="規格" Width="250" Binding="{Binding Standard, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/>
 
-                <DataGridTextColumn Header="個数" Binding="{Binding QueryDatas.Quantity, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="200" />
+                <DataGridTextColumn Header="個数" Width="100"  Binding="{Binding Quantity, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
             </DataGrid.Columns>
         </DataGrid>
@@ -101,12 +109,14 @@
                     Content="OK"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
+                    Click="BtnOK_OnClick"
                     Height="27"
                     Width="110" />
             <Button Grid.Column="5" x:Name="BtnReset"
                     Content="キャンセル"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
+                    Click="BtnReset_OnClick"
                     Height="27"
                     Width="110" />
         </Grid>
