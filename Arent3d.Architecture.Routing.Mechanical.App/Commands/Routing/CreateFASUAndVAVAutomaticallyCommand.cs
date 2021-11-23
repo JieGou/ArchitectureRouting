@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string heightOfVAV = "3275" ;
     private const string diameterOfVAV = "250" ;
     private const int rootBranchNumber = 0 ;
-
+    private const double minDistanceSpacesCollinear = 2.5 ;
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       ConnectorPicker.IPickResult iPickResult =
@@ -85,8 +85,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           double distanceBetweenFASUCenterAndVAVCenter = ( boxOfFASU.Max.X - boxOfFASU.Min.X ) / 2 +
                                                          ( boxOfVAV.Max.X - boxOfVAV.Min.X ) / 2 +
                                                          distanceBetweenFASUAndVAV ;
-          ElementTransformUtils.MoveElement( document, instanceOfVAV.Id, new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
-
+          ElementTransformUtils.MoveElement( document, instanceOfVAV.Id, new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;          
           // Rotate FASU and VAV
           List<ElementId> idOfFASUAndVAV = new List<ElementId>() ;
           idOfFASUAndVAV.Add( instanceOfFASU.Id ) ;
@@ -126,14 +125,22 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
           continue ;
         }
-
+        
         // Get center of spaces group
         XYZ centerPointOfSpacesGroup = GetCenterSpacesGroup( document, spaces, branchNumbers ) ;
+        
+        // Deal with the case where all spaces are collinear
+        ( bool isCollinear, double rotationAngle ) = GetRotationAngleSpacesCollinear( document, spaces, branchNumbers, centerPointOfSpacesGroup, element, axisOfRotation ) ;
 
         // Calculate rotation angle of FASU and VAV in each space
         foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
-          XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
-          listAllRotationOfSpaces[ branchNumber.value ] = GetRotationSpace( centerPointOfSpacesGroup, centerOfSpace, axisOfRotation) ;
+          if ( isCollinear ) {
+            listAllRotationOfSpaces[ branchNumber.value ] = rotationAngle ;
+          }
+          else {
+            XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
+            listAllRotationOfSpaces[ branchNumber.value ] = GetRotationSpace( centerPointOfSpacesGroup, centerOfSpace, axisOfRotation) ; 
+          }
         }
       }
 
@@ -197,6 +204,37 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, 
                       ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2,
                       ( boxOfSpace.Max.Z + boxOfSpace.Min.Z ) / 2 ) ;
+    }
+
+    private static (bool, double) GetRotationAngleSpacesCollinear( Document document, IList<Element> spaces,
+      List<int> branchNumbers, XYZ centerPointOfSpacesGroup, Element element, int axisOfRotation )
+    {
+      if ( branchNumbers.Count == 0 ) return ( false, 0 ) ;
+      bool isCollinear = true ;
+
+      foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
+        XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
+        if ( axisOfRotation == 0 ) {
+          if ( Math.Abs( centerPointOfSpacesGroup.X - centerOfSpace.X ) > minDistanceSpacesCollinear ) {
+            isCollinear = false ;
+            break ;
+          }
+        }
+        else {
+          if ( Math.Abs( centerPointOfSpacesGroup.Y - centerOfSpace.Y ) > minDistanceSpacesCollinear ) {
+            isCollinear = false ;
+            break ;
+          }
+        }
+      }
+
+      XYZ postionOfConnector = ( element.Location as LocationPoint )!.Point ;
+      if ( isCollinear ) {
+        return ( true, GetRotationSpace( centerPointOfSpacesGroup, postionOfConnector, axisOfRotation ) ) ;
+      }
+      else {
+        return ( false, 0 ) ;
+      }
     }
 
     private static int GetAxisRotation( double rotation )
