@@ -8,7 +8,7 @@ using System ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Revit ;
-using System.Linq;
+using System.Linq ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
@@ -25,6 +25,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string diameterOfVAV = "250" ;
     private const int rootBranchNumber = 0 ;
     private const double minDistanceSpacesCollinear = 2.5 ;
+    
+    private enum DirectionOfConnector
+    {
+      XAxis,
+      YAxis
+    }
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       ConnectorPicker.IPickResult iPickResult =
@@ -111,7 +117,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       // Determine AHU coincides with the axis Ox or Oy
-      int axisOfRotation = GetAxisRotation( instanceOfSpace ) ;
+      DirectionOfConnector axisOfRotation = GetAxisRotation( instanceOfSpace ) ;
 
       // Process by group BranchNumber
       foreach ( var handleBranchNumber in listAllOfBranchNumber.Select( ( value, index ) => new { value, index } ) ) {
@@ -130,7 +136,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
         
         // Get center of spaces group
-        XYZ centerPointOfSpacesGroup = GetCenterSpacesGroup( document, spaces, branchNumbers ) ;
+        XYZ centerPointOfSpacesGroup = GetCenterPointOfSpacesGroup( document, spaces, branchNumbers ) ;
         
         // Deal with the case where all spaces are collinear
         ( bool isCollinear, double rotationAngle ) = GetRotationAngleSpacesCollinear( document, spaces, branchNumbers, centerPointOfSpacesGroup, instanceOfConnector, axisOfRotation ) ;
@@ -170,7 +176,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return groupOfBranchNumberSpaces ;
     }
 
-    private static XYZ GetCenterSpacesGroup(Document document, IList<Element> spaces, List<int> branchNumbers)
+    private static XYZ GetCenterPointOfSpacesGroup(Document document, IList<Element> spaces, List<int> branchNumbers)
     {
       XYZ maxOfSpaces = new XYZ(), minOfSpaces = new XYZ() ;
       foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
@@ -209,20 +215,20 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
                       ( boxOfSpace.Max.Z + boxOfSpace.Min.Z ) / 2 ) ;
     }
     
-    private static int GetAxisRotation( Element instanceOfElement )
+    private static DirectionOfConnector GetAxisRotation( Element instanceOfElement )
     {
       var rotation = ( instanceOfElement.Location as LocationPoint )!.Rotation ;
       if ( Math.Abs( Math.Cos( rotation ) ) >= Math.Cos( Math.PI / 4 ) ) {
-        return 0 ;
+        return DirectionOfConnector.XAxis ;
       }
       else {
-        return 1 ;
+        return DirectionOfConnector.YAxis ;
       }
     }
     
-    private static double GetRotationSpace( XYZ centerOfGroupSpaces, XYZ centerOfSpace, int axisOfRotation)
+    private static double GetRotationSpace( XYZ centerOfGroupSpaces, XYZ centerOfSpace, DirectionOfConnector axisOfRotation)
     {
-      if ( axisOfRotation == 0 ) {
+      if ( axisOfRotation == DirectionOfConnector.XAxis ) {
         if ( centerOfSpace.X <= centerOfGroupSpaces.X ) {
           return  0;
         }
@@ -240,13 +246,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
     }
     private static (bool, double) GetRotationAngleSpacesCollinear( Document document, IList<Element> spaces,
-      List<int> branchNumbers, XYZ centerPointOfSpacesGroup, Connector instanceOfConnector, int axisOfRotation )
+      List<int> branchNumbers, XYZ centerPointOfSpacesGroup, Connector instanceOfConnector, DirectionOfConnector axisOfRotation )
     {
       if ( branchNumbers.Count == 0 ) return ( false, 0 ) ;
       
       foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
         XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
-        if ( axisOfRotation == 0 ) {
+        if ( axisOfRotation == DirectionOfConnector.XAxis ) {
           if ( Math.Abs( centerPointOfSpacesGroup.X - centerOfSpace.X ) > minDistanceSpacesCollinear ) {
             return ( false, 0 ) ;
           }
@@ -269,7 +275,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( boxOfVAV == null ) return false ;
       
       // Determine connector (AHU) coincides with the axis Ox or Oy
-      int axisOfRotation = GetAxisRotation( instanceOfElement ) ;
+      DirectionOfConnector axisOfRotation = GetAxisRotation( instanceOfElement ) ;
       ( double pointOfMinBoxVAV, double pointOfMaxBoxVAV ) =
         GetMinMaxBoxRotatingObject( boxOfVAV, pointOfRotation, rotationAngle, axisOfRotation ) ;
 
@@ -288,9 +294,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     }
 
     private static (double, double) GetMinMaxBoxRotatingObject( BoundingBoxXYZ boxOfRotatingObject, XYZ pointOfRotation,
-      double rotationAngle, int axisOfRotation )
+      double rotationAngle, DirectionOfConnector axisOfRotation )
     {
-      if ( axisOfRotation == 0 ) {
+      if ( axisOfRotation == DirectionOfConnector.XAxis ) {
         if ( Math.Cos( rotationAngle ) > 0 ) {
           return (boxOfRotatingObject.Min.X, boxOfRotatingObject.Max.X );
         }
