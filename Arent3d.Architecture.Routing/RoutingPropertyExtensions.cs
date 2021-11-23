@@ -55,6 +55,10 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "f208f9ab-b763-4b2a-afc9-0b2a22936dab" ), NameOnRevit( "Parent Envelope Id" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
     ParentEnvelopeId,
+    
+    [ParameterGuid( "f339149b-704c-403c-a97c-335646773992" ), NameOnRevit( "To-Side Connector Id" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
+    ToSideConnectorId,
   }
 
   public enum PassPointParameter
