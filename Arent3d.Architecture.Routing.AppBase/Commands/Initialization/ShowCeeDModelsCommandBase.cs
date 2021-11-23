@@ -23,7 +23,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var dlgCeeDModel = new CeeDModelDialog( doc ) ;
 
       dlgCeeDModel.ShowDialog() ;
-      if ( dlgCeeDModel.DialogResult ?? false )
+      if ( ! ( dlgCeeDModel.DialogResult ?? false ) ) return Result.Cancelled ;
+      if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedSetCode ) ) {
         return doc.Transaction( "TransactionName.Commands.Routing.PlacementSetCode".GetAppStringByKeyOrDefault( "Placement Set Code" ), _ =>
         {
           var uiDoc = commandData.Application.ActiveUIDocument ;
@@ -49,7 +50,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           TextNoteOptions opts = new(defaultTextTypeId) ;
           opts.HorizontalAlignment = HorizontalTextAlignment.Left ;
 
-          var txtPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
+          var txtPosition = new XYZ( originX - 2, originY + 2, heightOfConnector ) ;
           var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeeDModel.SelectedSetCode, opts ) ;
 
           // create group of selected element and new text note
@@ -60,7 +61,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           return Result.Succeeded ;
         } ) ;
-      return Result.Cancelled ;
+      }
+      return Result.Succeeded ;
     }
 
     private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level )
