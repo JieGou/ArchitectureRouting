@@ -2,7 +2,6 @@
 {
   public class PickUpModel
   {
-    public int Number { get ; set ; }
     public string Item { get ; set ; }
     public string Floor { get ; set ; }
     public string ConstructionItems { get ; set ; }
@@ -14,12 +13,16 @@
     public string Specification { get ; set ; }
     public string Specification2 { get ; set ; }
     public string Size { get ; set ; }
-    public double Quantity { get ; set ; }
+    public string Quantity { get ; set ; }
     public string Tani { get ; set ; }
+    public string Supplement { get ; set ; }
+    public string Supplement2 { get ; set ; }
+    public string Glue { get ; set ; }
+    public string Layer { get ; set ; }
+    public string Classification { get ; set ; }
 
-    public PickUpModel( int? number, string? item, string? floor, string? constructionItems, string? facility, string? productName, string? use, string? construction, string? modelNumber, string? specification, string? specification2, string? size, double? quantity, string? tani )
+    public PickUpModel( string? item, string? floor, string? constructionItems, string? facility, string? productName, string? use, string? construction, string? modelNumber, string? specification, string? specification2, string? size, string? quantity, string? tani, string? supplement, string? supplement2, string? glue, string? layer, string? classification )
     {
-      Number = number ?? 0 ;
       Item = item ?? string.Empty ;
       Floor = floor ?? string.Empty ;
       ConstructionItems = constructionItems ?? string.Empty ;
@@ -31,8 +34,13 @@
       Specification = specification ?? string.Empty ;
       Specification2 = specification2 ?? string.Empty ;
       Size = size ?? string.Empty ;
-      Quantity = quantity ?? 0 ;
+      Quantity = quantity ?? string.Empty ;
       Tani = tani ?? string.Empty ;
+      Supplement = supplement ?? string.Empty ;
+      Supplement2 = supplement2 ?? string.Empty ;
+      Glue = glue ?? string.Empty ;
+      Layer = layer ?? string.Empty ;
+      Classification = classification ?? string.Empty ;
     }
   }
 }

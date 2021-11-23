@@ -10,7 +10,6 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
   {
     private enum SerializeField
     {
-      Number,
       Item,
       Floor,
       ConstructionItems,
@@ -23,14 +22,18 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Specification2,
       Size,
       Quantity,
-      Tani
+      Tani,
+      Supplement,
+      Supplement2,
+      Glue,
+      Layer,
+      Classification
     }
     
     protected override PickUpModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
-      var number = deserializer.GetInt( SerializeField.Number ) ;
       var item = deserializer.GetString( SerializeField.Item ) ;
       var floor = deserializer.GetString( SerializeField.Floor ) ;
       var constructionItems = deserializer.GetString( SerializeField.ConstructionItems ) ;
@@ -42,17 +45,21 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var specification = deserializer.GetString( SerializeField.Specification ) ;
       var specification2 = deserializer.GetString( SerializeField.Specification2 ) ;
       var size = deserializer.GetString( SerializeField.Size ) ;
-      var quantity = deserializer.GetDouble( SerializeField.Quantity ) ;
+      var quantity = deserializer.GetString( SerializeField.Quantity ) ;
       var tani = deserializer.GetString( SerializeField.Tani ) ;
+      var supplement = deserializer.GetString( SerializeField.Supplement ) ;
+      var supplement2 = deserializer.GetString( SerializeField.Supplement2 ) ;
+      var glue = deserializer.GetString( SerializeField.Glue ) ;
+      var layer = deserializer.GetString( SerializeField.Layer ) ;
+      var classification = deserializer.GetString( SerializeField.Classification ) ;
 
-      return new PickUpModel( number, item, floor, constructionItems, facility, productName, use, construction, modelNumber, specification, specification2, size, quantity, tani ) ;
+      return new PickUpModel( item, floor, constructionItems, facility, productName, use, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, glue, layer, classification ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, PickUpModel customTypeValue )
     {
       var serializerObject = new SerializerObject<SerializeField>() ;
 
-      serializerObject.Add( SerializeField.Number, customTypeValue.Number ) ;
       serializerObject.AddNonNull( SerializeField.Item, customTypeValue.Item ) ;
       serializerObject.AddNonNull( SerializeField.Floor, customTypeValue.Floor ) ;
       serializerObject.AddNonNull( SerializeField.ConstructionItems, customTypeValue.ConstructionItems ) ;
@@ -64,8 +71,13 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Specification, customTypeValue.Specification ) ;
       serializerObject.AddNonNull( SerializeField.Specification2, customTypeValue.Specification2 ) ;
       serializerObject.AddNonNull( SerializeField.Size, customTypeValue.Size ) ;
-      serializerObject.Add( SerializeField.Quantity, customTypeValue.Quantity ) ;
+      serializerObject.AddNonNull( SerializeField.Quantity, customTypeValue.Quantity ) ;
       serializerObject.AddNonNull( SerializeField.Tani, customTypeValue.Tani ) ;
+      serializerObject.AddNonNull( SerializeField.Supplement, customTypeValue.Supplement ) ;
+      serializerObject.AddNonNull( SerializeField.Supplement2, customTypeValue.Supplement2 ) ;
+      serializerObject.AddNonNull( SerializeField.Glue, customTypeValue.Glue ) ;
+      serializerObject.AddNonNull( SerializeField.Layer, customTypeValue.Layer ) ;
+      serializerObject.AddNonNull( SerializeField.Classification, customTypeValue.Classification ) ;
 
       return serializerObject ;
     }
