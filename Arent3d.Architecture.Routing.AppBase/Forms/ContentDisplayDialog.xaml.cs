@@ -164,7 +164,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 quantity = hiroiSetMasterNormalModel.ParentPartsQuantity ;
                 var materialCode1 = hiroiSetMasterNormalModel.MaterialCode1 ;
                 if ( _hiroiMasterModels.Any() && ! string.IsNullOrEmpty( materialCode1 ) ) {
-                  var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode1! ) ) ;
+                  var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode1 ) ) ;
                   if ( hiroiMasterModel != null ) {
                     facility = hiroiMasterModel.Setubisyu ;
                     productName = hiroiMasterModel.Hinmei ;
@@ -185,9 +185,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         var supplement = string.Empty ;
         var supplement2 = string.Empty ;
-        var glue = "azbil" ;
-        var layer = "jdou2" ;
-        var classification = "未設定" ;
+        var glue = string.Empty  ;
+        var layer = string.Empty  ;
+        var classification = string.Empty  ;
         PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, facility, productName, use, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, glue, layer, classification ) ;
         pickUpModels.Add( pickUpModel ) ;
       }
