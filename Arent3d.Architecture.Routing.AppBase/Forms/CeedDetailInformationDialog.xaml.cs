@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         private readonly ObservableCollection<QueryData> _queryDataMaster;
         private readonly List<CeedModel> _listCeedModel;
         private string _setCode;
-        
+
         public CeedDetailInformationDialog(Document document, string pickedText)
         {
             InitializeComponent();
@@ -40,111 +40,68 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 {
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode1))
                     {
-                        string itemStandard1 = "";
-                        item.Name1 = item.Name1.Replace("　", " ");
-                        string[] split1 = item.Name1.Trim().Split(' ');
-                        if (split1.Length > 1)
-                        {
-                            itemStandard1 = split1[1].Trim();
-                        }
-
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode1, split1[0], itemStandard1, item.Quantity1));
+                        (string, string) split = SplitString(item.Name1);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode1, split.Item1, split.Item2, item.Quantity1));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode2))
                     {
-                        string itemStandard2 = "";
-                        item.Name2 = item.Name2.Replace("　", " ");
-                        string[] split2 = item.Name2.Trim().Split(' ');
-                        if (split2.Length > 1)
-                        {
-                            itemStandard2 = split2[1].Trim();
-                        }
-
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode2, split2[0], itemStandard2, item.Quantity2));
+                        (string, string) split = SplitString(item.Name2);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode2, split.Item1, split.Item2, item.Quantity2));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode3))
                     {
-                        string itemStandard3 = "";
-                        item.Name3 = item.Name3.Replace("　", " ");
-                        string[] split3 = item.Name3.Trim().Split(' ');
-                        if (split3.Length > 1)
-                        {
-                            itemStandard3 = split3[1].Trim();
-                        }
-
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode3, split3[0], itemStandard3, item.Quantity3));
+                        (string, string) split = SplitString(item.Name3);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode3, split.Item1, split.Item2, item.Quantity3));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode4))
                     {
-                        string itemStandard4 = "";
-                        item.Name4 = item.Name4.Replace("　", " ");
-                        string[] split4 = item.Name4.Trim().Split(' ');
-                        if (split4.Length > 1)
-                        {
-                            itemStandard4 = split4[1].Trim();
-                        }
-
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode4, split4[0], itemStandard4, item.Quantity4));
+                        (string, string) split = SplitString(item.Name4);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode4, split.Item1, split.Item2, item.Quantity4));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode5))
                     {
-                        string itemStandard5 = "";
-                        item.Name5 = item.Name5.Replace("　", " ");
-                        string[] split5 = item.Name5.Trim().Split(' ');
-                        if (split5.Length > 1)
-                        {
-                            itemStandard5 = split5[1].Trim();
-                        }
-
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode5, split5[0], itemStandard5, item.Quantity5));
+                        (string, string) split = SplitString(item.Name5);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode5, split.Item1, split.Item2, item.Quantity5));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode6))
                     {
-                        string itemStandard6 = "";
-                        item.Name6 = item.Name6.Replace("　", " ");
-                        string[] split6 = item.Name6.Trim().Split(' ');
-                        if (split6.Length > 1)
-                        {
-                            itemStandard6 = split6[1].Trim();
-                        }
-
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode6, split6[0], itemStandard6, item.Quantity6));
+                        (string, string) split = SplitString(item.Name6);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode6, split.Item1, split.Item2, item.Quantity6));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode7))
                     {
-                        string itemStandard7 = "";
-                        item.Name7 = item.Name7.Replace("　", " ");
-                        string[] split7 = item.Name7.Trim().Split(' ');
-                        if (split7.Length > 1)
-                        {
-                            itemStandard7 = split7[1].Trim();
-                        }
-
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode7, split7[0], itemStandard7, item.Quantity7));
+                        (string, string) split = SplitString(item.Name7);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode7, split.Item1, split.Item2, item.Quantity7));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode8))
                     {
-                        string itemStandard8 = "";
-                        item.Name8 = item.Name8.Replace("　", " ");
-                        string[] split8 = item.Name8.Trim().Split(' ');
-                        if (split8.Length > 1)
-                        {
-                            itemStandard8 = split8[1].Trim();
-                        }
-
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode8, split8[0], itemStandard8, item.Quantity8));
+                        (string, string) split = SplitString(item.Name8);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode8, split.Item1, split.Item2, item.Quantity8));
                     }
                 }
             }
 
             return queryData;
+        }
+
+        private (string, string) SplitString(string str)
+        {
+            str = str.Replace("　", " ");
+            string standard = "";
+            string[] strArray = str.Trim().Split(' ');
+            if (strArray.Length > 1)
+            {
+                standard = strArray[1].Trim();
+            }
+
+            return (strArray[0].Trim(), standard);
         }
 
         private void LoadData()
@@ -155,7 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 queryData = new ObservableCollection<QueryData>(_queryDataMaster.Where(x => x.CeeDSetCode.IndexOf(_setCode, StringComparison.OrdinalIgnoreCase) > -1));
             }
 
-            CeeDDetailInformationModel ceeDDetailInformationModels = new CeeDDetailInformationModel(queryData, "", _setCode);
+            CeeDDetailInformationModel ceeDDetailInformationModels = new CeeDDetailInformationModel(queryData, "");
             CeeDDetailInformationViewModel viewModel = new CeeDDetailInformationViewModel(ceeDDetailInformationModels);
             DataContext = viewModel;
         }
