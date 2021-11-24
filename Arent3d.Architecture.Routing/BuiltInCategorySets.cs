@@ -132,13 +132,12 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_MEPSpaces
     } ;
     
-    public static readonly BuiltInCategory[] PickUpElements = CombineArrays(
-      ElectricalRoutingElements,
-      new[]
-      {
-        BuiltInCategory.OST_ElectricalEquipment
-      }
-    ) ;
+    public static readonly BuiltInCategory[] PickUpElements =
+    {
+      BuiltInCategory.OST_ElectricalEquipment,
+      BuiltInCategory.OST_ElectricalFixtures,
+      BuiltInCategory.OST_MechanicalEquipment,
+    } ;
 
     private static T[] CombineArrays<T>( params T[][] arrays )
     {

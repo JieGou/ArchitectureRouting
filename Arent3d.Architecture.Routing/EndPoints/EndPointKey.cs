@@ -51,14 +51,19 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public string GetElementId()
     {
       const string paramName = "ElementId" ;
+      const string type = "Terminate Point" ;
       var elementId = string.Empty ;
-      if ( ! Param.Contains( paramName ) ) return elementId ;
-      var startIndex = Param.IndexOf( paramName, StringComparison.Ordinal ) ;
-      var param = Param.Substring( startIndex ) ;
-      var endIndex = param.IndexOf( ",", StringComparison.Ordinal ) ;
-      param = param.Substring( 0, endIndex ) ;
-      var paramDic = param.Split( ':' ) ;
-      elementId = paramDic[ 1 ] ?? string.Empty ;
+      if ( Param.Contains( paramName ) ) {
+        var startIndex = Param.IndexOf( paramName, StringComparison.Ordinal ) ;
+        var param = Param.Substring( startIndex ) ;
+        var endIndex = param.IndexOf( ",", StringComparison.Ordinal ) ;
+        param = param.Substring( 0, endIndex ) ;
+        var paramDic = param.Split( ':' ) ;
+        elementId = paramDic[ 1 ] ?? string.Empty ;
+      }
+      else if ( Type == type ) {
+        elementId = Param ;
+      }
 
       return elementId ;
     }
