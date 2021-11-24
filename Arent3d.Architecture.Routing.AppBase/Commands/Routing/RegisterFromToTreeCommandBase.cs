@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <returns></returns>
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      return  Initialize( commandData.Application ) ;
+      return Initialize( commandData.Application ) ;
     }
 
     // view activated event

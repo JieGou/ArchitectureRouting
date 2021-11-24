@@ -50,10 +50,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       ++_nextShaftEndPointIndex ;
 
       var isDirect = ( false == subRoute.IsRoutingOnPipeSpace ) ;
-      var fromAutoRoutingEndPoint = new AutoRoutingEndPoint( fromEndPoint, true, priority, diameter, isDirect, routeCondition ) ;
-      var shaftAutoRoutingEndPoint1 = new AutoRoutingEndPoint( shaftEndPoint, false, priority, diameter, isDirect, routeCondition ) ;
-      var shaftAutoRoutingEndPoint2 = new AutoRoutingEndPoint( shaftEndPoint, true, priority, diameter, isDirect, routeCondition ) ;
-      var toAutoRoutingEndPoint = new AutoRoutingEndPoint( toEndPoint, false, priority, diameter, isDirect, routeCondition ) ;
+      var fromAutoRoutingEndPoint = new AutoRoutingEndPoint( fromEndPoint, true, null, priority, diameter, isDirect, routeCondition ) ;
+      var shaftAutoRoutingEndPoint1 = new AutoRoutingEndPoint( shaftEndPoint, false, null, priority, diameter, isDirect, routeCondition ) ;
+      var shaftAutoRoutingEndPoint2 = new AutoRoutingEndPoint( shaftEndPoint, true, null, priority, diameter, isDirect, routeCondition ) ;
+      var toAutoRoutingEndPoint = new AutoRoutingEndPoint( toEndPoint, false, null, priority, diameter, isDirect, routeCondition ) ;
 
       return new[]
       {

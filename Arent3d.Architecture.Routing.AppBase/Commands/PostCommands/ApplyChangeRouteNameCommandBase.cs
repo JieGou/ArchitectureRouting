@@ -21,10 +21,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
   {
     protected override string GetTransactionName() => "TransactionName.Commands.PostCommands.ApplyChangeRouteNameCommand".GetAppStringByKeyOrDefault( " Rename RouteName" ) ;
 
-    protected override Result Execute( Document document, ApplyChangeRouteNameCommandParameter param, TransactionWrapper transaction )
+    protected override ExecutionResult Execute( ApplyChangeRouteNameCommandParameter param, Document document, TransactionWrapper transaction )
     {
       param.Route.Rename( param.NewName ) ;
-      return Result.Succeeded ;
+      return ExecutionResult.Succeeded ;
     }
   }
 }
