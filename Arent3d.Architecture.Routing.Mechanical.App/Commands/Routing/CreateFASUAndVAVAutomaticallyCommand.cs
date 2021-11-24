@@ -164,9 +164,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         // Separate handling for rootBranchNumber (default value == 0)
         if ( handleBranchNumber.index == RootBranchNumber ) {
           foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
-            XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
+            XYZ centerPointOfSpace = GetCenterPointOfSpace( document, spaces[ branchNumber.value ] ) ;
             directionForFASUsAndVAVs[ branchNumber.value ] =
-              GetDirectionForFASUAndVAV( pickedConnector.Origin, centerOfSpace, rotationAxis ) ;
+              GetDirectionForFASUAndVAV( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
           }
 
           continue ;
@@ -186,9 +186,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
               centerPointOfSpacesGroup, rotationAxis ) ;
           }
           else {
-            XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
+            XYZ centerPointOfSpace = GetCenterPointOfSpace( document, spaces[ branchNumber.value ] ) ;
             directionForFASUsAndVAVs[ branchNumber.value ] =
-              GetDirectionForFASUAndVAV( centerPointOfSpacesGroup, centerOfSpace, rotationAxis ) ;
+              GetDirectionForFASUAndVAV( centerPointOfSpacesGroup, centerPointOfSpace, rotationAxis ) ;
           }
         }
       }
@@ -220,24 +220,24 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       XYZ maxOfSpaces = new XYZ(), minOfSpaces = new XYZ() ;
       foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
-        XYZ centerOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
+        XYZ centerPointOfSpace = GetCenterPointOfSpace( document, spaces[ branchNumber.value ] ) ;
         if ( branchNumber.index == 0 ) {
-          maxOfSpaces = centerOfSpace ;
-          minOfSpaces = centerOfSpace ;
+          maxOfSpaces = centerPointOfSpace ;
+          minOfSpaces = centerPointOfSpace ;
         }
         else {
-          if ( maxOfSpaces.X < centerOfSpace.X )
-            maxOfSpaces = new XYZ( centerOfSpace.X, maxOfSpaces.Y, maxOfSpaces.Z ) ;
-          if ( maxOfSpaces.Y < centerOfSpace.Y )
-            maxOfSpaces = new XYZ( maxOfSpaces.X, centerOfSpace.Y, maxOfSpaces.Z ) ;
-          if ( maxOfSpaces.Z < centerOfSpace.Z )
-            maxOfSpaces = new XYZ( maxOfSpaces.X, maxOfSpaces.Y, centerOfSpace.Z ) ;
-          if ( minOfSpaces.X > centerOfSpace.X )
-            minOfSpaces = new XYZ( centerOfSpace.X, minOfSpaces.Y, minOfSpaces.Z ) ;
-          if ( minOfSpaces.Y > centerOfSpace.Y )
-            minOfSpaces = new XYZ( minOfSpaces.X, centerOfSpace.Y, minOfSpaces.Z ) ;
-          if ( minOfSpaces.Z > centerOfSpace.Z )
-            minOfSpaces = new XYZ( minOfSpaces.X, minOfSpaces.Y, centerOfSpace.Z ) ;
+          if ( maxOfSpaces.X < centerPointOfSpace.X )
+            maxOfSpaces = new XYZ( centerPointOfSpace.X, maxOfSpaces.Y, maxOfSpaces.Z ) ;
+          if ( maxOfSpaces.Y < centerPointOfSpace.Y )
+            maxOfSpaces = new XYZ( maxOfSpaces.X, centerPointOfSpace.Y, maxOfSpaces.Z ) ;
+          if ( maxOfSpaces.Z < centerPointOfSpace.Z )
+            maxOfSpaces = new XYZ( maxOfSpaces.X, maxOfSpaces.Y, centerPointOfSpace.Z ) ;
+          if ( minOfSpaces.X > centerPointOfSpace.X )
+            minOfSpaces = new XYZ( centerPointOfSpace.X, minOfSpaces.Y, minOfSpaces.Z ) ;
+          if ( minOfSpaces.Y > centerPointOfSpace.Y )
+            minOfSpaces = new XYZ( minOfSpaces.X, centerPointOfSpace.Y, minOfSpaces.Z ) ;
+          if ( minOfSpaces.Z > centerPointOfSpace.Z )
+            minOfSpaces = new XYZ( minOfSpaces.X, minOfSpaces.Y, centerPointOfSpace.Z ) ;
         }
       }
 
@@ -247,7 +247,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return centerPointOfSpacesGroup ;
     }
 
-    private static XYZ GetCenterSpace( Document document, Element instanceOfSpace )
+    private static XYZ GetCenterPointOfSpace( Document document, Element instanceOfSpace )
     {
       BoundingBoxXYZ boxOfSpace = instanceOfSpace.get_BoundingBox( document.ActiveView ) ;
       return new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2,
@@ -266,17 +266,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
     }
 
-    private static double GetDirectionForFASUAndVAV( XYZ centerPointOfSpacesGroup, XYZ centerOfSpace,
+    private static double GetDirectionForFASUAndVAV( XYZ centerPointOfSpacesGroup, XYZ centerPointOfSpace,
       RotationAxis axisOfRotation )
     {
       if ( axisOfRotation == RotationAxis.XAxis ) {
-        if ( centerOfSpace.X <= centerPointOfSpacesGroup.X ) {
+        if ( centerPointOfSpace.X <= centerPointOfSpacesGroup.X ) {
           return 0 ;
         }
         return Math.PI ;
       }
 
-      if ( centerOfSpace.Y <= centerPointOfSpacesGroup.Y ) {
+      if ( centerPointOfSpace.Y <= centerPointOfSpacesGroup.Y ) {
         return 0.5 * Math.PI ;
       }
       return 1.5 * Math.PI ;
@@ -287,7 +287,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       if ( branchNumbers.Count == 0 ) return false;
       foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
-        XYZ centerPointOfSpace = GetCenterSpace( document, spaces[ branchNumber.value ] ) ;
+        XYZ centerPointOfSpace = GetCenterPointOfSpace( document, spaces[ branchNumber.value ] ) ;
         if ( rotationAxis == RotationAxis.XAxis ) {
           if ( Math.Abs( centerPointOfSpacesGroup.X - centerPointOfSpace.X ) > MinDistanceSpacesCollinear ) {
             return false;
