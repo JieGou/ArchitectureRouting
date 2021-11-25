@@ -15,106 +15,84 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
     public partial class CeedDetailInformationDialog : Window
     {
-        private readonly List<HiroiSetMasterModel> _hiroiSetMasterEcoModel;
-        private readonly ObservableCollection<QueryData> _queryDataMaster;
+        private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModel;
+        private readonly List<HiroiMasterModel> _hiroiMasterModel;
         private readonly List<CeedModel> _listCeedModel;
         private string _setCode;
-        private static char[] _whiteSpaces = new char[] {' ', '　'};
-        private static char[] _numbers = new char[] {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '０', '１', '２', '３', '４', '５', '６', '７', '８', '９'};
 
         public CeedDetailInformationDialog(Document document, string pickedText)
         {
             InitializeComponent();
             _setCode = pickedText;
             _listCeedModel = document.GetAllStorables<CeedStorable>().FirstOrDefault()?.CeedModelData ?? new List<CeedModel>();
-            _hiroiSetMasterEcoModel = document.GetCsvStorable().HiroiSetMasterEcoModelData;
-            _queryDataMaster = LoadQueryData();
+            _hiroiSetMasterNormalModel = document.GetCsvStorable().HiroiSetMasterNormalModelData;
+            _hiroiMasterModel = document.GetCsvStorable().HiroiMasterModelData;
             txtSetCode.Text = pickedText;
         }
 
-        private ObservableCollection<QueryData> LoadQueryData()
+        private ObservableCollection<QueryData> LoadQueryData(CeedModel ceedModel)
         {
             ObservableCollection<QueryData> queryData = new ObservableCollection<QueryData>();
-            foreach (var ceedModel in _listCeedModel)
+            var hiroiSetMasterNormalList = _hiroiSetMasterNormalModel.Where(x => x.ParentPartModelNumber.Contains(ceedModel.CeeDModelNumber));
+            foreach (var item in hiroiSetMasterNormalList)
             {
-                var listHiroiSet = _hiroiSetMasterEcoModel.Where(x => x.ParentPartModelNumber.Contains(ceedModel.CeeDModelNumber));
-                foreach (var item in listHiroiSet)
+                if (!string.IsNullOrWhiteSpace(item.MaterialCode1))
                 {
-                    if (!string.IsNullOrWhiteSpace(item.MaterialCode1))
-                    {
-                        var (name, standard) = GetNameAndStandard(item.Name1);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode1, name, standard, item.Quantity1));
-                    }
+                    var (name, standard) = GetNameAndStandardFromHiroiMaster(item.MaterialCode1);
+                    queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode1, name, standard, item.Quantity1));
+                }
 
-                    if (!string.IsNullOrWhiteSpace(item.MaterialCode2))
-                    {
-                        var (name, standard) = GetNameAndStandard(item.Name2);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode2, name, standard, item.Quantity2));
-                    }
+                if (!string.IsNullOrWhiteSpace(item.MaterialCode2))
+                {
+                    var (name, standard) = GetNameAndStandardFromHiroiMaster(item.MaterialCode2);
+                    queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode2, name, standard, item.Quantity2));
+                }
 
-                    if (!string.IsNullOrWhiteSpace(item.MaterialCode3))
-                    {
-                        var (name, standard) = GetNameAndStandard(item.Name3);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode3, name, standard, item.Quantity3));
-                    }
+                if (!string.IsNullOrWhiteSpace(item.MaterialCode3))
+                {
+                    var (name, standard) = GetNameAndStandardFromHiroiMaster(item.MaterialCode3);
+                    queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode3, name, standard, item.Quantity3));
+                }
 
-                    if (!string.IsNullOrWhiteSpace(item.MaterialCode4))
-                    {
-                        var (name, standard) = GetNameAndStandard(item.Name4);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode4, name, standard, item.Quantity4));
-                    }
+                if (!string.IsNullOrWhiteSpace(item.MaterialCode4))
+                {
+                    var (name, standard) = GetNameAndStandardFromHiroiMaster(item.MaterialCode4);
+                    queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode4, name, standard, item.Quantity4));
+                }
 
-                    if (!string.IsNullOrWhiteSpace(item.MaterialCode5))
-                    {
-                        var (name, standard) = GetNameAndStandard(item.Name5);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode5, name, standard, item.Quantity5));
-                    }
+                if (!string.IsNullOrWhiteSpace(item.MaterialCode5))
+                {
+                    var (name, standard) = GetNameAndStandardFromHiroiMaster(item.MaterialCode5);
+                    queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode5, name, standard, item.Quantity5));
+                }
 
-                    if (!string.IsNullOrWhiteSpace(item.MaterialCode6))
-                    {
-                        var (name, standard) = GetNameAndStandard(item.Name6);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode6, name, standard, item.Quantity6));
-                    }
+                if (!string.IsNullOrWhiteSpace(item.MaterialCode6))
+                {
+                    var (name, standard) = GetNameAndStandardFromHiroiMaster(item.MaterialCode6);
+                    queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode6, name, standard, item.Quantity6));
+                }
 
-                    if (!string.IsNullOrWhiteSpace(item.MaterialCode7))
-                    {
-                        var (name, standard) = GetNameAndStandard(item.Name7);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode7, name, standard, item.Quantity7));
-                    }
+                if (!string.IsNullOrWhiteSpace(item.MaterialCode7))
+                {
+                    var (name, standard) = GetNameAndStandardFromHiroiMaster(item.MaterialCode7);
+                    queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode7, name, standard, item.Quantity7));
+                }
 
-                    if (!string.IsNullOrWhiteSpace(item.MaterialCode8))
-                    {
-                        var (name, standard) = GetNameAndStandard(item.Name8);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode8, name, standard, item.Quantity8));
-                    }
+                if (!string.IsNullOrWhiteSpace(item.MaterialCode8))
+                {
+                    var (name, standard) = GetNameAndStandardFromHiroiMaster(item.MaterialCode8);
+                    queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode8, name, standard, item.Quantity8));
                 }
             }
 
             return queryData;
         }
 
-        private static (string, string) GetNameAndStandard(string str)
+        private (string, string) GetNameAndStandardFromHiroiMaster(string str)
         {
-            str = str.Trim();
-            string name, standard = "";
-            int index;
+            var item = _hiroiMasterModel.FirstOrDefault(x => x.Buzaicd == String.Format("{0:D6}", Convert.ToInt32(str)));
 
-            if ((index = str.LastIndexOfAny(_whiteSpaces)) <= 0)
-            {
-                index = str.IndexOfAny(_numbers);
-            }
-
-            if (index <= 0)
-            {
-                name = str;
-            }
-            else
-            {
-                name = str.Substring(0, index);
-                standard = str.Substring(index, str.Length - index);
-            }
-
-            return (name.Trim(), standard.Trim());
+            return item != null ? (item.Hinmei.Trim(), item.Kikaku.Trim()) : (string.Empty, string.Empty);
         }
 
         private void LoadData()
@@ -122,7 +100,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             ObservableCollection<QueryData> queryData = new ObservableCollection<QueryData>();
             if (!string.IsNullOrWhiteSpace(_setCode))
             {
-                queryData = new ObservableCollection<QueryData>(_queryDataMaster.Where(x => x.CeeDSetCode.IndexOf(_setCode, StringComparison.OrdinalIgnoreCase) > -1));
+                CeedModel? ceedModel = _listCeedModel.FirstOrDefault((model => model.CeeDSetCode.ToUpper().Equals(_setCode.ToUpper())));
+                if (ceedModel != null)
+                {
+                    queryData = LoadQueryData(ceedModel);
+                }
             }
 
             CeeDDetailInformationModel ceeDDetailInformationModels = new CeeDDetailInformationModel(queryData, "");
@@ -132,7 +114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         private void TxtSetCode_OnTextChanged(object sender, TextChangedEventArgs e)
         {
-            _setCode = txtSetCode.Text;
+            _setCode = txtSetCode.Text.Trim();
             LoadData();
         }
 
