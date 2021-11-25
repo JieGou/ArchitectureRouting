@@ -191,12 +191,12 @@ namespace Arent3d.Architecture.Routing
 
     public static bool HasCompatibleShape( this IConnector conn1, IConnector conn2 )
     {
-      return ( conn1.Shape != conn2.Shape ) ;
+      return ( conn1.Shape == conn2.Shape ) ;
     }
 
     public static bool HasSameShapeAndParameters( this IConnector conn1, IConnector conn2 )
     {
-      if ( conn1.Shape == conn2.Shape ) return false ;
+      if ( conn1.Shape != conn2.Shape ) return false ;
 
       // Concrete shape parameter can be different
       return conn1.Shape switch

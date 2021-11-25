@@ -71,6 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     public static IPickResult GetVavConnector( Element element, UIDocument uiDocument, RoutingExecutor routingExecutor, bool pickingFromSide, string message, IPickResult? compatiblePickResult, AddInType addInType )
     {
+      while ( true ) {
         if ( PassPointPickResult.Create( element ) is { } ppResult ) return ppResult ;
         var globalPoint = element.Location as LocationPoint ;
         if ( AddInType.Electrical == addInType ) {
@@ -86,17 +87,19 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         var conn = compatiblePickResult?.SubRoute?.GetReferenceConnector() ?? compatiblePickResult?.PickedConnector ;
 
-        // var (result, connector) = FindConnector( uiDocument, element, message, conn, addInType ) ;
-        var connectors = element.GetConnectors() ;
-        var connector = connectors.LastOrDefault() ;
-        // var connector = element.GetConnectors().FirstOrDefault() ;
+        var (result, connector) = FindConnector( uiDocument, element, message, conn, addInType ) ;
+        // var connectors = element.GetConnectors() ;
+        // var connector = connectors.LastOrDefault() ;
 
-        // if ( null != connector ) {
-        //   return new ConnectorPickResult( element, connector ) ;
-        // }
+        if ( false == result ) continue ;
+
+        if ( null != connector ) {
+          return new ConnectorPickResult( element, connector ) ;
+        }
 
         return new OriginPickResult( element, addInType ) ;
-    }    
+      }
+    }
 
     private static IEndPoint? PickEndPointOverSubRoute( UIDocument uiDocument, SubRoutePickResult pickResult, bool pickingFromSide )
     {
