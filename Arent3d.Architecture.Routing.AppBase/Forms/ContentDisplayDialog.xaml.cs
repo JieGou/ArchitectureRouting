@@ -76,14 +76,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_ExportFile( object sender, RoutedEventArgs e )
     {
-      const string fileName = "ドーコンOFF.dat" ;
+      const string fileName = "file_name.dat" ;
       SaveFileDialog saveFileDialog = new SaveFileDialog { FileName = fileName, Filter = "CSV files (*.dat)|*.dat", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
 
       if ( saveFileDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK ) return ;
       try {
         using ( StreamWriter sw = new StreamWriter( saveFileDialog.FileName ) ) {
-          foreach ( var pickUpModel in _pickUpModels ) {
-            string line = "\"" + pickUpModel.ProductName + "\",\"" + pickUpModel.ModelNumber + "\"" ;
+          foreach ( var p in _pickUpModels ) {
+            List<string> param = new List<string>()
+            {
+              p.Floor,
+              p.ConstructionItems,
+              p.Facility,
+              p.ProductName,
+              p.Use,
+              p.Construction,
+              p.ModelNumber,
+              p.Specification,
+              p.Specification2,
+              p.Size,
+              p.Quantity,
+              p.Tani
+            } ;
+            string line = "\"" + string.Join( "\",\"", param ) + "\"" ;
             sw.WriteLine( line ) ;
           }
 
