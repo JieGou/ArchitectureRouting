@@ -6,9 +6,10 @@ using System.Collections.Generic ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 using System ;
 using Arent3d.Architecture.Routing.AppBase ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Revit ;
 using System.Linq ;
+using MathLib ;
+using Line = Autodesk.Revit.DB.Line ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
@@ -31,7 +32,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       XAxis,
       YAxis
     }
-    
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -63,7 +64,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       ConnectorPicker.IPickResult iPickResult =
         ConnectorPicker.GetConnector( uiDocument, routingExecutor, true,
           "Dialog.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand.PickConnector", null, GetAddInType() ) ;
-      if ( iPickResult.PickedConnector != null && CreateFASUAndVAVAutomatically( uiDocument.Document, iPickResult.PickedConnector ) == Result.Succeeded ) {
+      if ( iPickResult.PickedConnector != null &&
+           CreateFASUAndVAVAutomatically( uiDocument.Document, iPickResult.PickedConnector ) == Result.Succeeded ) {
         TaskDialog.Show( "FASUとVAVの自動配置", "FASUとVAVを配置しました。" ) ;
       }
 
@@ -80,34 +82,42 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       // Get all the spaces in the document
       IList<Element> spaces = GetAllSpaces( document ) ;
 
-      // Get branch number　property of spaces
-      IList<int> listOfAllBranchNumbers = spaces.Select( space =>
-          space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ? branchNumber : -1 )
-        .ToArray() ;
+      Dictionary<int, List<Element>> branchNumberDict = new() ;
+      foreach ( Element space in spaces ) {
+        space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
+        if ( branchNumberDict.ContainsKey( branchNumber ) ) {
+          branchNumberDict[ branchNumber ].Add( space ) ;
+        }
+        else {
+          branchNumberDict.Add( branchNumber, new List<Element>() { space } ) ;
+        }
+      }
+      
+      var rotationAxis = GetRotationAxis( pickedConnector ) ;
 
       // Calculate direction for FASU and VAV inside the space
-      List<double> FASUAndVAVDirectionInformations = CalculateDirectionForFASUsAndVAVs( document, spaces,
-        listOfAllBranchNumbers, pickedConnector ) ;
+      Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
+        branchNumberDict, pickedConnector, rotationAxis ) ;
 
       // Start Transaction
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
-        foreach ( var space in spaces.Select( ( value, index ) => new { value, index } ) ) {
+        foreach ( var space in spaces ) {
           // Add object to the document
-          BoundingBoxXYZ boxOfSpace = space.value.get_BoundingBox( document.ActiveView ) ;
+          BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
 
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2,
             ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
 
           // Add FASU to document
-          var instanceOfFASU = document.AddFASU( positionOfFASUAndVAV, space.value.LevelId ) ;
+          var instanceOfFASU = document.AddFASU( positionOfFASUAndVAV, space.LevelId ) ;
           ElementTransformUtils.RotateElement( document, instanceOfFASU.Id,
             Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI / 2 ) ;
           instanceOfFASU.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).SetValueString( HeightOfFASU ) ;
 
           // Add VAV to document
-          var instanceOfVAV = document.AddVAV( positionOfFASUAndVAV, space.value.LevelId ) ;
+          var instanceOfVAV = document.AddVAV( positionOfFASUAndVAV, space.LevelId ) ;
           instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( DiameterOfVAV ) ;
           instanceOfVAV.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).SetValueString( HeightOfVAV ) ;
 
@@ -118,24 +128,25 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           if ( boxOfVAV == null ) continue ;
 
           // Move the VAV to a distance distanceBetweenFASUAndVAV from FASU
-          double distanceBetweenFASUCenterAndVAVCenter ;
-          distanceBetweenFASUCenterAndVAVCenter = ( boxOfFASU.Max.X - boxOfFASU.Min.X ) / 2 +
-                                                  ( boxOfVAV.Max.X - boxOfVAV.Min.X ) / 2 +
-                                                  DistanceBetweenFASUAndVAV ;
+          double distanceBetweenFASUCenterAndVAVCenter = ( boxOfFASU.Max.X - boxOfFASU.Min.X ) / 2 +
+                                                         ( boxOfVAV.Max.X - boxOfVAV.Min.X ) / 2 +
+                                                         DistanceBetweenFASUAndVAV ;
           ElementTransformUtils.MoveElement( document, instanceOfVAV.Id,
             new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
 
-          // Check the condition if the rotation touches the connector or not?
-          if ( CheckVAVTouchingConnector( document, instanceOfVAV, pickedConnector, positionOfFASUAndVAV,
-            FASUAndVAVDirectionInformations[ space.index ] ) ) continue ;
-
+          // 回転軸で見るとき、コネクターがVAVの境界ボックス内にある場合、VAVの向きを反転させる
+          // if ( CheckVAVTouchingConnector( document, instanceOfVAV, pickedConnector, positionOfFASUAndVAV,
+          //   rotationAnglesOfFASUsAndVAVs[ space ], rotationAxis ) ) {
+          //   rotationAnglesOfFASUsAndVAVs[ space ] += Math.PI ;
+          // }
+          
           // Rotate FASU and VAV
           List<ElementId> idOfFASUAndVAV = new List<ElementId>() ;
           idOfFASUAndVAV.Add( instanceOfFASU.Id ) ;
           idOfFASUAndVAV.Add( instanceOfVAV.Id ) ;
           ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
             Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ),
-            FASUAndVAVDirectionInformations[ space.index ] ) ;
+            rotationAnglesOfFASUsAndVAVs[ space ] ) ;
         }
 
         tr.Commit() ;
@@ -144,56 +155,47 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Result.Succeeded ;
     }
 
-    private static List<double> CalculateDirectionForFASUsAndVAVs( Document document, IList<Element> spaces,
-      IList<int> listAllOfBranchNumber , Connector pickedConnector )
+    private static Dictionary<Element, double> CalculateRotationAnglesOfFASUsAndVAVs( Document document,
+      Dictionary<int, List<Element>> branchNumberDict, Connector pickedConnector, RotationAxis rotationAxis )
     {
-      // Initialize to initial value
-      List<double> directionForFASUsAndVAVs = new List<double>() ;
-      for ( int i = 0 ; i < spaces.Count ; i++ ) {
-        directionForFASUsAndVAVs.Add( 0 ) ;
-      }
-
-      // Determine AHU coincides with the axis Ox or Oy
-      var rotationAxis = GetRotationAxis( pickedConnector ) ;
+      Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = new() ;
 
       // Process by group BranchNumber
-      foreach ( var handleBranchNumber in listAllOfBranchNumber.Select( ( value, index ) => new { value, index } ) ) {
-        List<int> branchNumbers = GetBranchNumbers( listAllOfBranchNumber, handleBranchNumber.index ) ;
-        if ( branchNumbers.Count == 0 ) continue ;
+      foreach ( var handleBranchNumber in branchNumberDict.Keys ) {
+        List<Element> handleSpaces = branchNumberDict[ handleBranchNumber ] ;
 
         // Separate handling for rootBranchNumber (default value == 0)
-        if ( handleBranchNumber.index == RootBranchNumber ) {
-          foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
-            XYZ centerPointOfSpace = GetCenterPointOfSpace( document, spaces[ branchNumber.value ] ) ;
-            directionForFASUsAndVAVs[ branchNumber.value ] =
-              GetDirectionForFASUAndVAV( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
+        if ( handleBranchNumber == RootBranchNumber ) {
+          foreach ( var handleSpace in handleSpaces ) {
+            XYZ centerPointOfSpace = GetCenterPointOfElement( document, handleSpace ) ;
+            var direction = GetRotationAngle( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
+            rotationAnglesOfFASUsAndVAVs.Add( handleSpace, direction ) ;
           }
-
           continue ;
         }
 
         // Get center of spaces group
-        XYZ centerPointOfSpacesGroup = GetCenterPointOfSpacesGroup( document, spaces, branchNumbers ) ;
-        
+        XYZ centerPointOfSpacesGroup = GetCenterPointOfSpacesGroup( document, handleSpaces ) ;
+
         // Are the spaces collinear
         bool areTheSpacesCollinear =
-          GetRotationAngleSpacesCollinear( document, spaces, branchNumbers, centerPointOfSpacesGroup, rotationAxis ) ;
+          GetRotationAngleSpacesCollinear( document, handleSpaces, centerPointOfSpacesGroup, rotationAxis ) ;
 
         // Calculate rotation angle of FASU and VAV in each space
-        foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
+        foreach ( var handleSpace in handleSpaces ) {
           if ( areTheSpacesCollinear ) {
-            directionForFASUsAndVAVs[ branchNumber.value ] = GetDirectionForFASUAndVAV( pickedConnector.Origin,
+            rotationAnglesOfFASUsAndVAVs[ handleSpace ] = GetRotationAngle( pickedConnector.Origin,
               centerPointOfSpacesGroup, rotationAxis ) ;
           }
           else {
-            XYZ centerPointOfSpace = GetCenterPointOfSpace( document, spaces[ branchNumber.value ] ) ;
-            directionForFASUsAndVAVs[ branchNumber.value ] =
-              GetDirectionForFASUAndVAV( centerPointOfSpacesGroup, centerPointOfSpace, rotationAxis ) ;
+            XYZ centerPointOfSpace = GetCenterPointOfElement( document, handleSpace ) ;
+            rotationAnglesOfFASUsAndVAVs[ handleSpace ] =
+              GetRotationAngle( centerPointOfSpacesGroup, centerPointOfSpace, rotationAxis ) ;
           }
         }
       }
 
-      return directionForFASUsAndVAVs ;
+      return rotationAnglesOfFASUsAndVAVs ;
     }
 
     private static IList<Element> GetAllSpaces( Document document )
@@ -204,55 +206,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return spaces ;
     }
 
-    private static List<int> GetBranchNumbers( IList<int> listAllBranchNumber, int valueOfBranchNumber )
+    private static XYZ GetCenterPointOfSpacesGroup( Document document, List<Element> spaces )
     {
-      List<int> groupOfBranchNumberSpaces = new List<int>() ;
-      foreach ( var branchNumberOfSpace in listAllBranchNumber.Select( ( value, index ) => new { value, index } ) ) {
-        if ( branchNumberOfSpace.value == valueOfBranchNumber ) {
-          groupOfBranchNumberSpaces.Add( branchNumberOfSpace.index ) ;
-        }
-      }
-
-      return groupOfBranchNumberSpaces ;
+      var centerPositions = spaces.Select( element => GetCenterPointOfElement( document, element ).To3dPoint() )
+        .ToArray() ;
+      return new Box3d( centerPositions ).Center.ToXYZPoint() ;
     }
 
-    private static XYZ GetCenterPointOfSpacesGroup( Document document, IList<Element> spaces, List<int> branchNumbers )
+    private static XYZ GetCenterPointOfElement( Document document, Element element )
     {
-      XYZ maxOfSpaces = new XYZ(), minOfSpaces = new XYZ() ;
-      foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
-        XYZ centerPointOfSpace = GetCenterPointOfSpace( document, spaces[ branchNumber.value ] ) ;
-        if ( branchNumber.index == 0 ) {
-          maxOfSpaces = centerPointOfSpace ;
-          minOfSpaces = centerPointOfSpace ;
-        }
-        else {
-          if ( maxOfSpaces.X < centerPointOfSpace.X )
-            maxOfSpaces = new XYZ( centerPointOfSpace.X, maxOfSpaces.Y, maxOfSpaces.Z ) ;
-          if ( maxOfSpaces.Y < centerPointOfSpace.Y )
-            maxOfSpaces = new XYZ( maxOfSpaces.X, centerPointOfSpace.Y, maxOfSpaces.Z ) ;
-          if ( maxOfSpaces.Z < centerPointOfSpace.Z )
-            maxOfSpaces = new XYZ( maxOfSpaces.X, maxOfSpaces.Y, centerPointOfSpace.Z ) ;
-          if ( minOfSpaces.X > centerPointOfSpace.X )
-            minOfSpaces = new XYZ( centerPointOfSpace.X, minOfSpaces.Y, minOfSpaces.Z ) ;
-          if ( minOfSpaces.Y > centerPointOfSpace.Y )
-            minOfSpaces = new XYZ( minOfSpaces.X, centerPointOfSpace.Y, minOfSpaces.Z ) ;
-          if ( minOfSpaces.Z > centerPointOfSpace.Z )
-            minOfSpaces = new XYZ( minOfSpaces.X, minOfSpaces.Y, centerPointOfSpace.Z ) ;
-        }
+      BoundingBoxXYZ boxOfSpace = element.get_BoundingBox( document.ActiveView ) ;
+      if ( boxOfSpace != null ) {
+        return new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2,
+          ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2,
+          ( boxOfSpace.Max.Z + boxOfSpace.Min.Z ) / 2 ) ;
       }
-
-      XYZ centerPointOfSpacesGroup = new XYZ( ( maxOfSpaces.X + minOfSpaces.X ) / 2,
-        ( maxOfSpaces.Y + minOfSpaces.Y ) / 2,
-        ( maxOfSpaces.Z + minOfSpaces.Z ) / 2 ) ;
-      return centerPointOfSpacesGroup ;
-    }
-
-    private static XYZ GetCenterPointOfSpace( Document document, Element instanceOfSpace )
-    {
-      BoundingBoxXYZ boxOfSpace = instanceOfSpace.get_BoundingBox( document.ActiveView ) ;
-      return new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2,
-        ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2,
-        ( boxOfSpace.Max.Z + boxOfSpace.Min.Z ) / 2 ) ;
+      //TODO：スペースにはBounding boxが含まれていないことがある。この場合は警告を出す必要があるか?
+      return new XYZ() ;
     }
 
     private static RotationAxis GetRotationAxis( Connector pickedConnector )
@@ -266,31 +236,38 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
     }
 
-    private static double GetDirectionForFASUAndVAV( XYZ centerPointOfSpacesGroup, XYZ centerPointOfSpace,
-      RotationAxis axisOfRotation )
+    /// <summary>
+    /// (fromPoint,toPoint)ベクトルに対応した回転角度を求める
+    /// </summary>
+    /// <param name="toPoint">回転ベクトルの始点</param>
+    /// <param name="fromPoint">回転ベクトルの終点</param>
+    /// <param name="axisOfRotation">回転軸（縦・横方向の回転のみ）</param>
+    /// <returns>回転角度</returns>
+    private static double GetRotationAngle( XYZ toPoint, XYZ fromPoint, RotationAxis axisOfRotation )
     {
       if ( axisOfRotation == RotationAxis.XAxis ) {
-        if ( centerPointOfSpace.X <= centerPointOfSpacesGroup.X ) {
+        if ( fromPoint.X <= toPoint.X ) {
           return 0 ;
         }
+
         return Math.PI ;
       }
 
-      if ( centerPointOfSpace.Y <= centerPointOfSpacesGroup.Y ) {
+      if ( fromPoint.Y <= toPoint.Y ) {
         return 0.5 * Math.PI ;
       }
+
       return 1.5 * Math.PI ;
     }
 
-    private static bool GetRotationAngleSpacesCollinear( Document document, IList<Element> spaces,
-      List<int> branchNumbers, XYZ centerPointOfSpacesGroup, RotationAxis rotationAxis )
+    private static bool GetRotationAngleSpacesCollinear( Document document, List<Element> spaces,
+      XYZ centerPointOfSpacesGroup, RotationAxis rotationAxis )
     {
-      if ( branchNumbers.Count == 0 ) return false;
-      foreach ( var branchNumber in branchNumbers.Select( ( value, index ) => new { value, index } ) ) {
-        XYZ centerPointOfSpace = GetCenterPointOfSpace( document, spaces[ branchNumber.value ] ) ;
+      foreach ( var space in spaces ) {
+        XYZ centerPointOfSpace = GetCenterPointOfElement( document, space ) ;
         if ( rotationAxis == RotationAxis.XAxis ) {
           if ( Math.Abs( centerPointOfSpacesGroup.X - centerPointOfSpace.X ) > MinDistanceSpacesCollinear ) {
-            return false;
+            return false ;
           }
         }
         else {
@@ -303,24 +280,24 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     }
 
     private static bool CheckVAVTouchingConnector( Document document, Element instanceOfVAV,
-      Connector instanceOfConnector, XYZ pointOfRotation, double rotationAngle )
+      Connector instanceOfConnector, XYZ pointOfRotation, double rotationAngle, RotationAxis axisOfRotation )
     {
       // Get BoundingBox of VAV
       BoundingBoxXYZ boxOfVAV = instanceOfVAV.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfVAV == null ) return false ;
+      
+      // 仮にオブジェクトを回転したとき、回転軸において回転したオブジェクトの境界線の位置を求める。
+      ( double leftOfVAV, double rightOfVAV ) =
+        GetTheBoundariesOfTheRotatedObjectOnTheAxisOfRotation( boxOfVAV, pointOfRotation, rotationAngle,
+          axisOfRotation ) ;
 
-      // Determine connector (AHU) coincides with the axis Ox or Oy
-      RotationAxis axisOfRotation = GetRotationAxis( instanceOfConnector ) ;
-      ( double pointOfMinBoxVAV, double pointOfMaxBoxVAV ) =
-        GetMinMaxBoxRotatingObject( boxOfVAV, pointOfRotation, rotationAngle, axisOfRotation ) ;
-
-      if ( axisOfRotation == 0 ) {
-        if ( instanceOfConnector.Origin.X >= pointOfMinBoxVAV && instanceOfConnector.Origin.X <= pointOfMaxBoxVAV ) {
+      if ( axisOfRotation == RotationAxis.XAxis ) {
+        if ( instanceOfConnector.Origin.X >= leftOfVAV && instanceOfConnector.Origin.X <= rightOfVAV ) {
           return true ;
         }
       }
       else {
-        if ( instanceOfConnector.Origin.Y >= pointOfMinBoxVAV && instanceOfConnector.Origin.Y <= pointOfMaxBoxVAV ) {
+        if ( instanceOfConnector.Origin.Y >= leftOfVAV && instanceOfConnector.Origin.Y <= rightOfVAV ) {
           return true ;
         }
       }
@@ -328,7 +305,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return false ;
     }
 
-    private static (double, double) GetMinMaxBoxRotatingObject( BoundingBoxXYZ boxOfRotatingObject, XYZ pointOfRotation,
+    private static (double, double) GetTheBoundariesOfTheRotatedObjectOnTheAxisOfRotation(
+      BoundingBoxXYZ boxOfRotatingObject, XYZ pointOfRotation,
       double rotationAngle, RotationAxis axisOfRotation )
     {
       if ( axisOfRotation == RotationAxis.XAxis ) {
