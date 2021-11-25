@@ -26,6 +26,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string DiameterOfVAV = "250" ;
     private const int RootBranchNumber = 0 ;
     private const double MinDistanceSpacesCollinear = 2.5 ;
+    private const double EastDirection = Math.PI * 0 ;
+    private const double NorthDirection = Math.PI * 0.5 ;
+    private const double WestDirection = Math.PI * 1 ;
+    private const double SouthDirection = Math.PI * 1.5 ;
 
     private enum RotationAxis
     {
@@ -61,11 +65,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
+      IList<Element> spaces = GetAllSpaces( uiDocument.Document ) ;
+      foreach ( var space in spaces ) {
+        if ( CheckSpaceHasBoundingBox(  uiDocument.Document , space ) ) {
+          return ( false, $"`{space.Name}` have not bounding box." ) ;
+        }
+      }
       ConnectorPicker.IPickResult iPickResult =
         ConnectorPicker.GetConnector( uiDocument, routingExecutor, true,
           "Dialog.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand.PickConnector", null, GetAddInType() ) ;
       if ( iPickResult.PickedConnector != null &&
-           CreateFASUAndVAVAutomatically( uiDocument.Document, iPickResult.PickedConnector ) == Result.Succeeded ) {
+           CreateFASUAndVAVAutomatically( uiDocument.Document, iPickResult.PickedConnector, spaces ) == Result.Succeeded ) {
         TaskDialog.Show( "FASUとVAVの自動配置", "FASUとVAVを配置しました。" ) ;
       }
 
@@ -77,10 +87,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private RoutingExecutor CreateRoutingExecutor( Document document, View view ) =>
       AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector )
+    private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector, IList<Element> spaces )
     {
-      IList<Element> spaces = GetAllSpaces( document ) ;
-
       Dictionary<int, List<Element>> branchNumberToAreaDictionary = new() ;
       foreach ( Element space in spaces ) {
         space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
@@ -91,7 +99,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           branchNumberToAreaDictionary.Add( branchNumber, new List<Element>() { space } ) ;
         }
       }
-      
+
       var rotationAxis = GetRotationAxis( pickedConnector ) ;
 
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
@@ -132,12 +140,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           ElementTransformUtils.MoveElement( document, instanceOfVAV.Id,
             new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
 
-          // 回転軸で見るとき、コネクターがVAVの境界ボックス内にある場合、VAVの向きを反転させる
-          if ( CheckVAVTouchingConnector( document, instanceOfVAV, pickedConnector, positionOfFASUAndVAV,
-            rotationAnglesOfFASUsAndVAVs[ space ], rotationAxis ) ) {
-            rotationAnglesOfFASUsAndVAVs[ space ] += Math.PI ;
-          }
-          
           // Rotate FASU and VAV
           var idOfFASUAndVAV = new List<ElementId>
           {
@@ -147,6 +149,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
             Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ),
             rotationAnglesOfFASUsAndVAVs[ space ] ) ;
+
+          // 回転軸で見るとき、コネクターがVAVの境界ボックス内にある場合、VAVの向きを反転させる
+          if ( CheckVAVTouchingConnector( document, instanceOfVAV, pickedConnector, rotationAxis ) ) {
+            ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
+              Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI) ;
+          }
         }
 
         tr.Commit() ;
@@ -168,9 +176,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         if ( branchNumber == RootBranchNumber ) {
           foreach ( var targetSpace in targetSpaces ) {
             XYZ centerPointOfSpace = GetCenterPointOfElement( document, targetSpace ) ;
-            var rotation = GetRotationAngle( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
+            var rotation = GetDirectionForFASUAndVAV( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
             rotationAnglesOfFASUsAndVAVs.Add( targetSpace, rotation ) ;
           }
+
           continue ;
         }
 
@@ -184,13 +193,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         // Calculate rotation angle of FASU and VAV in each space
         foreach ( var handleSpace in targetSpaces ) {
           if ( areSpacesCollinear ) {
-            rotationAnglesOfFASUsAndVAVs[ handleSpace ] = GetRotationAngle( pickedConnector.Origin,
+            rotationAnglesOfFASUsAndVAVs[ handleSpace ] = GetDirectionForFASUAndVAV( pickedConnector.Origin,
               centerPointOfSpacesGroup, rotationAxis ) ;
           }
           else {
             XYZ centerPointOfSpace = GetCenterPointOfElement( document, handleSpace ) ;
             rotationAnglesOfFASUsAndVAVs[ handleSpace ] =
-              GetRotationAngle( centerPointOfSpacesGroup, centerPointOfSpace, rotationAxis ) ;
+              GetDirectionForFASUAndVAV( centerPointOfSpacesGroup, centerPointOfSpace, rotationAxis ) ;
           }
         }
       }
@@ -216,46 +225,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static XYZ GetCenterPointOfElement( Document document, Element element )
     {
       BoundingBoxXYZ boxOfSpace = element.get_BoundingBox( document.ActiveView ) ;
-      if ( boxOfSpace != null ) {
-        return boxOfSpace.ToBox3d().Center.ToXYZPoint() ;
-      }
-
-      //TODO：スペースにはBounding boxが含まれていないことがある。この場合は警告を出す必要があるか?
-      return new XYZ() ;
+      return boxOfSpace.ToBox3d().Center.ToXYZPoint() ;
     }
 
     private static RotationAxis GetRotationAxis( Connector pickedConnector )
     {
       var rotation = ( pickedConnector.Owner.Location as LocationPoint )!.Rotation ;
-      if ( Math.Abs( Math.Cos( rotation ) ) >= Math.Cos( Math.PI / 4 ) ) {
-        return RotationAxis.XAxis ;
-      }
-
-      return RotationAxis.YAxis ;
+      return Math.Abs( Math.Cos( rotation ) ) >= Math.Cos( Math.PI / 4 ) ? RotationAxis.XAxis : RotationAxis.YAxis ;
     }
 
-    /// <summary>
-    /// (fromPoint,toPoint)ベクトルに対応した回転角度を求める
-    /// </summary>
-    /// <param name="toPoint">回転ベクトルの始点</param>
-    /// <param name="fromPoint">回転ベクトルの終点</param>
-    /// <param name="axisOfRotation">回転軸（縦・横方向の回転のみ）</param>
-    /// <returns>回転角度</returns>
-    private static double GetRotationAngle( XYZ toPoint, XYZ fromPoint, RotationAxis axisOfRotation )
+    private static double GetDirectionForFASUAndVAV( XYZ centerPointOfSpacesGroup, XYZ centerPointOfSpace,
+      RotationAxis axisOfRotation )
     {
       if ( axisOfRotation == RotationAxis.XAxis ) {
-        if ( fromPoint.X <= toPoint.X ) {
-          return 0 ;
-        }
-
-        return Math.PI ;
+        return centerPointOfSpace.X <= centerPointOfSpacesGroup.X ? EastDirection : WestDirection ;
       }
 
-      if ( fromPoint.Y <= toPoint.Y ) {
-        return 0.5 * Math.PI ;
-      }
-
-      return 1.5 * Math.PI ;
+      return centerPointOfSpace.Y <= centerPointOfSpacesGroup.Y ? NorthDirection : SouthDirection ;
     }
 
     private static bool AreRotatedSpacesCollinear( Document document, List<Element> spaces,
@@ -274,57 +260,26 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           }
         }
       }
+
       return true ;
     }
 
     private static bool CheckVAVTouchingConnector( Document document, Element instanceOfVAV,
-      Connector instanceOfConnector, XYZ pointOfRotation, double rotationAngle, RotationAxis axisOfRotation )
+      Connector instanceOfConnector, RotationAxis axisOfRotation )
     {
       // Get BoundingBox of VAV
       BoundingBoxXYZ boxOfVAV = instanceOfVAV.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfVAV == null ) return false ;
-      
-      // 仮にオブジェクトを回転したとき、回転軸において回転したオブジェクトの境界線の位置を求める。
-      ( double leftOfVAV, double rightOfVAV ) =
-        GetTheBoundariesOfTheRotatedObjectOnTheAxisOfRotation( boxOfVAV, pointOfRotation, rotationAngle,
-          axisOfRotation ) ;
-
       if ( axisOfRotation == RotationAxis.XAxis ) {
-        if ( instanceOfConnector.Origin.X >= leftOfVAV && instanceOfConnector.Origin.X <= rightOfVAV ) {
-          return true ;
-        }
-      }
-      else {
-        if ( instanceOfConnector.Origin.Y >= leftOfVAV && instanceOfConnector.Origin.Y <= rightOfVAV ) {
-          return true ;
-        }
+        return instanceOfConnector.Origin.X >= boxOfVAV.Min.X && instanceOfConnector.Origin.X <= boxOfVAV.Max.X ;
       }
 
-      return false ;
+      return instanceOfConnector.Origin.Y >= boxOfVAV.Min.Y && instanceOfConnector.Origin.Y <= boxOfVAV.Max.Y ;
     }
-
-    private static (double, double) GetTheBoundariesOfTheRotatedObjectOnTheAxisOfRotation(
-      BoundingBoxXYZ boxOfRotatingObject, XYZ pointOfRotation,
-      double rotationAngle, RotationAxis axisOfRotation )
+    
+    private static bool CheckSpaceHasBoundingBox(Document document, Element space )
     {
-      if ( axisOfRotation == RotationAxis.XAxis ) {
-        if ( Math.Cos( rotationAngle ) > 0 ) {
-          return ( boxOfRotatingObject.Min.X, boxOfRotatingObject.Max.X ) ;
-        }
-        else {
-          return ( pointOfRotation.X - Math.Abs( pointOfRotation.X - boxOfRotatingObject.Max.X ),
-            pointOfRotation.X + Math.Abs( pointOfRotation.X - boxOfRotatingObject.Min.X ) ) ;
-        }
-      }
-      else {
-        if ( Math.Sin( rotationAngle ) > 0 ) {
-          return ( boxOfRotatingObject.Min.Y, boxOfRotatingObject.Max.Y ) ;
-        }
-        else {
-          return ( pointOfRotation.Y - Math.Abs( pointOfRotation.Y - boxOfRotatingObject.Max.Y ),
-            pointOfRotation.Y + Math.Abs( pointOfRotation.Y - boxOfRotatingObject.Min.Y ) ) ;
-        }
-      }
+      return ( null == space.get_BoundingBox( document.ActiveView ) ) ;
     }
   }
 }
