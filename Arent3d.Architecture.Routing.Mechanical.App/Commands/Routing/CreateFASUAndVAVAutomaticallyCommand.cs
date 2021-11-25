@@ -176,7 +176,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         if ( branchNumber == RootBranchNumber ) {
           foreach ( var targetSpace in targetSpaces ) {
             XYZ centerPointOfSpace = GetCenterPointOfElement( document, targetSpace ) ;
-            var rotation = GetDirectionForFASUAndVAV( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
+            var rotation = GetRotationAngleForFASUAndVAV( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
             rotationAnglesOfFASUsAndVAVs.Add( targetSpace, rotation ) ;
           }
 
@@ -193,13 +193,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         // Calculate rotation angle of FASU and VAV in each space
         foreach ( var handleSpace in targetSpaces ) {
           if ( areSpacesCollinear ) {
-            rotationAnglesOfFASUsAndVAVs[ handleSpace ] = GetDirectionForFASUAndVAV( pickedConnector.Origin,
+            rotationAnglesOfFASUsAndVAVs[ handleSpace ] = GetRotationAngleForFASUAndVAV( pickedConnector.Origin,
               centerPointOfSpacesGroup, rotationAxis ) ;
           }
           else {
             XYZ centerPointOfSpace = GetCenterPointOfElement( document, handleSpace ) ;
             rotationAnglesOfFASUsAndVAVs[ handleSpace ] =
-              GetDirectionForFASUAndVAV( centerPointOfSpacesGroup, centerPointOfSpace, rotationAxis ) ;
+              GetRotationAngleForFASUAndVAV( centerPointOfSpacesGroup, centerPointOfSpace, rotationAxis ) ;
           }
         }
       }
@@ -234,7 +234,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Math.Abs( Math.Cos( rotation ) ) >= Math.Cos( Math.PI / 4 ) ? RotationAxis.XAxis : RotationAxis.YAxis ;
     }
 
-    private static double GetDirectionForFASUAndVAV( XYZ centerPointOfSpacesGroup, XYZ centerPointOfSpace,
+    private static double GetRotationAngleForFASUAndVAV( XYZ centerPointOfSpacesGroup, XYZ centerPointOfSpace,
       RotationAxis axisOfRotation )
     {
       if ( axisOfRotation == RotationAxis.XAxis ) {
