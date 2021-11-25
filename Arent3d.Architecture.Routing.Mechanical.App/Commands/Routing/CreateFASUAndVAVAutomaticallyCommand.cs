@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      IList<Element> spaces = GetAllSpaces( uiDocument.Document ) ;
+      IList<Element> spaces = GetAllSpaces( uiDocument.Document ).Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) ).ToArray() ;
       foreach ( var space in spaces ) {
         if ( CheckSpaceHasBoundingBox(  uiDocument.Document , space ) ) {
           return ( false, $"`{space.Name}` have not bounding box." ) ;
