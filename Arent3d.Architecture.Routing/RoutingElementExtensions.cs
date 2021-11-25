@@ -179,6 +179,9 @@ namespace Arent3d.Architecture.Routing
 
     private static bool IsCompatibleTo( this MEPSystemClassification systemClassification1, MEPSystemClassification systemClassification2 )
     {
+      if ( systemClassification1 == MEPSystemClassification.UndefinedSystemClassification ) return true ;
+      if ( systemClassification2 == MEPSystemClassification.UndefinedSystemClassification ) return true ;
+
       if ( systemClassification1 == MEPSystemClassification.PowerCircuit && IsCompatibleToPowerCircuit( systemClassification2 ) ) return true ;
       if ( systemClassification2 == MEPSystemClassification.PowerCircuit && IsCompatibleToPowerCircuit( systemClassification1 ) ) return true ;
 
