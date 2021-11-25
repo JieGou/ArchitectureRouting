@@ -1,10 +1,13 @@
 using System ;
 using System.Collections.Generic ;
+using System.Linq ;
 using System.Threading ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Revit.UI.Forms ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -41,6 +44,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var executionResult = GenerateRoutes( document, executor, state ) ;
           if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
           if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
+
+          // Avoid Revit bugs about reducer insertion.
+          FixReducers( document, executor, executionResult.GeneratedRoutes ) ;
 
           return Result.Succeeded ;
         } ) ;
@@ -91,6 +97,63 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           return ( Result.Cancelled, RoutingExecutionResult.Cancel ) ;
         }
       }, RoutingExecutionResult.Cancel ) ;
+    }
+
+    private static void FixReducers( Document document, RoutingExecutor executor, IEnumerable<Route> routes )
+    {
+      document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
+      {
+        using var _ = FromToTreeManager.SuppressUpdate() ;
+
+        SetupFailureHandlingOptions( transaction, executor ) ;
+
+        var routeNames = routes.Select( route => route.Name ).ToHashSet() ;
+        foreach ( var curve in document.GetAllElements<MEPCurve>().Where( curve => curve.GetRouteName() is { } routeName && routeNames.Contains( routeName ) ) ) {
+          FixCurveReducers( curve ) ;
+        }
+
+        return ( Result.Succeeded, null! ) ;
+      }, (RoutingExecutionResult)null! ) ;
+
+      static void FixCurveReducers( MEPCurve curve )
+      {
+        // Avoid Revit bugs about reducer insertion.
+        foreach ( var connector in curve.GetConnectors().OfEnd() ) {
+          var anotherConnectors = connector.GetConnectedConnectors().OfEnd().EnumerateAll() ;
+          if ( 1 != anotherConnectors.Count ) continue ;
+
+          var anotherConnector = anotherConnectors.First() ;
+          if ( connector.HasSameShapeAndParameters( anotherConnector ) ) continue ;
+
+          if ( false == ShakeShape( connector, anotherConnector ) ) continue ;
+          return ;  // done
+        }
+      }
+
+      static bool ShakeShape( Connector connector, Connector anotherConnector )
+      {
+        switch ( connector.Shape ) {
+          case ConnectorProfileType.Oval :
+          case ConnectorProfileType.Round :
+          {
+            var orgRadius = connector.Radius ;
+            connector.Radius = anotherConnector.Radius ;
+            connector.Radius = orgRadius ;
+            return true ;
+          }
+          case ConnectorProfileType.Rectangular :
+          {
+            var orgWidth = connector.Width ;
+            var orgHeight = connector.Height ;
+            connector.Width = anotherConnector.Width ;
+            connector.Height = anotherConnector.Height ;
+            connector.Width = orgWidth ;
+            connector.Height = orgHeight ;
+            return true ;
+          }
+          default : return false ;
+        }
+      }
     }
 
 

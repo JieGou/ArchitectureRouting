@@ -186,23 +186,26 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsCompatibleTo( this Connector conn1, Connector conn2 )
     {
-      return ( conn1.ConnectorType == conn2.ConnectorType ) && ( conn1.Domain == conn2.Domain ) && conn1.HasSameShape( conn2 ) ;
+      return ( conn1.ConnectorType == conn2.ConnectorType ) && ( conn1.Domain == conn2.Domain ) && conn1.HasCompatibleShape( conn2 ) ;
     }
 
-    public static bool HasSameShape( this IConnector conn1, IConnector conn2 )
+    public static bool HasCompatibleShape( this IConnector conn1, IConnector conn2 )
+    {
+      return ( conn1.Shape != conn2.Shape ) ;
+    }
+
+    public static bool HasSameShapeAndParameters( this IConnector conn1, IConnector conn2 )
     {
       if ( conn1.Shape == conn2.Shape ) return false ;
 
-      return true ;
-
-      // // Concrete shape parameter can be different
-      // return conn1.Shape switch
-      // {
-      //   ConnectorProfileType.Oval => HasSameOvalShape( conn1, conn2 ),
-      //   ConnectorProfileType.Round => HasSameRoundShape( conn1, conn2 ),
-      //   ConnectorProfileType.Rectangular => HasSameRectangularShape( conn1, conn2 ),
-      //   _ => false,
-      // } ;
+      // Concrete shape parameter can be different
+      return conn1.Shape switch
+      {
+        ConnectorProfileType.Oval => HasSameOvalShape( conn1, conn2 ),
+        ConnectorProfileType.Round => HasSameRoundShape( conn1, conn2 ),
+        ConnectorProfileType.Rectangular => HasSameRectangularShape( conn1, conn2 ),
+        _ => false,
+      } ;
     }
 
     private static bool HasSameOvalShape( IConnector conn1, IConnector conn2 )

@@ -6,6 +6,7 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
+using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -15,6 +16,7 @@ using Autodesk.Revit.DB ;
 using NPOI.SS.UserModel ;
 using NPOI.XSSF.UserModel ;
 using CellType = NPOI.SS.UserModel.CellType ;
+using MessageBox = System.Windows.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -24,7 +26,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private CeedViewModel? _allCeeDModels ;
     private string _ceeDModelNumberSearch ;
     private string _modelNumberSearch ;
+    public string SelectedSetCode ;
 
+    private void Row_DoubleClick( object sender, DataGridViewCellEventArgs e )
+    {
+      MessageBox.Show( e.RowIndex.ToString() ) ;
+    }
     public CeeDModelDialog( Document document )
     {
       InitializeComponent() ;
@@ -32,11 +39,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allCeeDModels = null ;
       _ceeDModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
+      SelectedSetCode = string.Empty ;
       
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
         LoadData( oldCeeDStorable );
       }
+
+      Style rowStyle = new Style( typeof( DataGridRow ) ) ;
+      rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
+      DtGrid.RowStyle = rowStyle ;
+    }
+
+    private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
+    {
+      var selectedItem = (CeedModel)DtGrid.SelectedValue ;
+      SelectedSetCode = selectedItem.CeeDSetCode ;
+      DialogResult = true ;
+      Close() ;      
     }
 
     private void Button_Click( object sender, RoutedEventArgs e )
