@@ -79,25 +79,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector )
     {
-      // Get all the spaces in the document
       IList<Element> spaces = GetAllSpaces( document ) ;
 
-      Dictionary<int, List<Element>> branchNumberDict = new() ;
+      Dictionary<int, List<Element>> branchNumberToAreaDictionary = new() ;
       foreach ( Element space in spaces ) {
         space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
-        if ( branchNumberDict.ContainsKey( branchNumber ) ) {
-          branchNumberDict[ branchNumber ].Add( space ) ;
+        if ( branchNumberToAreaDictionary.ContainsKey( branchNumber ) ) {
+          branchNumberToAreaDictionary[ branchNumber ].Add( space ) ;
         }
         else {
-          branchNumberDict.Add( branchNumber, new List<Element>() { space } ) ;
+          branchNumberToAreaDictionary.Add( branchNumber, new List<Element>() { space } ) ;
         }
       }
       
       var rotationAxis = GetRotationAxis( pickedConnector ) ;
 
-      // Calculate direction for FASU and VAV inside the space
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
-        branchNumberDict, pickedConnector, rotationAxis ) ;
+        branchNumberToAreaDictionary, pickedConnector, rotationAxis ) ;
 
       // Start Transaction
       using ( Transaction tr = new(document) ) {
@@ -128,9 +126,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           if ( boxOfVAV == null ) continue ;
 
           // Move the VAV to a distance distanceBetweenFASUAndVAV from FASU
-          double distanceBetweenFASUCenterAndVAVCenter = ( boxOfFASU.Max.X - boxOfFASU.Min.X ) / 2 +
-                                                         ( boxOfVAV.Max.X - boxOfVAV.Min.X ) / 2 +
-                                                         DistanceBetweenFASUAndVAV ;
+          var distanceBetweenFASUCenterAndVAVCenter = ( boxOfFASU.Max.X - boxOfFASU.Min.X ) / 2 +
+                                                      ( boxOfVAV.Max.X - boxOfVAV.Min.X ) / 2 +
+                                                      DistanceBetweenFASUAndVAV ;
           ElementTransformUtils.MoveElement( document, instanceOfVAV.Id,
             new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
 
@@ -141,9 +139,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           }
           
           // Rotate FASU and VAV
-          List<ElementId> idOfFASUAndVAV = new List<ElementId>() ;
-          idOfFASUAndVAV.Add( instanceOfFASU.Id ) ;
-          idOfFASUAndVAV.Add( instanceOfVAV.Id ) ;
+          var idOfFASUAndVAV = new List<ElementId>
+          {
+            instanceOfFASU.Id,
+            instanceOfVAV.Id
+          } ;
           ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
             Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ),
             rotationAnglesOfFASUsAndVAVs[ space ] ) ;
@@ -158,32 +158,32 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static Dictionary<Element, double> CalculateRotationAnglesOfFASUsAndVAVs( Document document,
       Dictionary<int, List<Element>> branchNumberDict, Connector pickedConnector, RotationAxis rotationAxis )
     {
-      Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = new() ;
+      var rotationAnglesOfFASUsAndVAVs = new Dictionary<Element, double>() ;
 
       // Process by group BranchNumber
-      foreach ( var handleBranchNumber in branchNumberDict.Keys ) {
-        List<Element> handleSpaces = branchNumberDict[ handleBranchNumber ] ;
+      foreach ( var branchNumber in branchNumberDict.Keys ) {
+        List<Element> targetSpaces = branchNumberDict[ branchNumber ] ;
 
-        // Separate handling for rootBranchNumber (default value == 0)
-        if ( handleBranchNumber == RootBranchNumber ) {
-          foreach ( var handleSpace in handleSpaces ) {
-            XYZ centerPointOfSpace = GetCenterPointOfElement( document, handleSpace ) ;
-            var direction = GetRotationAngle( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
-            rotationAnglesOfFASUsAndVAVs.Add( handleSpace, direction ) ;
+        // Separate handling for RootBranchNumber
+        if ( branchNumber == RootBranchNumber ) {
+          foreach ( var targetSpace in targetSpaces ) {
+            XYZ centerPointOfSpace = GetCenterPointOfElement( document, targetSpace ) ;
+            var rotation = GetRotationAngle( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
+            rotationAnglesOfFASUsAndVAVs.Add( targetSpace, rotation ) ;
           }
           continue ;
         }
 
         // Get center of spaces group
-        XYZ centerPointOfSpacesGroup = GetCenterPointOfSpacesGroup( document, handleSpaces ) ;
+        XYZ centerPointOfSpacesGroup = GetCenterPointOfSpacesGroup( document, targetSpaces ) ;
 
         // Are the spaces collinear
-        bool areTheSpacesCollinear =
-          GetRotationAngleSpacesCollinear( document, handleSpaces, centerPointOfSpacesGroup, rotationAxis ) ;
+        var areSpacesCollinear =
+          AreRotatedSpacesCollinear( document, targetSpaces, centerPointOfSpacesGroup, rotationAxis ) ;
 
         // Calculate rotation angle of FASU and VAV in each space
-        foreach ( var handleSpace in handleSpaces ) {
-          if ( areTheSpacesCollinear ) {
+        foreach ( var handleSpace in targetSpaces ) {
+          if ( areSpacesCollinear ) {
             rotationAnglesOfFASUsAndVAVs[ handleSpace ] = GetRotationAngle( pickedConnector.Origin,
               centerPointOfSpacesGroup, rotationAxis ) ;
           }
@@ -217,10 +217,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       BoundingBoxXYZ boxOfSpace = element.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfSpace != null ) {
-        return new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2,
-          ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2,
-          ( boxOfSpace.Max.Z + boxOfSpace.Min.Z ) / 2 ) ;
+        return boxOfSpace.ToBox3d().Center.ToXYZPoint() ;
       }
+
       //TODO：スペースにはBounding boxが含まれていないことがある。この場合は警告を出す必要があるか?
       return new XYZ() ;
     }
@@ -231,9 +230,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( Math.Abs( Math.Cos( rotation ) ) >= Math.Cos( Math.PI / 4 ) ) {
         return RotationAxis.XAxis ;
       }
-      else {
-        return RotationAxis.YAxis ;
-      }
+
+      return RotationAxis.YAxis ;
     }
 
     /// <summary>
@@ -260,7 +258,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return 1.5 * Math.PI ;
     }
 
-    private static bool GetRotationAngleSpacesCollinear( Document document, List<Element> spaces,
+    private static bool AreRotatedSpacesCollinear( Document document, List<Element> spaces,
       XYZ centerPointOfSpacesGroup, RotationAxis rotationAxis )
     {
       foreach ( var space in spaces ) {
