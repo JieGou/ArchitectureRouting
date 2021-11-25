@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             {
               p.Floor,
               p.ConstructionItems,
-              p.Facility,
+              p.EquipmentType,
               p.ProductName,
               p.Use,
               p.Construction,
@@ -162,9 +162,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var item = string.Empty ;
         var floor = _document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ;
         var constructionItems = string.Empty ;
-        var facility = string.Empty ;
+        var equipmentType = string.Empty ;
         var productName = string.Empty ;
         var use = string.Empty ;
+        var usageName = string.Empty ;
         var construction = string.Empty ;
         var modelNumber = string.Empty ;
         var specification = string.Empty ;
@@ -187,7 +188,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 if ( _hiroiMasterModels.Any() && ! string.IsNullOrEmpty( materialCode1 ) ) {
                   var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode1 ) ) ;
                   if ( hiroiMasterModel != null ) {
-                    facility = hiroiMasterModel.Setubisyu + "（" + productType + "）" ;
+                    equipmentType = hiroiMasterModel.Setubisyu + "（" + productType + "）" ;
                     productName = hiroiMasterModel.Hinmei ;
                     size = hiroiMasterModel.Size2 ;
                     tani = hiroiMasterModel.Tani ;
@@ -206,10 +207,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         var supplement = string.Empty ;
         var supplement2 = string.Empty ;
-        var glue = string.Empty ;
+        var group = string.Empty ;
         var layer = string.Empty ;
         var classification = string.Empty ;
-        PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, facility, productName, use, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, glue, layer, classification ) ;
+        PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification ) ;
         pickUpModels.Add( pickUpModel ) ;
       }
     }

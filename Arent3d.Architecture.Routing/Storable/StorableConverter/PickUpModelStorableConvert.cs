@@ -13,9 +13,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Item,
       Floor,
       ConstructionItems,
-      Facility,
+      EquipmentType,
       ProductName,
       Use,
+      UsageName,
       Construction,
       ModelNumber,
       Specification,
@@ -25,7 +26,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Tani,
       Supplement,
       Supplement2,
-      Glue,
+      Group,
       Layer,
       Classification
     }
@@ -37,9 +38,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var item = deserializer.GetString( SerializeField.Item ) ;
       var floor = deserializer.GetString( SerializeField.Floor ) ;
       var constructionItems = deserializer.GetString( SerializeField.ConstructionItems ) ;
-      var facility = deserializer.GetString( SerializeField.Facility ) ;
+      var equipmentType = deserializer.GetString( SerializeField.EquipmentType ) ;
       var productName = deserializer.GetString( SerializeField.ProductName ) ;
       var use = deserializer.GetString( SerializeField.Use ) ;
+      var usageName = deserializer.GetString( SerializeField.UsageName ) ;
       var construction = deserializer.GetString( SerializeField.Construction ) ;
       var modelNumber = deserializer.GetString( SerializeField.ModelNumber ) ;
       var specification = deserializer.GetString( SerializeField.Specification ) ;
@@ -49,11 +51,11 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var tani = deserializer.GetString( SerializeField.Tani ) ;
       var supplement = deserializer.GetString( SerializeField.Supplement ) ;
       var supplement2 = deserializer.GetString( SerializeField.Supplement2 ) ;
-      var glue = deserializer.GetString( SerializeField.Glue ) ;
+      var group = deserializer.GetString( SerializeField.Group ) ;
       var layer = deserializer.GetString( SerializeField.Layer ) ;
       var classification = deserializer.GetString( SerializeField.Classification ) ;
 
-      return new PickUpModel( item, floor, constructionItems, facility, productName, use, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, glue, layer, classification ) ;
+      return new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, PickUpModel customTypeValue )
@@ -63,7 +65,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Item, customTypeValue.Item ) ;
       serializerObject.AddNonNull( SerializeField.Floor, customTypeValue.Floor ) ;
       serializerObject.AddNonNull( SerializeField.ConstructionItems, customTypeValue.ConstructionItems ) ;
-      serializerObject.AddNonNull( SerializeField.Facility, customTypeValue.Facility ) ;
+      serializerObject.AddNonNull( SerializeField.EquipmentType, customTypeValue.EquipmentType ) ;
       serializerObject.AddNonNull( SerializeField.ProductName, customTypeValue.ProductName ) ;
       serializerObject.AddNonNull( SerializeField.Use, customTypeValue.Use ) ;
       serializerObject.AddNonNull( SerializeField.Construction, customTypeValue.Construction ) ;
@@ -75,7 +77,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Tani, customTypeValue.Tani ) ;
       serializerObject.AddNonNull( SerializeField.Supplement, customTypeValue.Supplement ) ;
       serializerObject.AddNonNull( SerializeField.Supplement2, customTypeValue.Supplement2 ) ;
-      serializerObject.AddNonNull( SerializeField.Glue, customTypeValue.Glue ) ;
+      serializerObject.AddNonNull( SerializeField.Group, customTypeValue.Group ) ;
       serializerObject.AddNonNull( SerializeField.Layer, customTypeValue.Layer ) ;
       serializerObject.AddNonNull( SerializeField.Classification, customTypeValue.Classification ) ;
 
