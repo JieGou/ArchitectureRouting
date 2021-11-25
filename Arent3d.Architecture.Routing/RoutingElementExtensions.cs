@@ -191,7 +191,7 @@ namespace Arent3d.Architecture.Routing
 
     public static bool HasSameShape( this IConnector conn1, IConnector conn2 )
     {
-      if ( conn1.Shape != conn2.Shape ) return false ;
+      if ( conn1.Shape == conn2.Shape ) return false ;
 
       return true ;
 

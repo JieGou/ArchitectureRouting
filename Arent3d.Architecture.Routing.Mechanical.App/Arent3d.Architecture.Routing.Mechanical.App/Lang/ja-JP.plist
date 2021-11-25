@@ -82,6 +82,9 @@
         <key>Mechanical.App.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand</key>
         <string>Create&#xA;FASUsAndVAVs</string>
 
+        <key>Mechanical.App.Commands.Routing.AutoRoutingVavCommand</key>
+        <string>自動&#xA;VAVsルーティング</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
@@ -136,7 +139,9 @@
 
         <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Route高さを変更</string>
-        
+
+        <key>TransactionName.Commands.Routing.AutoRoutingVav</key>
+        <string>自動VAVsルーティング</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>

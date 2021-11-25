@@ -83,6 +83,9 @@
         <key>Mechanical.App.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand</key>
         <string>Create FASUs&#xA;And VAVs</string>
 
+        <key>Mechanical.App.Commands.Routing.AutoRoutingVavCommand</key>
+        <string>Auto&#xA;Routing VAVs</string>        
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
@@ -138,6 +141,8 @@
         <key>TransactionName.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
         <string>Change Route Height</string>
 
+        <key>TransactionName.Commands.Routing.AutoRoutingVav</key>
+        <string>Auto Routing VAVs</string>        
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
