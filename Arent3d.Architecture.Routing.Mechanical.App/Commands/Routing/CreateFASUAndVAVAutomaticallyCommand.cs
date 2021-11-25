@@ -135,10 +135,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
 
           // 回転軸で見るとき、コネクターがVAVの境界ボックス内にある場合、VAVの向きを反転させる
-          // if ( CheckVAVTouchingConnector( document, instanceOfVAV, pickedConnector, positionOfFASUAndVAV,
-          //   rotationAnglesOfFASUsAndVAVs[ space ], rotationAxis ) ) {
-          //   rotationAnglesOfFASUsAndVAVs[ space ] += Math.PI ;
-          // }
+          if ( CheckVAVTouchingConnector( document, instanceOfVAV, pickedConnector, positionOfFASUAndVAV,
+            rotationAnglesOfFASUsAndVAVs[ space ], rotationAxis ) ) {
+            rotationAnglesOfFASUsAndVAVs[ space ] += Math.PI ;
+          }
           
           // Rotate FASU and VAV
           List<ElementId> idOfFASUAndVAV = new List<ElementId>() ;
