@@ -77,12 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     public static bool IsEnabledConnector( Connector connector, Connector? firstConnector )
     {
-      return ( false == connector.IsConnected ) && ( ( null == firstConnector ) || ( HasCompatibleType( connector, firstConnector ) && firstConnector.HasCompatibleShape( connector ) ) ) ;
-    }
-
-    private static bool HasCompatibleType( Connector connector1, Connector connector2 )
-    {
-      return ( connector1.Domain == connector2.Domain ) && ( connector1.GetSystemType() == connector2.GetSystemType() ) ;
+      return ( false == connector.IsConnected ) && ( ( null == firstConnector ) || ( connector.HasCompatibleSystemType( firstConnector ) && firstConnector.HasCompatibleShape( connector ) ) ) ;
     }
 
     private static int SetElementTransparency( Element element, int transparency )

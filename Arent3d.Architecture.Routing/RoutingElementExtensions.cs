@@ -144,15 +144,27 @@ namespace Arent3d.Architecture.Routing
       return manager.Connectors.OfType<Connector>().Where( c => c.Id != id ) ;
     }
 
-    public static int GetSystemType( this Connector conn )
+    public static bool HasCompatibleSystemType( this Connector connector1, Connector connector2 )
+    {
+      if ( connector1.Domain != connector2.Domain ) return false ;
+
+      var classification1 = connector1.GetSystemType() ;
+      var classification2 = connector2.GetSystemType() ;
+      if ( classification1.IsCompatibleTo( classification2 ) ) return true ;
+
+      return false ;
+    }
+
+
+    public static MEPSystemClassification GetSystemType( this Connector conn )
     {
       return conn.Domain switch
       {
-        Domain.DomainPiping => (int)conn.PipeSystemType,
-        Domain.DomainHvac => (int)conn.DuctSystemType,
-        Domain.DomainElectrical => (int)conn.ElectricalSystemType,
-        Domain.DomainCableTrayConduit => (int)MEPSystemClassification.CableTrayConduit,
-        _ => (int)MEPSystemClassification.UndefinedSystemClassification,
+        Domain.DomainPiping => (MEPSystemClassification)conn.PipeSystemType,
+        Domain.DomainHvac => (MEPSystemClassification)conn.DuctSystemType,
+        Domain.DomainElectrical => (MEPSystemClassification)conn.ElectricalSystemType,
+        Domain.DomainCableTrayConduit => MEPSystemClassification.CableTrayConduit,
+        _ => MEPSystemClassification.UndefinedSystemClassification,
       } ;
     }
 
@@ -162,11 +174,15 @@ namespace Arent3d.Architecture.Routing
         return true ;
       }
 
-      var another = (MEPSystemClassification)connector.GetSystemType() ;
-      if ( systemClassification == MEPSystemClassification.PowerCircuit && IsCompatibleToPowerCircuit( another ) ) return true ;
-      if ( another == MEPSystemClassification.PowerCircuit && IsCompatibleToPowerCircuit( systemClassification ) ) return true ;
+      return systemClassification.IsCompatibleTo( connector.GetSystemType() ) ;
+    }
 
-      return ( systemClassification == another ) ;
+    private static bool IsCompatibleTo( this MEPSystemClassification systemClassification1, MEPSystemClassification systemClassification2 )
+    {
+      if ( systemClassification1 == MEPSystemClassification.PowerCircuit && IsCompatibleToPowerCircuit( systemClassification2 ) ) return true ;
+      if ( systemClassification2 == MEPSystemClassification.PowerCircuit && IsCompatibleToPowerCircuit( systemClassification1 ) ) return true ;
+
+      return ( systemClassification1 == systemClassification2 ) ;
     }
 
     private static bool IsCompatibleToPowerCircuit( MEPSystemClassification systemClassification )
@@ -191,7 +207,7 @@ namespace Arent3d.Architecture.Routing
 
     public static bool HasCompatibleShape( this IConnector conn1, IConnector conn2 )
     {
-      return ( conn1.Shape != conn2.Shape ) ;
+      return ( conn1.Shape == conn2.Shape ) ;
     }
 
     public static bool HasSameShapeAndParameters( this IConnector conn1, IConnector conn2 )
