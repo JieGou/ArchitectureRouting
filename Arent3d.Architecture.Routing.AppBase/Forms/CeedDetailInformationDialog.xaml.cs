@@ -19,6 +19,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         private readonly ObservableCollection<QueryData> _queryDataMaster;
         private readonly List<CeedModel> _listCeedModel;
         private string _setCode;
+        private static char[] _whiteSpaces = new char[] {' ', '　'};
+        private static char[] _numbers = new char[] {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '０', '１', '２', '３', '４', '５', '６', '７', '８', '９'};
 
         public CeedDetailInformationDialog(Document document, string pickedText)
         {
@@ -40,50 +42,50 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 {
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode1))
                     {
-                        (string, string) split = SplitString(item.Name1);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode1, split.Item1, split.Item2, item.Quantity1));
+                        var (name, standard) = GetNameAndStandard(item.Name1);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode1, name, standard, item.Quantity1));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode2))
                     {
-                        (string, string) split = SplitString(item.Name2);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode2, split.Item1, split.Item2, item.Quantity2));
+                        var (name, standard) = GetNameAndStandard(item.Name2);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode2, name, standard, item.Quantity2));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode3))
                     {
-                        (string, string) split = SplitString(item.Name3);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode3, split.Item1, split.Item2, item.Quantity3));
+                        var (name, standard) = GetNameAndStandard(item.Name3);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode3, name, standard, item.Quantity3));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode4))
                     {
-                        (string, string) split = SplitString(item.Name4);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode4, split.Item1, split.Item2, item.Quantity4));
+                        var (name, standard) = GetNameAndStandard(item.Name4);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode4, name, standard, item.Quantity4));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode5))
                     {
-                        (string, string) split = SplitString(item.Name5);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode5, split.Item1, split.Item2, item.Quantity5));
+                        var (name, standard) = GetNameAndStandard(item.Name5);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode5, name, standard, item.Quantity5));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode6))
                     {
-                        (string, string) split = SplitString(item.Name6);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode6, split.Item1, split.Item2, item.Quantity6));
+                        var (name, standard) = GetNameAndStandard(item.Name6);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode6, name, standard, item.Quantity6));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode7))
                     {
-                        (string, string) split = SplitString(item.Name7);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode7, split.Item1, split.Item2, item.Quantity7));
+                        var (name, standard) = GetNameAndStandard(item.Name7);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode7, name, standard, item.Quantity7));
                     }
 
                     if (!string.IsNullOrWhiteSpace(item.MaterialCode8))
                     {
-                        (string, string) split = SplitString(item.Name8);
-                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode8, split.Item1, split.Item2, item.Quantity8));
+                        var (name, standard) = GetNameAndStandard(item.Name8);
+                        queryData.Add(new QueryData(ceedModel.CeeDSetCode, ceedModel.CeeDModelNumber, item.ParentPartModelNumber, item.MaterialCode8, name, standard, item.Quantity8));
                     }
                 }
             }
@@ -91,17 +93,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             return queryData;
         }
 
-        private (string, string) SplitString(string str)
+        private static (string, string) GetNameAndStandard(string str)
         {
-            str = str.Replace("　", " ");
-            string standard = "";
-            string[] strArray = str.Trim().Split(' ');
-            if (strArray.Length > 1)
+            str = str.Trim();
+
+            string name, standard = "";
+            int index;
+
+            if ((index = str.LastIndexOfAny(_whiteSpaces)) <= 0)
             {
-                standard = strArray[1].Trim();
+                index = str.IndexOfAny(_numbers);
             }
 
-            return (strArray[0].Trim(), standard);
+            if (index <= 0)
+            {
+                name = str;
+            }
+            else
+            {
+                name = str.Substring(0, index);
+                standard = str.Substring(index, str.Length - index);
+            }
+
+            return (name.Trim(), standard.Trim());
         }
 
         private void LoadData()
