@@ -30,6 +30,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const double NorthDirection = Math.PI * 0.5 ;
     private const double WestDirection = Math.PI * 1 ;
     private const double SouthDirection = Math.PI * 1.5 ;
+    private const int FASUConnectorID = 18 ;
+    private const int VAVConnectorID = 4 ;
 
     private enum RotationAxis
     {
@@ -154,6 +156,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           if ( CheckVAVTouchingConnector( document, instanceOfVAV, pickedConnector, rotationAxis ) ) {
             ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
               Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI) ;
+          }
+          
+          // Connect FASU's connector and VAV's connector
+          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorID ) ;
+          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorID ) ;
+          if ( fasuConnector != null && vavConnector != null ) {
+            vavConnector.ConnectTo( fasuConnector ) ;
           }
         }
 
