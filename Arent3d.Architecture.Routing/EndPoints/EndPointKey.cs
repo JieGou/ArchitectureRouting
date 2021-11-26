@@ -51,7 +51,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public string GetElementId()
     {
       const string paramName = "ElementId" ;
-      const string type = "Terminate Point" ;
+      const string terminatePointType = "Terminate Point" ;
+      const string passPointType = "Pass Point" ;
       var elementId = string.Empty ;
       if ( Param.Contains( paramName ) ) {
         var startIndex = Param.IndexOf( paramName, StringComparison.Ordinal ) ;
@@ -61,7 +62,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
         var paramDic = param.Split( ':' ) ;
         elementId = paramDic[ 1 ] ?? string.Empty ;
       }
-      else if ( Type == type ) {
+      else if ( Type is terminatePointType or passPointType ) {
         elementId = Param ;
       }
 

@@ -257,7 +257,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string elementId )
     {
       var connector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == elementId ) ;
-      if ( connector!.IsTerminatePoint() ) {
+      if ( connector!.IsTerminatePoint() || connector!.IsPassPoint() ) {
         connector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? connectorId ) ;
         if ( ! string.IsNullOrEmpty( connectorId ) )
           connector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == connectorId ) ;
