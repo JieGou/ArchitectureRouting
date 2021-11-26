@@ -1,5 +1,8 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Net.Configuration;
 using System.Threading;
+using System.Windows.Forms.VisualStyles;
 using Arent3d.Architecture.Routing.AppBase.Forms;
 using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using Arent3d.Architecture.Routing.Extensions;
@@ -10,6 +13,7 @@ using Arent3d.Revit.UI;
 using Arent3d.Revit.UI.Forms;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using Autodesk.Revit.UI.Selection;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -44,6 +48,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                         }
                     }
 
+                    if (!string.IsNullOrEmpty(viewModel.ApplyToSymbolsText))
+                    {
+                        var selectedElements = UiDocument.Selection.PickObjects(ObjectType.Element);
+                        foreach (var item in selectedElements)
+                        {
+                            var element = document.GetElement(item.ElementId);
+                        }
+                    }
+                    
                     return Result.Succeeded;
                 });
             }
@@ -64,7 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             return old == null || !newSettings.Equals(old);
         }
 
-        private static void DataProcessBeforeSave( CnsSettingStorable cnsSettings)
+        private static void DataProcessBeforeSave(CnsSettingStorable cnsSettings)
         {
             bool hadUpdating = false;
             // Remove empty row
@@ -81,7 +94,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             {
                 // Add default value if list empty
                 cnsSettings.CnsSettingData.Add(new CnsSettingModel(sequence: 1, categoryName: "未設定"));
-            } else if (hadUpdating)
+            }
+            else if (hadUpdating)
             {
                 // Set sequence if list was changed
                 for (int i = 0; i < cnsSettings.CnsSettingData.Count; i++)

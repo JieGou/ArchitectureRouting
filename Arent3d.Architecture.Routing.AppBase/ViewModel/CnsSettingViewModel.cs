@@ -3,8 +3,11 @@ using Arent3d.Architecture.Routing.Storable;
 using Arent3d.Architecture.Routing.Storable.Model;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
+using System.Windows.Forms;
 using System.Windows.Input;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing;
+using Autodesk.Revit.DB.Structure;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -13,10 +16,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         public ObservableCollection<CnsSettingModel> CnsSettingModels { get; set; }
 
         public CnsSettingStorable CnsSettingStorable { get; }
+        
+        public string ApplyToSymbolsText { get; set; }
 
         public CnsSettingViewModel(CnsSettingStorable cnsStorables)
         {
             CnsSettingStorable = cnsStorables;
+            ApplyToSymbolsText = string.Empty;
             CnsSettingModels = new ObservableCollection<CnsSettingModel>(cnsStorables.CnsSettingData);
             AddDefaultValue();
             ReadFileCommand = new RelayCommand<object>(
@@ -43,6 +49,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 (p) => true, // CanExecute()
                 (p) => { cnsStorables.CnsSettingData = CnsSettingModels; } // Execute()
             );
+            
+            ApplyToSymbolsCommand = new RelayCommand<int>(
+                (p) => true, // CanExecute()
+                ApplyToSymbols // Execute()
+            );
         }
 
         public ICommand ReadFileCommand { get; set; }
@@ -50,6 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         public ICommand AddRowCommand { get; set; }
         public ICommand DeleteRowCommand { get; set; }
         public ICommand SaveCommand { get; set; }
+        public ICommand ApplyToSymbolsCommand { get; set; }
 
         private void ReadFile()
         {
@@ -126,6 +138,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             UpdateSequence();
         }
 
+        private  void ApplyToSymbols(int index)
+        {
+            if (index == -1)
+            {
+                ApplyToSymbolsText = "";
+            }
+            else
+            {
+                var item = CnsSettingModels.ElementAt(index);
+                ApplyToSymbolsText = item.CategoryName;
+            }
+        }
+        
         private void UpdateSequence()
         {
             for (int i = 0; i < CnsSettingModels.Count; i++)
