@@ -73,7 +73,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // Get VAV Connector
       if ( farthestVav == null ) return ( false, null ) ;
-      ConnectorPicker.IPickResult toPickResult = ConnectorPicker.GetVavConnector( farthestVav, uiDocument, routingExecutor, false, "Dialog.Commands.Routing.PickRouting.PickSecond".GetAppStringByKeyOrDefault( null ), fromPickResult, GetAddInType() ) ;
+      ConnectorPicker.IPickResult toPickResult = ConnectorPicker.GetVavConnector( farthestVav, GetAddInType() ) ;
       var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
       if ( true != property?.DialogResult ) return ( false, null ) ;
 
