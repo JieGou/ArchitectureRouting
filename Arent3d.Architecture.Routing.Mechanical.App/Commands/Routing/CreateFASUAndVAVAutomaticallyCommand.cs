@@ -151,14 +151,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
                                                       DistanceBetweenFASUAndVAV ;
           ElementTransformUtils.MoveElement( document, instanceOfVAV.Id,
             new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
-
-
+          
           // Rotate FASU and VAV
           var idOfFASUAndVAV = new List<ElementId>
           {
             instanceOfFASU.Id,
-            instanceOfVAV.Id,
-            // instanceOfDuct.Id
+            instanceOfVAV.Id
           } ;
           ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
             Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ),
