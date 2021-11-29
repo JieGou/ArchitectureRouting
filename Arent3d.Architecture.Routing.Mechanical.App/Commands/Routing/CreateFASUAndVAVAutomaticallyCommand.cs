@@ -31,10 +31,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const double NorthDirection = Math.PI * 0.5 ;
     private const double WestDirection = Math.PI * 1 ;
     private const double SouthDirection = Math.PI * 1.5 ;
-    private const int FASUConnectorID = 18 ;
-    private const int VAVConnectorID = 4 ;
-    private const string FamilyNameOfConnectorDuct = "丸型ダクト" ;
-
+    private const int FASUConnectorId = 18 ;
+    private const int VAVConnectorId = 4 ;
+    private const string RoundDuctUniqueId = "dee0da15-198f-4f79-aa08-3ce71203da82-00c0cdcf" ;
     private enum RotationAxis
     {
       XAxis,
@@ -78,8 +77,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      if ( ! CheckDocumentHasDuctType( uiDocument.Document, FamilyNameOfConnectorDuct ) )
-        return ( false, $"There no family `{FamilyNameOfConnectorDuct}` in the document." ) ;
+      if ( ! CheckDocumentHasDuctType( uiDocument.Document ) )
+        return ( false, $"There no family with UniqueID `{RoundDuctUniqueId}` in the document." ) ;
 
       ConnectorPicker.IPickResult iPickResult =
         ConnectorPicker.GetConnector( uiDocument, routingExecutor, true,
@@ -152,8 +151,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           ElementTransformUtils.MoveElement( document, instanceOfVAV.Id,
             new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
 
-          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorID ) ;
-          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorID ) ;
+          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorId ) ;
+          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorId ) ;
 
           Element instanceOfDuct = CreateDuctConnectFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
 
@@ -305,16 +304,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
         .WhereElementIsElementType() ;
-      DuctType ductType =
-        (DuctType) collector.First( e => ( e as DuctType )!.FamilyName == FamilyNameOfConnectorDuct ) ;
+      var ductType = collector.First( e => e.UniqueId == RoundDuctUniqueId ) ;
       return Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
     }
 
-    private static bool CheckDocumentHasDuctType( Document document, String familyNameOfDuctType )
+    private static bool CheckDocumentHasDuctType( Document document )
     {
-      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
-        .WhereElementIsElementType() ;
-      return collector.Count( e => ( e as DuctType )!.FamilyName == familyNameOfDuctType ) > 0 ;
+      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ) ;
+      return collector.Count( e => e.UniqueId == RoundDuctUniqueId ) > 0 ;
     }
   }
 }
