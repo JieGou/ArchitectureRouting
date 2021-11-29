@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
+using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
@@ -21,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract AddInType GetAddInType() ;
 
-    private record SelectState( Connector? AhuConnector, IReadOnlyList<FamilyInstance> GrandParentConnectors, IReadOnlyList<FamilyInstance> ParentConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
+    private record SelectState( Connector? AhuConnector, IReadOnlyList<FamilyInstance> GrandParentConnectors, Dictionary<int, List<FamilyInstance>> ParentConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
 
     protected abstract DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo ) ;
     protected abstract MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType ) ;
@@ -39,31 +40,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( false, null ) ;
     }
 
-    private static ( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IReadOnlyList<FamilyInstance> grandParentConnectors, IReadOnlyList<FamilyInstance> parentConnectors, string? ErrorMessage ) SelectionAhuAndFindVav( UIDocument uiDocument, RoutingExecutor routingExecutor, AddInType addInType )
+    private static ( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IReadOnlyList<FamilyInstance> grandParentConnectors, Dictionary<int, List<FamilyInstance>> parentConnectors, string? ErrorMessage ) SelectionAhuAndFindVav( UIDocument uiDocument, RoutingExecutor routingExecutor, AddInType addInType )
     {
       var doc = uiDocument.Document ;
 
       // Select AHU
       var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
-      if ( fromPickResult.PickedConnector == null ) return ( null!, null!, Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), ErrorMessageNoAhu ) ;
+      if ( fromPickResult.PickedConnector == null ) return ( null!, null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoAhu ) ;
       var ahuPosition = fromPickResult.PickedConnector.Origin ;
 
       // Get all vav
       var dampers = doc.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
       var dampersInstances = dampers as FamilyInstance[] ?? dampers.ToArray() ;
-      if ( ! dampersInstances.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), ErrorMessageNoVav ) ;
+      if ( ! dampersInstances.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoVav ) ;
 
       // Get all space box
       var spaceBoxes = GetAllSpaces( doc ) ;
-      if ( ! spaceBoxes.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), ErrorMessageNoSpace ) ;
+      if ( ! spaceBoxes.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get group space
-      var (grandParentSpaces, parentSpaces) = GetGroupSpace( doc, spaceBoxes, dampersInstances, ahuPosition ) ;
+      var (grandParentSpaces, parentSpaces) = GetGroupSpace( spaceBoxes, ahuPosition ) ;
       
       var grandParentConnectors = grandParentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
-      var parentConnectors = parentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
+      var parentConnectors = GetVavFromSpace( doc, dampersInstances, parentSpaces ) ;
       
-      if ( ! grandParentConnectors.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), ErrorMessageNoVav ) ;
+      if ( ! grandParentConnectors.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoVav ) ;
       ConnectorPicker.IPickResult toPickResult = ConnectorPicker.GetVavConnector( grandParentConnectors.Last(), addInType ) ;
       
       return ( fromPickResult, toPickResult, grandParentConnectors, parentConnectors, null ) ;
@@ -85,24 +86,56 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return vav ;
     }
 
-    private static ( IReadOnlyList<Element> grandParentSpaces, IReadOnlyList<Element> parentSpaces ) GetGroupSpace( Document doc, IList<Element> spaceBoxes, FamilyInstance[] dampersInstances, XYZ ahuPosition )
+    private static Dictionary<int, List<FamilyInstance>> GetVavFromSpace( Document doc, FamilyInstance[] dampersInstances, Dictionary<int, List<Element>> parentSpaces )
     {
-      List<Element> parentSpaces = new() ;
-      List<Element> grandParentSpaces = new() ;
-      var maxDistance = double.MinValue ;
-      foreach ( var space in spaceBoxes ) {
-        var branchNumber = space.GetSpaceBranchNumber() ;
-        if ( branchNumber != SpaceType.GrandParent ) {
-          if ( branchNumber == SpaceType.Parent ) {
-            parentSpaces.Add( space );
+      var result = new Dictionary<int, List<FamilyInstance>>() ;
+      foreach ( var (key, value) in parentSpaces ) {
+        foreach ( var space in value ) {
+          BoundingBoxXYZ spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
+          FamilyInstance vav = null! ;
+          foreach ( var fi in dampersInstances ) {
+            var vavPosition = fi.Location as LocationPoint ;
+            if ( vavPosition == null ) continue ;
+            if ( spaceBox.Max.X > vavPosition.Point.X && spaceBox.Max.Y > vavPosition.Point.Y && spaceBox.Max.Z > vavPosition.Point.Z && spaceBox.Min.X < vavPosition.Point.X && spaceBox.Min.Y < vavPosition.Point.Y && spaceBox.Min.Z < vavPosition.Point.Z ) {
+              vav = fi ;
+              break ;
+            }
           }
+
+          if ( result.ContainsKey( key ) ) {
+            result[ key ].Add( vav ) ;
+          }
+          else {
+            result.Add( key, new List<FamilyInstance>() { vav } ) ;
+          }          
         }
-        else {
+      }
+
+      return result ;
+    }
+    
+    private static ( IReadOnlyList<Element> grandParentSpaces, Dictionary<int, List<Element>> parentSpaces ) GetGroupSpace( IList<Element> spaceBoxes, XYZ ahuPosition )
+    {
+      List<Element> grandParentSpaces = new() ;
+      var maxDistance = double.MinValue ;      
+      Dictionary<int, List<Element>> parentSpaces = new() ;
+      foreach ( Element space in spaceBoxes ) {
+        var branchNumber = space.GetSpaceBranchNumber() ;
+        if(branchNumber == (int) SpaceType.Invalid) continue;
+        if ( branchNumber == (int)SpaceType.GrandParent ) {
           grandParentSpaces.Add( space ) ;
           var spacePosition = space.Location as LocationPoint ;
           var distance = ahuPosition.DistanceTo( spacePosition!.Point ) ;
           if ( ! ( distance > maxDistance ) ) continue ;
           maxDistance = distance ;
+        }
+        else {
+          if ( parentSpaces.ContainsKey( branchNumber ) ) {
+            parentSpaces[ branchNumber ].Add( space ) ;
+          }
+          else {
+            parentSpaces.Add( branchNumber, new List<Element>() { space } ) ;
+          }
         }
       }
       grandParentSpaces.Sort( Compare ) ;
@@ -198,10 +231,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // Grand parent route
       var ahuConnectorEndPoint = new ConnectorEndPoint( ahuConnector!, radius ) ;
       var ahuConnectorEndPointKey = ahuConnectorEndPoint.Key ;
-      var grandParentEndPoint = new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First(), radius ) ;
 
       // Main route
-      var secondFromEndPoints = passPoints.Take( passPoints.Count -1 ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
+      var secondFromEndPoints = passPoints.Take( passPoints.Count ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
       var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( grandParentConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
       var firstToEndPoint = secondFromEndPoints[ 0 ] ;
       result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
@@ -211,8 +243,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return ( routeName, segment ) ;
       } ) ) ;
 
-      // branch routes
-      result.AddRange( passPoints.Zip( grandParentConnectors.Take( passPoints.Count - 1 ), ( pp, vavConnector ) =>
+      // Branch routes
+      result.AddRange( passPoints.Zip( grandParentConnectors.Take( passPoints.Count ), ( pp, vavConnector ) =>
       {
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new PassPointBranchEndPoint( document, pp.Id, radius, ahuConnectorEndPointKey ) ;
@@ -231,8 +263,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var diameter = routeProperty.GetDiameter() ;
       var bendingRadius = pipeSpec.GetLongElbowSize( diameter.DiameterValueToPipeDiameter() ) ;
       var forcedFixedHeight = PassPointEndPoint.GetForcedFixedHeight( document, routeProperty.GetFromFixedHeight(), levelId ) ;
-      var sensorConnectorsWithoutLast = grandParentConnectors.Take( grandParentConnectors.Count - 1 ).ToReadOnlyCollection( grandParentConnectors.Count - 1 ) ;
-      var (passPointPositions, passPointDirection) = GetPassPointPositions( ahuConnector, grandParentConnectors, forcedFixedHeight, bendingRadius ) ;
+      var grandParentWithoutLast = grandParentConnectors.Take( grandParentConnectors.Count - 1 ).ToReadOnlyCollection( grandParentConnectors.Count - 1 ) ;
+      var (passPointPositions, passPointDirection) = GetPassPointPositions( ahuConnector, grandParentWithoutLast, forcedFixedHeight, bendingRadius ) ;
       var passPoints = new List<FamilyInstance>( passPointPositions.Count ) ;
       foreach ( var pos in passPointPositions ) {
         var fi = document.AddPassPoint( routeName, pos, passPointDirection, diameter * 0.5, levelId ) ;
@@ -244,7 +276,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       static (IReadOnlyList<XYZ>, XYZ) GetPassPointPositions( Connector ahuConnector, IReadOnlyCollection<FamilyInstance> grandParentConnectors, double? forcedFixedHeight, double bendingRadius )
       {
         var ahuPosition = ahuConnector.Origin ;
-        var grandParentPositions = grandParentConnectors.ConvertAll( sensorConnector => sensorConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
+        var grandParentPositions = grandParentConnectors.ConvertAll( connector => connector.GetTopConnectorOfConnectorFamily().Origin ) ;
         var fixedHeight = forcedFixedHeight ?? GetPreferredRouteHeight( ahuPosition, grandParentPositions, grandParentPositions.Last(), bendingRadius ) ;
         var passPoints = new List<XYZ>() ;
         foreach ( var grandParentPosition in grandParentPositions ) {
