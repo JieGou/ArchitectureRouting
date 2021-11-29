@@ -20,7 +20,16 @@ namespace Arent3d.Architecture.Routing.Storable
     public const string StorableName = "Cns Setting" ;
     private const string CnsSettingField = "CnsSetting" ;
     public ObservableCollection<CnsSettingModel> CnsSettingData { get ; set ; }
-    
+
+    public enum ApplyForConduit
+    {
+      None,
+      Apply
+    }
+
+    public int SelectedIndex { get; set; }
+    public ApplyForConduit ApplyMode { get; set; }
+
     /// <summary>
     /// for loading from storage.
     /// </summary>
@@ -28,6 +37,8 @@ namespace Arent3d.Architecture.Routing.Storable
     private CnsSettingStorable( DataStorage owner ) : base( owner, false )
     {
       CnsSettingData = new ObservableCollection<CnsSettingModel>();
+      SelectedIndex = 0;
+      ApplyMode = ApplyForConduit.None;
     }
 
     /// <summary>
@@ -64,6 +75,7 @@ namespace Arent3d.Architecture.Routing.Storable
       return CnsSettingData.SequenceEqual( other.CnsSettingData, new CnsSettingStorableComparer() ) ;
     }
   }
+
   public class CnsSettingStorableComparer : IEqualityComparer<CnsSettingModel>
   {
     public bool Equals( CnsSettingModel x, CnsSettingModel y )
@@ -76,5 +88,4 @@ namespace Arent3d.Architecture.Routing.Storable
       return obj.GetHashCode() ;
     }
   }
-
 }

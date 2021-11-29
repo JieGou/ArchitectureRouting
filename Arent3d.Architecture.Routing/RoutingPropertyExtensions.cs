@@ -57,6 +57,14 @@ namespace Arent3d.Architecture.Routing
     ParentEnvelopeId,
   }
 
+  public enum ConstructionParameter
+  {
+    [ParameterGuid("854ae774-f9b2-4f4c-8518-f675ef5e2457"), NameOnRevit("Construction")]
+    [BuiltInCategories(ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA,
+      typeof(BuiltInCategorySets), nameof(BuiltInCategorySets.Conduits))]
+    Construction
+  }
+
   public enum PassPointParameter
   {
     [ParameterGuid( "b975f161-499f-4cc6-8e11-0d7ddf25b1f4" ), NameOnRevit( "PassPoint From-side Element Id" )]
@@ -74,6 +82,7 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ElementsUsedForUI ) )]
     RouteConnectorRelationIds,
   }
+
   public enum ConnectorFamilyParameter
   {
     [ParameterGuid( "442b05ee-df38-4595-93c9-e2d7cfa227e9" ), NameOnRevit( "Connector Type" )]
@@ -88,7 +97,6 @@ namespace Arent3d.Architecture.Routing
       nameof( BuiltInCategorySets.SpaceElements ) )]
     BranchNumber
   }
-  
 
   public static class RoutingPropertyExtensions
   {
@@ -103,6 +111,7 @@ namespace Arent3d.Architecture.Routing
       document.LoadAllParametersFromFile<PassPointParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
       document.LoadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() );
       document.LoadAllParametersFromFile<ConnectorFamilyParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
+      document.LoadAllParametersFromFile<ConstructionParameter>(AssetManager.GetConstructionSharedParameterPath());
     }
 
     public static void MakeBranchNumberParameter( this Document document )

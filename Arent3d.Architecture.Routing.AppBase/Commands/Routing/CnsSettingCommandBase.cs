@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading;
 using Arent3d.Architecture.Routing.AppBase.Forms;
+using Arent3d.Architecture.Routing.AppBase.Selection;
 using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using Arent3d.Architecture.Routing.Extensions;
 using Arent3d.Architecture.Routing.Storable;
@@ -9,6 +10,7 @@ using Arent3d.Revit;
 using Arent3d.Revit.UI;
 using Arent3d.Revit.UI.Forms;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Electrical;
 using Autodesk.Revit.UI;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -42,6 +44,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                         {
                             SaveCnsList(document, cnsStorables);
                         }
+                    }
+
+                    if (cnsStorables.ApplyMode == CnsSettingStorable.ApplyForConduit.Apply)
+                    {
+                      ApplyParameterForConduit(UiDocument, cnsStorables);
                     }
 
                     return Result.Succeeded;
@@ -88,6 +95,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 {
                     cnsSettings.CnsSettingData[i].Sequence = i + 1;
                 }
+            }
+        }
+
+        private static void ApplyParameterForConduit(UIDocument uiDocument, CnsSettingStorable cnsStorables)
+        {
+            var selectedElements = uiDocument.Selection
+                .PickElementsByRectangle(ConstructionSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。")
+                .Where(p => p is FamilyInstance || p is Conduit);
+
+            foreach (var element in selectedElements)
+            {
+                var categoryName = cnsStorables.SelectedIndex > 0
+                  ? cnsStorables.CnsSettingData[cnsStorables.SelectedIndex].CategoryName
+                  : string.Empty;
+                element.SetProperty(ConstructionParameter.Construction, categoryName);
             }
         }
     }

@@ -43,6 +43,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 (p) => true, // CanExecute()
                 (p) => { cnsStorables.CnsSettingData = CnsSettingModels; } // Execute()
             );
+
+            GetInfoCommand = new RelayCommand<int>(
+				(p) => true, // CanExecute()
+				(p) =>
+				{
+					cnsStorables.SelectedIndex = p;
+					cnsStorables.ApplyMode = CnsSettingStorable.ApplyForConduit.Apply;
+					cnsStorables.CnsSettingData = CnsSettingModels;
+				} // Execute()
+			);
         }
 
         public ICommand ReadFileCommand { get; set; }
@@ -50,6 +60,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         public ICommand AddRowCommand { get; set; }
         public ICommand DeleteRowCommand { get; set; }
         public ICommand SaveCommand { get; set; }
+        public ICommand GetInfoCommand { get; set; }
 
         private void ReadFile()
         {
