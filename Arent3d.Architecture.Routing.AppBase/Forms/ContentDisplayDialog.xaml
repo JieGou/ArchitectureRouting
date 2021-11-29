@@ -28,23 +28,17 @@
         </DataGrid.Resources>
 
         <DataGrid.Columns>
-            <DataGridTextColumn Header="項目" Binding="{Binding Item, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
             <DataGridTextColumn Header="フロア" Binding="{Binding Floor, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="100" />
             <DataGridTextColumn Header="工事項目" Binding="{Binding ConstructionItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="200" />
-            <DataGridTextColumn Header="設備種類" Binding="{Binding EquipmentType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
             <DataGridTextColumn Header="品名" Binding="{Binding ProductName, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
-            <DataGridTextColumn Header="用途" Binding="{Binding Use, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-            <DataGridTextColumn Header="用途名称" Binding="{Binding UsageName, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-            <DataGridTextColumn Header="施工区分" Binding="{Binding Construction, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
+            <DataGridTextColumn Header="施工区分" Binding="{Binding Construction, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
             <DataGridTextColumn Header="型番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-            <DataGridTextColumn Header="仕様" Binding="{Binding Specification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
+            <DataGridTextColumn Header="仕様" Binding="{Binding Specification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="200" />
             <DataGridTextColumn Header="仕様2" Binding="{Binding Specification2, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
             <DataGridTextColumn Header="サイズ" Binding="{Binding Size, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
             <DataGridTextColumn Header="数量" Binding="{Binding Quantity, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
             <DataGridTextColumn Header="単位" Binding="{Binding Tani, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-            <DataGridTextColumn Header="補足説明1" Binding="{Binding Supplement, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-            <DataGridTextColumn Header="補足説明2" Binding="{Binding Supplement2, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-            <DataGridTextColumn Header="グループ" Binding="{Binding Group, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
+            <DataGridTextColumn Header="補足説明" Binding="{Binding Supplement, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
             <DataGridTextColumn Header="レイヤ" Binding="{Binding Layer, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
             <DataGridTextColumn Header="区分設定" Binding="{Binding Classification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
         </DataGrid.Columns>

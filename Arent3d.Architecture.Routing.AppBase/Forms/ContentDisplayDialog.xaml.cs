@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModels ;
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
     private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterNormalModels ;
-    private readonly Dictionary<string, string> _productType = new Dictionary<string, string>() { { "Connector", "コネクター" }, { "Conduit", "配線" }, { "Cable", "ケーブルラック" } } ;
+    private readonly Dictionary<string, string> _productType = new Dictionary<string, string>() { { "Connector", "コネクタ" }, { "Conduit", "配線" }, { "Cable", "ケーブルラック" } } ;
 
     public ContentDisplayDialog( Document document )
     {
@@ -163,7 +163,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var floor = _document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ;
         var constructionItems = string.Empty ;
         var equipmentType = string.Empty ;
-        var productName = string.Empty ;
         var use = string.Empty ;
         var usageName = string.Empty ;
         var construction = string.Empty ;
@@ -173,23 +172,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var size = string.Empty ;
         var quantity = string.Empty ;
         var tani = string.Empty ;
+        var supplement = string.Empty ;
+        var supplement2 = string.Empty ;
+        var group = string.Empty ;
+        var layer = string.Empty ;
+        var classification = string.Empty ;
         var ceeDSetCode = GetCeeDSetCodeOfElement( element ) ;
         if ( _ceeDModels.Any() && ! string.IsNullOrEmpty( ceeDSetCode ) ) {
           var ceeDModel = _ceeDModels.FirstOrDefault( x => x.CeeDSetCode == ceeDSetCode ) ;
           if ( ceeDModel != null ) {
-            modelNumber = ceeDModel.CeeDModelNumber ;
+            modelNumber = ceeDModel.ModelNumber ;
             specification2 = ceeDModel.CeeDSetCode ;
-            if ( _hiroiSetMasterNormalModels.Any() && ! string.IsNullOrEmpty( modelNumber ) ) {
-              var hiroiSetMasterNormalModel = _hiroiSetMasterNormalModels.FirstOrDefault( h => h.ParentPartModelNumber == modelNumber ) ;
+            supplement = ceeDModel.Name ;
+            if ( _hiroiSetMasterNormalModels.Any() && ! string.IsNullOrEmpty( ceeDModel.CeeDModelNumber ) ) {
+              var hiroiSetMasterNormalModel = _hiroiSetMasterNormalModels.FirstOrDefault( h => h.ParentPartModelNumber == ceeDModel.CeeDModelNumber ) ;
               if ( hiroiSetMasterNormalModel != null ) {
-                specification = hiroiSetMasterNormalModel.ParentPartName ;
-                quantity = hiroiSetMasterNormalModel.ParentPartsQuantity ;
+                specification = hiroiSetMasterNormalModel.Name1 ;
                 var materialCode1 = hiroiSetMasterNormalModel.MaterialCode1 ;
                 if ( _hiroiMasterModels.Any() && ! string.IsNullOrEmpty( materialCode1 ) ) {
                   var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode1 ) ) ;
                   if ( hiroiMasterModel != null ) {
-                    equipmentType = hiroiMasterModel.Setubisyu + "（" + productType + "）" ;
-                    productName = hiroiMasterModel.Hinmei ;
                     size = hiroiMasterModel.Size2 ;
                     tani = hiroiMasterModel.Tani ;
                   }
@@ -197,7 +199,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               }
             }
 
-            if ( _hiroiSetCdMasterNormalModels.Any() ) {
+            if ( _hiroiSetCdMasterNormalModels.Any() && productType == _productType.ElementAt( 1 ).Value ) {
               var hiroiSetCdMasterNormalModel = _hiroiSetCdMasterNormalModels.FirstOrDefault( h => h.SetCode == ceeDSetCode ) ;
               if ( hiroiSetCdMasterNormalModel != null )
                 construction = hiroiSetCdMasterNormalModel.ConstructionClassification ;
@@ -205,12 +207,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           }
         }
 
-        var supplement = string.Empty ;
-        var supplement2 = string.Empty ;
-        var group = string.Empty ;
-        var layer = string.Empty ;
-        var classification = string.Empty ;
-        PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification ) ;
+        PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productType, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification ) ;
         pickUpModels.Add( pickUpModel ) ;
       }
     }
