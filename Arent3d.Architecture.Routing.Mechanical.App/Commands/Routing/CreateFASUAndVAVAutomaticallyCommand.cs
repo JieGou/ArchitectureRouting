@@ -34,6 +34,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const int FASUConnectorId = 18 ;
     private const int VAVConnectorId = 4 ;
     private const string RoundDuctUniqueId = "dee0da15-198f-4f79-aa08-3ce71203da82-00c0cdcf" ;
+
     private enum RotationAxis
     {
       XAxis,
@@ -151,17 +152,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           ElementTransformUtils.MoveElement( document, instanceOfVAV.Id,
             new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
 
-          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorId ) ;
-          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorId ) ;
-
-          Element instanceOfDuct = CreateDuctConnectFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
 
           // Rotate FASU and VAV
           var idOfFASUAndVAV = new List<ElementId>
           {
             instanceOfFASU.Id,
             instanceOfVAV.Id,
-            instanceOfDuct.Id
+            // instanceOfDuct.Id
           } ;
           ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
             Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ),
@@ -172,6 +169,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
               Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI ) ;
           }
+
+          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorId ) ;
+          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorId ) ;
+          CreateDuctConnectFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
         }
 
         tr.Commit() ;
@@ -299,19 +300,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return ( null != space.get_BoundingBox( document.ActiveView ) ) ;
     }
 
-    private static Element CreateDuctConnectFASUAndVAV( Document document, Connector connectorOfFASU,
+    private static void CreateDuctConnectFASUAndVAV( Document document, Connector connectorOfFASU,
       Connector connectorOfVAV, ElementId levelId )
     {
       FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
         .WhereElementIsElementType() ;
       var ductType = collector.First( e => e.UniqueId == RoundDuctUniqueId ) ;
-      return Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
+      Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
     }
 
     private static bool CheckDocumentHasDuctType( Document document )
     {
       FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ) ;
-      return collector.Any( e => e.UniqueId == RoundDuctUniqueId );
+      return collector.Any( e => e.UniqueId == RoundDuctUniqueId ) ;
     }
   }
 }
