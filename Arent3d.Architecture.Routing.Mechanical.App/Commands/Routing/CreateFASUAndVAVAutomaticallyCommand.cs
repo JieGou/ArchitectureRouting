@@ -297,7 +297,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static bool CheckSpaceHasBoundingBox( Document document, Element space )
     {
-      return ( null == space.get_BoundingBox( document.ActiveView ) ) ;
+      return ( null != space.get_BoundingBox( document.ActiveView ) ) ;
     }
 
     private static Element CreateDuctConnectFASUAndVAV( Document document, Connector connectorOfFASU,
