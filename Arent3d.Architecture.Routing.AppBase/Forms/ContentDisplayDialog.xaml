@@ -40,7 +40,6 @@
             <DataGridTextColumn Header="単位" Binding="{Binding Tani, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
             <DataGridTextColumn Header="補足説明" Binding="{Binding Supplement, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
             <DataGridTextColumn Header="レイヤ" Binding="{Binding Layer, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-            <DataGridTextColumn Header="区分設定" Binding="{Binding Classification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
         </DataGrid.Columns>
       </DataGrid>
       
