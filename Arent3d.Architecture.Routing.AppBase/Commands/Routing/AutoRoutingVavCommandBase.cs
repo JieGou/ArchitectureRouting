@@ -15,13 +15,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class AutoRoutingVavCommandBase : RoutingCommandBase
   {
+    private const string ErrorMessageNoVav = "No VAV on the AHU level." ;
+    private const string ErrorMessageNoAhu = "No AHU are selected." ;
+    private const string ErrorMessageNoSpace = "Find space cannot be found." ;
+
     protected abstract AddInType GetAddInType() ;
 
-    private bool UseConnectorDiameter()
-    {
-      return AddInType.Electrical != GetAddInType() ;
-    }
-
+    private record SelectState( Connector? AhuConnector, IReadOnlyList<FamilyInstance> GrandParentConnectors, IReadOnlyList<FamilyInstance> ParentConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
 
     protected abstract DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo ) ;
     protected abstract MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType ) ;
@@ -30,56 +30,89 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
+      var (fromPickResult, toPickResult, grandParentConnectors, parentConnectors, errorMessage) = SelectionAhuAndFindVav( uiDocument, routingExecutor, GetAddInType() ) ;
+      if ( null != errorMessage ) return ( false, errorMessage ) ;
+      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, grandParentConnectors.First() ) ;
+      if ( true != property?.DialogResult ) return ( false, null ) ;
+      var pipeSpec = new MEPSystemPipeSpec( new RouteMEPSystem( uiDocument.Document, property.GetSystemType(), property.GetCurveType() ), routingExecutor.FittingSizeCalculator ) ;
+      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, grandParentConnectors, parentConnectors, property, classificationInfo, pipeSpec ) ) ;
+      return ( false, null ) ;
+    }
+
+    private static ( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IReadOnlyList<FamilyInstance> grandParentConnectors, IReadOnlyList<FamilyInstance> parentConnectors, string? ErrorMessage ) SelectionAhuAndFindVav( UIDocument uiDocument, RoutingExecutor routingExecutor, AddInType addInType )
+    {
       var doc = uiDocument.Document ;
-      
+
       // Select AHU
-      var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
-      if ( fromPickResult.PickedConnector == null ) return ( false, null ) ;
+      var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
+      if ( fromPickResult.PickedConnector == null ) return ( null!, null!, Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), ErrorMessageNoAhu ) ;
       var ahuPosition = fromPickResult.PickedConnector.Origin ;
-      
+
       // Get all vav
       var dampers = doc.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
       var dampersInstances = dampers as FamilyInstance[] ?? dampers.ToArray() ;
-      if ( ! dampersInstances.Any() ) return ( false, null ) ;
+      if ( ! dampersInstances.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), ErrorMessageNoVav ) ;
 
       // Get all space box
       var spaceBoxes = GetAllSpaces( doc ) ;
-      if ( ! spaceBoxes.Any() ) return ( false, null ) ;
+      if ( ! spaceBoxes.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), ErrorMessageNoSpace ) ;
 
-      // Get Farthest Space
-      var farthestSpace = spaceBoxes.FirstOrDefault() ;
-      var maxDistance = double.MinValue ;
-      foreach ( var space in spaceBoxes ) {
-        var branchNumber = space.GetSpaceBranchNumber() ;
-        if ( branchNumber != SpaceType.GrandParent ) continue ;
-        var spacePosition = space.Location as LocationPoint ;
-        var distance = ahuPosition.DistanceTo( spacePosition!.Point ) ;
-        if ( ! ( distance > maxDistance ) ) continue ;
-        maxDistance = distance ;
-        farthestSpace = space ;
-      }
+      // Get group space
+      var (grandParentSpaces, parentSpaces) = GetGroupSpace( doc, spaceBoxes, dampersInstances, ahuPosition ) ;
       
-      // Get Farthest VAV
-      if ( farthestSpace == null ) return ( false, null ) ;
-      BoundingBoxXYZ spaceBox = farthestSpace.get_BoundingBox( doc.ActiveView ) ;
-      var farthestVav = dampersInstances.FirstOrDefault() ;
+      var grandParentConnectors = grandParentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
+      var parentConnectors = parentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
+      
+      if ( ! grandParentConnectors.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), Array.Empty<FamilyInstance>(), ErrorMessageNoVav ) ;
+      ConnectorPicker.IPickResult toPickResult = ConnectorPicker.GetVavConnector( grandParentConnectors.Last(), addInType ) ;
+      
+      return ( fromPickResult, toPickResult, grandParentConnectors, parentConnectors, null ) ;
+    }
+
+    private static FamilyInstance GetVavFromSpace( Document doc, FamilyInstance[] dampersInstances, Element space )
+    {
+      BoundingBoxXYZ spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
+      FamilyInstance vav = null! ;
       foreach ( var fi in dampersInstances ) {
         var vavPosition = fi.Location as LocationPoint ;
         if ( vavPosition == null ) continue ;
         if ( spaceBox.Max.X > vavPosition.Point.X && spaceBox.Max.Y > vavPosition.Point.Y && spaceBox.Max.Z > vavPosition.Point.Z && spaceBox.Min.X < vavPosition.Point.X && spaceBox.Min.Y < vavPosition.Point.Y && spaceBox.Min.Z < vavPosition.Point.Z ) {
-          farthestVav = fi ;
+          vav = fi ;
+          break ;
         }
-      }      
+      }
 
-      // Get VAV Connector
-      if ( farthestVav == null ) return ( false, null ) ;
-      ConnectorPicker.IPickResult toPickResult = ConnectorPicker.GetVavConnector( farthestVav, GetAddInType() ) ;
-      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
-      if ( true != property?.DialogResult ) return ( false, null ) ;
+      return vav ;
+    }
 
-      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is { } classificationInfo ) return ( true, new PickState( fromPickResult, toPickResult, property, classificationInfo ) ) ;
+    private static ( IReadOnlyList<Element> grandParentSpaces, IReadOnlyList<Element> parentSpaces ) GetGroupSpace( Document doc, IList<Element> spaceBoxes, FamilyInstance[] dampersInstances, XYZ ahuPosition )
+    {
+      List<Element> parentSpaces = new() ;
+      List<Element> grandParentSpaces = new() ;
+      var maxDistance = double.MinValue ;
+      foreach ( var space in spaceBoxes ) {
+        var branchNumber = space.GetSpaceBranchNumber() ;
+        if ( branchNumber != SpaceType.GrandParent ) {
+          if ( branchNumber == SpaceType.Parent ) {
+            parentSpaces.Add( space );
+          }
+        }
+        else {
+          grandParentSpaces.Add( space ) ;
+          var spacePosition = space.Location as LocationPoint ;
+          var distance = ahuPosition.DistanceTo( spacePosition!.Point ) ;
+          if ( ! ( distance > maxDistance ) ) continue ;
+          maxDistance = distance ;
+        }
+      }
+      grandParentSpaces.Sort( Compare ) ;
+      return ( grandParentSpaces, parentSpaces ) ;
 
-      return ( false, null ) ;
+      static int Compare( Element a, Element b )
+      {
+        if ( a.Location is not LocationPoint aPos || b.Location is not LocationPoint bPos ) return default ;
+        return aPos.Point.X.CompareTo( bPos.Point.X ) ;
+      }
     }
 
     private static IList<Element> GetAllSpaces( Document document )
@@ -99,18 +132,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return GetMEPSystemClassificationInfoFromSystemType( systemType ) ;
     }
 
-    private IRoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    private RoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, Element toPickElement )
     {
       var fromLevelId = GetTrueLevelId( document, fromPickResult ) ;
-      var toLevelId = GetTrueLevelId( document, toPickResult ) ;
+      var toLevelId = toPickElement.LevelId ;
 
-      if ( ( fromPickResult.SubRoute ?? toPickResult.SubRoute ) is { } subRoute ) {
-        var route = subRoute.Route ;
-
-        return ShowDialog( document, new DialogInitValues( route.GetSystemClassificationInfo(), route.GetMEPSystemType(), route.GetDefaultCurveType(), subRoute.GetDiameter() ), fromLevelId, toLevelId ) ;
-      }
-
-      if ( ( fromPickResult.PickedConnector ?? toPickResult.PickedConnector ) is { } connector ) {
+      if ( ( fromPickResult.PickedConnector ?? toPickElement.GetConnectors().FirstOrDefault() ) is { } connector ) {
         if ( MEPSystemClassificationInfo.From( connector ) is not { } classificationInfo ) return null ;
 
         if ( CreateSegmentDialogDefaultValuesWithConnector( document, connector, classificationInfo ) is not { } initValues ) return null ;
@@ -129,7 +156,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return document.GuessLevel( pickResult.GetOrigin() ).Id ;
     }
 
-    protected virtual IRoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
+    protected virtual RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
       var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ) ;
@@ -150,163 +177,95 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
-      var pickState = state as PickState ?? throw new InvalidOperationException() ;
-      var (fromPickResult, toPickResult, routeProperty, classificationInfo) = pickState ;
+      var selectState = state as SelectState ?? throw new InvalidOperationException() ;
+      var (ahuConnector, grandParentConnectors, parentConnectors, routeProperty, classificationInfo, pipeSpec) = selectState ;
 
-      RouteGenerator.CorrectEnvelopes( document ) ;
-
-      if ( null != fromPickResult.SubRoute ) return CreateNewSegmentListForRoutePick( fromPickResult, toPickResult, false, routeProperty, classificationInfo ) ;
-      if ( null != toPickResult.SubRoute ) return CreateNewSegmentListForRoutePick( toPickResult, fromPickResult, true, routeProperty, classificationInfo ) ;
-
-      return CreateNewSegmentList( document, fromPickResult, toPickResult, routeProperty, classificationInfo ) ;
-    }
-
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
-    {
-      var useConnectorDiameter = UseConnectorDiameter() ;
-      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter ) ;
-      var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult, useConnectorDiameter ) ;
-
-      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo ) ;
-
-      return new[] { ( name, segment ) } ;
-    }
-
-    private (string RouteName, RouteSegment Segment) CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
-    {
       var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
-
-      var routes = RouteCache.Get( document ) ;
-      var nameBase = GetNameBase( systemType, curveType ) ;
-      var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
-      var name = nameBase + "_" + nextIndex ;
-      routes.FindOrCreate( name ) ;
-
-      var diameter = routeProperty.GetDiameter() ;
-      var isRoutingOnPipeSpace = routeProperty.GetRouteOnPipeSpace() ;
-      var fromFixedHeight = routeProperty.GetFromFixedHeight() ;
-      var toFixedHeight = routeProperty.GetToFixedHeight() ;
+      var sensorFixedHeight = routeProperty.GetFromFixedHeight() ;
       var avoidType = routeProperty.GetAvoidType() ;
-      var shaftElementId = routeProperty.GetShaft()?.Id ?? ElementId.InvalidElementId ;
+      var diameter = routeProperty.GetDiameter() ;
+      var radius = diameter * 0.5 ;
+      var nameBase = GetNameBase( systemType, curveType ) ;
+      var nextIndex = GetRouteNameIndex( RouteCache.Get( document ), nameBase ) ;
+      var routeName = nameBase + "_" + nextIndex ;
 
-      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ;
+      var passPoints = CreatePassPoints( routeName, ahuConnector!, grandParentConnectors, routeProperty, classificationInfo, pipeSpec ) ;
+      document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
+
+      var result = new List<(string RouteName, RouteSegment Segment)>( 1 * 2 + 1 ) ;
+
+      // Grand parent route
+      var ahuConnectorEndPoint = new ConnectorEndPoint( ahuConnector!, radius ) ;
+      var ahuConnectorEndPointKey = ahuConnectorEndPoint.Key ;
+      var grandParentEndPoint = new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First(), radius ) ;
+
+      // Main route
+      var secondFromEndPoints = passPoints.Take( passPoints.Count -1 ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
+      var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( grandParentConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
+      var firstToEndPoint = secondFromEndPoints[ 0 ] ;
+      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
+      result.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
+      {
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+        return ( routeName, segment ) ;
+      } ) ) ;
+
+      // branch routes
+      result.AddRange( passPoints.Zip( grandParentConnectors.Take( passPoints.Count - 1 ), ( pp, vavConnector ) =>
+      {
+        var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
+        var branchEndPoint = new PassPointBranchEndPoint( document, pp.Id, radius, ahuConnectorEndPointKey ) ;
+        var connectorEndPoint = new ConnectorEndPoint( vavConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+        return ( subRouteName, segment ) ;
+      } ) ) ;
+
+      return result ;
     }
 
-    private static Level? GetLevel( Document document, IEndPoint endPoint )
+    private static IReadOnlyList<FamilyInstance> CreatePassPoints( string routeName, Connector ahuConnector, IReadOnlyCollection<FamilyInstance> grandParentConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, MEPSystemPipeSpec pipeSpec )
     {
-      if ( endPoint.GetReferenceConnector()?.Owner.GetLevelId() is not { } levelId ) return null ;
+      var document = grandParentConnectors.FirstOrDefault()!.Document ;
+      var levelId = grandParentConnectors.FirstOrDefault()!.LevelId ;
+      var diameter = routeProperty.GetDiameter() ;
+      var bendingRadius = pipeSpec.GetLongElbowSize( diameter.DiameterValueToPipeDiameter() ) ;
+      var forcedFixedHeight = PassPointEndPoint.GetForcedFixedHeight( document, routeProperty.GetFromFixedHeight(), levelId ) ;
+      var sensorConnectorsWithoutLast = grandParentConnectors.Take( grandParentConnectors.Count - 1 ).ToReadOnlyCollection( grandParentConnectors.Count - 1 ) ;
+      var (passPointPositions, passPointDirection) = GetPassPointPositions( ahuConnector, grandParentConnectors, forcedFixedHeight, bendingRadius ) ;
+      var passPoints = new List<FamilyInstance>( passPointPositions.Count ) ;
+      foreach ( var pos in passPointPositions ) {
+        var fi = document.AddPassPoint( routeName, pos, passPointDirection, diameter * 0.5, levelId ) ;
+        passPoints.Add( fi ) ;
+      }
 
-      return document.GetElementById<Level>( levelId ) ;
-    }
+      return passPoints ;
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentListForRoutePick( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
-    {
-      //return AppendNewSegmentIntoPickedRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide ) ;  // Use this, when a branch is to be merged into the parent from-to.
-      return CreateSubBranchRoute( routePickResult, anotherPickResult, anotherIndicatorIsFromSide, routeProperty, classificationInfo ).EnumerateAll() ;
-    }
-
-    private IEnumerable<(string RouteName, RouteSegment Segment)> CreateSubBranchRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
-    {
-      var affectedRoutes = new List<Route>() ;
-      var (routeEndPoint, otherSegments1) = CreateEndPointOnSubRoute( routePickResult, anotherPickResult, routeProperty, classificationInfo, true ) ;
-
-      IEndPoint anotherEndPoint ;
-      IReadOnlyCollection<( string RouteName, RouteSegment Segment )>? otherSegments2 = null ;
-      if ( null != anotherPickResult.SubRoute )
-        ( anotherEndPoint, otherSegments2 ) = CreateEndPointOnSubRoute( anotherPickResult, routePickResult, routeProperty, classificationInfo, false ) ;
-      else
-        anotherEndPoint = PickCommandUtil.GetEndPoint( anotherPickResult, routePickResult, UseConnectorDiameter() ) ;
-
-      var fromEndPoint = anotherIndicatorIsFromSide ? anotherEndPoint : routeEndPoint ;
-      var toEndPoint = anotherIndicatorIsFromSide ? routeEndPoint : anotherEndPoint ;
-
-      var document = routePickResult.SubRoute!.Route.Document ;
-      var (name, segment) = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, routeProperty, classificationInfo ) ;
-
-      // Inserted segment
-      yield return ( name, segment ) ;
-
-      // Routes where pass points are inserted
-      var routes = RouteCache.Get( routePickResult.SubRoute!.Route.Document ) ;
-      var changedRoutes = new HashSet<Route>() ;
-      if ( null != otherSegments1 )
-        foreach ( var tuple in otherSegments1 ) {
-          yield return tuple ;
-
-          if ( routes.TryGetValue( tuple.RouteName, out var route ) ) changedRoutes.Add( route ) ;
+      static (IReadOnlyList<XYZ>, XYZ) GetPassPointPositions( Connector ahuConnector, IReadOnlyCollection<FamilyInstance> grandParentConnectors, double? forcedFixedHeight, double bendingRadius )
+      {
+        var ahuPosition = ahuConnector.Origin ;
+        var grandParentPositions = grandParentConnectors.ConvertAll( sensorConnector => sensorConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
+        var fixedHeight = forcedFixedHeight ?? GetPreferredRouteHeight( ahuPosition, grandParentPositions, grandParentPositions.Last(), bendingRadius ) ;
+        var passPoints = new List<XYZ>() ;
+        foreach ( var grandParentPosition in grandParentPositions ) {
+          var parentPassPoint = new XYZ( grandParentPosition.X, ahuPosition.Y, fixedHeight ) ;
+          passPoints.Add( parentPassPoint ) ;
         }
 
-      if ( null != otherSegments2 )
-        foreach ( var tuple in otherSegments2 ) {
-          yield return tuple ;
-
-          if ( routes.TryGetValue( tuple.RouteName, out var route ) ) changedRoutes.Add( route ) ;
-        }
-
-      // Affected routes
-      if ( 0 != affectedRoutes.Count ) {
-        var affectedRouteSet = new HashSet<Route>() ;
-        foreach ( var route in affectedRoutes ) {
-          affectedRouteSet.Add( route ) ;
-          affectedRouteSet.UnionWith( route.CollectAllDescendantBranches() ) ;
-        }
-
-        affectedRouteSet.ExceptWith( changedRoutes ) ;
-
-        foreach ( var tuple in affectedRouteSet.ToSegmentsWithName() ) yield return tuple ;
+        var passPointDir = new XYZ( 1, 0, 0 ) ;
+        return ( passPoints, passPointDir ) ;
       }
     }
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> AppendNewSegmentIntoPickedRoute( ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, bool anotherIndicatorIsFromSide )
+    private static double GetPreferredRouteHeight( XYZ ahuPosition, IEnumerable<XYZ> grandParentPositions, XYZ lastGrandParentPosition, double bendingRadius )
     {
-      var route = routePickResult.SubRoute!.Route ;
-      var segments = route.ToSegmentsWithNameList() ;
-      var anotherEndPoint = PickCommandUtil.GetEndPoint( anotherPickResult, routePickResult, UseConnectorDiameter() ) ;
-      var segment = CreateNewSegment( routePickResult.SubRoute!, routePickResult.EndPointOverSubRoute, routePickResult, anotherEndPoint, anotherIndicatorIsFromSide ) ;
-      segment.ApplyRealNominalDiameter() ;
-      segments.Add( ( route.RouteName, segment ) ) ;
-      return segments ;
-    }
-
-    private static RouteSegment CreateNewSegment( SubRoute subRoute, EndPointKey? endPointOverSubRoute, ConnectorPicker.IPickResult pickResult, IEndPoint newEndPoint, bool newEndPointIndicatorIsFromSide )
-    {
-      var document = subRoute.Route.Document ;
-      var detector = new RouteSegmentDetector( subRoute, pickResult.PickedElement ) ;
-      var classificationInfo = subRoute.Route.GetSystemClassificationInfo() ;
-      var systemType = subRoute.Route.GetMEPSystemType() ;
-      var curveType = subRoute.Route.GetDefaultCurveType() ;
-
-      if ( null != endPointOverSubRoute && subRoute.AllEndPoints.FirstOrDefault( ep => ep.Key == endPointOverSubRoute ) is { } overSubRoute ) {
-        var shaft = newEndPoint.GetLevelId( document ) != overSubRoute.GetLevelId( document ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
-        if ( newEndPointIndicatorIsFromSide )
-          return new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, overSubRoute, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FromFixedHeight, subRoute.ToFixedHeight, subRoute.AvoidType, shaft ) ;
-        return new RouteSegment( classificationInfo, systemType, curveType, overSubRoute, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FromFixedHeight, subRoute.ToFixedHeight, subRoute.AvoidType, shaft ) ;
-      }
-
-      foreach ( var segment in subRoute.Route.RouteSegments.EnumerateAll() ) {
-        if ( false == detector.IsPassingThrough( segment ) ) continue ;
-
-        if ( newEndPointIndicatorIsFromSide ) {
-          var shaft = newEndPoint.GetLevelId( document ) != segment.ToEndPoint.GetLevelId( document ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
-          return new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, segment.ToEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FromFixedHeight, subRoute.ToFixedHeight, subRoute.AvoidType, shaft ) ;
-        }
-        else {
-          var shaft = segment.FromEndPoint.GetLevelId( document ) != newEndPoint.GetLevelId( document ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
-          return new RouteSegment( classificationInfo, systemType, curveType, segment.FromEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FromFixedHeight, subRoute.ToFixedHeight, subRoute.AvoidType, shaft ) ;
-        }
-      }
-
-      // fall through: add terminate end point.
-      if ( newEndPointIndicatorIsFromSide ) {
-        var terminateEndPoint = new TerminatePointEndPoint( document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( false ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-        var shaft = newEndPoint.GetLevelId( document ) != terminateEndPoint.GetLevelId( document ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
-        return new RouteSegment( classificationInfo, systemType, curveType, newEndPoint, terminateEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FromFixedHeight, subRoute.ToFixedHeight, subRoute.AvoidType, shaft ) ;
+      var sensorHeight = grandParentPositions.Append( lastGrandParentPosition ).Max( pos => pos.Z ) ;
+      var powerHeight = ahuPosition.Z ;
+      if ( powerHeight < sensorHeight + bendingRadius ) {
+        return powerHeight + bendingRadius ;
       }
       else {
-        var terminateEndPoint = new TerminatePointEndPoint( document, ElementId.InvalidElementId, newEndPoint.RoutingStartPosition, newEndPoint.GetRoutingDirection( true ), newEndPoint.GetDiameter(), ElementId.InvalidElementId ) ;
-        var shaft = terminateEndPoint.GetLevelId( document ) != newEndPoint.GetLevelId( document ) ? subRoute.ShaftElementId : ElementId.InvalidElementId ;
-        return new RouteSegment( classificationInfo, systemType, curveType, terminateEndPoint, newEndPoint, subRoute.GetDiameter(), subRoute.IsRoutingOnPipeSpace, subRoute.FromFixedHeight, subRoute.ToFixedHeight, subRoute.AvoidType, shaft ) ;
+        return sensorHeight + bendingRadius ;
       }
     }
 
@@ -319,8 +278,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return lastIndex + 1 ;
     }
-
-    public record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
   }
