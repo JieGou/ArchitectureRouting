@@ -311,7 +311,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static bool CheckDocumentHasDuctType( Document document )
     {
       FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ) ;
-      return collector.Count( e => e.UniqueId == RoundDuctUniqueId ) > 0 ;
+      return collector.Any( e => e.UniqueId == RoundDuctUniqueId );
     }
   }
 }
