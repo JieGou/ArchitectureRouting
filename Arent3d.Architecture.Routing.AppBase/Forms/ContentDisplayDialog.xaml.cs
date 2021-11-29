@@ -163,6 +163,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var floor = _document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ;
         var constructionItems = string.Empty ;
         var equipmentType = string.Empty ;
+        var productName = string.Empty ;
         var use = string.Empty ;
         var usageName = string.Empty ;
         var construction = string.Empty ;
@@ -192,6 +193,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 if ( _hiroiMasterModels.Any() && ! string.IsNullOrEmpty( materialCode1 ) ) {
                   var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode1 ) ) ;
                   if ( hiroiMasterModel != null ) {
+                    productName = hiroiMasterModel.Hinmei ;
                     size = hiroiMasterModel.Size2 ;
                     tani = hiroiMasterModel.Tani ;
                   }
@@ -207,7 +209,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           }
         }
 
-        PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productType, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification ) ;
+        PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification ) ;
         pickUpModels.Add( pickUpModel ) ;
       }
     }
