@@ -8,6 +8,7 @@ using System ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit ;
 using System.Linq ;
+using Autodesk.Revit.DB.Mechanical ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
 
@@ -32,6 +33,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const double SouthDirection = Math.PI * 1.5 ;
     private const int FASUConnectorID = 18 ;
     private const int VAVConnectorID = 4 ;
+    private const string FamilyNameOfConnectorDuct = "丸型ダクト" ;
 
     private enum RotationAxis
     {
@@ -67,17 +69,24 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      IList<Element> spaces = GetAllSpaces( uiDocument.Document ).Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) ).ToArray() ;
+      IList<Element> spaces = GetAllSpaces( uiDocument.Document )
+        .Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) ).ToArray() ;
+
       foreach ( var space in spaces ) {
-        if ( CheckSpaceHasBoundingBox(  uiDocument.Document , space ) ) {
+        if ( ! CheckSpaceHasBoundingBox( uiDocument.Document, space ) ) {
           return ( false, $"`{space.Name}` have not bounding box." ) ;
         }
       }
+
+      if ( ! CheckDocumentHasDuctType( uiDocument.Document, FamilyNameOfConnectorDuct ) )
+        return ( false, $"There no family `{FamilyNameOfConnectorDuct}` in the document." ) ;
+
       ConnectorPicker.IPickResult iPickResult =
         ConnectorPicker.GetConnector( uiDocument, routingExecutor, true,
           "Dialog.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand.PickConnector", null, GetAddInType() ) ;
       if ( iPickResult.PickedConnector != null &&
-           CreateFASUAndVAVAutomatically( uiDocument.Document, iPickResult.PickedConnector, spaces ) == Result.Succeeded ) {
+           CreateFASUAndVAVAutomatically( uiDocument.Document, iPickResult.PickedConnector, spaces ) ==
+           Result.Succeeded ) {
         TaskDialog.Show( "FASUとVAVの自動配置", "FASUとVAVを配置しました。" ) ;
       }
 
@@ -89,7 +98,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private RoutingExecutor CreateRoutingExecutor( Document document, View view ) =>
       AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector, IList<Element> spaces )
+    private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector,
+      IList<Element> spaces )
     {
       Dictionary<int, List<Element>> branchNumberToAreaDictionary = new() ;
       foreach ( Element space in spaces ) {
@@ -142,11 +152,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           ElementTransformUtils.MoveElement( document, instanceOfVAV.Id,
             new XYZ( distanceBetweenFASUCenterAndVAVCenter, 0, 0 ) ) ;
 
+          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorID ) ;
+          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorID ) ;
+
+          Element instanceOfDuct = CreateDuctConnectFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
+
           // Rotate FASU and VAV
           var idOfFASUAndVAV = new List<ElementId>
           {
             instanceOfFASU.Id,
-            instanceOfVAV.Id
+            instanceOfVAV.Id,
+            instanceOfDuct.Id
           } ;
           ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
             Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ),
@@ -155,14 +171,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           // 回転軸で見るとき、コネクターがVAVの境界ボックス内にある場合、VAVの向きを反転させる
           if ( CheckVAVTouchingConnector( document, instanceOfVAV, pickedConnector, rotationAxis ) ) {
             ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
-              Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI) ;
-          }
-          
-          // Connect FASU's connector and VAV's connector
-          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorID ) ;
-          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorID ) ;
-          if ( fasuConnector != null && vavConnector != null ) {
-            vavConnector.ConnectTo( fasuConnector ) ;
+              Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI ) ;
           }
         }
 
@@ -285,10 +294,27 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       return instanceOfConnector.Origin.Y >= boxOfVAV.Min.Y && instanceOfConnector.Origin.Y <= boxOfVAV.Max.Y ;
     }
-    
-    private static bool CheckSpaceHasBoundingBox(Document document, Element space )
+
+    private static bool CheckSpaceHasBoundingBox( Document document, Element space )
     {
       return ( null == space.get_BoundingBox( document.ActiveView ) ) ;
+    }
+
+    private static Element CreateDuctConnectFASUAndVAV( Document document, Connector connectorOfFASU,
+      Connector connectorOfVAV, ElementId levelId )
+    {
+      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
+        .WhereElementIsElementType() ;
+      DuctType ductType =
+        (DuctType) collector.First( e => ( e as DuctType )!.FamilyName == FamilyNameOfConnectorDuct ) ;
+      return Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
+    }
+
+    private static bool CheckDocumentHasDuctType( Document document, String familyNameOfDuctType )
+    {
+      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
+        .WhereElementIsElementType() ;
+      return collector.Count( e => ( e as DuctType )!.FamilyName == familyNameOfDuctType ) > 0 ;
     }
   }
 }
