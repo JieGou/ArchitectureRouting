@@ -57,14 +57,6 @@ namespace Arent3d.Architecture.Routing
     ParentEnvelopeId,
   }
 
-  public enum ConstructionParameter
-  {
-    [ParameterGuid("854ae774-f9b2-4f4c-8518-f675ef5e2457"), NameOnRevit("Construction")]
-    [BuiltInCategories(ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA,
-      typeof(BuiltInCategorySets), nameof(BuiltInCategorySets.Conduits))]
-    Construction
-  }
-
   public enum PassPointParameter
   {
     [ParameterGuid( "b975f161-499f-4cc6-8e11-0d7ddf25b1f4" ), NameOnRevit( "PassPoint From-side Element Id" )]
@@ -81,6 +73,10 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "3285f3e8-1838-4eba-a676-1a2af4708e7a" ), NameOnRevit( "Route Connector Relation Ids" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ElementsUsedForUI ) )]
     RouteConnectorRelationIds,
+
+    [ParameterGuid( "f054f110-68e7-4bce-9d17-688557d410da" ), NameOnRevit( "Construction Item" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Conduits ) )]
+    Construction
   }
 
   public enum ConnectorFamilyParameter
@@ -97,6 +93,7 @@ namespace Arent3d.Architecture.Routing
       nameof( BuiltInCategorySets.SpaceElements ) )]
     BranchNumber
   }
+  
 
   public static class RoutingPropertyExtensions
   {
@@ -111,7 +108,6 @@ namespace Arent3d.Architecture.Routing
       document.LoadAllParametersFromFile<PassPointParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
       document.LoadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() );
       document.LoadAllParametersFromFile<ConnectorFamilyParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
-      document.LoadAllParametersFromFile<ConstructionParameter>(AssetManager.GetConstructionSharedParameterPath());
     }
 
     public static void MakeBranchNumberParameter( this Document document )

@@ -6,11 +6,11 @@ using Autodesk.Revit.DB.Electrical;
 
 namespace Arent3d.Architecture.Routing.AppBase.Selection
 {
-	public class ConstructionSelectionFilter : ISelectionFilter
+	public class ConduitSelectionFilter : ISelectionFilter
 	{
-		public static ISelectionFilter Instance { get; } = new ConstructionSelectionFilter();
+		public static ISelectionFilter Instance { get; } = new ConduitSelectionFilter();
 
-		private ConstructionSelectionFilter()
+		private ConduitSelectionFilter()
 		{
 		}
 

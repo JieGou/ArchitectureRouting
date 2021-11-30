@@ -21,14 +21,14 @@ namespace Arent3d.Architecture.Routing.Storable
     private const string CnsSettingField = "CnsSetting" ;
     public ObservableCollection<CnsSettingModel> CnsSettingData { get ; set ; }
 
-    public enum ApplyForConduit
+    public enum ConstructionItemType
     {
-      None,
-      Apply
+      None, // デフォルト：工事項目を設定しない
+      Conduit //配線に工事項目を設定する
     }
 
     public int SelectedIndex { get; set; }
-    public ApplyForConduit ApplyMode { get; set; }
+    public ConstructionItemType ConduitType { get; set; }
 
     /// <summary>
     /// for loading from storage.
@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       CnsSettingData = new ObservableCollection<CnsSettingModel>();
       SelectedIndex = 0;
-      ApplyMode = ApplyForConduit.None;
+      ConduitType = ConstructionItemType.None;
     }
 
     /// <summary>

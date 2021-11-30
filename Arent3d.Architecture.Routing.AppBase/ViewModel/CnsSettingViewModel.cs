@@ -43,16 +43,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 (p) => true, // CanExecute()
                 (p) => { cnsStorables.CnsSettingData = CnsSettingModels; } // Execute()
             );
-
-            GetInfoCommand = new RelayCommand<int>(
-				(p) => true, // CanExecute()
-				(p) =>
-				{
-					cnsStorables.SelectedIndex = p;
-					cnsStorables.ApplyMode = CnsSettingStorable.ApplyForConduit.Apply;
-					cnsStorables.CnsSettingData = CnsSettingModels;
-				} // Execute()
-			);
+            
+            SetConstructionItemForConduitCommand = new RelayCommand<int>( 
+                ( p ) => true, // CanExecute()
+                ( p ) => { SetInfo( cnsStorables, p ) ; } // Execute()
+            ) ;
         }
 
         public ICommand ReadFileCommand { get; set; }
@@ -60,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         public ICommand AddRowCommand { get; set; }
         public ICommand DeleteRowCommand { get; set; }
         public ICommand SaveCommand { get; set; }
-        public ICommand GetInfoCommand { get; set; }
+        public ICommand SetConstructionItemForConduitCommand { get ; set ; }
 
         private void ReadFile()
         {
@@ -151,6 +146,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             {
                 CnsSettingModels.Add(new CnsSettingModel(sequence: 1, categoryName: "未設定"));
             }
+        }
+        
+        private void SetInfo( CnsSettingStorable cnsStorables, int index )
+        {
+            cnsStorables.SelectedIndex = index ;
+            cnsStorables.ConduitType = CnsSettingStorable.ConstructionItemType.Conduit ;
+            cnsStorables.CnsSettingData = CnsSettingModels ;
         }
     }
 }
