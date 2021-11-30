@@ -160,6 +160,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
         }
       }
 
+      elemTerP.SetProperty( PassPointParameter.RelatedConnectorId, LinkedInstanceId.IntegerValue.ToString() ) ;
+
       return true ;
     }
 

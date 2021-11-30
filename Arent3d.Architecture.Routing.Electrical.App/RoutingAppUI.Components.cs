@@ -2,7 +2,6 @@ using Arent3d.Architecture.Routing.Electrical.App.Commands ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Demo ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint ;
-using Arent3d.Architecture.Routing.Electrical.App.Commands.PostCommands ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Routing.Connectors ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Rack ;
@@ -36,6 +35,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
         [Button(typeof(LoadCsvFilesCommand), OnlyInitialized = true)]
         private static class LoadCsvFilesCommandButton { }
+        
+        [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
+        private static class ShowPickUpInformationCommandButton { }
         
         [Button(typeof(PickUpReportCommand), OnlyInitialized = true)]
         private static class PickUpReportCommandButton { }

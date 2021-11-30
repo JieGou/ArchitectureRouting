@@ -124,6 +124,9 @@
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>読み込みdb保存</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
+        <string>拾い</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>

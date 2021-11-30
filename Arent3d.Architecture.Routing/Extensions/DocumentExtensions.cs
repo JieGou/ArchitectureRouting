@@ -73,5 +73,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new CsvStorable( document ) ;
       }
     }
+
+    /// <summary>
+    /// Get pick up data from snoop DB.
+    /// </summary>
+    public static PickUpStorable GetPickUpStorable( this Document document )
+    {
+      try {
+        return PickUpStorableCache.Get( document ).FindOrCreate( PickUpStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new PickUpStorable( document ) ;
+      }
+    }
   }
 }
