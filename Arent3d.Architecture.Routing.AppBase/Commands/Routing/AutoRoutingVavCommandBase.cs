@@ -15,6 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class AutoRoutingVavCommandBase : RoutingCommandBase
   {
+    private const int VavConnectorId = 4 ;
     private const string ErrorMessageNoVav = "No VAV on the AHU level." ;
     private const string ErrorMessageNoAhu = "No AHU are selected." ;
     private const string ErrorMessageNoSpace = "Find space cannot be found." ;
@@ -242,9 +243,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // Main routes
       var secondFromEndPoints = passPoints.Take( passPoints.Count ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
-      var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( grandParentConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
+      var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ) ;
       if ( passPoints.Count < 1 ) {
-        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, new ConnectorEndPoint( grandParentConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ), diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
+        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ), diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
       }
       else {
       var firstToEndPoint = secondFromEndPoints[ 0 ] ;
@@ -271,13 +272,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( vavConnPos!.Point.Y < ppPos!.Point.Y ) {
           // Other group
           var branchEndPoint = new PassPointBranchEndPoint( document, pp.Id, radius, ahuConnectorEndPointKey ) ;
-          var connectorEndPoint = new ConnectorEndPoint( vavConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
+          var connectorEndPoint = new ConnectorEndPoint( vavConnector.GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;
           segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
         }
         else {
           // Group 0
           var branchEndPoint = new PassPointBranchEndPoint( document, pp.Id, radius, ahuConnectorEndPointKey ) ;
-          var connectorEndPoint = new ConnectorEndPoint( vavConnector.GetTopConnectorOfConnectorFamily(), radius ) ;          
+          var connectorEndPoint = new ConnectorEndPoint( vavConnector.GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;          
           segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
         }
 
