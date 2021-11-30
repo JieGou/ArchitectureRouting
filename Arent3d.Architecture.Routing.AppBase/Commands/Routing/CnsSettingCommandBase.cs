@@ -51,9 +51,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                             .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
                             .Where( p => p is FamilyInstance || p is Conduit ) ;
 
+                        var categoryName = cnsStorables.SelectedIndex > 0 ? cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName : string.Empty ;
                         foreach ( var element in selectedElements ) {
-                            var categoryName = cnsStorables.SelectedIndex > 0 ? cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName : string.Empty ;
-                            element.SetProperty( RoutingFamilyLinkedParameter.Construction, categoryName ) ;
+                            SetConstructionItemForConduit( element, categoryName ) ;
                         }
                     }
 
@@ -102,6 +102,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     cnsSettings.CnsSettingData[i].Sequence = i + 1;
                 }
             }
+        }
+
+        private static void SetConstructionItemForConduit( Element element, string categoryName )
+        {
+            element.SetProperty( RoutingFamilyLinkedParameter.Construction, categoryName ) ;
         }
     }
 }
