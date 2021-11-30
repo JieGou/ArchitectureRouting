@@ -26,7 +26,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModels ;
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
     private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterNormalModels ;
-    private readonly Dictionary<string, string> _productType = new Dictionary<string, string>() { { "Connector", "コネクタ" }, { "Conduit", "配線" }, { "Cable", "ケーブルラック" } } ;
 
     public ContentDisplayDialog( Document document )
     {
@@ -142,19 +141,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DialogResult = false ;
       Close() ;
     }
+    
+    private enum ProductType
+    {
+      Connector,
+      Conduit, 
+      Cable
+    }
 
     private List<PickUpModel> GetPickUpData()
     {
       List<PickUpModel> pickUpModels = new List<PickUpModel>() ;
       List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
-      SetPickUpModels( pickUpModels, allConnector, _productType.ElementAt( 0 ).Value ) ;
+      SetPickUpModels( pickUpModels, allConnector, ProductType.Connector ) ;
       var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       GetToConnectorsOfConduit( connectors, pickUpModels ) ;
       GetToConnectorsOfCables( connectors, pickUpModels ) ;
       return pickUpModels ;
     }
 
-    private void SetPickUpModels( List<PickUpModel> pickUpModels, List<Element> elements, string productType )
+    private void SetPickUpModels( List<PickUpModel> pickUpModels, List<Element> elements, ProductType productType )
     {
       foreach ( var connector in elements ) {
         if ( connector.LevelId == ElementId.InvalidElementId ) continue ;
@@ -201,7 +207,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               }
             }
 
-            if ( _hiroiSetCdMasterNormalModels.Any() && productType == _productType.ElementAt( 1 ).Value ) {
+            if ( _hiroiSetCdMasterNormalModels.Any() && productType == ProductType.Conduit ) {
               var hiroiSetCdMasterNormalModel = _hiroiSetCdMasterNormalModels.FirstOrDefault( h => h.SetCode == ceeDSetCode ) ;
               if ( hiroiSetCdMasterNormalModel != null )
                 construction = hiroiSetCdMasterNormalModel.ConstructionClassification ;
@@ -237,7 +243,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         AddPickUpConnectors( allConnectors, pickUpConnectors, elementId ) ;
       }
 
-      SetPickUpModels( pickUpModels, pickUpConnectors, _productType.ElementAt( 1 ).Value ) ;
+      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Conduit ) ;
     }
 
     private void GetToConnectorsOfCables( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
@@ -250,7 +256,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         AddPickUpConnectors( allConnectors, pickUpConnectors, elementId ) ;
       }
 
-      SetPickUpModels( pickUpModels, pickUpConnectors, _productType.ElementAt( 2 ).Value ) ;
+      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Cable ) ;
     }
 
     private void AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string elementId )
