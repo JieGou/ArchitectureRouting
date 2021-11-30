@@ -77,7 +77,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
     }
 
-    private RouteEndPoint( Document document, string routeName, int subRouteIndex )
+    public RouteEndPoint( Document document, string routeName, int subRouteIndex )
     {
       _document = document ;
       RouteName = routeName ;
