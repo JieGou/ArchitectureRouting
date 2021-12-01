@@ -1,5 +1,7 @@
 using System ;
 using System.Diagnostics ;
+using Arent3d.Revit ;
+using Arent3d.Utility.Serialization ;
 
 namespace Arent3d.Architecture.Routing.EndPoints
 {
@@ -46,6 +48,32 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public static bool operator !=( EndPointKey? left, EndPointKey? right )
     {
       return ! Equals( left, right ) ;
+    }
+
+    public string GetElementId()
+    {
+      const string connectorPointType = "Connector" ;
+      const string terminatePointType = "Terminate Point" ;
+      const string passPointType = "Pass Point" ;
+      var elementId = string.Empty ;
+      switch ( Type ) {
+        case connectorPointType :
+        {
+          var deserializer = new DeserializerObject<SerializeField>( Param ) ;
+          elementId = deserializer.GetElementId( SerializeField.ElementId ) is not { } connectorId ? string.Empty : connectorId.IntegerValue.ToString() ;
+          break ;
+        }
+        case terminatePointType or passPointType :
+          elementId = Param ;
+          break ;
+      }
+
+      return elementId ;
+    }
+    
+    private enum SerializeField
+    {
+      ElementId
     }
   }
 }

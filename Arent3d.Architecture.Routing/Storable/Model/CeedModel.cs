@@ -9,14 +9,16 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string GeneralDisplayDeviceSymbol { get ; set ; }
     public string ModelNumber { get ; set ; }
     public string FloorPlanSymbol { get ; set ; }
+    public string Name { get ; set ; }
     
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string name )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
       ModelNumber = modelNumber ;
       FloorPlanSymbol = floorPlanSymbol ;
+      Name = name ;
     }
   }
 }

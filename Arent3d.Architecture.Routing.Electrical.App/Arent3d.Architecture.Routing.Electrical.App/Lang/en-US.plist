@@ -127,6 +127,9 @@
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>Load&#xA;Save To DB</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
+        <string>Pick Up</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
