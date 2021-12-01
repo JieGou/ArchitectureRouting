@@ -234,20 +234,42 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       var result = new List<(string RouteName, RouteSegment Segment)>( 2 ) ;
 
-      // Grand parent routes
-      var ahuConnectorEndPoint = new ConnectorEndPoint( ahuConnector!, radius ) ;
-
       // Main routes
+      var ahuConnectorEndPoint = new ConnectorEndPoint( ahuConnector!, radius ) ;
       var vavConnectorEndPoint = new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;
       result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, vavConnectorEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
       
       // Branch routes
-      var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
-      var branchEndPoint = new RouteEndPoint( document, routeName, 0 ) ;
-      var connectorEndPoint = new ConnectorEndPoint( parentConnectors[1].Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;          
-      var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
-      result.Add( ( subRouteName, segment ) );
-      
+      foreach ( var vav in grandParentConnectors.Take( grandParentConnectors.Count - 1 ) ) {
+        var diameterChild = grandParentConnectors.Last().LookupParameter( "ダクト径" ).AsDouble() ;
+        var radiusChild = diameterChild * 0.5 ;        
+        var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
+        var branchEndPoint = new RouteEndPoint( document, routeName, 0 ) ;
+        var connectorEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;          
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameterChild, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+        result.Add( ( subRouteName, segment ) );        
+      }
+
+      foreach ( var (key, value) in parentConnectors ) {
+        var diameterChild = value.Last().LookupParameter( "ダクト径" ).AsDouble() * 2 ;
+        var radiusChild = diameterChild * 0.5 ;
+        var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
+        var branchEndPoint = new RouteEndPoint( document, routeName, 0 ) ;
+        var connectorEndPoint = new ConnectorEndPoint( value.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;          
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameterChild, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+        result.Add( ( subRouteName, segment ) );
+        foreach ( var vav in value.Take( value.Count - 1 ) ) {
+          diameterChild = vav.LookupParameter( "ダクト径" ).AsDouble() ;
+          radiusChild = diameterChild * 0.5 ;          
+          var subChildRouteName = nameBase + "_" + ( ++nextIndex ) ;
+          var branchChildEndPoint = new RouteEndPoint( document, subRouteName, 0 ) ;
+          var connectorChildEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;          
+          var segmentChild = new RouteSegment( classificationInfo, systemType, curveType, branchChildEndPoint, connectorChildEndPoint, diameterChild, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+          result.Add( ( subChildRouteName, segmentChild ) );            
+        }
+        
+      }
+
       return result ;
     }
 

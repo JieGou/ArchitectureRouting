@@ -84,12 +84,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           progress.Message = "Routing..." ;
 
           var segments = GetRouteSegments( document, state ) ;
-          // var result = executor.Run( segments, progress ) ;
-          
-          var result = executor.Run( new []{segments.ElementAt(0)}, progress ) ;
-          for ( int i = 1 ; i < segments.Count ; i++ ) {
-            executor.Run( new []{segments.ElementAt(i)}, progress ) ;
-          }          
+          var result = executor.Run( segments, progress ) ;
 
           return result.Type switch
           {
