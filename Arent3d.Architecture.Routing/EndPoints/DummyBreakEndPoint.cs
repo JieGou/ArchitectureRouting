@@ -39,7 +39,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     Connector? IEndPoint.GetReferenceConnector() => throw new NotSupportedException() ;
     bool IEndPoint.HasValidElement( bool isFrom ) => throw new NotSupportedException() ;
-    (Route? Route, SubRoute? SubRoute) IEndPoint.ParentBranch() => throw new NotSupportedException() ;
+    Route? IEndPoint.ParentRoute() => throw new NotSupportedException() ;
+    SubRoute? IEndPoint.ParentSubRoute() => throw new NotSupportedException() ;
     bool IEndPoint.GenerateInstance( string routeName ) => throw new NotSupportedException() ;
     bool IEndPoint.EraseInstance() => throw new NotSupportedException() ;
     void IEndPoint.Accept( IEndPointVisitor visitor ) => throw new NotSupportedException() ;
