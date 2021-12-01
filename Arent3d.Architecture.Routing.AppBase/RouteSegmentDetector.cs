@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     private bool ContainsFromEndPoint( IEndPoint endPoint )
     {
       if ( endPoint is RouteEndPoint routeEndPoint ) {
-        if ( routeEndPoint.GetSubRoute() is not { } subRoute ) return false ;
+        if ( routeEndPoint.ParentSubRoute() is not { } subRoute ) return false ;
         return subRoute.Segments.Any( seg => ContainsFromEndPoint( seg.FromEndPoint ) ) ;
       }
 
@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     private bool ContainsToEndPoint( IEndPoint endPoint )
     {
       if ( endPoint is RouteEndPoint routeEndPoint ) {
-        if ( routeEndPoint.GetSubRoute() is not { } subRoute ) return false ;
+        if ( routeEndPoint.ParentSubRoute() is not { } subRoute ) return false ;
         return subRoute.Segments.Any( seg => ContainsToEndPoint( seg.ToEndPoint ) ) ;
       }
 

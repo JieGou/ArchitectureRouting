@@ -66,11 +66,10 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public Instance? GetPassPoint() => Document.GetElementById<Instance>( PassPointId ) ;
 
     public string RouteName => GetPassPoint()?.GetRouteName() ?? string.Empty ;
-    public Route? GetRoute() => ParentBranch().Route ;
 
     public SubRoute? GetSubRoute( bool fromSideOfPassPoint )
     {
-      if ( GetRoute() is not { } route ) return null ;
+      if ( ParentRoute() is not { } route ) return null ;
 
       var passPointKey = PassPointEndPoint.KeyFromPassPointId( PassPointId ) ;
       return route.SubRoutes.FirstOrDefault( subRoute => HasPassPoint( subRoute, passPointKey, fromSideOfPassPoint ) ) ;
@@ -183,12 +182,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
-    public (Route? Route, SubRoute? SubRoute) ParentBranch()
-    {
-      if ( false == RouteCache.Get( Document ).TryGetValue( RouteName, out var route ) ) return ( null, null ) ;
-
-      return ( route, null ) ;
-    }
+    public Route? ParentRoute() => RouteCache.Get( Document ).TryGetValue( RouteName, out var route ) ? route : null ;
+    SubRoute? IEndPoint.ParentSubRoute() => null ;
 
     public bool GenerateInstance( string routeName )
     {
