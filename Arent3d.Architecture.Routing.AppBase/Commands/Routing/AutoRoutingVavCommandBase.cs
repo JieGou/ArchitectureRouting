@@ -60,17 +60,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // Get group space
       var (grandParentSpaces, parentSpaces) = GetGroupSpace( spaceBoxes, ahuPosition ) ;
-      
+
       var grandParentConnectors = grandParentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
       var parentConnectors = GetVavFromSpace( doc, dampersInstances, parentSpaces ) ;
-      
+
       if ( ! grandParentConnectors.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoVav ) ;
       ConnectorPicker.IPickResult toPickResult = ConnectorPicker.GetVavConnector( grandParentConnectors.Last(), addInType ) ;
-      
+
       return ( fromPickResult, toPickResult, grandParentConnectors, parentConnectors, null ) ;
     }
 
-    private static FamilyInstance GetVavFromSpace( Document doc, FamilyInstance[] dampersInstances, Element space )
+    private static FamilyInstance GetVavFromSpace( Document doc, IEnumerable<FamilyInstance> dampersInstances, Element space )
     {
       BoundingBoxXYZ spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
       FamilyInstance vav = null! ;
@@ -107,21 +107,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
           else {
             result.Add( key, new List<FamilyInstance>() { vav } ) ;
-          }          
+          }
         }
       }
 
       return result ;
     }
-    
-    private static ( IReadOnlyList<Element> grandParentSpaces, Dictionary<int, List<Element>> parentSpaces ) GetGroupSpace( IList<Element> spaceBoxes, XYZ ahuPosition )
+
+    private static ( IReadOnlyList<Element> grandParentSpaces, Dictionary<int, List<Element>> parentSpaces ) GetGroupSpace( IEnumerable<Element> spaceBoxes, XYZ ahuPosition )
     {
       List<Element> grandParentSpaces = new() ;
-      var maxDistance = double.MinValue ;      
+      var maxDistance = double.MinValue ;
       Dictionary<int, List<Element>> parentSpaces = new() ;
       foreach ( Element space in spaceBoxes ) {
         var branchNumber = space.GetSpaceBranchNumber() ;
-        if(branchNumber == (int) SpaceType.Invalid) continue;
+        if ( branchNumber == (int)SpaceType.Invalid ) continue ;
         if ( branchNumber == (int)SpaceType.GrandParent ) {
           grandParentSpaces.Add( space ) ;
           var spacePosition = space.Location as LocationPoint ;
@@ -138,10 +138,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
       }
+
       grandParentSpaces.Sort( Compare ) ;
       foreach ( var (key, value) in parentSpaces ) {
-        parentSpaces[key].Sort( CompareY ) ;
+        parentSpaces[ key ].Sort( CompareY ) ;
       }
+
       return ( grandParentSpaces, parentSpaces ) ;
     }
 
@@ -150,12 +152,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( a.Location is not LocationPoint aPos || b.Location is not LocationPoint bPos ) return default ;
       return aPos.Point.X.CompareTo( bPos.Point.X ) ;
     }
-    
+
     private static int CompareY( Element a, Element b )
     {
       if ( a.Location is not LocationPoint aPos || b.Location is not LocationPoint bPos ) return default ;
       return aPos.Point.Y.CompareTo( bPos.Point.Y ) ;
-    }        
+    }
 
     private static IList<Element> GetAllSpaces( Document document )
     {
@@ -198,7 +200,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return document.GuessLevel( pickResult.GetOrigin() ).Id ;
     }
 
-    protected virtual RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
+    protected RoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
       var sv = new RoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ) ;
@@ -238,114 +240,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var ahuConnectorEndPoint = new ConnectorEndPoint( ahuConnector!, radius ) ;
       var vavConnectorEndPoint = new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;
       result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, vavConnectorEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
-      
+
       // Branch routes
       foreach ( var vav in grandParentConnectors.Take( grandParentConnectors.Count - 1 ) ) {
         var diameterChild = grandParentConnectors.Last().LookupParameter( "ダクト径" ).AsDouble() ;
-        var radiusChild = diameterChild * 0.5 ;        
+        var radiusChild = diameterChild * 0.5 ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, 0 ) ;
-        var connectorEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;          
+        var connectorEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameterChild, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
-        result.Add( ( subRouteName, segment ) );        
+        result.Add( ( subRouteName, segment ) ) ;
       }
 
-      foreach ( var (key, value) in parentConnectors ) {
+      foreach ( var (_, value) in parentConnectors ) {
         var diameterChild = value.Last().LookupParameter( "ダクト径" ).AsDouble() * 2 ;
         var radiusChild = diameterChild * 0.5 ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, 0 ) ;
-        var connectorEndPoint = new ConnectorEndPoint( value.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;          
+        var connectorEndPoint = new ConnectorEndPoint( value.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameterChild, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
-        result.Add( ( subRouteName, segment ) );
+        result.Add( ( subRouteName, segment ) ) ;
         foreach ( var vav in value.Take( value.Count - 1 ) ) {
           diameterChild = vav.LookupParameter( "ダクト径" ).AsDouble() ;
-          radiusChild = diameterChild * 0.5 ;          
+          radiusChild = diameterChild * 0.5 ;
           var subChildRouteName = nameBase + "_" + ( ++nextIndex ) ;
           var branchChildEndPoint = new RouteEndPoint( document, subRouteName, 0 ) ;
-          var connectorChildEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;          
+          var connectorChildEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;
           var segmentChild = new RouteSegment( classificationInfo, systemType, curveType, branchChildEndPoint, connectorChildEndPoint, diameterChild, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
-          result.Add( ( subChildRouteName, segmentChild ) );            
+          result.Add( ( subChildRouteName, segmentChild ) ) ;
         }
-        
       }
 
       return result ;
-    }
-
-    private static (IReadOnlyList<FamilyInstance>, Dictionary<int, List<FamilyInstance>> ) CreatePassPoints( string routeName, Connector ahuConnector, IReadOnlyCollection<FamilyInstance> grandParentConnectors, Dictionary<int, List<FamilyInstance>> parentConnectors, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, MEPSystemPipeSpec pipeSpec )
-    {
-      var document = grandParentConnectors.FirstOrDefault()!.Document ;
-      var levelId = grandParentConnectors.FirstOrDefault()!.LevelId ;
-      var diameter = routeProperty.GetDiameter() ;
-      var bendingRadius = pipeSpec.GetLongElbowSize( diameter.DiameterValueToPipeDiameter() ) ;
-      var forcedFixedHeight = PassPointEndPoint.GetForcedFixedHeight( document, routeProperty.GetFromFixedHeight(), levelId ) ;
-      var grandParentWithoutLast = grandParentConnectors.Take( grandParentConnectors.Count - 1 ).ToReadOnlyCollection( grandParentConnectors.Count - 1 ) ;
-      var (passPointPositions, childPpPositions) = GetPassPointPositions( ahuConnector, grandParentWithoutLast, parentConnectors, forcedFixedHeight, bendingRadius ) ;
-      var passPointDirection = new XYZ( 1, 0, 0 ) ;
-      var passPoints = passPointPositions.ConvertAll( pos => document.AddPassPoint( routeName, pos, passPointDirection, diameter * 0.5, levelId ) ) ;
-
-      var childPassPoints = new Dictionary<int, List<FamilyInstance>>() ;
-      var passPointChildDir = new XYZ( 0, 1, 0 ) ;
-      foreach ( var (key, value) in childPpPositions ) {
-        childPassPoints[ key ] = value.ConvertAll( pos => document.AddPassPoint( routeName, pos, passPointChildDir, diameter * 0.5, levelId ) ) ;
-      }
-
-      return ( passPoints, childPassPoints ) ;
-
-      static (IReadOnlyList<XYZ>, Dictionary<int, List<XYZ>>) GetPassPointPositions( Connector ahuConnector, IReadOnlyCollection<FamilyInstance> grandParentConnectors, Dictionary<int, List<FamilyInstance>> parentConnectors, double? forcedFixedHeight, double bendingRadius )
-      {
-        var ahuPosition = ahuConnector.Origin ;
-        var grandParentPositions = grandParentConnectors.ConvertAll( connector => connector.GetTopConnectorOfConnectorFamily().Origin ) ;
-        var fixedHeight = forcedFixedHeight ?? GetPreferredRouteHeight( ahuPosition, grandParentPositions, grandParentPositions.Last(), bendingRadius ) ;
-        var passPoints = new List<XYZ>() ;
-        
-        // Add grand parent pass point for grand parent group
-        foreach ( var grandParentPosition in grandParentPositions ) {
-          var parentPassPoint = new XYZ( grandParentPosition.X-5, ahuPosition.Y, fixedHeight ) ;
-          passPoints.Add( parentPassPoint ) ;
-        }
-        
-        // Add grand parent pass point for other group
-        Dictionary<int, List<XYZ>> childPassPoints = new() ;
-        foreach ( var (key, value) in parentConnectors ) {
-          var entryCollection = value.ToReadOnlyCollection(value.Count) ;
-          var parentPositions = entryCollection.ConvertAll( connector => connector.GetTopConnectorOfConnectorFamily().Origin ).ToList() ;
-          var farthestParent = parentPositions.Last() ;
-          var parentPassPoint = new XYZ( farthestParent.X - 10, ahuPosition.Y, fixedHeight ) ;
-          passPoints.Add( parentPassPoint );
-          
-          // Add child pass point
-          foreach ( var vav in parentPositions.Take( parentPositions.Count - 1 ) ) {
-            var childPassPoint = new XYZ( farthestParent.X - 5, vav.Y - 5, fixedHeight ) ;
-            if ( childPassPoints.ContainsKey( key ) ) {
-              childPassPoints[ key ].Add( childPassPoint ) ;
-            }
-            else {
-              childPassPoints.Add( key, new List<XYZ>() { childPassPoint } ) ;
-            }               
-          }
-
-          var orderedPassPoints = childPassPoints[ key ].OrderBy( pp => pp.Y ).ToList() ;
-          childPassPoints[ key ] = orderedPassPoints ;
-        }
-        var orderedEnumerable = passPoints.OrderBy( pp => pp.X ).ToList() ;
-     
-        return ( orderedEnumerable, childPassPoints ) ;
-      }
-    }
-
-    private static double GetPreferredRouteHeight( XYZ ahuPosition, IEnumerable<XYZ> grandParentPositions, XYZ lastGrandParentPosition, double bendingRadius )
-    {
-      var sensorHeight = grandParentPositions.Append( lastGrandParentPosition ).Max( pos => pos.Z ) ;
-      var powerHeight = ahuPosition.Z ;
-      if ( powerHeight < sensorHeight + bendingRadius ) {
-        
-        return powerHeight + bendingRadius ;
-      }
-      else {
-        return sensorHeight + bendingRadius ;
-      }
     }
 
     private static int GetRouteNameIndex( RouteCache routes, string? targetName )
