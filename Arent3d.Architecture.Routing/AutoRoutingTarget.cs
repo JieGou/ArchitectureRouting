@@ -127,7 +127,7 @@ namespace Arent3d.Architecture.Routing
       var subRouteAndParents = subRoutes.ToDictionary( r => r, r => new List<SubRoute>() ) ;
 
       foreach ( var subRoute in subRoutes ) {
-        foreach ( var parent in subRoute.AllEndPoints.Select( ep => ep.ParentBranch().SubRoute ).NonNull() ) {
+        foreach ( var parent in subRoute.AllEndPoints.Select( ep => ep.ParentSubRoute() ).NonNull() ) {
           if ( false == subRouteAndParents.TryGetValue( subRoute, out var list ) ) continue ; // not contained.
 
           list.Add( parent ) ;

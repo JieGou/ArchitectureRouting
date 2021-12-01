@@ -290,7 +290,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         _endPoint = endPoint ;
 
         if ( endPoint is RouteEndPoint routeEndPoint ) {
-          SubRoute = routeEndPoint.GetSubRoute() ;
+          SubRoute = routeEndPoint.ParentSubRoute() ?? subRoute ;
           EndPointOverSubRoute = null ;
         }
         else if ( endPoint is PassPointBranchEndPoint passPointBranchEndPoint ) {
