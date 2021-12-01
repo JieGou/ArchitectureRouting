@@ -38,6 +38,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
         [Button(typeof(LoadCsvFilesCommand), OnlyInitialized = true)]
         private static class LoadCsvFilesCommandButton { }
+        
+        [Button( typeof( ShowConduitInformationCommand ), OnlyInitialized = true )]
+        private static class ShowConduitInformationCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.routing", TitleKey = "Electrical.App.Panels.Routing.Routing" )]
