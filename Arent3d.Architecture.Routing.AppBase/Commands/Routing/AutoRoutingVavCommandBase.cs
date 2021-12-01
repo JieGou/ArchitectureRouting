@@ -231,63 +231,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var nameBase = GetNameBase( systemType, curveType ) ;
       var nextIndex = GetRouteNameIndex( RouteCache.Get( document ), nameBase ) ;
       var routeName = nameBase + "_" + nextIndex ;
-
-      var ( passPoints, childPassPoints ) = CreatePassPoints( routeName, ahuConnector!, grandParentConnectors, parentConnectors, routeProperty, classificationInfo, pipeSpec ) ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
-
-      var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 1 ) ;
+      var result = new List<(string RouteName, RouteSegment Segment)>( 2 ) ;
 
       // Grand parent routes
       var ahuConnectorEndPoint = new ConnectorEndPoint( ahuConnector!, radius ) ;
-      var ahuConnectorEndPointKey = ahuConnectorEndPoint.Key ;
 
       // Main routes
-      var secondFromEndPoints = passPoints.Take( passPoints.Count ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
-      var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ) ;
-      if ( passPoints.Count < 1 ) {
-        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ), diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
-      }
-      else {
-      var firstToEndPoint = secondFromEndPoints[ 0 ] ;
-      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
-      result.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
-      {
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
-        
-        return ( routeName, segment ) ;
-      } ) ) ;
-
-      // Branch routes
-      var branchConnectors = grandParentConnectors.Take( grandParentConnectors.Count - 1 ).ToList() ;
-      foreach ( var (key, value) in parentConnectors ) {
-        branchConnectors.Add( value.Last() ) ;
-      }
-      branchConnectors.Sort(Compare);
-      result.AddRange( passPoints.Zip( branchConnectors.Take( passPoints.Count ), ( pp, vavConnector ) =>
-      {
-        var ppPos = pp.Location as LocationPoint ;
-        var vavConnPos = vavConnector.Location as LocationPoint ;
-        var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
-        RouteSegment segment ;
-        if ( vavConnPos!.Point.Y < ppPos!.Point.Y ) {
-          // Other group
-          var branchEndPoint = new PassPointBranchEndPoint( document, pp.Id, radius, ahuConnectorEndPointKey ) ;
-          var connectorEndPoint = new ConnectorEndPoint( vavConnector.GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;
-          segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
-        }
-        else {
-          // Group 0
-          var branchEndPoint = new PassPointBranchEndPoint( document, pp.Id, radius, ahuConnectorEndPointKey ) ;
-          var connectorEndPoint = new ConnectorEndPoint( vavConnector.GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;          
-          segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
-        }
-
-        return ( subRouteName, segment ) ;          
-      } ) ) ;
+      var vavConnectorEndPoint = new ConnectorEndPoint( grandParentConnectors.First().GetConnectors().Last( c => c.Id != VavConnectorId ), radius ) ;
+      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, vavConnectorEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
       
-      // Child routes        
-      }
-
+      // Branch routes
+      var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
+      var branchEndPoint = new RouteEndPoint( document, routeName, 0 ) ;
+      var connectorEndPoint = new ConnectorEndPoint( parentConnectors[1].Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;          
+      var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+      result.Add( ( subRouteName, segment ) );
+      
       return result ;
     }
 
