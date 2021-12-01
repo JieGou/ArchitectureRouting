@@ -238,7 +238,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var ahuConnectorEndPoint = new ConnectorEndPoint( ahuConnector!, radius ) ;
 
       // Main routes
-      var vavConnectorEndPoint = new ConnectorEndPoint( grandParentConnectors.First().GetConnectors().Last( c => c.Id != VavConnectorId ), radius ) ;
+      var vavConnectorEndPoint = new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;
       result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, vavConnectorEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
       
       // Branch routes
