@@ -348,7 +348,7 @@ namespace Arent3d.Architecture.Routing
     {
       var routes = new HashSet<Route>() ;
       foreach ( var subRoute in _subRoutes ) {
-        routes.UnionWith( subRoute.AllEndPoints.Select( endPoint => endPoint.ParentBranch().Route ).NonNull() ) ;
+        routes.UnionWith( subRoute.AllEndPoints.Select( endPoint => endPoint.ParentRoute() ).NonNull() ) ;
       }
 
       routes.Remove( this ) ;
@@ -363,7 +363,7 @@ namespace Arent3d.Architecture.Routing
 
     public bool IsParentBranch( Route route )
     {
-      return route._subRoutes.SelectMany( subRoute => subRoute.AllEndPoints ).Any( endPoint => endPoint.ParentBranch().Route == this ) ;
+      return route._subRoutes.SelectMany( subRoute => subRoute.AllEndPoints ).Any( endPoint => endPoint.ParentRoute() == this ) ;
     }
 
     public static IReadOnlyCollection<Route> CollectAllDescendantBranches( IEnumerable<Route> routes )
@@ -389,7 +389,7 @@ namespace Arent3d.Architecture.Routing
     /// <returns></returns>
     public bool HasParent()
     {
-      return _subRoutes.SelectMany( subRoute => subRoute.AllEndPoints.OfType<IRouteBranchEndPoint>() ).Any( endPoint => null != endPoint.ParentBranch().Route ) ;
+      return _subRoutes.SelectMany( subRoute => subRoute.AllEndPoints.OfType<IRouteBranchEndPoint>() ).Any( endPoint => null != endPoint.ParentRoute() ) ;
     }
 
     private static void AddChildren( HashSet<Route> routeSet, Route root, Action<Route>? onAdd = null )

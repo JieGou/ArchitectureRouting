@@ -103,7 +103,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
-    public (Route? Route, SubRoute? SubRoute) ParentBranch() => ( null, null ) ;
+    Route? IEndPoint.ParentRoute() => null ;
+    SubRoute? IEndPoint.ParentSubRoute() => null ;
 
     public bool GenerateInstance( string routeName ) => false ;
     public bool EraseInstance() => false ;
