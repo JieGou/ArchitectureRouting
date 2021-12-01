@@ -12,7 +12,6 @@ using Autodesk.Revit.UI.Selection ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB.Architecture ;
-using Autodesk.Revit.DB.Electrical ;
 
 namespace Arent3d.Architecture.Routing.AppBase
 {
@@ -67,18 +66,6 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         return new OriginPickResult( element, addInType ) ;
       }
-    }
-
-    public static IPickResult GetVavConnector( Element element, AddInType addInType )
-    {
-        var connectors = element.GetConnectors() ;
-        var connector = connectors.LastOrDefault() ;
-
-        if ( null != connector ) {
-          return new ConnectorPickResult( element, connector ) ;
-        }
-
-        return new OriginPickResult( element, addInType ) ;
     }
 
     private static IEndPoint? PickEndPointOverSubRoute( UIDocument uiDocument, SubRoutePickResult pickResult, bool pickingFromSide )

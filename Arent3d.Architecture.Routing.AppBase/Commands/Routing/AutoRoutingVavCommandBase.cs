@@ -28,36 +28,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo ) ;
     protected abstract MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType ) ;
-    // protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom ) ;
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      var (fromPickResult, toPickResult, grandParentConnectors, parentConnectors, errorMessage) = SelectionAhuAndFindVav( uiDocument, routingExecutor, GetAddInType() ) ;
+      var (fromPickResult, grandParentConnectors, parentConnectors, errorMessage) = SelectionAhuAndFindVav( uiDocument, routingExecutor, GetAddInType() ) ;
       if ( null != errorMessage ) return ( false, errorMessage ) ;
       var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, grandParentConnectors.First() ) ;
       if ( true != property?.DialogResult ) return ( false, null ) ;
-      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, grandParentConnectors, parentConnectors, property, classificationInfo ) ) ;
+      if ( GetMEPSystemClassificationInfoFromSystemType( property.GetSystemType() ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, grandParentConnectors, parentConnectors, property, classificationInfo ) ) ;
       return ( false, null ) ;
     }
 
-    private static ( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, IReadOnlyList<FamilyInstance> grandParentConnectors, Dictionary<int, List<FamilyInstance>> parentConnectors, string? ErrorMessage ) SelectionAhuAndFindVav( UIDocument uiDocument, RoutingExecutor routingExecutor, AddInType addInType )
+    private static ( ConnectorPicker.IPickResult fromPickResult, IReadOnlyList<FamilyInstance> grandParentConnectors, Dictionary<int, List<FamilyInstance>> parentConnectors, string? ErrorMessage ) SelectionAhuAndFindVav( UIDocument uiDocument, RoutingExecutor routingExecutor, AddInType addInType )
     {
       var doc = uiDocument.Document ;
 
       // Select AHU
       var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
-      if ( fromPickResult.PickedConnector == null ) return ( null!, null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoAhu ) ;
+      if ( fromPickResult.PickedConnector == null ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoAhu ) ;
       // var ahuPosition = fromPickResult.PickedConnector.Origin ;
 
       // Get all vav
       var dampers = doc.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
       var dampersInstances = dampers as FamilyInstance[] ?? dampers.ToArray() ;
-      if ( ! dampersInstances.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoVav ) ;
+      if ( ! dampersInstances.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoVav ) ;
 
       // Get all space box
       var spaceBoxes = GetAllSpaces( doc ) ;
-      if ( ! spaceBoxes.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
+      if ( ! spaceBoxes.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get group space
       var (grandParentSpaces, parentSpaces) = GetGroupSpace( spaceBoxes ) ;
@@ -65,10 +64,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var grandParentConnectors = grandParentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
       var parentConnectors = GetVavFromSpace( doc, dampersInstances, parentSpaces ) ;
 
-      if ( ! grandParentConnectors.Any() ) return ( null!, null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoGrandParentVav ) ;
-      ConnectorPicker.IPickResult toPickResult = ConnectorPicker.GetVavConnector( grandParentConnectors.Last(), addInType ) ;
+      if ( ! grandParentConnectors.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoGrandParentVav ) ;
 
-      return ( fromPickResult, toPickResult, grandParentConnectors, parentConnectors, null ) ;
+      return ( fromPickResult, grandParentConnectors, parentConnectors, null ) ;
     }
 
     /// <summary>
@@ -101,7 +99,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return result ;
     }
 
-    private static bool IsInSpace(BoundingBoxXYZ spaceBox, XYZ vavPosition )
+    private static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavPosition )
     {
       var (x, y, z) = vavPosition ;
       return spaceBox.Max.X > x && spaceBox.Max.Y > y && spaceBox.Max.Z > z && spaceBox.Min.X < x && spaceBox.Min.Y < y && spaceBox.Min.Z < z ;
@@ -161,15 +159,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       FilteredElementCollector collector = new(document) ;
       IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElements() ;
       return spaces ;
-    }
-
-    private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, MEPSystemType? systemType )
-    {
-      if ( ( fromPickResult.SubRoute ?? toPickResult.SubRoute )?.Route.GetSystemClassificationInfo() is { } routeSystemClassificationInfo ) return routeSystemClassificationInfo ;
-
-      if ( ( fromPickResult.PickedConnector ?? toPickResult.PickedConnector ) is { } connector && MEPSystemClassificationInfo.From( connector ) is { } connectorClassificationInfo ) return connectorClassificationInfo ;
-
-      return GetMEPSystemClassificationInfoFromSystemType( systemType ) ;
     }
 
     private RoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, Element toPickElement )
