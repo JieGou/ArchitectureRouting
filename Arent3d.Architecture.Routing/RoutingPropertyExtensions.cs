@@ -89,7 +89,12 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "3285f3e8-1838-4eba-a676-1a2af4708e7a" ), NameOnRevit( "Route Connector Relation Ids" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ElementsUsedForUI ) )]
     RouteConnectorRelationIds,
+
+    [ParameterGuid( "f054f110-68e7-4bce-9d17-688557d410da" ), NameOnRevit( "Construction Item" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Conduits ) )]
+    ConstructionItem
   }
+
   public enum ConnectorFamilyParameter
   {
     [ParameterGuid( "442b05ee-df38-4595-93c9-e2d7cfa227e9" ), NameOnRevit( "Connector Type" )]

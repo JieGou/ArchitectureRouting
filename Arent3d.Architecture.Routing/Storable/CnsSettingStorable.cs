@@ -3,8 +3,8 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.ExtensibleStorage ;
 using System ;
 using System.Collections.Generic ;
-using System.Collections.ObjectModel;
-using System.IO;
+using System.Collections.ObjectModel ;
+using System.IO ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -20,14 +20,25 @@ namespace Arent3d.Architecture.Routing.Storable
     public const string StorableName = "Cns Setting" ;
     private const string CnsSettingField = "CnsSetting" ;
     public ObservableCollection<CnsSettingModel> CnsSettingData { get ; set ; }
-    
+
+    public enum ConstructionItemType
+    {
+      None, // デフォルト：工事項目を設定しない
+      Conduit //配線に工事項目を設定する
+    }
+
+    public int SelectedIndex { get ; set ; }
+    public ConstructionItemType ConduitType { get ; set ; }
+
     /// <summary>
     /// for loading from storage.
     /// </summary>
     /// <param name="owner">Owner element.</param>
     private CnsSettingStorable( DataStorage owner ) : base( owner, false )
     {
-      CnsSettingData = new ObservableCollection<CnsSettingModel>();
+      CnsSettingData = new ObservableCollection<CnsSettingModel>() ;
+      SelectedIndex = 0 ;
+      ConduitType = ConstructionItemType.None ;
     }
 
     /// <summary>
@@ -36,7 +47,7 @@ namespace Arent3d.Architecture.Routing.Storable
     /// <param name="document"></param>
     public CnsSettingStorable( Document document ) : base( document, false )
     {
-      CnsSettingData = new ObservableCollection<CnsSettingModel>();
+      CnsSettingData = new ObservableCollection<CnsSettingModel>() ;
     }
 
     public override string Name => StorableName ;
@@ -44,7 +55,7 @@ namespace Arent3d.Architecture.Routing.Storable
     protected override void LoadAllFields( FieldReader reader )
     {
       var dataSaved = reader.GetArray<CnsSettingModel>( CnsSettingField ) ;
-      CnsSettingData = new ObservableCollection<CnsSettingModel>(dataSaved);
+      CnsSettingData = new ObservableCollection<CnsSettingModel>( dataSaved ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
@@ -52,18 +63,19 @@ namespace Arent3d.Architecture.Routing.Storable
       writer.SetArray( CnsSettingField, CnsSettingData ) ;
     }
 
-    protected override void SetupAllFields(FieldGenerator generator)
+    protected override void SetupAllFields( FieldGenerator generator )
     {
       generator.SetArray<CnsSettingModel>( CnsSettingField ) ;
     }
 
-    
-    public bool Equals(CnsSettingStorable? other)
+
+    public bool Equals( CnsSettingStorable? other )
     {
       if ( other == null ) return false ;
       return CnsSettingData.SequenceEqual( other.CnsSettingData, new CnsSettingStorableComparer() ) ;
     }
   }
+
   public class CnsSettingStorableComparer : IEqualityComparer<CnsSettingModel>
   {
     public bool Equals( CnsSettingModel x, CnsSettingModel y )
@@ -76,5 +88,4 @@ namespace Arent3d.Architecture.Routing.Storable
       return obj.GetHashCode() ;
     }
   }
-
 }

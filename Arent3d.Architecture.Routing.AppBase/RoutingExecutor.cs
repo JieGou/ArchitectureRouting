@@ -184,11 +184,11 @@ namespace Arent3d.Architecture.Routing.AppBase
           result.Add( route ) ;
         }
 
-        if ( segment.FromEndPoint.ParentBranch().Route is { } fromParent ) {
+        if ( segment.FromEndPoint.ParentRoute() is { } fromParent ) {
           parents.UnionWith( fromParent.GetAllRelatedBranches() ) ;
         }
 
-        if ( segment.ToEndPoint.ParentBranch().Route is { } toParent ) {
+        if ( segment.ToEndPoint.ParentRoute() is { } toParent ) {
           parents.UnionWith( toParent.GetAllRelatedBranches() ) ;
         }
 
