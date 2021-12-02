@@ -10,6 +10,7 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using MathLib ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -17,14 +18,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     private const int VavConnectorId = 4 ;
     private const int DefaultSubRouteIndex = 0 ;
-    private const string ErrorMessageNoVav = "No VAV on the AHU level." ;
-    private const string ErrorMessageNoAhu = "No AHU are selected." ;
+    private const string ErrorMessageNoVav = "No VAV on the Root Connector level." ;
+    private const string ErrorMessageNoRootConnector = "No RootConnector are selected." ;
     private const string ErrorMessageNoSpace = "Find space cannot be found." ;
-    private const string ErrorMessageNoGrandParentVav = "No VAV on the space group 0" ;
+    private const string ErrorMessageNoParentVav = "No VAV on the space group 0" ;
 
     protected abstract AddInType GetAddInType() ;
 
-    private record SelectState( Connector? AhuConnector, IReadOnlyList<FamilyInstance> GrandParentConnectors, Dictionary<int, List<FamilyInstance>> ParentConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
+    private record SelectState( Connector? RootConnector, IReadOnlyList<FamilyInstance> ParentConnectors, Dictionary<int, List<FamilyInstance>> ChildConnectors, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
 
     protected abstract DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo ) ;
     protected abstract MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType ) ;
@@ -32,22 +33,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      var (fromPickResult, grandParentConnectors, parentConnectors, errorMessage) = SelectionAhuAndFindVav( uiDocument, routingExecutor, GetAddInType() ) ;
+      var (fromPickResult, parentConnectors, childConnectors, errorMessage) = SelectionRootConnectorAndFindVav( uiDocument, routingExecutor, GetAddInType() ) ;
       if ( null != errorMessage ) return ( false, errorMessage ) ;
-      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, grandParentConnectors.First() ) ;
+      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, parentConnectors.First() ) ;
       if ( true != property?.DialogResult ) return ( false, null ) ;
-      if ( GetMEPSystemClassificationInfoFromSystemType( property.GetSystemType() ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, grandParentConnectors, parentConnectors, property, classificationInfo ) ) ;
+      if ( GetMEPSystemClassificationInfoFromSystemType( property.GetSystemType() ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, parentConnectors, childConnectors, property, classificationInfo ) ) ;
       return ( false, null ) ;
     }
 
-    private static ( ConnectorPicker.IPickResult fromPickResult, IReadOnlyList<FamilyInstance> grandParentConnectors, Dictionary<int, List<FamilyInstance>> parentConnectors, string? ErrorMessage ) SelectionAhuAndFindVav( UIDocument uiDocument, RoutingExecutor routingExecutor, AddInType addInType )
+    private static (ConnectorPicker.IPickResult fromPickResult, IReadOnlyList<FamilyInstance> parentConnectors, Dictionary<int, List<FamilyInstance>> childConnectors, string? ErrorMessage) SelectionRootConnectorAndFindVav( UIDocument uiDocument, RoutingExecutor routingExecutor, AddInType addInType )
     {
       var doc = uiDocument.Document ;
 
-      // Select AHU
+      // Select Root Connector
       var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
-      if ( fromPickResult.PickedConnector == null ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoAhu ) ;
-      // var ahuPosition = fromPickResult.PickedConnector.Origin ;
+      if ( fromPickResult.PickedConnector == null ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoRootConnector ) ;
 
       // Get all vav
       var dampers = doc.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
@@ -59,14 +59,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! spaceBoxes.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get group space
-      var (grandParentSpaces, parentSpaces) = GetGroupSpace( spaceBoxes ) ;
+      var (parentSpaces, childSpacesGroupedByBranchNum) = GetSortedSpaceGroups( spaceBoxes ) ;
 
-      var grandParentConnectors = grandParentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
-      var parentConnectors = GetVavFromSpace( doc, dampersInstances, parentSpaces ) ;
+      var parentConnectors = parentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
+      var childConnectors = GetVavsFromSpaces( doc, dampersInstances, childSpacesGroupedByBranchNum ) ;
 
-      if ( ! grandParentConnectors.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoGrandParentVav ) ;
+      if ( ! parentConnectors.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoParentVav ) ;
 
-      return ( fromPickResult, grandParentConnectors, parentConnectors, null ) ;
+      return ( fromPickResult, parentConnectors, childConnectors, null ) ;
     }
 
     /// <summary>
@@ -75,23 +75,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static FamilyInstance GetVavFromSpace( Document doc, IEnumerable<FamilyInstance> dampersInstances, Element space )
     {
       BoundingBoxXYZ spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
+      FamilyInstance vav = null! ;
+      foreach ( var fi in dampersInstances ) {
+        var vavPosition = fi.Location as LocationPoint ;
+        if ( vavPosition == null ) continue ;
+        if ( ! IsInSpace( spaceBox, vavPosition.Point ) ) continue ;
+        vav = fi ;
+        break ;
+      }
 
-      return ( from fi in dampersInstances let vavPosition = fi.Location as LocationPoint where vavPosition != null where IsInSpace( spaceBox, vavPosition.Point ) select fi ).FirstOrDefault()! ;
+      return vav ;
     }
 
     /// <summary>
     /// Get multi Vav from multi space 
     /// </summary>
-    private static Dictionary<int, List<FamilyInstance>> GetVavFromSpace( Document doc, FamilyInstance[] dampersInstances, Dictionary<int, List<Element>> parentSpaces )
+    private static Dictionary<int, List<FamilyInstance>> GetVavsFromSpaces( Document doc, FamilyInstance[] dampersInstances, Dictionary<int, List<Element>> childSpacesGroupedByBranchNum )
     {
       var result = new Dictionary<int, List<FamilyInstance>>() ;
-      foreach ( var (key, value) in parentSpaces ) {
-        foreach ( var vav in from space in value select space.get_BoundingBox( doc.ActiveView ) into spaceBox select ( from fi in dampersInstances let vavPosition = fi.Location as LocationPoint where vavPosition != null where IsInSpace( spaceBox, vavPosition.Point ) select fi ).FirstOrDefault()! ) {
-          if ( result.ContainsKey( key ) ) {
-            result[ key ].Add( vav ) ;
-          }
-          else {
-            result.Add( key, new List<FamilyInstance>() { vav } ) ;
+      foreach ( var (key, value) in childSpacesGroupedByBranchNum ) {
+        foreach ( var space in value ) {
+          BoundingBoxXYZ spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
+          foreach ( var fi in dampersInstances ) {
+            var vavPosition = fi.Location as LocationPoint ;
+            if ( vavPosition == null ) continue ;
+            if ( IsInSpace( spaceBox, vavPosition.Point ) ) {
+              if ( result.ContainsKey( key ) ) {
+                result[ key ].Add( fi ) ;
+              }
+              else {
+                result.Add( key, new List<FamilyInstance>() { fi } ) ;
+              }
+
+              break ;
+            }
           }
         }
       }
@@ -101,31 +118,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavPosition )
     {
-      var (x, y, z) = vavPosition ;
-      return spaceBox.Max.X > x && spaceBox.Max.Y > y && spaceBox.Max.Z > z && spaceBox.Min.X < x && spaceBox.Min.Y < y && spaceBox.Min.Z < z ;
+      return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
     }
 
-    private static ( IReadOnlyList<Element> grandParentSpaces, Dictionary<int, List<Element>> parentSpaces ) GetGroupSpace( IEnumerable<Element> spaceBoxes )
+    private static (IReadOnlyList<Element> parentSpaces, Dictionary<int, List<Element>> childSpacesGroupedByBranchNum) GetSortedSpaceGroups( IEnumerable<Element> spaceBoxes )
     {
-      List<Element> grandParentSpaces = new() ;
-      Dictionary<int, List<Element>> parentSpaces = new() ;
+      List<Element> parentSpaces = new() ;
+      Dictionary<int, List<Element>> childSpacesGroupedByBranchNum = new() ;
       foreach ( Element space in spaceBoxes ) {
         var branchNumber = space.GetSpaceBranchNumber() ;
         switch ( branchNumber ) {
           case (int)SpaceType.Invalid :
             continue ;
-          case (int)SpaceType.GrandParent :
+          case (int)SpaceType.Parent :
           {
-            grandParentSpaces.Add( space ) ;
+            parentSpaces.Add( space ) ;
             break ;
           }
           default :
           {
-            if ( parentSpaces.ContainsKey( branchNumber ) ) {
-              parentSpaces[ branchNumber ].Add( space ) ;
+            if ( childSpacesGroupedByBranchNum.ContainsKey( branchNumber ) ) {
+              childSpacesGroupedByBranchNum[ branchNumber ].Add( space ) ;
             }
             else {
-              parentSpaces.Add( branchNumber, new List<Element>() { space } ) ;
+              childSpacesGroupedByBranchNum.Add( branchNumber, new List<Element>() { space } ) ;
             }
 
             break ;
@@ -133,12 +149,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      grandParentSpaces.Sort( Compare ) ;
-      foreach ( var (key, value) in parentSpaces ) {
-        parentSpaces[ key ].Sort( CompareY ) ;
+      parentSpaces.Sort( Compare ) ;
+      foreach ( var (key, value) in childSpacesGroupedByBranchNum ) {
+        childSpacesGroupedByBranchNum[ key ].Sort( CompareY ) ;
       }
 
-      return ( grandParentSpaces, parentSpaces ) ;
+      return ( parentSpaces, childSpacesGroupedByBranchNum ) ;
     }
 
     private static int Compare( Element a, Element b )
@@ -207,7 +223,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var selectState = state as SelectState ?? throw new InvalidOperationException() ;
-      var (ahuConnector, grandParentConnectors, parentConnectors, routeProperty, classificationInfo) = selectState ;
+      var (rootConnector, parentConnectors, childConnectors, routeProperty, classificationInfo) = selectState ;
 
       var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
@@ -222,13 +238,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
 
       // Main routes
-      var ahuConnectorEndPoint = new ConnectorEndPoint( ahuConnector!, radius ) ;
-      var vavConnectorEndPoint = new ConnectorEndPoint( grandParentConnectors.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;
-      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, ahuConnectorEndPoint, vavConnectorEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
+      var rootConnectorEndPoint = new ConnectorEndPoint( rootConnector!, radius ) ;
+      var vavConnectorEndPoint = new ConnectorEndPoint( parentConnectors.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;
+      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, rootConnectorEndPoint, vavConnectorEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
 
       // Branch routes
-      foreach ( var vav in grandParentConnectors.Take( grandParentConnectors.Count - 1 ) ) {
-        var diameterChild = grandParentConnectors.Last().LookupParameter( "ダクト径" ).AsDouble() ;
+      foreach ( var vav in parentConnectors.Take( parentConnectors.Count - 1 ) ) {
+        var diameterChild = parentConnectors.Last().LookupParameter( "ダクト径" ).AsDouble() ;
         var radiusChild = diameterChild * 0.5 ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
@@ -237,7 +253,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         result.Add( ( subRouteName, segment ) ) ;
       }
 
-      foreach ( var (_, value) in parentConnectors ) {
+      foreach ( var (_, value) in childConnectors ) {
         var diameterChild = value.Last().LookupParameter( "ダクト径" ).AsDouble() * 2 ;
         var radiusChild = diameterChild * 0.5 ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;

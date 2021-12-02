@@ -6,7 +6,7 @@ namespace Arent3d.Architecture.Routing
   public enum SpaceType
   {
     Invalid = -1,
-    GrandParent = 0
+    Parent = 0
   }
 
   public static class SpaceElementExtensions
