@@ -48,7 +48,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // Select Root Connector
       var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
       if ( fromPickResult.PickedConnector == null ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoRootConnector ) ;
-      var rootConnectorPos = fromPickResult.PickedConnector.Origin ;
 
       // Get all vav
       var dampers = doc.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
@@ -60,7 +59,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! spaceBoxes.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get group space
-      var (parentSpaces, childSpacesGroupedByBranchNum) = GetSortedSpaceGroups( spaceBoxes, rootConnectorPos ) ;
+      var (parentSpaces, childSpacesGroupedByBranchNum) = GetSortedSpaceGroups( spaceBoxes, fromPickResult.PickedConnector ) ;
 
       var parentConnectors = parentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
       var childConnectors = GetVavsFromSpaces( doc, dampersInstances, childSpacesGroupedByBranchNum ) ;
@@ -122,7 +121,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
     }
 
-    private static (IReadOnlyList<Element> parentSpaces, Dictionary<int, List<Element>> childSpacesGroupedByBranchNum) GetSortedSpaceGroups( IEnumerable<Element> spaceBoxes, XYZ rootConnectorPos )
+    private static (IReadOnlyList<Element> parentSpaces, Dictionary<int, List<Element>> childSpacesGroupedByBranchNum) GetSortedSpaceGroups( IEnumerable<Element> spaceBoxes, Connector rootConnector )
     {
       List<Element> parentSpaces = new() ;
       Dictionary<int, List<Element>> childSpacesGroupedByBranchNum = new() ;
@@ -150,7 +149,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      parentSpaces.Sort( ( a, b ) => CompareDistanceBasisZ( rootConnectorPos, a, b ) ) ;
+      parentSpaces.Sort( ( a, b ) => CompareDistanceBasisZ( rootConnector, a, b ) ) ;
 
       foreach ( var (key, value) in childSpacesGroupedByBranchNum ) {
         childSpacesGroupedByBranchNum[ key ].Sort( CompareY ) ;
@@ -159,13 +158,42 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( parentSpaces, childSpacesGroupedByBranchNum ) ;
     }
 
-    private static int CompareDistanceBasisZ( XYZ rootConnectorPos, Element a, Element b )
+    private static int CompareDistanceBasisZ( IConnector rootConnector, Element a, Element b )
     {
       if ( a.Location is not LocationPoint aPos || b.Location is not LocationPoint bPos ) return default ;
-      var rootConnVec = rootConnectorPos.To3dPoint().To2d() ;
-      var aPosVec = aPos.Point.To3dPoint().To2d() ;
-      var bPosVec = bPos.Point.To3dPoint().To2d() ;
-      return Vector2d.Distance( rootConnVec, aPosVec ).CompareTo( Vector2d.Distance( rootConnVec, bPosVec ) ) ;
+
+      return DistanceFromRoot( rootConnector, aPos ).CompareTo( DistanceFromRoot( rootConnector, bPos ) ) ;
+    }
+
+    private static double DistanceFromRoot( IConnector rootConnector, LocationPoint connPos )
+    {
+      var rootConnectorPos = rootConnector.Origin ;
+      var rootConnVec = ToVector2d( rootConnectorPos ) ;
+      var vec = ToVector2d( connPos.Point ) ;
+
+      var connBasisZ = ToVector2d( rootConnector.CoordinateSystem.BasisZ ) ;
+      var rootVavVector = vec - rootConnVec ;
+      var angle = GetAngleBetweenVector( connBasisZ, rootVavVector ) ;
+
+      return Math.Cos( angle ) * rootVavVector.magnitude ;
+    }
+
+    private static Vector2d ToVector2d( XYZ vector3d )
+    {
+      return new Vector2d( vector3d.X, vector3d.Y ) ;
+    }
+
+    // Get the angle between two vectors
+    private static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
+    {
+      // return the angle (in radian)
+      return Math.Acos( GetDotProduct( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
+    }
+
+    // Get the dot product of two vectors
+    private static double GetDotProduct( Vector2d rootVec, Vector2d otherVector )
+    {
+      return ( ( rootVec.x * otherVector.x ) + ( rootVec.y * otherVector.y ) ) ;
     }
 
     private static int CompareY( Element a, Element b )
