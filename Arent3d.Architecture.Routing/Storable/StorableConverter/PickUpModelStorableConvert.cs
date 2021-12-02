@@ -28,7 +28,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Supplement2,
       Group,
       Layer,
-      Classification
+      Classification,
+      Standard,
+      PickUpNumber,
+      Direction
     }
     
     protected override PickUpModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -54,8 +57,11 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var group = deserializer.GetString( SerializeField.Group ) ;
       var layer = deserializer.GetString( SerializeField.Layer ) ;
       var classification = deserializer.GetString( SerializeField.Classification ) ;
+      var standard = deserializer.GetString( SerializeField.Standard ) ;
+      var pickUpNumber = deserializer.GetString( SerializeField.PickUpNumber ) ;
+      var direction = deserializer.GetString( SerializeField.Direction ) ;
 
-      return new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification ) ;
+      return new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, PickUpModel customTypeValue )
@@ -80,6 +86,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Group, customTypeValue.Group ) ;
       serializerObject.AddNonNull( SerializeField.Layer, customTypeValue.Layer ) ;
       serializerObject.AddNonNull( SerializeField.Classification, customTypeValue.Classification ) ;
+      serializerObject.AddNonNull( SerializeField.Standard, customTypeValue.Standard ) ;
+      serializerObject.AddNonNull( SerializeField.PickUpNumber, customTypeValue.PickUpNumber ) ;
+      serializerObject.AddNonNull( SerializeField.Direction, customTypeValue.Direction ) ;
 
       return serializerObject ;
     }

@@ -55,6 +55,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       const string connectorPointType = "Connector" ;
       const string terminatePointType = "Terminate Point" ;
       const string passPointType = "Pass Point" ;
+      const string passPointBranchType = "Pass Point Branch" ;
       var elementId = string.Empty ;
       switch ( Type ) {
         case connectorPointType :
@@ -63,7 +64,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
           elementId = deserializer.GetElementId( SerializeField.ElementId ) is not { } connectorId ? string.Empty : connectorId.IntegerValue.ToString() ;
           break ;
         }
-        case terminatePointType or passPointType :
+        case terminatePointType or passPointType or passPointBranchType :
           elementId = Param ;
           break ;
       }
