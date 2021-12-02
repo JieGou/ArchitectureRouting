@@ -48,6 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // Select Root Connector
       var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
       if ( fromPickResult.PickedConnector == null ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoRootConnector ) ;
+      var rootConnectorPos = fromPickResult.PickedConnector.Origin ;
 
       // Get all vav
       var dampers = doc.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
@@ -59,7 +60,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! spaceBoxes.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get group space
-      var (parentSpaces, childSpacesGroupedByBranchNum) = GetSortedSpaceGroups( spaceBoxes ) ;
+      var (parentSpaces, childSpacesGroupedByBranchNum) = GetSortedSpaceGroups( spaceBoxes, rootConnectorPos ) ;
 
       var parentConnectors = parentSpaces.ConvertAll( space => GetVavFromSpace( doc, dampersInstances, space ) ) ;
       var childConnectors = GetVavsFromSpaces( doc, dampersInstances, childSpacesGroupedByBranchNum ) ;
@@ -121,7 +122,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
     }
 
-    private static (IReadOnlyList<Element> parentSpaces, Dictionary<int, List<Element>> childSpacesGroupedByBranchNum) GetSortedSpaceGroups( IEnumerable<Element> spaceBoxes )
+    private static (IReadOnlyList<Element> parentSpaces, Dictionary<int, List<Element>> childSpacesGroupedByBranchNum) GetSortedSpaceGroups( IEnumerable<Element> spaceBoxes, XYZ rootConnectorPos )
     {
       List<Element> parentSpaces = new() ;
       Dictionary<int, List<Element>> childSpacesGroupedByBranchNum = new() ;
@@ -149,7 +150,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      parentSpaces.Sort( Compare ) ;
+      parentSpaces.Sort( ( a, b ) => CompareDistanceBasisZ( rootConnectorPos, a, b ) ) ;
+
       foreach ( var (key, value) in childSpacesGroupedByBranchNum ) {
         childSpacesGroupedByBranchNum[ key ].Sort( CompareY ) ;
       }
@@ -157,10 +159,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( parentSpaces, childSpacesGroupedByBranchNum ) ;
     }
 
-    private static int Compare( Element a, Element b )
+    private static int CompareDistanceBasisZ( XYZ rootConnectorPos, Element a, Element b )
     {
       if ( a.Location is not LocationPoint aPos || b.Location is not LocationPoint bPos ) return default ;
-      return aPos.Point.X.CompareTo( bPos.Point.X ) ;
+      var rootConnVec = rootConnectorPos.To3dPoint().To2d() ;
+      var aPosVec = aPos.Point.To3dPoint().To2d() ;
+      var bPosVec = bPos.Point.To3dPoint().To2d() ;
+      return Vector2d.Distance( rootConnVec, aPosVec ).CompareTo( Vector2d.Distance( rootConnVec, bPosVec ) ) ;
     }
 
     private static int CompareY( Element a, Element b )
