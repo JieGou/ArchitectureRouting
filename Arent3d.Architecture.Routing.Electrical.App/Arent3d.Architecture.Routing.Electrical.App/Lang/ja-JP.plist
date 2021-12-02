@@ -283,7 +283,7 @@
         <string>失敗</string>
 
         <key>Dialog.Electrical.SetConduitProperty.Title</key>
-        <string>失敗</string>
+        <string>適用結果</string>
 
 
         <!-- Parameter Names -->
