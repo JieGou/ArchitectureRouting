@@ -68,34 +68,45 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <GroupBox Grid.Row="3" Header="出力ファイル種類" DockPanel.Dock="Left" Width="200" Height="115" FontSize="16" VerticalAlignment="Top" Margin="10" HorizontalAlignment="Left">
+        <GroupBox Grid.Row="3" Header="出力ファイル種類" DockPanel.Dock="Left" Width="180" Height="115" FontSize="16" VerticalAlignment="Top" Margin="10" HorizontalAlignment="Left">
             <ListBox Name="LbFileType" HorizontalContentAlignment="Stretch" BorderBrush="White" >
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <CheckBox IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14"/>
+                        <CheckBox IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" Checked="FileType_Checked" Unchecked="FileType_Unchecked" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
         </GroupBox>
 
-        <GroupBox Grid.Row="3" Header="出力項目" DockPanel.Dock="Left" Width="250" Height="115" FontSize="16" VerticalAlignment="Top" Margin="210, 10, 10, 10" HorizontalAlignment="Left">
+        <GroupBox Grid.Row="3" Header="出力項目" DockPanel.Dock="Left" Width="220" Height="115" FontSize="16" VerticalAlignment="Top" Margin="190, 10, 10, 10" HorizontalAlignment="Left">
             <DockPanel>
-                <ListBox Name="LbOutputItem" HorizontalContentAlignment="Stretch" Width="150" BorderBrush="White" >
+                <ListBox Name="LbOutputItem" HorizontalContentAlignment="Stretch" Width="140" BorderBrush="White" >
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <RadioButton GroupName="OutputItem" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14"/>
+                            <RadioButton GroupName="OutputItem" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" Checked="OutputItem_Checked"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
                 <Button x:Name="BtnSetting"
                         Content="設定"
                         Click="Button_Setting"
-                        Margin="0,0,20, 0"
+                        Margin="0,0,10, 0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Height="35"
-                        Width="50" />
+                        Width="50" 
+                        IsEnabled="False"/>
             </DockPanel>
+        </GroupBox>
+        
+        <GroupBox Grid.Row="3" Header="ドーコン" DockPanel.Dock="Left" Width="100" Height="115" FontSize="16" VerticalAlignment="Top" Margin="410, 10, 10, 10" HorizontalAlignment="Left">
+            <ListBox Name="LbDocon" HorizontalContentAlignment="Stretch" BorderBrush="White" >
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton GroupName="Docon" IsChecked="{Binding TheValue}" Content="{Binding TheText}" Margin="5, 5, 0, 0" FontSize="14" Checked="DoconItem_Checked"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </GroupBox>
 
         <StackPanel Grid.Row="3" HorizontalAlignment="Right" Margin="420, 40, 10, 10">
