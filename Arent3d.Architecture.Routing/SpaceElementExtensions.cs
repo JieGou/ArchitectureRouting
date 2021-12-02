@@ -14,8 +14,7 @@ namespace Arent3d.Architecture.Routing
     public static int GetSpaceBranchNumber( this Element space )
     {
       if ( ! space.HasParameter( BranchNumberParameter.BranchNumber ) ) return (int)SpaceType.Invalid ;
-      if ( false == space.TryGetProperty( BranchNumberParameter.BranchNumber, out int spaceNum ) ) return (int)SpaceType.Invalid ;
-      return spaceNum ;
+      return space.GetPropertyInt( BranchNumberParameter.BranchNumber ) ;
     }
   }
 }
