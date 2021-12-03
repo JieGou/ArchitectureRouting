@@ -1,4 +1,5 @@
-﻿using System.Linq ;
+﻿using System.Collections.Generic ;
+using System.Linq ;
 using System.Threading ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -33,6 +34,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {
+        var conduits = new List<Element>() ;
+        if ( cnsStorables.ConduitType == CnsSettingStorable.ConstructionItemType.Conduit ) {
+          MessageBox.Show(
+            "Dialog.Electrical.SelectConduit.Message".GetAppStringByKeyOrDefault( "Please select a range." ),
+            "Dialog.Electrical.SelectConduit.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
+          var selectedElements = UiDocument.Selection
+            .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
+            .Where( p => p is FamilyInstance or Conduit ) ;
+          conduits = selectedElements.ToList() ;
+          if ( ! conduits.Any() ) {
+            message = "Dialog.Electrical.SelectConduit.NoConduitMessage".GetAppStringByKeyOrDefault(
+              "No Conduits are selected." ) ;
+            return Result.Cancelled ;
+          }
+        }
+
         return document.Transaction( "TransactionName.Commands.Routing.CnsSetting", _ =>
         {
           DataProcessBeforeSave( cnsStorables ) ;
@@ -47,27 +64,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           if ( cnsStorables.ConduitType == CnsSettingStorable.ConstructionItemType.Conduit ) {
             try {
-              var selectedElements = UiDocument.Selection
-                .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-                .Where( p => p is FamilyInstance or Conduit ) ;
-
-              var conduits = selectedElements.ToList() ;
-              if ( conduits.Any() ) {
-                var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
-                foreach ( var conduit in conduits ) {
-                  SetConstructionItemForConduit( conduit, categoryName ) ;
-                }
-
-                MessageBox.Show( "Dialog.Electrical.SetConduitProperty.Success".GetAppStringByKeyOrDefault( "Success" ),
-                  "Dialog.Electrical.SetConduitProperty.Title".GetAppStringByKeyOrDefault(
-                    "Construction item addition result" ), MessageBoxButtons.OK ) ;
+              var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
+              foreach ( var conduit in conduits ) {
+                SetConstructionItemForConduit( conduit, categoryName ) ;
               }
-              else {
-                MessageBox.Show(
-                  "Dialog.Electrical.SelectConduit.Message".GetAppStringByKeyOrDefault( "Please select a range." ),
-                  "Dialog.Electrical.SelectConduit.Title".GetAppStringByKeyOrDefault( "Message" ),
-                  MessageBoxButtons.OK ) ;
-              }
+
+              MessageBox.Show( "Dialog.Electrical.SetConduitProperty.Success".GetAppStringByKeyOrDefault( "Success" ),
+                "Dialog.Electrical.SetConduitProperty.Title".GetAppStringByKeyOrDefault(
+                  "Construction item addition result" ), MessageBoxButtons.OK ) ;
             }
             catch {
               MessageBox.Show( "Dialog.Electrical.SetConduitProperty.Failure".GetAppStringByKeyOrDefault( "Failed" ),
