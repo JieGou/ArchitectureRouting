@@ -5,6 +5,7 @@ using Autodesk.Revit.UI ;
 using System.Collections.Generic ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 using System ;
+using System.Diagnostics ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit ;
 using System.Linq ;
@@ -102,7 +103,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       IList<Element> spaces )
     {
       Dictionary<int, List<Element>> branchNumberToAreaDictionary = new() ;
-      foreach ( Element space in spaces ) {
+      foreach ( Element space in spaces )
+      {
         space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
         if ( branchNumberToAreaDictionary.ContainsKey( branchNumber ) ) {
           branchNumberToAreaDictionary[ branchNumber ].Add( space ) ;
@@ -121,6 +123,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         foreach ( var space in spaces ) {
+          if (CheckFASUAndVAVExistInSpace(document, space) != false) continue;
+          
           // Add object to the document
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
@@ -177,6 +181,29 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return Result.Succeeded ;
+    }
+
+    private static bool CheckFASUAndVAVExistInSpace(Document document, Element space)
+    {
+      BoundingBoxXYZ boxOfSpace;
+      BoundingBoxXYZ boxOfFASU;
+      
+      boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
+      if (boxOfSpace == null) return false;
+      
+      foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_250Phi ) )
+      {
+        boxOfFASU = familyInstance.get_BoundingBox(document.ActiveView);
+        if ( boxOfSpace == null ) continue ;
+          
+        if ((boxOfSpace.Min.X <= boxOfFASU.Min.X && boxOfSpace.Max.X >= boxOfFASU.Max.X) &&
+            (boxOfSpace.Min.Y <= boxOfFASU.Min.Y && boxOfSpace.Max.Y >= boxOfFASU.Max.Y))
+        {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     private static Dictionary<Element, double> CalculateRotationAnglesOfFASUsAndVAVs( Document document,
