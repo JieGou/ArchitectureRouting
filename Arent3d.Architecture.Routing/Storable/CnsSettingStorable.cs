@@ -20,6 +20,14 @@ namespace Arent3d.Architecture.Routing.Storable
     public const string StorableName = "Cns Setting" ;
     private const string CnsSettingField = "CnsSetting" ;
     public ObservableCollection<CnsSettingModel> CnsSettingData { get ; set ; }
+    public enum ConstructionItemType
+    {
+      None, // デフォルト：工事項目を設定しない
+      Connector //配線に工事項目を設定する
+    }
+    
+    public int SelectedIndex { get ; set ; }
+    public ConstructionItemType ConnectorType { get ; set ; }
     
     /// <summary>
     /// for loading from storage.
@@ -37,6 +45,8 @@ namespace Arent3d.Architecture.Routing.Storable
     public CnsSettingStorable( Document document ) : base( document, false )
     {
       CnsSettingData = new ObservableCollection<CnsSettingModel>();
+      SelectedIndex = 0 ;
+      ConnectorType = ConstructionItemType.None ;
     }
 
     public override string Name => StorableName ;

@@ -1,22 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Configuration;
 using System.Threading;
-using System.Windows.Data;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 using Arent3d.Architecture.Routing.AppBase.Forms;
+using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using Arent3d.Architecture.Routing.Extensions;
 using Arent3d.Architecture.Routing.Storable;
 using Arent3d.Architecture.Routing.Storable.Model;
 using Arent3d.Revit;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using Autodesk.Revit.UI.Selection;
-using Application = Autodesk.Revit.ApplicationServices.Application;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar;
 
 #pragma warning disable 618
@@ -40,6 +37,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             dialog.ShowDialog();
             if (dialog.DialogResult ?? false)
             {
+                var connectors = new List<Element>() ;
+                if ( cnsStorables.ConnectorType == CnsSettingStorable.ConstructionItemType.Connector ) {
+                    MessageBox.Show(
+                        "Dialog.Electrical.SelectConector.Message".GetAppStringByKeyOrDefault( "Please select a range." ),
+                        "Dialog.Electrical.SelectConector.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
+                    var selectedElements = UiDocument.Selection
+                        .PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( x=>x is FamilyInstance );
+                    connectors = selectedElements.ToList() ;
+                    if ( ! connectors.Any() ) {
+                        message = "Dialog.Electrical.SelectConnector.NoConnectorMessage".GetAppStringByKeyOrDefault(
+                            "No Connectors are selected." ) ;
+                        return Result.Cancelled ;
+                    }
+                }
+                
                 return document.Transaction("TransactionName.Commands.Routing.CnsSetting", _ =>
                 {
                     DataProcessBeforeSave(cnsStorables);
@@ -54,22 +66,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                         }
                     }
 
-                    if (string.IsNullOrEmpty(viewModel.ApplyToSymbolsText)) return Result.Succeeded;
-                    var selectedElements = UiDocument.Selection.PickObjects(ObjectType.Element);
-                    foreach (var item in selectedElements)
-                    {
-                        try
-                        {
-                            
-                            Category connector = document.Settings.Categories.get_Item(BuiltInCategory.OST_ElectricalFixtures);
-                            CategorySet categorySet = UiDocument.Application.Application.Create.NewCategorySet();
-                            categorySet.Insert(connector);
-                            RawCreateProjectParameterFromNewSharedParameter(UiDocument.Application.Application, "ConstructionClassification", "Construction Classification", ParameterType.Text, true, categorySet, BuiltInParameterGroup.PG_IDENTITY_DATA, false, viewModel.ApplyToSymbolsText);
-                            
+                    if ( cnsStorables.ConnectorType == CnsSettingStorable.ConstructionItemType.Connector ) {
+                        try {
+                            var categoryName = viewModel.ApplyToSymbolsText ;
+                            foreach ( var connector in connectors ) {
+                                SetConstructionClassificationForConnector( connector, categoryName ) ;
+                            }
+
+                            MessageBox.Show( "Dialog.Electrical.SetConnectorProperty.Success".GetAppStringByKeyOrDefault( "Success" ),
+                                "Dialog.Electrical.SetConnectorProperty.Title".GetAppStringByKeyOrDefault(
+                                    "Construction item addition result" ), MessageBoxButtons.OK ) ;
                         }
-                        catch (Exception ex)
-                        {
-                            TaskDialog.Show("Error", ex.Message);
+                        catch(Exception ex) {
+                            
+                            MessageBox.Show( ex.Message,
+                                "Dialog.Electrical.SetConnectorProperty.Title".GetAppStringByKeyOrDefault(
+                                    "Construction item addition result" ), MessageBoxButtons.OK ) ;
+                            return Result.Cancelled ;
                         }
                     }
 
@@ -120,33 +133,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 }
             }
         }
-
-        [ObsoleteAttribute("This constructor is deprecated in Revit 2022 and may be removed in a future version of Revit. Please use the ExternalDefinitionCreationOptions(string, ForgeTypeId) overload instead.")]
-        private static void RawCreateProjectParameterFromNewSharedParameter(Application app, string defGroup, string name, ParameterType type, bool visible, CategorySet cats, BuiltInParameterGroup paramGroup, bool inst, string applyToSymbolsText)
+        
+        private static void SetConstructionClassificationForConnector( Element element, string categoryName )
         {
-            DefinitionFile defFile = app.OpenSharedParameterFile();
-            if (defFile == null) throw new Exception("No SharedParameter File!");
-            if (defFile.Groups.All(x => x.Name != "ConstructionClassification"))
-            {
-                ExternalDefinitionCreationOptions option = new ExternalDefinitionCreationOptions(name, type);
-                option.Visible = true;
-                option.UserModifiable = false;
-                option.Visible = true;
-                var def = app.OpenSharedParameterFile().Groups.Create(defGroup).Definitions.Create(option) as ExternalDefinition;
-                Autodesk.Revit.DB.Binding binding = app.Create.NewTypeBinding(cats);
-                if (inst) binding = app.Create.NewInstanceBinding(cats);
-                BindingMap map = (new UIApplication(app)).ActiveUIDocument.Document.ParameterBindings;
-                map.Insert(def, binding, paramGroup);
-            }
-            else
-            {
-                ExternalDefinitionCreationOptions option = new ExternalDefinitionCreationOptions(name, type);
-                var def = app.OpenSharedParameterFile().Groups.FirstOrDefault(x => x.Name == "ConstructionClassification")?.Definitions.FirstOrDefault() as ExternalDefinition;
-                Autodesk.Revit.DB.Binding binding = app.Create.NewTypeBinding(cats);
-                if (inst) binding = app.Create.NewInstanceBinding(cats);
-                BindingMap map = (new UIApplication(app)).ActiveUIDocument.Document.ParameterBindings;
-                map.Insert(def, binding, paramGroup);
-            }
+            element.SetProperty( RoutingFamilyLinkedParameter.ConstructionClassification, categoryName ) ;
         }
     }
 }

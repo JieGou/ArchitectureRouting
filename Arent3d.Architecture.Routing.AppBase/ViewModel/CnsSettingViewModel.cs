@@ -4,10 +4,8 @@ using Arent3d.Architecture.Routing.Storable.Model;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Windows.Forms;
 using System.Windows.Input;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing;
-using Autodesk.Revit.DB.Structure;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -52,7 +50,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             
             ApplyToSymbolsCommand = new RelayCommand<int>(
                 (p) => true, // CanExecute()
-                ApplyToSymbols // Execute()
+                (seletectedIndex)=>
+                {
+                    ApplyToSymbols( cnsStorables, seletectedIndex ) ;
+                }
+                // Execute()
             );
         }
 
@@ -138,16 +140,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             UpdateSequence();
         }
 
-        private  void ApplyToSymbols(int index)
+        private  void ApplyToSymbols(CnsSettingStorable cnsStorables, int seletectedIndex)
         {
-            if (index == -1)
+            if (seletectedIndex == -1)
             {
                 ApplyToSymbolsText = "";
             }
             else
             {
-                var item = CnsSettingModels.ElementAt(index);
+                var item = CnsSettingModels.ElementAt(seletectedIndex);
                 ApplyToSymbolsText = item.CategoryName;
+                cnsStorables.ConnectorType = CnsSettingStorable.ConstructionItemType.Connector ;
             }
         }
         

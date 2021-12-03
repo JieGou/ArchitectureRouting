@@ -73,16 +73,16 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "3285f3e8-1838-4eba-a676-1a2af4708e7a" ), NameOnRevit( "Route Connector Relation Ids" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ElementsUsedForUI ) )]
     RouteConnectorRelationIds,
+    
+    [ParameterGuid( "28b41f1c-301a-4009-ade3-3934d7e6389b" ), NameOnRevit( "Construction Classification" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
+    ConstructionClassification,
   }
   public enum ConnectorFamilyParameter
   {
     [ParameterGuid( "442b05ee-df38-4595-93c9-e2d7cfa227e9" ), NameOnRevit( "Connector Type" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
     ConnectorType,
-    
-    [ParameterGuid( "28b41f1c-301a-4009-ade3-3934d7e6389b" ), NameOnRevit( "Construction Classification" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
-    ConstructionClassification,
   }
 
   public enum BranchNumberParameter

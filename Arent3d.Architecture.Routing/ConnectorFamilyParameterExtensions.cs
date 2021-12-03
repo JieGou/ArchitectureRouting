@@ -16,11 +16,6 @@ namespace Arent3d.Architecture.Routing
     {
       connectorFamilyInstance.SetProperty( ConnectorFamilyParameter.ConnectorType, GetConnectorFamilyTypeName( type ) ) ;
     }
-    
-    public static void SetConnectorConstructionClassification( this FamilyInstance connectorFamilyInstance, string value )
-    {
-      connectorFamilyInstance.SetProperty( ConnectorFamilyParameter.ConstructionClassification, value ) ;
-    }
 
     public static ConnectorFamilyType? GetConnectorFamilyType( this FamilyInstance connectorFamilyInstance )
     {
