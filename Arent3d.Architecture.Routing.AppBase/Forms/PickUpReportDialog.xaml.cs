@@ -23,11 +23,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     private const string SummaryFileType = "拾い出し集計表" ;
     private const string ConfirmationFileType = "拾い根拠確認表" ;
-    private const string UserFileType = "ユーザファイル" ;
     private const string DoconOff = "ドーコンOFF" ;
     private const string DoconOn = "ドーコンON" ;
+    private const string On = "ON" ;
+    private const string Off = "OFF" ;
     private const string SummaryFileName = "_拾い出し集計表.xlsx" ;
     private const string ConfirmationFileName = "_拾い根拠確認表.xlsx" ;
+    private const string DefaultConstructionItem = "未設定" ;
     private readonly Document _document ;
     private readonly List<PickUpModel> _pickUpModels ;
     private readonly List<ListBoxItem> _fileTypes ;
@@ -47,18 +49,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CreateCheckBoxList() ;
       var pickUpStorable = _document.GetAllStorables<PickUpStorable>().FirstOrDefault() ;
       if ( pickUpStorable != null ) _pickUpModels = pickUpStorable.AllPickUpModelData ;
-    }
-
-    private void Button_Register( object sender, RoutedEventArgs e )
-    {
-    }
-
-    private void Button_Delete( object sender, RoutedEventArgs e )
-    {
-    }
-
-    private void Button_DeleteAll( object sender, RoutedEventArgs e )
-    {
     }
 
     private void Button_Reference( object sender, RoutedEventArgs e )
@@ -98,11 +88,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       _fileTypes.Add( new ListBoxItem { TheText = SummaryFileType, TheValue = false } ) ;
       _fileTypes.Add( new ListBoxItem { TheText = ConfirmationFileType, TheValue = false } ) ;
-      _fileTypes.Add( new ListBoxItem { TheText = UserFileType, TheValue = true } ) ;
       LbFileType.ItemsSource = _fileTypes ;
 
-      _doconTypes.Add( new ListBoxItem { TheText = "ON", TheValue = true } ) ;
-      _doconTypes.Add( new ListBoxItem { TheText = "OFF", TheValue = false } ) ;
+      _doconTypes.Add( new ListBoxItem { TheText = On, TheValue = true } ) ;
+      _doconTypes.Add( new ListBoxItem { TheText = Off, TheValue = false } ) ;
       LbDocon.ItemsSource = _doconTypes ;
     }
 
@@ -111,7 +100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _fileNames = new List<string>() ;
       var radioButton = sender as RadioButton ;
       var fileTypes = _fileTypes.Where( f => f.TheValue == true ).Select( f => f.TheText ).ToList() ;
-      var docon = radioButton!.Content.ToString() == "ON" ? DoconOn : DoconOff ;
+      var docon = radioButton!.Content.ToString() == On ? DoconOn : DoconOff ;
       foreach ( var fileType in fileTypes ) {
         string fileName = string.Empty ;
         switch ( fileType ) {
@@ -187,7 +176,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! _pickUpModels.Any() ) MessageBox.Show( "Don't have pick up data.", "Message" ) ;
       try {
         var constructionItemList = GetConstructionItemList() ;
-        if ( ! constructionItemList.Any() ) constructionItemList.Add( "未設定" ) ;
+        if ( ! constructionItemList.Any() ) constructionItemList.Add( DefaultConstructionItem ) ;
         foreach ( var fileName in _fileNames ) {
           XSSFWorkbook workbook = new XSSFWorkbook() ;
 

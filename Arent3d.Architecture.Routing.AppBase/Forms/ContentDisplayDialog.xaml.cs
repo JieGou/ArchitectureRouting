@@ -20,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class ContentDisplayDialog : Window
   {
+    private const string DefaultConstructionItem = "未設定" ;
     private readonly Document _document ;
     private List<PickUpModel> _pickUpModels ;
     private PickUpStorable _pickUpStorable ;
@@ -178,7 +179,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var element = _document.GetElement( connector.Id ) ;
         var item = string.Empty ;
         var floor = _document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ;
-        var constructionItems = productType == ProductType.Conduit ? constructionItemList[ index ] : "未設定" ;
+        var constructionItems = productType == ProductType.Conduit ? constructionItemList[ index ] : DefaultConstructionItem ;
         var equipmentType = productType.GetFieldName() ;
         var productName = string.Empty ;
         var use = string.Empty ;
@@ -326,7 +327,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           break ;
       }
 
-      constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? "未設定" : constructionItem ) ;
+      constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem ) ;
     }
 
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string elementId, string fromElementId, List<int> pickUpNumbers )
