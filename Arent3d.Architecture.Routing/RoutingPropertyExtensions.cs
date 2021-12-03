@@ -97,8 +97,7 @@ namespace Arent3d.Architecture.Routing
   public enum BranchNumberParameter
   {
     [ParameterGuid( "01c73735-4b79-4729-91af-3dede453c482" ), NameOnRevit( "BranchNumber" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ),
-      nameof( BuiltInCategorySets.SpaceElements ) )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.SpaceElements ) )]
     BranchNumber
   }
   
