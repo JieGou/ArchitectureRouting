@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var doc = uiDocument.Document ;
 
       // Select Root Connector
-      var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
+      var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.AutoRouteVavs.PickRootConnector".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
       if ( fromPickResult.PickedConnector == null ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoRootConnector ) ;
 
       // Get all vav
@@ -149,33 +149,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      parentSpaces.Sort( ( a, b ) => CompareDistanceBasisZ( rootConnector, a, b ) ) ;
+      parentSpaces.Sort( ( a, b ) => CompareDistanceBasisZ( rootConnector, a, b, false ) ) ;
 
       foreach ( var (key, value) in childSpacesGroupedByBranchNum ) {
-        childSpacesGroupedByBranchNum[ key ].Sort( CompareY ) ;
+        childSpacesGroupedByBranchNum[ key ].Sort( ( a, b ) => CompareDistanceBasisZ( rootConnector, a, b, true ) ) ;
       }
 
       return ( parentSpaces, childSpacesGroupedByBranchNum ) ;
     }
 
-    private static int CompareDistanceBasisZ( IConnector rootConnector, Element a, Element b )
+    private static int CompareDistanceBasisZ( IConnector rootConnector, Element a, Element b, bool isRotate )
     {
       if ( a.Location is not LocationPoint aPos || b.Location is not LocationPoint bPos ) return default ;
 
-      return DistanceFromRoot( rootConnector, aPos ).CompareTo( DistanceFromRoot( rootConnector, bPos ) ) ;
+      return DistanceFromRoot( rootConnector, aPos, isRotate ).CompareTo( DistanceFromRoot( rootConnector, bPos, isRotate ) ) ;
     }
 
-    private static double DistanceFromRoot( IConnector rootConnector, LocationPoint connPos )
+    private static double DistanceFromRoot( IConnector rootConnector, LocationPoint connPos, bool isRotate )
     {
       var rootConnectorPos = rootConnector.Origin ;
       var rootConnVec = ToVector2d( rootConnectorPos ) ;
       var vec = ToVector2d( connPos.Point ) ;
 
       var connBasisZ = ToVector2d( rootConnector.CoordinateSystem.BasisZ ) ;
+      var calculateDir = isRotate ? new Vector2d( -connBasisZ.y, connBasisZ.x ) : connBasisZ ;
       var rootVavVector = vec - rootConnVec ;
-      var angle = GetAngleBetweenVector( connBasisZ, rootVavVector ) ;
+      var angle = GetAngleBetweenVector( calculateDir, rootVavVector ) ;
 
-      return Math.Cos( angle ) * rootVavVector.magnitude ;
+      return Math.Abs( Math.Cos( angle ) * rootVavVector.magnitude ) ;
     }
 
     private static Vector2d ToVector2d( XYZ vector3d )
@@ -194,12 +195,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static double GetDotProduct( Vector2d rootVec, Vector2d otherVector )
     {
       return ( ( rootVec.x * otherVector.x ) + ( rootVec.y * otherVector.y ) ) ;
-    }
-
-    private static int CompareY( Element a, Element b )
-    {
-      if ( a.Location is not LocationPoint aPos || b.Location is not LocationPoint bPos ) return default ;
-      return aPos.Point.Y.CompareTo( bPos.Point.Y ) ;
     }
 
     private static IList<Element> GetAllSpaces( Document document )

@@ -216,6 +216,8 @@
         <key>Dialog.Forms.FromToTree.Title</key>
         <string>Mechanical From-To</string>
 
+        <key>Dialog.Commands.Routing.AutoRouteVavs.PickRootConnector</key>
+        <string>Pick the root point of a auto route VAVs.</string>
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
