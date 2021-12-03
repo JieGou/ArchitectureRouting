@@ -130,6 +130,9 @@
         <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
         <string>拾い</string>
 
+        <key>Electrical.App.Commands.Initialization.PickUpReportCommand</key>
+        <string>拾い書出力</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>

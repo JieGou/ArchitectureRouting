@@ -5,10 +5,9 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Initialization.PickUpReportCommand", DefaultString = "拾い書出力" )]
+  [DisplayNameKey( "Electrical.App.Commands.Initialization.PickUpReportCommand", DefaultString = "Pick Up\nOutput" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class PickUpReportCommand : PickUpReportCommandBase
   {
-    
   }
 }
