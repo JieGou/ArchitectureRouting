@@ -271,19 +271,19 @@
         <string>(使用しない)</string>
 
         <key>Dialog.Electrical.SelectConduit.Message</key>
-        <string>ドラックで複数コンジットを選択して下さい。</string>
+        <string>範囲選択してください。</string>
 
         <key>Dialog.Electrical.SelectConduit.Title</key>
         <string>メッセージ</string>
 
         <key>Dialog.Electrical.SetConduitProperty.Success</key>
-        <string>成功</string>
+        <string>成功しました</string>
 
         <key>Dialog.Electrical.SetConduitProperty.Failure</key>
-        <string>失敗</string>
+        <string>失敗しました</string>
 
         <key>Dialog.Electrical.SetConduitProperty.Title</key>
-        <string>適用結果</string>
+        <string>工事項目付加結果</string>
 
 
         <!-- Parameter Names -->

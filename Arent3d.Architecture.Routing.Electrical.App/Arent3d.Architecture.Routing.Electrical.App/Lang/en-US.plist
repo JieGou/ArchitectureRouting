@@ -280,7 +280,7 @@
         <string>(None)</string>
 
         <key>Dialog.Electrical.SelectConduit.Message</key>
-        <string>Select multiple conduits by dragging.</string>
+        <string>Please select a range.</string>
 
         <key>Dialog.Electrical.SelectConduit.Title</key>
         <string>Message</string>
@@ -289,10 +289,10 @@
         <string>Success</string>
 
         <key>Dialog.Electrical.SetConduitProperty.Failure</key>
-        <string>Failure</string>
+        <string>Failed</string>
 
         <key>Dialog.Electrical.SetConduitProperty.Title</key>
-        <string>Application result</string>
+        <string>Construction item addition result</string>
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
