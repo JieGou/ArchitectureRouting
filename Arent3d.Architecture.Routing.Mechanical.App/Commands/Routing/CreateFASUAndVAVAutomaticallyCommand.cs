@@ -103,8 +103,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       IList<Element> spaces )
     {
       Dictionary<int, List<Element>> branchNumberToAreaDictionary = new() ;
-      foreach ( Element space in spaces )
-      {
+      foreach ( Element space in spaces ) {
         space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
         if ( branchNumberToAreaDictionary.ContainsKey( branchNumber ) ) {
           branchNumberToAreaDictionary[ branchNumber ].Add( space ) ;
@@ -124,7 +123,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         foreach ( var space in spaces ) {
           if (CheckFASUAndVAVExistInSpace(document, space) != false) continue;
-          
           // Add object to the document
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
