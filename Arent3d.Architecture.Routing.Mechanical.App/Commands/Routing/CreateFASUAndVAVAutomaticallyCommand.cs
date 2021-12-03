@@ -122,7 +122,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         foreach ( var space in spaces ) {
-          if (CheckFASUAndVAVExistInSpace(document, space) != false) continue;
+          if ( CheckFASUAndVAVExistInSpace( document, space ) ) continue;
           // Add object to the document
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
@@ -183,25 +183,26 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static bool CheckFASUAndVAVExistInSpace(Document document, Element space)
     {
-      BoundingBoxXYZ boxOfSpace;
-      BoundingBoxXYZ boxOfFASU;
-      
-      boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
-      if (boxOfSpace == null) return false;
-      
-      foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_250Phi ) )
-      {
-        boxOfFASU = familyInstance.get_BoundingBox(document.ActiveView);
-        if ( boxOfSpace == null ) continue ;
-          
-        if ((boxOfSpace.Min.X <= boxOfFASU.Min.X && boxOfSpace.Max.X >= boxOfFASU.Max.X) &&
-            (boxOfSpace.Min.Y <= boxOfFASU.Min.Y && boxOfSpace.Max.Y >= boxOfFASU.Max.Y))
-        {
-          return true;
-        }
-      }
+      BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
+      if ( boxOfSpace == null ) return false ;
 
-      return false;
+      var dampers = document.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
+      var dampersInstances = dampers as FamilyInstance[] ?? dampers.ToArray() ;
+
+      foreach (var fi in dampersInstances)
+      {
+        var vavPosition = fi.Location as LocationPoint ;
+        if ( vavPosition == null ) continue ;
+
+        if ( IsInSpace( boxOfSpace, vavPosition.Point ) ) return true ;
+      }
+      
+      return false ;
+    }
+    
+    private static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavPosition )
+    {
+      return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
     }
 
     private static Dictionary<Element, double> CalculateRotationAnglesOfFASUsAndVAVs( Document document,
