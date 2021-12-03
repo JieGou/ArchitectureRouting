@@ -28,17 +28,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private const string DoconOn = "ドーコンON" ;
     private const string SummaryFileName = "_拾い出し集計表.xlsx" ;
     private const string ConfirmationFileName = "_拾い根拠確認表.xlsx" ;
-    private const string AllOutputItemType = "全項目出力" ;
-    private const string SelectOutputItemType = "出力項目選択" ;
     private readonly Document _document ;
     private readonly List<PickUpModel> _pickUpModels ;
     private readonly List<ListBoxItem> _fileTypes ;
-    private readonly List<ListBoxItem> _outputItems ;
-    private List<ListBoxItem> _itemTypes ;
     private List<ListBoxItem> _doconTypes ;
-    private string _itemSelected ;
-    private List<string> _itemsTypesSelected ;
-    private string path ;
+    private string _path ;
     private List<string> _fileNames ;
 
     public PickUpReportDialog( Document document )
@@ -47,12 +41,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _document = document ;
       _pickUpModels = new List<PickUpModel>() ;
       _fileTypes = new List<ListBoxItem>() ;
-      _outputItems = new List<ListBoxItem>() ;
-      _itemTypes = new List<ListBoxItem>() ;
       _doconTypes = new List<ListBoxItem>() ;
-      _itemSelected = string.Empty ;
-      _itemsTypesSelected = new List<string>() ;
-      path = string.Empty ;
+      _path = string.Empty ;
       _fileNames = new List<string>() ;
       CreateCheckBoxList() ;
       var pickUpStorable = _document.GetAllStorables<PickUpStorable>().FirstOrDefault() ;
@@ -71,33 +61,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
     }
 
-    private void Button_Setting( object sender, RoutedEventArgs e )
-    {
-      ChangeValueItemType() ;
-      var dialog = new PickUpItemSelectionDialog( _itemTypes ) ;
-
-      dialog.ShowDialog() ;
-      _itemsTypesSelected = dialog.ItemsTypesSelected ;
-    }
-
     private void Button_Reference( object sender, RoutedEventArgs e )
     {
       const string fileName = "only_choose_folder_and_do_not_edit_file_name.xlsx" ;
       SaveFileDialog saveFileDialog = new SaveFileDialog { FileName = fileName, Filter = "Csv files (*.xlsx)|*.xlsx", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
 
       if ( saveFileDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK ) return ;
-      path = Path.GetDirectoryName( saveFileDialog.FileName )! ;
-      TbFolder.Text = path ;
+      _path = Path.GetDirectoryName( saveFileDialog.FileName )! ;
+      TbFolder.Text = _path ;
     }
 
     private void Button_Execute( object sender, RoutedEventArgs e )
     {
-      _itemSelected = string.Empty ;
-      foreach ( var outputItem in _outputItems ) {
-        if ( outputItem.TheValue == true )
-          _itemSelected = outputItem.TheText! ;
-      }
-
       if ( _fileNames.Any() )
         CreateOutputFile() ;
       else {
@@ -126,29 +101,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _fileTypes.Add( new ListBoxItem { TheText = UserFileType, TheValue = true } ) ;
       LbFileType.ItemsSource = _fileTypes ;
 
-      _outputItems.Add( new ListBoxItem { TheText = AllOutputItemType, TheValue = true } ) ;
-      _outputItems.Add( new ListBoxItem { TheText = SelectOutputItemType, TheValue = false } ) ;
-      LbOutputItem.ItemsSource = _outputItems ;
-
       _doconTypes.Add( new ListBoxItem { TheText = "ON", TheValue = true } ) ;
       _doconTypes.Add( new ListBoxItem { TheText = "OFF", TheValue = false } ) ;
       LbDocon.ItemsSource = _doconTypes ;
-
-      _itemTypes.Add( new ListBoxItem { TheText = "長さ物", TheValue = true } ) ;
-      _itemTypes.Add( new ListBoxItem { TheText = "工事部材", TheValue = true } ) ;
-      _itemTypes.Add( new ListBoxItem { TheText = "機器取付", TheValue = false } ) ;
-      _itemTypes.Add( new ListBoxItem { TheText = "結線", TheValue = false } ) ;
-      _itemTypes.Add( new ListBoxItem { TheText = "盤搬入据付", TheValue = false } ) ;
-      _itemTypes.Add( new ListBoxItem { TheText = "内装・補修・設備", TheValue = true } ) ;
-      _itemTypes.Add( new ListBoxItem { TheText = "その他", TheValue = false } ) ;
-
-      _itemsTypesSelected = new List<string>() { "長さ物", "工事部材", "内装・補修・設備" } ;
-    }
-
-    private void OutputItem_Checked( object sender, RoutedEventArgs e )
-    {
-      var radioButton = sender as RadioButton ;
-      BtnSetting.IsEnabled = radioButton!.Content.ToString() == SelectOutputItemType ;
     }
 
     private void DoconItem_Checked( object sender, RoutedEventArgs e )
@@ -217,13 +172,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       TbFileName.Text = _fileNames.Any() ? "\"" + string.Join( "\" \"", _fileNames ) + "\"" : string.Empty ;
     }
 
-    private void ChangeValueItemType()
-    {
-      foreach ( var itemType in _itemTypes ) {
-        itemType.TheValue = _itemsTypesSelected.Contains( itemType.TheText! ) ? true : false ;
-      }
-    }
-
     private List<string> GetConstructionItemList()
     {
       var constructionItemList = new List<string>() ;
@@ -271,7 +219,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               CreateSheet( SheetType.Confirmation, workbook, sheetName, xssfCellStyles ) ;
             }
 
-          FileStream fs = new FileStream( path + @"\" + fileName, FileMode.OpenOrCreate ) ;
+          FileStream fs = new FileStream( _path + @"\" + fileName, FileMode.OpenOrCreate ) ;
           workbook.Write( fs ) ;
 
           workbook.Close() ;
