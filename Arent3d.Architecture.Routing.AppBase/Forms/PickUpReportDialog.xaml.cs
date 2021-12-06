@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly Document _document ;
     private readonly List<PickUpModel> _pickUpModels ;
     private readonly List<ListBoxItem> _fileTypes ;
-    private List<ListBoxItem> _doconTypes ;
+    private readonly List<ListBoxItem> _doconTypes ;
     private string _path ;
     private List<string> _fileNames ;
 

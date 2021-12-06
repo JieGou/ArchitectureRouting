@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       return elementId ;
     }
-    
+
     private enum SerializeField
     {
       ElementId

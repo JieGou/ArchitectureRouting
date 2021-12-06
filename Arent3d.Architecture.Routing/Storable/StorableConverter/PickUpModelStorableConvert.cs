@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       PickUpNumber,
       Direction
     }
-    
+
     protected override PickUpModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
