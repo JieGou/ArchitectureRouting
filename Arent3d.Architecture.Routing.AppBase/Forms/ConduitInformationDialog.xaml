@@ -44,24 +44,24 @@
             </DataGrid.Resources>
 
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="" Width="40" Binding="{Binding ConduitStatus}" CanUserSort="False" IsReadOnly="True"/>
+                <DataGridCheckBoxColumn Header="計算除外" Width="40" Binding="{Binding CalculationExclusion}" CanUserSort="False" IsReadOnly="True"/>
                 <DataGridTextColumn Header="フロア" Width="60" Binding="{Binding Floor, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" />
-                <DataGridTextColumn Header="明細..." Width="60" Binding="{Binding ConduitDetail, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="明細記号" Width="60" Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="電線種類" Width="120" Binding="{Binding WireType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電路…" Width="60" Binding="{Binding ElectricCircuit, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電線…" Width="60" Binding="{Binding ElectricalWireType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電誤…" Width="60" Binding="{Binding ElectricError, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="了…" Width="15" Binding="{Binding Done1, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="了…" Width="15" Binding="{Binding Done2, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="了…" Width="15" Binding="{Binding Done3, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管…" Width="60" Binding="{Binding Plumbing1, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管…" Width="60" Binding="{Binding Plumbing2, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管…" Width="60" Binding="{Binding Plumbing3, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="七"  Width="15" Binding="{Binding Seven, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="苑工…" Width="60" Binding="{Binding GardenWork, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="電線サイズ" Width="60" Binding="{Binding WireSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="電線条数" Width="60" Binding="{Binding WireStrip, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="電線本数" Width="60" Binding="{Binding WireBook, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="アース種類" Width="15" Binding="{Binding EarthType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="アースサイズ" Width="15" Binding="{Binding EarthSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="アース本数" Width="15" Binding="{Binding NumberOfGrounds, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="配管種類" Width="60" Binding="{Binding PipingType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="配管サイズ" Width="60" Binding="{Binding PipingSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="配管本数" Width="60" Binding="{Binding NumberOfPipes, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="セット本数"  Width="15" Binding="{Binding NumberOfSets, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="施工区分" Width="60" Binding="{Binding ConstructionClassification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="区分" Width="120" Binding="{Binding Classification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="工事項目" Width="170" Binding="{Binding ConstructionItem, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管工事項目" Width="170" Binding="{Binding PlumbingItem, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="工事項目" Width="170" Binding="{Binding ConstructionItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="配管工事項目" Width="170" Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="備考" Width="250" Binding="{Binding Remark, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
             </DataGrid.Columns>
         </DataGrid>

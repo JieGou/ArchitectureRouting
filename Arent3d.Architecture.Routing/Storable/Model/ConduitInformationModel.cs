@@ -2,65 +2,65 @@
 {
   public class ConduitInformationModel
   {
-    public bool ConduitStatus { get ; set ; }
+    public bool CalculationExclusion { get ; set ; }
     public string Floor { get ; set ; }
-    public string ConduitDetail { get ; set ; }
+    public string DetailSymbol { get ; set ; }
     public string WireType { get ; set ; }
-    public string ElectricCircuit { get ; set ; }
-    public string ElectricalWireType { get ; set ; }
-    public string ElectricError { get ; set ; }
-    public string Done1 { get ; set ; }
-    public string Done2 { get ; set ; }
-    public string Done3 { get ; set ; }
-    public string Plumbing1 { get ; set ; }
-    public string Plumbing2 { get ; set ; }
-    public string Plumbing3 { get ; set ; }
-    public string Seven { get ; set ; }
-    public string GardenWork { get ; set ; }
+    public string WireSize { get ; set ; }
+    public string WireStrip { get ; set ; }
+    public string WireBook { get ; set ; }
+    public string EarthType { get ; set ; }
+    public string EarthSize { get ; set ; }
+    public string NumberOfGrounds { get ; set ; }
+    public string PipingType { get ; set ; }
+    public string PipingSize { get ; set ; }
+    public string NumberOfPipes { get ; set ; }
+    public string NumberOfSets { get ; set ; }
+    public string ConstructionClassification { get ; set ; }
     public string Classification { get ; set ; }
-    public string ConstructionItem { get ; set ; }
-    public string PlumbingItem { get ; set ; }
+    public string ConstructionItems { get ; set ; }
+    public string PlumbingItems { get ; set ; }
     public string Remark { get ; set ; }
 
     public ConduitInformationModel( 
-      bool conduitStatus, 
+      bool calculationExclusion, 
       string floor, 
-      string conduitDetail,
+      string detailSymbol,
       string wireType, 
-      string electricCircuit, 
-      string electricalWireType, 
-      string electricError,
-      string done1,
-      string done2,
-      string done3,
-      string plumbing1,
-      string plumbing2,
-      string plumbing3,
-      string seven,
-      string gardenWork,
+      string wireSize, 
+      string wireStrip, 
+      string wireBook,
+      string earthType,
+      string earthSize,
+      string numberOfGrounds,
+      string pipingType,
+      string pipingSize,
+      string numberOfPipes,
+      string numberOfSets,
+      string constructionClassification,
       string classification,
-      string constructionItem,
-      string plumbingItem,
+      string constructionItems,
+      string plumbingItems,
       string remark)
     {
-      ConduitStatus = conduitStatus ;
+      CalculationExclusion = calculationExclusion ;
       Floor = floor ;
-      ConduitDetail = conduitDetail ;
+      DetailSymbol = detailSymbol ;
       WireType = wireType ;
-      ElectricCircuit = electricCircuit ;
-      ElectricalWireType = electricalWireType ;
-      ElectricError = electricError ;
-      Done1 = done1 ;
-      Done2 = done2 ;
-      Done3 = done3 ;
-      Plumbing1 = plumbing1 ;
-      Plumbing2 = plumbing2 ;
-      Plumbing3 = plumbing3 ;
-      Seven = seven ;
-      GardenWork = gardenWork ;
+      WireSize = wireSize ;
+      WireStrip = wireStrip ;
+      WireBook = wireBook ;
+      EarthType = earthType ;
+      EarthSize = earthSize ;
+      NumberOfGrounds = numberOfGrounds ;
+      PipingType = pipingType ;
+      PipingSize = pipingSize ;
+      NumberOfPipes = numberOfPipes ;
+      NumberOfSets = numberOfSets ;
+      ConstructionClassification = constructionClassification ;
       Classification = classification ;
-      ConstructionItem = constructionItem ;
-      PlumbingItem = plumbingItem ;
+      ConstructionItems = constructionItems ;
+      PlumbingItems = plumbingItems ;
       Remark = remark ;
     }
   }
