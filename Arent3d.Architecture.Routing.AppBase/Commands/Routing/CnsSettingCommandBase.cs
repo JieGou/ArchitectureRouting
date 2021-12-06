@@ -1,5 +1,7 @@
-﻿using System.Linq ;
+﻿using System.Collections.Generic ;
+using System.Linq ;
 using System.Threading ;
+using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -7,11 +9,12 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
-using Arent3d.Revit.UI.Forms ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
+using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -31,6 +34,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {
+        var conduits = new List<Element>() ;
+        if ( cnsStorables.ConduitType == CnsSettingStorable.ConstructionItemType.Conduit ) {
+          MessageBox.Show(
+            "Dialog.Electrical.SelectConduit.Message".GetAppStringByKeyOrDefault( "Please select a range." ),
+            "Dialog.Electrical.SelectConduit.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
+          var selectedElements = UiDocument.Selection
+            .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
+            .Where( p => p is FamilyInstance or Conduit ) ;
+          conduits = selectedElements.ToList() ;
+          if ( ! conduits.Any() ) {
+            message = "Dialog.Electrical.SelectConduit.NoConduitMessage".GetAppStringByKeyOrDefault(
+              "No Conduits are selected." ) ;
+            return Result.Cancelled ;
+          }
+        }
+
         return document.Transaction( "TransactionName.Commands.Routing.CnsSetting", _ =>
         {
           DataProcessBeforeSave( cnsStorables ) ;
@@ -44,13 +63,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           if ( cnsStorables.ConduitType == CnsSettingStorable.ConstructionItemType.Conduit ) {
-            var selectedElements = UiDocument.Selection
-              .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-              .Where( p => p is FamilyInstance or Conduit ) ;
+            try {
+              var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
+              foreach ( var conduit in conduits ) {
+                SetConstructionItemForConduit( conduit, categoryName ) ;
+              }
 
-            var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
-            foreach ( var element in selectedElements ) {
-              SetConstructionItemForConduit( element, categoryName ) ;
+              MessageBox.Show( "Dialog.Electrical.SetConduitProperty.Success".GetAppStringByKeyOrDefault( "Success" ),
+                "Dialog.Electrical.SetConduitProperty.Title".GetAppStringByKeyOrDefault(
+                  "Construction item addition result" ), MessageBoxButtons.OK ) ;
+            }
+            catch {
+              MessageBox.Show( "Dialog.Electrical.SetConduitProperty.Failure".GetAppStringByKeyOrDefault( "Failed" ),
+                "Dialog.Electrical.SetConduitProperty.Title".GetAppStringByKeyOrDefault(
+                  "Construction item addition result" ), MessageBoxButtons.OK ) ;
+              return Result.Cancelled ;
             }
           }
 
