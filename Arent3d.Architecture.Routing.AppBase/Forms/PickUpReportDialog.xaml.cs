@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private const string SummaryFileName = "_拾い出し集計表.xlsx" ;
     private const string ConfirmationFileName = "_拾い根拠確認表.xlsx" ;
     private const string DefaultConstructionItem = "未設定" ;
+    private const string DefaultUnit = "m" ;
     private readonly Document _document ;
     private readonly List<PickUpModel> _pickUpModels ;
     private readonly List<ListBoxItem> _fileTypes ;
@@ -63,13 +64,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_Execute( object sender, RoutedEventArgs e )
     {
-      if ( _fileNames.Any() )
+      if ( _fileNames.Any() && ! string.IsNullOrEmpty( _path ) ) {
         CreateOutputFile() ;
-      else {
-        MessageBox.Show( "Please choose output file type.", "Message" ) ;
+        DialogResult = true ;
+        Close() ;
       }
-      //DialogResult = true ;
-      //Close() ;
+      else {
+        if ( ! _fileNames.Any() && string.IsNullOrEmpty( _path ) )
+          MessageBox.Show( "Please select the output folder and file type.", "Warning" ) ;
+        else if ( string.IsNullOrEmpty( _path ) )
+          MessageBox.Show( "Please select the output folder.", "Warning" ) ;
+        else if ( ! _fileNames.Any() )
+          MessageBox.Show( "Please select the output file type.", "Warning" ) ;
+      }
     }
 
     private void Button_Cancel( object sender, RoutedEventArgs e )
@@ -349,7 +356,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var pickUpModel = pickUpModels.First() ;
       var rowName = sheet.CreateRow( rowStart ) ;
       CreateMergeCell( sheet, rowName, rowStart, rowStart, 1, 3, pickUpModel.ProductName, xssfCellStyles[ "leftAlignmentLeftRightBorderedCellStyle" ] ) ;
-      CreateMergeCell( sheet, rowName, rowStart, rowStart + 1, 4, 4, pickUpModel.Tani, xssfCellStyles[ "borderedCellStyle" ] ) ;
+      CreateMergeCell( sheet, rowName, rowStart, rowStart + 1, 4, 4, DefaultUnit, xssfCellStyles[ "borderedCellStyle" ] ) ;
 
       rowStart++ ;
       var rowStandard = sheet.CreateRow( rowStart ) ;
@@ -396,7 +403,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CreateCell( row, 1, pickUpModel.ProductName, xssfCellStyles[ "leftBottomBorderedCellStyle" ] ) ;
       CreateCell( row, 2, pickUpModel.Standard, xssfCellStyles[ "leftBottomBorderedCellStyle" ] ) ;
       CreateCell( row, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyle" ] ) ;
-      CreateCell( row, 4, pickUpModel.Tani, xssfCellStyles[ "borderedCellStyle" ] ) ;
+      CreateCell( row, 4, DefaultUnit, xssfCellStyles[ "borderedCellStyle" ] ) ;
 
       double total = 0 ;
       Dictionary<string, int> trajectory = new Dictionary<string, int>() ;
