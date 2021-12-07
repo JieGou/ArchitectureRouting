@@ -22,6 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var wiresAndCablesModelData = doc.GetCsvStorable().WiresAndCablesModelData ;
       var conduitsModelData = doc.GetCsvStorable().ConduitsModelData ;
+      var hiroiSetCdMasterNormalModelData = doc.GetCsvStorable().HiroiSetCdMasterNormalModelData ;
       ObservableCollection<ConduitInformationModel> conduitInformationModels =
         new ObservableCollection<ConduitInformationModel>() ;
       try {
@@ -29,24 +30,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
           .Where( p => p is FamilyInstance or Conduit ) ;
         foreach ( var element in pickedObjects ) {
-          string diameter = element.LookupParameter( "Diameter(Trade Size)" ).AsValueString().Replace( " ", "" ) ;
-          var conduitModel = conduitsModelData.FirstOrDefault( x => x.Size.Equals( diameter ) ) ;
+          var conduitModel = conduitsModelData.FirstOrDefault() ;
           var wireType = wiresAndCablesModelData.FirstOrDefault() ;
+          var heroiCdSet = hiroiSetCdMasterNormalModelData.FirstOrDefault() ;
+          string floor = element.LookupParameter( "Level" )?.AsValueString() ??
+                         element.LookupParameter( "Reference Level" ).AsValueString() ;
           List<string> paramList = new List<string>() ;
           foreach ( Parameter param in element.Parameters ) {
-            if(!string.IsNullOrEmpty( param.AsValueString() ) )
-            {
-              paramList.Add( param.Definition.Name+" - "+ param.AsValueString() );
+            if ( ! string.IsNullOrEmpty( param.AsValueString() ) ) {
+              paramList.Add( param.Definition.Name + " - " + param.AsValueString() ) ;
             }
-           
           }
-          if ( conduitModel == null ) continue ; 
-          if ( wireType != null )
-            conduitInformationModels.Add( new ConduitInformationModel( true,
-              element.LookupParameter( "Reference Level" ).AsValueString(), wireType.COrP, wireType.WireType,
-              wireType.FinishedOuterDiameter, wireType.DiameterOrNominal, wireType.NumberOfConnections, "8", "9", "10", conduitModel.PipingType,
-              conduitModel.Size, conduitModel.InnerCrossSectionalArea, string.Empty, "15", wireType.Classification,
-              conduitModel.Classification, wireType.Name, "19" ) ) ;
+
+          conduitInformationModels.Add( new ConduitInformationModel( true, floor, wireType?.COrP ?? "",
+            wireType?.WireType ?? "", wireType?.DiameterOrNominal ?? "", wireType?.NumberOfHeartsOrLogarithm ?? "",
+            wireType?.NumberOfConnections ?? "", "", "", "", conduitModel?.PipingType ?? "", conduitModel?.Size ?? "",
+            "", string.Empty, heroiCdSet?.ConstructionClassification ?? "", wireType?.Classification ?? "",
+            "","", "" ) ) ;
         }
       }
       catch ( Exception ex ) {
