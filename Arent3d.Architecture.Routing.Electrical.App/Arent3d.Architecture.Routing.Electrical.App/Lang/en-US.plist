@@ -282,6 +282,20 @@
         <key>Dialog.Electrical.Shaft.List.None</key>
         <string>(None)</string>
 
+        <key>Dialog.Electrical.SelectConduit.Message</key>
+        <string>Please select a range.</string>
+
+        <key>Dialog.Electrical.SelectConduit.Title</key>
+        <string>Message</string>
+
+        <key>Dialog.Electrical.SetConduitProperty.Success</key>
+        <string>Success</string>
+
+        <key>Dialog.Electrical.SetConduitProperty.Failure</key>
+        <string>Failed</string>
+
+        <key>Dialog.Electrical.SetConduitProperty.Title</key>
+        <string>Construction item addition result</string>
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

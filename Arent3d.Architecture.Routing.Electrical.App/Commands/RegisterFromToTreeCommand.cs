@@ -23,18 +23,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       CreateFromToTreeUiManager( application, dpId, postCommandExecutor ) ;
     }
 
-    /// <summary>
-    /// Executes the specIfied command Data
-    /// </summary>
-    /// <param name="commandData"></param>
-    /// <param name="message"></param>
-    /// <param name="elements"></param>
-    /// <returns></returns>
-    public new Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
-    {
-      return Initialize( commandData.Application ) ;
-    }
-
     // view activated event
 
     public override Result Initialize( UIApplication uiApplication )
