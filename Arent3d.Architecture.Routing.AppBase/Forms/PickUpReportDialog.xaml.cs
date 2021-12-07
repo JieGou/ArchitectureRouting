@@ -30,7 +30,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private const string SummaryFileName = "_拾い出し集計表.xlsx" ;
     private const string ConfirmationFileName = "_拾い根拠確認表.xlsx" ;
     private const string DefaultConstructionItem = "未設定" ;
-    private const string DefaultUnit = "m" ;
     private readonly Document _document ;
     private readonly List<PickUpModel> _pickUpModels ;
     private readonly List<ListBoxItem> _fileTypes ;
@@ -356,7 +355,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var pickUpModel = pickUpModels.First() ;
       var rowName = sheet.CreateRow( rowStart ) ;
       CreateMergeCell( sheet, rowName, rowStart, rowStart, 1, 3, pickUpModel.ProductName, xssfCellStyles[ "leftAlignmentLeftRightBorderedCellStyle" ] ) ;
-      CreateMergeCell( sheet, rowName, rowStart, rowStart + 1, 4, 4, DefaultUnit, xssfCellStyles[ "borderedCellStyle" ] ) ;
+      CreateMergeCell( sheet, rowName, rowStart, rowStart + 1, 4, 4, pickUpModel.Tani, xssfCellStyles[ "borderedCellStyle" ] ) ;
 
       rowStart++ ;
       var rowStandard = sheet.CreateRow( rowStart ) ;
@@ -403,7 +402,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CreateCell( row, 1, pickUpModel.ProductName, xssfCellStyles[ "leftBottomBorderedCellStyle" ] ) ;
       CreateCell( row, 2, pickUpModel.Standard, xssfCellStyles[ "leftBottomBorderedCellStyle" ] ) ;
       CreateCell( row, 3, "", xssfCellStyles[ "rightBottomBorderedCellStyle" ] ) ;
-      CreateCell( row, 4, DefaultUnit, xssfCellStyles[ "borderedCellStyle" ] ) ;
+      CreateCell( row, 4, pickUpModel.Tani, xssfCellStyles[ "borderedCellStyle" ] ) ;
 
       double total = 0 ;
       Dictionary<string, int> trajectory = new Dictionary<string, int>() ;
