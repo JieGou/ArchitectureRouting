@@ -76,6 +76,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         
         [Button( typeof( CreateFASUAndVAVAutomaticallyCommand ), OnlyInitialized = true )]
         private static class CreateFASUAndVAVAutomaticallyCommandButton { }
+
+        [Button( typeof( AutoRoutingVavCommand ), OnlyInitialized = true )]
+        private static class AutoRoutingVavCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Mechanical.App.Panels.Routing.Monitor" )]

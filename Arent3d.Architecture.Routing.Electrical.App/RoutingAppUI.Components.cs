@@ -33,8 +33,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [Button( typeof( ShowCeeDModelsCommand ), OnlyInitialized = true )]
         private static class ShowCeeDModelsCommandButton { }
         
+        [Button( typeof( ShowCeeDDetailInformationCommand ), OnlyInitialized = true )]
+        private static class ShowCeeDDetailInformationCommandButton { }
+        
         [Button(typeof(LoadCsvFilesCommand), OnlyInitialized = true)]
         private static class LoadCsvFilesCommandButton { }
+        
+        [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
+        private static class ShowPickUpInformationCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.routing", TitleKey = "Electrical.App.Panels.Routing.Routing" )]

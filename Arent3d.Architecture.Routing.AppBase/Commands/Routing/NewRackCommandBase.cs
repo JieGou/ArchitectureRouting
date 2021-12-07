@@ -278,6 +278,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // set cable rack comments
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
+      // set To-Side Connector Id
+      var toConnectorId = GetToConnectorId( conduit ) ;
+      if ( ! string.IsNullOrEmpty( toConnectorId ) )
+        SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
+      
       // set cable tray direction
       if ( 1.0 == line.Direction.Y ) {
         ElementTransformUtils.RotateElement( document, instance.Id, Line.CreateBound( new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z ), new XYZ( firstConnector.Origin.X, firstConnector.Origin.Y, firstConnector.Origin.Z + 1 ) ), Math.PI / 2 ) ;
@@ -330,6 +335,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // set cable rack comments
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableTrayDefaultBendRadius == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
+      // set To-Side Connector Id
+      var toConnectorId = GetToConnectorId( conduit ) ;
+      if ( ! string.IsNullOrEmpty( toConnectorId ) )
+        SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
+      
       // set cable tray fitting direction
       if ( 1.0 == conduit.FacingOrientation.X ) {
         instance.Location.Rotate( Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ), new XYZ( location.Point.X, location.Point.Y, location.Point.Z - 1 ) ), Math.PI / 2 ) ;
@@ -357,6 +367,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return isSameConnectors ;
+    }
+
+    private static string GetToConnectorId( Element conduit )
+    {
+      var toEndPoint = conduit.GetNearestEndPoints( false ) ;
+      var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
+      var toConnectorId = toEndPointKey!.GetElementId() ;
+      return toConnectorId ;
     }
   }
 }

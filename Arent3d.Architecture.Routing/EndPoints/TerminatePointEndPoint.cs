@@ -135,7 +135,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
-    public (Route? Route, SubRoute? SubRoute) ParentBranch() => ( null, null ) ;
+    Route? IEndPoint.ParentRoute() => null ;
+    SubRoute? IEndPoint.ParentSubRoute() => null ;
 
     public bool GenerateInstance( string routeName )
     {
@@ -159,6 +160,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
           parameter.Set( addPoint.ToString().Substring( 1, addPoint.ToString().Length - 1 ) ) ;
         }
       }
+
+      elemTerP.SetProperty( PassPointParameter.RelatedConnectorId, LinkedInstanceId.IntegerValue.ToString() ) ;
 
       return true ;
     }

@@ -15,7 +15,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       CeeDSetCode,
       GeneralDisplayDeviceSymbol,
       ModelNumber,
-      FloorPlanSymbol
+      FloorPlanSymbol,
+      Name
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedModel customTypeValue )
@@ -27,6 +28,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.GeneralDisplayDeviceSymbol, customTypeValue.GeneralDisplayDeviceSymbol ) ;
       serializerObject.AddNonNull( SerializeField.ModelNumber, customTypeValue.ModelNumber ) ;
       serializerObject.AddNonNull( SerializeField.FloorPlanSymbol, customTypeValue.FloorPlanSymbol ) ;
+      serializerObject.AddNonNull( SerializeField.Name, customTypeValue.Name ) ;
 
       return serializerObject ;
     }
@@ -40,8 +42,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var generalDisplayDeviceSymbol = deserializer.GetString( SerializeField.GeneralDisplayDeviceSymbol ) ;
       var modelNumber = deserializer.GetString( SerializeField.ModelNumber ) ;
       var floorPlanSymbol = deserializer.GetString( SerializeField.FloorPlanSymbol ) ;
+      var name = deserializer.GetString( SerializeField.Name ) ;
 
-      return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol! ) ;
+      return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, name! ) ;
     }
   }
 }

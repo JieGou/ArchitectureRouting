@@ -121,8 +121,14 @@
         <key>Electrical.App.Commands.Initialization.ShowCeeDModelsCommand</key>
         <string>View&#xA;Set Code</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowCeeDDetailInformationCommand</key>
+        <string>Pickup Display&#xA;Information</string>
+        
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>Load&#xA;Save To DB</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
+        <string>Pick Up</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -273,6 +279,20 @@
         <key>Dialog.Electrical.Shaft.List.None</key>
         <string>(None)</string>
 
+        <key>Dialog.Electrical.SelectElement.Message</key>
+        <string>Please select a range.</string>
+
+        <key>Dialog.Electrical.SelectElement.Title</key>
+        <string>Message</string>
+
+        <key>Dialog.Electrical.SetElementProperty.Success</key>
+        <string>Success</string>
+
+        <key>Dialog.Electrical.SetElementProperty.Failure</key>
+        <string>Failed</string>
+
+        <key>Dialog.Electrical.SetElementProperty.Title</key>
+        <string>Construction item addition result</string>
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

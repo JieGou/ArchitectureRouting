@@ -59,13 +59,6 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public string RouteName { get ; private set ; } = null! ;
     public int SubRouteIndex { get ; private set ; }
 
-    public SubRoute GetSubRoute()
-    {
-      if ( false == RouteCache.Get( _document ).TryGetValue( RouteName, out var route ) ) throw new KeyNotFoundException() ;
-
-      return route.GetSubRoute( SubRouteIndex ) ?? throw new KeyNotFoundException() ;
-    }
-
     public ElementId GetLevelId( Document document ) => ElementId.InvalidElementId ;
 
     internal void ReplaceRouteName( string newRouteName )
@@ -77,7 +70,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
     }
 
-    private RouteEndPoint( Document document, string routeName, int subRouteIndex )
+    public RouteEndPoint( Document document, string routeName, int subRouteIndex )
     {
       _document = document ;
       RouteName = routeName ;
@@ -87,17 +80,14 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public XYZ GetRoutingDirection( bool isFrom ) => throw new InvalidOperationException() ;
     public bool HasValidElement( bool isFrom ) => true ;
 
-    public Connector? GetReferenceConnector() => GetSubRoute()?.GetReferenceConnector() ;
+    public Connector? GetReferenceConnector() => ParentSubRoute()?.GetReferenceConnector() ;
 
     public double? GetDiameter() => null ;
 
     public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
-    public (Route? Route, SubRoute? SubRoute) ParentBranch()
-    {
-      var subRoute = GetSubRoute() ;
-      return ( subRoute.Route, subRoute ) ;
-    }
+    public Route? ParentRoute() => RouteCache.Get( _document ).TryGetValue( RouteName, out var route ) ? route : null ;
+    public SubRoute? ParentSubRoute() => ParentRoute()?.GetSubRoute( SubRouteIndex ) ;
 
     public bool GenerateInstance( string routeName ) => false ;
     public bool EraseInstance() => false ;
