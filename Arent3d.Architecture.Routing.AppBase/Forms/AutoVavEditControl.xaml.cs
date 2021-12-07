@@ -23,14 +23,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     public static readonly DependencyProperty UseSystemTypeProperty = DependencyProperty.Register( "UseSystemType", typeof( bool ), typeof( AutoVavEditControl ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty UseShaftProperty = DependencyProperty.Register( "UseShaft", typeof( bool ), typeof( AutoVavEditControl ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty UseCurveTypeProperty = DependencyProperty.Register( "UseCurveType", typeof( bool ), typeof( AutoVavEditControl ), new PropertyMetadata( true ) ) ;
     public static readonly DependencyProperty DiameterIndexProperty = DependencyProperty.Register( "DiameterIndex", typeof( int ), typeof( AutoVavEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty SystemTypeIndexProperty = DependencyProperty.Register( "SystemTypeIndex", typeof( int ), typeof( AutoVavEditControl ), new PropertyMetadata( -1 ) ) ;
-    public static readonly DependencyProperty ShaftIndexProperty = DependencyProperty.Register( "ShaftIndex", typeof( int ), typeof( AutoVavEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty CurveTypeIndexProperty = DependencyProperty.Register( "CurveTypeIndex", typeof( int ), typeof( AutoVavEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( AutoVavEditControl ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
-    public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( AutoVavEditControl ), new PropertyMetadata( (bool?)true ) ) ;
     public static readonly DependencyProperty UseFromFixedHeightProperty = DependencyProperty.Register( "UseFromFixedHeight", typeof( bool? ), typeof( AutoVavEditControl ), new PropertyMetadata( (bool?)false ) ) ;
     public static readonly DependencyProperty FromFixedHeightProperty = DependencyProperty.Register( "FromFixedHeight", typeof( double? ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0, FromFixedHeight_Changed ) ) ;
     public static readonly DependencyProperty FromLocationTypeIndexProperty = DependencyProperty.Register( "FromLocationTypeIndex", typeof( int ), typeof( AutoVavEditControl ), new PropertyMetadata( 0, FromLocationTypeIndex_PropertyChanged ) ) ;
@@ -45,12 +41,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static readonly DependencyPropertyKey FromMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsCeilingLevel", typeof( double ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey FromDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsFloorLevel", typeof( double ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey FromDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsCeilingLevel", typeof( double ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsFloorLevel", typeof( double ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsFloorLevel", typeof( double ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsCeilingLevel", typeof( double ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsCeilingLevel", typeof( double ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsFloorLevel", typeof( double ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey ToDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsCeilingLevel", typeof( double ), typeof( AutoVavEditControl ), new PropertyMetadata( 0.0 ) ) ;
 
     //Diameter Info
     private double VertexTolerance { get ; set ; }
@@ -108,22 +98,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       set => SetValue( UseSystemTypeProperty, value ) ;
     }
 
-    //Shafts Info
-    private ObservableCollection<OpeningProxy> Shafts { get ; } = new() ;
-    private Opening? ShaftOrg { get ; set ; }
-
-    public Opening? Shaft
-    {
-      get => GetItemOnIndex( Shafts, (int)GetValue( ShaftIndexProperty ) )?.Value ;
-      private set => SetValue( ShaftIndexProperty, GetShaftIndex( Shafts, value ) ) ;
-    }
-
-    private bool UseShaft
-    {
-      get => (bool)GetValue( UseShaftProperty ) ;
-      set => SetValue( UseShaftProperty, value ) ;
-    }
-
     //CurveType Info
     private ObservableCollection<MEPCurveType> CurveTypes { get ; } = new() ;
     private MEPCurveType? CurveTypeOrg { get ; set ; }
@@ -175,12 +149,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       set => SetValue( CurveTypeLabelProperty, value ) ;
     }
 
-    private bool UseCurveType
-    {
-      get => (bool)GetValue( UseCurveTypeProperty ) ;
-      set => SetValue( UseCurveTypeProperty, value ) ;
-    }
-
     private static T? GetItemOnIndex<T>( IReadOnlyList<T> values, int index ) where T : class
     {
       if ( index < 0 || values.Count <= index ) return null ;
@@ -193,21 +161,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ElementId.InvalidElementId == valueId ) return -1 ;
 
       return elements.FindIndex( elm => elm.Id == valueId ) ;
-    }
-
-    private static int GetShaftIndex( IEnumerable<OpeningProxy> elements, Opening? value )
-    {
-      var valueId = value.GetValidId() ;
-      return elements.FindIndex( elm => elm.Value?.Id == valueId ) ;
-    }
-
-    //Direct Info
-    private bool? IsRouteOnPipeSpaceOrg { get ; set ; }
-
-    public bool? IsRouteOnPipeSpace
-    {
-      get => (bool?)GetValue( IsRouteOnPipeSpaceProperty ) ;
-      private set => SetValue( IsRouteOnPipeSpaceProperty, value ) ;
     }
 
     //HeightSetting
@@ -255,36 +208,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       get => (double)GetValue( FromDefaultHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
       set => SetValue( FromDefaultHeightAsCeilingLevelPropertyKey, value ) ;
-    }
-    private double ToMinimumHeightAsFloorLevel
-    {
-      get => (double)GetValue( ToMinimumHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
-      set => SetValue( ToMinimumHeightAsFloorLevelPropertyKey, value ) ;
-    }
-    private double ToMaximumHeightAsFloorLevel
-    {
-      get => (double)GetValue( ToMaximumHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
-      set => SetValue( ToMaximumHeightAsFloorLevelPropertyKey, value ) ;
-    }
-    private double ToMinimumHeightAsCeilingLevel
-    {
-      get => (double)GetValue( ToMinimumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
-      set => SetValue( ToMinimumHeightAsCeilingLevelPropertyKey, value ) ;
-    }
-    private double ToMaximumHeightAsCeilingLevel
-    {
-      get => (double)GetValue( ToMaximumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
-      set => SetValue( ToMaximumHeightAsCeilingLevelPropertyKey, value ) ;
-    }
-    private double ToDefaultHeightAsFloorLevel
-    {
-      get => (double)GetValue( ToDefaultHeightAsFloorLevelPropertyKey.DependencyProperty ) ;
-      set => SetValue( ToDefaultHeightAsFloorLevelPropertyKey, value ) ;
-    }
-    private double ToDefaultHeightAsCeilingLevel
-    {
-      get => (double)GetValue( ToDefaultHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
-      set => SetValue( ToDefaultHeightAsCeilingLevelPropertyKey, value ) ;
     }
 
     private static void FromLocationTypeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
@@ -425,18 +348,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         UseSystemType = false ;
       }
 
-      Shafts.Add( new OpeningProxy( null ) ) ;
-      if ( propertyTypeList.Shafts is {} shafts ) {
-        foreach ( var shaft in shafts ) {
-          Shafts.Add( new OpeningProxy( shaft ) ) ;
-        }
-
-        UseShaft = true ;
-      }
-      else {
-        UseShaft = false ;
-      }
-
       // Curve type
       foreach ( var c in propertyTypeList.CurveTypes ) {
         CurveTypes.Add( c ) ;
@@ -446,11 +357,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ( FromMinimumHeightAsCeilingLevel, FromMaximumHeightAsCeilingLevel ) = propertyTypeList.FromHeightRangeAsCeilingLevel ;
       FromDefaultHeightAsFloorLevel = propertyTypeList.FromDefaultHeightAsFloorLevel ;
       FromDefaultHeightAsCeilingLevel = propertyTypeList.FromDefaultHeightAsCeilingLevel ;
-
-      ( ToMinimumHeightAsFloorLevel, ToMaximumHeightAsFloorLevel ) = propertyTypeList.ToHeightRangeAsFloorLevel ;
-      ( ToMinimumHeightAsCeilingLevel, ToMaximumHeightAsCeilingLevel ) = propertyTypeList.ToHeightRangeAsCeilingLevel ;
-      ToDefaultHeightAsFloorLevel = propertyTypeList.ToDefaultHeightAsFloorLevel ;
-      ToDefaultHeightAsCeilingLevel = propertyTypeList.ToDefaultHeightAsCeilingLevel ;
     }
 
     public void SetRouteProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
@@ -461,9 +367,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SystemTypeOrg = properties.SystemType ;
       CurveTypeOrg = properties.CurveType ;
       DiameterOrg = properties.Diameter ;
-      ShaftOrg = properties.Shaft ;
-
-      IsRouteOnPipeSpaceOrg = properties.IsRouteOnPipeSpace ;
 
       UseFromFixedHeightOrg = properties.UseFromFixedHeight ;
       if ( null == UseFromFixedHeightOrg ) {
@@ -483,10 +386,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SystemType = SystemTypeOrg ;
       CurveType = CurveTypeOrg ;
       Diameter = DiameterOrg ;
-      Shaft = ShaftOrg ;
-
-      IsRouteOnPipeSpace = IsRouteOnPipeSpaceOrg ;
-
       UseFromFixedHeight = UseFromFixedHeightOrg ;
       FromLocationType = FromLocationTypeOrg ;
       FromFixedHeight = FromFixedHeightOrg ;
@@ -507,9 +406,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DiameterOrg = null ;
       SystemTypeOrg = null ;
       CurveTypeOrg = null ;
-      ShaftOrg = null ;
-
-      IsRouteOnPipeSpaceOrg = false ;
 
       UseFromFixedHeightOrg = false ;
       FromLocationTypeOrg = FixedHeightType.Floor ;
@@ -555,16 +451,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         DisplayUnit.IMPERIAL => LengthConverter.Inches,
         _ => LengthConverter.Default,
       } ;
-    }
-
-    public class OpeningProxy
-    {
-      internal OpeningProxy( Opening? opening )
-      {
-        Value = opening ;
-      }
-
-      public Opening? Value { get ; }
     }
   }
 }

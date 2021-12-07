@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var (fromPickResult, parentVavs, childVavs, errorMessage) = SelectRootConnectorAndFindVavs( uiDocument, routingExecutor, GetAddInType() ) ;
       if ( null != errorMessage ) return ( false, errorMessage ) ;
       _rootLevel = uiDocument.Document.GuessLevel( fromPickResult.GetOrigin() ) ;
-      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, parentVavs.First() ) ;
+      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult ) ;
       if ( true != property?.DialogResult ) return ( false, null ) ;
       if ( GetMEPSystemClassificationInfoFromSystemType( property.GetSystemType() ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, parentVavs, childVavs, property, classificationInfo ) ) ;
       return ( false, null ) ;
@@ -167,13 +167,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static double DistanceFromRoot( IConnector rootConnector, LocationPoint targetConnectorPos, bool isRotate90 )
     {
-      var rootConnectorPos = rootConnector.Origin ;
-      var rootConnVec = rootConnectorPos.To3dPoint().To2d() ;
+      var rootConnectorPosXyz = rootConnector.Origin ;
+      var rootConnectorPos2d = rootConnectorPosXyz.To3dPoint().To2d() ;
       var targetConnector = targetConnectorPos.Point.To3dPoint().To2d() ;
 
       var rootConnectorBasisZ = rootConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
       var calculateDir = isRotate90 ? new Vector2d( -rootConnectorBasisZ.y, rootConnectorBasisZ.x ) : rootConnectorBasisZ ;
-      var rootToVavVector = targetConnector - rootConnVec ;
+      var rootToVavVector = targetConnector - rootConnectorPos2d ;
       var angle = GetAngleBetweenVector( calculateDir, rootToVavVector ) ;
 
       return Math.Abs( Math.Cos( angle ) * rootToVavVector.magnitude ) ;
@@ -194,32 +194,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return spaces ;
     }
 
-    private AutoVavRoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, Element toPickElement )
+    private AutoVavRoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult )
     {
-      var toLevelId = toPickElement.LevelId ;
-
-      if ( ( fromPickResult.PickedConnector ?? toPickElement.GetConnectors().First( c => c.Id != VavConnectorId ) ) is { } connector ) {
-        if ( MEPSystemClassificationInfo.From( connector ) is not { } classificationInfo ) return null ;
-
-        if ( CreateSegmentDialogDefaultValuesWithConnector( document, connector, classificationInfo ) is not { } initValues ) return null ;
-
-        return ShowDialog( document, initValues, _rootLevel.Id, toLevelId ) ;
-      }
-
-      return null ;
+      if ( fromPickResult.PickedConnector == null ) return null ;
+      if ( MEPSystemClassificationInfo.From( fromPickResult.PickedConnector ) is not { } classificationInfo ) return null ;
+      return CreateSegmentDialogDefaultValuesWithConnector( document, fromPickResult.PickedConnector, classificationInfo ) is not { } initValues ? null : ShowDialog( document, initValues, _rootLevel.Id ) ;
     }
 
-    private static ElementId GetTrueLevelId( Document document, ConnectorPicker.IPickResult pickResult )
+    protected static AutoVavRoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId )
     {
-      var levelId = pickResult.GetLevelId() ;
-      if ( ElementId.InvalidElementId != levelId ) return levelId ;
-
-      return document.GuessLevel( pickResult.GetOrigin() ).Id ;
-    }
-
-    protected static AutoVavRoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
-    {
-      var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
+      var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, fromLevelId ) ;
       var sv = new AutoVavRoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ) ;
 
       sv.ShowDialog() ;
@@ -248,35 +232,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var rootConnectorEndPoint = new ConnectorEndPoint( rootConnector, radius ) ;
       var vavConnectorEndPoint = new ConnectorEndPoint( parentVavs.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radius ) ;
       var mainRouteHeight = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, rootConnector.Origin.Z - _rootLevel.Elevation ) ;
-      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, rootConnectorEndPoint, vavConnectorEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), mainRouteHeight, mainRouteHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
+      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, rootConnectorEndPoint, vavConnectorEndPoint, diameter, false, mainRouteHeight, mainRouteHeight, avoidType, ElementId.InvalidElementId ) ) ) ;
 
       // Branch routes
       foreach ( var vav in parentVavs.Take( parentVavs.Count - 1 ) ) {
-        var diameterChild = parentVavs.Last().LookupParameter( "ダクト径" ).AsDouble() ;
-        var radiusChild = diameterChild * 0.5 ;
+        var childDiameter = parentVavs.Last().LookupParameter( "ダクト径" ).AsDouble() ;
+        var childRadius = childDiameter * 0.5 ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
-        var connectorEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameterChild, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+        var connectorEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), childRadius ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, null, null, avoidType, ElementId.InvalidElementId ) ;
         result.Add( ( subRouteName, segment ) ) ;
       }
 
-      foreach ( var (_, value) in childVavs ) {
-        var diameterChild = value.Last().LookupParameter( "ダクト径" ).AsDouble() * 2 ;
-        var radiusChild = diameterChild * 0.5 ;
+      foreach ( var (_, childVav) in childVavs ) {
+        var childDiameter = childVav.Last().LookupParameter( "ダクト径" ).AsDouble() * 2 ;
+        var childRadius = childDiameter * 0.5 ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
-        var connectorEndPoint = new ConnectorEndPoint( value.Last().GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameterChild, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+        var connectorEndPoint = new ConnectorEndPoint( childVav.Last().GetConnectors().First( c => c.Id != VavConnectorId ), childRadius ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, sensorFixedHeight, null, avoidType, ElementId.InvalidElementId ) ;
         result.Add( ( subRouteName, segment ) ) ;
-        foreach ( var vav in value.Take( value.Count - 1 ) ) {
-          diameterChild = vav.LookupParameter( "ダクト径" ).AsDouble() ;
-          radiusChild = diameterChild * 0.5 ;
+        foreach ( var vav in childVav.Take( childVav.Count - 1 ) ) {
+          childDiameter = vav.LookupParameter( "ダクト径" ).AsDouble() ;
+          childRadius = childDiameter * 0.5 ;
           var subChildRouteName = nameBase + "_" + ( ++nextIndex ) ;
           var branchChildEndPoint = new RouteEndPoint( document, subRouteName, DefaultSubRouteIndex ) ;
-          var connectorChildEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), radiusChild ) ;
-          var segmentChild = new RouteSegment( classificationInfo, systemType, curveType, branchChildEndPoint, connectorChildEndPoint, diameterChild, false, null, null, avoidType, ElementId.InvalidElementId ) ;
-          result.Add( ( subChildRouteName, segmentChild ) ) ;
+          var connectorChildEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), childRadius ) ;
+          var childSegment = new RouteSegment( classificationInfo, systemType, curveType, branchChildEndPoint, connectorChildEndPoint, childDiameter, false, null, null, avoidType, ElementId.InvalidElementId ) ;
+          result.Add( ( subChildRouteName, childSegment ) ) ;
         }
       }
 

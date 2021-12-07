@@ -49,8 +49,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public double GetDiameter() => AutoVavEdit.Diameter ?? throw new InvalidOperationException() ;
 
-    public bool GetRouteOnPipeSpace() => AutoVavEdit.IsRouteOnPipeSpace ?? throw new InvalidOperationException() ;
-
     public FixedHeight? GetFromFixedHeight()
     {
       if ( true != AutoVavEdit.UseFromFixedHeight ) return null ;
@@ -58,11 +56,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     public AvoidType GetAvoidType() => AutoVavEdit.AvoidType ?? throw new InvalidOperationException() ;
-
-    public Opening? GetShaft()
-    {
-      return AutoVavEdit.Shaft ;
-    }
     
   }
 }
