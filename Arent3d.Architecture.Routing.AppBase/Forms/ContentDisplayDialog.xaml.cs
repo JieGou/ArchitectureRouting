@@ -191,8 +191,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             modelNumber = ceeDModel.ModelNumber ;
             specification2 = ceeDModel.CeeDSetCode ;
             supplement = ceeDModel.Name ;
-            if ( _hiroiSetMasterNormalModels.Any() && ! string.IsNullOrEmpty( ceeDModel.CeeDModelNumber ) ) {
-              var hiroiSetMasterNormalModel = _hiroiSetMasterNormalModels.FirstOrDefault( h => h.ParentPartModelNumber == ceeDModel.CeeDModelNumber ) ;
+            
+            var ceeDModelNumber = string.Empty ;
+            if ( _hiroiSetCdMasterNormalModels.Any() ) {
+              var hiroiSetCdMasterNormalModel = _hiroiSetCdMasterNormalModels.FirstOrDefault( h => h.SetCode == ceeDSetCode ) ;
+              if ( hiroiSetCdMasterNormalModel != null ) {
+                ceeDModelNumber = productType == ProductType.Connector ? hiroiSetCdMasterNormalModel.QuantityParentPartModelNumber : hiroiSetCdMasterNormalModel.LengthParentPartModelNumber ;
+                construction = productType == ProductType.Conduit ? hiroiSetCdMasterNormalModel.ConstructionClassification : string.Empty ;
+              }
+            }
+
+            if ( _hiroiSetMasterNormalModels.Any() && ! string.IsNullOrEmpty( ceeDModelNumber ) ) {
+              var hiroiSetMasterNormalModel = _hiroiSetMasterNormalModels.FirstOrDefault( h => h.ParentPartModelNumber == ceeDModelNumber ) ;
               if ( hiroiSetMasterNormalModel != null ) {
                 specification = hiroiSetMasterNormalModel.Name1 ;
                 var materialCode1 = hiroiSetMasterNormalModel.MaterialCode1 ;
@@ -205,12 +215,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                   }
                 }
               }
-            }
-
-            if ( _hiroiSetCdMasterNormalModels.Any() && productType == ProductType.Conduit ) {
-              var hiroiSetCdMasterNormalModel = _hiroiSetCdMasterNormalModels.FirstOrDefault( h => h.SetCode == ceeDSetCode ) ;
-              if ( hiroiSetCdMasterNormalModel != null )
-                construction = hiroiSetCdMasterNormalModel.ConstructionClassification ;
             }
           }
         }
