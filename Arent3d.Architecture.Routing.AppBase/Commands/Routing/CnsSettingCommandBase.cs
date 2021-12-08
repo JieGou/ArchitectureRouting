@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
+using System.Collections.ObjectModel ;
+using System.Drawing.Text ;
 using System.Linq ;
 using System.Threading ;
 using System.Windows.Forms ;
@@ -29,6 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // get data of Cns Category from snoop DB
       CnsSettingStorable cnsStorables = document.GetCnsSettingStorable() ;
+      ObservableCollection<CnsSettingModel> currentCnsSettingData = CopyCnsSetting( cnsStorables.CnsSettingData ) ;
       CnsSettingViewModel viewModel = new CnsSettingViewModel( cnsStorables ) ;
       var dialog = new CnsSettingDialog( viewModel ) ;
 
@@ -59,6 +63,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             progress.Message = "Saving CNS Setting..." ;
             using ( progress?.Reserve( 0.5 ) ) {
               SaveCnsList( document, cnsStorables ) ;
+              UpdateConstructionsItem( document, currentCnsSettingData, cnsStorables.CnsSettingData ) ;
             }
           }
 
@@ -127,6 +132,43 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static void SetConstructionItemForConduit( Element element, string categoryName )
     {
       element.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, categoryName ) ;
+    }
+
+    private static IEnumerable<Element> GetAllConduits( Document document )
+    {
+      ElementCategoryFilter filter = new(BuiltInCategory.OST_Conduit) ;
+      FilteredElementCollector collector = new(document) ;
+      IList<Element> conduits = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElements() ;
+      return conduits ;
+    }
+
+    private static void UpdateConstructionsItem( Document document, ObservableCollection<CnsSettingModel> currentCnsSettingData, ObservableCollection<CnsSettingModel> newCnsSettingData )
+    {
+      var conduits = GetAllConduits( document ) ;
+      foreach ( var conduit in conduits ) {
+        var strCurrentConstructionItem = conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+        if ( string.IsNullOrEmpty( strCurrentConstructionItem ) ) continue ;
+
+        var currentItem = currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strCurrentConstructionItem ) ;
+        if ( currentItem == null ) {
+          continue ;
+        }
+
+        if ( newCnsSettingData.All( c => c.Index != currentItem.Index ) ) {
+          SetConstructionItemForConduit( conduit, "未設定" ) ;
+          continue ;
+        }
+
+        var newItem = newCnsSettingData.First( c => c.Index == currentItem.Index ) ;
+        if ( newItem == null ) continue ;
+        if ( newItem.CategoryName == strCurrentConstructionItem ) continue ;
+        SetConstructionItemForConduit( conduit, newItem.CategoryName ) ;
+      }
+    }
+
+    private static ObservableCollection<T> CopyCnsSetting<T>( IEnumerable<T> listCnsSettingData ) where T : ICloneable
+    {
+      return new ObservableCollection<T>( listCnsSettingData.Select( x => x.Clone() ).Cast<T>() ) ;
     }
   }
 }
