@@ -1,4 +1,5 @@
 ﻿using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.StorableConverter ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.Exceptions ;
 
@@ -84,6 +85,19 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new PickUpStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get detail symbol data from snoop DB.
+    /// </summary>
+    public static DetailSymbolStorable GetDetailSymbolStorable( this Document document )
+    {
+      try {
+        return DetailSymbolStorableCache.Get( document ).FindOrCreate( DetailSymbolStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new DetailSymbolStorable( document ) ;
       }
     }
   }
