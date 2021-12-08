@@ -48,8 +48,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               var selectedElements = UiDocument.Selection
                 .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
                 .Where( p => p is FamilyInstance or Conduit ) ;
-              var listConduit = selectedElements.ToList() ;
-              if ( ! listConduit.Any() ) {
+              var conduitList = selectedElements.ToList() ;
+              if ( ! conduitList.Any() ) {
                 message = "No Conduits are selected." ;
                 return Result.Cancelled ;
               }
@@ -59,7 +59,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 using Transaction transaction = new Transaction( document ) ;
                 transaction.Start( "Set conduits property" ) ;
 
-                SetConstructionItemForConduit( listConduit.ToList(), categoryName ) ;
+                SetConstructionItemForElements( conduitList.ToList(), categoryName ) ;
 
                 transaction.Commit() ;
               }
@@ -69,9 +69,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               var selectedElements = UiDocument.Selection
                 .PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
                 .Where( x => x is FamilyInstance or TextNote ) ;
-              var listConnector = selectedElements.ToList() ;
+              var connectorList = selectedElements.ToList() ;
               var categoryName = viewModel.ApplyToSymbolsText ;
-              if ( ! listConnector.Any() ) {
+              if ( ! connectorList.Any() ) {
                 message = "No Connectors are selected." ;
                 return Result.Cancelled ;
               }
@@ -79,7 +79,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 using Transaction transaction = new Transaction( document ) ;
                 transaction.Start( "Ungroup members and set connectors property" ) ;
 
-                foreach ( var connector in listConnector ) {
+                foreach ( var connector in connectorList ) {
                   var parentGroup = document.GetElement( connector.GroupId ) as Group ;
                   if ( parentGroup != null ) {
                     // ungroup before set property
@@ -96,13 +96,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     connectorGroups.Add( connector.Id, listTextNoteIds ) ;
                     parentGroup.UngroupMembers() ;
                   }
-
-                  if ( connector is FamilyInstance ) {
-                    // set value to "Construction Classification" property
-                    SetConstructionClassificationForConnector( connector, categoryName ) ;
-                  }
                 }
-
+                SetConstructionItemForElements( connectorList.ToList(), categoryName ) ;
                 transaction.Commit() ;
               }
             }
@@ -135,7 +130,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
                cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
             foreach ( var item in connectorGroups ) {
-              // create group for updated connector (with new property) and related text note
+              // create group for updated connector (with new property) and related text note if any
               List<ElementId> groupIds = new List<ElementId>() ;
               groupIds.Add( item.Key ) ;
               groupIds.AddRange( item.Value ) ;
@@ -186,12 +181,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void SetConstructionClassificationForConnector( Element element, string categoryName )
-    {
-      element.SetProperty( RoutingFamilyLinkedParameter.ConstructionClassification, categoryName ) ;
-    }
-
-    private static void SetConstructionItemForConduit( List<Element> elements, string categoryName )
+    private static void SetConstructionItemForElements( List<Element> elements, string categoryName )
     {
       foreach ( var conduit in elements ) {
         conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, categoryName ) ;

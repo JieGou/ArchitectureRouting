@@ -99,14 +99,9 @@ namespace Arent3d.Architecture.Routing
       typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ElementsUsedForUI ) )]
     RouteConnectorRelationIds,
 
-    [ParameterGuid( "28b41f1c-301a-4009-ade3-3934d7e6389b" ), NameOnRevit( "Construction Classification" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA,
-      typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
-    ConstructionClassification,
-
     [ParameterGuid( "f054f110-68e7-4bce-9d17-688557d410da" ), NameOnRevit( "Construction Item" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA,
-      typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Conduits ) )]
+      typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConstructionItems ) )]
     ConstructionItem
   }
 
