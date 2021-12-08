@@ -41,6 +41,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
         [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
         private static class ShowPickUpInformationCommandButton { }
+        
+        [Button( typeof( CreateDetailSymbolCommand ), OnlyInitialized = true )]
+        private static class CreateDetailSymbolCommandButton { }
       }
 
       [Panel("arent3d.architecture.routing.routing", TitleKey = "Electrical.App.Panels.Routing.Routing" )]
