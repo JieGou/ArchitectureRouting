@@ -170,7 +170,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private List<string> GetConstructionItemList()
     {
       var constructionItemList = new List<string>() ;
-      foreach ( var pickUpModel in _pickUpModels.Where( pickUpModel => ! constructionItemList.Contains( pickUpModel.ConstructionItems ) ) ) {
+      foreach ( var pickUpModel in _pickUpModels.Where( pickUpModel => ! constructionItemList.Contains( pickUpModel.ConstructionItems ) && pickUpModel.EquipmentType == ContentDisplayDialog.ProductType.Conduit.GetFieldName() ) ) {
         constructionItemList.Add( pickUpModel.ConstructionItems ) ;
       }
 
