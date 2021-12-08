@@ -1,4 +1,3 @@
-using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Threading ;
@@ -35,32 +34,87 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {
-        var listElement = new List<Element>() ;
+        Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
 
         if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None ) {
-          MessageBox.Show(
-            "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( "Please select a range." ),
-            "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
-          string returnMessage = string.Empty ;
-          
-          if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Conduit ) {
-            // pick conduits
-            var selectedElements = UiDocument.Selection
-              .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-              .Where( p => p is FamilyInstance or Conduit ) ;
-            returnMessage = "No Conduits are selected." ;
-            listElement = selectedElements.ToList() ;
-          } else if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
-            // pick connectors
-            var selectedElements = UiDocument.Selection
-              .PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-              .Where( x => x is FamilyInstance ) ;
-            returnMessage = "No Connectors are selected." ;
-            listElement = selectedElements.ToList() ;
-          }
+          try {
+            MessageBox.Show(
+              "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( "Please select a range." ),
+              "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
+            string returnMessage = string.Empty ;
 
-          if ( ! listElement.Any() ) {
-            message =  returnMessage ;
+            if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Conduit ) {
+              // pick conduits
+              var selectedElements = UiDocument.Selection
+                .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
+                .Where( p => p is FamilyInstance or Conduit ) ;
+              var listConduit = selectedElements.ToList() ;
+              if ( ! listConduit.Any() ) {
+                message = "No Conduits are selected." ;
+                return Result.Cancelled ;
+              }
+              else {
+                // set value to "Construction Item" property
+                var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
+                using Transaction transaction = new Transaction( document ) ;
+                transaction.Start( "Set conduits property" ) ;
+
+                SetConstructionItemForConduit( listConduit.ToList(), categoryName ) ;
+
+                transaction.Commit() ;
+              }
+            }
+            else if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
+              // pick connectors
+              var selectedElements = UiDocument.Selection
+                .PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
+                .Where( x => x is FamilyInstance or TextNote ) ;
+              var listConnector = selectedElements.ToList() ;
+              var categoryName = viewModel.ApplyToSymbolsText ;
+              if ( ! listConnector.Any() ) {
+                message = "No Connectors are selected." ;
+                return Result.Cancelled ;
+              }
+              else {
+                using Transaction transaction = new Transaction( document ) ;
+                transaction.Start( "Ungroup members and set connectors property" ) ;
+
+                foreach ( var connector in listConnector ) {
+                  var parentGroup = document.GetElement( connector.GroupId ) as Group ;
+                  if ( parentGroup != null ) {
+                    // ungroup before set property
+                    var attachedGroup = document.GetAllElements<Group>()
+                      .Where( x => x.AttachedParentId == parentGroup.Id ) ;
+                    List<ElementId> listTextNoteIds = new List<ElementId>() ;
+                    // ungroup textNote before ungroup connector
+                    foreach ( var group in attachedGroup ) {
+                      var ids = group.GetMemberIds() ;
+                      listTextNoteIds.AddRange( ids ) ;
+                      group.UngroupMembers() ;
+                    }
+
+                    connectorGroups.Add( connector.Id, listTextNoteIds ) ;
+                    parentGroup.UngroupMembers() ;
+                  }
+
+                  if ( connector is FamilyInstance ) {
+                    // set value to "Construction Classification" property
+                    SetConstructionClassificationForConnector( connector, categoryName ) ;
+                  }
+                }
+
+                transaction.Commit() ;
+              }
+            }
+
+            MessageBox.Show( "Dialog.Electrical.SetElementProperty.Success".GetAppStringByKeyOrDefault( "Success" ),
+              "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault(
+                "Construction item addition result" ), MessageBoxButtons.OK ) ;
+          }
+          catch {
+            MessageBox.Show( "Dialog.Electrical.SetElementProperty.Failure".GetAppStringByKeyOrDefault( "Failed" ),
+              "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault(
+                "Construction item addition result" ), MessageBoxButtons.OK ) ;
             return Result.Cancelled ;
           }
         }
@@ -78,35 +132,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
           }
 
-          if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None ) {
-            try {
-              if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Conduit ) {
-                // set value to "Construction Item" property
-                var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
-                foreach ( var conduit in listElement ) {
-                  SetConstructionItemForConduit( conduit, categoryName ) ;
-                }
-              } else if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
-                // set value to "Construction Classification" property
-                var categoryName = viewModel.ApplyToSymbolsText ;
-                foreach ( var connector in listElement ) {
-                  SetConstructionClassificationForConnector( connector, categoryName ) ;
-                }
-              }
-              MessageBox.Show( "Dialog.Electrical.SetElementProperty.Success".GetAppStringByKeyOrDefault( "Success" ),
-                "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault(
-                  "Construction item addition result" ), MessageBoxButtons.OK ) ;
+          if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
+               cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
+            foreach ( var item in connectorGroups ) {
+              // create group for updated connector (with new property) and related text note
+              List<ElementId> groupIds = new List<ElementId>() ;
+              groupIds.Add( item.Key ) ;
+              groupIds.AddRange( item.Value ) ;
+              document.Create.NewGroup( groupIds ) ;
             }
-            catch {
-              MessageBox.Show( "Dialog.Electrical.SetElementProperty.Failure".GetAppStringByKeyOrDefault( "Failed" ),
-                "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault(
-                  "Construction item addition result" ), MessageBoxButtons.OK ) ;
-              return Result.Cancelled ;
-            }
-
-            cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.None ;
           }
 
+          cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.None ;
           return Result.Succeeded ;
         } ) ;
       }
@@ -154,9 +191,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       element.SetProperty( RoutingFamilyLinkedParameter.ConstructionClassification, categoryName ) ;
     }
 
-    private static void SetConstructionItemForConduit( Element element, string categoryName )
+    private static void SetConstructionItemForConduit( List<Element> elements, string categoryName )
     {
-      element.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, categoryName ) ;
+      foreach ( var conduit in elements ) {
+        conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, categoryName ) ;
+      }
     }
   }
 }
