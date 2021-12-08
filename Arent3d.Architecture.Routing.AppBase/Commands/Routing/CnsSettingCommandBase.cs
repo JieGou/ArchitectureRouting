@@ -154,12 +154,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           continue ;
         }
 
-        if ( newCnsSettingData.All( c => c.Index != currentItem.Index ) ) {
+        if ( newCnsSettingData.All( c => c.Position != currentItem.Position ) ) {
           SetConstructionItemForConduit( conduit, "未設定" ) ;
           continue ;
         }
 
-        var newItem = newCnsSettingData.First( c => c.Index == currentItem.Index ) ;
+        var newItem = newCnsSettingData.First( c => c.Position == currentItem.Position ) ;
         if ( newItem == null ) continue ;
         if ( newItem.CategoryName == strCurrentConstructionItem ) continue ;
         SetConstructionItemForConduit( conduit, newItem.CategoryName ) ;

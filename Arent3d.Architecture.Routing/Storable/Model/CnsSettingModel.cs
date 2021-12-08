@@ -17,23 +17,24 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       }
     }
 
-    private int _index;
-    public int Index 
+    private int _position;
+    public int Position 
     { 
-      get => _index;
+      get => _position;
       set
       {
-        _index = value;
+        _position = value;
         OnPropertyChanged();
       }
     }
+    
     public string CategoryName { get; set; }
 
     public CnsSettingModel(int sequence, string categoryName)
     {
       _sequence = sequence;
       CategoryName = categoryName;
-      _index = sequence ;
+      _position = sequence ;
     }
     
     public bool Equals( CnsSettingModel other )
