@@ -20,13 +20,18 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         public string ProductName { get; set; }
         public string Standard { get; set; }
         public string Quantity { get; set; }
+        public int MaterialIndex { get; set; }
+        
+        public string ParentPartModelNumber { get; set; }
 
-        public QueryData(string productCode, string productName, string standard, string quantity)
+        public QueryData(string productCode, string productName, string standard, string quantity, string parentPartModelNumber, int materialIndex)
         {
             ProductCode = productCode;
             ProductName = productName;
             Standard = standard;
             Quantity = quantity;
+            ParentPartModelNumber = parentPartModelNumber;
+            MaterialIndex = materialIndex;
         }
     }
 }

@@ -36,7 +36,18 @@
             <TextBox Grid.Row="0" Grid.Column="5" VerticalContentAlignment="Center"  Name="txtMaterialCode" Width="200" Height="27"/>
 
             <Label Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" Content="施工区分" Margin="10,5,10,5" />
-            <ComboBox Grid.Row="1" Grid.Column="1" Width="200" VerticalContentAlignment="Center"  Margin="0,5,0,5" HorizontalAlignment="Left" VerticalAlignment="Top" Name="CmbSelect" IsEditable="True" Height="27" />
+            <ComboBox Grid.Row="1" 
+                      Grid.Column="1" 
+                      Width="200" 
+                      ItemsSource="{Binding  SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      TextBoxBase.TextChanged="ConstructionKbnComboBox_TextChanged"
+                      VerticalContentAlignment="Center"  
+                      Margin="0,5,0,5" 
+                      HorizontalAlignment="Left" 
+                      VerticalAlignment="Top" 
+                      Name="CmbSelect" 
+                      IsEditable="True" 
+                      Height="27" />
             <Image Grid.Row="1" Grid.Column="4" Width="100" Height="100" HorizontalAlignment="Right" Source="{Binding CeeDDetailInformationModel.SymbolImage}" />
             <Button Grid.Row="1" Grid.Column="5" HorizontalAlignment="Left" VerticalAlignment="Top" x:Name="btnChangeImage" Command="{Binding ChangeImageCommand}" Content="シンボル変更" Margin="10,15,0,10" Height="27" Width="150" />
         </Grid>
@@ -90,6 +101,7 @@
                     Content="行削除"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
+                    Click="BtnDelete_OnClick"
                     Height="27"
                     Width="110" />
             <Button Grid.Column="1" x:Name="Btn2"
