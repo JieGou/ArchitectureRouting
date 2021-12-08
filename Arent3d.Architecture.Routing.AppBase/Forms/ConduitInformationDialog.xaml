@@ -44,25 +44,24 @@
             </DataGrid.Resources>
 
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="計算除外" Width="40" Binding="{Binding CalculationExclusion}" CanUserSort="False" IsReadOnly="True"/>
-                <DataGridTextColumn Header="フロア" Width="60" Binding="{Binding Floor, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" />
-                <DataGridTextColumn Header="明細記号" Width="60" Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電線種類" Width="120" Binding="{Binding WireType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電線サイズ" Width="60" Binding="{Binding WireSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電線条数" Width="60" Binding="{Binding WireStrip, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電線本数" Width="60" Binding="{Binding WireBook, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="アース種類" Width="15" Binding="{Binding EarthType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="アースサイズ" Width="15" Binding="{Binding EarthSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="アース本数" Width="15" Binding="{Binding NumberOfGrounds, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管種類" Width="60" Binding="{Binding PipingType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管サイズ" Width="60" Binding="{Binding PipingSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管本数" Width="60" Binding="{Binding NumberOfPipes, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="セット本数"  Width="15" Binding="{Binding NumberOfSets, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="施工区分" Width="60" Binding="{Binding ConstructionClassification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="区分" Width="120" Binding="{Binding Classification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="工事項目" Width="170" Binding="{Binding ConstructionItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管工事項目" Width="170" Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="備考" Width="250" Binding="{Binding Remark, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridCheckBoxColumn Header="計算除外" Width="50" Binding="{Binding CalculationExclusion}" CanUserSort="False"/>
+                <DataGridTextColumn Header="フロア" Width="70" Binding="{Binding Floor, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" />
+                <DataGridTextColumn Header="明細記号" Width="70" Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="電線種類" Width="130" Binding="{Binding WireType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="電線サイズ" Width="70" Binding="{Binding WireSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="電線条数" Width="70" Binding="{Binding WireStrip, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="電線本数" Width="70" Binding="{Binding WireBook, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="アース種類" Width="25" Binding="{Binding EarthType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="アースサイズ" Width="25" Binding="{Binding EarthSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="アース本数" Width="25" Binding="{Binding NumberOfGrounds, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="配管種類" Width="70" Binding="{Binding PipingType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="配管サイズ" Width="70" Binding="{Binding PipingSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="配管本数" Width="70" Binding="{Binding NumberOfPipes, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="施工区分" Width="70" Binding="{Binding ConstructionClassification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="信号種別" Width="130" Binding="{Binding Classification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="工事項目" Width="180" Binding="{Binding ConstructionItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="配管工事項目" Width="180" Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="備考" Width="250" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" />
             </DataGrid.Columns>
         </DataGrid>
         <Grid VerticalAlignment="Bottom" Width="1890" Height="70">

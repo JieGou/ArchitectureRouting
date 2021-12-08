@@ -7,6 +7,7 @@ using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
@@ -33,19 +34,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var conduitModel = conduitsModelData.FirstOrDefault() ;
           var wireType = wiresAndCablesModelData.FirstOrDefault() ;
           var heroiCdSet = hiroiSetCdMasterNormalModelData.FirstOrDefault() ;
-          string floor = element.LookupParameter( "Level" )?.AsValueString() ??
-                         element.LookupParameter( "Reference Level" ).AsValueString() ;
-          List<string> paramList = new List<string>() ;
-          foreach ( Parameter param in element.Parameters ) {
-            if ( ! string.IsNullOrEmpty( param.AsValueString() ) ) {
-              paramList.Add( param.Definition.Name + " - " + param.AsValueString() ) ;
-            }
-          }
+          string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
 
-          conduitInformationModels.Add( new ConduitInformationModel( true, floor, wireType?.COrP ?? "",
-            wireType?.WireType ?? "", wireType?.DiameterOrNominal ?? "", wireType?.NumberOfHeartsOrLogarithm ?? "",
-            wireType?.NumberOfConnections ?? "", "", "", "", conduitModel?.PipingType ?? "", conduitModel?.Size ?? "",
-            "", string.Empty, heroiCdSet?.ConstructionClassification ?? "", wireType?.Classification ?? "",
+          conduitInformationModels.Add( new ConduitInformationModel( false, floor, wireType?.COrP,
+            wireType?.WireType, wireType?.DiameterOrNominal, wireType?.NumberOfHeartsOrLogarithm,
+            wireType?.NumberOfConnections, string.Empty, string.Empty, string.Empty, conduitModel?.PipingType, conduitModel?.Size,
+            "", heroiCdSet?.ConstructionClassification, wireType?.Classification,
             "","", "" ) ) ;
         }
       }
