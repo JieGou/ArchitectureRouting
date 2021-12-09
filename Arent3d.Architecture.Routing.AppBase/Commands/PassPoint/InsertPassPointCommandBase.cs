@@ -46,14 +46,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
     private static FamilyInstance InsertPassPointElement( Document document, PointOnRoutePicker.PickInfo pickInfo )
     {
       var (fromElementId, toElementId) = NewRackCommandBase.GetFromConnectorIdAndToConnectorId( pickInfo.Element ) ;
-      var (fromConnectorId, toConnectorId) = FindFromAndToConnectorIds( document, fromElementId, toElementId ) ;
+      var (fromConnectorId, toConnectorId) = GetFromConnectorIdAndToConnectorId( document, fromElementId, toElementId ) ;
       var passPoint = document.AddPassPoint( pickInfo.Route.RouteName, pickInfo.Position, pickInfo.RouteDirection, pickInfo.Radius, pickInfo.Element.GetLevelId() ) ;
       passPoint.SetProperty( PassPointParameter.RelatedConnectorId, toConnectorId ) ;
       passPoint.SetProperty( PassPointParameter.RelatedFromConnectorId, fromConnectorId ) ;
       return passPoint ;
     }
 
-    private static (string, string) FindFromAndToConnectorIds( Document document, string fromElementId, string toElementId )
+    private static (string, string) GetFromConnectorIdAndToConnectorId( Document document, string fromElementId, string toElementId )
     {
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
 
