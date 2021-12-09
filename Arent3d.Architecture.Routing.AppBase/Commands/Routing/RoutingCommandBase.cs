@@ -42,11 +42,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var result = document.TransactionGroup( GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ), _ =>
         {
           var executionResult = GenerateRoutes( document, executor, state ) ;
-          if ( RoutingExecutionResultType.Cancel == executionResult.Type ) return Result.Cancelled ;
-          if ( RoutingExecutionResultType.Failure == executionResult.Type ) return Result.Failed ;
+          if ( Result.Cancelled == executionResult.Result ) return Result.Cancelled ;
+          if ( Result.Failed == executionResult.Result ) return Result.Failed ;
 
           // Avoid Revit bugs about reducer insertion.
-          FixReducers( document, executor, executionResult.GeneratedRoutes ) ;
+          FixReducers( document, executor, executionResult.Value ) ;
 
           return Result.Succeeded ;
         } ) ;
@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract RoutingExecutor CreateRoutingExecutor( Document document, View view ) ;
 
-    private RoutingExecutionResult GenerateRoutes( Document document, RoutingExecutor executor, object? state )
+    private OperationResult<IReadOnlyCollection<Route>> GenerateRoutes( Document document, RoutingExecutor executor, object? state )
     {
       return document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
       {
@@ -84,19 +84,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           progress.Message = "Routing..." ;
 
           var segments = GetRouteSegments( document, state ) ;
-          var result = executor.Run( segments, progress ) ;
-
-          return result.Type switch
-          {
-            RoutingExecutionResultType.Success => ( Result.Succeeded, result ),
-            RoutingExecutionResultType.Cancel => ( Result.Cancelled, result ),
-            _ => ( Result.Failed, result ),
-          } ;
+          return executor.Run( segments, progress ) ;
         }
         catch ( OperationCanceledException ) {
-          return ( Result.Cancelled, RoutingExecutionResult.Cancel ) ;
+          return OperationResult<IReadOnlyCollection<Route>>.Cancelled ;
         }
-      }, RoutingExecutionResult.Cancel ) ;
+      } ) ;
     }
 
     private static void FixReducers( Document document, RoutingExecutor executor, IEnumerable<Route> routes )
@@ -112,8 +105,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           FixCurveReducers( curve ) ;
         }
 
-        return ( Result.Succeeded, null! ) ;
-      }, (RoutingExecutionResult)null! ) ;
+        return Result.Succeeded ;
+      } ) ;
 
       static void FixCurveReducers( MEPCurve curve )
       {

@@ -229,8 +229,9 @@ namespace Arent3d.Architecture.Routing
 
     private static bool HasSameOvalShape( IConnector conn1, IConnector conn2 )
     {
-      // TODO
-      return false ;
+      var document = GetDocument( conn1 ) ?? GetDocument( conn2 ) ?? throw new InvalidOperationException() ;
+      var tole = document.Application.VertexTolerance ;
+      return Math.Abs( conn1.Radius - conn2.Radius ) < tole ;
     }
 
     private static bool HasSameRoundShape( IConnector conn1, IConnector conn2 )
