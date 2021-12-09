@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         
         private void BuildQueryData(string materialCode, string quantity, string parentPartModelNumber, int materialIndex, ref ObservableCollection<QueryData> queryData)
         {
-            if ( !string.IsNullOrWhiteSpace(materialCode) )
+            if (!string.IsNullOrWhiteSpace(materialCode))
             {
                 materialCode = String.Format(_productCodeFormat, Convert.ToInt32(materialCode));
                 var hiroiMasterItem = _hiroiMasterModel.FirstOrDefault(x => x.Buzaicd == materialCode);
@@ -64,42 +64,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         private void LoadData()
         {
             ObservableCollection<QueryData> queryData = new ObservableCollection<QueryData>();
-            
-            CeedModel? ceedModel = _listCeedModel.FirstOrDefault( (model => model.CeeDSetCode.ToUpper().Equals( _setCode.ToUpper() ) ) );
-            var selectedValue = CmbSelect.SelectedValue == null ? string.Empty : CmbSelect.SelectedValue.ToString() ;
-            var hiroiSetMasterNormalList = new List<HiroiSetMasterModel>() ;
-
-            if ( ceedModel != null ) {
-                hiroiSetMasterNormalList = _hiroiSetMasterNormalModel.Where(x => x.ParentPartModelNumber.Contains(ceedModel.CeeDModelNumber)).ToList();
-            }
-
-            if ( !string.IsNullOrEmpty( selectedValue ) ) {
-                var hiroiSetCdMaster = new List<HiroiSetCdMasterModel>() ;
-                
-                if ( !string.IsNullOrEmpty( _setCode ) ) {
-                    hiroiSetCdMaster = _hiroiSetCdMasterModel.Where( x => x.ConstructionClassification.Equals(selectedValue) && x.SetCode.Equals(_setCode) ).ToList() ;
-                }
-                else {
-                    hiroiSetCdMaster = _hiroiSetCdMasterModel.Where( x => x.ConstructionClassification.Equals(selectedValue) ).ToList() ;
-                }
-                
-                hiroiSetMasterNormalList = _hiroiSetMasterNormalModel
-                                                .Where(x => 
-                                                    hiroiSetCdMaster.Exists( a => a.LengthParentPartModelNumber.Equals(x.ParentPartModelNumber)) || 
-                                                    hiroiSetCdMaster.Exists( a => a.QuantityParentPartModelNumber.Equals(x.ParentPartModelNumber))
-                                                ).ToList();
-            }
-            
-            foreach ( var item in hiroiSetMasterNormalList )
+            if (!string.IsNullOrWhiteSpace(_setCode))
             {
-                BuildQueryData(item.MaterialCode1, item.Quantity1, item.ParentPartModelNumber,1, ref queryData);
-                BuildQueryData(item.MaterialCode2, item.Quantity2, item.ParentPartModelNumber,2, ref queryData);
-                BuildQueryData(item.MaterialCode3, item.Quantity3, item.ParentPartModelNumber,3, ref queryData);
-                BuildQueryData(item.MaterialCode4, item.Quantity4, item.ParentPartModelNumber,4, ref queryData);
-                BuildQueryData(item.MaterialCode5, item.Quantity5, item.ParentPartModelNumber,5, ref queryData);
-                BuildQueryData(item.MaterialCode6, item.Quantity6, item.ParentPartModelNumber,6, ref queryData);
-                BuildQueryData(item.MaterialCode7, item.Quantity7, item.ParentPartModelNumber,7, ref queryData);
-                BuildQueryData(item.MaterialCode8, item.Quantity8, item.ParentPartModelNumber,8, ref queryData);
+                CeedModel? ceedModel = _listCeedModel.FirstOrDefault((model => model.CeeDSetCode.ToUpper().Equals(_setCode.ToUpper())));
+                if (ceedModel != null)
+                {
+                    var hiroiSetMasterNormalList = _hiroiSetMasterNormalModel.Where(x => x.ParentPartModelNumber.Contains(ceedModel.CeeDModelNumber));
+                    foreach (var item in hiroiSetMasterNormalList)
+                    {
+                        BuildQueryData(item.MaterialCode1, item.Quantity1, item.ParentPartModelNumber,1, ref queryData);
+                        BuildQueryData(item.MaterialCode2, item.Quantity2, item.ParentPartModelNumber,2, ref queryData);
+                        BuildQueryData(item.MaterialCode3, item.Quantity3, item.ParentPartModelNumber,3, ref queryData);
+                        BuildQueryData(item.MaterialCode4, item.Quantity4, item.ParentPartModelNumber,4, ref queryData);
+                        BuildQueryData(item.MaterialCode5, item.Quantity5, item.ParentPartModelNumber,5, ref queryData);
+                        BuildQueryData(item.MaterialCode6, item.Quantity6, item.ParentPartModelNumber,6, ref queryData);
+                        BuildQueryData(item.MaterialCode7, item.Quantity7, item.ParentPartModelNumber,7, ref queryData);
+                        BuildQueryData(item.MaterialCode8, item.Quantity8, item.ParentPartModelNumber,8, ref queryData);
+                    }
+                }
             }
 
             CeeDDetailInformationModel ceeDDetailInformationModels = new CeeDDetailInformationModel(queryData, "");
@@ -110,12 +92,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         private void TxtSetCode_OnTextChanged(object sender, TextChangedEventArgs e)
         {
             _setCode = txtSetCode.Text.Trim();
+            
+            //Set selected value for combobox
+            var hiroiSetCdMaster = _hiroiSetCdMasterModel.Find( x => x.SetCode.Equals( _setCode ) ) ;
+
+            if ( hiroiSetCdMaster == null ) {
+                CmbSelect.SelectedIndex = -1 ;
+            }
+            else {
+                CmbSelect.SelectedValue = hiroiSetCdMaster.ConstructionClassification ;
+            }
+            
             LoadData();
         }
 
         private void ConstructionKbnComboBox_TextChanged( object sender, TextChangedEventArgs e )
         {
-            LoadData();
+            if ( CmbSelect.SelectedValue == null ) return ;
+            var selectedValue = CmbSelect.SelectedValue ;
+            var item = _hiroiSetCdMasterModel.Find( x => x.SetCode.Equals( _setCode.ToUpper() ) ) ;
+            if ( item == null ) return ;
+            if (item.ConstructionClassification.Equals( CmbSelect.SelectedValue.ToString()) ) return;
+                    
+            item.ConstructionClassification = CmbSelect.SelectedValue.ToString() ;
+            _csvStorable.HiroiSetCdMasterNormalModelData = _hiroiSetCdMasterModel;
+                
+            try {
+                using Transaction t = new Transaction( _document, "Delete data" ) ;
+                t.Start() ;
+                _csvStorable.Save() ;
+                t.Commit() ;
+            }
+            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+                MessageBox.Show( "Delete Data Failed.", "Error Message" ) ;
+                DialogResult = false ;
+            }
         }
         
         private void BtnOK_OnClick(object sender, RoutedEventArgs e)
@@ -131,13 +142,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         
         private void BtnDelete_OnClick( object sender, RoutedEventArgs e )
         {
-            if ( DtGrid.SelectedCells.Count < 1 ) 
-                return;
+            if ( DtGrid.SelectedCells.Count < 1 ) return;
             
             var row = (QueryData)DtGrid.SelectedItem ;
-            
             var item =  _hiroiSetMasterNormalModel.Find( x => x.ParentPartModelNumber.Equals( row.ParentPartModelNumber ) && x.ParentPartModelNumber.Equals( row.ParentPartModelNumber ) );
-            
             switch ( row.MaterialIndex ) {
                 case 1:
                     item.MaterialCode1 = string.Empty ;
