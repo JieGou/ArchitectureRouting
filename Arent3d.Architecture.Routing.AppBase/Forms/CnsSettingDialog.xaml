@@ -33,13 +33,15 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="" IsReadOnly="True">
                             <DataGridTextColumn.Binding>
-                                <Binding  Path="Sequence" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay">
-                                </Binding>
+                                <Binding Path="Sequence" NotifyOnTargetUpdated="True"
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="工事項目名称" Width="280" EditingElementStyle="{StaticResource errorStyle}">
+                        <DataGridTextColumn Header="工事項目名称" Width="280"
+                                            EditingElementStyle="{StaticResource errorStyle}">
                             <DataGridTextColumn.Binding>
-                                <Binding  Path="CategoryName" NotifyOnTargetUpdated="True" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" >
+                                <Binding Path="CategoryName" NotifyOnTargetUpdated="True"
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay">
                                     <Binding.ValidationRules>
                                         <CnsSettingRules:CnsSettingValidationRule />
                                     </Binding.ValidationRules>
@@ -52,12 +54,18 @@
         </StackPanel>
         <StackPanel DockPanel.Dock="Right" Width="100">
             <Button Content="行追加" Height="32" Command="{Binding AddRowCommand}" Margin="0,10,0,0" Click="ButtonAddNewRow_OnClick"/>
-            <Button Content="行削除" Height="32" Command="{Binding DeleteRowCommand}" CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Margin="0,10,0,0" />
+            <Button Content="行削除" Height="32" Command="{Binding DeleteRowCommand}"
+                    CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Margin="0,10,0,0" />
             <Button Content="編集" Height="32" Click="Update_Click" Margin="0,10,0,0" />
             <Button Content="ハイライト" IsEnabled="False" Height="32" Margin="0,10,0,0" />
             <Button Content="読込み" Command="{Binding ReadFileCommand}" Height="32" Margin="0,10,0,0" />
             <Button Content="書出し" Command="{Binding WriteFileCommand}" Height="32" Margin="0,10,0,0" />
-            <Button Content="配線に適用" Command="{Binding SetConstructionItemForConduitCommand}" CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Click="ButtonApply_OnClick" Height="32" Margin="0,10,0,0"></Button>
+            <Button Content="シンボルに適用" Command="{Binding  SetConstructionItemForSymbolsCommand}"
+                    CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}"
+                    Click="Close_Click" Height="32" Margin="0,10,0,0" />
+            <Button Content="配線に適用" Command="{Binding SetConstructionItemForConduitsCommand}"
+                    CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Click="ButtonApply_OnClick"
+                    Height="32" Margin="0,10,0,0" />
             <Button Content="終了" Command="{Binding SaveCommand}" Click="ButtonSave_OnClick" Height="32" Margin="0,10,0,0" />
         </StackPanel>
     </DockPanel>

@@ -1,10 +1,8 @@
-﻿using System;
-using System.IO;
-using System.Linq ;
+﻿using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
-using Arent3d.Architecture.Routing.Storable.Model;
+using Arent3d.Architecture.Routing.Storable.Model ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -18,6 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         
         private void Update_Click(object sender, RoutedEventArgs e)
         {
+            if( grdCategories.SelectedItem == null) return;
             var selectedItem = ( (CnsSettingModel) grdCategories.SelectedItem ) ;
             if ( selectedItem.CategoryName == "未設定" ) return ;
             grdCategories.IsReadOnly = false ;
