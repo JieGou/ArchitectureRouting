@@ -5,7 +5,7 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Initialization.AddSymbolCommand", DefaultString = "Create Detail Symbol" )]
+  [DisplayNameKey( "Electrical.App.Commands.Initialization.CreateDetailSymbolCommand", DefaultString = "Create\nDetail Symbol" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CreateDetailSymbolCommand : CreateDetailSymbolCommandBase
   {
