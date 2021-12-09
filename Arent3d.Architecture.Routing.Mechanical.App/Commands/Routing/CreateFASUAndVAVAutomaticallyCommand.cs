@@ -5,7 +5,6 @@ using Autodesk.Revit.UI ;
 using System.Collections.Generic ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 using System ;
-using System.Diagnostics ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit ;
 using System.Linq ;
@@ -118,11 +117,24 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
         branchNumberToAreaDictionary, pickedConnector, rotationAxis ) ;
 
+      Dictionary<string, int> lstVAVQuantityInSpaces = new Dictionary<string, int>() ;
+      foreach ( var space in spaces ) {
+        var count = GetVAVQuantityExistInSpace( document, space ) ;
+        lstVAVQuantityInSpaces.Add( space.Name, count ) ;
+      }
+
+      if ( lstVAVQuantityInSpaces.Any( x=> x.Value >= 2 ) ) {
+        var lstInvalidSpaces = lstVAVQuantityInSpaces.Where( x => x.Value >= 2 ) ;
+        TaskDialog.Show( "FASUとVAVの自動配置", $"同一のSpaceに2つ以上のVAVが存在しているため、処理に失敗しました。 \n({string.Join(",", lstInvalidSpaces.Select(x => x.Key))})") ;
+        return Result.Failed ;
+      }
+      
       // Start Transaction
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         foreach ( var space in spaces ) {
-          if ( CheckFASUAndVAVExistInSpace( document, space ) ) continue;
+          if ( lstVAVQuantityInSpaces[space.Name] > 0 ) continue ;
+          
           // Add object to the document
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
@@ -140,7 +152,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           var instanceOfVAV = document.AddVAV( positionOfFASUAndVAV, space.LevelId ) ;
           instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( DiameterOfVAV ) ;
           instanceOfVAV.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).SetValueString( HeightOfVAV ) ;
-
+          
           // Get BoundingBox of FASU and VAV
           BoundingBoxXYZ boxOfFASU = instanceOfFASU.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfFASU == null ) continue ;
@@ -180,31 +192,31 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       return Result.Succeeded ;
     }
-
-    private static bool CheckFASUAndVAVExistInSpace(Document document, Element space)
+    
+    private static int GetVAVQuantityExistInSpace(Document document, Element space)
     {
       BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
-      if ( boxOfSpace == null ) return false ;
+      if ( boxOfSpace == null ) return 0 ;
 
       var dampers = document.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
       var dampersInstances = dampers as FamilyInstance[] ?? dampers.ToArray() ;
 
-      foreach (var fi in dampersInstances)
-      {
-        var vavPosition = fi.Location as LocationPoint ;
-        if ( vavPosition == null ) continue ;
+      var count = 0;
+      foreach ( var damperInstance in dampersInstances ) {
+        var damperPosition = damperInstance.Location as LocationPoint ;
+        if ( damperPosition == null ) continue ;
 
-        if ( IsInSpace( boxOfSpace, vavPosition.Point ) ) return true ;
+        if ( IsInSpace( boxOfSpace, damperPosition.Point ) ) count++ ;
       }
       
-      return false ;
+      return count ;
     }
     
     private static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavPosition )
     {
       return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
     }
-
+    
     private static Dictionary<Element, double> CalculateRotationAnglesOfFASUsAndVAVs( Document document,
       Dictionary<int, List<Element>> branchNumberDict, Connector pickedConnector, RotationAxis rotationAxis )
     {
