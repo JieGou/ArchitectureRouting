@@ -7,30 +7,44 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <Configurations>Debug 2019-2021;Release 2019-2021;Debug 2022;Release 2022</Configurations>
+        <Configurations>Debug 2019;Release 2019;Debug 2020;Release 2020;Debug 2021;Release 2021;Debug 2022;Release 2022</Configurations>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <LangVersion>9</LangVersion>
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <Platforms>x64</Platforms>
         <Authors>Arent Inc.</Authors>
-        <TargetFrameworks>net47;net472;net48</TargetFrameworks>
     </PropertyGroup>
 
     <Choose>
-        <When Condition=" '$(TargetFramework)' == 'net47' And $(Configuration.EndsWith(' 2019-2021')) ">
+        <When Condition=" $(Configuration.StartsWith('Debug ')) ">
             <PropertyGroup>
-                <RevitVersion>2019</RevitVersion>
+                <ConfigMode>Debug</ConfigMode>
             </PropertyGroup>
         </When>
-        <When Condition=" '$(TargetFramework)' == 'net472' And $(Configuration.EndsWith(' 2019-2021')) ">
+        <Otherwise>
+            <PropertyGroup>
+                <ConfigMode>Release</ConfigMode>
+            </PropertyGroup>
+        </Otherwise>
+    </Choose>
+    <Choose>
+        <When Condition=" $(Configuration.EndsWith(' 2019')) ">
             <PropertyGroup>
                 <RevitVersion>2020</RevitVersion>
+                <TargetFramework>net472</TargetFramework>
             </PropertyGroup>
         </When>
-        <When Condition=" '$(TargetFramework)' == 'net48' And $(Configuration.EndsWith(' 2019-2021')) ">
+        <When Condition=" $(Configuration.EndsWith(' 2020')) ">
+            <PropertyGroup>
+                <RevitVersion>2020</RevitVersion>
+                <TargetFramework>net472</TargetFramework>
+            </PropertyGroup>
+        </When>
+        <When Condition=" $(Configuration.EndsWith(' 2021')) ">
             <PropertyGroup>
                 <RevitVersion>2021</RevitVersion>
+                <TargetFramework>net48</TargetFramework>
             </PropertyGroup>
         </When>
         <When Condition=" $(Configuration.EndsWith(' 2022')) ">
@@ -42,16 +56,10 @@
         <Otherwise>
             <PropertyGroup>
                 <RevitVersion>0</RevitVersion>
+                <TargetFramework>net48</TargetFramework>
             </PropertyGroup>
         </Otherwise>
     </Choose>
-
-    <PropertyGroup Condition=" $(Configuration.StartsWith('Debug ')) ">
-        <ConfigMode>Debug</ConfigMode>
-    </PropertyGroup>
-    <PropertyGroup Condition=" $(Configuration.StartsWith('Release ')) ">
-        <ConfigMode>Release</ConfigMode>
-    </PropertyGroup>
 
     <PropertyGroup>
         <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
