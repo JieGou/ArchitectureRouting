@@ -42,11 +42,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ( p ) => { cnsStorables.CnsSettingData = CnsSettingModels ; } // Execute()
       ) ;
 
-      ApplyToSymbolsCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
-        ( seletectedIndex ) => { ApplyToSymbols( cnsStorables, seletectedIndex ) ; }
+      SetConstructionItemForSymbolsCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
+        ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex ) ; }
         // Execute()
       ) ;
-      SetConstructionItemForConduitCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
+      SetConstructionItemForConduitsCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
         ( seletectedIndex ) => { SetConstructionItemForConduit( cnsStorables, seletectedIndex ) ; } // Execute()
       ) ;
     }
@@ -56,8 +56,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand AddRowCommand { get ; set ; }
     public ICommand DeleteRowCommand { get ; set ; }
     public ICommand SaveCommand { get ; set ; }
-    public ICommand ApplyToSymbolsCommand { get ; set ; }
-    public ICommand SetConstructionItemForConduitCommand { get ; set ; }
+    public ICommand SetConstructionItemForSymbolsCommand { get ; set ; }
+    public ICommand SetConstructionItemForConduitsCommand { get ; set ; }
 
     private void ReadFile()
     {
@@ -110,18 +110,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void ApplyToSymbols( CnsSettingStorable cnsStorables, int seletectedIndex )
-    {
-      if ( seletectedIndex == -1 ) {
-        ApplyToSymbolsText = "" ;
-      }
-      else {
-        var item = CnsSettingModels.ElementAt( seletectedIndex ) ;
-        ApplyToSymbolsText = item.CategoryName ;
-        cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Connector ;
-      }
-    }
-
     private void AddRow()
     {
       CnsSettingModels.Add( new CnsSettingModel( CnsSettingModels.Count + 1, "" ) ) ;
@@ -146,6 +134,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       if ( CnsSettingModels.Count == 0 ) {
         CnsSettingModels.Add( new CnsSettingModel( sequence: 1, categoryName: "未設定" ) ) ;
+      }
+    }
+    
+    private void SetConstructionItemForSymbol( CnsSettingStorable cnsStorables, int seletectedIndex )
+    {
+      if ( seletectedIndex == -1 ) {
+        ApplyToSymbolsText = "未設定" ;
+      }
+      else {
+        var item = CnsSettingModels.ElementAt( seletectedIndex ) ;
+        ApplyToSymbolsText = item.CategoryName ;
+        cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Connector ;
       }
     }
 

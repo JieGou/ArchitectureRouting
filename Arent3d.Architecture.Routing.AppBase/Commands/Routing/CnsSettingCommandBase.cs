@@ -43,17 +43,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
             string returnMessage = string.Empty ;
 
-            if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Conduit ) {
-              // pick conduits
-              var selectedElements = UiDocument.Selection
-                .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-                .Where( p => p is FamilyInstance or Conduit ) ;
-              var conduitList = selectedElements.ToList() ;
-              if ( ! conduitList.Any() ) {
-                message = "No Conduits are selected." ;
-                return Result.Cancelled ;
-              }
-              else {
+            switch ( cnsStorables.ElementType ) {
+              case CnsSettingStorable.UpdateItemType.Conduit :
+              {
+                // pick conduits
+                var selectedElements = UiDocument.Selection
+                  .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
+                  .Where( p => p is FamilyInstance or Conduit ) ;
+                var conduitList = selectedElements.ToList() ;
+                if ( ! conduitList.Any() ) {
+                  message = "No Conduits are selected." ;
+                  return Result.Cancelled ;
+                }
+
                 // set value to "Construction Item" property
                 var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
                 using Transaction transaction = new Transaction( document ) ;
@@ -62,20 +64,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 SetConstructionItemForElements( conduitList.ToList(), categoryName ) ;
 
                 transaction.Commit() ;
+
+                break ;
               }
-            }
-            else if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
-              // pick connectors
-              var selectedElements = UiDocument.Selection
-                .PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-                .Where( x => x is FamilyInstance or TextNote ) ;
-              var connectorList = selectedElements.ToList() ;
-              var categoryName = viewModel.ApplyToSymbolsText ;
-              if ( ! connectorList.Any() ) {
-                message = "No Connectors are selected." ;
-                return Result.Cancelled ;
-              }
-              else {
+              case CnsSettingStorable.UpdateItemType.Connector :
+              {
+                // pick connectors
+                var selectedElements = UiDocument.Selection
+                  .PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
+                  .Where( x => x is FamilyInstance or TextNote ) ;
+                var connectorList = selectedElements.ToList() ;
+                var categoryName = viewModel.ApplyToSymbolsText ;
+                if ( ! connectorList.Any() ) {
+                  message = "No Connectors are selected." ;
+                  return Result.Cancelled ;
+                }
+
                 using Transaction transaction = new Transaction( document ) ;
                 transaction.Start( "Ungroup members and set connectors property" ) ;
 
@@ -88,9 +92,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     List<ElementId> listTextNoteIds = new List<ElementId>() ;
                     // ungroup textNote before ungroup connector
                     foreach ( var group in attachedGroup ) {
-                      var ids = group.GetMemberIds() ;
+                      var ids = @group.GetMemberIds() ;
                       listTextNoteIds.AddRange( ids ) ;
-                      group.UngroupMembers() ;
+                      @group.UngroupMembers() ;
                     }
 
                     connectorGroups.Add( connector.Id, listTextNoteIds ) ;
@@ -99,6 +103,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 }
                 SetConstructionItemForElements( connectorList.ToList(), categoryName ) ;
                 transaction.Commit() ;
+
+                break ;
               }
             }
 

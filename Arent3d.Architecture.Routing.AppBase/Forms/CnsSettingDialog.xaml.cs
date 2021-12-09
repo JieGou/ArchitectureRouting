@@ -23,17 +23,5 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             DialogResult = true;
             Close();
         }
-
-        private void ApplyToSymbols_OnClick(object sender, RoutedEventArgs e)
-        {
-            DialogResult = true;
-            Close();
-        }
-
-        private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
-        {
-            DialogResult = true;
-            Close();
-        }
     }
 }
