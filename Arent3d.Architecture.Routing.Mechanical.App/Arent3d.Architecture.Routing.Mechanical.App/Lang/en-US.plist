@@ -84,7 +84,10 @@
         <string>Create FASUs&#xA;And VAVs</string>
 
         <key>Mechanical.App.Commands.Routing.AutoRoutingVavCommand</key>
-        <string>Auto&#xA;Routing VAVs</string>        
+        <string>Auto&#xA;Routing VAVs</string>
+
+        <key>Mechanical.App.Commands.Routing.AdjustDuctSizeCommand</key>
+        <string>Adjust&#xA;Duct Size</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -113,6 +116,9 @@
 
         <key>TransactionName.Commands.Routing.PickAndReRoute</key>
         <string>Reroute Selected</string>
+
+        <key>TransactionName.Commands.Routing.PickAndAdjustDuctSize</key>
+        <string>Adjust Duct Size</string>
 
         <key>TransactionName.Commands.Routing.RerouteAll</key>
         <string>Reroute All</string>

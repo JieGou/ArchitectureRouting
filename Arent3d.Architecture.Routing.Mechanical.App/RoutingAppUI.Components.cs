@@ -80,8 +80,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         [Button( typeof( AutoRoutingVavCommand ), OnlyInitialized = true )]
         private static class AutoRoutingVavCommandButton { }
         
-        [Button( typeof( VavReRouteCommand ), OnlyInitialized = true )]
-        private static class VavReRouteCommandButton { }        
+        [Button( typeof( AdjustDuctSizeCommand ), OnlyInitialized = true )]
+        private static class AdjustDuctSizeCommandButton { }        
       }
 
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Mechanical.App.Panels.Routing.Monitor" )]
