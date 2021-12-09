@@ -279,7 +279,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
       // set To-Side Connector Id
-      var (fromConnectorId, toConnectorId) = GetToConnectorId( conduit ) ;
+      var (fromConnectorId, toConnectorId) = GetFromConnectorIdAndToConnectorId( conduit ) ;
       if ( ! string.IsNullOrEmpty( toConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
@@ -338,7 +338,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableTrayDefaultBendRadius == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
       // set To-Side Connector Id
-      var (fromConnectorId, toConnectorId) = GetToConnectorId( conduit ) ;
+      var (fromConnectorId, toConnectorId) = GetFromConnectorIdAndToConnectorId( conduit ) ;
       if ( ! string.IsNullOrEmpty( toConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
@@ -373,7 +373,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return isSameConnectors ;
     }
 
-    private static ( string, string ) GetToConnectorId( Element conduit )
+    public static ( string, string ) GetFromConnectorIdAndToConnectorId( Element conduit )
     {
       var fromEndPoint = conduit.GetNearestEndPoints( true ) ;
       var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;

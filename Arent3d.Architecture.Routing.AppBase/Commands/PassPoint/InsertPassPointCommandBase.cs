@@ -45,7 +45,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
 
     private static FamilyInstance InsertPassPointElement( Document document, PointOnRoutePicker.PickInfo pickInfo )
     {
-      return document.AddPassPoint( pickInfo.Route.RouteName, pickInfo.Position, pickInfo.RouteDirection, pickInfo.Radius, pickInfo.Element.GetLevelId() ) ;
+      var (fromElementId, toElementId) = NewRackCommandBase.GetFromConnectorIdAndToConnectorId( pickInfo.Element ) ;
+      var (fromConnectorId, toConnectorId) = FindFromAndToConnectorIds( document, fromElementId, toElementId ) ;
+      var passPoint = document.AddPassPoint( pickInfo.Route.RouteName, pickInfo.Position, pickInfo.RouteDirection, pickInfo.Radius, pickInfo.Element.GetLevelId() ) ;
+      passPoint.SetProperty( PassPointParameter.RelatedConnectorId, toConnectorId ) ;
+      passPoint.SetProperty( PassPointParameter.RelatedFromConnectorId, fromConnectorId ) ;
+      return passPoint ;
+    }
+
+    private static (string, string) FindFromAndToConnectorIds( Document document, string fromElementId, string toElementId )
+    {
+      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+
+      if ( ! string.IsNullOrEmpty( fromElementId ) ) {
+        var fromConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
+        if ( fromConnector!.IsTerminatePoint() || fromConnector!.IsPassPoint() ) {
+          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorId, out string? fromConnectorId ) ;
+          if ( ! string.IsNullOrEmpty( fromConnectorId ) )
+            fromElementId = fromConnectorId! ;
+        }
+      }
+
+      if ( string.IsNullOrEmpty( toElementId ) ) return ( fromElementId, toElementId ) ;
+      {
+        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
+        if ( ! toConnector!.IsTerminatePoint() && ! toConnector!.IsPassPoint() ) return ( fromElementId, toElementId ) ;
+        toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? toConnectorId ) ;
+        if ( ! string.IsNullOrEmpty( toConnectorId ) )
+          toElementId = toConnectorId! ;
+      }
+
+      return ( fromElementId, toElementId ) ;
     }
   }
 }
