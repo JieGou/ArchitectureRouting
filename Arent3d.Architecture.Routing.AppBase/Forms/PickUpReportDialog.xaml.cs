@@ -303,7 +303,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           row2 = sheet.CreateRow( 2 ) ;
           var row3 = sheet.CreateRow( 3 ) ;
           CreateCell( row0, 2, "【拾い出し集計表】", xssfCellStyles[ "headerNoneBorderedCellStyle" ] ) ;
-          CreateCell( row0, 6, docon, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
+          CreateMergeCell( sheet, row0, 0, 0, 6, 7, docon, xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
           for ( var i = 7 ; i < 19 ; i++ ) {
             CreateCell( row0, i, "", xssfCellStyles[ "bottomBorderedCellStyle" ] ) ;
           }
