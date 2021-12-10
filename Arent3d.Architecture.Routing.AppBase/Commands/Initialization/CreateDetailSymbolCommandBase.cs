@@ -1,5 +1,5 @@
-﻿using System ;
-using System.Collections.Generic ;
+﻿using System.Collections.Generic ;
+using System.Drawing ;
 using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -10,11 +10,13 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Application = Autodesk.Revit.ApplicationServices.Application ;
+using Color = Autodesk.Revit.DB.Color ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -29,21 +31,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         MessageBox.Show( mess, "Message" ) ;
         return Result.Cancelled ;
       }
-      
+
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var selection = uiDoc.Selection ;
       UIApplication uiApp = commandData.Application ;
       Application app = uiApp.Application ;
       var isLeft = true ;
       var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
-      List<string> conduitHasSymbolId = detailSymbolStorable.DetailSymbolModelData.Select( d => d.ConduitId ).ToList() ;
 
       return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
       {
         var element = selection.PickObject( ObjectType.Element, ConduitSelectionFilter.Instance, "Select cable." ) ;
         var conduit = doc.GetElement( element.ElementId ) ;
-        if ( conduitHasSymbolId.Contains( conduit.Id.IntegerValue.ToString() ) ) {
-          const string mess = "Conduit has been added the detail symbol." ;
+        var conduitHasSymbol = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.ConduitId == conduit.Id.IntegerValue.ToString() ) ;
+        if ( conduitHasSymbol != null ) {
+          string mess = "Cable has the detail symbol '" + conduitHasSymbol.DetailSymbol + "'" ;
           MessageBox.Show( mess, "Message" ) ;
           return Result.Cancelled ;
         }
@@ -54,6 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( ! ( detailSymbolSettingDialog.DialogResult ?? false ) ) return Result.Cancelled ;
 
         const double dPlus = 0.2 ;
+        var size = detailSymbolSettingDialog.HeightCharacter ;
         CurveArray lines = app.Create.NewCurveArray() ;
         XYZ firstPoint = element.GlobalPoint ;
         var startLineP1 = new XYZ( firstPoint.X + dPlus, firstPoint.Y + dPlus, firstPoint.Z ) ;
@@ -66,24 +69,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         List<XYZ> points = new List<XYZ>() ;
         switch ( detailSymbolSettingDialog.Angle ) {
           case "0" :
-            points.Add( new XYZ( firstPoint.X - dPlus * 10, firstPoint.Y, firstPoint.Z ) ) ;
+            points.Add( new XYZ( firstPoint.X - dPlus * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
             firstPoint = new XYZ( firstPoint.X + dPlus, firstPoint.Y, firstPoint.Z ) ;
             isLeft = true ;
             break ;
           case "90" :
             points.Add( new XYZ( firstPoint.X, firstPoint.Y + dPlus * 10, firstPoint.Z ) ) ;
-            points.Add( new XYZ( firstPoint.X - dPlus * 7, firstPoint.Y + dPlus * 10, firstPoint.Z ) ) ;
+            points.Add( new XYZ( firstPoint.X - dPlus * ( 3 + size ), firstPoint.Y + dPlus * 10, firstPoint.Z ) ) ;
             firstPoint = new XYZ( firstPoint.X, firstPoint.Y - dPlus, firstPoint.Z ) ;
             isLeft = true ;
             break ;
           case "180" :
-            points.Add( new XYZ( firstPoint.X + dPlus * 10, firstPoint.Y, firstPoint.Z ) ) ;
+            points.Add( new XYZ( firstPoint.X + dPlus * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
             firstPoint = new XYZ( firstPoint.X - dPlus, firstPoint.Y, firstPoint.Z ) ;
             isLeft = false ;
             break ;
           case "-90" :
-            points.Add( new XYZ( firstPoint.X, firstPoint.Y - dPlus * 10, firstPoint.Z ) ) ;
-            points.Add( new XYZ( firstPoint.X + dPlus * 7, firstPoint.Y - dPlus * 10, firstPoint.Z ) ) ;
+            points.Add( new XYZ( firstPoint.X, firstPoint.Y - dPlus * ( 8 + size ), firstPoint.Z ) ) ;
+            points.Add( new XYZ( firstPoint.X + dPlus * ( 5 + size ), firstPoint.Y - dPlus * ( 8 + size ), firstPoint.Z ) ) ;
             firstPoint = new XYZ( firstPoint.X, firstPoint.Y + dPlus, firstPoint.Z ) ;
             isLeft = false ;
             break ;
@@ -101,7 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         doc.Create.NewDetailCurveArray( doc.ActiveView, lines ) ;
 
         ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-        var noteWidth = detailSymbolSettingDialog.HeightCharacter * detailSymbolSettingDialog.PercentWidth ;
+        var noteWidth = ( size / 32.0 ) * ( 1.0 / 12.0 ) * detailSymbolSettingDialog.PercentWidth / 100 ;
 
         // make sure note width works for the text type
         var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
@@ -115,8 +118,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-        var txtPosition = new XYZ( firstPoint.X + ( isLeft ? dPlus : -dPlus * 5 ), firstPoint.Y + dPlus * 6.5, firstPoint.Z ) ;
-        TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, detailSymbolSettingDialog.DetailSymbol, opts ) ;
+        var txtPosition = new XYZ( firstPoint.X + ( isLeft ? dPlus : -dPlus * 4 ), firstPoint.Y + dPlus * ( 1 + size * 2 ), firstPoint.Z ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, detailSymbolSettingDialog.DetailSymbol, opts ) ;
+        CreateNewTextNoteType( doc, textNote, size, detailSymbolSettingDialog.SymbolFont, detailSymbolSettingDialog.SymbolStyle, detailSymbolSettingDialog.Offset, detailSymbolSettingDialog.BackGround, detailSymbolSettingDialog.PercentWidth ) ;
 
         SaveDetailSymbol( doc, detailSymbolStorable, conduit, detailSymbolSettingDialog.DetailSymbol ) ;
         return Result.Succeeded ;
@@ -191,7 +195,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private string GetCeeDSetCodeOfElement( Document doc, Element element )
     {
       var ceeDSetCode = string.Empty ;
-      if ( element.GroupId == ElementId.InvalidElementId ) return ceeDSetCode ?? string.Empty ;
+      if ( element.GroupId == ElementId.InvalidElementId ) return ceeDSetCode ;
       var groupId = doc.GetAllElements<Group>().FirstOrDefault( g => g.AttachedParentId == element.GroupId )?.Id ;
       if ( groupId != null )
         ceeDSetCode = doc.GetAllElements<TextNote>().FirstOrDefault( t => t.GroupId == groupId )?.Text.Trim( '\r' ) ;
@@ -293,8 +297,49 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       if ( toConnector == null ) return detailSymbol ;
       var code = GetCeeDSetCodeOfElement( doc, toConnector ) ;
+      if ( string.IsNullOrEmpty( code ) ) return detailSymbol ;
       detailSymbol = detailSymbolModels.Where( d => d.Code == code ).Select( d => d.DetailSymbol ).FirstOrDefault() ?? string.Empty ;
       return detailSymbol ;
+    }
+
+    private void CreateNewTextNoteType( Document doc, TextNote textNote, double size, string symbolFont, string symbolStyle, int offset, int background, int widthScale )
+    {
+      //Create new text type
+      var bold = 0 ;
+      var italic = 0 ;
+      var underline = 0 ;
+      string strStyleName = "TNT-" + symbolFont + "-" + size ;
+      if ( symbolStyle == FontStyle.Bold.GetFieldName() ) {
+        strStyleName += "-Bold" ;
+        bold = 1 ;
+      }
+      else if ( symbolStyle == FontStyle.Italic.GetFieldName() ) {
+        strStyleName += "-Italic" ;
+        italic = 1 ;
+      }
+      else if ( symbolStyle == FontStyle.Underline.GetFieldName() ) {
+        strStyleName += "-Underline" ;
+        underline = 1 ;
+      }
+
+      var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( strStyleName, tt.Name ) ) ;
+      if ( textNoteType == null ) {
+        // Create new Note type
+        Element ele = textNote.TextNoteType.Duplicate( strStyleName ) ;
+        textNoteType = ( ele as TextNoteType ) ! ;
+
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_FONT ).Set( symbolFont ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( ( size / 32.0 ) * ( 1.0 / 12.0 ) ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( background ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_BOLD ).Set( bold ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_ITALIC ).Set( italic ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_UNDERLINE ).Set( underline ) ;
+        textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( ( offset / 32.0 ) * ( 1.0 / 12.0 ) ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( (double)widthScale / 100 ) ;
+      }
+
+      // Change the text notes type to the new type
+      textNote.ChangeTypeId( textNoteType!.Id ) ;
     }
   }
 }
