@@ -21,8 +21,11 @@
     public string Group { get ; set ; }
     public string Layer { get ; set ; }
     public string Classification { get ; set ; }
+    public string Standard { get ; set ; }
+    public string PickUpNumber { get ; set ; }
+    public string Direction { get ; set ; }
 
-    public PickUpModel( string? item, string? floor, string? constructionItems, string? equipmentType, string? productName, string? use, string? usageName, string? construction, string? modelNumber, string? specification, string? specification2, string? size, string? quantity, string? tani, string? supplement, string? supplement2, string? group, string? layer, string? classification )
+    public PickUpModel( string? item, string? floor, string? constructionItems, string? equipmentType, string? productName, string? use, string? usageName, string? construction, string? modelNumber, string? specification, string? specification2, string? size, string? quantity, string? tani, string? supplement, string? supplement2, string? group, string? layer, string? classification, string? standard, string? pickUpNumber, string? direction )
     {
       Item = item ?? string.Empty ;
       Floor = floor ?? string.Empty ;
@@ -43,6 +46,9 @@
       Group = group ?? string.Empty ;
       Layer = layer ?? string.Empty ;
       Classification = classification ?? string.Empty ;
+      Standard = standard ?? string.Empty ;
+      PickUpNumber = pickUpNumber ?? string.Empty ;
+      Direction = direction ?? string.Empty ;
     }
   }
 }
