@@ -70,11 +70,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       foreach ( var tee in teesOnSelectedRoute ) {
         var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int)TeeConnectorType.Connector1 || conn.Id == (int)TeeConnectorType.Connector2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
         if ( behindTeeConnector == null ) continue ;
-        var passPointDir = tee.HandOrientation ;
+        var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
         var teeRouteName = tee.GetRouteName() ;
         if(teeRouteName == null) continue;
         var teeSegment = segments.FirstOrDefault( segment => segment.RouteName == teeRouteName ).Segment ;
-        var passPoint = document.AddPassPoint( teeRouteName, behindTeeConnector.Origin, passPointDir, teeSegment.PreferredNominalDiameter/2, teeSegment.FromEndPoint.GetLevelId( document ) ) ;
+        var passPointPosition = new XYZ( behindTeeConnector.Origin.X, behindTeeConnector.Origin.Y, behindTeeConnector.Origin.Z ) ;
+        var passPoint = document.AddPassPoint( teeRouteName, passPointPosition, passPointDir, teeSegment.PreferredNominalDiameter/2, teeSegment.FromEndPoint.GetLevelId( document ) ) ;
         var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
         if ( passPointOnRoutes.ContainsKey( teeRouteName ) ) {
           passPointOnRoutes[ teeRouteName ].Add( passPointEndPoint ) ;
@@ -98,6 +99,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         newRouteSegments = removeSegmentByRouteName( routeName, segments ).ToList() ;
 
         if ( passPoints.Count() > 1 ) {
+          passPoints.Sort( ( a, b ) => CompareDistance( startPosition, a, b ) ) ;
           var secondFromEndPoints = passPoints.ToList() ;
           var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( segment.ToEndPoint ) ;
           var firstToEndPoint = secondFromEndPoints[ 0 ] ;
@@ -120,9 +122,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         break;
       }
       
-      return newRouteSegments ;
+      return segments ;
     }
+    
+    private static int CompareDistance( XYZ startPosition, PassPointEndPoint a, PassPointEndPoint b )
+    {
+      if ( a.GetPassPoint()!.Location is not LocationPoint aPos || b.GetPassPoint()!.Location is not LocationPoint bPos ) return default ;
 
+      return Vector2d.Distance( aPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) .CompareTo( Vector2d.Distance( bPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ;
+    }
+    
     private static IEnumerable<FamilyInstance> RemoveTeeOutsideOfSegments( IEnumerable<FamilyInstance> tees, List<(string, RouteSegment)> segments )
     {
       List<FamilyInstance> resultTees = new() ;
