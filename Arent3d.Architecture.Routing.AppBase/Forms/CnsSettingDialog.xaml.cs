@@ -40,10 +40,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 .GroupBy(x => x.CategoryName).Any(g => g.Count() > 1);
             if ( isDuplicateName ) {
                 MessageBox.Show( "工事項目名称がすでに存在しています。再度工事項目名称を入力してください。" ) ;
-                var cellEdit = e.EditingElement ;
-                grdCategories.SelectedIndex = e.Row.GetIndex() ;
-                cellEdit.Dispatcher.BeginInvoke( DispatcherPriority.Input, new Action(() => cellEdit.MoveFocus(new TraversalRequest(FocusNavigationDirection.First))));
-                grdCategories.Focus() ;
+                e.Cancel = true ;
+                return;
             }
 
             grdCategories.IsReadOnly = true ;
