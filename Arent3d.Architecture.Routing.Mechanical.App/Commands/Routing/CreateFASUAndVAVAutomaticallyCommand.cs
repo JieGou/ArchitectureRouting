@@ -119,7 +119,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       Dictionary<string, int> quantityOfVAVsInSpacesDictionary = new Dictionary<string, int>() ;
       Dictionary<string, int> quantityOfFASUsInSpacesDictionary = new Dictionary<string, int>() ;
-      foreach ( var space in spaces ) {
+      foreach ( var space in spaces )
+      {
         var quantityOfVAVsInSpace = GetQuantityOfVAVsInSpace( document, space ) ;
         quantityOfVAVsInSpacesDictionary.Add( space.Name, quantityOfVAVsInSpace ) ;
         
@@ -129,8 +130,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       if ( quantityOfVAVsInSpacesDictionary.Any( x=> x.Value >= 2) ||
            quantityOfFASUsInSpacesDictionary.Any( x=> x.Value >= 2 ) ) {
-        var invalidSpacesList = quantityOfVAVsInSpacesDictionary.Where( x => x.Value >= 2 ).Select(x=>x.Key).Union(quantityOfFASUsInSpacesDictionary.Where( x => x.Value >= 2 ).Select(x=>x.Key)).Distinct() ;
-        TaskDialog.Show( "FASUとVAVの自動配置", $"同一のSpaceに2つ以上のVAV、FASUが存在しているため、処理に失敗しました。 \n({string.Join(",", invalidSpacesList)})") ;
+        var invalidSpacesList = quantityOfVAVsInSpacesDictionary.Where( x => x.Value >= 2 ).Select(x=>x.Key.Substring(0, x.Key.IndexOf(" ", StringComparison.Ordinal))).Union(quantityOfFASUsInSpacesDictionary.Where( x => x.Value >= 2 ).Select(x=>x.Key.Substring(0, x.Key.IndexOf(" ", StringComparison.Ordinal)))).Distinct() ;
+        TaskDialog.Show( "FASUとVAVの自動配置", $"同一のSpaceに2つ以上のVAV、FASUが存在しているため、処理に失敗しました。 \n該当Space: {string.Join(",", invalidSpacesList)}") ;
         return Result.Failed ;
       }
 
@@ -138,7 +139,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         foreach ( var space in spaces ) {
-          if ( quantityOfVAVsInSpacesDictionary[space.Name] > 0 ) continue ;
+          if ( quantityOfVAVsInSpacesDictionary[space.Name] > 0 || quantityOfFASUsInSpacesDictionary[space.Name] > 0) continue ;
           
           // Add object to the document
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
@@ -222,7 +223,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfSpace == null ) return 0 ;
 
-      var fasus = document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_250Phi ) ;
+      var fasus = document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_200Phi )
+        .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_250Phi ))
+        .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F5_150_250Phi ))
+        .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F6_150_250Phi ))
+        .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F6_150_300Phi ))
+        .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F7_150_300Phi ))
+        .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_250Phi ))
+        .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_300Phi ));
       var fasuInstances = fasus as FamilyInstance[] ?? fasus.ToArray() ;
 
       var quantityOfFASUs = 0;
