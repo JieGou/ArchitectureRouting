@@ -1,8 +1,8 @@
-﻿using System ;
+using System ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using System.Collections.ObjectModel ;
-using System.IO ;
+using System.Linq ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 
@@ -14,38 +14,39 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public CnsSettingStorable CnsSettingStorable { get ; }
 
+    public string ApplyToSymbolsText { get ; set ; }
+
     public CnsSettingViewModel( CnsSettingStorable cnsStorables )
     {
       CnsSettingStorable = cnsStorables ;
+      ApplyToSymbolsText = string.Empty ;
       CnsSettingModels = new ObservableCollection<CnsSettingModel>( cnsStorables.CnsSettingData ) ;
       AddDefaultValue() ;
-      ReadFileCommand = new RelayCommand<object>(
-        ( p ) => true, // CanExecute()
+      ReadFileCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
         ( p ) => { ReadFile() ; } // Execute()
       ) ;
 
-      WriteFileCommand = new RelayCommand<object>(
-        ( p ) => true, // CanExecute()
+      WriteFileCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
         ( p ) => { WriteFile() ; } // Execute()
       ) ;
 
-      AddRowCommand = new RelayCommand<object>(
-        ( p ) => true, // CanExecute()
+      AddRowCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
         ( p ) => { AddRow() ; } // Execute()
       ) ;
 
-      DeleteRowCommand = new RelayCommand<int>(
-        ( p ) => true, // CanExecute()
+      DeleteRowCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
         DeleteRow // Execute()
       ) ;
 
-      SaveCommand = new RelayCommand<object>(
-        ( p ) => true, // CanExecute()
+      SaveCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
         ( p ) => { cnsStorables.CnsSettingData = CnsSettingModels ; } // Execute()
       ) ;
 
-      SetConstructionItemForConduitCommand = new RelayCommand<int>(
-        ( p ) => true, // CanExecute()
+      SetConstructionItemForSymbolsCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
+        ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex ) ; }
+        // Execute()
+      ) ;
+      SetConstructionItemForConduitsCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
         ( seletectedIndex ) => { SetConstructionItemForConduit( cnsStorables, seletectedIndex ) ; } // Execute()
       ) ;
     }
@@ -55,7 +56,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand AddRowCommand { get ; set ; }
     public ICommand DeleteRowCommand { get ; set ; }
     public ICommand SaveCommand { get ; set ; }
-    public ICommand SetConstructionItemForConduitCommand { get ; set ; }
+    public ICommand SetConstructionItemForSymbolsCommand { get ; set ; }
+    public ICommand SetConstructionItemForConduitsCommand { get ; set ; }
 
     private void ReadFile()
     {
@@ -105,10 +107,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             createText += item.CategoryName.Trim() + Environment.NewLine + Environment.NewLine ;
           }
         }
-
-        if ( ! string.IsNullOrWhiteSpace( createText.Trim() ) && createText.Trim() != "未設定" ) {
-          File.WriteAllText( dlg.FileName, createText.Trim() ) ;
-        }
       }
     }
 
@@ -138,11 +136,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CnsSettingModels.Add( new CnsSettingModel( sequence: 1, categoryName: "未設定" ) ) ;
       }
     }
+    
+    private void SetConstructionItemForSymbol( CnsSettingStorable cnsStorables, int seletectedIndex )
+    {
+      if ( seletectedIndex == -1 ) {
+        ApplyToSymbolsText = "未設定" ;
+      }
+      else {
+        var item = CnsSettingModels.ElementAt( seletectedIndex ) ;
+        ApplyToSymbolsText = item.CategoryName ;
+        cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Connector ;
+      }
+    }
 
     private void SetConstructionItemForConduit( CnsSettingStorable cnsStorables, int seletectedIndex )
     {
-      if(seletectedIndex != -1) cnsStorables.SelectedIndex = seletectedIndex ;
-      cnsStorables.ConduitType = CnsSettingStorable.ConstructionItemType.Conduit ;
+      if ( seletectedIndex != -1 ) cnsStorables.SelectedIndex = seletectedIndex ;
+      cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Conduit ;
       cnsStorables.CnsSettingData = CnsSettingModels ;
     }
   }
