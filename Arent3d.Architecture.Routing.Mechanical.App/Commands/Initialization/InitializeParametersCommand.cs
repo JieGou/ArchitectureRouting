@@ -20,6 +20,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
       using Transaction tr = new Transaction( document ) ;
       tr.Start( "Add Space Parameters" );
       document.MakeBranchNumberParameter() ;
+      document.MakeGroupIdParameter() ;
       tr.Commit();
       return Result.Succeeded;
     }

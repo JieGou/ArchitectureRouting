@@ -109,6 +109,13 @@ namespace Arent3d.Architecture.Routing
     BranchNumber
   }
   
+  public enum GroupIdParameter
+  {
+    [ParameterGuid( "e1522ec9-2d76-4c32-addc-f9f27d3aa8ea" ), NameOnRevit( "GroupId" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.GroupIdElements ) )]
+    GroupId
+  }
+  
 
   public static class RoutingPropertyExtensions
   {
@@ -128,6 +135,11 @@ namespace Arent3d.Architecture.Routing
     public static void MakeBranchNumberParameter( this Document document )
     {
       document.LoadAllParametersFromFile<BranchNumberParameter>(AssetManager.GetSpaceSharedParameterPath()) ;
+    }
+    
+    public static void MakeGroupIdParameter( this Document document )
+    {
+      document.LoadAllParametersFromFile<GroupIdParameter>(AssetManager.GetSpaceSharedParameterPath()) ;
     }
   }
 }

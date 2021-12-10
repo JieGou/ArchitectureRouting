@@ -147,6 +147,12 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_MechanicalEquipment,
     } ;
 
+    public static readonly BuiltInCategory[] GroupIdElements =
+    {
+      BuiltInCategory.OST_MEPSpaces,
+      BuiltInCategory.OST_MechanicalEquipment,
+    } ;
+    
     private static T[] CombineArrays<T>( params T[][] arrays )
     {
       var totalLength = arrays.Sum( array => array.Length ) ;
