@@ -198,17 +198,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static IEnumerable<Element> GetAllConduits( Document document )
-    {
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_Conduit) ;
-      FilteredElementCollector collector = new(document) ;
-      IList<Element> conduits = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElements() ;
-      return conduits ;
-    }
-
     private static void UpdateConstructionsItem( Document document, ObservableCollection<CnsSettingModel> currentCnsSettingData, ObservableCollection<CnsSettingModel> newCnsSettingData )
     {
-      var conduits = GetAllConduits( document ) ;
+      var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
       foreach ( var conduit in conduits ) {
         var strCurrentConstructionItem = conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
         if ( string.IsNullOrEmpty( strCurrentConstructionItem ) ) continue ;

@@ -1,7 +1,10 @@
-﻿using System.Linq ;
+﻿using System ;
+using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input ;
+using System.Windows.Threading ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -26,12 +29,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         
         private void Close_Click(object sender, RoutedEventArgs e)
         {
+            SetDuplicateName() ;
             DialogResult = true;
             Close();
         }
         
         private void GrdCategories_OnCellEditEnding( object sender, DataGridCellEditEndingEventArgs e )
         {
+           var isDuplicateName = grdCategories.ItemsSource.Cast<CnsSettingModel>().ToList()
+                .GroupBy(x => x.CategoryName).Any(g => g.Count() > 1);
+            if ( isDuplicateName ) {
+                MessageBox.Show( "工事項目名称がすでに存在しています。再度工事項目名称を入力してください。" ) ;
+                var cellEdit = e.EditingElement ;
+                grdCategories.SelectedIndex = e.Row.GetIndex() ;
+                cellEdit.Dispatcher.BeginInvoke( DispatcherPriority.Input, new Action(() => cellEdit.MoveFocus(new TraversalRequest(FocusNavigationDirection.First))));
+                grdCategories.Focus() ;
+            }
+
             grdCategories.IsReadOnly = true ;
         }
 
@@ -40,29 +54,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             grdCategories.IsReadOnly = false ;
         }
 
-        private void ButtonSave_OnClick( object sender, RoutedEventArgs e )
+        private void SetDuplicateName()
         {
-            if ( CheckDuplicateName() ) {
-                MessageBox.Show( "工事項目名称がすでに存在しています。再度工事項目名称を入力してください。" ) ;
-                return ;
+            var duplicateCategoryName = grdCategories.ItemsSource.Cast<CnsSettingModel>().GroupBy( x => x.CategoryName )
+                .Where( g => g.Count() > 1 ).ToList() ;
+           
+            if ( !duplicateCategoryName.Any()) return ;
+            var sequences = duplicateCategoryName.FirstOrDefault()!.Select(c=>c.Sequence).ToList() ;
+            for ( var i = 0 ; i < sequences.Count() ; i++ ) {
+              if( i!=0 )
+                grdCategories.ItemsSource.Cast<CnsSettingModel>().ToList()[sequences[ i ] - 1].CategoryName = string.Empty;
             }
-            DialogResult = true ;
-            Close() ;
-        }
-        private void ButtonApply_OnClick( object sender, RoutedEventArgs e )
-        {
-            if ( CheckDuplicateName() ) {
-                MessageBox.Show( "工事項目名称がすでに存在しています。再度工事項目名称を入力してください。" ) ;
-                return ;
-            }
-            DialogResult = true ;
-            Close() ;
-        }
-
-        private bool CheckDuplicateName()
-        {
-            return grdCategories.ItemsSource.Cast<CnsSettingModel>().ToList()
-                .GroupBy(x => x.CategoryName).Any(g => g.Count() > 1);
+           
         }
     }
 }
