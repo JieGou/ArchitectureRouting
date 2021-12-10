@@ -15,14 +15,14 @@
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
         
-        <GroupBox Grid.Row="0" Header="個別設定" DockPanel.Dock="Left" Width="450" Height="70" FontSize="16" VerticalAlignment="Top" Margin="15, 15, 10, 10" HorizontalAlignment="Left">
+        <GroupBox Grid.Row="0" Header="個別設定" DockPanel.Dock="Left" Width="450" Height="70" VerticalAlignment="Top" Margin="15, 15, 10, 10" HorizontalAlignment="Left">
             <StackPanel VerticalAlignment="Center" Orientation="Horizontal" >
             <Label Content="明細記号" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
             <ComboBox Name="CmbDetailSymbols" IsEditable="True" Width="230" Height="27" />
             </StackPanel>
         </GroupBox>
         
-        <GroupBox Grid.Row="1" Header="スタイル" DockPanel.Dock="Left" Width="450" FontSize="16" VerticalAlignment="Top" Margin="15, 0, 10, 0" HorizontalAlignment="Left">
+        <GroupBox Grid.Row="1" Header="スタイル" DockPanel.Dock="Left" Width="450" VerticalAlignment="Top" Margin="15, 0, 10, 0" HorizontalAlignment="Left">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="35" />
