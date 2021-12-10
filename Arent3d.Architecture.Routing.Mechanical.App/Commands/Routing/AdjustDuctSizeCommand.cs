@@ -84,12 +84,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      // Test Get spaceの給気風量設定値
-      foreach ( var (routeName, segment) in segments ) {
-        var toEndPointConnector = segment.ToEndPoint.GetReferenceConnector() ;
-        var space = GetSpaceFromVavConnector( document, toEndPointConnector!, spaces ) as Space ;
-        var spaceSpecifiedSupplyAirflow = UnitUtils.ConvertFromInternalUnits( space!.DesignSupplyAirflow, UnitTypeId.CubicMeters ) ;
-      }
+      // // Test Get spaceの給気風量設定値
+      // foreach ( var (routeName, segment) in segments ) {
+      //   var toEndPointConnector = segment.ToEndPoint.GetReferenceConnector() ;
+      //   var space = GetSpaceFromVavConnector( document, toEndPointConnector!, spaces ) as Space ;
+      //   var spaceSpecifiedSupplyAirflow = UnitUtils.ConvertFromInternalUnits( space!.DesignSupplyAirflow, UnitTypeId.CubicMeters ) ;
+      // }
 
       // Get list of new segments
       foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
