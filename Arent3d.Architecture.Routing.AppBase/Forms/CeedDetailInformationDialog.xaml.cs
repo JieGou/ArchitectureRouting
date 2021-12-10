@@ -42,11 +42,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         private void LoadComboboxSelect()
         {
             // Fill data into combobox
-            CmbSelect.ItemsSource = _hiroiSetCdMasterModel.Select( x => x.ConstructionClassification ).Distinct() ;
+            ConstructionClassificationCombobox.ItemsSource = _hiroiSetCdMasterModel.Select( x => x.ConstructionClassification ).Distinct() ;
             
             //Set selected value for combobox
             var hiroiSetCdMaster = _hiroiSetCdMasterModel.Find( x => x.SetCode.Equals( _setCode ) ) ;
-            CmbSelect.SelectedValue = hiroiSetCdMaster == null ? string.Empty : hiroiSetCdMaster.ConstructionClassification ;
+            ConstructionClassificationCombobox.SelectedValue = hiroiSetCdMaster == null ? string.Empty : hiroiSetCdMaster.ConstructionClassification ;
         }
         
         private void BuildQueryData(string materialCode, string quantity, string parentPartModelNumber, int materialIndex, ref ObservableCollection<QueryData> queryData)
@@ -97,24 +97,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             var hiroiSetCdMaster = _hiroiSetCdMasterModel.Find( x => x.SetCode.Equals( _setCode ) ) ;
 
             if ( hiroiSetCdMaster == null ) {
-                CmbSelect.SelectedIndex = -1 ;
+                ConstructionClassificationCombobox.SelectedIndex = -1 ;
             }
             else {
-                CmbSelect.SelectedValue = hiroiSetCdMaster.ConstructionClassification ;
+                ConstructionClassificationCombobox.SelectedValue = hiroiSetCdMaster.ConstructionClassification ;
             }
             
             LoadData();
         }
 
-        private void ConstructionKbnComboBox_TextChanged( object sender, TextChangedEventArgs e )
+        private void UpdateConstructionClassification( object sender, TextChangedEventArgs e )
         {
-            if ( CmbSelect.SelectedValue == null ) return ;
-            var selectedValue = CmbSelect.SelectedValue ;
+            if ( ConstructionClassificationCombobox.SelectedValue == null ) return ;
+            var selectedValue = ConstructionClassificationCombobox.SelectedValue ;
             var item = _hiroiSetCdMasterModel.Find( x => x.SetCode.Equals( _setCode.ToUpper() ) ) ;
             if ( item == null ) return ;
-            if (item.ConstructionClassification.Equals( CmbSelect.SelectedValue.ToString()) ) return;
+            if (item.ConstructionClassification.Equals( ConstructionClassificationCombobox.SelectedValue.ToString()) ) return;
                     
-            item.ConstructionClassification = CmbSelect.SelectedValue.ToString() ;
+            item.ConstructionClassification = ConstructionClassificationCombobox.SelectedValue.ToString() ;
             _csvStorable.HiroiSetCdMasterNormalModelData = _hiroiSetCdMasterModel;
                 
             try {
