@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SymbolFont = CmbFont.SelectedValue.ToString() ;
       SymbolStyle = CmbStyle.SelectedValue.ToString() ;
       Offset = Convert.ToInt32( CmbOffset.SelectedValue.ToString() ) ;
-      BackGround = CmbOffset.SelectedValue.ToString() == "On" ? 1 : 0 ;
+      BackGround = CmbHideTextBackground.SelectedValue.ToString() == "On" ? 0 : 1 ;
       DialogResult = true ;
       Close() ;
     }

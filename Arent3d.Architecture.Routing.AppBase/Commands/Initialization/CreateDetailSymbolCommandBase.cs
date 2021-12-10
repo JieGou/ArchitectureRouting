@@ -162,7 +162,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( ! string.IsNullOrEmpty( fromElementId ) ) {
           var fromConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
           if ( fromConnector!.IsTerminatePoint() || fromConnector!.IsPassPoint() ) {
-            fromConnector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? fromConnectorId ) ;
+            fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorId, out string? fromConnectorId ) ;
             if ( ! string.IsNullOrEmpty( fromConnectorId ) ) {
               fromElementId = fromConnectorId! ;
             }
@@ -308,7 +308,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var bold = 0 ;
       var italic = 0 ;
       var underline = 0 ;
-      string strStyleName = "TNT-" + symbolFont + "-" + size ;
+      string strStyleName = "TNT-" + symbolFont + "-" + size + "-" + background + "-" + offset + "-" + widthScale + "%" ;
       if ( symbolStyle == FontStyle.Bold.GetFieldName() ) {
         strStyleName += "-Bold" ;
         bold = 1 ;
