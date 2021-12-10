@@ -49,14 +49,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       var spaces = GetAllSpaces( document ) ;
       var segments = Route.GetAllRelatedBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
-      var mainSegment = segments.First().Segment ;
       
       // Get start point of route
       XYZ? startPosition = null ;
       foreach ( var (_, segment) in segments ) {
         try {
           startPosition = segment.FromEndPoint.RoutingStartPosition ;
-          mainSegment = segment ;
           break ;
         }
         catch {
@@ -66,44 +64,27 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( startPosition == null ) return segments ;
 
       var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
-      var teesOnSelectedRoute = RemoveTeeOutsideRoute(tees.ToList(), segments.ToList()) ;
-      var result = new List<(string RouteName, RouteSegment Segment)>() ;
-      var count = 0 ;
-      Dictionary<string, List<FamilyInstance>> passPointOnRoutes = new() ;
-      foreach ( var tee in tees ) {
-        foreach ( var (routeName, segment) in segments ) {
-          var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int)TeeConnectorType.Connector1 || conn.Id == 2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
-          if ( behindTeeConnector == null ) continue ;
-          if ( tee.GetNearestEndPoints( false ).First().Key == segment.ToEndPoint.Key ) {
-            var passPointDir = tee.HandOrientation ;
-            var passPoint = document.AddPassPoint( routeName, behindTeeConnector.Origin, passPointDir, segment.PreferredNominalDiameter/2, segment.FromEndPoint.GetLevelId( document ) ) ;
-            
-            if ( passPointOnRoutes.ContainsKey( routeName ) ) {
-              passPointOnRoutes[ routeName ].Add( passPoint ) ;
-            }
-            else {
-              passPointOnRoutes.Add( routeName, new List<FamilyInstance>() { passPoint } ) ;
-            }            
-            
-            var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
-            
-            if ( segment == mainSegment && count == 0 ) {
-              var beforeSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, passPointEndPoint, segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
-              var afterSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, passPointEndPoint, segment.ToEndPoint, segment.PreferredNominalDiameter / 2, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;              
-              result.Add( ( routeName, beforeSegment ) ) ;
-              result.Add( ( routeName, afterSegment ) ) ;
-              count++ ;
-            }
-            else {
-              result.Add( ( routeName, segment ) ) ;
-            }
-
-            break ;
-          }
+      var teesOnSelectedRoute = RemoveTeeOutsideOfSegments(tees.ToList(), segments.ToList()) ;
+      var newRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
+      Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes = new() ;
+      foreach ( var tee in teesOnSelectedRoute ) {
+        var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int)TeeConnectorType.Connector1 || conn.Id == (int)TeeConnectorType.Connector2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
+        if ( behindTeeConnector == null ) continue ;
+        var passPointDir = tee.HandOrientation ;
+        var teeRouteName = tee.GetRouteName() ;
+        if(teeRouteName == null) continue;
+        var teeSegment = segments.FirstOrDefault( segment => segment.RouteName == teeRouteName ).Segment ;
+        var passPoint = document.AddPassPoint( teeRouteName, behindTeeConnector.Origin, passPointDir, teeSegment.PreferredNominalDiameter/2, teeSegment.FromEndPoint.GetLevelId( document ) ) ;
+        var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
+        if ( passPointOnRoutes.ContainsKey( teeRouteName ) ) {
+          passPointOnRoutes[ teeRouteName ].Add( passPointEndPoint ) ;
+        }
+        else {
+          passPointOnRoutes.Add( teeRouteName, new List<PassPointEndPoint>() { passPointEndPoint } ) ;
         }
       }
 
-      // Get spaceの給気風量設定値
+      // Test Get spaceの給気風量設定値
       foreach ( var (routeName, segment) in segments ) {
         var toEndPointConnector = segment.ToEndPoint.GetReferenceConnector() ;
         var space = GetSpaceFromVavConnector( document, toEndPointConnector!, spaces ) as Space ;
@@ -111,25 +92,38 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       // Get list of new segments
-      // IList<(string, RouteSegment )> newRouteSegments = new List<(string, RouteSegment)>() ;
-      // foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
-      //   var segment = segments.FirstOrDefault( segment => segment.RouteName == routeName ).Segment ;
-      //   result = removeSegmentByRouteName( routeName, segments ).ToList() ;
-      //   var index = 0 ;
-      //   foreach ( var passPoint in passPoints ) {
-      //     var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
-      //     var routeSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, passPointEndPoint, segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
-      //     var subRouteName = routeName + "_" + index ;
-      //     result.Add( ( subRouteName, routeSegment ) ) ;
-      //     index++ ;
-      //   }
-      // }
+      foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
+        var segment = segments.FirstOrDefault( segment => segment.RouteName == routeName ).Segment ;
+        if(segment == null) continue;
+        newRouteSegments = removeSegmentByRouteName( routeName, segments ).ToList() ;
 
-      // return result ;
-      return segments ;
+        if ( passPoints.Count() > 1 ) {
+          var secondFromEndPoints = passPoints.ToList() ;
+          var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( segment.ToEndPoint ) ;
+          var firstToEndPoint = secondFromEndPoints[ 0 ] ;
+        
+          newRouteSegments.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, firstToEndPoint, segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ) ) ;
+          newRouteSegments.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
+          {
+            var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, f, t, segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
+            return ( routeName, newSegment ) ;
+          } ) ) ;             
+        }
+        else {
+          var beforeSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, passPoints.First(), segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
+          var afterSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, passPoints.First(), segment.ToEndPoint, segment.PreferredNominalDiameter / 2, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
+          newRouteSegments.Add( ( routeName, beforeSegment ) ) ;
+          newRouteSegments.Add( ( routeName, afterSegment ) ) ;             
+        }
+
+        // Test one case
+        break;
+      }
+      
+      return newRouteSegments ;
     }
 
-    private static IEnumerable<FamilyInstance> RemoveTeeOutsideRoute( IEnumerable<FamilyInstance> tees, List<(string, RouteSegment)> segments )
+    private static IEnumerable<FamilyInstance> RemoveTeeOutsideOfSegments( IEnumerable<FamilyInstance> tees, List<(string, RouteSegment)> segments )
     {
       List<FamilyInstance> resultTees = new() ;
       foreach ( var tee in tees ) {
