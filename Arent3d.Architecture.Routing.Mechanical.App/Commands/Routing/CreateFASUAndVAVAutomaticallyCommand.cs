@@ -27,19 +27,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string DiameterOfVAV = "250" ;
     private const int RootBranchNumber = 0 ;
     private const double MinDistanceSpacesCollinear = 2.5 ;
-    private const double EastDirection = Math.PI * 0 ;
-    private const double NorthDirection = Math.PI * 0.5 ;
-    private const double WestDirection = Math.PI * 1 ;
-    private const double SouthDirection = Math.PI * 1.5 ;
     private const int FASUConnectorId = 18 ;
     private const int VAVConnectorId = 4 ;
     private const string RoundDuctUniqueId = "dee0da15-198f-4f79-aa08-3ce71203da82-00c0cdcf" ;
-
-    private enum RotationAxis
-    {
-      XAxis,
-      YAxis
-    }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -73,7 +63,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         .Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) ).ToArray() ;
 
       foreach ( var space in spaces ) {
-        if ( ! CheckSpaceHasBoundingBox( uiDocument.Document, space ) ) {
+        if ( ! HasBoundingBox( uiDocument.Document, space ) ) {
           return ( false, $"`{space.Name}` have not bounding box." ) ;
         }
       }
@@ -112,10 +102,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      var rotationAxis = GetRotationAxis( pickedConnector ) ;
-
+      if ( ! branchNumberToAreaDictionary.TryGetValue( 0, out var rootAreas ) )
+      {
+        rootAreas = new List<Element>() ;
+      }
+      
+      // TODO VAVのファミリから取得
+      var vavUpstreamConnectorNormal = new Vector3d( 1, 0, 0 ) ;
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
-        branchNumberToAreaDictionary, pickedConnector, rotationAxis ) ;
+        branchNumberToAreaDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
 
       // Start Transaction
       using ( Transaction tr = new(document) ) {
@@ -162,15 +157,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ),
             rotationAnglesOfFASUsAndVAVs[ space ] ) ;
 
-          // 回転軸で見るとき、コネクターがVAVの境界ボックス内にある場合、VAVの向きを反転させる
-          if ( CheckVAVTouchingConnector( document, instanceOfVAV, pickedConnector, rotationAxis ) ) {
+          // この時点でコネクタの向きとは逆を向いている想定
+          // コネクタの裏側にあるときは、ここで向きを反転する
+          if ( rootAreas.Contains( space ) && IsVavLocatedBehindConnector( document, instanceOfVAV, pickedConnector ) ) {
             ElementTransformUtils.RotateElements( document, idOfFASUAndVAV,
               Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI ) ;
           }
 
           var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorId ) ;
           var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorId ) ;
-          CreateDuctConnectFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
+          CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
         }
 
         tr.Commit() ;
@@ -180,43 +176,40 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     }
 
     private static Dictionary<Element, double> CalculateRotationAnglesOfFASUsAndVAVs( Document document,
-      Dictionary<int, List<Element>> branchNumberDict, Connector pickedConnector, RotationAxis rotationAxis )
+      Dictionary<int, List<Element>> branchNumberDict, Connector rootConnector, Vector3d upstreamConnectorNormal )
     {
       var rotationAnglesOfFASUsAndVAVs = new Dictionary<Element, double>() ;
 
-      // Process by group BranchNumber
+      var rootConnectorNormal = rootConnector.CoordinateSystem.BasisZ.To3dDirection() ;
+      var orthogonalToConnectorNormal = new Vector3d( rootConnectorNormal.y, -rootConnectorNormal.x, 0 ) ;
+        
       foreach ( var branchNumber in branchNumberDict.Keys ) {
         List<Element> targetSpaces = branchNumberDict[ branchNumber ] ;
 
-        // Separate handling for RootBranchNumber
         if ( branchNumber == RootBranchNumber ) {
+          var rotation = GetRotationForRootSpaces( rootConnector, upstreamConnectorNormal ) ;
           foreach ( var targetSpace in targetSpaces ) {
-            XYZ centerPointOfSpace = GetCenterPointOfElement( document, targetSpace ) ;
-            var rotation = GetRotationAngleForFASUAndVAV( pickedConnector.Origin, centerPointOfSpace, rotationAxis ) ;
             rotationAnglesOfFASUsAndVAVs.Add( targetSpace, rotation ) ;
           }
 
           continue ;
         }
 
-        // Get center of spaces group
-        XYZ centerPointOfSpacesGroup = GetCenterPointOfSpacesGroup( document, targetSpaces ) ;
-
-        // Are the spaces collinear
-        var areSpacesCollinear =
-          AreRotatedSpacesCollinear( document, targetSpaces, centerPointOfSpacesGroup, rotationAxis ) ;
-
-        // Calculate rotation angle of FASU and VAV in each space
-        foreach ( var handleSpace in targetSpaces ) {
-          if ( areSpacesCollinear ) {
-            rotationAnglesOfFASUsAndVAVs[ handleSpace ] = GetRotationAngleForFASUAndVAV( pickedConnector.Origin,
-              centerPointOfSpacesGroup, rotationAxis ) ;
+        if ( AreSpacesCollinear( document, targetSpaces, orthogonalToConnectorNormal ) ) {
+          var rotation = GetRotationForCollinearSpaces( document, rootConnector, targetSpaces, upstreamConnectorNormal ) ;
+          foreach ( var targetSpace in targetSpaces ) {
+            rotationAnglesOfFASUsAndVAVs[ targetSpace ] = rotation ;
           }
-          else {
-            XYZ centerPointOfSpace = GetCenterPointOfElement( document, handleSpace ) ;
-            rotationAnglesOfFASUsAndVAVs[ handleSpace ] =
-              GetRotationAngleForFASUAndVAV( centerPointOfSpacesGroup, centerPointOfSpace, rotationAxis ) ;
-          }
+
+          continue ;
+        }
+
+        var spaceBoxes = targetSpaces.Select( space => space.get_BoundingBox( document.ActiveView ).ToBox3d() ).ToArray() ;
+        var spacesCenter = spaceBoxes.UnionBounds()!.Value.Center ;
+        
+        foreach ( var space in targetSpaces ) {
+          var spaceCenter = space.get_BoundingBox( document.ActiveView ).ToBox3d().Center ;
+          rotationAnglesOfFASUsAndVAVs[space] = GetRotationForNonCollinearSpace( document, rootConnector, spacesCenter, spaceCenter, upstreamConnectorNormal ) ;
         }
       }
 
@@ -231,74 +224,76 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return spaces ;
     }
 
-    private static XYZ GetCenterPointOfSpacesGroup( Document document, List<Element> spaces )
+    private static double ConvertDegreeToRadian( double degreeAngle )
     {
-      var centerPositions = spaces.Select( element => GetCenterPointOfElement( document, element ).To3dPoint() )
-        .ToArray() ;
-      return new Box3d( centerPositions ).Center.ToXYZPoint() ;
+      return degreeAngle * Math.PI / 180 ;
     }
 
-    private static XYZ GetCenterPointOfElement( Document document, Element element )
+    private static double CalcRadianAngle2D( Vector3d from, Vector3d to )
     {
-      BoundingBoxXYZ boxOfSpace = element.get_BoundingBox( document.ActiveView ) ;
-      return boxOfSpace.ToBox3d().Center.ToXYZPoint() ;
+      var degree = Vector3d.SignedAngle( from, to, new Vector3d( 0, 0, 1 ) ) ;
+      if ( degree != 0 ) return ConvertDegreeToRadian(degree) ;
+      return from == to ? 0 : Math.PI ;
+    }
+    
+    private static double GetRotationForRootSpaces( Connector rootConnector, Vector3d upstreamConnectorNormal )
+    {
+      var rootConnectorNormal = rootConnector.CoordinateSystem.BasisZ.To3dDirection() ;
+      if ( upstreamConnectorNormal == rootConnectorNormal ) return ConvertDegreeToRadian( 180 ) ;
+
+      return CalcRadianAngle2D( upstreamConnectorNormal, -rootConnectorNormal ) ;
     }
 
-    private static RotationAxis GetRotationAxis( Connector pickedConnector )
+    private static double GetRotationForCollinearSpaces( Document document, Connector rootConnector, IReadOnlyList<Element> spaces, Vector3d upstreamConnectorNormal )
     {
-      var rotation = ( pickedConnector.Owner.Location as LocationPoint )!.Rotation ;
-      return Math.Abs( Math.Cos( rotation ) ) >= Math.Cos( Math.PI / 4 ) ? RotationAxis.XAxis : RotationAxis.YAxis ;
+      var rootConnectorOrigin = rootConnector.Origin.To3dPoint() ;
+      var rootConnectorNormal = rootConnector.CoordinateSystem.BasisZ.To3dDirection() ;
+      
+      var spaceBoxes = spaces.Select( space => space.get_BoundingBox( document.ActiveView ).ToBox3d() ).ToArray() ;
+      var centerOfSpaces = spaceBoxes.UnionBounds()!.Value.Center ;
+
+      // RootConnectorの法線方向基準で、RootConnectorより奥にある場合は、上流につなげるConnectorの向きを法線方向とは逆向きにする.
+      var sign = Vector3d.Dot( centerOfSpaces - rootConnectorOrigin, rootConnectorNormal ) > 0 ? -1 : 1 ;
+      return CalcRadianAngle2D( upstreamConnectorNormal, sign * rootConnectorNormal ) ;
     }
 
-    private static double GetRotationAngleForFASUAndVAV( XYZ centerPointOfSpacesGroup, XYZ centerPointOfSpace,
-      RotationAxis axisOfRotation )
+    private static double GetRotationForNonCollinearSpace( Document document, Connector rootConnector, Vector3d spaceGroupCenter, Vector3d spaceCenter, Vector3d upstreamConnectorNormal )
     {
-      if ( axisOfRotation == RotationAxis.XAxis ) {
-        return centerPointOfSpace.X <= centerPointOfSpacesGroup.X ? EastDirection : WestDirection ;
-      }
-
-      return centerPointOfSpace.Y <= centerPointOfSpacesGroup.Y ? NorthDirection : SouthDirection ;
+      var rootConnectorNormal = rootConnector.CoordinateSystem.BasisZ.To3dDirection() ;
+      var sign = Vector3d.Dot( spaceGroupCenter - spaceCenter, rootConnectorNormal ) > 0 ? 1 : -1 ;
+      return CalcRadianAngle2D( upstreamConnectorNormal, sign * rootConnectorNormal ) ;
     }
 
-    private static bool AreRotatedSpacesCollinear( Document document, List<Element> spaces,
-      XYZ centerPointOfSpacesGroup, RotationAxis rotationAxis )
+    private static bool AreSpacesCollinear( Document document, IReadOnlyList<Element> spaces, Vector3d checkTargetDir2D )
     {
-      foreach ( var space in spaces ) {
-        XYZ centerPointOfSpace = GetCenterPointOfElement( document, space ) ;
-        if ( rotationAxis == RotationAxis.XAxis ) {
-          if ( Math.Abs( centerPointOfSpacesGroup.X - centerPointOfSpace.X ) > MinDistanceSpacesCollinear ) {
-            return false ;
-          }
-        }
-        else {
-          if ( Math.Abs( centerPointOfSpacesGroup.Y - centerPointOfSpace.Y ) > MinDistanceSpacesCollinear ) {
-            return false ;
-          }
-        }
-      }
-
-      return true ;
+      var orthogonalToTargetDir = new Vector3d( checkTargetDir2D.y, -checkTargetDir2D.x, 0.0 ) ;
+      
+      var spaceBoxes = spaces.Select( space => space.get_BoundingBox( document.ActiveView ).ToBox3d() ).ToArray() ;
+      var centerOfSpaces = spaceBoxes.UnionBounds()!.Value.Center ;
+      
+      return spaceBoxes.Select( box => box.Center )
+        .Any( center => Math.Abs( Vector3d.Dot( centerOfSpaces - center, orthogonalToTargetDir ) ) < MinDistanceSpacesCollinear ) ; 
     }
 
-    private static bool CheckVAVTouchingConnector( Document document, Element instanceOfVAV,
-      Connector instanceOfConnector, RotationAxis axisOfRotation )
+    private static bool IsVavLocatedBehindConnector( Document document, Element instanceOfVAV, Connector instanceOfConnector )
     {
       // Get BoundingBox of VAV
       BoundingBoxXYZ boxOfVAV = instanceOfVAV.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfVAV == null ) return false ;
-      if ( axisOfRotation == RotationAxis.XAxis ) {
-        return instanceOfConnector.Origin.X >= boxOfVAV.Min.X && instanceOfConnector.Origin.X <= boxOfVAV.Max.X ;
-      }
 
-      return instanceOfConnector.Origin.Y >= boxOfVAV.Min.Y && instanceOfConnector.Origin.Y <= boxOfVAV.Max.Y ;
+      var connectorPosition = instanceOfConnector.Origin.To3dPoint() ;
+      var connectorNormal = instanceOfConnector.CoordinateSystem.BasisZ.To3dDirection() ;
+      
+      // コネクタの向いている方向の成分で比較したときに、VAVのBoxの角が1つでもコネクタ位置よりも小さければ後方とみなす.
+      return boxOfVAV.ToBox3d().Vertices().Any( boxCorner => Vector3d.Dot( boxCorner - connectorPosition, connectorNormal ) < 0 ) ;
     }
 
-    private static bool CheckSpaceHasBoundingBox( Document document, Element space )
+    private static bool HasBoundingBox( Document document, Element space )
     {
-      return ( null != space.get_BoundingBox( document.ActiveView ) ) ;
+      return null != space.get_BoundingBox( document.ActiveView ) ;
     }
 
-    private static void CreateDuctConnectFASUAndVAV( Document document, Connector connectorOfFASU,
+    private static void CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
       Connector connectorOfVAV, ElementId levelId )
     {
       FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
