@@ -1,4 +1,5 @@
 using System ;
+using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Routing ;
@@ -22,6 +23,9 @@ namespace Arent3d.Architecture.Routing.Rack
     }
 
     public IEnumerable<ILayerGroup> LayerGroups { get ; }
+    public IEnumerator<ILayerGroup> GetEnumerator() => LayerGroups.GetEnumerator() ;
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator() ;
+
     public bool IsPipeRack { get ; } = true ;
     public bool IsMainRack { get ; set ; }
     public string Name { get ; set ; } = string.Empty ;
