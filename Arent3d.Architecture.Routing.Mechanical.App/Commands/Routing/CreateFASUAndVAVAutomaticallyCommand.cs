@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      if ( ! CheckDocumentHasDuctType( uiDocument.Document ) )
+      if ( ! RoundDuctTypeExists( uiDocument.Document ) )
         return ( false, $"There no family with UniqueID `{RoundDuctUniqueId}` in the document." ) ;
 
       ConnectorPicker.IPickResult iPickResult =
@@ -164,6 +164,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
               Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI ) ;
           }
 
+          // TODO : 一直線にならんでいるグループの方向修正
+          
           var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorId ) ;
           var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorId ) ;
           CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
@@ -302,7 +304,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
     }
 
-    private static bool CheckDocumentHasDuctType( Document document )
+    private static bool RoundDuctTypeExists( Document document )
     {
       FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ) ;
       return collector.Any( e => e.UniqueId == RoundDuctUniqueId ) ;
