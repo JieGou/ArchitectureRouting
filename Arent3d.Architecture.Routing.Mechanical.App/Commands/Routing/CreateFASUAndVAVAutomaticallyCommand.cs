@@ -274,7 +274,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var centerOfSpaces = spaceBoxes.UnionBounds()!.Value.Center ;
       
       return spaceBoxes.Select( box => box.Center )
-        .Any( center => Math.Abs( Vector3d.Dot( centerOfSpaces - center, orthogonalToTargetDir ) ) < MinDistanceSpacesCollinear ) ; 
+        .All( center => Math.Abs( Vector3d.Dot( centerOfSpaces - center, orthogonalToTargetDir ) ) <
+                        MinDistanceSpacesCollinear ) ;
     }
 
     private static bool IsVavLocatedBehindConnector( Document document, Element instanceOfVAV, Connector instanceOfConnector )
