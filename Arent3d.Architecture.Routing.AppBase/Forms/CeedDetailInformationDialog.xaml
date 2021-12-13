@@ -101,7 +101,7 @@
                     Content="行削除"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
-                    Click="BtnDelete_OnClick"
+                    Click="Button_DeleteRow"
                     Height="27"
                     Width="110" />
             <Button Grid.Column="1" x:Name="Btn2"

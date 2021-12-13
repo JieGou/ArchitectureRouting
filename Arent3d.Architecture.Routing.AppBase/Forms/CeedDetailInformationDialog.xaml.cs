@@ -118,13 +118,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             _csvStorable.HiroiSetCdMasterNormalModelData = _hiroiSetCdMasterModel;
                 
             try {
-                using Transaction t = new Transaction( _document, "Delete data" ) ;
+                using Transaction t = new Transaction( _document, "Update Consutrction Classification" ) ;
                 t.Start() ;
                 _csvStorable.Save() ;
                 t.Commit() ;
             }
             catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-                MessageBox.Show( "Delete Data Failed.", "Error Message" ) ;
+                MessageBox.Show( "Failed to update the construction classification.", "Error Message" ) ;
                 DialogResult = false ;
             }
         }
@@ -140,7 +140,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             this.Close();
         }
         
-        private void BtnDelete_OnClick( object sender, RoutedEventArgs e )
+        private void Button_DeleteRow( object sender, RoutedEventArgs e )
         {
             if ( DtGrid.SelectedCells.Count < 1 ) return;
             
