@@ -41,10 +41,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       YAxis
     }
     
-    private class NumberOfVAVAndFASUModel
+    private class NumberOfFASUAndVAVModel
     {
-      public int numberOfVAV ;
       public int numberOfFASU ;
+      public int numberOfVAV ;
     }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -118,9 +118,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      Dictionary<string, NumberOfVAVAndFASUModel> numberOfVAVsAndFASUsInSpacesDictionary = CountVAVsAndFASUsBySpace ( document, spaces ) ;
-      var IsPreconditionOfVAVsAndFASUsSatisfied = CheckPreconditionOfVAVsAndFASUs ( numberOfVAVsAndFASUsInSpacesDictionary );
-      if ( !IsPreconditionOfVAVsAndFASUsSatisfied )  return Result.Failed ;
+      Dictionary<string, NumberOfFASUAndVAVModel> numberOfFASUsAndVAVsInSpacesDictionary = CountFASUsAndVAVsBySpace ( document, spaces ) ;
+      var isPreconditionOfVAVsAndFASUsSatisfied = IsPreconditionOfFASUsAndVAVsSatisfied ( numberOfFASUsAndVAVsInSpacesDictionary );
+      if ( !isPreconditionOfVAVsAndFASUsSatisfied )  return Result.Failed ;
       
       var rotationAxis = GetRotationAxis( pickedConnector ) ;
 
@@ -131,7 +131,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         foreach ( var space in spaces ) {
-          if ( numberOfVAVsAndFASUsInSpacesDictionary.Any(x => x.Key == space.Name && x.Value.numberOfVAV == 1 && x.Value.numberOfFASU == 1 )) continue ;
+          if ( numberOfFASUsAndVAVsInSpacesDictionary.Any(x => x.Key == space.Name && x.Value.numberOfFASU == 1 && x.Value.numberOfVAV == 1 )) continue ;
           
           // Add object to the document
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
@@ -191,12 +191,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Result.Succeeded ;
     }
 
-    private static Dictionary<string, NumberOfVAVAndFASUModel> CountVAVsAndFASUsBySpace ( Document document, IList<Element> spaces )
+    private static Dictionary<string, NumberOfFASUAndVAVModel> CountFASUsAndVAVsBySpace ( Document document, IList<Element> spaces )
     {
-      var numberOfVAVsAndFASUsInSpacesDictionary = new Dictionary<string, NumberOfVAVAndFASUModel>() ;
+      var numberOfFASUsAndVAVsInSpacesDictionary = new Dictionary<string, NumberOfFASUAndVAVModel>() ;
       
-      var vavs = document.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
-      var vavInstances = vavs as FamilyInstance[] ?? vavs.ToArray() ;
       var fasus = document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_200Phi )
         .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_250Phi ))
         .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F5_150_250Phi ))
@@ -206,19 +204,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_250Phi ))
         .Union(document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_300Phi )) ;
       var fasuInstances = fasus as FamilyInstance[] ?? fasus.ToArray() ;
+      var vavs = document.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
+      var vavInstances = vavs as FamilyInstance[] ?? vavs.ToArray() ;
       
       foreach ( var space in spaces )
       {
         BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
         if ( boxOfSpace == null ) continue ;
-        
-        var numberOfVAVs = 0 ;
-        foreach ( var vavInstance in vavInstances ) {
-          var vavPosition = vavInstance.Location as LocationPoint ;
-          if ( vavPosition == null ) continue ;
-
-          if ( IsInSpace( boxOfSpace, vavPosition.Point ) ) numberOfVAVs++ ;
-        }
         
         var numberOfFASUs = 0 ;
         foreach ( var fasuInstance in fasuInstances ) {
@@ -228,40 +220,48 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           if ( IsInSpace( boxOfSpace, fasuPosition.Point ) ) numberOfFASUs++ ;
         }
         
-        var numberOfVAVAndFASU = new NumberOfVAVAndFASUModel
+        var numberOfVAVs = 0 ;
+        foreach ( var vavInstance in vavInstances ) {
+          var vavPosition = vavInstance.Location as LocationPoint ;
+          if ( vavPosition == null ) continue ;
+
+          if ( IsInSpace( boxOfSpace, vavPosition.Point ) ) numberOfVAVs++ ;
+        }
+        
+        var numberOfFASUAndVAV = new NumberOfFASUAndVAVModel
         {
-          numberOfVAV = numberOfVAVs,
-          numberOfFASU = numberOfFASUs
+          numberOfFASU = numberOfFASUs,
+          numberOfVAV = numberOfVAVs
         } ;
-        numberOfVAVsAndFASUsInSpacesDictionary.Add( space.Name, numberOfVAVAndFASU ) ;
+        numberOfFASUsAndVAVsInSpacesDictionary.Add( space.Name, numberOfFASUAndVAV ) ;
       }
 
-      return numberOfVAVsAndFASUsInSpacesDictionary ;
+      return numberOfFASUsAndVAVsInSpacesDictionary ;
     }
     
-    private static bool CheckPreconditionOfVAVsAndFASUs( Dictionary<string, NumberOfVAVAndFASUModel> numberOfVAVsAndFASUsInSpacesDictionary )
+    private static bool IsPreconditionOfFASUsAndVAVsSatisfied( Dictionary<string, NumberOfFASUAndVAVModel> numberOfFASUsAndVAVsInSpacesDictionary )
     {
-      if ( numberOfVAVsAndFASUsInSpacesDictionary.Any( x=> x.Value.numberOfVAV >= 2 || x.Value.numberOfFASU >= 2 ))
+      if ( numberOfFASUsAndVAVsInSpacesDictionary.Any( x=> x.Value.numberOfVAV >= 2 || x.Value.numberOfFASU >= 2 ))
       {
-        var invalidSpacesList = numberOfVAVsAndFASUsInSpacesDictionary.Where(x => x.Value.numberOfVAV >= 2 || x.Value.numberOfFASU >= 2)
+        var invalidSpacesList = numberOfFASUsAndVAVsInSpacesDictionary.Where(x => x.Value.numberOfFASU >= 2 || x.Value.numberOfVAV >= 2 )
           .Select(x => x.Key.Substring(0, x.Key.IndexOf(" ", StringComparison.Ordinal))) ;
-        TaskDialog.Show( "FASUとVAVの自動配置", $"同一のSpaceに2つ以上のVAV、FASUが存在しているため、処理に失敗しました。 \n該当Space: {string.Join(",", invalidSpacesList)}") ;
+        TaskDialog.Show( "FASUとVAVの自動配置", $"同一のSpaceに2つ以上のFASU、VAVが存在しているため、処理に失敗しました。 \n該当Space: {string.Join(",", invalidSpacesList)}") ;
         return false ;
       }
 
-      if ( numberOfVAVsAndFASUsInSpacesDictionary.Any(x => x.Value.numberOfVAV == 1 && x.Value.numberOfFASU == 0 ))
+      if ( numberOfFASUsAndVAVsInSpacesDictionary.Any(x => x.Value.numberOfVAV == 0 && x.Value.numberOfFASU == 1 ))
       {
-        var invalidSpacesList = numberOfVAVsAndFASUsInSpacesDictionary.Where(x => x.Value.numberOfVAV == 1 && x.Value.numberOfFASU == 0)
-          .Select(x => x.Key.Substring(0, x.Key.IndexOf(" ", StringComparison.Ordinal))) ;
-        TaskDialog.Show( "FASUとVAVの自動配置", $"以下のSpaceにVAVのみが配置されているため、処理に失敗しました。\n該当Space: {string.Join(",", invalidSpacesList)}") ;
-        return false ;
-      }
-
-      if ( numberOfVAVsAndFASUsInSpacesDictionary.Any(x => x.Value.numberOfVAV == 0 && x.Value.numberOfFASU == 1 ))
-      {
-        var invalidSpacesList = numberOfVAVsAndFASUsInSpacesDictionary.Where(x => x.Value.numberOfVAV == 0 && x.Value.numberOfFASU == 1)
+        var invalidSpacesList = numberOfFASUsAndVAVsInSpacesDictionary.Where(x => x.Value.numberOfFASU == 1 && x.Value.numberOfVAV == 0 )
           .Select(x => x.Key.Substring(0, x.Key.IndexOf(" ", StringComparison.Ordinal))) ;
         TaskDialog.Show( "FASUとVAVの自動配置", $"以下のSpaceにFASUのみが配置されているため、処理に失敗しました。\n該当Space: {string.Join(",", invalidSpacesList)}") ;
+        return false ;
+      }
+      
+      if ( numberOfFASUsAndVAVsInSpacesDictionary.Any(x => x.Value.numberOfVAV == 1 && x.Value.numberOfFASU == 0 ))
+      {
+        var invalidSpacesList = numberOfFASUsAndVAVsInSpacesDictionary.Where(x => x.Value.numberOfFASU == 0 && x.Value.numberOfVAV == 1 )
+          .Select(x => x.Key.Substring(0, x.Key.IndexOf(" ", StringComparison.Ordinal))) ;
+        TaskDialog.Show( "FASUとVAVの自動配置", $"以下のSpaceにVAVのみが配置されているため、処理に失敗しました。\n該当Space: {string.Join(",", invalidSpacesList)}") ;
         return false ;
       }
 
