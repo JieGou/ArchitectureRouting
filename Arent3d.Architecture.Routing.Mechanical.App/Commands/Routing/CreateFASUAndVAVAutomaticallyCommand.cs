@@ -97,20 +97,20 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector,
       IList<Element> spaces )
     {
-      Dictionary<int, List<Element>> branchNumberToAreaDictionary = new() ;
+      Dictionary<int, List<Element>> branchNumberToSpacesDictionary = new() ;
       foreach ( Element space in spaces ) {
         space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
-        if ( branchNumberToAreaDictionary.ContainsKey( branchNumber ) ) {
-          branchNumberToAreaDictionary[ branchNumber ].Add( space ) ;
+        if ( branchNumberToSpacesDictionary.ContainsKey( branchNumber ) ) {
+          branchNumberToSpacesDictionary[ branchNumber ].Add( space ) ;
         }
         else {
-          branchNumberToAreaDictionary.Add( branchNumber, new List<Element>() { space } ) ;
+          branchNumberToSpacesDictionary.Add( branchNumber, new List<Element>() { space } ) ;
         }
       }
 
-      if ( ! branchNumberToAreaDictionary.TryGetValue( 0, out var rootAreas ) )
+      if ( ! branchNumberToSpacesDictionary.TryGetValue( 0, out var rootSpaces ) )
       {
-        rootAreas = new List<Element>() ;
+        rootSpaces = new List<Element>() ;
       }
       
       Dictionary<string, NumberOfFASUAndVAVModel> numberOfFASUsAndVAVsInSpacesDictionary = CountFASUsAndVAVsBySpace ( document, spaces ) ;
@@ -121,7 +121,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var vavUpstreamConnectorNormal = new Vector3d( 1, 0, 0 ) ;
       
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
-        branchNumberToAreaDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
+        branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
 
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
@@ -142,7 +142,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           
           // この時点でコネクタの向きとは逆を向いている想定
           // コネクタの裏側にあるときは、ここで向きを反転する
-          if ( rootAreas.Contains( space ) && IsVavLocatedBehindConnector( document, instanceOfVAV, pickedConnector ) ) {
+          if ( rootSpaces.Contains( space ) && IsVavLocatedBehindConnector( document, instanceOfVAV, pickedConnector ) ) {
             ElementTransformUtils.RotateElements( document, new List<ElementId>(){instanceOfFASU.Id,instanceOfVAV.Id},
               Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI ) ;
           }
