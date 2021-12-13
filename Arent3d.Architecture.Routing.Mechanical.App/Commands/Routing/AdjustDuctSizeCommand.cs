@@ -80,11 +80,24 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      // Add pass point into selected route
       if ( startPosition == null ) return segments ;
 
+      // Update diameter for grand child route
+      var newRouteSegments = UpdateGrandChildDiameter( document, segments.ToList(), spaces.ToList() ) ;
+
+      // Add pass point into selected route
+      var passPointOnRoutes = AddPassPoint( document, newRouteSegments, startPosition, mainRouteName ) ;
+
+      // Get list of new segments
+      newRouteSegments = GetListOfNewSegments( document, segments, newRouteSegments, spaces.ToList(), passPointOnRoutes, startPosition ) ;
+
+      return newRouteSegments ;
+    }
+
+    private static Dictionary<string, List<PassPointEndPoint>> AddPassPoint( Document document, List<(string RouteName, RouteSegment Segment)> newRouteSegments, XYZ startPosition, string mainRouteName )
+    {
       var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
-      var teesOnSelectedRoute = RemoveTeeOutsideOfSegments( tees.ToList(), segments.ToList() ) ;
+      var teesOnSelectedRoute = RemoveTeeOutsideOfSegments( tees.ToList(), newRouteSegments ) ;
       Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes = new() ;
       foreach ( var tee in teesOnSelectedRoute ) {
         var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int)TeeConnectorType.Connector1 || conn.Id == (int)TeeConnectorType.Connector2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
@@ -92,7 +105,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
         var teeRouteName = tee.GetRouteName() ;
         if ( teeRouteName == null ) continue ;
-        var teeSegment = segments.FirstOrDefault( segment => segment.RouteName == teeRouteName ).Segment ;
+        var teeSegment = newRouteSegments.FirstOrDefault( segment => segment.RouteName == teeRouteName ).Segment ;
 
         // Fix bug line to short by move pass point position one distance is 0.01 pass point direction
         double offset = 0 ;
@@ -114,7 +127,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      // Update diameter for grand child route
+      return passPointOnRoutes ;
+    }
+
+    private static List<(string RouteName, RouteSegment Segment)> UpdateGrandChildDiameter( Document document, List<(string, RouteSegment)> segments, List<Element> spaces )
+    {
       var newRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
       foreach ( var (routeName, segment) in segments ) {
         var ductDiameter = segment.PreferredNominalDiameter ;
@@ -128,7 +145,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         newRouteSegments.Add( ( routeName, newSegment ) ) ;
       }
 
-      // Get list of new segments
+      return newRouteSegments ;
+    }
+
+    private static List<(string RouteName, RouteSegment Segment)> GetListOfNewSegments( Document document, IReadOnlyCollection<(string RouteName, RouteSegment Segment)> segments, List<(string, RouteSegment)> newRouteSegments, IReadOnlyCollection<Element> spaces, Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes, XYZ startPosition )
+    {
       foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
         var segment = segments.FirstOrDefault( segment => segment.RouteName == routeName ).Segment ;
         if ( segment == null ) continue ;
@@ -172,6 +193,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     /// <param name="airflow">Unit: CubicMetersPerHour</param>
     private static double ConvertAirflowToDiameter( double airflow )
     {
+      // TODO : 仮対応、風量が11700m3/h以上の場合はルート径が700にします。
       var ductDiameter = DiameterLinkWithAirflow.Keys.Last() ;
       foreach ( var (diameterType, airflowType) in DiameterLinkWithAirflow ) {
         if ( airflowType - airflow < 0 ) continue ;
