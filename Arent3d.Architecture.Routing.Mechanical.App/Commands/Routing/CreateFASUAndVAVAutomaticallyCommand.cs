@@ -279,7 +279,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static bool IsVavLocatedBehindConnector( Document document, Element instanceOfVAV, Connector instanceOfConnector )
     {
-      // Get BoundingBox of VAV
       BoundingBoxXYZ boxOfVAV = instanceOfVAV.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfVAV == null ) return false ;
 
@@ -290,9 +289,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return boxOfVAV.ToBox3d().Vertices().Any( boxCorner => Vector3d.Dot( boxCorner - connectorPosition, connectorNormal ) < 0 ) ;
     }
 
-    private static bool HasBoundingBox( Document document, Element space )
+    private static bool HasBoundingBox( Document document, Element element )
     {
-      return null != space.get_BoundingBox( document.ActiveView ) ;
+      return null != element.get_BoundingBox( document.ActiveView ) ;
     }
 
     private static void CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
