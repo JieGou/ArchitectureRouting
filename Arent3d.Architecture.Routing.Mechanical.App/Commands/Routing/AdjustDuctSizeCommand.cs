@@ -22,6 +22,22 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class AdjustDuctSizeCommand : RoutingCommandBase
   {
+    private static readonly Dictionary<double, double> DiameterLinkWithAirflow = new()
+    {
+      { 150, 195 },
+      { 200, 420 },
+      { 250, 765 },
+      { 300, 1240 },
+      { 350, 1870 },
+      { 400, 2670 },
+      { 450, 3650 },
+      { 500, 4820 },
+      { 550, 6200 },
+      { 600, 7800 },
+      { 650, 9600 },
+      { 700, 1170 }
+    } ;
+
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickAndAdjustDuctSize" ;
 
     private AddInType GetAddInType() => AppCommandSettings.AddInType ;
@@ -49,7 +65,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       var spaces = GetAllSpaces( document ) ;
       var segments = Route.GetAllRelatedBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
-      
+
       // Get start point of route
       XYZ? startPosition = null ;
       foreach ( var (_, segment) in segments ) {
@@ -61,10 +77,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           // Todo something
         }
       }
+
       if ( startPosition == null ) return segments ;
 
       var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
-      var teesOnSelectedRoute = RemoveTeeOutsideOfSegments(tees.ToList(), segments.ToList()) ;
+      var teesOnSelectedRoute = RemoveTeeOutsideOfSegments( tees.ToList(), segments.ToList() ) ;
       var newRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
       Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes = new() ;
       foreach ( var tee in teesOnSelectedRoute ) {
@@ -72,10 +89,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         if ( behindTeeConnector == null ) continue ;
         var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
         var teeRouteName = tee.GetRouteName() ;
-        if(teeRouteName == null) continue;
+        if ( teeRouteName == null ) continue ;
         var teeSegment = segments.FirstOrDefault( segment => segment.RouteName == teeRouteName ).Segment ;
         var passPointPosition = new XYZ( behindTeeConnector.Origin.X, behindTeeConnector.Origin.Y, behindTeeConnector.Origin.Z ) ;
-        var passPoint = document.AddPassPoint( teeRouteName, passPointPosition, passPointDir, teeSegment.PreferredNominalDiameter/2, teeSegment.FromEndPoint.GetLevelId( document ) ) ;
+        var passPoint = document.AddPassPoint( teeRouteName, passPointPosition, passPointDir, teeSegment.PreferredNominalDiameter / 2, teeSegment.FromEndPoint.GetLevelId( document ) ) ;
         var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
         if ( passPointOnRoutes.ContainsKey( teeRouteName ) ) {
           passPointOnRoutes[ teeRouteName ].Add( passPointEndPoint ) ;
@@ -85,60 +102,75 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      // // Test Get spaceの給気風量設定値
-      // foreach ( var (routeName, segment) in segments ) {
-      //   var toEndPointConnector = segment.ToEndPoint.GetReferenceConnector() ;
-      //   var space = GetSpaceFromVavConnector( document, toEndPointConnector!, spaces ) as Space ;
-      //   var spaceSpecifiedSupplyAirflow = UnitUtils.ConvertFromInternalUnits( space!.DesignSupplyAirflow, UnitTypeId.CubicMeters ) ;
-      // }
-
       // Get list of new segments
       foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
         var segment = segments.FirstOrDefault( segment => segment.RouteName == routeName ).Segment ;
-        if(segment == null) continue;
-        newRouteSegments = removeSegmentByRouteName( routeName, segments ).ToList() ;
+        if ( segment == null ) continue ;
+        newRouteSegments = RemoveSegmentByRouteName( routeName, segments ).ToList() ;
 
         if ( passPoints.Count() > 1 ) {
           passPoints.Sort( ( a, b ) => CompareDistance( startPosition, a, b ) ) ;
           var secondFromEndPoints = passPoints.ToList() ;
           var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( segment.ToEndPoint ) ;
           var firstToEndPoint = secondFromEndPoints[ 0 ] ;
-        
+
           newRouteSegments.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, firstToEndPoint, segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ) ) ;
           newRouteSegments.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
           {
-            var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, f, t, segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
+            var ductDiameter = segment.PreferredNominalDiameter ;
+            if ( t == segment.ToEndPoint ) {
+              var space = GetSpaceFromVavConnector( document, segment.ToEndPoint.GetReferenceConnector()!, spaces ) as Space ;
+              var spaceSpecifiedSupplyAirflow = space is null ? 0 : UnitUtils.ConvertFromInternalUnits( space.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
+              ductDiameter = ConvertAirflowToDiameter( spaceSpecifiedSupplyAirflow ).MillimetersToRevitUnits() ;
+            }
+            var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, f, t, ductDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
             return ( routeName, newSegment ) ;
-          } ) ) ;             
+          } ) ) ;
         }
         else {
           var beforeSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, passPoints.First(), segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
           var afterSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, passPoints.First(), segment.ToEndPoint, segment.PreferredNominalDiameter / 2, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
           newRouteSegments.Add( ( routeName, beforeSegment ) ) ;
-          newRouteSegments.Add( ( routeName, afterSegment ) ) ;             
+          newRouteSegments.Add( ( routeName, afterSegment ) ) ;
         }
 
         // Test one case
-        break;
+        // break ;
       }
-      
-      return segments ;
+
+      return newRouteSegments ;
     }
-    
+
+    /// <summary>
+    /// Convert airflow to duct diameter
+    /// </summary>
+    /// <param name="airflow">Unit: CubicMetersPerHour</param>
+    private static double ConvertAirflowToDiameter( double airflow )
+    {
+      var ductDiameter = DiameterLinkWithAirflow.Keys.Last() ;
+      foreach ( var (diameterType, airflowType) in DiameterLinkWithAirflow ) {
+        if ( airflowType - airflow < 0 ) continue ;
+        ductDiameter = diameterType ;
+        break ;
+      }
+
+      return ductDiameter ;
+    }
+
     private static int CompareDistance( XYZ startPosition, PassPointEndPoint a, PassPointEndPoint b )
     {
       if ( a.GetPassPoint()!.Location is not LocationPoint aPos || b.GetPassPoint()!.Location is not LocationPoint bPos ) return default ;
 
-      return Vector2d.Distance( aPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) .CompareTo( Vector2d.Distance( bPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ;
+      return Vector2d.Distance( aPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ).CompareTo( Vector2d.Distance( bPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ;
     }
-    
+
     private static IEnumerable<FamilyInstance> RemoveTeeOutsideOfSegments( IEnumerable<FamilyInstance> tees, List<(string, RouteSegment)> segments )
     {
       List<FamilyInstance> resultTees = new() ;
       foreach ( var tee in tees ) {
         foreach ( var (routeName, segment) in segments ) {
           if ( tee.GetNearestEndPoints( false ).First().Key == segment.ToEndPoint.Key ) {
-            resultTees.Add( tee );
+            resultTees.Add( tee ) ;
           }
         }
       }
@@ -146,7 +178,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return resultTees ;
     }
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> removeSegmentByRouteName( string removeRouteName, IReadOnlyCollection<(string RouteName, RouteSegment Segment)> segments )
+    private static IEnumerable<(string RouteName, RouteSegment Segment)> RemoveSegmentByRouteName( string removeRouteName, IEnumerable<(string RouteName, RouteSegment Segment)> segments )
     {
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
       foreach ( var (routeName, segment) in segments ) {
@@ -157,13 +189,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       return result ;
     }
-    
+
     /// <summary>
     /// Get one Vav from one space
     /// </summary>
     private static Element GetSpaceFromVavConnector( Document doc, Connector vavConnector, IEnumerable<Element> spaces )
     {
-      
       foreach ( var space in spaces ) {
         BoundingBoxXYZ spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
         if ( vavConnector == null || ( ! IsInSpace( spaceBox, vavConnector.Origin ) ) ) continue ;
@@ -176,8 +207,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavConnectorPosition )
     {
       return spaceBox.ToBox3d().Contains( vavConnectorPosition.To3dPoint(), 0.0 ) ;
-    }    
-    
+    }
+
     private static IList<Element> GetAllSpaces( Document document )
     {
       ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
@@ -185,7 +216,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElements() ;
       return spaces ;
     }
-    
+
     private enum TeeConnectorType
     {
       Connector1 = 1,
