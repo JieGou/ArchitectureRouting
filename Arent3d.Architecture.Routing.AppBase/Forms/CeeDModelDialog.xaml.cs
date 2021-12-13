@@ -204,6 +204,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             if ( ! string.IsNullOrEmpty( symbol ) && ! symbol.Contains( "又は" ) ) floorPlanSymbol = symbol ;
           }
 
+          Drawing drawing = sheet.createDrawingPatriarch() ;
+          ClientAnchor anchor = helper.createClientAnchor() ;
+          anchor.setCol1(0) ;
+          anchor.setRow1(0) ;
+          Picture pict = drawing.createPicture( anchor, pictureureIdx );
+          pict.resize() ; 
+
+          int pictOriginalWidthInPixels = pict.getImageDimension().width ;
+          int pictOriginalHeightInPixels = pict.getImageDimension().height ;
+
+          float rowHeightInPixels = 0f;
+          for ( int r = 0; r < 4; r++ ) {
+            row = sheet.getRow(r); if (row == null) row = sheet.createRow(r);
+            float rowHeightInPoints = row.getHeightInPoints(); 
+            rowHeightInPixels += rowHeightInPoints * Units.PIXEL_DPI / Units.POINT_DPI;
+          }
+          
           var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
           if ( ! ceeDModelNumbers.Any() ) {
             CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
