@@ -131,7 +131,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         foreach ( var space in spaces ) {
-          if ( numberOfFASUsAndVAVsInSpacesDictionary.Any(x => x.Key == space.Name && x.Value.numberOfFASU == 1 && x.Value.numberOfVAV == 1 )) continue ;
+          if ( false == numberOfFASUsAndVAVsInSpacesDictionary.TryGetValue( space.Name, out var numberOfFASUAndVAV ) ) continue ;
+          if ( numberOfFASUAndVAV.numberOfFASU == 1 && numberOfFASUAndVAV.numberOfVAV == 1 ) continue ;
           
           // Add object to the document
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
