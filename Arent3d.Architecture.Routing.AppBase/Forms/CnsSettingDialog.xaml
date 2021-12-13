@@ -7,6 +7,7 @@
     x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingDialog"
     mc:Ignorable="d"
     WindowStartupLocation="CenterScreen"
+    Closing="DataWindow_Closing"
     d:DesignHeight="600" d:DesignWidth="500" Width="500" Height="600">
     <DockPanel Margin="5">
         <StackPanel DockPanel.Dock="Left" Width="350">
