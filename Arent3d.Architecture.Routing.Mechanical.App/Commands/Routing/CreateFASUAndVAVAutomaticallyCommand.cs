@@ -9,6 +9,7 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit ;
 using System.Linq ;
 using Autodesk.Revit.DB.Mechanical ;
+using Autodesk.Revit.DB.Structure ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
 
@@ -134,6 +135,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue;
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
+          
+          var symbol = document.GetFamilySymbols( RoutingFamilyType.TTE_VAV_140 ).FirstOrDefault() ?? throw new System.InvalidOperationException() ;
+          if (false == symbol.IsActive) symbol.Activate() ;
+          var instance = document.Create.NewFamilyInstance(positionOfFASUAndVAV, symbol, null, StructuralType.NonStructural) ;
+          var connectors = instance.GetConnectors() ;
           
           var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
           if ( placeResult == null ) continue ;// Failed to place
