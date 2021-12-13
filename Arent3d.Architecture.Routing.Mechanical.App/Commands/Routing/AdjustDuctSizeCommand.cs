@@ -13,7 +13,6 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.UI ;
 using MathLib ;
-using Org.BouncyCastle.Utilities.Collections ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
@@ -86,10 +85,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
       var teesOnSelectedRoute = RemoveTeeOutsideOfSegments( tees.ToList(), segments.ToList() ) ;
-      var newRouteSegments = segments.ToList() ;
       Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes = new() ;
       foreach ( var tee in teesOnSelectedRoute ) {
-        var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int)TeeConnectorType.Connector1 || conn.Id == 2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
+        var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int)TeeConnectorType.Connector1 || conn.Id == (int)TeeConnectorType.Connector2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
         if ( behindTeeConnector == null ) continue ;
         var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
         var teeRouteName = tee.GetRouteName() ;
@@ -99,7 +97,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         // Fix bug line to short by move pass point position one distance is 0.01 pass point direction
         double offset = 0 ;
         if ( mainRouteName == teeRouteName ) {
-          offset = passPointDir.Y != 0 ? 100 : 5000 ;
+          offset = passPointDir.Y != 0 ? 100 : 4500 ;
         }
         else {
           offset = 10 ;
@@ -114,6 +112,20 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         else {
           passPointOnRoutes.Add( teeRouteName, new List<PassPointEndPoint>() { passPointEndPoint } ) ;
         }
+      }
+
+      // Update diameter for grand child route
+      var newRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
+      foreach ( var (routeName, segment) in segments ) {
+        var ductDiameter = segment.PreferredNominalDiameter ;
+        var space = GetSpaceFromVavConnector( document, segment.ToEndPoint.GetReferenceConnector()!, spaces ) as Space ;
+        var spaceSpecifiedSupplyAirflow = space is null ? 0 : UnitUtils.ConvertFromInternalUnits( space.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
+        if ( segment.ToEndPoint is ConnectorEndPoint ) {
+          ductDiameter = ConvertAirflowToDiameter( spaceSpecifiedSupplyAirflow ).MillimetersToRevitUnits() ;
+        }
+
+        var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, segment.ToEndPoint, ductDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
+        newRouteSegments.Add( ( routeName, newSegment ) ) ;
       }
 
       // Get list of new segments
@@ -149,9 +161,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           newRouteSegments.Add( ( routeName, beforeSegment ) ) ;
           newRouteSegments.Add( ( routeName, afterSegment ) ) ;
         }
-
-        // Test one case
-        // break ;
       }
 
       return newRouteSegments ;
