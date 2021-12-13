@@ -10,5 +10,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             InitializeComponent();
             DataContext = viewModel;
         }
+
+        private void BtnSave_OnClick( object sender, RoutedEventArgs e )
+        {
+            DialogResult = true ;
+            this.Close();
+        }
+
+        private void BtnCompleted_OnClick( object sender, RoutedEventArgs e )
+        {
+            this.Close();
+        }
     }
 }

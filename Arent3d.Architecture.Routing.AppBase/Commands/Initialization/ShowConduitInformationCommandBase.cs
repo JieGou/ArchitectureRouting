@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -8,10 +7,11 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
-using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -36,11 +36,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var heroiCdSet = hiroiSetCdMasterNormalModelData.FirstOrDefault() ;
           string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
 
-          conduitInformationModels.Add( new ConduitInformationModel( false, floor, wireType?.COrP,
-            wireType?.WireType, wireType?.DiameterOrNominal, wireType?.NumberOfHeartsOrLogarithm,
-            wireType?.NumberOfConnections, string.Empty, string.Empty, string.Empty, conduitModel?.PipingType, conduitModel?.Size,
-            "", heroiCdSet?.ConstructionClassification, wireType?.Classification,
-            "","", "" ) ) ;
+          conduitInformationModels.Add( new ConduitInformationModel( false, floor, wireType?.COrP, wireType?.WireType,
+            wireType?.DiameterOrNominal, wireType?.NumberOfHeartsOrLogarithm, wireType?.NumberOfConnections,
+            string.Empty, string.Empty, string.Empty, conduitModel?.PipingType, conduitModel?.Size, "",
+            heroiCdSet?.ConstructionClassification, wireType?.Classification, "", "", "" ) ) ;
         }
       }
       catch ( Exception ex ) {
@@ -53,24 +52,48 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       dialog.ShowDialog() ;
 
       if ( dialog.DialogResult ?? false ) {
-        return Result.Succeeded ;
+        return doc.Transaction(
+          "TransactionName.Commands.Routing.ConduitInformation".GetAppStringByKeyOrDefault( "Set conduit information" ),
+          _ =>
+          {
+            if ( viewModel.IsCreateSchedule ) {
+              var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+              var level = uiDoc.ActiveView.GenLevel ;
+              var heightOfConnector =
+                doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+
+              ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+              var noteWidth = 0.4 ;
+              TextNoteOptions opts = new(defaultTextTypeId) ;
+              var txtPosition = new XYZ( originX, originY, heightOfConnector ) ;
+              TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( viewModel ), opts ) ;
+              viewModel.IsCreateSchedule = false ;
+            }
+
+            return Result.Succeeded ;
+          } ) ;
       }
       else {
         return Result.Cancelled ;
       }
     }
 
-    private class ConduitPickFilter : ISelectionFilter
+    private string GenerateTextTable( ConduitInformationViewModel viewModel )
     {
-      public bool AllowElement( Element e )
-      {
-        return ( e.Category.Id.IntegerValue.Equals( (int) BuiltInCategory.OST_Conduit ) ) ;
+      string line = new string( '＿', 32 ) ;
+      string result = string.Empty ;
+      var conduitInformationModels = viewModel.ConduitInformationModels ;
+      var maxWireType = conduitInformationModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
+      var conduitInformationDictionary = conduitInformationModels.GroupBy( x => x.DetailSymbol )
+        .ToDictionary( g => g.Key, g => g.ToList() ) ;
+      result += $"{line}\rB1階平面图" ;
+      foreach ( var group in conduitInformationDictionary ) {
+        result += $"\r{line}\r{group.Key}" ;
+        result = @group.Value.Aggregate( result, ( current, item ) => current + $"\r{line}\r{item.WireType + item.WireSize}\t-{item.WireStrip}\tX1\t({item.PipingType + item.PipingSize})\t{item.Remark}" ) ;
       }
 
-      public bool AllowReference( Reference r, XYZ p )
-      {
-        return false ;
-      }
+      result += $"\r{line}" ;
+      return result ;
     }
   }
 }

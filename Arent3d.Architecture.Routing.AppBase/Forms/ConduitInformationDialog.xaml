@@ -88,25 +88,30 @@
                     <ColumnDefinition Width="130" />
                     <ColumnDefinition Width="130" />
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" x:Name="BtnOK"
+                <Button Grid.Column="0" x:Name="btnSave"
                         Content="保存"
                         Margin="5,5,5,5"
                         HorizontalAlignment="Right"
                         DockPanel.Dock="Right"
+                        Command="{Binding SaveConduitInformationCommand}"
+                        Click="BtnSave_OnClick"
                         Height="27"
                         Width="110" />
-            <Button Grid.Column="1" x:Name="Btn2"
+            <Button Grid.Column="1" x:Name="btnSaveAndCreate"
                     Content="保存＆明細表作成"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
                     DockPanel.Dock="Right"
+                    Command="{Binding SaveAndCreateConduitInformationCommand}"
+                    Click="BtnSave_OnClick"
                     Height="27"
                     Width="110" />
-            <Button Grid.Column="2" x:Name="Btn3"
+            <Button Grid.Column="2" x:Name="btnCompleted"
                     Content="終了"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
                     DockPanel.Dock="Right"
+                    Click="BtnCompleted_OnClick"
                     Height="27"
                     Width="110" />
             </Grid>
