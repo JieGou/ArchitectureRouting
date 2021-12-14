@@ -4,6 +4,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -86,7 +87,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var newRouteSegments = UpdateGrandChildDiameter( document, segments.ToList(), spaces.ToList() ) ;
 
       // Add pass point into selected route
-      var passPointOnRoutes = AddPassPoint( document, newRouteSegments, startPosition, mainRouteName ) ;
+      var passPointOnRoutes = AddPassPoint( document, newRouteSegments, startPosition, mainRouteName, spaces.ToList() ) ;
 
       // Get list of new segments
       newRouteSegments = GetListOfNewSegments( document, segments, newRouteSegments, spaces.ToList(), passPointOnRoutes, startPosition ) ;
@@ -94,7 +95,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return newRouteSegments ;
     }
 
-    private static Dictionary<string, List<PassPointEndPoint>> AddPassPoint( Document document, List<(string RouteName, RouteSegment Segment)> newRouteSegments, XYZ startPosition, string mainRouteName )
+    private static Dictionary<string, List<PassPointEndPoint>> AddPassPoint( Document document, List<(string RouteName, RouteSegment Segment)> newRouteSegments, XYZ startPosition, string mainRouteName,  List<Element> spaces )
     {
       var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
       var teesOnSelectedRoute = RemoveTeeOutsideOfSegments( tees.ToList(), newRouteSegments ) ;
@@ -130,7 +131,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return passPointOnRoutes ;
     }
 
-    private static List<(string RouteName, RouteSegment Segment)> UpdateGrandChildDiameter( Document document, List<(string, RouteSegment)> segments, List<Element> spaces )
+    private static List<(string RouteName, RouteSegment Segment)> UpdateGrandChildDiameter( Document document, List<(string, RouteSegment)> segments, IReadOnlyCollection<Element> spaces )
     {
       var newRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
       foreach ( var (routeName, segment) in segments ) {
@@ -148,8 +149,37 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return newRouteSegments ;
     }
 
+    private static Dictionary<string, List<double>> GetAllPassPointDiameter( Document document, Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes, XYZ startPosition, IReadOnlyCollection<Element> spaces )
+    {
+      var passPointDiameters = new Dictionary<string, List<double>>() ;
+      foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
+        // Get all branch route
+        var routeCache = RouteCache.Get( document ) ;
+        if ( false == routeCache.TryGetValue( routeName, out var parentRoute ) ) continue ;
+        var childBranches = parentRoute.GetChildBranches().ToList() ;
+        childBranches.Sort( ( a, b ) => CompareByDistanceFromEndPoint( startPosition, a, b ) ) ;
+        var spaceParent = GetSpaceFromVavConnector( document, parentRoute.FirstToConnector()!.GetConnector()!, spaces ) as Space ;
+        var spaceParentSpecifiedSupplyAirflow = spaceParent is null ? 0 : UnitUtils.ConvertFromInternalUnits( spaceParent.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
+        foreach ( var route in childBranches ) {
+          var space = GetSpaceFromVavConnector( document, route.FirstToConnector()!.GetConnector()!, spaces ) as Space ;
+          var spaceSpecifiedSupplyAirflow = space is null ? 0 : UnitUtils.ConvertFromInternalUnits( space.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
+          var sumSpecifiedSupplyAirflow = spaceSpecifiedSupplyAirflow + spaceParentSpecifiedSupplyAirflow ;
+          var ductDiameter = ConvertAirflowToDiameter( sumSpecifiedSupplyAirflow ).MillimetersToRevitUnits() ;
+          if ( passPointDiameters.ContainsKey( routeName ) ) {
+            passPointDiameters[ routeName ].Add( ductDiameter ) ;
+          }
+          else {
+            passPointDiameters.Add( routeName, new List<double>() { ductDiameter } ) ;
+          }          
+        }
+      }
+
+      return passPointDiameters ;
+    }
+
     private static List<(string RouteName, RouteSegment Segment)> GetListOfNewSegments( Document document, IReadOnlyCollection<(string RouteName, RouteSegment Segment)> segments, List<(string, RouteSegment)> newRouteSegments, IReadOnlyCollection<Element> spaces, Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes, XYZ startPosition )
     {
+      var passPointDiameters = GetAllPassPointDiameter(document, passPointOnRoutes, startPosition, spaces  ) ;
       foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
         var segment = segments.FirstOrDefault( segment => segment.RouteName == routeName ).Segment ;
         if ( segment == null ) continue ;
@@ -203,7 +233,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       return ductDiameter ;
     }
+    
+    private static int CompareByDistanceFromEndPoint( XYZ startPosition, Route a, Route b )
+    {
+      if ( a.FirstFromConnector() == null || b.FirstFromConnector() == null) return default ;
 
+      return Vector2d.Distance( b.FirstFromConnector()!.GetConnector()!.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ).CompareTo( Vector2d.Distance( a.FirstFromConnector()!.GetConnector()!.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ;
+    }
+    
     private static int CompareDistance( XYZ startPosition, PassPointEndPoint a, PassPointEndPoint b )
     {
       if ( a.GetPassPoint()!.Location is not LocationPoint aPos || b.GetPassPoint()!.Location is not LocationPoint bPos ) return default ;
