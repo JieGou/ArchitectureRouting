@@ -44,12 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var element = selection.PickObject( ObjectType.Element, ConduitSelectionFilter.Instance, "Select cable." ) ;
         var conduit = doc.GetElement( element.ElementId ) ;
         var conduitHasSymbol = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.ConduitId == conduit.Id.IntegerValue.ToString() ) ;
-        if ( conduitHasSymbol != null ) {
-          string mess = "Cable has the detail symbol '" + conduitHasSymbol.DetailSymbol + "'" ;
-          MessageBox.Show( mess, "Message" ) ;
-          return Result.Cancelled ;
-        }
-
+        
         var (symbols, angle) = CreateValueForCombobox( doc, detailSymbolStorable.DetailSymbolModelData, conduit ) ;
         var detailSymbolSettingDialog = new DetailSymbolSettingDialog( symbols, angle ) ;
         detailSymbolSettingDialog.ShowDialog() ;
@@ -57,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         const double dPlus = 0.2 ;
         var size = detailSymbolSettingDialog.HeightCharacter ;
-        CurveArray lines = app.Create.NewCurveArray() ;
+        List<string> lineIds = new List<string>() ;
         XYZ firstPoint = element.GlobalPoint ;
         var startLineP1 = new XYZ( firstPoint.X + dPlus, firstPoint.Y + dPlus, firstPoint.Z ) ;
         var endLineP1 = new XYZ( firstPoint.X - dPlus, firstPoint.Y - dPlus, firstPoint.Z ) ;
@@ -65,6 +60,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var startLine = doc.Create.NewDetailCurve( doc.ActiveView, startCurve ) ;
         var subCategory = GetLineStyle( doc ) ;
         startLine.LineStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        lineIds.Add( startLine.Id.IntegerValue.ToString() );
 
         List<XYZ> points = new List<XYZ>() ;
         switch ( detailSymbolSettingDialog.Angle ) {
@@ -95,13 +91,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         foreach ( var nextP in points ) {
           if ( firstPoint.DistanceTo( nextP ) > 0.001 ) {
             var curve = Line.CreateBound( firstPoint, nextP ) ;
-            lines.Append( curve ) ;
+            var detailCurve = doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
+            lineIds.Add( detailCurve.Id.IntegerValue.ToString() );
           }
 
           firstPoint = nextP ;
         }
-
-        doc.Create.NewDetailCurveArray( doc.ActiveView, lines ) ;
 
         ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
         var noteWidth = ( size / 32.0 ) * ( 1.0 / 12.0 ) * detailSymbolSettingDialog.PercentWidth / 100 ;
@@ -122,15 +117,62 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, detailSymbolSettingDialog.DetailSymbol, opts ) ;
         CreateNewTextNoteType( doc, textNote, size, detailSymbolSettingDialog.SymbolFont, detailSymbolSettingDialog.SymbolStyle, detailSymbolSettingDialog.Offset, detailSymbolSettingDialog.BackGround, detailSymbolSettingDialog.PercentWidth ) ;
 
-        SaveDetailSymbol( doc, detailSymbolStorable, conduit, detailSymbolSettingDialog.DetailSymbol ) ;
+        if ( conduitHasSymbol != null ) 
+          UpdateDetailSymbol( doc, detailSymbolStorable, conduitHasSymbol, textNote.Id.IntegerValue.ToString(), detailSymbolSettingDialog.DetailSymbol, string.Join( ",", lineIds ) ) ;
+        else
+          SaveDetailSymbol( doc, detailSymbolStorable, conduit, textNote.Id.IntegerValue.ToString(), detailSymbolSettingDialog.DetailSymbol, string.Join( ",", lineIds ) ) ;
+
         return Result.Succeeded ;
       } ) ;
     }
 
-    private void SaveDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, Element conduit, string detailSymbol )
+    private void UpdateDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, DetailSymbolModel detailSymbolModel, string detailSymbolId, string detailSymbol, string lineIds )
     {
       try {
-        detailSymbolStorable.DetailSymbolModelData.AddRange( AddDetailSymbol( doc, conduit, detailSymbol ) ) ;
+        string oldSymbol = detailSymbolModel.DetailSymbol ;
+        List<string> detailSymbolIds = new List<string>() ;
+        // delete old symbol
+        var symbolId = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.Id.IntegerValue.ToString() == detailSymbolModel.DetailSymbolId ).Select( t => t.Id ).FirstOrDefault() ;
+        if ( symbolId != null ) doc.Delete( symbolId ) ;
+        foreach ( var lineId in detailSymbolModel.LineIds.Split( ',' ) ) {
+          var id = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.Id.IntegerValue.ToString() == lineId ).Select( e => e.Id ).FirstOrDefault() ;
+          if ( id != null ) doc.Delete( id ) ;
+        }
+        // update symbol of cables same from-to connector
+        foreach ( var symbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbol == oldSymbol && d.FromConnectorId == detailSymbolModel.FromConnectorId && d.ToConnectorId == detailSymbolModel.ToConnectorId ) ) {
+          symbolModel.DetailSymbolId = detailSymbolId ;
+          symbolModel.DetailSymbol = detailSymbol ;
+          symbolModel.LineIds = lineIds ;
+        }
+        // update symbol of cables same to-connector
+        foreach ( var symbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbol == oldSymbol && d.FromConnectorId != detailSymbolModel.FromConnectorId && d.ToConnectorId == detailSymbolModel.ToConnectorId ) ) {
+          symbolModel.DetailSymbol = detailSymbol ;
+          if ( ! detailSymbolIds.Contains( symbolModel.DetailSymbolId ) )
+            detailSymbolIds.Add( symbolModel.DetailSymbolId );
+        }
+
+        if ( detailSymbolIds.Any() ) {
+          foreach ( var id in detailSymbolIds ) {
+            var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == id ) ;
+            if ( textElement == null ) continue ;
+            var textNote = ( textElement as TextNote ) ! ;
+            textNote.Text = detailSymbol ;
+          }
+        }
+        // update symbol's text color of cables different to-connector and same code
+        if ( oldSymbol != detailSymbol ) {
+          var firstChildSymbol = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.DetailSymbol == oldSymbol && d.ToConnectorId != detailSymbolModel.ToConnectorId ) ;
+          if ( firstChildSymbol != null ) {
+            detailSymbolIds = detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.ToConnectorId == firstChildSymbol.ToConnectorId ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+            foreach ( var id in detailSymbolIds ) {
+              var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == id ) ;
+              if ( textElement == null ) continue ;
+              var textNote = ( textElement as TextNote ) ! ;
+              CreateNewTextNoteType( doc, textNote, 0 ) ;
+            }
+          }
+        }
+        
         detailSymbolStorable.Save() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -138,18 +180,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private List<DetailSymbolModel> AddDetailSymbol( Document doc, Element conduit, string detailSymbol )
+    private void SaveDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, Element conduit, string detailSymbolId, string detailSymbol, string lineIds )
+    {
+      try {
+        detailSymbolStorable.DetailSymbolModelData.AddRange( AddDetailSymbol( doc, conduit, detailSymbolId, detailSymbol, lineIds ) ) ;
+        detailSymbolStorable.Save() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        MessageBox.Show( "Save Data Failed.", "Error Message" ) ;
+      }
+    }
+
+    private List<DetailSymbolModel> AddDetailSymbol( Document doc, Element conduit, string detailSymbolId, string detailSymbol, string lineIds )
     {
       List<DetailSymbolModel> detailSymbolModels = new List<DetailSymbolModel>() ;
       List<Element> allConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.Id != conduit.Id ).ToList() ;
-      DetailSymbolModel detailSymbolModel = CreateDetailSymbolModel( doc, allConnector, conduit, detailSymbol ) ;
+      DetailSymbolModel detailSymbolModel = CreateDetailSymbolModel( doc, allConnector, conduit, detailSymbolId, detailSymbol, lineIds ) ;
       detailSymbolModels.Add( detailSymbolModel ) ;
-      AddDetailSymbolForConduitSameFromToConnectors( doc, allConduit, allConnector, detailSymbolModels, detailSymbol, detailSymbolModel.FromConnectorId, detailSymbolModel.ToConnectorId ) ;
+      AddDetailSymbolForConduitSameFromToConnectors( doc, allConduit, allConnector, detailSymbolModels, detailSymbolId,detailSymbol, detailSymbolModel.FromConnectorId, detailSymbolModel.ToConnectorId, lineIds ) ;
       return detailSymbolModels ;
     }
 
-    private DetailSymbolModel CreateDetailSymbolModel( Document doc, List<Element> allConnectors, Element conduit, string detailSymbol )
+    private DetailSymbolModel CreateDetailSymbolModel( Document doc, List<Element> allConnectors, Element conduit, string detailSymbolId, string detailSymbol, string lineIds )
     {
       var code = string.Empty ;
       var fromElementId = string.Empty ;
@@ -188,7 +241,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      DetailSymbolModel detailSymbolModel = new DetailSymbolModel( detailSymbol, conduit.Id.IntegerValue.ToString(), fromElementId, toElementId, code ) ;
+      DetailSymbolModel detailSymbolModel = new DetailSymbolModel( detailSymbolId, detailSymbol, conduit.Id.IntegerValue.ToString(), fromElementId, toElementId, code, lineIds ) ;
       return detailSymbolModel ;
     }
 
@@ -220,10 +273,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return subCategory ;
     }
 
-    private void AddDetailSymbolForConduitSameFromToConnectors( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, string detailSymbol, string fromConnectorId, string toConnectorId )
+    private void AddDetailSymbolForConduitSameFromToConnectors( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, string detailSymbolId, string detailSymbol, string fromConnectorId, string toConnectorId, string lineIds )
     {
       foreach ( var conduit in allConduit ) {
-        DetailSymbolModel detailSymbolModel = CreateDetailSymbolModel( doc, allConnector, conduit, detailSymbol ) ;
+        DetailSymbolModel detailSymbolModel = CreateDetailSymbolModel( doc, allConnector, conduit, detailSymbolId, detailSymbol, lineIds ) ;
         if ( detailSymbolModel.FromConnectorId == fromConnectorId && detailSymbolModel.ToConnectorId == toConnectorId )
           detailSymbolModels.Add( detailSymbolModel ) ;
       }
@@ -232,23 +285,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private (List<string>, List<int>) CreateValueForCombobox( Document doc, List<DetailSymbolModel> detailSymbolModels, Element conduit )
     {
       List<string> symbols = new List<string>() ;
-      if ( detailSymbolModels.Any() ) {
-        var symbol = CheckDetailSymbolOfConduitSameCode( doc, conduit, detailSymbolModels ) ;
-        if ( ! string.IsNullOrEmpty( symbol ) ) {
-          symbols.Add( symbol ) ;
-        }
-        else {
-          List<string> detailSymbols = detailSymbolModels.Select( d => d.DetailSymbol ).ToList() ;
-          for ( var letter = 'A' ; letter <= 'Z' ; letter++ ) {
-            if ( detailSymbols.Contains( letter.ToString() ) ) continue ;
-            symbols.Add( letter.ToString() ) ;
-          }
-        }
-      }
-      else {
-        for ( var letter = 'A' ; letter <= 'Z' ; letter++ ) {
-          symbols.Add( letter.ToString() ) ;
-        }
+      for ( var letter = 'A' ; letter <= 'Z' ; letter++ ) {
+        symbols.Add( letter.ToString() ) ;
       }
 
       List<int> angle = new List<int>() ;
@@ -336,6 +374,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_UNDERLINE ).Set( underline ) ;
         textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( ( offset / 32.0 ) * ( 1.0 / 12.0 ) ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( (double)widthScale / 100 ) ;
+      }
+
+      // Change the text notes type to the new type
+      textNote.ChangeTypeId( textNoteType!.Id ) ;
+    }
+    
+    private void CreateNewTextNoteType( Document doc, TextNote textNote, int color )
+    {
+      //Create new text type
+      string strStyleName = textNote.TextNoteType.Name + "-" + color ;
+
+      var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( strStyleName, tt.Name ) ) ;
+      if ( textNoteType == null ) {
+        // Create new Note type
+        Element ele = textNote.TextNoteType.Duplicate( strStyleName ) ;
+        textNoteType = ( ele as TextNoteType ) ! ;
+        textNoteType.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( color ) ;
       }
 
       // Change the text notes type to the new type
