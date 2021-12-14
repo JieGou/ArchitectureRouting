@@ -36,7 +36,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var selection = uiDoc.Selection ;
       UIApplication uiApp = commandData.Application ;
       Application app = uiApp.Application ;
-      var isLeft = true ;
       var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
 
       return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
@@ -44,89 +43,96 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var element = selection.PickObject( ObjectType.Element, ConduitSelectionFilter.Instance, "Select cable." ) ;
         var conduit = doc.GetElement( element.ElementId ) ;
         var conduitHasSymbol = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.ConduitId == conduit.Id.IntegerValue.ToString() ) ;
-        
+
         var (symbols, angle) = CreateValueForCombobox( doc, detailSymbolStorable.DetailSymbolModelData, conduit ) ;
         var detailSymbolSettingDialog = new DetailSymbolSettingDialog( symbols, angle ) ;
         detailSymbolSettingDialog.ShowDialog() ;
         if ( ! ( detailSymbolSettingDialog.DialogResult ?? false ) ) return Result.Cancelled ;
 
-        const double dPlus = 0.2 ;
-        var size = detailSymbolSettingDialog.HeightCharacter ;
-        List<string> lineIds = new List<string>() ;
         XYZ firstPoint = element.GlobalPoint ;
-        var startLineP1 = new XYZ( firstPoint.X + dPlus, firstPoint.Y + dPlus, firstPoint.Z ) ;
-        var endLineP1 = new XYZ( firstPoint.X - dPlus, firstPoint.Y - dPlus, firstPoint.Z ) ;
-        Curve startCurve = Line.CreateBound( startLineP1, endLineP1 ) ;
-        var startLine = doc.Create.NewDetailCurve( doc.ActiveView, startCurve ) ;
-        var subCategory = GetLineStyle( doc ) ;
-        startLine.LineStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-        lineIds.Add( startLine.Id.IntegerValue.ToString() );
+        var (textNote, lineIds) = CreateDetailSymbol( doc, detailSymbolSettingDialog, firstPoint, detailSymbolSettingDialog.Angle ) ;
 
-        List<XYZ> points = new List<XYZ>() ;
-        switch ( detailSymbolSettingDialog.Angle ) {
-          case "0" :
-            points.Add( new XYZ( firstPoint.X - dPlus * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
-            firstPoint = new XYZ( firstPoint.X + dPlus, firstPoint.Y, firstPoint.Z ) ;
-            isLeft = true ;
-            break ;
-          case "90" :
-            points.Add( new XYZ( firstPoint.X, firstPoint.Y + dPlus * 10, firstPoint.Z ) ) ;
-            points.Add( new XYZ( firstPoint.X - dPlus * ( 3 + size ), firstPoint.Y + dPlus * 10, firstPoint.Z ) ) ;
-            firstPoint = new XYZ( firstPoint.X, firstPoint.Y - dPlus, firstPoint.Z ) ;
-            isLeft = true ;
-            break ;
-          case "180" :
-            points.Add( new XYZ( firstPoint.X + dPlus * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
-            firstPoint = new XYZ( firstPoint.X - dPlus, firstPoint.Y, firstPoint.Z ) ;
-            isLeft = false ;
-            break ;
-          case "-90" :
-            points.Add( new XYZ( firstPoint.X, firstPoint.Y - dPlus * ( 8 + size ), firstPoint.Z ) ) ;
-            points.Add( new XYZ( firstPoint.X + dPlus * ( 5 + size ), firstPoint.Y - dPlus * ( 8 + size ), firstPoint.Z ) ) ;
-            firstPoint = new XYZ( firstPoint.X, firstPoint.Y + dPlus, firstPoint.Z ) ;
-            isLeft = false ;
-            break ;
-        }
-
-        foreach ( var nextP in points ) {
-          if ( firstPoint.DistanceTo( nextP ) > 0.001 ) {
-            var curve = Line.CreateBound( firstPoint, nextP ) ;
-            var detailCurve = doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
-            lineIds.Add( detailCurve.Id.IntegerValue.ToString() );
-          }
-
-          firstPoint = nextP ;
-        }
-
-        ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-        var noteWidth = ( size / 32.0 ) * ( 1.0 / 12.0 ) * detailSymbolSettingDialog.PercentWidth / 100 ;
-
-        // make sure note width works for the text type
-        var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
-        var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
-        if ( noteWidth < minWidth ) {
-          noteWidth = minWidth ;
-        }
-        else if ( noteWidth > maxWidth ) {
-          noteWidth = maxWidth ;
-        }
-
-        TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
-
-        var txtPosition = new XYZ( firstPoint.X + ( isLeft ? dPlus : -dPlus * 4 ), firstPoint.Y + dPlus * ( 1 + size * 2 ), firstPoint.Z ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, detailSymbolSettingDialog.DetailSymbol, opts ) ;
-        CreateNewTextNoteType( doc, textNote, size, detailSymbolSettingDialog.SymbolFont, detailSymbolSettingDialog.SymbolStyle, detailSymbolSettingDialog.Offset, detailSymbolSettingDialog.BackGround, detailSymbolSettingDialog.PercentWidth ) ;
-
-        if ( conduitHasSymbol != null ) 
-          UpdateDetailSymbol( doc, detailSymbolStorable, conduitHasSymbol, textNote.Id.IntegerValue.ToString(), detailSymbolSettingDialog.DetailSymbol, string.Join( ",", lineIds ) ) ;
+        if ( conduitHasSymbol != null )
+          UpdateDetailSymbol( doc, detailSymbolStorable, conduitHasSymbol, textNote, detailSymbolSettingDialog.DetailSymbol, lineIds ) ;
         else
-          SaveDetailSymbol( doc, detailSymbolStorable, conduit, textNote.Id.IntegerValue.ToString(), detailSymbolSettingDialog.DetailSymbol, string.Join( ",", lineIds ) ) ;
+          SaveDetailSymbol( doc, detailSymbolStorable, conduit, textNote, detailSymbolSettingDialog, lineIds ) ;
 
         return Result.Succeeded ;
       } ) ;
     }
 
-    private void UpdateDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, DetailSymbolModel detailSymbolModel, string detailSymbolId, string detailSymbol, string lineIds )
+    private ( TextNote, string) CreateDetailSymbol( Document doc, DetailSymbolSettingDialog detailSymbolSettingDialog, XYZ firstPoint, string angle )
+    {
+      const double dPlus = 0.2 ;
+      var isLeft = true ;
+      var size = detailSymbolSettingDialog.HeightCharacter ;
+      List<string> lineIds = new List<string>() ;
+      var startLineP1 = new XYZ( firstPoint.X + dPlus, firstPoint.Y + dPlus, firstPoint.Z ) ;
+      var endLineP1 = new XYZ( firstPoint.X - dPlus, firstPoint.Y - dPlus, firstPoint.Z ) ;
+      Curve startCurve = Line.CreateBound( startLineP1, endLineP1 ) ;
+      var startLine = doc.Create.NewDetailCurve( doc.ActiveView, startCurve ) ;
+      var subCategory = GetLineStyle( doc ) ;
+      startLine.LineStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+      lineIds.Add( startLine.Id.IntegerValue.ToString() ) ;
+
+      List<XYZ> points = new List<XYZ>() ;
+      switch ( angle ) {
+        case "0" :
+          points.Add( new XYZ( firstPoint.X - dPlus * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
+          firstPoint = new XYZ( firstPoint.X + dPlus, firstPoint.Y, firstPoint.Z ) ;
+          isLeft = true ;
+          break ;
+        case "90" :
+          points.Add( new XYZ( firstPoint.X, firstPoint.Y + dPlus * 10, firstPoint.Z ) ) ;
+          points.Add( new XYZ( firstPoint.X - dPlus * ( 3 + size ), firstPoint.Y + dPlus * 10, firstPoint.Z ) ) ;
+          firstPoint = new XYZ( firstPoint.X, firstPoint.Y - dPlus, firstPoint.Z ) ;
+          isLeft = true ;
+          break ;
+        case "180" :
+          points.Add( new XYZ( firstPoint.X + dPlus * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
+          firstPoint = new XYZ( firstPoint.X - dPlus, firstPoint.Y, firstPoint.Z ) ;
+          isLeft = false ;
+          break ;
+        case "-90" :
+          points.Add( new XYZ( firstPoint.X, firstPoint.Y - dPlus * ( 8 + size ), firstPoint.Z ) ) ;
+          points.Add( new XYZ( firstPoint.X + dPlus * ( 5 + size ), firstPoint.Y - dPlus * ( 8 + size ), firstPoint.Z ) ) ;
+          firstPoint = new XYZ( firstPoint.X, firstPoint.Y + dPlus, firstPoint.Z ) ;
+          isLeft = false ;
+          break ;
+      }
+
+      foreach ( var nextP in points ) {
+        if ( firstPoint.DistanceTo( nextP ) > 0.001 ) {
+          var curve = Line.CreateBound( firstPoint, nextP ) ;
+          var detailCurve = doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
+          lineIds.Add( detailCurve.Id.IntegerValue.ToString() ) ;
+        }
+
+        firstPoint = nextP ;
+      }
+
+      ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+      var noteWidth = ( size / 32.0 ) * ( 1.0 / 12.0 ) * detailSymbolSettingDialog.PercentWidth / 100 ;
+
+      // make sure note width works for the text type
+      var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
+      var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
+      if ( noteWidth < minWidth ) {
+        noteWidth = minWidth ;
+      }
+      else if ( noteWidth > maxWidth ) {
+        noteWidth = maxWidth ;
+      }
+
+      TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
+
+      var txtPosition = new XYZ( firstPoint.X + ( isLeft ? dPlus : -dPlus * 4 ), firstPoint.Y + dPlus * ( 1 + size * 2 ), firstPoint.Z ) ;
+      var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, detailSymbolSettingDialog.DetailSymbol, opts ) ;
+      CreateNewTextNoteType( doc, textNote, size, detailSymbolSettingDialog.SymbolFont, detailSymbolSettingDialog.SymbolStyle, detailSymbolSettingDialog.Offset, detailSymbolSettingDialog.BackGround, detailSymbolSettingDialog.PercentWidth, 0 ) ;
+      return ( textNote, string.Join( ",", lineIds ) ) ;
+    }
+
+    private void UpdateDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, DetailSymbolModel detailSymbolModel, TextNote symbol, string detailSymbol, string lineIds )
     {
       try {
         string oldSymbol = detailSymbolModel.DetailSymbol ;
@@ -138,41 +144,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var id = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.Id.IntegerValue.ToString() == lineId ).Select( e => e.Id ).FirstOrDefault() ;
           if ( id != null ) doc.Delete( id ) ;
         }
+
         // update symbol of cables same from-to connector
         foreach ( var symbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbol == oldSymbol && d.FromConnectorId == detailSymbolModel.FromConnectorId && d.ToConnectorId == detailSymbolModel.ToConnectorId ) ) {
-          symbolModel.DetailSymbolId = detailSymbolId ;
+          symbolModel.DetailSymbolId = symbol.Id.IntegerValue.ToString() ;
           symbolModel.DetailSymbol = detailSymbol ;
           symbolModel.LineIds = lineIds ;
         }
-        // update symbol of cables same to-connector
-        foreach ( var symbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbol == oldSymbol && d.FromConnectorId != detailSymbolModel.FromConnectorId && d.ToConnectorId == detailSymbolModel.ToConnectorId ) ) {
-          symbolModel.DetailSymbol = detailSymbol ;
-          if ( ! detailSymbolIds.Contains( symbolModel.DetailSymbolId ) )
-            detailSymbolIds.Add( symbolModel.DetailSymbolId );
-        }
 
-        if ( detailSymbolIds.Any() ) {
-          foreach ( var id in detailSymbolIds ) {
-            var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == id ) ;
-            if ( textElement == null ) continue ;
-            var textNote = ( textElement as TextNote ) ! ;
-            textNote.Text = detailSymbol ;
-          }
-        }
-        // update symbol's text color of cables different to-connector and same code
-        if ( oldSymbol != detailSymbol ) {
-          var firstChildSymbol = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.DetailSymbol == oldSymbol && d.ToConnectorId != detailSymbolModel.ToConnectorId ) ;
-          if ( firstChildSymbol != null ) {
-            detailSymbolIds = detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.ToConnectorId == firstChildSymbol.ToConnectorId ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
-            foreach ( var id in detailSymbolIds ) {
-              var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == id ) ;
-              if ( textElement == null ) continue ;
-              var textNote = ( textElement as TextNote ) ! ;
-              CreateNewTextNoteType( doc, textNote, 0 ) ;
+        if ( ! string.IsNullOrEmpty( detailSymbolModel.Code ) ) {
+          // update symbol of cables same code
+          UpdateSymbolOfConduitSameCode( doc, detailSymbolStorable.DetailSymbolModelData, detailSymbol, detailSymbolModel.Code, symbol.TextNoteType ) ;
+
+          // update symbol's text color of cables different code and same symbol
+          if ( oldSymbol != detailSymbol ) {
+            var firstChildSymbol = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.DetailSymbol == oldSymbol && d.Code != detailSymbolModel.Code ) ;
+            if ( firstChildSymbol != null ) {
+              detailSymbolIds = detailSymbolStorable.DetailSymbolModelData.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.ToConnectorId == firstChildSymbol.ToConnectorId ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+              foreach ( var id in detailSymbolIds ) {
+                var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == id ) ;
+                if ( textElement == null ) continue ;
+                var textNote = ( textElement as TextNote ) ! ;
+                CreateNewTextNoteType( doc, textNote, 0 ) ;
+              }
             }
           }
         }
-        
+
         detailSymbolStorable.Save() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -180,26 +178,45 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void SaveDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, Element conduit, string detailSymbolId, string detailSymbol, string lineIds )
+    private void UpdateSymbolOfConduitSameCode( Document doc, List<DetailSymbolModel> detailSymbolModels, string detailSymbol, string code, TextNoteType textNoteType )
+    {
+      List<string> detailSymbolIds = new List<string>() ;
+      foreach ( var symbolModel in detailSymbolModels.Where( d => d.Code == code ) ) {
+        symbolModel.DetailSymbol = detailSymbol ;
+        if ( ! detailSymbolIds.Contains( symbolModel.DetailSymbolId ) )
+          detailSymbolIds.Add( symbolModel.DetailSymbolId ) ;
+      }
+
+      if ( ! detailSymbolIds.Any() ) return ;
+      foreach ( var id in detailSymbolIds ) {
+        var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == id ) ;
+        if ( textElement == null ) continue ;
+        var textNote = ( textElement as TextNote ) ! ;
+        textNote.Text = detailSymbol ;
+        textNote.TextNoteType = textNoteType ;
+      }
+    }
+
+    private void SaveDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, Element conduit, TextNote detailSymbol, DetailSymbolSettingDialog detailSymbolSettingDialog, string lineIds )
     {
       try {
-        detailSymbolStorable.DetailSymbolModelData.AddRange( AddDetailSymbol( doc, conduit, detailSymbolId, detailSymbol, lineIds ) ) ;
+        List<DetailSymbolModel> detailSymbolModels = new List<DetailSymbolModel>() ;
+        List<string> conduitIdsHasSymbol = detailSymbolStorable.DetailSymbolModelData.Select( d => d.ConduitId ).ToList() ;
+        List<Element> allConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+        List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.Id != conduit.Id ).ToList() ;
+        DetailSymbolModel detailSymbolModel = CreateDetailSymbolModel( doc, allConnector, conduit, detailSymbol.Id.IntegerValue.ToString(), detailSymbolSettingDialog.DetailSymbol, lineIds ) ;
+        detailSymbolModels.Add( detailSymbolModel ) ;
+        AddDetailSymbolForConduitSameFromToConnectors( doc, allConduit, allConnector, detailSymbolModels, detailSymbol.Id.IntegerValue.ToString(), detailSymbolSettingDialog.DetailSymbol, detailSymbolModel.FromConnectorId, detailSymbolModel.ToConnectorId, lineIds ) ;
+        if ( ! string.IsNullOrEmpty( detailSymbolModel.Code ) ) {
+          AddDetailSymbolForConduitSameCode( doc, allConduit, allConnector, detailSymbolModels, detailSymbolSettingDialog, conduitIdsHasSymbol, detailSymbolModel.Code ) ;
+          UpdateSymbolOfConduitSameCode( doc, detailSymbolStorable.DetailSymbolModelData, detailSymbolSettingDialog.DetailSymbol, detailSymbolModel.Code, detailSymbol.TextNoteType ) ;
+        }
+        detailSymbolStorable.DetailSymbolModelData.AddRange( detailSymbolModels ) ;
         detailSymbolStorable.Save() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         MessageBox.Show( "Save Data Failed.", "Error Message" ) ;
       }
-    }
-
-    private List<DetailSymbolModel> AddDetailSymbol( Document doc, Element conduit, string detailSymbolId, string detailSymbol, string lineIds )
-    {
-      List<DetailSymbolModel> detailSymbolModels = new List<DetailSymbolModel>() ;
-      List<Element> allConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
-      List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.Id != conduit.Id ).ToList() ;
-      DetailSymbolModel detailSymbolModel = CreateDetailSymbolModel( doc, allConnector, conduit, detailSymbolId, detailSymbol, lineIds ) ;
-      detailSymbolModels.Add( detailSymbolModel ) ;
-      AddDetailSymbolForConduitSameFromToConnectors( doc, allConduit, allConnector, detailSymbolModels, detailSymbolId,detailSymbol, detailSymbolModel.FromConnectorId, detailSymbolModel.ToConnectorId, lineIds ) ;
-      return detailSymbolModels ;
     }
 
     private DetailSymbolModel CreateDetailSymbolModel( Document doc, List<Element> allConnectors, Element conduit, string detailSymbolId, string detailSymbol, string lineIds )
@@ -282,6 +299,55 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
+    private void AddDetailSymbolForConduitSameCode( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, DetailSymbolSettingDialog detailSymbolSettingDialog, List<string> conduitIdsHasSymbol, string code )
+    {
+      Dictionary<string, List<Element>> conduitSameToConnectors = new Dictionary<string, List<Element>>() ;
+      conduitIdsHasSymbol.AddRange( detailSymbolModels.Select( d => d.ConduitId ).ToList() ) ;
+      var conduitsHaveNotSymbol = allConduit.Where( c => ! conduitIdsHasSymbol.Contains( c.Id.IntegerValue.ToString() ) ).ToList() ;
+      foreach ( var conduit in conduitsHaveNotSymbol ) {
+        DetailSymbolModel detailSymbolModel = CreateDetailSymbolModel( doc, allConnector, conduit, string.Empty, detailSymbolSettingDialog.DetailSymbol, string.Empty ) ;
+        if ( detailSymbolModel.Code != code ) continue ;
+        detailSymbolModels.Add( detailSymbolModel ) ;
+        var key = detailSymbolModel.FromConnectorId + "," + detailSymbolModel.ToConnectorId ;
+        if ( conduitSameToConnectors.ContainsKey( key ) ) {
+          conduitSameToConnectors[ key ].Add( conduit ) ;
+        }
+        else {
+          conduitSameToConnectors.Add( key, new List<Element>() { conduit } ) ;
+        }
+      }
+
+      if ( ! conduitSameToConnectors.Any() ) return ;
+      {
+        foreach ( var (key, elements) in conduitSameToConnectors ) {
+          var maxLength = double.MinValue ;
+          XYZ firstPoint = XYZ.Zero ;
+          var isDirectionX = true ;
+          var conduits = elements.Where( e => e is Conduit ).ToList() ;
+          foreach ( var conduit in conduits ) {
+            var location = ( conduit.Location as LocationCurve ) ! ;
+            var line = ( location.Curve as Line ) ! ;
+            if ( line.Direction.X is not (1.0 or -1.0) && line.Direction.Y is not (1.0 or -1.0) ) continue ;
+            var length = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( doc, "Length" ) ).AsDouble() / 2 ;
+            if ( ! ( length > maxLength ) ) continue ;
+            maxLength = length ;
+            isDirectionX = line.Direction.X is 1.0 or -1.0 ? true : false ;
+            var (x, y, z) = line.Origin ;
+            firstPoint = isDirectionX ? new XYZ( line.Direction.X is 1.0 ? x + length : x - length, y, z ) : new XYZ( x, line.Direction.Y is 1.0 ? y + length : y - length, z ) ;
+          }
+
+          var angle = isDirectionX ? "90" : "0" ;
+          var (detailSymbol, lineIds) = CreateDetailSymbol( doc, detailSymbolSettingDialog, firstPoint, angle ) ;
+          foreach ( var element in elements ) {
+            var detailSymbolModel = detailSymbolModels.FirstOrDefault( d => d.ConduitId == element.Id.IntegerValue.ToString() ) ;
+            if ( detailSymbolModel == null ) continue ;
+            detailSymbolModel.DetailSymbolId = detailSymbol.Id.IntegerValue.ToString() ;
+            detailSymbolModel.LineIds = lineIds ;
+          }
+        }
+      }
+    }
+
     private (List<string>, List<int>) CreateValueForCombobox( Document doc, List<DetailSymbolModel> detailSymbolModels, Element conduit )
     {
       List<string> symbols = new List<string>() ;
@@ -340,13 +406,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return detailSymbol ;
     }
 
-    private void CreateNewTextNoteType( Document doc, TextNote textNote, double size, string symbolFont, string symbolStyle, int offset, int background, int widthScale )
+    private void CreateNewTextNoteType( Document doc, TextNote textNote, double size, string symbolFont, string symbolStyle, int offset, int background, int widthScale, int color )
     {
       //Create new text type
       var bold = 0 ;
       var italic = 0 ;
       var underline = 0 ;
-      string strStyleName = "TNT-" + symbolFont + "-" + size + "-" + background + "-" + offset + "-" + widthScale + "%" ;
+      string strStyleName = "TNT-" + symbolFont + "-" + color + "-" + size + "-" + background + "-" + offset + "-" + widthScale + "%" ;
       if ( symbolStyle == FontStyle.Bold.GetFieldName() ) {
         strStyleName += "-Bold" ;
         bold = 1 ;
@@ -366,6 +432,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         Element ele = textNote.TextNoteType.Duplicate( strStyleName ) ;
         textNoteType = ( ele as TextNoteType ) ! ;
 
+        textNoteType.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( color ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_FONT ).Set( symbolFont ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( ( size / 32.0 ) * ( 1.0 / 12.0 ) ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( background ) ;
@@ -373,13 +440,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_ITALIC ).Set( italic ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_UNDERLINE ).Set( underline ) ;
         textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( ( offset / 32.0 ) * ( 1.0 / 12.0 ) ) ;
-        textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( (double)widthScale / 100 ) ;
+        textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( (double) widthScale / 100 ) ;
       }
 
       // Change the text notes type to the new type
       textNote.ChangeTypeId( textNoteType!.Id ) ;
     }
-    
+
     private void CreateNewTextNoteType( Document doc, TextNote textNote, int color )
     {
       //Create new text type
