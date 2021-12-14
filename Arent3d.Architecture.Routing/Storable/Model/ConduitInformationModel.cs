@@ -40,6 +40,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string? PlumbingItems { get ; set ; }
     [DisplayName("備考")]
     public string? Remark { get ; set ; }
+    
+    public  int Quantity { get ; set ; }
 
     public ConduitInformationModel( 
       bool? calculationExclusion, 

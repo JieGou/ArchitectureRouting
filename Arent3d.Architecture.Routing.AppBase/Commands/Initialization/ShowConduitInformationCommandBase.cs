@@ -41,6 +41,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             string.Empty, string.Empty, string.Empty, conduitModel?.PipingType, conduitModel?.Size, "",
             heroiCdSet?.ConstructionClassification, wireType?.Classification, "", "", "" ) ) ;
         }
+        conduitInformationModels =new ObservableCollection<ConduitInformationModel>( conduitInformationModels.GroupBy( x => x.WireType )
+          .Select( g =>
+          {
+            g.First().Quantity = g.Count() ;
+            g.First().Remark = $"x{g.Count()}" ;
+            return g.First() ;
+          } ) );
       }
       catch ( Exception ex ) {
         string e = ex.Message ;
@@ -66,7 +73,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               var noteWidth = 0.4 ;
               TextNoteOptions opts = new(defaultTextTypeId) ;
               var txtPosition = new XYZ( originX, originY, heightOfConnector ) ;
-              TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( viewModel ), opts ) ;
+              TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( viewModel, level.Name ), opts ) ;
               viewModel.IsCreateSchedule = false ;
             }
 
@@ -78,7 +85,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private string GenerateTextTable( ConduitInformationViewModel viewModel )
+    private string GenerateTextTable( ConduitInformationViewModel viewModel, string level )
     {
       string line = new string( '＿', 32 ) ;
       string result = string.Empty ;
@@ -86,10 +93,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var maxWireType = conduitInformationModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
       var conduitInformationDictionary = conduitInformationModels.GroupBy( x => x.DetailSymbol )
         .ToDictionary( g => g.Key, g => g.ToList() ) ;
-      result += $"{line}\rB1階平面图" ;
+      result += $"{line}\r{level}階平面图" ;
       foreach ( var group in conduitInformationDictionary ) {
         result += $"\r{line}\r{group.Key}" ;
-        result = @group.Value.Aggregate( result, ( current, item ) => current + $"\r{line}\r{item.WireType + item.WireSize}\t-{item.WireStrip}\tX1\t({item.PipingType + item.PipingSize})\t{item.Remark}" ) ;
+        result = @group.Value.Aggregate( result, ( current, item ) => current + $"\r{line}\r{item.WireType + item.WireSize}\t-{item.WireStrip}\tX{item.Quantity}\t({item.PipingType + item.PipingSize})\t{item.Remark}" ) ;
       }
 
       result += $"\r{line}" ;
