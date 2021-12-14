@@ -116,13 +116,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var isPreconditionOfVAVsAndFASUsSatisfied = IsPreconditionOfFASUsAndVAVsSatisfied ( numberOfFASUsAndVAVsInSpacesDictionary ) ;
       if ( !isPreconditionOfVAVsAndFASUsSatisfied )  return Result.Failed ;
       
-      // TODO VAVのファミリから取得
-      var vavUpstreamConnectorNormal = new Vector3d( 1, 0, 0 ) ;
-      var vavSymbol = document.GetFamilySymbols( RoutingFamilyType.TTE_VAV_140 ).FirstOrDefault() ?? throw new System.InvalidOperationException() ;
-      var inConnectorOfVavSymbol = vavSymbol.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
-      if ( inConnectorOfVavSymbol != null )
-        vavUpstreamConnectorNormal = new Vector3d( inConnectorOfVavSymbol.Origin.X, inConnectorOfVavSymbol.Origin.Y, inConnectorOfVavSymbol.Origin.Z ) ;
-      
+      var vavUpstreamConnectorNormal = GetVAVUpstreamConnectorNormal(document) ;
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
         branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
 
@@ -270,6 +264,22 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ position )
     {
       return spaceBox.ToBox3d().Contains( position.To3dPoint(), 0.0 ) ;
+    }
+
+    private static Vector3d GetVAVUpstreamConnectorNormal( Document document )
+    {
+      var vavUpstreamConnectorNormal = new Vector3d( 1, 0, 0 ) ;
+
+      using ( Transaction tr = new(document) ) {
+        tr.Start( "Get UpstreamConnectorNormal of VAV" ) ;
+        var instanceOfVAV = document.AddVAV( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
+        var inConnectorOfVavInstance = instanceOfVAV.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
+        if ( inConnectorOfVavInstance != null )
+          vavUpstreamConnectorNormal = new Vector3d( inConnectorOfVavInstance.Origin.X, inConnectorOfVavInstance.Origin.Y, inConnectorOfVavInstance.Origin.Z ) ;
+        tr.RollBack() ;
+      }
+
+      return vavUpstreamConnectorNormal ;
     }
     
     private static Dictionary<Element, double> CalculateRotationAnglesOfFASUsAndVAVs( Document document,
