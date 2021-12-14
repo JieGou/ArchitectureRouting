@@ -16,9 +16,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       FromConnectorId,
       ToConnectorId,
       Code,
-      LineIds
+      LineIds,
+      ParentSymbol
     }
-    
+
     protected override DetailSymbolModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
@@ -30,8 +31,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var toConnectorId = deserializer.GetString( SerializeField.ToConnectorId ) ;
       var code = deserializer.GetString( SerializeField.Code ) ;
       var lineIds = deserializer.GetString( SerializeField.LineIds ) ;
+      var parentSymbol = deserializer.GetInt( SerializeField.ParentSymbol ) ;
 
-      return new DetailSymbolModel( detailSymbolId, detailSymbol, conduitId, fromConnectorId, toConnectorId, code, lineIds ) ;
+      return new DetailSymbolModel( detailSymbolId, detailSymbol, conduitId, fromConnectorId, toConnectorId, code, lineIds, parentSymbol ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailSymbolModel customTypeValue )
@@ -45,6 +47,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.ToConnectorId, customTypeValue.ToConnectorId ) ;
       serializerObject.AddNonNull( SerializeField.Code, customTypeValue.Code ) ;
       serializerObject.AddNonNull( SerializeField.LineIds, customTypeValue.LineIds ) ;
+      serializerObject.Add( SerializeField.ParentSymbol, customTypeValue.ParentSymbol ) ;
 
       return serializerObject ;
     }
