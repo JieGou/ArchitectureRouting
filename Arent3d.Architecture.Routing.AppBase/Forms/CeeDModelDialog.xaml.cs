@@ -7,12 +7,14 @@ using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
+using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
+using NPOI.HSSF.UserModel ;
 using NPOI.SS.UserModel ;
 using NPOI.XSSF.UserModel ;
 using CellType = NPOI.SS.UserModel.CellType ;
@@ -152,6 +154,52 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
         XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
         ISheet workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
+        
+        XSSFDrawing drawing = (XSSFDrawing)workSheet.DrawingPatriarch;
+
+
+        var allShapes =  drawing.GetShapes()
+                                                      .Where( x => ((XSSFClientAnchor)x.GetAnchor()).Col1 is 5 or 6)
+                                                      .OrderBy( x => ((XSSFClientAnchor)x.GetAnchor()).Col1)
+                                                      .ThenBy( x => ((XSSFClientAnchor)x.GetAnchor()).Row1) ;
+
+        int pictureIndex = 0 ;
+        byte[] dataByte ;
+        List<Byte[]> listdataByte = new List<byte[]>() ;
+        
+        foreach (var shape in allShapes )
+        {
+          if (shape is XSSFShapeGroup shapeGroups) {
+            var clientAnchor = ( (XSSFClientAnchor) shape.GetAnchor() ) ;
+            // Add picture empty
+            
+            var picture = drawing.CreatePicture(clientAnchor, 0) ;
+            dataByte =  picture.PictureData.Data;
+            listdataByte.Add( dataByte ) ;
+            break ;
+            // int groupRow = ((XSSFClientAnchor)shape.GetAnchor()).Row1;
+            // long groupRowDy = ((XSSFClientAnchor)shape.GetAnchor()).Dy1;
+            // int groupCol  = ((XSSFClientAnchor)shape.GetAnchor()).Col1;
+            // long groupColDx  = ((XSSFClientAnchor)shape.GetAnchor()).Dx1;
+          }
+          // if (shape is XSSFShape shapes) {
+          //   var am = shape.GetAnchor()  ;
+          //   int groupRow = ((XSSFClientAnchor)shape.GetAnchor()).Row1;
+          //   long groupRowDy = ((XSSFClientAnchor)shape.GetAnchor()).Dy1;
+          //   int groupCol  = ((XSSFClientAnchor)shape.GetAnchor()).Col1;
+          //   long groupColDx  = ((XSSFClientAnchor)shape.GetAnchor()).Dx1;
+          // }
+          // if (shape is XSSFPicture picture) {
+          //   var clientAnchor = ( (XSSFClientAnchor) shape.GetAnchor() ) ;
+          //   var pict = drawing.CreatePicture(clientAnchor, 0) ;
+          //   dataByte =  pict.PictureData.Data;
+          //   listdataByte.Add( dataByte ) ;
+          //   break ;
+          // }
+
+          pictureIndex++ ;
+        }
+        
         const int startRow = 7 ;
         var endRow = workSheet.LastRowNum ;
         for ( var i = startRow ; i <= endRow ; i++ ) {
@@ -203,23 +251,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             var symbol = GetCellValue( symbolCell ) ;
             if ( ! string.IsNullOrEmpty( symbol ) && ! symbol.Contains( "又は" ) ) floorPlanSymbol = symbol ;
           }
-
-          Drawing drawing = sheet.createDrawingPatriarch() ;
-          ClientAnchor anchor = helper.createClientAnchor() ;
-          anchor.setCol1(0) ;
-          anchor.setRow1(0) ;
-          Picture pict = drawing.createPicture( anchor, pictureureIdx );
-          pict.resize() ; 
-
-          int pictOriginalWidthInPixels = pict.getImageDimension().width ;
-          int pictOriginalHeightInPixels = pict.getImageDimension().height ;
-
-          float rowHeightInPixels = 0f;
-          for ( int r = 0; r < 4; r++ ) {
-            row = sheet.getRow(r); if (row == null) row = sheet.createRow(r);
-            float rowHeightInPoints = row.getHeightInPoints(); 
-            rowHeightInPixels += rowHeightInPoints * Units.PIXEL_DPI / Units.POINT_DPI;
-          }
           
           var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
           if ( ! ceeDModelNumbers.Any() ) {
@@ -229,7 +260,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
-              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
+              //CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
+              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, listdataByte, ceeDName ) ;
               ceedModelData.Add( ceeDModel ) ;
             }
           }
@@ -237,7 +269,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           i-- ;
         }
       }
-      catch ( Exception ) {
+      catch ( Exception ex) {
+        var a = ex.Message ;
         return new List<CeedModel>() ;
       }
 
