@@ -68,6 +68,13 @@
                 HorizontalAlignment="Left"
                 Width="265" />
         
+        <Button Grid.Row="7" x:Name="BtnLoadAll"
+                Content="一括読込"
+                Click="BtnLoadAll_OnClick"
+                Margin="10,5,10,5"
+                HorizontalAlignment="Left"
+                Width="80" />
+        
         <Button Grid.Row="7" x:Name="BtnSave"
                 Content="Save"
                 Click="Button_Save"
