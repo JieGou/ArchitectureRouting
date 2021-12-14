@@ -28,8 +28,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string DiameterOfVAV = "250" ;
     private const int RootBranchNumber = 0 ;
     private const double MinDistanceSpacesCollinear = 2.5 ;
-    private const int FASUConnectorId = 18 ;
-    private const int VAVConnectorId = 4 ;
     private const string RoundDuctUniqueId = "dee0da15-198f-4f79-aa08-3ce71203da82-00c0cdcf" ;
 
     private class NumberOfFASUAndVAVModel
@@ -120,6 +118,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       
       // TODO VAVのファミリから取得
       var vavUpstreamConnectorNormal = new Vector3d( 1, 0, 0 ) ;
+      var vavSymbol = document.GetFamilySymbols( RoutingFamilyType.TTE_VAV_140 ).FirstOrDefault() ?? throw new System.InvalidOperationException() ;
+      var inConnectorOfVavSymbol = vavSymbol.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
+      if ( inConnectorOfVavSymbol != null )
+        vavUpstreamConnectorNormal = new Vector3d( inConnectorOfVavSymbol.Origin.X, inConnectorOfVavSymbol.Origin.Y, inConnectorOfVavSymbol.Origin.Z ) ;
       
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
         branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
@@ -135,12 +137,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue;
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
-          
-          var symbol = document.GetFamilySymbols( RoutingFamilyType.TTE_VAV_140 ).FirstOrDefault() ?? throw new System.InvalidOperationException() ;
-          if (false == symbol.IsActive) symbol.Activate() ;
-          var instance = document.Create.NewFamilyInstance(positionOfFASUAndVAV, symbol, null, StructuralType.NonStructural) ;
-          var connectors = instance.GetConnectors() ;
-          
+
           var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
           if ( placeResult == null ) continue ;// Failed to place
 
@@ -155,8 +152,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
           // TODO : 一直線にならんでいるグループの方向修正
           
-          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorId ) ;
-          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorId ) ;
+          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Direction == FlowDirectionType.In ) ;
+          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Direction == FlowDirectionType.Out ) ;
           CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
         }
 
