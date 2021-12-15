@@ -1,5 +1,4 @@
-﻿using System ;
-using System.Collections.ObjectModel ;
+﻿using System.Collections.ObjectModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
@@ -49,8 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             return g.First() ;
           } ) );
       }
-      catch ( Exception ex ) {
-        string e = ex.Message ;
+      catch{
         return Result.Cancelled ;
       }
 
@@ -64,7 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           _ =>
           {
             if ( viewModel.IsCreateSchedule ) {
-              var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+              var (originX, originY, originZ) = uiDoc.Selection.PickPoint() ;
               var level = uiDoc.ActiveView.GenLevel ;
               var heightOfConnector =
                 doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
