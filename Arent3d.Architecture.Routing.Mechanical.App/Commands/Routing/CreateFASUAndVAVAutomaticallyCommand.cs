@@ -111,10 +111,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         rootSpaces = new List<Element>() ;
       }
       
+      if ( !IsPreconditionOfFlowDirectionOfFASUAndVAVSatisfied(document) )  return Result.Failed ;
+      
       Dictionary<string, NumberOfFASUAndVAVModel> numberOfFASUsAndVAVsInSpacesDictionary = CountFASUsAndVAVsBySpace ( document, spaces ) ;
-      var isPreconditionOfVAVsAndFASUsSatisfied = IsPreconditionOfFASUsAndVAVsSatisfied ( numberOfFASUsAndVAVsInSpacesDictionary ) ;
-      if ( !isPreconditionOfVAVsAndFASUsSatisfied )  return Result.Failed ;
-
+      if ( !IsPreconditionOfFASUsAndVAVsSatisfied ( numberOfFASUsAndVAVsInSpacesDictionary ) )  return Result.Failed ;
+      
       var vavUpstreamConnectorNormal = GetVAVUpstreamConnectorNormal( document ) ;
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
         branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
@@ -130,7 +131,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue;
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
-
           var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
           if ( placeResult == null ) continue ;// Failed to place
 
@@ -144,10 +144,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           }
 
           // TODO : 一直線にならんでいるグループの方向修正
-          
-          var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Direction == FlowDirectionType.In ) ;
-          var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Direction == FlowDirectionType.Out ) ;
-          CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
+
+          var fasuConnector = instanceOfFASU.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
+          var vavConnector = instanceOfVAV.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.Out ) ;
+          if ( fasuConnector != null && vavConnector != null )
+            CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
         }
 
         tr.Commit() ;
@@ -260,6 +261,38 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return true;
     }
 
+    private static bool IsPreconditionOfFlowDirectionOfFASUAndVAVSatisfied( Document document )
+    {
+      using ( Transaction tr = new(document) ) {
+        tr.Start( "Check the flow direction of FASU and VAV" ) ;
+        var instanceOfFASU = document.AddFASU( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
+        var connectorOfFASUInstance = instanceOfFASU.GetConnectors() ;
+        var inConnectorOfAFSUInstance = connectorOfFASUInstance.FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
+        if ( inConnectorOfAFSUInstance == null ) {
+          TaskDialog.Show( "FASUとVAVの自動配置", "FASUの流れの方向[イン]が設定されていないため、処理に失敗しました。" ) ;
+          tr.RollBack() ;
+          return false ;
+        }
+        var instanceOfVAV = document.AddVAV( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
+        var connectorOfVAVInstance = instanceOfVAV.GetConnectors() ;
+        var inConnectorOfVavInstance = connectorOfVAVInstance.FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
+        if ( inConnectorOfVavInstance == null ) {
+          TaskDialog.Show( "FASUとVAVの自動配置", "VAVの流れの方向[イン]が設定されていないため、処理に失敗しました。" ) ;
+          tr.RollBack() ;
+          return false ;
+        }
+        var outConnectorOfVavInstance = connectorOfVAVInstance.FirstOrDefault( c => c.Direction == FlowDirectionType.Out ) ;
+        if ( outConnectorOfVavInstance == null ) {
+          TaskDialog.Show( "FASUとVAVの自動配置", "VAVの流れの方向[アウト]が設定されていないため、処理に失敗しました。" ) ;
+          tr.RollBack() ;
+          return false ;
+        }
+        tr.RollBack() ;
+      }
+
+      return true ;
+    }
+
     private static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ position )
     {
       return spaceBox.ToBox3d().Contains( position.To3dPoint(), 0.0 ) ;
@@ -274,7 +307,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var instanceOfVAV = document.AddVAV( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
         var inConnectorOfVavInstance = instanceOfVAV.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
         if ( inConnectorOfVavInstance != null )
-          vavUpstreamConnectorNormal = new Vector3d( inConnectorOfVavInstance.Origin.X, inConnectorOfVavInstance.Origin.Y, inConnectorOfVavInstance.Origin.Z ) ;
+          vavUpstreamConnectorNormal = inConnectorOfVavInstance.CoordinateSystem.BasisZ.To3dPoint().normalized ;
         tr.RollBack() ;
       }
 
