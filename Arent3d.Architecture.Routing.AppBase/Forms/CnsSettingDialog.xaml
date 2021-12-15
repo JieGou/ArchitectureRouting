@@ -7,7 +7,7 @@
     x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CnsSettingDialog"
     mc:Ignorable="d"
     WindowStartupLocation="CenterScreen"
-    Closing="DataWindow_Closing"
+    Closing="CnsSettingDialog_Closing"
     d:DesignHeight="600" d:DesignWidth="500" Width="500" Height="600">
     <DockPanel Margin="5">
         <StackPanel DockPanel.Dock="Left" Width="350">
@@ -67,7 +67,7 @@
             <Button Content="配線に適用" Command="{Binding SetConstructionItemForConduitsCommand}"
                     CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Click="Close_Click"
                     Height="32" Margin="0,10,0,0" />
-            <Button Content="終了" Command="{Binding SaveCommand}" Click="Close_Click" Height="32" Margin="0,10,0,0" />
+            <Button Content="保存" Command="{Binding SaveCommand}" Click="Close_Click" Height="32" Margin="0,10,0,0" />
         </StackPanel>
     </DockPanel>
 </Window>

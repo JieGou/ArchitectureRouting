@@ -33,10 +33,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Close() ;
     }
 
-    private void DataWindow_Closing( object sender, CancelEventArgs e )
+    private void CnsSettingDialog_Closing( object sender, CancelEventArgs e )
     {
-      SetDuplicateName() ;
-      DialogResult = true ;
+      DialogResult ??= false ;
     }
 
     private void GrdCategories_OnCellEditEnding( object sender, DataGridCellEditEndingEventArgs e )

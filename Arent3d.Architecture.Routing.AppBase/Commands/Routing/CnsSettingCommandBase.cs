@@ -153,6 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         } ) ;
       }
 
+      cnsStorables.CnsSettingData = currentCnsSettingData ;
       return Result.Succeeded ;
     }
 
