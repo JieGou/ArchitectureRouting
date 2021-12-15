@@ -16,7 +16,6 @@ using Autodesk.Revit.DB ;
 using NPOI.SS.UserModel ;
 using NPOI.XSSF.UserModel ;
 using CellType = NPOI.SS.UserModel.CellType ;
-using MessageBox = System.Windows.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -26,12 +25,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private CeedViewModel? _allCeeDModels ;
     private string _ceeDModelNumberSearch ;
     private string _modelNumberSearch ;
-    public string SelectedSetCode ;
+    public string SelectedDeviceSymbol ;
 
-    private void Row_DoubleClick( object sender, DataGridViewCellEventArgs e )
-    {
-      MessageBox.Show( e.RowIndex.ToString() ) ;
-    }
     public CeeDModelDialog( Document document )
     {
       InitializeComponent() ;
@@ -39,7 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allCeeDModels = null ;
       _ceeDModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
-      SelectedSetCode = string.Empty ;
+      SelectedDeviceSymbol = string.Empty ;
       
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
@@ -54,9 +49,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
     {
       var selectedItem = (CeedModel)DtGrid.SelectedValue ;
-      SelectedSetCode = selectedItem.CeeDSetCode ;
+      var dlgSelectDeviceSymbol = new SelectDeviceSymbol( selectedItem.GeneralDisplayDeviceSymbol ) ;
+      dlgSelectDeviceSymbol.ShowDialog() ;
+      if ( dlgSelectDeviceSymbol.DialogResult == false ) return ;
+      SelectedDeviceSymbol = dlgSelectDeviceSymbol.GetSelectedDeviceSymbol() ;
+      if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) ) return ;
       DialogResult = true ;
-      Close() ;      
+      Close() ;
     }
 
     private void Button_Click( object sender, RoutedEventArgs e )

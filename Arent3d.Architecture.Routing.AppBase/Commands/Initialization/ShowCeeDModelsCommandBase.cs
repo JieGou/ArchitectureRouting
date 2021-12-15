@@ -24,8 +24,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       dlgCeeDModel.ShowDialog() ;
       if ( ! ( dlgCeeDModel.DialogResult ?? false ) ) return Result.Cancelled ;
-      if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedSetCode ) ) {
-        return doc.Transaction( "TransactionName.Commands.Routing.PlacementSetCode".GetAppStringByKeyOrDefault( "Placement Set Code" ), _ =>
+      if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedDeviceSymbol ) ) {
+        return doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
         {
           var uiDoc = commandData.Application.ActiveUIDocument ;
 
@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           opts.HorizontalAlignment = HorizontalTextAlignment.Left ;
 
           var txtPosition = new XYZ( originX - 2, originY + 2, heightOfConnector ) ;
-          var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeeDModel.SelectedSetCode, opts ) ;
+          var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeeDModel.SelectedDeviceSymbol, opts ) ;
 
           // create group of selected element and new text note
           ICollection<ElementId> groupIds = new List<ElementId>() ;
