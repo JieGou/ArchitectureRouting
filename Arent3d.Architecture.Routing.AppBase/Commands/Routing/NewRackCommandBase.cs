@@ -477,11 +477,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var bendRadiusRack = rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble() ;
       var notationModel = rackNotationStorable.RackNotationModelData.FirstOrDefault( n => n.FromConnectorId == fromConnectorId && n.IsDirectionX == isDirectionX && Math.Abs( n.RackWidth - Math.Round( bendRadiusRack, 4 ) ) == 0 ) ;
       if ( notationModel == null ) {
-        List<string> lineIds = new List<string>() ;
         const double dPlus = 0.5 ;
-        CurveArray lines = app.Create.NewCurveArray() ;
         List<XYZ> points = new List<XYZ>() ;
-        
+        List<string> lineIds = new List<string>() ;
+
         var lenghtRack = rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).AsDouble() / 2 ;
         var (x, y, z) = ( rack.Location as LocationPoint )!.Point ;
         var firstPoint = isDirectionX ? new XYZ( rack.HandOrientation.X is 1.0 ? x + lenghtRack : x - lenghtRack, y + bendRadiusRack / 2, z ) : new XYZ( x + bendRadiusRack / 2, rack.HandOrientation.Y is 1.0 ? y + lenghtRack : y - lenghtRack, z ) ;
@@ -496,12 +495,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         foreach ( var nextP in points ) {
           var curve = Line.CreateBound( firstPoint, nextP ) ;
-          lines.Append( curve ) ;
+          var detailCurve = doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
+          lineIds.Add( detailCurve.Id.IntegerValue.ToString() ) ;
           firstPoint = nextP ;
-          lineIds.Add( curve.Id.ToString() ) ;
         }
 
-        doc.Create.NewDetailCurveArray( doc.ActiveView, lines ) ;
         ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
         var noteWidth = 0.1 ;
 
