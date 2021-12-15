@@ -6,6 +6,7 @@ using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -87,6 +88,9 @@ namespace Arent3d.Architecture.Routing
         // do not erase pass points
         list = list.Where( p => false == ( p is FamilyInstance fi && ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint )) ) );
       }
+
+      List<string> elementIds = list.Select( elm => elm.Id.IntegerValue.ToString() ).Distinct().ToList() ;
+      RemoveRouteDetailSymbol( document, elementIds ) ;
 
       document.Delete( list.Select( elm => elm.Id ).Distinct().ToArray() ) ;
 
@@ -195,6 +199,31 @@ namespace Arent3d.Architecture.Routing
         var childrenLocation = childrenEnvelope.Location as LocationPoint ;
         childrenLocation!.Point = new XYZ( parentLocation!.Point.X, parentLocation!.Point.Y, parentLocation!.Point.Z - offset ) ;
       }
+    }
+
+    private static void RemoveRouteDetailSymbol( Document document, List<string> elementIds )
+    {
+      var detailSymbolStorable = document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? document.GetDetailSymbolStorable() ;
+      if ( ! detailSymbolStorable.DetailSymbolModelData.Any() ) return ;
+      var detailSymbolModels = new List<DetailSymbolModel>() ;
+      foreach ( var detailSymbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => elementIds.Contains( d.ConduitId ) ).ToList() ) {
+        // delete symbol
+        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.Id.IntegerValue.ToString() == detailSymbolModel.DetailSymbolId ).Select( t => t.Id ).FirstOrDefault() ;
+        if ( symbolId != null ) document.Delete( symbolId ) ;
+        foreach ( var lineId in detailSymbolModel.LineIds.Split( ',' ) ) {
+          var id = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.Id.IntegerValue.ToString() == lineId ).Select( e => e.Id ).FirstOrDefault() ;
+          if ( id != null ) document.Delete( id ) ;
+        }
+
+        detailSymbolModels.Add( detailSymbolModel ) ;
+      }
+
+      if ( ! detailSymbolModels.Any() ) return ;
+      foreach ( var detailSymbolModel in detailSymbolModels ) {
+        detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+      }
+
+      detailSymbolStorable.Save() ;
     }
   }
 }
