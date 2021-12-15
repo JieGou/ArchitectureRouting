@@ -269,22 +269,22 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var connectorOfFASUInstance = instanceOfFASU.GetConnectors() ;
         var inConnectorOfAFSUInstance = connectorOfFASUInstance.FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
         if ( inConnectorOfAFSUInstance == null ) {
-          TaskDialog.Show( "FASUとVAVの自動配置", "FASUの流れの方向[イン]が設定されていないため、処理に失敗しました。" ) ;
           tr.RollBack() ;
+          TaskDialog.Show( "FASUとVAVの自動配置", "FASUの流れの方向[イン]が設定されていないため、処理に失敗しました。" ) ;
           return false ;
         }
         var instanceOfVAV = document.AddVAV( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
         var connectorOfVAVInstance = instanceOfVAV.GetConnectors() ;
         var inConnectorOfVavInstance = connectorOfVAVInstance.FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
         if ( inConnectorOfVavInstance == null ) {
-          TaskDialog.Show( "FASUとVAVの自動配置", "VAVの流れの方向[イン]が設定されていないため、処理に失敗しました。" ) ;
           tr.RollBack() ;
+          TaskDialog.Show( "FASUとVAVの自動配置", "VAVの流れの方向[イン]が設定されていないため、処理に失敗しました。" ) ;
           return false ;
         }
         var outConnectorOfVavInstance = connectorOfVAVInstance.FirstOrDefault( c => c.Direction == FlowDirectionType.Out ) ;
         if ( outConnectorOfVavInstance == null ) {
-          TaskDialog.Show( "FASUとVAVの自動配置", "VAVの流れの方向[アウト]が設定されていないため、処理に失敗しました。" ) ;
           tr.RollBack() ;
+          TaskDialog.Show( "FASUとVAVの自動配置", "VAVの流れの方向[アウト]が設定されていないため、処理に失敗しました。" ) ;
           return false ;
         }
         tr.RollBack() ;
