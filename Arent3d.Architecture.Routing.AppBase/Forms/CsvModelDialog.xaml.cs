@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private List<HiroiMasterModel> _allHiroiMasterModels ;
     private List<CeedModel> _ceeDModelData ;
     private bool _isLoadAll ;
+    private bool _isErrorFile ;
 
     public CsvModelDialog( Document document )
     {
@@ -246,7 +247,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         reader.Close() ;
         if ( ! checkFile ) {
-          MessageBox.Show( "Incorrect file format.", "Error Message" ) ;
+          if ( ! _isLoadAll ) {
+            MessageBox.Show( "Incorrect file format.", "Error Message" ) ;
+          }
+          else {
+            _isErrorFile = true ;
+          }
         }
         else {
           if ( ! _isLoadAll ) {
@@ -255,7 +261,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
       catch ( Exception ) {
-        MessageBox.Show( "Load file failed.", "Error Message" ) ;
+        if ( ! _isLoadAll ) {
+          MessageBox.Show( "Load file failed.", "Error Message" ) ;
+        }
+        else {
+          _isErrorFile = true ;
+        }
       }
     }
 
@@ -287,59 +298,112 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         "【CeeD】セットコード一覧表.xlsx"
       } ;
       _isLoadAll = true ;
-      StringBuilder resultMessage = new StringBuilder() ;
-      string defaultMessage = "指定したフォルダから以下のデータを正常にロードできます。" ;
-      resultMessage.AppendLine( defaultMessage ) ;
+      StringBuilder correctMessage = new StringBuilder() ;
+      StringBuilder errorMessage = new StringBuilder() ;
+      string defaultCorrectMessage = "指定されたフォルダから以下のデータを正常にロードできました。" ;
+      string defaultErrorMessage = "以下のファイルの読み込みが失敗しました。" ;
+      correctMessage.AppendLine( defaultCorrectMessage ) ;
+      errorMessage.AppendLine( defaultErrorMessage ) ;
       foreach ( var fileName in fileNames ) {
+        _isErrorFile = false ;
         var path = Path.Combine( dialog.SelectedPath, fileName ) ;
         if ( File.Exists( path ) ) {
           switch ( fileName ) {
             case "hiroimaster.csv" :
               _allHiroiMasterModels = new List<HiroiMasterModel>() ;
               GetData( path, 0, ModelName.HiroiMaster ) ;
-              resultMessage.AppendLine( "\u2022 Hiroi Master" ) ;
+              if(!_isErrorFile){
+                correctMessage.AppendLine( "\u2022 Hiroi Master" ) ;
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
               break ;
             case "hiroisetcdmaster_normal.csv" :
               _allHiroiSetCdMasterNormalModels = new List<HiroiSetCdMasterModel>() ;
               GetData( path, 0, ModelName.HiroiSetCdMasterNormal ) ;
-              resultMessage.AppendLine( "\u2022 Hiroi Set CD Master Normal" ) ;
+              if(!_isErrorFile){
+                correctMessage.AppendLine( "\u2022 Hiroi Set CD Master Normal" ) ;
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
               break ;
             case "hiroisetcdmaster_eco.csv" :
               _allHiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
               GetData( path, 0, ModelName.HiroiSetCdMasterEco ) ;
-              resultMessage.AppendLine( "\u2022 Hiroi Set CD Master ECO" ) ;
+              if(!_isErrorFile){
+                correctMessage.AppendLine( "\u2022 Hiroi Set CD Master ECO" ) ;
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
               break ;
             case "hiroisetmaster_eco.csv" :
               _allHiroiSetMasterEcoModels = new List<HiroiSetMasterModel>() ;
               GetData( path, 0, ModelName.HiroiSetMasterEco ) ;
-              resultMessage.AppendLine( "\u2022 Hiroi Set Master ECO" ) ;
+              if(!_isErrorFile){
+                correctMessage.AppendLine( "\u2022 Hiroi Set Master ECO" ) ;
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
               break ;
             case "hiroisetmaster_normal.csv" :
               _allHiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
               GetData( path, 0, ModelName.HiroiSetMasterNormal ) ;
-              resultMessage.AppendLine( "\u2022 Hiroi Set Master Normal" ) ;
+              if(!_isErrorFile){
+                correctMessage.AppendLine( "\u2022 Hiroi Set Master Normal" ) ;
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
               break ;
             case "電線管一覧.csv" :
               _allConduitModels = new List<ConduitsModel>() ;
               GetData( path, 2, ModelName.Conduits ) ;
-              resultMessage.AppendLine( "\u2022 電線管一覧" ) ;
+              if(!_isErrorFile){
+                correctMessage.AppendLine( "\u2022 電線管一覧" ) ;
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
               break ;
             case "電線・ケーブル一覧.csv" :
               _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
               GetData( path, 2, ModelName.WiresAndCables ) ;
-              resultMessage.AppendLine( "\u2022 電線・ケーブル一覧" ) ;
+              if(!_isErrorFile){
+                correctMessage.AppendLine( "\u2022 電線・ケーブル一覧" ) ;
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
               break ;
             case "【CeeD】セットコード一覧表.xlsx" :
               _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( path ) ;
-              resultMessage.AppendLine( "\u2022 【CeeD】セットコード一覧表" ) ;
+              if(_ceeDModelData.Any()){
+                correctMessage.AppendLine( "\u2022 【CeeD】セットコード一覧表" ) ;
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
               break ;
           }
         }
       }
-      
+
+      string resultMessage = string.Empty ;
+      if ( !correctMessage.ToString().Trim().Equals( defaultCorrectMessage ) ) {
+        resultMessage += correctMessage +"\r";
+      }
+      if ( !errorMessage.ToString().Trim().Equals( defaultErrorMessage ) ) {
+        resultMessage += errorMessage ;
+      }
+      if ( string.IsNullOrEmpty( resultMessage.Trim() ) ) {
+        resultMessage = "指定されたフォルダに条件に一致するファイルが存在しません。" ;
+      }
       MessageBox.Show(
-        resultMessage.ToString().Trim().Equals( defaultMessage ) ? "満たすデータがないようです。" : resultMessage.ToString(),
-        "Result Message" ) ;
+        resultMessage,"Result Message" ) ;
       _isLoadAll = false ;
     }
   }
