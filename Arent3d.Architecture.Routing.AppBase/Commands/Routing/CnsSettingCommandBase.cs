@@ -31,6 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // get data of Cns Category from snoop DB
       CnsSettingStorable cnsStorables = document.GetCnsSettingStorable() ;
+      cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.None ;
       ObservableCollection<CnsSettingModel> currentCnsSettingData = CopyCnsSetting( cnsStorables.CnsSettingData ) ;
       CnsSettingViewModel viewModel = new CnsSettingViewModel( cnsStorables ) ;
       var dialog = new CnsSettingDialog( viewModel ) ;

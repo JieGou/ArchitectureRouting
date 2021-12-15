@@ -54,20 +54,57 @@
             </Grid>
         </StackPanel>
         <StackPanel DockPanel.Dock="Right" Width="100">
-            <Button Content="行追加" Height="32" Command="{Binding AddRowCommand}" Margin="0,10,0,0" Click="ButtonAddNewRow_OnClick"/>
-            <Button Content="行削除" Height="32" Command="{Binding DeleteRowCommand}"
-                    CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Margin="0,10,0,0" />
-            <Button Content="編集" Height="32" Click="Update_Click" Margin="0,10,0,0" />
+            <Button Content="行追加" Height="32" Margin="0,10,0,0" Click="AddNewRow_Click"/>
+            <Button Content="行削除" Height="32" Margin="0,10,0,0" Click="Delete_Click"
+                     CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" >
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
+                                <Setter Property="IsEnabled" Value="False" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="編集" Height="32" Click="Update_Click" Margin="0,10,0,0">
+                <Button.Style>
+                <Style TargetType="Button">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
+                            <Setter Property="IsEnabled" Value="False" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+                </Button.Style>
+            </Button>
             <Button Content="ハイライト" IsEnabled="False" Height="32" Margin="0,10,0,0" />
-            <Button Content="読込み" Command="{Binding ReadFileCommand}" Height="32" Margin="0,10,0,0" />
-            <Button Content="書出し" Command="{Binding WriteFileCommand}" Height="32" Margin="0,10,0,0" />
-            <Button Content="シンボルに適用" Command="{Binding  SetConstructionItemForSymbolsCommand}"
-                    CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}"
-                    Click="Close_Click" Height="32" Margin="0,10,0,0" />
-            <Button Content="配線に適用" Command="{Binding SetConstructionItemForConduitsCommand}"
-                    CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Click="Close_Click"
-                    Height="32" Margin="0,10,0,0" />
-            <Button Content="保存" Command="{Binding SaveCommand}" Click="Close_Click" Height="32" Margin="0,10,0,0" />
+            <Button Content="読込み" Height="32" Margin="0,10,0,0" Click="Import_Click" />
+            <Button Content="書出し" Height="32" Margin="0,10,0,0" Click="Export_Click" />
+            <Button Content="シンボルに適用" CommandParameter="{Binding ElementName=grdCategories, Path=SelectedIndex}" Click="SymbolApply_Click"
+                    Height="32" Margin="0,10,0,0">
+                       <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
+                                <Setter Property="IsEnabled" Value="False" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="配線に適用" Click="ConduitsApply_Click" Height="32" Margin="0,10,0,0" >
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedItems.Count,ElementName=grdCategories}" Value="0">
+                                <Setter Property="IsEnabled" Value="False" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="保存" Click="Save_Click" Height="32" Margin="0,10,0,0" />
         </StackPanel>
     </DockPanel>
 </Window>
