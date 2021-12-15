@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
     protected override bool Setup( Document document )
     {
       document.MakeBranchNumberParameter() ;
-
+      document.MakeAHUNumberParameter() ;
       return base.Setup( document ) ;
     }
   }
