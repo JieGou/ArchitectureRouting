@@ -40,6 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
       {
+        RemoveDetailSymbolUnused( doc, detailSymbolStorable ) ;
         var element = selection.PickObject( ObjectType.Element, ConduitSelectionFilter.Instance, "Select cable." ) ;
         var conduit = doc.GetElement( element.ElementId ) ;
         var conduitHasSymbol = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.ConduitId == conduit.Id.IntegerValue.ToString() ) ;
@@ -54,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var (textNote, lineIds) = CreateDetailSymbol( doc, detailSymbolSettingDialog, firstPoint, detailSymbolSettingDialog.Angle, checkSameSymbol ) ;
 
         if ( conduitHasSymbol != null )
-          UpdateDetailSymbol( doc, detailSymbolStorable, conduitHasSymbol, textNote, detailSymbolSettingDialog.DetailSymbol, lineIds, checkSameSymbol ) ;
+          UpdateDetailSymbol( doc, detailSymbolStorable, conduitHasSymbol, textNote, detailSymbolSettingDialog, lineIds, checkSameSymbol ) ;
         else
           SaveDetailSymbol( doc, detailSymbolStorable, conduit, textNote, detailSymbolSettingDialog, lineIds, checkSameSymbol ) ;
 
@@ -138,9 +139,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( textNote, string.Join( ",", lineIds ) ) ;
     }
 
-    private void UpdateDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, DetailSymbolModel detailSymbolModel, TextNote symbol, string detailSymbol, string lineIds, bool checkSameSymbol )
+    private void UpdateDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, DetailSymbolModel detailSymbolModel, TextNote symbol, DetailSymbolSettingDialog detailSymbolSettingDialog, string lineIds, bool checkSameSymbol )
     {
       try {
+        var detailSymbol = detailSymbolSettingDialog.DetailSymbol ;
         var oldSymbol = detailSymbolModel.DetailSymbol ;
         var oldParentSymbol = detailSymbolModel.ParentSymbol ;
         var parentSymbol = checkSameSymbol ? 0 : 1 ;
@@ -168,6 +170,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( oldSymbol != detailSymbol && oldParentSymbol == 0 ) {
             UpdateSymbolOfConduitSameSymbolAndDifferentCode( doc, detailSymbolStorable.DetailSymbolModelData, oldSymbol, detailSymbolModel.Code ) ;
           }
+          
+          // add symbol for cables same code
+          List<DetailSymbolModel> detailSymbolModels = new List<DetailSymbolModel>() ;
+          List<string> conduitIdsHasSymbol = detailSymbolStorable.DetailSymbolModelData.Select( d => d.ConduitId ).ToList() ;
+          List<Element> allConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+          List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.Id.IntegerValue.ToString() != detailSymbolModel.ConduitId ).ToList() ;
+          AddDetailSymbolForConduitSameCode( doc, allConduit, allConnector, detailSymbolModels, detailSymbolSettingDialog, conduitIdsHasSymbol, detailSymbolModel.Code, checkSameSymbol ) ;
+          detailSymbolStorable.DetailSymbolModelData.AddRange( detailSymbolModels );
         }
 
         detailSymbolStorable.Save() ;
@@ -325,7 +335,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private void AddDetailSymbolForConduitSameCode( Document doc, List<Element> allConduit, List<Element> allConnector, List<DetailSymbolModel> detailSymbolModels, DetailSymbolSettingDialog detailSymbolSettingDialog, List<string> conduitIdsHasSymbol, string code, bool checkSameSymbol )
     {
-      Dictionary<string, List<Element>> conduitSameToConnectors = new Dictionary<string, List<Element>>() ;
+      Dictionary<string, List<Element>> conduitSameCode = new Dictionary<string, List<Element>>() ;
       conduitIdsHasSymbol.AddRange( detailSymbolModels.Select( d => d.ConduitId ).ToList() ) ;
       var conduitsHaveNotSymbol = allConduit.Where( c => ! conduitIdsHasSymbol.Contains( c.Id.IntegerValue.ToString() ) ).ToList() ;
       foreach ( var conduit in conduitsHaveNotSymbol ) {
@@ -333,17 +343,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( detailSymbolModel.Code != code ) continue ;
         detailSymbolModels.Add( detailSymbolModel ) ;
         var key = detailSymbolModel.FromConnectorId + "," + detailSymbolModel.ToConnectorId ;
-        if ( conduitSameToConnectors.ContainsKey( key ) ) {
-          conduitSameToConnectors[ key ].Add( conduit ) ;
+        if ( conduitSameCode.ContainsKey( key ) ) {
+          conduitSameCode[ key ].Add( conduit ) ;
         }
         else {
-          conduitSameToConnectors.Add( key, new List<Element>() { conduit } ) ;
+          conduitSameCode.Add( key, new List<Element>() { conduit } ) ;
         }
       }
 
-      if ( ! conduitSameToConnectors.Any() ) return ;
+      if ( ! conduitSameCode.Any() ) return ;
       {
-        foreach ( var (key, elements) in conduitSameToConnectors ) {
+        foreach ( var (key, elements) in conduitSameCode ) {
           var maxLength = double.MinValue ;
           XYZ firstPoint = XYZ.Zero ;
           var isDirectionX = true ;
@@ -370,6 +380,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
         }
       }
+    }
+
+    private void RemoveDetailSymbolUnused( Document doc, DetailSymbolStorable detailSymbolStorable )
+    {
+      var detailSymbolUnused = new List<DetailSymbolModel>() ;
+      if ( ! detailSymbolStorable.DetailSymbolModelData.Any() ) return ;
+      foreach ( var detailSymbolModel in detailSymbolStorable.DetailSymbolModelData ) {
+        var conduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).FirstOrDefault( c => c.Id.IntegerValue.ToString() == detailSymbolModel.ConduitId ) ;
+        var detailSymbol = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == detailSymbolModel.DetailSymbolId ) ;
+        if ( conduit == null || detailSymbol == null ) {
+          detailSymbolUnused.Add( detailSymbolModel ) ;
+        }
+      }
+      if ( ! detailSymbolUnused.Any() ) return ;
+      foreach ( var detailSymbolModel in detailSymbolUnused ) {
+        detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+      }
+      detailSymbolStorable.Save() ;
     }
 
     private (List<string>, List<int>) CreateValueForCombobox( Document doc, List<DetailSymbolModel> detailSymbolModels, Element conduit )
@@ -424,7 +452,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( toConnector == null ) return true ;
       var code = GetCeeDSetCodeOfElement( doc, toConnector ) ;
       if ( string.IsNullOrEmpty( code ) ) return true ;
-      var detailSymbolModel = detailSymbolModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Code ) && d.Code != code && d.DetailSymbol == detailSymbol ) ;
+      var detailSymbolModel = detailSymbolModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Code ) && d.Code != code && d.DetailSymbol == detailSymbol && d.ParentSymbol == 0 ) ;
       return detailSymbolModel == null ;
     }
 
