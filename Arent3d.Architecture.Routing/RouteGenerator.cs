@@ -223,7 +223,54 @@ namespace Arent3d.Architecture.Routing
         detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
       }
 
+      var detailSymbols = detailSymbolModels.Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+      if ( detailSymbolStorable.DetailSymbolModelData.Any() && detailSymbols.Count == 1 ) {
+        var detailSymbolModel = detailSymbolModels.FirstOrDefault() ;
+        if ( detailSymbolModel!.ParentSymbol == 0 ) {
+          var detailSymbolModelParent = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.DetailSymbol == detailSymbolModel.DetailSymbol && d.Code == detailSymbolModel.Code && d.ParentSymbol == 0 ) ;
+          if ( detailSymbolModelParent == null ) {
+            UpdateSymbolOfConduitSameSymbolAndDifferentCode( document, detailSymbolStorable.DetailSymbolModelData, detailSymbolModel.DetailSymbol, detailSymbolModel.Code ) ;
+          }
+        }
+      }
+
       detailSymbolStorable.Save() ;
+    }
+
+    private static void UpdateSymbolOfConduitSameSymbolAndDifferentCode( Document doc, List<DetailSymbolModel> detailSymbolModels, string detailSymbol, string code )
+    {
+      var firstChildSymbol = detailSymbolModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != code ) ;
+      if ( firstChildSymbol == null ) return ;
+      {
+        var detailSymbolIds = detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+        foreach ( var id in detailSymbolIds ) {
+          var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == id ) ;
+          if ( textElement == null ) continue ;
+          var textNote = ( textElement as TextNote ) ! ;
+          CreateNewTextNoteType( doc, textNote, 0 ) ;
+        }
+
+        foreach ( var detailSymbolModel in detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).ToList() ) {
+          detailSymbolModel.ParentSymbol = 0 ;
+        }
+      }
+    }
+
+    private static void CreateNewTextNoteType( Document doc, TextNote textNote, int color )
+    {
+      //Create new text type
+      string strStyleName = textNote.TextNoteType.Name + "-" + color ;
+
+      var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( strStyleName, tt.Name ) ) ;
+      if ( textNoteType == null ) {
+        // Create new Note type
+        Element ele = textNote.TextNoteType.Duplicate( strStyleName ) ;
+        textNoteType = ( ele as TextNoteType ) ! ;
+        textNoteType.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( color ) ;
+      }
+
+      // Change the text notes type to the new type
+      textNote.ChangeTypeId( textNoteType!.Id ) ;
     }
   }
 }
