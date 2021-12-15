@@ -68,11 +68,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var segments = Route.GetAllRelatedBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
 
       // Get start point of route
+      var rootConnector = segments.First().Segment.FromEndPoint.GetReferenceConnector() ;
       var mainRouteName = segments.First().RouteName ;
       XYZ? startPosition = null ;
       foreach ( var (routeName, segment) in segments ) {
         try {
           startPosition = segment.FromEndPoint.RoutingStartPosition ;
+          rootConnector = segment.FromEndPoint.GetReferenceConnector() ;
           mainRouteName = routeName ;
           break ;
         }
@@ -81,10 +83,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      if ( startPosition == null ) return segments ;
+      if ( startPosition == null || rootConnector == null ) return segments ;
 
-      // Update diameter for grand child route
-      var newRouteSegments = UpdateGrandChildDiameter( document, segments.ToList(), spaces.ToList() ) ;
+      // Edit sub route index
+      var newRouteSegments = EditSubRouteIndex( document, segments.ToList(), mainRouteName, rootConnector ) ;
+
+      // Edit diameter for grand child route
+      // newRouteSegments = EditGrandChildDiameter( document, newRouteSegments.ToList(), spaces.ToList() ) ;
 
       // Add pass point into selected route
       var passPointOnRoutes = AddPassPoint( document, newRouteSegments, startPosition, mainRouteName, spaces.ToList() ) ;
@@ -95,43 +100,29 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return newRouteSegments ;
     }
 
-    private static Dictionary<string, List<PassPointEndPoint>> AddPassPoint( Document document, List<(string RouteName, RouteSegment Segment)> newRouteSegments, XYZ startPosition, string mainRouteName,  List<Element> spaces )
+    private static List<(string RouteName, RouteSegment Segment)> EditSubRouteIndex( Document document, List<(string, RouteSegment)> segments, string mainRouteName, Connector rootConnector )
     {
-      var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
-      var teesOnSelectedRoute = RemoveTeeOutsideOfSegments( tees.ToList(), newRouteSegments ) ;
-      Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes = new() ;
-      foreach ( var tee in teesOnSelectedRoute ) {
-        var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int)TeeConnectorType.Connector1 || conn.Id == (int)TeeConnectorType.Connector2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
-        if ( behindTeeConnector == null ) continue ;
-        var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
-        var teeRouteName = tee.GetRouteName() ;
-        if ( teeRouteName == null ) continue ;
-        var teeSegment = newRouteSegments.FirstOrDefault( segment => segment.RouteName == teeRouteName ).Segment ;
+      segments.Sort( ( a, b ) => CompareDistanceBasisZ( mainRouteName, rootConnector, a, b ) ) ;
+      var newRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
+      Dictionary<string, int> subRouteIndexes = new() ;
+      foreach ( var (routeName, segment) in segments ) {
+        var branchEndPoint = segment.FromEndPoint ;
+        if ( segment.FromEndPoint is RouteEndPoint routeEndPoint ) {
+          if ( ! subRouteIndexes.ContainsKey( routeEndPoint.RouteName ) ) {
+            subRouteIndexes.Add( routeEndPoint.RouteName, 0 ) ;
+          }
 
-        // Fix bug line to short by move pass point position one distance is 0.01 pass point direction
-        double offset = 0 ;
-        if ( mainRouteName == teeRouteName ) {
-          offset = passPointDir.Y != 0 ? 100 : 4500 ;
-        }
-        else {
-          offset = 10 ;
+          branchEndPoint = new RouteEndPoint( document, routeEndPoint.RouteName, subRouteIndexes[ routeEndPoint.RouteName ]++ ) ;
         }
 
-        var passPointPosition = behindTeeConnector.Origin + passPointDir * offset.MillimetersToRevitUnits() ;
-        var passPoint = document.AddPassPoint( teeRouteName, passPointPosition, passPointDir, teeSegment.PreferredNominalDiameter / 2, teeSegment.FromEndPoint.GetLevelId( document ) ) ;
-        var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
-        if ( passPointOnRoutes.ContainsKey( teeRouteName ) ) {
-          passPointOnRoutes[ teeRouteName ].Add( passPointEndPoint ) ;
-        }
-        else {
-          passPointOnRoutes.Add( teeRouteName, new List<PassPointEndPoint>() { passPointEndPoint } ) ;
-        }
+        var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, branchEndPoint, segment.ToEndPoint, segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
+        newRouteSegments.Add( ( routeName, newSegment ) ) ;
       }
 
-      return passPointOnRoutes ;
+      return newRouteSegments ;
     }
 
-    private static List<(string RouteName, RouteSegment Segment)> UpdateGrandChildDiameter( Document document, List<(string, RouteSegment)> segments, IReadOnlyCollection<Element> spaces )
+    private static List<(string RouteName, RouteSegment Segment)> EditGrandChildDiameter( Document document, List<(string, RouteSegment)> segments, IReadOnlyCollection<Element> spaces )
     {
       var newRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
       foreach ( var (routeName, segment) in segments ) {
@@ -147,6 +138,35 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return newRouteSegments ;
+    }
+
+    private static Dictionary<string, List<PassPointEndPoint>> AddPassPoint( Document document, List<(string RouteName, RouteSegment Segment)> newRouteSegments, XYZ startPosition, string mainRouteName, List<Element> spaces )
+    {
+      var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
+      var teesOnSelectedRoute = RemoveTeeOutsideOfSegments( tees.ToList(), newRouteSegments ) ;
+      Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes = new() ;
+      foreach ( var tee in teesOnSelectedRoute ) {
+        var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int)TeeConnectorType.Connector1 || conn.Id == (int)TeeConnectorType.Connector2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
+        if ( behindTeeConnector == null ) continue ;
+        var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
+        var teeRouteName = tee.GetRouteName() ;
+        if ( teeRouteName == null ) continue ;
+        var teeSegment = newRouteSegments.FirstOrDefault( segment => segment.RouteName == teeRouteName ).Segment ;
+
+        // Move pass point's position
+        const double offset = 100 ;
+        var passPointPosition = behindTeeConnector.Origin + passPointDir * offset.MillimetersToRevitUnits() ;
+        var passPoint = document.AddPassPoint( teeRouteName, passPointPosition, passPointDir, teeSegment.PreferredNominalDiameter / 2, teeSegment.FromEndPoint.GetLevelId( document ) ) ;
+        var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
+        if ( passPointOnRoutes.ContainsKey( teeRouteName ) ) {
+          passPointOnRoutes[ teeRouteName ].Add( passPointEndPoint ) ;
+        }
+        else {
+          passPointOnRoutes.Add( teeRouteName, new List<PassPointEndPoint>() { passPointEndPoint } ) ;
+        }
+      }
+
+      return passPointOnRoutes ;
     }
 
     private static Dictionary<string, List<double>> GetAllPassPointDiameter( Document document, Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes, XYZ startPosition, IReadOnlyCollection<Element> spaces )
@@ -170,7 +190,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           }
           else {
             passPointDiameters.Add( routeName, new List<double>() { ductDiameter } ) ;
-          }          
+          }
         }
       }
 
@@ -179,7 +199,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static List<(string RouteName, RouteSegment Segment)> GetListOfNewSegments( Document document, IReadOnlyCollection<(string RouteName, RouteSegment Segment)> segments, List<(string, RouteSegment)> newRouteSegments, IReadOnlyCollection<Element> spaces, Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes, XYZ startPosition )
     {
-      var passPointDiameters = GetAllPassPointDiameter(document, passPointOnRoutes, startPosition, spaces  ) ;
+      var passPointDiameters = GetAllPassPointDiameter( document, passPointOnRoutes, startPosition, spaces ) ;
       foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
         var segment = segments.FirstOrDefault( segment => segment.RouteName == routeName ).Segment ;
         if ( segment == null ) continue ;
@@ -233,14 +253,54 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       return ductDiameter ;
     }
-    
+
+    private static int CompareDistanceBasisZ( string mainRouteName, Connector rootConnector, (string, RouteSegment) a, (string, RouteSegment) b )
+    {
+      var (aRouteName, aRouteSegment) = a ;
+      var (bRouteName, bRouteSegment) = b ;
+      var aConnector = aRouteSegment.ToEndPoint.GetReferenceConnector() ;
+      var bConnector = bRouteSegment.ToEndPoint.GetReferenceConnector() ;
+      if ( aConnector == null || bConnector == null || aRouteName == mainRouteName || bRouteName == mainRouteName || aRouteName == bRouteName ) return default ;
+      if ( aRouteSegment.FromEndPoint.ParentRoute()!.RouteName == mainRouteName && bRouteSegment.FromEndPoint.ParentRoute()!.RouteName == mainRouteName ) {
+        return DistanceFromRoot( rootConnector, aConnector, false ).CompareTo( DistanceFromRoot( rootConnector, bConnector, false ) ) ;
+      }
+      else if ( aRouteSegment.FromEndPoint.ParentRoute() != null && aRouteSegment.FromEndPoint.ParentRoute()!.RouteName != mainRouteName && aRouteSegment.FromEndPoint.ParentRoute() != null && bRouteSegment.FromEndPoint.ParentRoute()!.RouteName != mainRouteName ) {
+        return DistanceFromRoot( rootConnector, aConnector, true ).CompareTo( DistanceFromRoot( rootConnector, bConnector, true ) ) ;
+      }
+      else {
+        return default ;
+      }
+    }
+
+    private static double DistanceFromRoot( IConnector rootConnector, IConnector targetConnector, bool isRotate90 )
+    {
+      var rootConnectorPosXyz = rootConnector.Origin ;
+      var rootConnectorPos2d = rootConnectorPosXyz.To3dPoint().To2d() ;
+      var targetConnectorPos = targetConnector.Origin ;
+      var targetConnector2d = targetConnectorPos.To3dPoint().To2d() ;
+
+      var rootConnectorBasisZ = rootConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
+      var calculateDir = isRotate90 ? new Vector2d( -rootConnectorBasisZ.y, rootConnectorBasisZ.x ) : rootConnectorBasisZ ;
+      var rootToVavVector = targetConnector2d - rootConnectorPos2d ;
+      var angle = GetAngleBetweenVector( calculateDir, rootToVavVector ) ;
+
+      return Math.Abs( Math.Cos( angle ) * rootToVavVector.magnitude ) ;
+    }
+
+    // Get the angle between two vectors
+    private static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
+    {
+      // return the angle (in radian)
+      return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
+    }
+
     private static int CompareByDistanceFromEndPoint( XYZ startPosition, Route a, Route b )
     {
-      if ( a.FirstFromConnector() == null || b.FirstFromConnector() == null) return default ;
+      if ( a.FirstFromConnector() == null || b.FirstFromConnector() == null ) return default ;
 
       return Vector2d.Distance( b.FirstFromConnector()!.GetConnector()!.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ).CompareTo( Vector2d.Distance( a.FirstFromConnector()!.GetConnector()!.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ;
     }
-    
+
     private static int CompareDistance( XYZ startPosition, PassPointEndPoint a, PassPointEndPoint b )
     {
       if ( a.GetPassPoint()!.Location is not LocationPoint aPos || b.GetPassPoint()!.Location is not LocationPoint bPos ) return default ;
