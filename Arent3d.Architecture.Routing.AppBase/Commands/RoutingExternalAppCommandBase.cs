@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
       return null ;
     }
   }
-  public abstract class RoutingExternalAppCommandBaseWithParam<TParam, TUIResult> : ExternalCommandBaseWithParam<TParam, TUIResult>
+  public abstract class RoutingExternalAppCommandBaseWithParam<TParam, TUIResult> : ExternalCommandBaseWithParam<TParam, TUIResult> where TParam : class
   {
     protected override string? OnException( TParam? param, Exception e, TUIResult? uiResult )
     {
@@ -27,7 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
       return null ;
     }
   }
-  public abstract class RoutingExternalAppCommandBaseWithParam<TParam> : ExternalCommandBaseWithParam<TParam>
+  public abstract class RoutingExternalAppCommandBaseWithParam<TParam> : ExternalCommandBaseWithParam<TParam> where TParam : class
   {
     protected override string? OnException( TParam? param, Exception e )
     {

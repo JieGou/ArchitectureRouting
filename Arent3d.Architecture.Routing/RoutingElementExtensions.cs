@@ -195,7 +195,7 @@ namespace Arent3d.Architecture.Routing
 
     public static Connector GetTopConnectorOfConnectorFamily( this FamilyInstance elm )
     {
-      var topItem = elm.GetConnectors().MaxItemOrDefault( conn => conn.Origin.Z ) ;
+      var topItem = elm.GetConnectors().MaxBy( conn => conn.Origin.Z ) ;
       return topItem ?? elm.GetConnectors().First() ;
     }
 
