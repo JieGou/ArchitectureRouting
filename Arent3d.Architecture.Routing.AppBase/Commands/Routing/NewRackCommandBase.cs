@@ -404,6 +404,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public static void CreateNotationForRack(Document doc, Application app, IEnumerable<FamilyInstance> racks )
     {
       var rackNotationStorable = doc.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? doc.GetRackNotationStorable() ;
+      RemoveNotationUnused( doc, rackNotationStorable ) ;
       Dictionary<string, Dictionary<double, List<FamilyInstance>>> directionXRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
       Dictionary<string, Dictionary<double, List<FamilyInstance>>> directionYRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
       foreach ( var rack in racks ) {
@@ -541,6 +542,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
         }
       }
+    }
+    
+    private static void RemoveNotationUnused( Document doc, RackNotationStorable rackNotationStorable )
+    {
+      var notationUnused = new List<RackNotationModel>() ;
+      if ( ! rackNotationStorable.RackNotationModelData.Any() ) return ;
+      foreach ( var notationModel in rackNotationStorable.RackNotationModelData ) {
+        var rack = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.RackTypeElements ).FirstOrDefault( c => c.Id.IntegerValue.ToString() == notationModel.RackId ) ;
+        if ( rack != null ) continue ;
+        notationUnused.Add( notationModel ) ;
+        var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( e => e.Id.IntegerValue.ToString() == notationModel.NotationId ) ;
+        if ( textElement == null ) return ;
+        var textNote = textElement as TextNote ;
+        var text = textNote!.Text ;
+        if ( text.Contains( 'x' ) ) {
+          var number = text.Substring( text.IndexOf( 'x' ) + 1 ).Trim('\r') ;
+          textNote.Text = Convert.ToInt16( number ) - 1 == 1 ? text.Substring( 0, text.IndexOf( 'x' ) - 1 ) : text.Substring( 0, text.IndexOf( 'x' ) + 2 ) + ( Convert.ToInt16( number ) - 1 ) ;
+        }
+        else {
+          doc.Delete( textElement.Id ) ;
+          foreach ( var lineId in notationModel.LineIds.Split( ',' ) ) {
+            var id = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.Id.IntegerValue.ToString() == lineId ).Select( e => e.Id ).FirstOrDefault() ;
+            if ( id != null ) doc.Delete( id ) ;
+          }
+        }
+      }
+      if ( ! notationUnused.Any() ) return ;
+      foreach ( var notationModel in notationUnused ) {
+        rackNotationStorable.RackNotationModelData.Remove( notationModel ) ;
+      }
+      rackNotationStorable.Save() ;
     }
   }
 }
