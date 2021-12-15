@@ -9,7 +9,6 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit ;
 using System.Linq ;
 using Autodesk.Revit.DB.Mechanical ;
-using Autodesk.Revit.DB.Structure ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
 
@@ -115,8 +114,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       Dictionary<string, NumberOfFASUAndVAVModel> numberOfFASUsAndVAVsInSpacesDictionary = CountFASUsAndVAVsBySpace ( document, spaces ) ;
       var isPreconditionOfVAVsAndFASUsSatisfied = IsPreconditionOfFASUsAndVAVsSatisfied ( numberOfFASUsAndVAVsInSpacesDictionary ) ;
       if ( !isPreconditionOfVAVsAndFASUsSatisfied )  return Result.Failed ;
-      
-      var vavUpstreamConnectorNormal = GetVAVUpstreamConnectorNormal(document) ;
+
+      var vavUpstreamConnectorNormal = GetVAVUpstreamConnectorNormal( document ) ;
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
         branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
 
