@@ -109,11 +109,11 @@ namespace Arent3d.Architecture.Routing
     BranchNumber
   }
   
-  public enum GroupIdParameter
+  public enum AHUNumberParameter
   {
-    [ParameterGuid( "e1522ec9-2d76-4c32-addc-f9f27d3aa8ea" ), NameOnRevit( "GroupId" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.GroupIdElements ) )]
-    GroupId
+    [ParameterGuid( "e1522ec9-2d76-4c32-addc-f9f27d3aa8ea" ), NameOnRevit( "AHUNumber" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.AHUNumberElements ) )]
+    AHUNumber
   }
   
 
@@ -137,9 +137,9 @@ namespace Arent3d.Architecture.Routing
       document.LoadAllParametersFromFile<BranchNumberParameter>(AssetManager.GetSpaceSharedParameterPath()) ;
     }
     
-    public static void MakeGroupIdParameter( this Document document )
+    public static void MakeAHUNumberParameter( this Document document )
     {
-      document.LoadAllParametersFromFile<GroupIdParameter>(AssetManager.GetSpaceSharedParameterPath()) ;
+      document.LoadAllParametersFromFile<AHUNumberParameter>(AssetManager.GetSpaceSharedParameterPath()) ;
     }
   }
 }

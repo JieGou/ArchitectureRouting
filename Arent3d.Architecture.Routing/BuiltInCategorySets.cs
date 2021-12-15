@@ -147,7 +147,7 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_MechanicalEquipment,
     } ;
 
-    public static readonly BuiltInCategory[] GroupIdElements =
+    public static readonly BuiltInCategory[] AHUNumberElements =
     {
       BuiltInCategory.OST_MEPSpaces,
       BuiltInCategory.OST_MechanicalEquipment,
