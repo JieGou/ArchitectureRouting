@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Globalization ;
 using System.IO ;
 using System.Linq ;
+using System.Runtime.Serialization.Formatters.Binary ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
@@ -14,10 +15,10 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using NPOI.HSSF.UserModel ;
 using NPOI.SS.UserModel ;
 using NPOI.XSSF.UserModel ;
 using CellType = NPOI.SS.UserModel.CellType ;
+using Clipboard = System.Windows.Forms.Clipboard ;
 using MessageBox = System.Windows.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -34,6 +35,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       MessageBox.Show( e.RowIndex.ToString() ) ;
     }
+
     public CeeDModelDialog( Document document )
     {
       InitializeComponent() ;
@@ -42,10 +44,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _ceeDModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
       SelectedSetCode = string.Empty ;
-      
+
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
-        LoadData( oldCeeDStorable );
+        LoadData( oldCeeDStorable ) ;
       }
 
       Style rowStyle = new Style( typeof( DataGridRow ) ) ;
@@ -55,10 +57,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
     {
-      var selectedItem = (CeedModel)DtGrid.SelectedValue ;
+      var selectedItem = (CeedModel) DtGrid.SelectedValue ;
       SelectedSetCode = selectedItem.CeeDSetCode ;
       DialogResult = true ;
-      Close() ;      
+      Close() ;
     }
 
     private void Button_Click( object sender, RoutedEventArgs e )
@@ -80,7 +82,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       _ceeDModelNumberSearch = ! string.IsNullOrEmpty( CmbCeeDModelNumbers.Text ) ? CmbCeeDModelNumbers.Text : string.Empty ;
     }
-    
+
     private void CmbModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
     {
       _modelNumberSearch = ! string.IsNullOrEmpty( CmbModelNumbers.Text ) ? CmbModelNumbers.Text : string.Empty ;
@@ -105,6 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             ceeDModels = _allCeeDModels.CeedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
             break ;
         }
+
         CeedViewModel ceeDModelsSearch = new CeedViewModel( _allCeeDModels.CeedStorable, ceeDModels ) ;
         this.DataContext = ceeDModelsSearch ;
       }
@@ -113,7 +116,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
       OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx)|*.xlsx", Multiselect = false } ;
-      string filePath = string.Empty;
+      string filePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
       }
@@ -145,7 +148,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbCeeDModelNumbers.ItemsSource = viewModel.CeeDModelNumbers ;
       CmbModelNumbers.ItemsSource = viewModel.ModelNumbers ;
     }
-    
+
     private static List<CeedModel> GetAllCeeDModelNumber( string path )
     {
       List<CeedModel> ceedModelData = new List<CeedModel>() ;
@@ -154,52 +157,48 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
         XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
         ISheet workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
-        
-        XSSFDrawing drawing = (XSSFDrawing)workSheet.DrawingPatriarch;
+
+        XSSFDrawing drawing = (XSSFDrawing) workSheet.DrawingPatriarch ;
 
 
-        var allShapes =  drawing.GetShapes()
-                                                      .Where( x => ((XSSFClientAnchor)x.GetAnchor()).Col1 is 5 or 6)
-                                                      .OrderBy( x => ((XSSFClientAnchor)x.GetAnchor()).Col1)
-                                                      .ThenBy( x => ((XSSFClientAnchor)x.GetAnchor()).Row1) ;
+        var allFloorShapes = drawing.GetShapes().Where( x => ( (XSSFClientAnchor) x.GetAnchor() ).Col1 is 5 )
+          .OrderBy( x => ( (XSSFClientAnchor) x.GetAnchor() ).Col1 ).ThenBy( x => ( (XSSFClientAnchor) x.GetAnchor() ).Row1 ) ;
+        var allInstrumentationShapes = drawing.GetShapes().Where( x => ( (XSSFClientAnchor) x.GetAnchor() ).Col1 is 6 )
+          .OrderBy( x => ( (XSSFClientAnchor) x.GetAnchor() ).Col1 ).ThenBy( x => ( (XSSFClientAnchor) x.GetAnchor() ).Row1 ) ;
 
-        int pictureIndex = 0 ;
-        byte[] dataByte ;
-        List<Byte[]> listdataByte = new List<byte[]>() ;
-        
-        foreach (var shape in allShapes )
-        {
-          if (shape is XSSFShapeGroup shapeGroups) {
-            var clientAnchor = ( (XSSFClientAnchor) shape.GetAnchor() ) ;
-            // Add picture empty
-            
-            var picture = drawing.CreatePicture(clientAnchor, 0) ;
-            dataByte =  picture.PictureData.Data;
-            listdataByte.Add( dataByte ) ;
-            break ;
-            // int groupRow = ((XSSFClientAnchor)shape.GetAnchor()).Row1;
-            // long groupRowDy = ((XSSFClientAnchor)shape.GetAnchor()).Dy1;
-            // int groupCol  = ((XSSFClientAnchor)shape.GetAnchor()).Col1;
-            // long groupColDx  = ((XSSFClientAnchor)shape.GetAnchor()).Dx1;
-          }
-          // if (shape is XSSFShape shapes) {
-          //   var am = shape.GetAnchor()  ;
-          //   int groupRow = ((XSSFClientAnchor)shape.GetAnchor()).Row1;
-          //   long groupRowDy = ((XSSFClientAnchor)shape.GetAnchor()).Dy1;
-          //   int groupCol  = ((XSSFClientAnchor)shape.GetAnchor()).Col1;
-          //   long groupColDx  = ((XSSFClientAnchor)shape.GetAnchor()).Dx1;
+        List<ImageBytes> imageBytesList = new List<ImageBytes>() ;
+        foreach ( var shape in allFloorShapes ) {
+          var clientAnchor = ( (XSSFClientAnchor) shape.GetAnchor() ) ;
+          var position = ( (XSSFClientAnchor) shape.GetAnchor() ).Row1 ;
+          byte[] imageByte = new byte[] { } ;
+          //TODO convert shape to byte[]
+          //1.
+          // ObjectData inpPic = (ObjectData) shape ;
+          // FileOutputStream out = new FileOutputStream("pict.jpg");
+          //imageByte = inpPic.PictureData.Data ;
+          //2.
+          // BinaryFormatter bf = new BinaryFormatter();
+          // using (MemoryStream ms = new MemoryStream())
+          // {
+          //   bf.Serialize(ms, shape);
+          //   imageByte= ms.ToArray();
           // }
-          // if (shape is XSSFPicture picture) {
-          //   var clientAnchor = ( (XSSFClientAnchor) shape.GetAnchor() ) ;
-          //   var pict = drawing.CreatePicture(clientAnchor, 0) ;
-          //   dataByte =  pict.PictureData.Data;
-          //   listdataByte.Add( dataByte ) ;
-          //   break ;
+          //3.
+          // shape.Copy() ;
+          // if (Clipboard.ContainsImage())
+          // {
+          //   var bitmap = Clipboard.GetImage();
+          //   if (bitmap==null) continue;
+          //   JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+          //   using MemoryStream stream  = new MemoryStream() ;
+          //   bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
+          // encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+          // encoder.Save(stream);
+          //   imageByte = stream.ToArray();
           // }
-
-          pictureIndex++ ;
+          imageBytesList.Add( new ImageBytes( position, imageByte ) ) ;
         }
-        
+
         const int startRow = 7 ;
         var endRow = workSheet.LastRowNum ;
         for ( var i = startRow ; i <= endRow ; i++ ) {
@@ -242,7 +241,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             var ceeDNameCell = workSheet.GetRow( j ).GetCell( 3 ) ;
             var modelName = GetCellValue( ceeDNameCell ) ;
             if ( ! string.IsNullOrEmpty( modelName ) ) ceeDName = modelName ;
-            
+
             var modelNumberCell = workSheet.GetRow( j ).GetCell( 4 ) ;
             var modelNumber = GetCellValue( modelNumberCell ) ;
             if ( ! string.IsNullOrEmpty( modelNumber ) ) modelNumbers.Add( modelNumber ) ;
@@ -251,7 +250,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             var symbol = GetCellValue( symbolCell ) ;
             if ( ! string.IsNullOrEmpty( symbol ) && ! symbol.Contains( "又は" ) ) floorPlanSymbol = symbol ;
           }
-          
+
           var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
           if ( ! ceeDModelNumbers.Any() ) {
             CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
@@ -260,8 +259,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
-              //CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
-              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, listdataByte, ceeDName ) ;
+              var imageByPosition = imageBytesList.Where( b => b.ImagePostion == i + 1 ).Select( c => c.ImagePostion ).ToList() ;
+              CeedModel ceeDModel ;
+              if ( imageByPosition is { Count: > 0 } ) {
+                var positionImg = string.Empty ;
+                foreach ( var pos in imageByPosition ) {
+                  positionImg = positionImg + " " + pos ;
+                }
+                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, positionImg, ceeDName ) ;
+              }
+              else {
+                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
+              }
+
               ceedModelData.Add( ceeDModel ) ;
             }
           }
@@ -269,8 +279,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           i-- ;
         }
       }
-      catch ( Exception ex) {
-        var a = ex.Message ;
+      catch ( Exception ex ) {
+        var a = ex.StackTrace ;
+        MessageBox.Show( a ) ;
         return new List<CeedModel>() ;
       }
 
@@ -291,5 +302,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       return cellValue ;
     }
+  }
+
+  public class ImageBytes
+  {
+    public ImageBytes( int imagePostion, byte[] imageBytesList )
+    {
+      this.ImagePostion = imagePostion ;
+      ImageByte = imageBytesList ;
+    }
+
+    public int ImagePostion { get ; set ; }
+    public byte[] ImageByte { get ; set ; }
   }
 }
