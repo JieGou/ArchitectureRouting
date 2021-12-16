@@ -29,7 +29,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const double MinDistanceSpacesCollinear = 2.5 ;
     private const int FASUConnectorId = 18 ;
     private const int VAVConnectorId = 4 ;
-    private const string RoundDuctUniqueId = "dee0da15-198f-4f79-aa08-3ce71203da82-00c0cdcf" ;
 
     private class NumberOfFASUAndVAVModel
     {
@@ -75,7 +74,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       if ( ! RoundDuctTypeExists( uiDocument.Document ) )
-        return ( false, $"There no family with UniqueID `{RoundDuctUniqueId}` in the document." ) ;
+        return ( false, "There no RoundDuct family in the document." ) ;
 
       ConnectorPicker.IPickResult iPickResult =
         ConnectorPicker.GetConnector( uiDocument, routingExecutor, true,
@@ -151,7 +150,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           
           var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorId ) ;
           var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorId ) ;
-          CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
+          var duct = CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
+
+          if ( duct != null ) {
+            // create group of FASUs, VAVs and RoundDuct
+            //var groupIds = new List<ElementId> { instanceOfFASU.Id, instanceOfVAV.Id } ;
+            var groupIds = new List<ElementId> { instanceOfFASU.Id, instanceOfVAV.Id, duct.Id } ;
+            document.Create.NewGroup(groupIds);
+          }
         }
 
         tr.Commit() ;
@@ -323,19 +329,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return null != element.get_BoundingBox( document.ActiveView ) ;
     }
 
-    private static void CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
+    private static Duct? CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
       Connector connectorOfVAV, ElementId levelId )
     {
-      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
-        .WhereElementIsElementType() ;
-      var ductType = collector.First( e => e.UniqueId == RoundDuctUniqueId ) ;
-      Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
+      var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
+        .WhereElementIsElementType().AsEnumerable().OfType<DuctType>() ;
+      var ductType = collector.LastOrDefault( e => e.Shape == ConnectorProfileType.Round ) ;
+      return ductType != null ? Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) : null ;
     }
 
     private static bool RoundDuctTypeExists( Document document )
     {
-      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ) ;
-      return collector.Any( e => e.UniqueId == RoundDuctUniqueId ) ;
+      var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ).AsEnumerable().OfType<DuctType>() ;
+      return collector.Any( e => e.Shape == ConnectorProfileType.Round ) ;
     }
 
     #region SubFunctionsForRotation
