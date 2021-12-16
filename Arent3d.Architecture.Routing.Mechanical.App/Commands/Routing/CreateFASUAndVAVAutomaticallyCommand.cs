@@ -122,41 +122,29 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
         branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
-
-      // Sort the location to find bottom right space
-      List<Element> listSpaces = spaces.ToList() ;
-      listSpaces.Sort( ( a, b ) => CompareDistanceBasisZ( pickedConnector, a, b, false ) ) ;
-      bool isBottomRightSpace = true ;
+      
+      var furthestSpace = GetFurthestSpaceAndBranchNumberZero( pickedConnector, spaces.ToList() ) ;
       
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         
         // TODO SpaceGroupごとにループを回す. 一直線に並んでいるグループの方向修正のため
-        for ( int i = listSpaces.Count - 1 ; i >= 0 ; i-- ) {
-          if ( false == numberOfFASUsAndVAVsInSpacesDictionary.TryGetValue( listSpaces[i].Name, out var numberOfFASUAndVAV ) ) continue ;
+        foreach ( var space in spaces ) {
+          if ( false == numberOfFASUsAndVAVsInSpacesDictionary.TryGetValue( space.Name, out var numberOfFASUAndVAV ) ) continue ;
           if ( numberOfFASUAndVAV.numberOfFASU == 1 && numberOfFASUAndVAV.numberOfVAV == 1 ) continue ;
           
-          BoundingBoxXYZ boxOfSpace = listSpaces[i].get_BoundingBox( document.ActiveView ) ;
+          BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue;
+          var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2,  space.Id == furthestSpace?.Id ? pickedConnector.Origin.Y : ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
           
-          listSpaces[i].TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
-
-          XYZ? positionOfFASUAndVAV ;
-          if ( branchNumber == 0 && isBottomRightSpace ) {
-            positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, pickedConnector.Origin.Y, 0 ) ;
-            isBottomRightSpace = false ;
-          }
-          else
-            positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
-          
-          var placeResult = PlaceFASUAndVAV( document, listSpaces[i].LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ listSpaces[i] ] ) ;
+          var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
           if ( placeResult == null ) continue ;// Failed to place
 
           var ( instanceOfFASU, instanceOfVAV) = placeResult.Value ;
           
           // この時点でコネクタの向きとは逆を向いている想定
           // コネクタの裏側にあるときは、ここで向きを反転する
-          if ( rootSpaces.Contains( listSpaces[i] ) && IsVavLocatedBehindConnector( document, instanceOfVAV, pickedConnector ) ) {
+          if ( rootSpaces.Contains( space ) && IsVavLocatedBehindConnector( document, instanceOfVAV, pickedConnector ) ) {
             ElementTransformUtils.RotateElements( document, new List<ElementId>(){instanceOfFASU.Id,instanceOfVAV.Id},
               Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI ) ;
           }
@@ -165,13 +153,24 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           
           var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorId ) ;
           var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorId ) ;
-          CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, listSpaces[i].LevelId ) ;
+          CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
         }
 
         tr.Commit() ;
       }
 
       return Result.Succeeded ;
+    }
+    
+    private static Element? GetFurthestSpaceAndBranchNumberZero( Connector connector, List<Element> spaces )
+    {
+      spaces.Sort( ( a, b ) => CompareDistanceBasisZ( connector , a, b, false ) ) ;
+
+      for ( var spaceIndex = spaces.Count - 1 ; spaceIndex >= 0 ; spaceIndex-- ) {
+        spaces[ spaceIndex ].TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
+        if ( branchNumber == 0 ) return spaces[ spaceIndex ] ;
+      }
+      return null ;
     }
     
     private static int CompareDistanceBasisZ( IConnector rootConnector, Element a, Element b, bool isRotate90 )
