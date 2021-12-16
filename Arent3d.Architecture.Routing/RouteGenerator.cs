@@ -226,8 +226,8 @@ namespace Arent3d.Architecture.Routing
       var detailSymbols = detailSymbolModels.Select( d => d.DetailSymbolId ).Distinct().ToList() ;
       if ( detailSymbolStorable.DetailSymbolModelData.Any() && detailSymbols.Count == 1 ) {
         var detailSymbolModel = detailSymbolModels.FirstOrDefault() ;
-        if ( detailSymbolModel!.ParentSymbol == 0 ) {
-          var detailSymbolModelParent = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.DetailSymbol == detailSymbolModel.DetailSymbol && d.Code == detailSymbolModel.Code && d.ParentSymbol == 0 ) ;
+        if ( detailSymbolModel!.IsParentSymbol ) {
+          var detailSymbolModelParent = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.DetailSymbol == detailSymbolModel.DetailSymbol && d.Code == detailSymbolModel.Code && d.IsParentSymbol ) ;
           if ( detailSymbolModelParent == null ) {
             UpdateSymbolOfConduitSameSymbolAndDifferentCode( document, detailSymbolStorable.DetailSymbolModelData, detailSymbolModel.DetailSymbol, detailSymbolModel.Code ) ;
           }
@@ -251,7 +251,7 @@ namespace Arent3d.Architecture.Routing
         }
 
         foreach ( var detailSymbolModel in detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).ToList() ) {
-          detailSymbolModel.ParentSymbol = 0 ;
+          detailSymbolModel.IsParentSymbol = true ;
         }
       }
     }
