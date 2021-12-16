@@ -102,10 +102,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static List<(string RouteName, RouteSegment Segment)> EditSubRouteIndex( Document document, List<(string, RouteSegment)> segments, string mainRouteName, Connector rootConnector )
     {
-      segments.Sort( ( a, b ) => CompareDistanceBasisZ( mainRouteName, rootConnector, a, b ) ) ;
       var newRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
+      var sortedSegments = SortSegmentByDistanceFromRoot( segments, mainRouteName, rootConnector ) ;
       Dictionary<string, int> subRouteIndexes = new() ;
-      foreach ( var (routeName, segment) in segments ) {
+      foreach ( var (routeName, segment) in sortedSegments ) {
         var branchEndPoint = segment.FromEndPoint ;
         if ( segment.FromEndPoint is RouteEndPoint routeEndPoint ) {
           if ( ! subRouteIndexes.ContainsKey( routeEndPoint.RouteName ) ) {
@@ -120,6 +120,28 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return newRouteSegments ;
+    }
+
+    private static bool CheckDistancePassPoint( XYZ passPointPosition, Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes )
+    {
+      var isNear = false ;
+      // それ以下パスポイントを追加しません。
+      double minDistance = 1000 ;
+
+      foreach ( var (_, passPointEndPoints) in passPointOnRoutes ) {
+        foreach ( var passPointEndPoint in passPointEndPoints ) {
+          if ( passPointEndPoint == null || passPointEndPoint.GetPassPoint() == null ) continue ;
+          var addedPassPointPosition = passPointEndPoint.GetPassPoint()!.Location as LocationPoint ;
+          if ( addedPassPointPosition != null && Vector3d.Distance( passPointPosition.To3dPoint(), addedPassPointPosition.Point.To3dPoint() ) < minDistance.MillimetersToRevitUnits() ) {
+            isNear = true ;
+            break ;
+          }
+        }
+
+        if ( isNear ) break ;
+      }
+
+      return isNear ;
     }
 
     private static List<(string RouteName, RouteSegment Segment)> EditGrandChildDiameter( Document document, List<(string, RouteSegment)> segments, IReadOnlyCollection<Element> spaces )
@@ -146,7 +168,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var teesOnSelectedRoute = RemoveTeeOutsideOfSegments( tees.ToList(), newRouteSegments ) ;
       Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes = new() ;
       foreach ( var tee in teesOnSelectedRoute ) {
-        var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int)TeeConnectorType.Connector1 || conn.Id == (int)TeeConnectorType.Connector2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
+        var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int) TeeConnectorType.Connector1 || conn.Id == (int) TeeConnectorType.Connector2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
         if ( behindTeeConnector == null ) continue ;
         var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
         var teeRouteName = tee.GetRouteName() ;
@@ -154,8 +176,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var teeSegment = newRouteSegments.FirstOrDefault( segment => segment.RouteName == teeRouteName ).Segment ;
 
         // Move pass point's position
-        const double offset = 100 ;
+        const double offset = 10 ;
         var passPointPosition = behindTeeConnector.Origin + passPointDir * offset.MillimetersToRevitUnits() ;
+        if ( CheckDistancePassPoint( passPointPosition, passPointOnRoutes ) ) continue ;
         var passPoint = document.AddPassPoint( teeRouteName, passPointPosition, passPointDir, teeSegment.PreferredNominalDiameter / 2, teeSegment.FromEndPoint.GetLevelId( document ) ) ;
         var passPointEndPoint = new PassPointEndPoint( passPoint ) ;
         if ( passPointOnRoutes.ContainsKey( teeRouteName ) ) {
@@ -254,6 +277,31 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return ductDiameter ;
     }
 
+    private static List<(string RouteName, RouteSegment Segment)> SortSegmentByDistanceFromRoot( List<(string RouteName, RouteSegment Segment)> segments, string mainRouteName, Connector rootConnector )
+    {
+      var childRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
+      var mainChildRouteSegments = new List<(string RouteName, RouteSegment Segment)>() ;
+      foreach ( var (routeName, segment) in segments ) {
+        var connector = segment.ToEndPoint.GetReferenceConnector() ;
+        if ( connector == null || routeName == mainRouteName || segment.FromEndPoint.ParentRoute() == null ) {
+          childRouteSegments.Add( ( routeName, segment ) ) ;
+          continue ;
+        }
+
+        if ( segment.FromEndPoint.ParentRoute()!.RouteName != mainRouteName ) {
+          childRouteSegments.Add( ( routeName, segment ) ) ;
+          continue ;
+        }
+
+        mainChildRouteSegments.Add( ( routeName, segment ) ) ;
+      }
+
+      childRouteSegments.Sort( ( a, b ) => CompareDistanceBasisZ( mainRouteName, rootConnector, a, b ) ) ;
+      mainChildRouteSegments.Sort( ( a, b ) => CompareDistanceBasisZ( mainRouteName, rootConnector, a, b ) ) ;
+
+      return mainChildRouteSegments.Concat( childRouteSegments ).ToList() ;
+    }
+
     private static int CompareDistanceBasisZ( string mainRouteName, Connector rootConnector, (string, RouteSegment) a, (string, RouteSegment) b )
     {
       var (aRouteName, aRouteSegment) = a ;
@@ -261,14 +309,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var aConnector = aRouteSegment.ToEndPoint.GetReferenceConnector() ;
       var bConnector = bRouteSegment.ToEndPoint.GetReferenceConnector() ;
       if ( aConnector == null || bConnector == null || aRouteName == mainRouteName || bRouteName == mainRouteName || aRouteName == bRouteName ) return default ;
-      if ( aRouteSegment.FromEndPoint.ParentRoute()!.RouteName == mainRouteName && bRouteSegment.FromEndPoint.ParentRoute()!.RouteName == mainRouteName ) {
+      if ( aRouteSegment.FromEndPoint.ParentRoute() != null && aRouteSegment.FromEndPoint.ParentRoute()!.RouteName == mainRouteName && bRouteSegment.FromEndPoint.ParentRoute() != null && bRouteSegment.FromEndPoint.ParentRoute()!.RouteName == mainRouteName ) {
         return DistanceFromRoot( rootConnector, aConnector, false ).CompareTo( DistanceFromRoot( rootConnector, bConnector, false ) ) ;
       }
-      else if ( aRouteSegment.FromEndPoint.ParentRoute() != null && aRouteSegment.FromEndPoint.ParentRoute()!.RouteName != mainRouteName && aRouteSegment.FromEndPoint.ParentRoute() != null && bRouteSegment.FromEndPoint.ParentRoute()!.RouteName != mainRouteName ) {
-        return DistanceFromRoot( rootConnector, aConnector, true ).CompareTo( DistanceFromRoot( rootConnector, bConnector, true ) ) ;
-      }
       else {
-        return default ;
+        return DistanceFromRoot( rootConnector, aConnector, true ).CompareTo( DistanceFromRoot( rootConnector, bConnector, true ) ) ;
       }
     }
 
