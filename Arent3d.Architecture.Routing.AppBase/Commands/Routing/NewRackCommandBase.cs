@@ -241,6 +241,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
             // save connectors of cable rack
             connectors.AddRange( instance.GetConnectors() ) ;
+            
+            racks.Add( instance );
           }
 
           transaction.Commit() ;
@@ -474,7 +476,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static void CreateNotation( Document doc, Application app, RackNotationStorable rackNotationStorable, IReadOnlyCollection<FamilyInstance> racks, string fromConnectorId, bool isDirectionX )
     {
       var count = racks.Count ;
-      var rack = racks.ElementAt( count / 2 ) ;
+      var rack = racks.OrderByDescending( x => x.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).AsDouble() ).FirstOrDefault() ;
       var bendRadiusRack = rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble() ;
       var notationModel = rackNotationStorable.RackNotationModelData.FirstOrDefault( n => n.FromConnectorId == fromConnectorId && n.IsDirectionX == isDirectionX && Math.Abs( n.RackWidth - Math.Round( bendRadiusRack, 4 ) ) == 0 ) ;
       if ( notationModel == null ) {
@@ -484,14 +486,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var lenghtRack = rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).AsDouble() / 2 ;
         var (x, y, z) = ( rack.Location as LocationPoint )!.Point ;
-        var firstPoint = isDirectionX ? new XYZ( rack.HandOrientation.X is 1.0 ? x + lenghtRack : x - lenghtRack, y + bendRadiusRack / 2, z ) : new XYZ( x + bendRadiusRack / 2, rack.HandOrientation.Y is 1.0 ? y + lenghtRack : y - lenghtRack, z ) ;
+        var firstPoint = isDirectionX ? new XYZ( rack.HandOrientation.X is 1.0 ? x + lenghtRack : x - lenghtRack, y + bendRadiusRack / 2, z ) : new XYZ( x - bendRadiusRack / 2, rack.HandOrientation.Y is 1.0 ? y + lenghtRack : y - lenghtRack, z ) ;
 
         if ( ! isDirectionX ) {
-          points.Add( new XYZ( firstPoint.X + dPlus * ( count > 1 ? 20 : 15 ), firstPoint.Y, firstPoint.Z ) ) ;
+          points.Add( new XYZ( firstPoint.X - dPlus * ( count > 1 ? 20 : 15 ), firstPoint.Y, firstPoint.Z ) ) ;
         }
         else {
-          points.Add( new XYZ( firstPoint.X, firstPoint.Y + dPlus * 6, firstPoint.Z ) ) ;
-          points.Add( new XYZ( firstPoint.X + dPlus * ( count > 1 ? 20 : 15 ), firstPoint.Y + dPlus * 6, firstPoint.Z ) ) ;
+          points.Add( new XYZ( firstPoint.X, firstPoint.Y + dPlus * 5, firstPoint.Z ) ) ;
+          points.Add( new XYZ( firstPoint.X + dPlus * ( count > 1 ? 20 : 15 ), firstPoint.Y + dPlus * 5, firstPoint.Z ) ) ;
         }
 
         foreach ( var nextP in points ) {
@@ -517,7 +519,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
         var notation = count > 1 ? Notation + " x " + racks.Count : Notation ;
-        var txtPosition = new XYZ( firstPoint.X - dPlus * ( count > 1 ? 16 : 12 ), firstPoint.Y + dPlus * 3, firstPoint.Z ) ;
+        var txtPosition = new XYZ( isDirectionX ? firstPoint.X - dPlus * ( count > 1 ? 16 : 12 ) : firstPoint.X , firstPoint.Y + dPlus * 3, firstPoint.Z ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, notation, opts ) ;
 
         foreach ( var item in racks ) {

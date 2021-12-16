@@ -57,7 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
 
             foreach ( var elbow in elbowsToCreate ) {
-              CreateElbow( uiDocument, elbow.Key, elbow.Value ) ;
+              CreateElbow( uiDocument, elbow.Key, elbow.Value, racks ) ;
             }
             
             //insert notation for racks
@@ -142,7 +142,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="uiDocument"></param>
     /// <param name="elementId"></param>
     /// <param name="connectors"></param>
-    private void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors )
+    private void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors, List<FamilyInstance> racks )
     {
       var document = uiDocument.Document ;
       using var transaction = new SubTransaction( document ) ;
@@ -192,6 +192,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
 
+        racks.Add( instance );
+        
         transaction.Commit() ;
       }
       catch {
