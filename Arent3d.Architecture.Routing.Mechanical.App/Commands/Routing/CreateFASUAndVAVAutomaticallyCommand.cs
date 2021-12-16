@@ -124,7 +124,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
       
       var furthestSpace = GetFurthestSpaceAndBranchNumberZero( pickedConnector, spaces.ToList() ) ;
-      
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         
@@ -135,7 +134,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue;
-          var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2,  space.Id == furthestSpace?.Id ? pickedConnector.Origin.Y : ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
+          var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, space.Id == furthestSpace?.Id ? pickedConnector.Origin.Y : ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
           
           var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
           if ( placeResult == null ) continue ;// Failed to place
