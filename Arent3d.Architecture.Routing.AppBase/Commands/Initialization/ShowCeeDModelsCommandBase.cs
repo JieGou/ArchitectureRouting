@@ -50,13 +50,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           TextNoteOptions opts = new(defaultTextTypeId) ;
           opts.HorizontalAlignment = HorizontalTextAlignment.Left ;
 
-          var txtPosition = new XYZ( originX - 2, originY + 2, heightOfConnector ) ;
+          var txtPosition = new XYZ( originX - 2, originY + 5, heightOfConnector ) ;
           var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeeDModel.SelectedDeviceSymbol, opts ) ;
 
           // create group of selected element and new text note
           ICollection<ElementId> groupIds = new List<ElementId>() ;
           groupIds.Add( element.Id ) ;
           groupIds.Add( textNote.Id ) ;
+          if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedDeviceSymbolType ) ) {
+            var txtTypePosition = new XYZ( originX - 2, originY + 3, heightOfConnector ) ;
+            var textTypeNote = TextNote.Create( doc, doc.ActiveView.Id, txtTypePosition, 0.1, dlgCeeDModel.SelectedDeviceSymbolType, opts ) ;
+            groupIds.Add( textTypeNote.Id ) ;
+          }
           doc.Create.NewGroup( groupIds ) ;
 
           return Result.Succeeded ;
