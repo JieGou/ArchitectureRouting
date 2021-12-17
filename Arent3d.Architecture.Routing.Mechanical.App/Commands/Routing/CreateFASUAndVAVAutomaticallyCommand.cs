@@ -135,7 +135,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           if ( boxOfSpace == null ) continue;
 
           XYZ? positionOfFASUAndVAV;
-          if ( space.Id == rootSpace?.Id ) {
+          if ( space == rootSpace ) {
             positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, pickedConnector.Origin.Y, 0 ) ;
           }
           else {
