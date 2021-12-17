@@ -364,11 +364,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static void CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
       Connector connectorOfVAV, ElementId levelId )
     {
-      var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
-        .WhereElementIsElementType().AsEnumerable().OfType<DuctType>() ;
-      var ductType = collector.LastOrDefault( e => e.Shape == ConnectorProfileType.Round ) ;
-      if ( ductType != null )
-        Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
+      var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ).WhereElementIsElementType().AsEnumerable().OfType<DuctType>() ;
+      var ductTypes = collector.Where( e => e.Shape == ConnectorProfileType.Round ) ;
+      if ( ductTypes.Any() ) {
+        var ductType = ductTypes.Any( e => e.PreferredJunctionType == JunctionType.Tee )
+          ? ductTypes.FirstOrDefault( e => e.PreferredJunctionType == JunctionType.Tee )
+          : ductTypes.FirstOrDefault() ;
+        Duct.Create( document, ductType?.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
+      }
     }
 
     private static bool RoundDuctTypeExists( Document document )
