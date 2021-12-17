@@ -282,20 +282,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var passPoints = new List<FamilyInstance>( passPointPositions.Count + 1 ) ;
       var footPassPoint = CreateFootPassPoint( routeName, powerConnector, passPointPositions[ 0 ], sensorDirection, bendingRadius, diameter * 0.5, levelId ) ;
+      footPassPoint!.SetProperty( PassPointParameter.RelatedConnectorId, sensorConnectors.Last().Id.IntegerValue.ToString() ) ;
+      footPassPoint!.SetProperty( PassPointParameter.RelatedFromConnectorId, powerConnector.Id.IntegerValue.ToString() ) ;
 
       var lastPos = footPassPoint?.GetTotalTransform().Origin ;
       var lastFamilyInstance = footPassPoint ;
+      var connectorIndex = 0 ;
       foreach ( var pos in passPointPositions ) {
+        var connectorId = sensorConnectors.ElementAt( connectorIndex ).Id.IntegerValue.ToString() ;
         if ( null != lastFamilyInstance && AreTooClose( lastPos!, pos, MEPSystemPipeSpec.MinimumShortCurveLength ) ) {
           // reuse last family instance
+          lastFamilyInstance.SetProperty( PassPointParameter.RelatedConnectorId, connectorId ) ;
+          lastFamilyInstance.SetProperty( PassPointParameter.RelatedFromConnectorId, powerConnector.Id.IntegerValue.ToString() ) ;
           passPoints.Add( lastFamilyInstance ) ;
         }
         else {
           // create new family instance
           lastPos = pos ;
-          lastFamilyInstance = document.AddPassPoint( routeName, pos, passPointDirection, diameter * 0.5, levelId ) ;
-          passPoints.Add( lastFamilyInstance ) ;
+          var newFamilyInstance = document.AddPassPoint( routeName, pos, passPointDirection, diameter * 0.5, levelId ) ;
+          newFamilyInstance.SetProperty( PassPointParameter.RelatedConnectorId, connectorId ) ;
+          newFamilyInstance.SetProperty( PassPointParameter.RelatedFromConnectorId, powerConnector.Id.IntegerValue.ToString() ) ;
+          passPoints.Add( newFamilyInstance ) ;
+          lastFamilyInstance = newFamilyInstance ;
         }
+
+        connectorIndex++ ;
       }
 
       return ( footPassPoint, passPoints ) ;

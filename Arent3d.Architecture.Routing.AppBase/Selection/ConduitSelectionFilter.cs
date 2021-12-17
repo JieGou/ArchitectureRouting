@@ -1,4 +1,4 @@
-﻿using System.Linq ;
+using System.Linq ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI.Selection ;

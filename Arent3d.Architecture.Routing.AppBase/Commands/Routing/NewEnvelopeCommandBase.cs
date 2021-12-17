@@ -72,8 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static Level? GetUpperLevel( Level refRevel )
     {
       var minElevation = refRevel.Elevation + refRevel.Document.Application.ShortCurveTolerance ;
-      return refRevel.Document.GetAllElements<Level>().Where( level => minElevation < level.Elevation )
-        .MinItemOrDefault( level => level.Elevation ) ;
+      return refRevel.Document.GetAllElements<Level>().Where( level => minElevation < level.Elevation ).MinBy( level => level.Elevation ) ;
     }
 
     private static void SetParameter( FamilyInstance instance, string parameterName, double value )

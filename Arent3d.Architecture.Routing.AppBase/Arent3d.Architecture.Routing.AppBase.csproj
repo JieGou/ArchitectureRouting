@@ -9,6 +9,7 @@
 
   <PropertyGroup>
     <OutputPath>bin\$(ConfigMode)\$(RevitVersion)\</OutputPath>
+    <RevitPath>C:\Program Files\Autodesk\Revit $(RevitVersion)\</RevitPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,21 +45,21 @@
     <Reference Include="Arent3d.Revit.UI, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
       <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Revit.UI.dll</HintPath>
     </Reference>
-    <Reference Include="CsvHelper, Version=19.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823">
+    <Reference Include="CsvHelper">
       <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\CsvHelper.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit $(RevitVersion)\RevitAPI.dll</HintPath>
+      <HintPath>$(RevitPath)RevitAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIUI">
-      <HintPath>C:\Program Files\Autodesk\Revit $(RevitVersion)\RevitAPIUI.dll</HintPath>
+      <HintPath>$(RevitPath)RevitAPIUI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AdWindows">
-      <HintPath>C:\Program Files\Autodesk\Revit $(RevitVersion)\AdWindows.dll</HintPath>
+      <HintPath>$(RevitPath)AdWindows.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="System.Windows.Forms" />

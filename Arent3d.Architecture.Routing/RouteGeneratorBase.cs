@@ -1,6 +1,7 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Threading ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
 
@@ -66,7 +67,9 @@ namespace Arent3d.Architecture.Routing
       } ) ;
 
       using ( var mainProgress = progressData?.Reserve( 0.9 ) ) {
-        mainProgress.ForEach( targetToIndex.Count, ApiForAutoRouting.Execute( StructureGraph, RoutingTargetGroups.SelectMany( group => group ), CollisionCheckTree ), item =>
+        var reporter = ( null == mainProgress ? new ProgressReporter() : new ProgressReporter( mainProgress ) ) ;
+        var token = mainProgress?.CancellationToken ?? CancellationToken.None ;
+        mainProgress.ForEach( targetToIndex.Count, ApiForAutoRouting.Execute( StructureGraph, RoutingTargetGroups.SelectMany( group => group ), CollisionCheckTree, reporter, token ), item =>
         {
           var (src, result) = item ;
           if ( src is not TAutoRoutingTarget srcTarget ) throw new InvalidOperationException() ;

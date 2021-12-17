@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         var result = document.Transaction( "TransactionName.Commands.Initialization.Initialize".GetAppStringByKeyOrDefault( "Setup Routing" ), _ =>
         {
-          return document.SetupRoutingFamiliesAndParameters() ? Result.Succeeded : Result.Failed ;
+          return Setup( document ) ? Result.Succeeded : Result.Failed ;
         } ) ;
 
         if ( Result.Failed == result ) {
@@ -32,6 +32,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
+    }
+
+    protected virtual bool Setup( Document document )
+    {
+      return document.SetupRoutingFamiliesAndParameters() ;
     }
   }
 }

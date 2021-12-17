@@ -23,15 +23,17 @@ namespace Arent3d.Architecture.Routing
     /// </summary>
     /// <param name="endPoint">Base end point.</param>
     /// <param name="isFrom">True if this end point represents a from-side end point.</param>
+    /// <param name="parent">An AutoRoutingEndPoint in the parent branch.</param>
     /// <param name="priority">Priority (can be duplicated between end points in an <see cref="AutoRoutingTarget"/>).</param>
     /// <param name="edgeDiameter">Edge diameter.</param>
     /// <param name="isDirect">Whether use direct routing or not.</param>
     /// <param name="routeCondition"></param>
-    public AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, int priority, double edgeDiameter, bool isDirect, MEPSystemRouteCondition routeCondition )
+    public AutoRoutingEndPoint( IEndPoint endPoint, bool isFrom, IAutoRoutingEndPoint? parent, int priority, double edgeDiameter, bool isDirect, MEPSystemRouteCondition routeCondition )
     {
       EndPoint = endPoint ;
       IsStart = isFrom ;
       Priority = priority ;
+      Parent = parent ;
       Depth = priority ;
       IsDirect = isDirect ;
 
@@ -41,6 +43,14 @@ namespace Arent3d.Architecture.Routing
 
       PipeCondition = routeCondition ;
     }
+
+    public bool IsParentOf( IAutoRoutingEndPoint ep )
+    {
+      var targetParent = ep.Parent is IPseudoEndPoint pseudoParent ? pseudoParent.Source : ep.Parent ;
+      return targetParent == this ;
+    }
+
+    public IAutoRoutingEndPoint? Parent { get ; }
 
     public Vector3d Position => EndPoint.RoutingStartPosition.To3dRaw() + _minimumStraightLength * Direction.ForEndPointType( IsStart ) ;
 
@@ -81,10 +91,10 @@ namespace Arent3d.Architecture.Routing
     /// <summary>
     /// Returns the priority. <see cref="Depth"/> is similar to <see cref="Priority"/>, but cannot be duplicated between end points in an <see cref="AutoRoutingTarget"/>.
     /// </summary>
-    public int Depth { get ; private set ; }
+    public int Depth { get ; }
 
     public bool AllowHorizontalBranches => true ;
-    public bool IsDirect { get ; private set ; }
+    public bool IsDirect { get ; }
     public bool AllowThroughBatteryLimit => false ;
 
     /// <summary>
@@ -96,99 +106,5 @@ namespace Arent3d.Architecture.Routing
     /// Not used now. Always returns null.
     /// </summary>
     public ILayerStack? LinkedRack => null ;
-
-    /// <summary>
-    /// Apply depths from priorities in an <see cref="AutoRoutingTarget"/>.
-    /// </summary>
-    /// <param name="fromList">From-side end points in an <see cref="AutoRoutingTarget"/>.</param>
-    /// <param name="toList">To-side end points in an <see cref="AutoRoutingTarget"/>.</param>
-    public static void ApplyDepths( IReadOnlyCollection<AutoRoutingEndPoint> fromList, IReadOnlyCollection<AutoRoutingEndPoint> toList )
-    {
-      if ( 0 == fromList.Count || 0 == toList.Count ) return ;
-
-      if ( 1 == fromList.Count && 1 == toList.Count ) {
-        // Can ignore priority.
-        fromList.First().Depth = 0 ;
-        toList.First().Depth = 0 ;
-        return ;
-      }
-
-      var fromPriorities = ByPriority( fromList ) ;
-      var toPriorities = ByPriority( toList ) ;
-      
-      {
-        // If from-list or to-list has two `Priority = 0' end points, make certain each list to have only one `Priority = 0' end point.
-        var (fromFirstPriority, fromFirstPriorityList) = fromPriorities.First() ;
-        var (toFirstPriority, toFirstPriorityList) = toPriorities.First() ;
-        if ( 1 < fromFirstPriorityList.Count ) {
-          // first element is before others.
-          var firstEp = fromFirstPriorityList[ 0 ] ;
-          fromPriorities.Add( Math.Min( fromFirstPriority, toFirstPriority ) - 1, new List<AutoRoutingEndPoint> { firstEp } ) ;
-          fromFirstPriorityList.RemoveAt( 0 ) ;
-        }
-
-        if ( 1 < toFirstPriorityList.Count ) {
-          // first element is before others.
-          var firstEp = toFirstPriorityList[ 0 ] ;
-          toPriorities.Add( Math.Min( fromFirstPriority, toFirstPriority ) - 1, new List<AutoRoutingEndPoint> { firstEp } ) ;
-          toFirstPriorityList.RemoveAt( 0 ) ;
-        }
-      }
-
-      {
-        // If the priority first end point is different from from-list and to-list, make same.
-        var (fromFirstPriority, fromFirstPriorityList) = fromPriorities.First() ;
-        var (toFirstPriority, toFirstPriorityList) = toPriorities.First() ;
-        if ( fromFirstPriority < toFirstPriority ) {
-          toPriorities.RemoveAt( 0 ) ;
-          toPriorities.Add( fromFirstPriority, toFirstPriorityList ) ;
-        }
-        else if ( fromFirstPriority > toFirstPriority ) {
-          toPriorities.RemoveAt( 0 ) ;
-          toPriorities.Add( toFirstPriority, fromFirstPriorityList ) ;
-        }
-      }
-
-      // Reorder by priority
-      CombineLists( fromPriorities, toPriorities ).ForEach( ( endPoints, i ) => endPoints.ForEach( ep => ep.Depth = i ) ) ;
-    }
-
-    private static SortedList<int, List<AutoRoutingEndPoint>> ByPriority( IEnumerable<AutoRoutingEndPoint> list )
-    {
-      var result = new SortedList<int, List<AutoRoutingEndPoint>>() ;
-
-      foreach ( var ep in list ) {
-        if ( false == result.TryGetValue( ep.Priority, out var listInPriority ) ) {
-          listInPriority = new List<AutoRoutingEndPoint>() ;
-          result.Add( ep.Priority, listInPriority ) ;
-        }
-        listInPriority.Add( ep ) ;
-      }
-
-      return result ;
-    }
-
-    private static IEnumerable<IEnumerable<AutoRoutingEndPoint>> CombineLists( SortedList<int, List<AutoRoutingEndPoint>> list1, SortedList<int, List<AutoRoutingEndPoint>> list2 )
-    {
-      using var enu1 = list1.GetEnumerator() ;
-      using var enu2 = list2.GetEnumerator() ;
-
-      bool hasValue1 = enu1.MoveNext(), hasValue2 = enu2.MoveNext() ;
-      while ( hasValue1 || hasValue2 ) {
-        if ( ! hasValue2 || ( hasValue1 && ( enu1.Current.Key < enu2.Current.Key ) ) ) {
-          yield return enu1.Current.Value ;
-          hasValue1 = enu1.MoveNext() ;
-        }
-        else if ( ! hasValue1 || ( hasValue2 && ( enu2.Current.Key < enu1.Current.Key ) ) ) {
-          yield return enu2.Current.Value ;
-          hasValue2 = enu2.MoveNext() ;
-        }
-        else {
-          yield return enu1.Current.Value.Concat( enu2.Current.Value ) ;
-          hasValue1 = enu1.MoveNext() ;
-          hasValue2 = enu2.MoveNext() ;
-        }
-      }
-    }
   }
 }

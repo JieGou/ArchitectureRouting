@@ -130,6 +130,15 @@
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>読み込みdb保存</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
+        <string>拾い</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpReportCommand</key>
+        <string>拾い書出力</string>
+
+        <key>Electrical.App.Commands.Initialization.CreateDetailSymbolCommand</key>
+        <string>明細記号作成</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
@@ -269,6 +278,21 @@
 
         <key>Dialog.Electrical.Shaft.List.None</key>
         <string>(使用しない)</string>
+
+        <key>Dialog.Electrical.SelectElement.Message</key>
+        <string>範囲選択してください。</string>
+
+        <key>Dialog.Electrical.SelectElement.Title</key>
+        <string>メッセージ</string>
+
+        <key>Dialog.Electrical.SetElementProperty.Success</key>
+        <string>成功しました</string>
+
+        <key>Dialog.Electrical.SetElementProperty.Failure</key>
+        <string>失敗しました</string>
+
+        <key>Dialog.Electrical.SetElementProperty.Title</key>
+        <string>工事項目付加結果</string>
 
 
         <!-- Parameter Names -->

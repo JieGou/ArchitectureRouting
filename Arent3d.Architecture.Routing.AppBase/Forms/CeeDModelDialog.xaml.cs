@@ -160,6 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           List<string> modelNumbers = new List<string>() ;
           string generalDisplayDeviceSymbols = string.Empty ;
           string floorPlanSymbol = string.Empty ;
+          string ceeDName = string.Empty ;
 
           var record = workSheet.GetRow( i ).GetCell( 3 ) ;
           if ( record == null || record.CellStyle.IsHidden ) continue ;
@@ -190,6 +191,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             var generalDisplayDeviceSymbol = GetCellValue( generalDisplayDeviceSymbolCell ) ;
             if ( ! string.IsNullOrEmpty( generalDisplayDeviceSymbol ) && ! generalDisplayDeviceSymbol.Contains( "．" ) ) generalDisplayDeviceSymbols = generalDisplayDeviceSymbol ;
 
+            var ceeDNameCell = workSheet.GetRow( j ).GetCell( 3 ) ;
+            var modelName = GetCellValue( ceeDNameCell ) ;
+            if ( ! string.IsNullOrEmpty( modelName ) ) ceeDName = modelName ;
+            
             var modelNumberCell = workSheet.GetRow( j ).GetCell( 4 ) ;
             var modelNumber = GetCellValue( modelNumberCell ) ;
             if ( ! string.IsNullOrEmpty( modelNumber ) ) modelNumbers.Add( modelNumber ) ;
@@ -201,13 +206,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
           var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
           if ( ! ceeDModelNumbers.Any() ) {
-            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol ) ;
+            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
             ceedModelData.Add( ceeDModel ) ;
           }
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
-              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol ) ;
+              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
               ceedModelData.Add( ceeDModel ) ;
             }
           }

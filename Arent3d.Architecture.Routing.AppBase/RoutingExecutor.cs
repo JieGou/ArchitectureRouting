@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.Exceptions ;
@@ -73,7 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     /// <param name="fromToList">Routing from-to records.</param>
     /// <param name="progressData">Progress bar.</param>
     /// <returns>Result of execution.</returns>
-    public RoutingExecutionResult Run( IReadOnlyCollection<(string RouteName, RouteSegment Segment)> fromToList, IProgressData? progressData = null )
+    public OperationResult<IReadOnlyCollection<Route>> Run( IReadOnlyCollection<(string RouteName, RouteSegment Segment)> fromToList, IProgressData? progressData = null )
     {
       try {
         IReadOnlyCollection<Route> routes ;
@@ -87,10 +88,10 @@ namespace Arent3d.Architecture.Routing.AppBase
           ExecuteRouting( domain, routesOfDomain, p ) ;
         }
 
-        return RoutingExecutionResult.GetSuccess( routes ) ;
+        return new OperationResult<IReadOnlyCollection<Route>>( routes ) ;
       }
       catch ( OperationCanceledException ) {
-        return RoutingExecutionResult.Cancel ;
+        return OperationResult<IReadOnlyCollection<Route>>.Cancelled ;
       }
     }
 
@@ -184,11 +185,11 @@ namespace Arent3d.Architecture.Routing.AppBase
           result.Add( route ) ;
         }
 
-        if ( segment.FromEndPoint.ParentBranch().Route is { } fromParent ) {
+        if ( segment.FromEndPoint.ParentRoute() is { } fromParent ) {
           parents.UnionWith( fromParent.GetAllRelatedBranches() ) ;
         }
 
-        if ( segment.ToEndPoint.ParentBranch().Route is { } toParent ) {
+        if ( segment.ToEndPoint.ParentRoute() is { } toParent ) {
           parents.UnionWith( toParent.GetAllRelatedBranches() ) ;
         }
 

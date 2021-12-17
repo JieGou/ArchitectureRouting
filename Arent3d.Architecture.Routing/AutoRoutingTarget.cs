@@ -45,13 +45,56 @@ namespace Arent3d.Architecture.Routing
       Domain = Routes.Select( route => route.Domain ).First() ;
 
       var depths = GetDepths( subRoutes ) ;
+      var ep2SubRoute = new Dictionary<AutoRoutingEndPoint, SubRoute>() ;
+      var fromEndPoints = new List<AutoRoutingEndPoint>() ;
+      var toEndPoints = new List<AutoRoutingEndPoint>() ;
+      var subRoute2ToEndPoint = new Dictionary<SubRoute, AutoRoutingEndPoint>() ;
 
-      var dic = new Dictionary<AutoRoutingEndPoint, SubRoute>() ;
-      _fromEndPoints = GenerateEndPointList( subRoutes, subRoute => GetFromEndPoints( subRoute, depths[ subRoute ], routeConditionDictionary[ new SubRouteInfo( subRoute ) ] ), dic ) ;
-      _toEndPoints = GenerateEndPointList( subRoutes, subRoute => GetToEndPoints( subRoute, depths[ subRoute ], routeConditionDictionary[ new SubRouteInfo( subRoute ) ] ), dic ) ;
-      _ep2SubRoute = dic ;
+      foreach ( var subRoute in subRoutes.OrderBy( s => depths[ s ] ) ) {
+        var depth = depths[ subRoute ] ;
+        var diameter = subRoute.GetDiameter() ;
+        var isDirect = ( false == subRoute.IsRoutingOnPipeSpace ) ;
+        var routeCondition = routeConditionDictionary[ new SubRouteInfo( subRoute ) ] ;
 
-      AutoRoutingEndPoint.ApplyDepths( _fromEndPoints, _toEndPoints ) ;
+        var routeEndPoints = subRoute.AllEndPoints.OfType<RouteEndPoint>().ToList() ;
+        if ( 2 <= routeEndPoints.Count ) {
+          throw new InvalidOperationException( "RouteEndPoint must be one or less in an AutoRoutingTarget." ) ;
+        }
+
+        AutoRoutingEndPoint? parent ;
+        if ( 1 == routeEndPoints.Count ) {
+          var parentSubRoute = routeEndPoints[ 0 ].ParentSubRoute() ;
+          if ( null == parentSubRoute || false == subRoute2ToEndPoint.TryGetValue( parentSubRoute, out var ep ) ) {
+            throw new InvalidOperationException( "RouteEndPoint's parent is not contained in its owner AutoRoutingTarget." ) ;
+          }
+          parent = ep ;
+        }
+        else {
+          parent = null ;
+        }
+
+        foreach ( var (endPoints, isFrom) in new[] { ( subRoute.FromEndPoints, true ), ( subRoute.ToEndPoints, false ) } ) {
+          foreach ( var endPoint in endPoints.Where( ep => ep is not RouteEndPoint ) ) {
+            var ep = new AutoRoutingEndPoint( endPoint, isFrom, parent, depth, diameter, isDirect, routeCondition ) ;
+            ep2SubRoute.Add( ep, subRoute ) ;
+            if ( isFrom ) {
+              fromEndPoints.Add( ep ) ;
+            }
+            else {
+              toEndPoints.Add( ep ) ;
+            }
+
+            if ( isFrom && null == parent ) continue ;
+            if ( subRoute2ToEndPoint.ContainsKey( subRoute ) ) continue ;
+
+            subRoute2ToEndPoint.Add( subRoute, ep ) ;
+          }
+        }
+      }
+
+      _fromEndPoints = fromEndPoints ;
+      _toEndPoints = toEndPoints ;
+      _ep2SubRoute = ep2SubRoute ;
 
       var firstSubRoute = subRoutes.First() ;
       LineId = $"{firstSubRoute.Route.RouteName}@{firstSubRoute.SubRouteIndex}" ;
@@ -69,14 +112,12 @@ namespace Arent3d.Architecture.Routing
       _toEndPoints = new[] { toEndPoint } ;
       _ep2SubRoute = new Dictionary<AutoRoutingEndPoint, SubRoute> { { fromEndPoint, subRoute }, { toEndPoint, subRoute } } ;
 
-      AutoRoutingEndPoint.ApplyDepths( _fromEndPoints, _toEndPoints ) ;
-
       LineId = $"{subRoute.Route.RouteName}@{subRoute.SubRouteIndex}" ;
 
       Condition = new AutoRoutingCondition( document, subRoute, priority, forcedFixedHeight ) ;
     }
 
-    private static Dictionary<SubRoute, int> GetDepths( IReadOnlyCollection<SubRoute> subRoutes )
+    private static IReadOnlyDictionary<SubRoute, int> GetDepths( IReadOnlyCollection<SubRoute> subRoutes )
     {
       var parentInfo = CollectSubRouteParents( subRoutes ) ;
 
@@ -108,26 +149,12 @@ namespace Arent3d.Architecture.Routing
       return result ;
     }
 
-    private static IReadOnlyCollection<AutoRoutingEndPoint> GenerateEndPointList( IEnumerable<SubRoute> subRoutes, Func<SubRoute, IEnumerable<AutoRoutingEndPoint>> generator, Dictionary<AutoRoutingEndPoint, SubRoute> dic )
-    {
-      var list = new List<AutoRoutingEndPoint>() ;
-
-      foreach ( var subRoute in subRoutes ) {
-        foreach ( var ep in generator( subRoute ) ) {
-          list.Add( ep ) ;
-          dic.Add( ep, subRoute ) ;
-        }
-      }
-
-      return list ;
-    }
-
     private static Dictionary<SubRoute, List<SubRoute>> CollectSubRouteParents( IReadOnlyCollection<SubRoute> subRoutes )
     {
       var subRouteAndParents = subRoutes.ToDictionary( r => r, r => new List<SubRoute>() ) ;
 
       foreach ( var subRoute in subRoutes ) {
-        foreach ( var parent in subRoute.AllEndPoints.Select( ep => ep.ParentBranch().SubRoute ).NonNull() ) {
+        foreach ( var parent in subRoute.AllEndPoints.Select( ep => ep.ParentSubRoute() ).NonNull() ) {
           if ( false == subRouteAndParents.TryGetValue( subRoute, out var list ) ) continue ; // not contained.
 
           list.Add( parent ) ;
@@ -135,23 +162,6 @@ namespace Arent3d.Architecture.Routing
       }
 
       return subRouteAndParents ;
-    }
-
-    private static IEnumerable<AutoRoutingEndPoint> GetFromEndPoints( SubRoute subRoute, int depth, MEPSystemRouteCondition routeCondition )
-    {
-      var endPoints = subRoute.FromEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, true, depth, subRoute.GetDiameter(), ( false == subRoute.IsRoutingOnPipeSpace ), routeCondition ) ) ;
-    }
-
-    private static IEnumerable<AutoRoutingEndPoint> GetToEndPoints( SubRoute subRoute, int depth, MEPSystemRouteCondition routeCondition )
-    {
-      var endPoints = subRoute.ToEndPoints.Where( IsRoutingTargetEnd ) ;
-      return endPoints.Select( ep => new AutoRoutingEndPoint( ep, false, depth, subRoute.GetDiameter(), ( false == subRoute.IsRoutingOnPipeSpace ), routeCondition ) ) ;
-    }
-
-    private static bool IsRoutingTargetEnd( IEndPoint ep )
-    {
-      return ( ep is not RouteEndPoint ) ;
     }
 
     public IAutoRoutingSpatialConstraints? CreateConstraints()

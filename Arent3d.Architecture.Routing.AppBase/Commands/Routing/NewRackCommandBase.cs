@@ -274,9 +274,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // set cable rack length
       if ( cableRackWidth > 0 )
         SetParameter( instance, "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ), cableRackWidth.MillimetersToRevitUnits() ) ;
-      
+
       // set cable rack comments
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
+
+      // set To-Side Connector Id
+      var (fromConnectorId, toConnectorId) = GetFromConnectorIdAndToConnectorId( conduit ) ;
+      if ( ! string.IsNullOrEmpty( toConnectorId ) )
+        SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
+      if ( ! string.IsNullOrEmpty( fromConnectorId ) )
+        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), toConnectorId ) ;
 
       // set cable tray direction
       if ( 1.0 == line.Direction.Y ) {
@@ -330,6 +337,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // set cable rack comments
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableTrayDefaultBendRadius == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
+      // set To-Side Connector Id
+      var (fromConnectorId, toConnectorId) = GetFromConnectorIdAndToConnectorId( conduit ) ;
+      if ( ! string.IsNullOrEmpty( toConnectorId ) )
+        SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
+      if ( ! string.IsNullOrEmpty( fromConnectorId ) )
+        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), toConnectorId ) ;
+
       // set cable tray fitting direction
       if ( 1.0 == conduit.FacingOrientation.X ) {
         instance.Location.Rotate( Line.CreateBound( new XYZ( location.Point.X, location.Point.Y, location.Point.Z ), new XYZ( location.Point.X, location.Point.Y, location.Point.Z - 1 ) ), Math.PI / 2 ) ;
@@ -346,7 +360,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return instance ;
     }
-    
+
     public static bool IsSameConnectors( IEnumerable<Connector> connectors, IEnumerable<Connector> otherConnectors )
     {
       var isSameConnectors = true ;
@@ -357,6 +371,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return isSameConnectors ;
+    }
+
+    public static ( string, string ) GetFromConnectorIdAndToConnectorId( Element conduit )
+    {
+      var fromEndPoint = conduit.GetNearestEndPoints( true ) ;
+      var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;
+      var fromConnectorId = fromEndPointKey!.GetElementId() ;
+
+      var toEndPoint = conduit.GetNearestEndPoints( false ) ;
+      var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
+      var toConnectorId = toEndPointKey!.GetElementId() ;
+
+      return ( fromConnectorId, toConnectorId ) ;
     }
   }
 }

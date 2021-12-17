@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   {
     protected override string GetTransactionName() => "TransactionName.Commands.Routing.RackSpace".GetAppStringByKeyOrDefault(" ") ;
 
-    protected override OperationResult<RackSpacePickRange> OperateUI( ExternalCommandData commandData, ref string message, ElementSet elements )
+    protected override OperationResult<RackSpacePickRange> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       var uiApp = commandData.Application ;
       var uiDocument = uiApp.ActiveUIDocument ;
@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return new RackSpacePickRange( firstPoint, secondPoint ) ;
     }
 
-    protected override Result Execute( Document document, TransactionWrapper transaction, RackSpacePickRange range )
+    protected override ExecutionResult Execute( Document document, TransactionWrapper transaction, RackSpacePickRange range )
     {
       var (x1, y1, z1) = range.Point1 ;
       var (x2, y2, _) = range.Point2 ;
@@ -78,7 +78,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         SetSize( familyInstance, xWidth, yWidth, zWidth ) ;
       }
 
-      return Result.Succeeded ;
+      return ExecutionResult.Succeeded ;
     }
 
     private static void SetSize( FamilyInstance familyInstance, double xWidth, double yWidth, double zWidth )

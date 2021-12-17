@@ -130,6 +130,15 @@
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>Load&#xA;Save To DB</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowPickUpInformationCommand</key>
+        <string>Pick Up</string>
+
+        <key>Electrical.App.Commands.Initialization.PickUpReportCommand</key>
+        <string>Pick Up&#xA;Output</string>
+
+        <key>Electrical.App.Commands.Initialization.CreateDetailSymbolCommand</key>
+        <string>Create&#xA;Detail Symbol</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
@@ -279,6 +288,20 @@
         <key>Dialog.Electrical.Shaft.List.None</key>
         <string>(None)</string>
 
+        <key>Dialog.Electrical.SelectElement.Message</key>
+        <string>Please select a range.</string>
+
+        <key>Dialog.Electrical.SelectElement.Title</key>
+        <string>Message</string>
+
+        <key>Dialog.Electrical.SetElementProperty.Success</key>
+        <string>Success</string>
+
+        <key>Dialog.Electrical.SetElementProperty.Failure</key>
+        <string>Failed</string>
+
+        <key>Dialog.Electrical.SetElementProperty.Title</key>
+        <string>Construction item addition result</string>
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

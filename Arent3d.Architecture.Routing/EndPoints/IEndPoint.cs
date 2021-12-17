@@ -78,8 +78,13 @@ namespace Arent3d.Architecture.Routing.EndPoints
     /// <summary>
     /// Gets a parent route when the end point is dependent to it.
     /// </summary>
-    /// <returns>Route and SubRoute which this end point is connecting.</returns>
-    (Route? Route, SubRoute? SubRoute) ParentBranch() ;
+    /// <returns>Route which this end point is connecting.</returns>
+    Route? ParentRoute() ;
+    /// <summary>
+    /// Gets a parent sub-route when the end point is dependent to it.
+    /// </summary>
+    /// <returns>SubRoute which this end point is connecting.</returns>
+    SubRoute? ParentSubRoute() ;
 
     /// <summary>
     /// Generate an element if needed.
