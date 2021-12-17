@@ -58,11 +58,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         // delete notation
         var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.Id.IntegerValue.ToString() == rackNotationModel.NotationId ).Select( t => t.Id ).FirstOrDefault() ;
         if ( notationId != null ) document.Delete( notationId ) ;
-        foreach ( var lineId in rackNotationModel.LineIds.Split( ',' ) ) {
-          var id = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.Id.IntegerValue.ToString() == lineId ).Select( e => e.Id ).FirstOrDefault() ;
-          if ( id != null ) document.Delete( id ) ;
-        }
-
         rackNotationModels.Add( rackNotationModel ) ;
       }
 
