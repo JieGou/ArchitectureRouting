@@ -89,13 +89,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var newRouteSegments = EditSubRouteIndex( document, segments.ToList(), mainRouteName, rootConnector ) ;
 
       // Edit diameter for grand child route
-      // newRouteSegments = EditGrandChildDiameter( document, newRouteSegments.ToList(), spaces.ToList() ) ;
+      newRouteSegments = EditGrandChildDiameter( document, newRouteSegments.ToList(), spaces.ToList() ) ;
 
       // Add pass point into selected route
-      var passPointOnRoutes = AddPassPoint( document, newRouteSegments, startPosition, mainRouteName, spaces.ToList() ) ;
+      var sortedPassPointOnRoutes = AddPassPoint( document, newRouteSegments, rootConnector, mainRouteName ) ;
 
       // Get list of new segments
-      newRouteSegments = GetListOfNewSegments( document, segments, newRouteSegments, spaces.ToList(), passPointOnRoutes, startPosition ) ;
+      newRouteSegments = GetListOfNewSegments( document, segments, newRouteSegments, spaces.ToList(), sortedPassPointOnRoutes, startPosition ) ;
 
       return newRouteSegments ;
     }
@@ -126,7 +126,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       var isNear = false ;
       // それ以下パスポイントを追加しません。
-      double minDistance = 1000 ;
+      double minDistance = 100 ;
 
       foreach ( var (_, passPointEndPoints) in passPointOnRoutes ) {
         foreach ( var passPointEndPoint in passPointEndPoints ) {
@@ -162,10 +162,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return newRouteSegments ;
     }
 
-    private static Dictionary<string, List<PassPointEndPoint>> AddPassPoint( Document document, List<(string RouteName, RouteSegment Segment)> newRouteSegments, XYZ startPosition, string mainRouteName, List<Element> spaces )
+    private static Dictionary<string, List<PassPointEndPoint>> AddPassPoint( Document document, List<(string RouteName, RouteSegment Segment)> newRouteSegments, IConnector rootConnector, string mainRouteName )
     {
       var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
       var teesOnSelectedRoute = RemoveTeeOutsideOfSegments( tees.ToList(), newRouteSegments ) ;
+      var startPosition = rootConnector.Origin ;
       Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes = new() ;
       foreach ( var tee in teesOnSelectedRoute ) {
         var behindTeeConnector = tee.GetConnectors().Where( conn => conn.Id == (int) TeeConnectorType.Connector1 || conn.Id == (int) TeeConnectorType.Connector2 ).MaxItemOrDefault( conn => ( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ) ;
@@ -189,7 +190,22 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      return passPointOnRoutes ;
+      Dictionary<string, List<PassPointEndPoint>> sortedPassPointOnRoutes = new() ;
+      foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
+        if ( routeName == mainRouteName ) {
+          passPoints.Sort( ( a, b ) => ComparePasPointBasisZ( rootConnector, a, b, false ) ) ;
+        }
+        else {
+          passPoints.Sort( ( a, b ) => ComparePasPointBasisZ( rootConnector, a, b, true ) ) ;
+        }
+
+        // use blow line for test
+        passPoints.Sort( ( a, b ) => CompareDistance( startPosition, a, b ) ) ;
+
+        sortedPassPointOnRoutes.Add( routeName, passPoints ) ;
+      }
+
+      return sortedPassPointOnRoutes ;
     }
 
     private static Dictionary<string, List<double>> GetAllPassPointDiameter( Document document, Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes, XYZ startPosition, IReadOnlyCollection<Element> spaces )
@@ -220,19 +236,30 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return passPointDiameters ;
     }
 
-    private static List<(string RouteName, RouteSegment Segment)> GetListOfNewSegments( Document document, IReadOnlyCollection<(string RouteName, RouteSegment Segment)> segments, List<(string, RouteSegment)> newRouteSegments, IReadOnlyCollection<Element> spaces, Dictionary<string, List<PassPointEndPoint>> passPointOnRoutes, XYZ startPosition )
+    private static List<(string RouteName, RouteSegment Segment)> GetListOfNewSegments( Document document, IReadOnlyCollection<(string RouteName, RouteSegment Segment)> segments, List<(string, RouteSegment)> newRouteSegments, IReadOnlyCollection<Element> spaces, Dictionary<string, List<PassPointEndPoint>> sortedPassPointOnRoutes, XYZ startPosition )
     {
-      var passPointDiameters = GetAllPassPointDiameter( document, passPointOnRoutes, startPosition, spaces ) ;
-      foreach ( var (routeName, passPoints) in passPointOnRoutes ) {
+      // Get pass point link with diameter
+      var passPointDiameters = GetAllPassPointDiameter( document, sortedPassPointOnRoutes, startPosition, spaces ) ;
+      var passPointIncludeDiameters = new Dictionary<IEndPoint, double>() ;
+      foreach ( var (routeName, passPointEndPoints) in sortedPassPointOnRoutes ) {
+        passPointDiameters[ routeName ].Reverse() ;
+        var index = 0 ;
+        foreach ( var passPointEndPoint in passPointEndPoints ) {
+          passPointIncludeDiameters.Add( passPointEndPoint, passPointDiameters[ routeName ][ index++ ] ) ;
+        }
+      }
+
+      // Get list of new segments
+      foreach ( var (routeName, passPoints) in sortedPassPointOnRoutes ) {
+        if ( passPoints.Count < 1 ) continue ;
         var segment = segments.FirstOrDefault( segment => segment.RouteName == routeName ).Segment ;
         if ( segment == null ) continue ;
-        var ductDiameter = segment.PreferredNominalDiameter ;
+        double? ductDiameter = null ;
         var space = GetSpaceFromVavConnector( document, segment.ToEndPoint.GetReferenceConnector()!, spaces ) as Space ;
         var spaceSpecifiedSupplyAirflow = space is null ? 0 : UnitUtils.ConvertFromInternalUnits( space.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
 
         newRouteSegments = RemoveSegmentByRouteName( routeName, newRouteSegments ).ToList() ;
         if ( passPoints.Count() > 1 ) {
-          passPoints.Sort( ( a, b ) => CompareDistance( startPosition, a, b ) ) ;
           var secondFromEndPoints = passPoints.ToList() ;
           var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( segment.ToEndPoint ) ;
           var firstToEndPoint = secondFromEndPoints[ 0 ] ;
@@ -240,9 +267,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           newRouteSegments.Add( ( routeName, new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, firstToEndPoint, segment.PreferredNominalDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ) ) ;
           newRouteSegments.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
           {
-            if ( t == segment.ToEndPoint ) {
-              ductDiameter = ConvertAirflowToDiameter( spaceSpecifiedSupplyAirflow ).MillimetersToRevitUnits() ;
-            }
+            ductDiameter = t == segment.ToEndPoint ? ConvertAirflowToDiameter( spaceSpecifiedSupplyAirflow ).MillimetersToRevitUnits() : passPointIncludeDiameters[ f ] ;
 
             var newSegment = new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, f, t, ductDiameter, false, segment.FromFixedHeight, segment.FromFixedHeight, segment.AvoidType, ElementId.InvalidElementId ) ;
             return ( routeName, newSegment ) ;
@@ -258,6 +283,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return newRouteSegments ;
+    }
+
+    private static int CompareDistance( XYZ startPosition, PassPointEndPoint a, PassPointEndPoint b )
+    {
+      if ( a.GetPassPoint()!.Location is not LocationPoint aPos || b.GetPassPoint()!.Location is not LocationPoint bPos ) return default ;
+
+      return Vector2d.Distance( aPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ).CompareTo( Vector2d.Distance( bPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ;
     }
 
     /// <summary>
@@ -346,11 +378,21 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Vector2d.Distance( b.FirstFromConnector()!.GetConnector()!.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ).CompareTo( Vector2d.Distance( a.FirstFromConnector()!.GetConnector()!.Origin.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ;
     }
 
-    private static int CompareDistance( XYZ startPosition, PassPointEndPoint a, PassPointEndPoint b )
+    private static int ComparePasPointBasisZ( IConnector rootConnector, PassPointEndPoint a, PassPointEndPoint b, bool isRotate90 )
     {
       if ( a.GetPassPoint()!.Location is not LocationPoint aPos || b.GetPassPoint()!.Location is not LocationPoint bPos ) return default ;
 
-      return Vector2d.Distance( aPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ).CompareTo( Vector2d.Distance( bPos.Point.To3dPoint().To2d(), startPosition.To3dPoint().To2d() ) ) ;
+      return DistancePassPointFromRoot( rootConnector, aPos.Point, isRotate90 ).CompareTo( DistancePassPointFromRoot( rootConnector, bPos.Point, isRotate90 ) ) ;
+    }
+
+    private static double DistancePassPointFromRoot( IConnector rootConnector, XYZ targetPosition, bool isRotate90 )
+    {
+      var rootConnectorBasisZ = rootConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
+      var calculateDir = isRotate90 ? new Vector2d( -rootConnectorBasisZ.y, rootConnectorBasisZ.x ) : rootConnectorBasisZ ;
+      var rootToVavVector = targetPosition.To3dPoint().To2d() - rootConnector.Origin.To3dPoint().To2d() ;
+      var angle = GetAngleBetweenVector( calculateDir, rootToVavVector ) ;
+
+      return Math.Abs( Math.Cos( angle ) * rootToVavVector.magnitude ) ;
     }
 
     private static IEnumerable<FamilyInstance> RemoveTeeOutsideOfSegments( IEnumerable<FamilyInstance> tees, List<(string, RouteSegment)> segments )
