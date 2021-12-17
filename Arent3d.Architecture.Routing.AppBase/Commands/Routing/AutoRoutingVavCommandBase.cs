@@ -236,6 +236,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // Branch routes
       foreach ( var vav in parentVavs.Take( parentVavs.Count - 1 ) ) {
+        // メインダクト - VAV
         var childDiameter = parentVavs.Last().LookupParameter( "ダクト径" ).AsDouble() ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
@@ -245,6 +246,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       foreach ( var (_, childVav) in childVavs ) {
+        // サブメインダクト
         var childDiameter = childVav.Last().LookupParameter( "ダクト径" ).AsDouble() * 2 ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
@@ -252,6 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, sensorFixedHeight, null, avoidType, ElementId.InvalidElementId ) ;
         result.Add( ( subRouteName, segment ) ) ;
         foreach ( var vav in childVav.Take( childVav.Count - 1 ) ) {
+          // サブメインダクト - VAV
           childDiameter = vav.LookupParameter( "ダクト径" ).AsDouble() ;
           var subChildRouteName = nameBase + "_" + ( ++nextIndex ) ;
           var branchChildEndPoint = new RouteEndPoint( document, subRouteName, DefaultSubRouteIndex ) ;
