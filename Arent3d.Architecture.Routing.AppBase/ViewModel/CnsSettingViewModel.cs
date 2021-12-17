@@ -149,6 +149,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var item = CnsSettingModels.ElementAt( seletectedIndex ) ;
         ApplyToSymbolsText = item.CategoryName ;
         cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Connector ;
+        cnsStorables.CnsSettingData = CnsSettingModels ;
       }
     }
 

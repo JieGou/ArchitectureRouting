@@ -57,17 +57,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var conduitList = selectedElements.ToList() ;
                 if ( ! conduitList.Any() ) {
                   message = "No Conduits are selected." ;
-                  return Result.Cancelled ;
+                  break ;
                 }
 
-                // set value to "Construction Item" property
-                var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
-                using Transaction transaction = new Transaction( document ) ;
-                transaction.Start( "Set conduits property" ) ;
+                  // set value to "Construction Item" property
+                  var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
+                  using Transaction transaction = new Transaction( document ) ;
+                  transaction.Start( "Set conduits property" ) ;
 
-                SetConstructionItemForElements( conduitList.ToList(), categoryName ) ;
+                  SetConstructionItemForElements( conduitList.ToList(), categoryName ) ;
 
-                transaction.Commit() ;
+                  transaction.Commit() ;
 
                 break ;
               }
@@ -81,9 +81,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var categoryName = viewModel.ApplyToSymbolsText ;
                 if ( ! connectorList.Any() ) {
                   message = "No Connectors are selected." ;
-                  return Result.Cancelled ;
+                  break ;
                 }
-
+               
                 using Transaction transaction = new Transaction( document ) ;
                 transaction.Start( "Ungroup members and set connectors property" ) ;
 
@@ -112,15 +112,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               }
             }
 
-            MessageBox.Show( "Dialog.Electrical.SetElementProperty.Success".GetAppStringByKeyOrDefault( "Success" ),
-              "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault(
-                "Construction item addition result" ), MessageBoxButtons.OK ) ;
+            if ( string.IsNullOrEmpty( message ) ) {
+              MessageBox.Show( "Dialog.Electrical.SetElementProperty.Success".GetAppStringByKeyOrDefault( "Success" ), "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault( "Construction item addition result" ), MessageBoxButtons.OK ) ;
+            }
+            else {
+              MessageBox.Show( message, "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault( "Construction item addition result" ), MessageBoxButtons.OK ) ;
+            }
           }
           catch {
             MessageBox.Show( "Dialog.Electrical.SetElementProperty.Failure".GetAppStringByKeyOrDefault( "Failed" ),
               "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault(
                 "Construction item addition result" ), MessageBoxButtons.OK ) ;
-            return Result.Cancelled ;
           }
         }
 
@@ -213,7 +215,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
         if ( newCnsSettingData.All( c => c.Position != currentItem.Position ) ) {
-          conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem,  "未設定" ) ;
+          conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, "未設定" ) ;
           continue ;
         }
 
