@@ -56,8 +56,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _pickUpStorable = _document.GetPickUpStorable() ;
       if ( ! _pickUpModels.Any() ) MessageBox.Show( "Don't have element.", "Result Message" ) ;
       else {
-        _pickUpModels = ( from pickUpModel in _pickUpModels orderby pickUpModel.Floor ascending select pickUpModel ).ToList() ;
-        var viewModel = new PickUpViewModel( _pickUpStorable, _pickUpModels ) ;
+        List<PickUpModel> pickUpConduitByNumbers = PickUpModelByNumber( ProductType.Conduit ) ;
+        List<PickUpModel> pickUpRackByNumbers = PickUpModelByNumber( ProductType.Cable ) ;
+        var pickUpModels = _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+        if ( pickUpConduitByNumbers.Any() ) pickUpModels.AddRange( pickUpConduitByNumbers ) ;
+        if ( pickUpRackByNumbers.Any() ) pickUpModels.AddRange( pickUpRackByNumbers ) ;
+        pickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor ascending select pickUpModel ).ToList() ;
+        var viewModel = new PickUpViewModel( _pickUpStorable, pickUpModels ) ;
         this.DataContext = viewModel ;
       }
     }
@@ -369,6 +374,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       return false ;
+    }
+
+    private List<PickUpModel> PickUpModelByNumber( ProductType productType )
+    {
+      List<PickUpModel> pickUpModels = new List<PickUpModel>() ;
+      var equipmentType = productType.GetFieldName() ;
+      var pickUpModelsByNumber = _pickUpModels.Where( p => p.EquipmentType == equipmentType ).GroupBy( x => x.PickUpNumber, ( key, g ) => new { NumberId = key, pickUpModels = g.ToList() } ) ;
+      foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
+        var sumQuantity = pickUpModelByNumber.pickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
+        var pickUpModel = pickUpModelByNumber.pickUpModels.FirstOrDefault() ;
+        if ( pickUpModel == null ) continue ;
+        PickUpModel newPickUpModel = new PickUpModel( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction ) ;
+        pickUpModels.Add( newPickUpModel ) ;
+      }
+
+      return pickUpModels ;
     }
   }
 }
