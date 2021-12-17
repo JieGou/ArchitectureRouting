@@ -365,12 +365,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       Connector connectorOfVAV, ElementId levelId )
     {
       var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ).WhereElementIsElementType().AsEnumerable().OfType<DuctType>() ;
-      var ductTypes = collector.Where( e => e.Shape == ConnectorProfileType.Round ) ;
-      if ( ductTypes.Any() ) {
-        var ductType = ductTypes.Any( e => e.PreferredJunctionType == JunctionType.Tee )
-          ? ductTypes.FirstOrDefault( e => e.PreferredJunctionType == JunctionType.Tee )
-          : ductTypes.FirstOrDefault() ;
-        Duct.Create( document, ductType?.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
+      var ductTypes = collector.Where( e => e.Shape == ConnectorProfileType.Round ).ToArray() ;
+      var ductType = ductTypes.FirstOrDefault( e => e.PreferredJunctionType == JunctionType.Tee ) ?? ductTypes.FirstOrDefault() ;
+      if ( ductType != null ) {
+        Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
       }
     }
 
