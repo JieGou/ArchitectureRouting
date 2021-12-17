@@ -119,7 +119,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
         branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
       
-      var furthestSpace = GetFurthestSpaceAndBranchNumberZero( pickedConnector, spaces.ToList() ) ;
+      var parentSpaces = spaces.Where( s => s.GetSpaceBranchNumber() == RootBranchNumber ).ToList() ;
+      parentSpaces.Sort( ( a, b ) => CompareDistanceBasisZ( pickedConnector, a, b, false ) ) ;
+      var rootSpace = parentSpaces.LastOrDefault() ;
+      
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
         
@@ -131,8 +134,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue;
 
-          var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, space.Id == furthestSpace?.Id ? pickedConnector.Origin.Y : ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
-          
+          XYZ? positionOfFASUAndVAV;
+          if ( space.Id == rootSpace?.Id ) {
+            positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, pickedConnector.Origin.Y, 0 ) ;
+          }
+          else {
+            positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
+          }
           var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
           if ( placeResult == null ) continue ;// Failed to place
 
@@ -157,17 +165,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return Result.Succeeded ;
-    }
-    
-    private static Element? GetFurthestSpaceAndBranchNumberZero( Connector connector, List<Element> spaces )
-    {
-      spaces.Sort( ( a, b ) => CompareDistanceBasisZ( connector , a, b, false ) ) ;
-
-      for ( var spaceIndex = spaces.Count - 1 ; spaceIndex >= 0 ; spaceIndex-- ) {
-        spaces[ spaceIndex ].TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
-        if ( branchNumber == 0 ) return spaces[ spaceIndex ] ;
-      }
-      return null ;
     }
     
     private static int CompareDistanceBasisZ( IConnector rootConnector, Element a, Element b, bool isRotate90 )
