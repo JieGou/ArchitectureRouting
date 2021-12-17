@@ -1,9 +1,11 @@
-﻿using System.Collections.ObjectModel ;
+﻿using System.Collections.Generic ;
+using System.Collections.ObjectModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -22,23 +24,80 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var wiresAndCablesModelData = doc.GetCsvStorable().WiresAndCablesModelData ;
       var conduitsModelData = doc.GetCsvStorable().ConduitsModelData ;
+      var hiroiSetMasterNormalModelData = doc.GetCsvStorable().HiroiSetMasterNormalModelData ;
+      var hiroiMasterModelData = doc.GetCsvStorable().HiroiMasterModelData ;
       var hiroiSetCdMasterNormalModelData = doc.GetCsvStorable().HiroiSetCdMasterNormalModelData ;
+      var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       ObservableCollection<ConduitInformationModel> conduitInformationModels =
         new ObservableCollection<ConduitInformationModel>() ;
+      var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;    
       try {
         var pickedObjects = uiDoc.Selection
           .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
           .Where( p => p is FamilyInstance or Conduit ) ;
         foreach ( var element in pickedObjects ) {
-          var conduitModel = conduitsModelData.FirstOrDefault() ;
-          var wireType = wiresAndCablesModelData.FirstOrDefault() ;
-          var heroiCdSet = hiroiSetCdMasterNormalModelData.FirstOrDefault() ;
           string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
+          string costructionItem = element.LookupParameter( "Construction Item" ).AsValueString() ;
+          var existSymbolDetail =
+            detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => element.Id.ToString() == x.ConduitId ) ;
+          if(existSymbolDetail!=null) {
+            if ( ceedStorable != null ) {
+              var ceedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
+              if ( ceedModel != null ) {
+                var hiroiCdModel =
+                  hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
+                var hiroiSetModels =
+                  hiroiSetMasterNormalModelData.Where( x => x.ParentPartName == ceedModel.CeeDSetCode ) ;
+                foreach ( var item in hiroiSetModels ) {
+                  List<string> listMaterialCode = new List<string>() ;
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
+                    listMaterialCode.Add( item.MaterialCode1 ) ;
+                  }
 
-          conduitInformationModels.Add( new ConduitInformationModel( false, floor, wireType?.COrP, wireType?.WireType,
-            wireType?.DiameterOrNominal, wireType?.NumberOfHeartsOrLogarithm, wireType?.NumberOfConnections,
-            string.Empty, string.Empty, string.Empty, conduitModel?.PipingType, conduitModel?.Size, "",
-            heroiCdSet?.ConstructionClassification, wireType?.Classification, "", "", "" ) ) ;
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode2 ) ) {
+                    listMaterialCode.Add( item.MaterialCode2 ) ;
+                  }
+
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode3 ) ) {
+                    listMaterialCode.Add( item.MaterialCode3 ) ;
+                  }
+
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode4 ) ) {
+                    listMaterialCode.Add( item.MaterialCode4 ) ;
+                  }
+
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode5 ) ) {
+                    listMaterialCode.Add( item.MaterialCode5 ) ;
+                  }
+
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode6 ) ) {
+                    listMaterialCode.Add( item.MaterialCode6 ) ;
+                  }
+
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode7 ) ) {
+                    listMaterialCode.Add( item.MaterialCode7 ) ;
+                  }
+
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode8 ) ) {
+                    listMaterialCode.Add( item.MaterialCode8 ) ;
+                  }
+
+                  if ( listMaterialCode.Any() ) {
+                    var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( x.Buzaicd ) ) ;
+                    foreach ( var master in masterModels ) {
+                      var conduitModels =
+                        conduitsModelData.Where( x => x.PipingType == master.Type && x.Size == master.Size1 ) ;
+                      conduitInformationModels.Add( new ConduitInformationModel( false, floor,
+                        existSymbolDetail.DetailSymbol, master.Type, master.Hinmei, master.Size1, master.Size2,
+                        string.Empty, string.Empty, string.Empty, master.Type, master.Size1,
+                        conduitModels.Count().ToString(), hiroiCdModel?.ConstructionClassification,
+                        conduitModels.FirstOrDefault().Classification, costructionItem, costructionItem, "" ) ) ;
+                    }
+                  }
+                }
+              }
+            }
+            }
         }
         conduitInformationModels =new ObservableCollection<ConduitInformationModel>( conduitInformationModels.GroupBy( x => x.WireType )
           .Select( g =>
