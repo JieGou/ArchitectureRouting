@@ -25,7 +25,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private List<HiroiSetCdMasterModel> _allHiroiSetCdMasterEcoModels ;
     private List<HiroiMasterModel> _allHiroiMasterModels ;
     private List<CeedModel> _ceeDModelData ;
-    private bool _isLoadAll ;
 
     public CsvModelDialog( Document document )
     {
@@ -96,7 +95,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
       string filePath = OpenFileDialog() ;
       if ( string.IsNullOrEmpty( filePath ) ) return ;
-      GetData( filePath, 2, ModelName.WiresAndCables ) ;
+      GetData( filePath, 2, ModelName.WiresAndCables, true ) ;
     }
 
     private void Button_LoadConduitsData( object sender, RoutedEventArgs e )
@@ -104,7 +103,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allConduitModels = new List<ConduitsModel>() ;
       string filePath = OpenFileDialog() ;
       if ( string.IsNullOrEmpty( filePath ) ) return ;
-      GetData( filePath, 2, ModelName.Conduits ) ;
+      GetData( filePath, 2, ModelName.Conduits, true ) ;
     }
 
     private void Button_LoadHiroiSetMasterNormalData( object sender, RoutedEventArgs e )
@@ -112,7 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allHiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
       string filePath = OpenFileDialog() ;
       if ( string.IsNullOrEmpty( filePath ) ) return ;
-      GetData( filePath, 0, ModelName.HiroiSetMasterNormal ) ;
+      GetData( filePath, 0, ModelName.HiroiSetMasterNormal, true ) ;
     }
 
     private void Button_LoadHiroiSetMasterEcoData( object sender, RoutedEventArgs e )
@@ -120,7 +119,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allHiroiSetMasterEcoModels = new List<HiroiSetMasterModel>() ;
       string filePath = OpenFileDialog() ;
       if ( string.IsNullOrEmpty( filePath ) ) return ;
-      GetData( filePath, 0, ModelName.HiroiSetMasterEco ) ;
+      GetData( filePath, 0, ModelName.HiroiSetMasterEco, true ) ;
     }
 
     private void Button_LoadHiroiSetCdMasterNormalData( object sender, RoutedEventArgs e )
@@ -128,7 +127,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allHiroiSetCdMasterNormalModels = new List<HiroiSetCdMasterModel>() ;
       string filePath = OpenFileDialog() ;
       if ( string.IsNullOrEmpty( filePath ) ) return ;
-      GetData( filePath, 0, ModelName.HiroiSetCdMasterNormal ) ;
+      GetData( filePath, 0, ModelName.HiroiSetCdMasterNormal, true ) ;
     }
 
     private void Button_LoadHiroiSetCdMasterEcoData( object sender, RoutedEventArgs e )
@@ -136,7 +135,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allHiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
       string filePath = OpenFileDialog() ;
       if ( string.IsNullOrEmpty( filePath ) ) return ;
-      GetData( filePath, 0, ModelName.HiroiSetCdMasterEco ) ;
+      GetData( filePath, 0, ModelName.HiroiSetCdMasterEco, true ) ;
     }
 
     private void Button_LoadHiroiMasterData( object sender, RoutedEventArgs e )
@@ -144,7 +143,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allHiroiMasterModels = new List<HiroiMasterModel>() ;
       string filePath = OpenFileDialog() ;
       if ( string.IsNullOrEmpty( filePath ) ) return ;
-      GetData( filePath, 0, ModelName.HiroiMaster ) ;
+      GetData( filePath, 0, ModelName.HiroiMaster, true ) ;
     }
 
     private string OpenFileDialog()
@@ -158,7 +157,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return filePath ;
     }
 
-    private bool GetData( string path, int startLine, ModelName modelName )
+    private bool GetData( string path, int startLine, ModelName modelName, bool showMessageFlag )
     {
       var checkFile = true ;
       const int wacColCount = 10 ;
@@ -246,14 +245,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         reader.Close() ;
         if ( ! checkFile ) {
-          if ( ! _isLoadAll ) {
+          if (showMessageFlag ) {
             MessageBox.Show( "Incorrect file format.", "Error Message" ) ;
           }
 
           return false ;
         }
         else {
-          if ( ! _isLoadAll ) {
+          if (showMessageFlag ) {
             MessageBox.Show( "Load file successful.", "Result Message" ) ;
           }
 
@@ -261,7 +260,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
       catch ( Exception ) {
-        if ( ! _isLoadAll ) {
+        if (showMessageFlag ) {
           MessageBox.Show( "Load file failed.", "Error Message" ) ;
         }
 
@@ -296,7 +295,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         "電線・ケーブル一覧.csv", 
         "【CeeD】セットコード一覧表.xlsx"
       } ;
-      _isLoadAll = true ;
       StringBuilder correctMessage = new StringBuilder() ;
       StringBuilder errorMessage = new StringBuilder() ;
       string defaultCorrectMessage = "指定されたフォルダから以下のデータを正常にロードできました。" ;
@@ -310,7 +308,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           switch ( fileName ) {
             case "hiroimaster.csv" :
               _allHiroiMasterModels = new List<HiroiMasterModel>() ; 
-              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiMaster ) ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiMaster, false ) ;
               if(isGetDataWithoutError){
                 correctMessage.AppendLine( "\u2022 Hiroi Master" ) ;
               }
@@ -320,7 +318,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               break ;
             case "hiroisetcdmaster_normal.csv" :
               _allHiroiSetCdMasterNormalModels = new List<HiroiSetCdMasterModel>() ;
-              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterNormal ) ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterNormal, false ) ;
               if(isGetDataWithoutError){
                 correctMessage.AppendLine( "\u2022 Hiroi Set CD Master Normal" ) ;
               }
@@ -330,7 +328,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               break ;
             case "hiroisetcdmaster_eco.csv" :
               _allHiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
-              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterEco ) ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterEco, false ) ;
               if(isGetDataWithoutError){
                 correctMessage.AppendLine( "\u2022 Hiroi Set CD Master ECO" ) ;
               }
@@ -340,7 +338,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               break ;
             case "hiroisetmaster_eco.csv" :
               _allHiroiSetMasterEcoModels = new List<HiroiSetMasterModel>() ;
-              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterEco ) ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterEco, false ) ;
               if(isGetDataWithoutError){
                 correctMessage.AppendLine( "\u2022 Hiroi Set Master ECO" ) ;
               }
@@ -350,7 +348,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               break ;
             case "hiroisetmaster_normal.csv" :
               _allHiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
-              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterNormal ) ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterNormal, false ) ;
               if(isGetDataWithoutError){
                 correctMessage.AppendLine( "\u2022 Hiroi Set Master Normal" ) ;
               }
@@ -360,7 +358,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               break ;
             case "電線管一覧.csv" :
               _allConduitModels = new List<ConduitsModel>() ;
-              isGetDataWithoutError = GetData( path, 2, ModelName.Conduits ) ;
+              isGetDataWithoutError = GetData( path, 2, ModelName.Conduits, false ) ;
               if(isGetDataWithoutError){
                 correctMessage.AppendLine( "\u2022 電線管一覧" ) ;
               }
@@ -370,7 +368,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               break ;
             case "電線・ケーブル一覧.csv" :
               _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
-              isGetDataWithoutError = GetData( path, 2, ModelName.WiresAndCables ) ;
+              isGetDataWithoutError = GetData( path, 2, ModelName.WiresAndCables, false ) ;
               if(isGetDataWithoutError){
                 correctMessage.AppendLine( "\u2022 電線・ケーブル一覧" ) ;
               }
@@ -403,7 +401,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       MessageBox.Show(
         resultMessage,"Result Message" ) ;
-      _isLoadAll = false ;
     }
   }
 }
