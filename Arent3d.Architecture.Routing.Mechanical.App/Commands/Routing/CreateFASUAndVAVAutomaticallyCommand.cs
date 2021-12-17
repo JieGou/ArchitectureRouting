@@ -134,7 +134,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue;
 
-          var positionOfFASUAndVAV = space == rootSpace ? new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, pickedConnector.Origin.Y, 0 ) : new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
+          var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
+          if ( space == rootSpace ) {
+            var adjustedPositionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, pickedConnector.Origin.Y, pickedConnector.Origin.Z ) ;
+            if ( IsInSpace( boxOfSpace, adjustedPositionOfFASUAndVAV ) )
+              positionOfFASUAndVAV = adjustedPositionOfFASUAndVAV ;
+          }
           var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
           if ( placeResult == null ) continue ;// Failed to place
 
