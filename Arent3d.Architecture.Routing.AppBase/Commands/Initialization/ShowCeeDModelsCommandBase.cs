@@ -57,10 +57,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           ICollection<ElementId> groupIds = new List<ElementId>() ;
           groupIds.Add( element.Id ) ;
           groupIds.Add( textNote.Id ) ;
-          if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedDeviceSymbolType ) ) {
-            var txtTypePosition = new XYZ( originX - 2, originY + 3, heightOfConnector ) ;
-            var textTypeNote = TextNote.Create( doc, doc.ActiveView.Id, txtTypePosition, 0.1, dlgCeeDModel.SelectedDeviceSymbolType, opts ) ;
-            groupIds.Add( textTypeNote.Id ) ;
+          
+          if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedCondition ) ) {
+            var txtConditionPosition = new XYZ( originX - 2, originY + 3, heightOfConnector ) ;
+            var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, .1, dlgCeeDModel.SelectedCondition, opts ) ;
+
+            var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) )
+              .WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( "1.5 mm", tt.Name ) ) ;
+            if ( textNoteType == null ) {
+              Element ele = conditionTextNote.TextNoteType.Duplicate( "1.5 mm" ) ;
+              textNoteType = ( ele as TextNoteType )! ;
+              TextElementType textType = conditionTextNote.Symbol ;
+              BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
+              Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
+              textSize.Set( .005 ) ;
+            }
+            conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
+            
+            groupIds.Add( conditionTextNote.Id ) ;
           }
           doc.Create.NewGroup( groupIds ) ;
 

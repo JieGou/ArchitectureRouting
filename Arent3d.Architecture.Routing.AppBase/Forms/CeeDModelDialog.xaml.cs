@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private string _ceeDModelNumberSearch ;
     private string _modelNumberSearch ;
     public string SelectedDeviceSymbol ;
-    public string SelectedDeviceSymbolType ;
+    public string SelectedCondition ;
 
     public CeeDModelDialog( Document document )
     {
@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _ceeDModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
       SelectedDeviceSymbol = string.Empty ;
-      SelectedDeviceSymbolType = string.Empty ;
+      SelectedCondition = string.Empty ;
       
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       dlgSelectDeviceSymbol.ShowDialog() ;
       if ( dlgSelectDeviceSymbol.DialogResult == false ) return ;
       SelectedDeviceSymbol = dlgSelectDeviceSymbol.GetSelectedDeviceSymbol() ;
-      SelectedDeviceSymbolType = selectedItem.DeviceSymbolType ;
+      SelectedCondition = selectedItem.Condition ;
       if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) ) return ;
       DialogResult = true ;
       Close() ;
@@ -160,7 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           List<string> ceeDModelNumbers = new List<string>() ;
           List<string> ceeDSetCodes = new List<string>() ;
           List<string> modelNumbers = new List<string>() ;
-          List<string> deviceSymbolTypes = new List<string>() ;
+          List<string> conditions = new List<string>() ;
           string generalDisplayDeviceSymbols = string.Empty ;
           string floorPlanSymbol = string.Empty ;
           string ceeDName = string.Empty ;
@@ -206,9 +206,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             var symbol = GetCellValue( symbolCell ) ;
             if ( ! string.IsNullOrEmpty( symbol ) && ! symbol.Contains( "又は" ) ) floorPlanSymbol = symbol ;
             
-            var deviceSymbolTypeCell = workSheet.GetRow( j ).GetCell( 8 ) ;
-            var deviceSymbolType = GetCellValue( deviceSymbolTypeCell ) ;
-            if ( ! string.IsNullOrEmpty( deviceSymbolType ) && deviceSymbolType.EndsWith( "の場合" ) ) deviceSymbolTypes.Add( deviceSymbolType.Replace("の場合", "").Replace("・", "") ) ;
+            var conditionCell = workSheet.GetRow( j ).GetCell( 8 ) ;
+            var condition = GetCellValue( conditionCell ) ;
+            if ( ! string.IsNullOrEmpty( condition ) && condition.EndsWith( "の場合" ) ) conditions.Add( condition.Replace("の場合", "").Replace("・", "") ) ;
           }
 
           var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
@@ -219,8 +219,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
-              var deviceSymbolType = deviceSymbolTypes.Count > k ? deviceSymbolTypes[ k ] : string.Empty ;
-              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName, deviceSymbolType ) ;
+              var condition = conditions.Count > k ? conditions[ k ] : string.Empty ;
+              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName, condition ) ;
               ceedModelData.Add( ceeDModel ) ;
             }
           }

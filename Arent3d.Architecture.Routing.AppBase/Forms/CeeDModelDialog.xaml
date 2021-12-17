@@ -60,7 +60,7 @@
 
           <DataGridTextColumn Header="平面図" Binding="{Binding FloorPlanSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
           
-          <DataGridTextColumn Header="" Binding="{Binding DeviceSymbolType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
+          <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
 
         </DataGrid.Columns>
       </DataGrid>
