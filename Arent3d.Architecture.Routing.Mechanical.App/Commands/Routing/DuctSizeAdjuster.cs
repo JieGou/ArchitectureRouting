@@ -203,7 +203,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var routeSegment = route.RouteSegments.First() ;
         
         var childBranches = route.GetChildBranches().ToList() ;
-        var startPosition = route.RouteSegments.First().FromEndPoint.RoutingStartPosition.To3dPoint() ;
+
+        var fromEndPoint = route.RouteSegments.First().FromEndPoint ;
+        var startPosition = fromEndPoint is RouteEndPoint 
+          ? branchNameToBranchPointInfo[route.RouteName].BranchPosition 
+          : fromEndPoint.RoutingStartPosition.To3dPoint() ;
         var sortedRoutes = SortRoutesOrderByDistanceFromStartPosition( childBranches, branchNameToBranchPointInfo, startPosition ) ;
 
         var passPointTerms = sortedRoutes.Select( r =>
