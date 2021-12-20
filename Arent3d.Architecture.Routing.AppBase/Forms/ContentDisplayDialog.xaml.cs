@@ -211,7 +211,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             modelNumber = ceeDModel.ModelNumber ;
             specification2 = ceeDModel.CeeDSetCode ;
             supplement = ceeDModel.Name ;
-            
+
             var ceeDModelNumber = string.Empty ;
             if ( _hiroiSetCdMasterNormalModels.Any() ) {
               var hiroiSetCdMasterNormalModel = _hiroiSetCdMasterNormalModels.FirstOrDefault( h => h.SetCode == ceeDSetCode ) ;
@@ -380,10 +380,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       List<PickUpModel> pickUpModels = new List<PickUpModel>() ;
       var equipmentType = productType.GetFieldName() ;
-      var pickUpModelsByNumber = _pickUpModels.Where( p => p.EquipmentType == equipmentType ).GroupBy( x => x.PickUpNumber, ( key, g ) => new { NumberId = key, pickUpModels = g.ToList() } ) ;
+      var pickUpModelsByNumber = _pickUpModels.Where( p => p.EquipmentType == equipmentType ).GroupBy( x => x.PickUpNumber, ( key, p ) => new { Number = key, PickUpModels = p.ToList() } ) ;
       foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
-        var sumQuantity = pickUpModelByNumber.pickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
-        var pickUpModel = pickUpModelByNumber.pickUpModels.FirstOrDefault() ;
+        var sumQuantity = pickUpModelByNumber.PickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
+        var pickUpModel = pickUpModelByNumber.PickUpModels.FirstOrDefault() ;
         if ( pickUpModel == null ) continue ;
         PickUpModel newPickUpModel = new PickUpModel( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction ) ;
         pickUpModels.Add( newPickUpModel ) ;
