@@ -43,15 +43,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElements() ;
       return spaces ;
     }
-    
+
     public static double? GetAirFlowOfSpace( Document document, Vector3d pointInSpace )
     {
       var spaces = GetAllSpaces( document ).OfType<Space>().ToArray() ;
-      var targetSpace = spaces.FirstOrDefault( space =>
-        space.get_BoundingBox( document.ActiveView ).ToBox3d().Contains( pointInSpace, 0.0 ) ) ;
+      var targetSpace = spaces.FirstOrDefault( space => space.get_BoundingBox( document.ActiveView ).ToBox3d().Contains( pointInSpace, 0.0 ) ) ;
 
-      // TODO AirFlowを取得
-      return targetSpace == null ? 0.0 : 146*6 ;
+      return targetSpace == null ? 0.0 : UnitUtils.ConvertFromInternalUnits( targetSpace.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
     } 
   }
 }
