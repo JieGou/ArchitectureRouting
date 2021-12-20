@@ -151,7 +151,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           var fasuConnector = instanceOfFASU.GetConnectors().First( c => c.Id == FASUConnectorId ) ;
           var vavConnector = instanceOfVAV.GetConnectors().First( c => c.Id == VAVConnectorId ) ;
           var duct = CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
-
+          document.Regenerate();
           if ( duct != null ) {
             // create group of FASUs, VAVs and RoundDuct
             //var groupIds = new List<ElementId> { instanceOfFASU.Id, instanceOfVAV.Id } ;
