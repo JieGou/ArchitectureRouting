@@ -520,7 +520,7 @@ namespace Arent3d.Architecture.Routing
         }
       }
 
-      if ( 0 == counts.Count ) return ( null, new SubRouteInfo[] { } ) ;
+      if ( 0 == counts.Count ) return ( null, Array.Empty<SubRouteInfo>() ) ;
 
       SubRouteInfo? maxSubRouteInfo = null ;
       var maxCount = -1 ;
@@ -532,7 +532,7 @@ namespace Arent3d.Architecture.Routing
         }
       }
 
-      return ( maxSubRouteInfo, subRoutes.Where( subRoute => subRoute != maxSubRouteInfo ).ToArray() ) ;
+      return ( maxSubRouteInfo, subRoutes.Where( subRoute => subRoute != maxSubRouteInfo ).EnumerateAll() ) ;
     }
 
     private static bool IsGreaterThan( SubRouteInfo tuple1, SubRouteInfo tuple2 )
@@ -596,7 +596,7 @@ namespace Arent3d.Architecture.Routing
 
     private static void MarkAsAutoRoutedElement( Element element, SubRoute subRoute, PassingEndPointInfo passingEndPointInfo )
     {
-      MarkAsAutoRoutedElement( element, subRoute.Route.RouteName, subRoute.SubRouteIndex, Array.Empty<string>(), passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints ) ;
+      MarkAsAutoRoutedElement( element, subRoute.Route.RouteName, subRoute.SubRouteIndex, Enumerable.Empty<string>(), passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints ) ;
     }
 
     private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex, IEnumerable<string> branchRouteNames, IEnumerable<IEndPoint> nearestFrom, IEnumerable<IEndPoint> nearestTo )
