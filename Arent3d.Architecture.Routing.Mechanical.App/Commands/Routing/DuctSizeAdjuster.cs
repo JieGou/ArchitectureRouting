@@ -146,7 +146,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       
       public void Merge( Segment toSideSegment )
       {
-        _toPoint = toSideSegment._fromPoint ;
+        _toPoint = toSideSegment._toPoint ;
         _childSegments.AddRange( toSideSegment._childSegments );
       }
 
