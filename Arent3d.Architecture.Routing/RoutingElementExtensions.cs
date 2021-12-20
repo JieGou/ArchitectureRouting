@@ -710,6 +710,21 @@ namespace Arent3d.Architecture.Routing
       return new SubRouteInfo( routeName, subRouteIndex ) ;
     }
 
+    /// <summary>
+    /// 分岐管(Tee, Cross)のBranch側のRoute名を取得する
+    /// </summary>
+    /// <param name="elemnt"></param>
+    /// <returns></returns>
+    public static IEnumerable<string> GetBranchRouteNames( this Element element )
+    {
+      if ( false == element.TryGetProperty( RoutingParameter.BranchRouteNames, out string? str )) yield break;
+      if ( str == null ) yield break;
+
+      foreach ( var routeName in RouteNamesUtil.ParseRouteNames( str ) ) {
+        yield return routeName ;
+      }
+    }
+    
     #endregion
 
     #region Center Lines

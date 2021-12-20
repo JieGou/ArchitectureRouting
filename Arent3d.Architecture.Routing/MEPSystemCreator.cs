@@ -415,7 +415,8 @@ namespace Arent3d.Architecture.Routing
     private Element? ConnectTwoConnectors( Connector connector1, Connector connector2 )
     {
       var connectors = new[] { connector1, connector2 } ;
-      var subRouteData = GuessSubRoute( connectors ) ;
+      var (mainSubRouteData, branchSubRouteData) = GuessSubRoute( connectors ) ;
+
       var fromEndPoints = GetNearestEnd( connectors, true ) ;
       var toEndPoints = GetNearestEnd( connectors, false ) ;
 
@@ -427,8 +428,9 @@ namespace Arent3d.Architecture.Routing
 
       if ( null == fitting ) return null ;
 
-      if ( null != subRouteData ) {
-        MarkAsAutoRoutedElement( fitting, subRouteData.RouteName, subRouteData.SubRouteIndex, fromEndPoints, toEndPoints ) ;
+      if ( null != mainSubRouteData ) {
+        var branchRouteNames = branchSubRouteData.Select( data => data.RouteName ) ;
+        MarkAsAutoRoutedElement( fitting, mainSubRouteData.RouteName, mainSubRouteData.SubRouteIndex, branchRouteNames, fromEndPoints, toEndPoints ) ;
       }
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
@@ -446,7 +448,7 @@ namespace Arent3d.Architecture.Routing
     private Element? ConnectThreeConnectors( Connector connector1, Connector connector2, Connector connector3 )
     {
       var connectors = new[] { connector1, connector2, connector3 } ;
-      var subRouteData = GuessSubRoute( connectors ) ;
+      var (mainSubRouteData, branchSubRouteData) = GuessSubRoute( connectors ) ;
       var fromEndPoints = GetNearestEnd( connectors, true ) ;
       var toEndPoints = GetNearestEnd( connectors, false ) ;
 
@@ -458,8 +460,9 @@ namespace Arent3d.Architecture.Routing
 
       if ( null == fitting ) return null ;
 
-      if ( null != subRouteData ) {
-        MarkAsAutoRoutedElement( fitting, subRouteData.RouteName, subRouteData.SubRouteIndex, fromEndPoints, toEndPoints ) ;
+      if ( null != mainSubRouteData ) {
+        var branchRouteNames = branchSubRouteData.Select( data => data.RouteName ) ;
+        MarkAsAutoRoutedElement( fitting, mainSubRouteData.RouteName, mainSubRouteData.SubRouteIndex, branchRouteNames, fromEndPoints, toEndPoints ) ;
       }
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
@@ -477,7 +480,8 @@ namespace Arent3d.Architecture.Routing
     private Element? ConnectFourConnectors( Connector connector1, Connector connector2, Connector connector3, Connector connector4 )
     {
       var connectors = new[] { connector1, connector2, connector3, connector4 } ;
-      var subRouteData = GuessSubRoute( connectors ) ;
+      var (mainSubRouteData, branchSubRouteData) = GuessSubRoute( connectors ) ;
+
       var fromEndPoints = GetNearestEnd( connectors, true ) ;
       var toEndPoints = GetNearestEnd( connectors, false ) ;
 
@@ -489,8 +493,9 @@ namespace Arent3d.Architecture.Routing
 
       if ( null == fitting ) return null ;
 
-      if ( null != subRouteData ) {
-        MarkAsAutoRoutedElement( fitting, subRouteData.RouteName, subRouteData.SubRouteIndex, fromEndPoints, toEndPoints ) ;
+      if ( null != mainSubRouteData ) {
+        var branchRouteNames = branchSubRouteData.Select( data => data.RouteName ) ;
+        MarkAsAutoRoutedElement( fitting, mainSubRouteData.RouteName, mainSubRouteData.SubRouteIndex, branchRouteNames, fromEndPoints, toEndPoints ) ;
       }
 
       SetRoutingFromToConnectorIdsForFitting( fitting ) ;
@@ -498,7 +503,7 @@ namespace Arent3d.Architecture.Routing
       return fitting ;
     }
 
-    private static SubRouteInfo? GuessSubRoute( params Connector[] connectors )
+    private static (SubRouteInfo? mainSubRouteInfo ,IReadOnlyCollection<SubRouteInfo> branchSubRouteInfos ) GuessSubRoute( params Connector[] connectors )
     {
       var subRoutes = new List<SubRouteInfo>() ;
       var counts = new Dictionary<SubRouteInfo, int>() ;
@@ -515,7 +520,7 @@ namespace Arent3d.Architecture.Routing
         }
       }
 
-      if ( 0 == counts.Count ) return null ;
+      if ( 0 == counts.Count ) return ( null, Array.Empty<SubRouteInfo>() ) ;
 
       SubRouteInfo? maxSubRouteInfo = null ;
       var maxCount = -1 ;
@@ -527,7 +532,7 @@ namespace Arent3d.Architecture.Routing
         }
       }
 
-      return maxSubRouteInfo ;
+      return ( maxSubRouteInfo, subRoutes.Where( subRoute => subRoute != maxSubRouteInfo ).EnumerateAll() ) ;
     }
 
     private static bool IsGreaterThan( SubRouteInfo tuple1, SubRouteInfo tuple2 )
@@ -591,13 +596,14 @@ namespace Arent3d.Architecture.Routing
 
     private static void MarkAsAutoRoutedElement( Element element, SubRoute subRoute, PassingEndPointInfo passingEndPointInfo )
     {
-      MarkAsAutoRoutedElement( element, subRoute.Route.RouteName, subRoute.SubRouteIndex, passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints ) ;
+      MarkAsAutoRoutedElement( element, subRoute.Route.RouteName, subRoute.SubRouteIndex, Enumerable.Empty<string>(), passingEndPointInfo.FromEndPoints, passingEndPointInfo.ToEndPoints ) ;
     }
 
-    private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex, IEnumerable<IEndPoint> nearestFrom, IEnumerable<IEndPoint> nearestTo )
+    private static void MarkAsAutoRoutedElement( Element element, string routeId, int subRouteIndex, IEnumerable<string> branchRouteNames, IEnumerable<IEndPoint> nearestFrom, IEnumerable<IEndPoint> nearestTo )
     {
       element.SetProperty( RoutingParameter.RouteName, routeId ) ;
       element.SetProperty( RoutingParameter.SubRouteIndex, subRouteIndex ) ;
+      element.SetProperty( RoutingParameter.BranchRouteNames, RouteNamesUtil.StringifyRouteNames( branchRouteNames ) );
       element.SetProperty( RoutingParameter.NearestFromSideEndPoints, nearestFrom.Stringify() ) ;
       element.SetProperty( RoutingParameter.NearestToSideEndPoints, nearestTo.Stringify() ) ;
     }
