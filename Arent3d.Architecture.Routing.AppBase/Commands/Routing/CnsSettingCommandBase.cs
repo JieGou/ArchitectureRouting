@@ -207,25 +207,49 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static void UpdateConstructionsItem( Document document, ObservableCollection<CnsSettingModel> currentCnsSettingData, ObservableCollection<CnsSettingModel> newCnsSettingData )
     {
-      var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).ToList() ;
-      foreach ( var conduit in conduits ) {
-        var strCurrentConstructionItem = conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
-        if ( string.IsNullOrEmpty( strCurrentConstructionItem ) ) continue ;
+      var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
+      var connectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
 
-        var currentItem = currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strCurrentConstructionItem ) ;
-        if ( currentItem == null ) {
+      //update Constructions Item for Conduits
+      foreach ( var conduit in conduits ) {
+        var strConduitConstructionItem = conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+        if ( string.IsNullOrEmpty( strConduitConstructionItem ) ) continue ;
+
+        var conduitCnsSetting = currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConduitConstructionItem ) ;
+        if ( conduitCnsSetting == null ) {
           continue ;
         }
 
-        if ( newCnsSettingData.All( c => c.Position != currentItem.Position ) ) {
+        if ( newCnsSettingData.All( c => c.Position != conduitCnsSetting.Position ) ) {
           conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, "未設定" ) ;
           continue ;
         }
 
-        var newItem = newCnsSettingData.First( c => c.Position == currentItem.Position ) ;
-        if ( newItem == null ) continue ;
-        if ( newItem.CategoryName == strCurrentConstructionItem ) continue ;
-        conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, newItem.CategoryName ) ;
+        var newConduitCnsSetting = newCnsSettingData.First( c => c.Position == conduitCnsSetting.Position ) ;
+        if ( newConduitCnsSetting == null ) continue ;
+        if ( newConduitCnsSetting.CategoryName == strConduitConstructionItem ) continue ;
+        conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, newConduitCnsSetting.CategoryName ) ;
+      }
+
+      //update Constructions Item for Connector
+      foreach ( var connector in connectors ) {
+        var strConnectorConstructionItem = connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+        if ( string.IsNullOrEmpty( strConnectorConstructionItem ) ) continue ;
+
+        var connectorCnsSetting = currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConnectorConstructionItem ) ;
+        if ( connectorCnsSetting == null ) {
+          continue ;
+        }
+
+        if ( newCnsSettingData.All( c => c.Position != connectorCnsSetting.Position ) ) {
+          connector.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, "未設定" ) ;
+          continue ;
+        }
+
+        var newConnectorCnsSetting = newCnsSettingData.First( c => c.Position == connectorCnsSetting.Position ) ;
+        if ( newConnectorCnsSetting == null ) continue ;
+        if ( newConnectorCnsSetting.CategoryName == strConnectorConstructionItem ) continue ;
+        connector.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, newConnectorCnsSetting.CategoryName ) ;
       }
     }
 
