@@ -6,6 +6,7 @@ using Arent3d.Architecture.Routing.CollisionTree ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -87,6 +88,9 @@ namespace Arent3d.Architecture.Routing
         // do not erase pass points
         list = list.Where( p => false == ( p is FamilyInstance fi && ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint )) ) );
       }
+
+      List<string> elementIds = list.Select( elm => elm.Id.IntegerValue.ToString() ).Distinct().ToList() ;
+      RemoveRouteDetailSymbol( document, elementIds ) ;
 
       document.Delete( list.Select( elm => elm.Id ).Distinct().ToArray() ) ;
 
@@ -195,6 +199,78 @@ namespace Arent3d.Architecture.Routing
         var childrenLocation = childrenEnvelope.Location as LocationPoint ;
         childrenLocation!.Point = new XYZ( parentLocation!.Point.X, parentLocation!.Point.Y, parentLocation!.Point.Z - offset ) ;
       }
+    }
+
+    private static void RemoveRouteDetailSymbol( Document document, List<string> elementIds )
+    {
+      var detailSymbolStorable = document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? document.GetDetailSymbolStorable() ;
+      if ( ! detailSymbolStorable.DetailSymbolModelData.Any() ) return ;
+      var detailSymbolModels = new List<DetailSymbolModel>() ;
+      foreach ( var detailSymbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => elementIds.Contains( d.ConduitId ) ).ToList() ) {
+        // delete symbol
+        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.Id.IntegerValue.ToString() == detailSymbolModel.DetailSymbolId ).Select( t => t.Id ).FirstOrDefault() ;
+        if ( symbolId != null ) document.Delete( symbolId ) ;
+        foreach ( var lineId in detailSymbolModel.LineIds.Split( ',' ) ) {
+          var id = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.Id.IntegerValue.ToString() == lineId ).Select( e => e.Id ).FirstOrDefault() ;
+          if ( id != null ) document.Delete( id ) ;
+        }
+
+        detailSymbolModels.Add( detailSymbolModel ) ;
+      }
+
+      if ( ! detailSymbolModels.Any() ) return ;
+      foreach ( var detailSymbolModel in detailSymbolModels ) {
+        detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+      }
+
+      var detailSymbols = detailSymbolModels.Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+      if ( detailSymbolStorable.DetailSymbolModelData.Any() && detailSymbols.Count == 1 ) {
+        var detailSymbolModel = detailSymbolModels.FirstOrDefault() ;
+        if ( detailSymbolModel!.IsParentSymbol ) {
+          var detailSymbolModelParent = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.DetailSymbol == detailSymbolModel.DetailSymbol && d.Code == detailSymbolModel.Code && d.IsParentSymbol ) ;
+          if ( detailSymbolModelParent == null ) {
+            UpdateSymbolOfConduitSameSymbolAndDifferentCode( document, detailSymbolStorable.DetailSymbolModelData, detailSymbolModel.DetailSymbol, detailSymbolModel.Code ) ;
+          }
+        }
+      }
+
+      detailSymbolStorable.Save() ;
+    }
+
+    private static void UpdateSymbolOfConduitSameSymbolAndDifferentCode( Document doc, List<DetailSymbolModel> detailSymbolModels, string detailSymbol, string code )
+    {
+      var firstChildSymbol = detailSymbolModels.FirstOrDefault( d => d.DetailSymbol == detailSymbol && d.Code != code ) ;
+      if ( firstChildSymbol == null ) return ;
+      {
+        var detailSymbolIds = detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+        foreach ( var id in detailSymbolIds ) {
+          var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == id ) ;
+          if ( textElement == null ) continue ;
+          var textNote = ( textElement as TextNote ) ! ;
+          CreateNewTextNoteType( doc, textNote, 0 ) ;
+        }
+
+        foreach ( var detailSymbolModel in detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).ToList() ) {
+          detailSymbolModel.IsParentSymbol = true ;
+        }
+      }
+    }
+
+    private static void CreateNewTextNoteType( Document doc, TextNote textNote, int color )
+    {
+      //Create new text type
+      string strStyleName = textNote.TextNoteType.Name + "-" + color ;
+
+      var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( strStyleName, tt.Name ) ) ;
+      if ( textNoteType == null ) {
+        // Create new Note type
+        Element ele = textNote.TextNoteType.Duplicate( strStyleName ) ;
+        textNoteType = ( ele as TextNoteType ) ! ;
+        textNoteType.get_Parameter( BuiltInParameter.LINE_COLOR ).Set( color ) ;
+      }
+
+      // Change the text notes type to the new type
+      textNote.ChangeTypeId( textNoteType!.Id ) ;
     }
   }
 }

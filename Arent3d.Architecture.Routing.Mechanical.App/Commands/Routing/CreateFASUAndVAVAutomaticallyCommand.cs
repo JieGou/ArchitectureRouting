@@ -27,7 +27,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string DiameterOfVAV = "250" ;
     private const int RootBranchNumber = 0 ;
     private const double MinDistanceSpacesCollinear = 2.5 ;
-    private const string RoundDuctUniqueId = "dee0da15-198f-4f79-aa08-3ce71203da82-00c0cdcf" ;
 
     private class NumberOfFASUAndVAVModel
     {
@@ -73,7 +72,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       if ( ! RoundDuctTypeExists( uiDocument.Document ) )
-        return ( false, $"There no family with UniqueID `{RoundDuctUniqueId}` in the document." ) ;
+        return ( false, "There no RoundDuct family in the document." ) ;
 
       ConnectorPicker.IPickResult iPickResult =
         ConnectorPicker.GetConnector( uiDocument, routingExecutor, true,
@@ -403,16 +402,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static void CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
       Connector connectorOfVAV, ElementId levelId )
     {
-      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
-        .WhereElementIsElementType() ;
-      var ductType = collector.First( e => e.UniqueId == RoundDuctUniqueId ) ;
-      Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
+      var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ).WhereElementIsElementType().AsEnumerable().OfType<DuctType>() ;
+      var ductTypes = collector.Where( e => e.Shape == ConnectorProfileType.Round ).ToArray() ;
+      var ductType = ductTypes.FirstOrDefault( e => e.PreferredJunctionType == JunctionType.Tee ) ?? ductTypes.FirstOrDefault() ;
+      if ( ductType != null ) {
+        Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
+      }
     }
 
     private static bool RoundDuctTypeExists( Document document )
     {
-      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ) ;
-      return collector.Any( e => e.UniqueId == RoundDuctUniqueId ) ;
+      var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ).AsEnumerable().OfType<DuctType>() ;
+      return collector.Any( e => e.Shape == ConnectorProfileType.Round ) ;
     }
 
     #region SubFunctionsForRotation
