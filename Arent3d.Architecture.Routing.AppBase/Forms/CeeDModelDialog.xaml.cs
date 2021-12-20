@@ -3,7 +3,10 @@ using System.Collections.Generic ;
 using System.Globalization ;
 using System.IO ;
 using System.Linq ;
+using System.Net ;
+using System.Runtime.InteropServices ;
 using System.Runtime.Serialization.Formatters.Binary ;
+using System.Text ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
@@ -15,11 +18,18 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
+using Microsoft.Office.Interop.Excel ;
 using NPOI.SS.UserModel ;
 using NPOI.XSSF.UserModel ;
+using Application = Microsoft.Office.Interop.Excel.Application ;
 using CellType = NPOI.SS.UserModel.CellType ;
 using Clipboard = System.Windows.Forms.Clipboard ;
+using Image = System.Drawing.Image ;
 using MessageBox = System.Windows.MessageBox ;
+using Style = System.Windows.Style ;
+using Window = System.Windows.Window ;
+using Worksheet = Microsoft.Office.Interop.Excel.Worksheet ;
+
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -121,6 +131,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         filePath = openFileDialog.FileName ;
       }
 
+      var images=GetListImages(  filePath ) ;
+      MessageBox.Show( images.Count.ToString() ) ;
+      
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
@@ -138,6 +151,133 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         }
       }
+    }
+
+    //void ReadFileByOpenXML( string filePath )
+    //{
+      //StringBuilder sb = new StringBuilder() ;
+      // using ( FileStream fs = new FileStream( filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite ) ) {
+      //   using ( SpreadsheetDocument doc = SpreadsheetDocument.Open( fs, false ) ) {
+      //     WorkbookPart? workbookPart = doc.WorkbookPart ;
+      //     if ( workbookPart != null ) {
+      //       var sstpart = workbookPart.GetPartsOfType<SharedStringTablePart>().First() ;
+      //       SharedStringTable sst = sstpart.SharedStringTable ;
+      //
+      //       WorksheetPart worksheetPart = workbookPart.WorksheetParts.First() ;
+      //       Worksheet sheet = worksheetPart.Worksheet ;
+      //
+      //       var cells = sheet.Descendants<Cell>() ;
+      //       var rows = sheet.Descendants<Row>() ;
+      //
+      //       sb.AppendLine( string.Format( "Row count = {0}", rows.LongCount() ) ) ;
+      //       sb.AppendLine( string.Format( "Row count = {0}", cells.LongCount() ) ) ;
+
+            // One way: go through each cell in the sheet
+            // foreach (Cell cell in cells)
+            // {
+            //   if ((cell.DataType != null) && (cell.DataType == CellValues.SharedString))
+            //   {
+            //     if ( cell.CellValue != null ) {
+            //       int ssid = int.Parse(cell.CellValue.Text);
+            //       string str = sst.ChildElements[ssid].InnerText;
+            //       result+=string.Format("Shared string {0}: {1}", ssid, str);
+            //     }
+            //   }
+            //   else if (cell.CellValue != null)
+            //   {
+            //     result+=string.Format("Cell contents: {0}", cell.CellValue.Text);
+            //   }
+            // }
+
+            // Or... via each row
+            // for ( int i = 7 ; i < rows.Count() ; i++ ) {
+            //   Row row = rows.ToList()[ i ] ;
+            //   Cell c = row.Elements<Cell>().ToList()[ 6 ] ;
+            //   if ((c.DataType != null) && (c.DataType == CellValues.SharedString))
+            //   {
+            //     if ( c.CellValue != null ) {
+            //       int ssid = int.Parse(c.CellValue.Text);
+            //       string str = sst.ChildElements[ssid].InnerText;
+            //       if ( str.Contains( "又は" ) ) {
+            //         sb.AppendLine(string.Format("Shared string shape{0}: {1}", ssid, str));  
+            //       }
+            //       
+            //     }
+            //   }
+            //   else if (c.CellValue != null)
+            //   {
+            //     sb.AppendLine(string.Format("Cell contents: {0}", c.CellValue.Text));
+            //   }
+            // }
+    //       }
+    //     }
+    //   }
+    // }
+
+    private List<Image> GetListImages( string filePath )
+    {
+      string workbookPath = filePath ;
+      var _listImage = new List<Image>() ;
+      Application? excelApp = new Microsoft.Office.Interop.Excel.Application() ;
+      var excelWorkbook = excelApp.Workbooks.Open( workbookPath, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing, false, XlPlatform.xlWindows, Type.Missing, true, false, Type.Missing, Type.Missing, Type.Missing, Type.Missing ) ;
+      if ( excelWorkbook != null ) {
+        Worksheet sheet = (Worksheet) excelWorkbook.Sheets[ "セットコード一覧表" ] ;
+
+        if ( sheet == null ) return _listImage ;
+
+        var shapes = new List<Microsoft.Office.Interop.Excel.Shape>() ;
+        Range xlRange = sheet.UsedRange ;
+        var endRow = xlRange.Rows.Count ;
+        for ( var i = 7 ; i <= endRow ; i++ ) {
+          Range cell = (Range) sheet.Cells[ i, 3 ] ;
+          if ( cell == null ) continue ;
+          var name = cell.Cells.Value2.ToString() ;
+          var firstIndexGroup = i ;
+          var nextName = cell.Cells.Value2.ToString() ;
+
+          do {
+            i++ ;
+            if ( i > endRow ) break ;
+            name = nextName ;
+            // cell =  sheet.Cells[ i, 3 ].ToString() ;
+            // if ( cell == null ) break ;
+            nextName = cell.Cells.Value2.ToString() ;
+          } while ( ! ( string.IsNullOrEmpty( name ) && ! string.IsNullOrEmpty( nextName ) ) ) ;
+          //COPY SHAPE TO NEW SHEET
+
+          //CONVERT SHARP TO IMAGE 
+          for ( int j = 1 ; i <= sheet.Shapes.Count ; j++ ) {
+            var shape = sheet.Shapes.Item( j ) ;
+            shape.Copy() ;
+            var image = Clipboard.GetImage() ;
+            _listImage.Add( image ) ;
+          }
+
+          // foreach ( var shape in shapes ) {
+          //   shape.Copy() ;
+          //   var image = Clipboard.GetImage() ;
+          //   _listImage.Add( image ) ;
+          // }
+          //DELETE TEMP SHEET
+        }
+
+
+        excelWorkbook.Save() ;
+        excelWorkbook.Close() ;
+        excelApp.Quit() ;
+
+
+        if ( sheet != null )
+          Marshal.ReleaseComObject( sheet ) ;
+
+        if ( excelWorkbook != null )
+          Marshal.ReleaseComObject( excelWorkbook ) ;
+        if ( excelApp != null )
+          Marshal.ReleaseComObject( excelApp ) ;
+        excelApp = null ;
+      }
+
+      return _listImage ;
     }
 
     private void LoadData( CeedStorable ceeDStorable )
