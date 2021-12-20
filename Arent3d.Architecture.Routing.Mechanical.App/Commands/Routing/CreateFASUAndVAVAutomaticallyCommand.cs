@@ -135,8 +135,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
           if ( space == rootSpace ) {
-            var adjustedPositionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, pickedConnector.Origin.Y, pickedConnector.Origin.Z ) ;
-            if ( IsInSpace( boxOfSpace, adjustedPositionOfFASUAndVAV ) )
+            var adjustedPositionOfFASUAndVAV = new XYZ( positionOfFASUAndVAV.X, pickedConnector.Origin.Y, positionOfFASUAndVAV.Z ) ;
+            if ( IsInSpace( boxOfSpace, new XYZ( adjustedPositionOfFASUAndVAV.X, adjustedPositionOfFASUAndVAV.Y, ( boxOfSpace.Max.Z + boxOfSpace.Min.Z ) / 2 ) ) )
               positionOfFASUAndVAV = adjustedPositionOfFASUAndVAV ;
           }
           var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
