@@ -281,8 +281,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       private static PassPointTerm CreatePassPointTerm(Vector3d startPosition, BranchPointInfo info, double offset )
       {
         // コネクタのIn,Outから対象を絞る
-        var behindTeeConnector = info.Tee.GetConnectors().Where( conn => conn.Id ==1 || conn.Id==2 ).
-          MaxItemOrDefault(conn=>( Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To2d() ) ) ) ;
+        var behindTeeConnector = info.Tee.GetConnectors().Where( conn => conn.Id ==1 || conn.Id==2 ).MaxBy( conn =>
+          Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To2d() ) ) ;
         if ( behindTeeConnector == null ) return null! ;
         var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
         var routeName = info.ChildRouteName ;
