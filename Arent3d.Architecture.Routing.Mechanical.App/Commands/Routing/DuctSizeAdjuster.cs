@@ -301,7 +301,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       var routeNameToBranchPointInfo = new Dictionary<string, BranchPointInfo>() ;
 
-      var a = CollectBranchPointInfos( document, new Route[] { route } ).ToArray() ;
+      //var a = CollectBranchPointInfos( document, new Route[] { route } ).ToArray() ;
       
       foreach ( var info in CollectBranchPointInfos( document, new Route[] { route } ) ) {
         routeNameToBranchPointInfo.Add( info.ChildRouteName, info ) ;
@@ -312,32 +312,20 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     
     class BranchPointInfo
     {
-      public BranchPointInfo( string childRouteName, Vector3d branchPosition, FamilyInstance tee,
-        ConnectorEndPoint otherSideEndPoint )
+      public BranchPointInfo( string childRouteName, Vector3d branchPosition, FamilyInstance tee)
       {
         ChildRouteName = childRouteName ;
         BranchPosition = branchPosition ;
         Tee = tee ;
-        OtherSideEndPoint = otherSideEndPoint ;
       }
       public string ChildRouteName { get ; }
       public Vector3d BranchPosition { get ; }
       public FamilyInstance Tee { get ; }
-      public ConnectorEndPoint OtherSideEndPoint { get ; }
     }
     
     private static IEnumerable<BranchPointInfo> CollectBranchPointInfos( Document document,IEnumerable<Route> routes)
     {
       var routeNameSegmentPairs = Route.GetAllRelatedBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
-      // Dictionary<RouteSegment, string> segmentToRoute = new Dictionary<RouteSegment, string>() ;
-      // foreach ( var routeNameSegmentsPair in routeNameSegmentsPairs ) {
-      //   segmentToRoute.Add(routeNameSegmentsPair.Segment, routeNameSegmentsPair.RouteName);
-      // }
-      // Dictionary<IEndPoint, RouteSegment> endPointToRouteSegment = new Dictionary<IEndPoint, RouteSegment>() ;
-      // foreach ( var segment in segmentToRoute.Keys ) {
-      //   endPointToRouteSegment.Add(segment.FromEndPoint, segment);
-      //   endPointToRouteSegment.Add(segment.ToEndPoint, segment  );
-      // }
 
       var connectorEndPointToRouteName = new Dictionary<EndPointKey, string>() ;
       foreach ( var (routeName, segment) in routeNameSegmentPairs ) {
@@ -346,15 +334,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
       foreach ( var tee in tees ) {
-        var connectorEndPoint = tee.GetNearestEndPoints( false ).OfType<ConnectorEndPoint>().FirstOrDefault() ;
-        if ( connectorEndPoint == null ) throw new InvalidOperationException() ;
-        var childRouteName = GetChildRouteName( tee ) ;
-        if ( childRouteName == null ) throw new InvalidOperationException() ;
-        
+        var branchRouteName = tee.GetBranchRouteNames().First() ;
         var branchLocation = tee.Location as LocationPoint ;
   
-        
-        yield return new BranchPointInfo( childRouteName, branchLocation!.Point.To3dPoint(), tee, connectorEndPoint ) ;
+        yield return new BranchPointInfo( branchRouteName, branchLocation!.Point.To3dPoint(), tee ) ;
       }
     }
 

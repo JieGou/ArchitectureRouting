@@ -41,8 +41,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
+      var topRoute = GetTopRoute( routes.First() ) ;
       RouteGenerator.CorrectEnvelopes( document ) ;
-      return DuctSizeAdjuster.AdjustDuctSize( document, routes.First(), 10.0 ).ToArray() ;
+      return DuctSizeAdjuster.AdjustDuctSize( document, topRoute, 10.0 ).ToArray() ;
     }
+
+    private static Route GetTopRoute( Route route )
+    {
+      var targetRoutes = route.GetParentBranches() ;
+      if ( ! targetRoutes.Any() ) return route ;
+      return GetTopRoute( targetRoutes.First() ) ;
+    }
+    
   }
 }
