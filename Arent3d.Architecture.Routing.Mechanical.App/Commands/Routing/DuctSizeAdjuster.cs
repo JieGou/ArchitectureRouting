@@ -234,6 +234,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       public void MergeSegmentsIfSmall( double distancePerBranch )
       {
+        if ( ! _segmentList.Any() ) return ;
+        
         var segmentList = new List<Segment> { _segmentList.First() } ;
 
         foreach ( var segment in _segmentList.Skip( 1 ) ) {
@@ -300,9 +302,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static Segments CreateSegments( Document document, Route route, double passPointOffset )
     {
       var routeNameToBranchPointInfo = new Dictionary<string, BranchPointInfo>() ;
-
-      //var a = CollectBranchPointInfos( document, new Route[] { route } ).ToArray() ;
-      
       foreach ( var info in CollectBranchPointInfos( document, new Route[] { route } ) ) {
         routeNameToBranchPointInfo.Add( info.ChildRouteName, info ) ;
       }
