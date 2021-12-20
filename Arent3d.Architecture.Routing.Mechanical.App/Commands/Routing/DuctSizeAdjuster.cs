@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       var segments = CreateSegments( document, route, passPointOffset ) ;
       segments.MergeSegmentsIfSmall( passPointOffset );
-      segments.CalcAirFlowAndSetDiameter() ;
+      segments.CalcAirFlowAndSetDiameter( document ) ;
       return segments.CreateRouteSegments( document ) ;
     }
 
@@ -82,6 +82,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       private readonly XYZ _position ;
       private readonly XYZ _direction ;
       private readonly ElementId _levelId ;
+      private double? _radius ;
+      
       
       public PassPointTerm( string routeName, XYZ position, XYZ direction, ElementId levelId)
       {
@@ -94,7 +96,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       public IEndPoint GetOrCreateEndPoint( Document document )
       {
         if ( _endPoint == null ) {
-          var passPointInstance = document.AddPassPoint( _routeName, _position, _direction, null, _levelId ) ;
+          var passPointInstance = document.AddPassPoint( _routeName, _position, _direction, _radius, _levelId ) ;
           _endPoint = new PassPointEndPoint( passPointInstance ) ;
         }
         return _endPoint ;
@@ -104,6 +106,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       {
         return _position.To3dPoint() ;
       }
+
+      public void UpdateRadius( double radius )
+      {
+        _radius = radius ;
+      }
+      
     }
 
     // SubRoute+その子供に相当する区間
@@ -149,22 +157,28 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      public double CalcAirFlowAndSetDiameter( double nextSegmentAirFlow )
+      public double CalcAirFlowAndSetDiameter( Document document, double nextSegmentAirFlow )
       {
         var totalAirFlow = nextSegmentAirFlow ;
         
         var childSegmentsTotalAirFlow = 0.0 ;
         foreach ( var childSegments in _childSegments ) {
-          childSegmentsTotalAirFlow += childSegments.CalcAirFlowAndSetDiameter() ;
+          childSegmentsTotalAirFlow += childSegments.CalcAirFlowAndSetDiameter( document ) ;
         }
 
         totalAirFlow += childSegmentsTotalAirFlow ;
         
         if ( _toPoint is FixedTerm ft ) {
-          // TODO VAV の　AirFlow を totalAirFlow に加える
+          var airflowOfSpace = TTEUtil.GetAirFlowOfSpace( document, ft.GetPosition() ) ;
+          if ( airflowOfSpace.HasValue ) totalAirFlow += airflowOfSpace.Value ;
         }
         
-        _diameter = TTEUtil.ConvertAirflowToDiameterForTTE( totalAirFlow ) ;
+        _diameter = TTEUtil.ConvertAirflowToDiameterForTTE( totalAirFlow ).MillimetersToRevitUnits() ;
+
+        if ( _toPoint is PassPointTerm ppt ) {
+          if ( _diameter.HasValue ) ppt.UpdateRadius( _diameter.Value * 0.5 );
+        }
+        
         return totalAirFlow ;
       }
       
@@ -253,14 +267,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      public double CalcAirFlowAndSetDiameter()
+      public double CalcAirFlowAndSetDiameter( Document document )
       {
         var airFlow = 0.0 ;
 
         var reversedSegmentList = _segmentList ;
         reversedSegmentList.Reverse() ;
         foreach ( var segment in reversedSegmentList ) {
-          airFlow = segment.CalcAirFlowAndSetDiameter( airFlow ) ;
+          airFlow = segment.CalcAirFlowAndSetDiameter( document, airFlow ) ;
         }
 
         return airFlow ;
