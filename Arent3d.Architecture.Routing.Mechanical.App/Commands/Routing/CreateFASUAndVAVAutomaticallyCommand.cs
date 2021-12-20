@@ -117,9 +117,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document,
         branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
-      
+
       var parentSpaces = spaces.Where( s => s.GetSpaceBranchNumber() == RootBranchNumber ).ToList() ;
-      parentSpaces.Sort( ( a, b ) => CompareDistanceBasisZ( pickedConnector, a, b, false ) ) ;
+      parentSpaces.Sort( ( a, b ) => CompareComponentOfRootConnectorNormal( pickedConnector, a, b ) ) ;
       var rootSpace = parentSpaces.LastOrDefault() ;
       
       using ( Transaction tr = new(document) ) {
@@ -164,35 +164,21 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       return Result.Succeeded ;
     }
-    
-    private static int CompareDistanceBasisZ( IConnector rootConnector, Element a, Element b, bool isRotate90 )
+
+    private static int CompareComponentOfRootConnectorNormal( IConnector rootConnector, Element a, Element b )
     {
       if ( a.Location is not LocationPoint aPos || b.Location is not LocationPoint bPos ) return default ;
-
-      return DistanceFromRoot( rootConnector, aPos, isRotate90 ).CompareTo( DistanceFromRoot( rootConnector, bPos, isRotate90 ) ) ;
+      return GetComponentOfRootConnectorNormal( rootConnector, aPos ).CompareTo( GetComponentOfRootConnectorNormal( rootConnector, bPos ) ) ;
     }
 
-    private static double DistanceFromRoot( IConnector rootConnector, LocationPoint targetConnectorPos, bool isRotate90 )
+    private static double GetComponentOfRootConnectorNormal( IConnector rootConnector, LocationPoint targetConnectorPos )
     {
-      var rootConnectorPosXyz = rootConnector.Origin ;
-      var rootConnectorPos2d = rootConnectorPosXyz.To3dPoint().To2d() ;
-      var targetConnector = targetConnectorPos.Point.To3dPoint().To2d() ;
-
-      var rootConnectorBasisZ = rootConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
-      var calculateDir = isRotate90 ? new Vector2d( -rootConnectorBasisZ.y, rootConnectorBasisZ.x ) : rootConnectorBasisZ ;
-      var rootToVavVector = targetConnector - rootConnectorPos2d ;
-      var angle = GetAngleBetweenVector( calculateDir, rootToVavVector ) ;
-
-      return Math.Abs( Math.Cos( angle ) * rootToVavVector.magnitude ) ;
+      var rootConnectorPos3d = rootConnector.Origin.To3dPoint() ;
+      var targetConnectorPos3d = targetConnectorPos.Point.To3dPoint() ;
+      var componentOfRootConnectorNormal = Vector3d.Dot( targetConnectorPos3d - rootConnectorPos3d, rootConnectorPos3d ) ;
+      return componentOfRootConnectorNormal ;
     }
 
-    // Get the angle between two vectors
-    private static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
-    {
-      // return the angle (in radian)
-      return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
-    }
-    
     private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV(Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double rotationAngle)
     {
       var instanceOfFASU = document.AddFASU( positionOfFASUAndVAV, levelId ) ;
