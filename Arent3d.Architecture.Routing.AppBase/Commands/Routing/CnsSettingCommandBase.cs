@@ -40,6 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( dialog.DialogResult ?? false ) {
         Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
 
+        bool applyError = false ;
         if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None ) {
           try {
             MessageBox.Show(
@@ -117,12 +118,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
             else {
               MessageBox.Show( message, "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault( "Construction item addition result" ), MessageBoxButtons.OK ) ;
+              applyError = true ;
             }
           }
           catch {
             MessageBox.Show( "Dialog.Electrical.SetElementProperty.Failure".GetAppStringByKeyOrDefault( "Failed" ),
               "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault(
                 "Construction item addition result" ), MessageBoxButtons.OK ) ;
+            applyError = true ;
           }
         }
 
@@ -140,7 +143,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
           }
 
-          if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
+          if ( ! applyError && cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
                cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
             foreach ( var item in connectorGroups ) {
               // create group for updated connector (with new property) and related text note if any
@@ -204,7 +207,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static void UpdateConstructionsItem( Document document, ObservableCollection<CnsSettingModel> currentCnsSettingData, ObservableCollection<CnsSettingModel> newCnsSettingData )
     {
-      var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
+      var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).ToList() ;
       foreach ( var conduit in conduits ) {
         var strCurrentConstructionItem = conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
         if ( string.IsNullOrEmpty( strCurrentConstructionItem ) ) continue ;
