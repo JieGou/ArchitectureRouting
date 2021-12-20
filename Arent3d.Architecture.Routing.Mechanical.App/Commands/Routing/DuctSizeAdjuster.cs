@@ -274,7 +274,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var reversedSegmentList = _segmentList ;
         reversedSegmentList.Reverse() ;
         foreach ( var segment in reversedSegmentList ) {
-          airFlow = segment.CalcAirFlowAndSetDiameter( document, airFlow ) ;
+          airFlow += segment.CalcAirFlowAndSetDiameter( document, airFlow ) ;
         }
 
         return airFlow ;
