@@ -4,12 +4,9 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
-using System.IO ;
 using System.Linq ;
 using System.Runtime.InteropServices ;
-using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
@@ -21,14 +18,15 @@ namespace Arent3d.Architecture.Routing.Storable
     private const string CnsSettingField = "CnsSetting" ;
     public ObservableCollection<CnsSettingModel> CnsSettingData { get ; set ; }
 
-    public enum ConstructionItemType
+    public enum UpdateItemType
     {
       None, // デフォルト：工事項目を設定しない
-      Conduit //配線に工事項目を設定する
+      Conduit, //配線に工事項目を設定する
+      Connector
     }
 
     public int SelectedIndex { get ; set ; }
-    public ConstructionItemType ConduitType { get ; set ; }
+    public UpdateItemType ElementType { get ; set ; }
 
     /// <summary>
     /// for loading from storage.
@@ -38,7 +36,7 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       CnsSettingData = new ObservableCollection<CnsSettingModel>() ;
       SelectedIndex = 0 ;
-      ConduitType = ConstructionItemType.None ;
+      ElementType = UpdateItemType.None ;
     }
 
     /// <summary>
@@ -48,6 +46,8 @@ namespace Arent3d.Architecture.Routing.Storable
     public CnsSettingStorable( Document document ) : base( document, false )
     {
       CnsSettingData = new ObservableCollection<CnsSettingModel>() ;
+      SelectedIndex = 0 ;
+      ElementType = UpdateItemType.None ;
     }
 
     public override string Name => StorableName ;

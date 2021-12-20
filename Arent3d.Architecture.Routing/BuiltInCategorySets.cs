@@ -50,6 +50,14 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_ConduitFitting,
       BuiltInCategory.OST_ConduitRun,
     } ;
+    
+    public static readonly BuiltInCategory[] ConstructionItems =
+    {
+      BuiltInCategory.OST_Conduit,
+      BuiltInCategory.OST_ConduitFitting,
+      BuiltInCategory.OST_ConduitRun,
+      BuiltInCategory.OST_ElectricalFixtures,
+    } ;
 
     public static readonly BuiltInCategory[] CableTrays =
     {
@@ -139,6 +147,12 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_MechanicalEquipment,
     } ;
 
+    public static readonly BuiltInCategory[] AHUNumberElements =
+    {
+      BuiltInCategory.OST_MEPSpaces,
+      BuiltInCategory.OST_MechanicalEquipment,
+    } ;
+    
     private static T[] CombineArrays<T>( params T[][] arrays )
     {
       var totalLength = arrays.Sum( array => array.Length ) ;

@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing.FittingSizeCalculators
 
     private static XYZ GetConnectorPosition( MEPCurve curve )
     {
-      return curve.GetConnectors().Select( conn => conn.Origin ).MinItemOrDefault( pos => pos.DotProduct( pos ) ) ?? throw new InvalidOperationException() ;
+      return curve.GetConnectors().Select( conn => conn.Origin ).MinBy( pos => pos.DotProduct( pos ) ) ?? throw new InvalidOperationException() ;
     }
   }
 }
