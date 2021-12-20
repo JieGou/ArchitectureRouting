@@ -60,7 +60,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           
           if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedCondition ) ) {
             var txtConditionPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
-            var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, .1, dlgCeeDModel.SelectedCondition, opts ) ;
+            var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeeDModel.SelectedCondition, opts ) ;
 
             var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) )
               .WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( "1.5 mm", tt.Name ) ) ;
