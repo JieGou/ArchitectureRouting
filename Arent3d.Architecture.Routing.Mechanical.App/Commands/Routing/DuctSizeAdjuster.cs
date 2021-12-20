@@ -139,6 +139,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         _diameter = orgSegment.PreferredNominalDiameter ;
       }
 
+      public Segment( string routeName, ITermPoint fromPoint, ITermPoint toPoint, RouteSegment orgSegment )
+      {
+        _routeName = routeName ;
+        _fromPoint = fromPoint ;
+        _toPoint = toPoint ;
+        _orgSegment = orgSegment ;
+        _childSegments = new List<Segments>() ;
+      }
+      
       public bool IsSmallSegment( double distancePerBranch )
       {
         return Vector3d.Distance( _fromPoint.GetPosition(), _toPoint.GetPosition() ) < distancePerBranch * _childSegments.Count ;
@@ -235,6 +244,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         for ( var i = 0 ; i < sortedRoutes.Count ; ++i ) {
           _segmentList.Add(new Segment( branchNameToBranchPointInfo, route.RouteName, terms[ i ], terms[ i + 1 ], routeSegment, sortedRoutes[ i ], passPointOffset )) ;
         }
+        _segmentList.Add( new Segment( route.RouteName, terms[sortedRoutes.Count], terms[sortedRoutes.Count+1], routeSegment )  );
       }
 
       public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments(Document document)
@@ -271,7 +281,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       {
         var airFlow = 0.0 ;
 
-        var reversedSegmentList = _segmentList ;
+        var reversedSegmentList = _segmentList.ToList() ;
         reversedSegmentList.Reverse() ;
         foreach ( var segment in reversedSegmentList ) {
           airFlow += segment.CalcAirFlowAndSetDiameter( document, airFlow ) ;
