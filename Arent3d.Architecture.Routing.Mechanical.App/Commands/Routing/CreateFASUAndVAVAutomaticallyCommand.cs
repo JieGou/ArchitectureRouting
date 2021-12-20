@@ -146,12 +146,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           var vavConnector = instanceOfVAV.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.Out ) ;
           if ( fasuConnector != null && vavConnector != null ) {
             var duct = CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
-
             document.Regenerate() ;
             if ( duct == null ) continue ;
             // create group of FASUs, VAVs and RoundDuct
-          var groupIds = new List<ElementId> { instanceOfFASU.Id, instanceOfVAV.Id, duct.Id } ;
-          document.Create.NewGroup(groupIds);
+            var groupIds = new List<ElementId> { instanceOfFASU.Id, instanceOfVAV.Id, duct.Id } ;
+            document.Create.NewGroup( groupIds ) ;
           }
         }
 
@@ -370,19 +369,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static Duct? CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
       Connector connectorOfVAV, ElementId levelId )
     {
-<<<<<<< HEAD
-      var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
-        .WhereElementIsElementType().AsEnumerable().OfType<DuctType>() ;
-      var ductType = collector.LastOrDefault( e => e.Shape == ConnectorProfileType.Round ) ;
-      return ductType != null ? Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) : null ;
-=======
       var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ).WhereElementIsElementType().AsEnumerable().OfType<DuctType>() ;
       var ductTypes = collector.Where( e => e.Shape == ConnectorProfileType.Round ).ToArray() ;
       var ductType = ductTypes.FirstOrDefault( e => e.PreferredJunctionType == JunctionType.Tee ) ?? ductTypes.FirstOrDefault() ;
-      if ( ductType != null ) {
-        Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
-      }
->>>>>>> develop
+      return ductType != null ? Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) : null ;
     }
 
     private static bool RoundDuctTypeExists( Document document )
