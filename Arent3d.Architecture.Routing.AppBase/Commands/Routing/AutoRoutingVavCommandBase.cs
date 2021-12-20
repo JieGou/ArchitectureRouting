@@ -21,6 +21,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const string ErrorMessageNoRootConnector = "No RootConnector are selected." ;
     private const string ErrorMessageNoSpace = "Find space cannot be found." ;
     private const string ErrorMessageNoParentVav = "No VAV on the space group 0" ;
+    private const string ErrorMessageVavNoInConnector = "VAVの流れの方向[イン]が設定されていないため、処理に失敗しました。" ;
+    private const string ErrorMessageVavNoOutConnector = "VAVの流れの方向[アウト]が設定されていないため、処理に失敗しました。" ;
 
     private Level _rootLevel = null! ;
     
@@ -56,6 +58,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var vavInstances = vavs as FamilyInstance[] ?? vavs.ToArray() ;
       if ( ! vavInstances.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoVav ) ;
 
+      // Check IN/OUT connectors
+      var vavInConnectorExists = vavInstances.Last().GetConnectors().Any( c => c.Direction == FlowDirectionType.In ) ;
+      if ( ! vavInConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoInConnector ) ;
+      var vavOutConnectorExists = vavInstances.Last().GetConnectors().Any( c => c.Direction == FlowDirectionType.Out ) ;
+      if ( ! vavOutConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoOutConnector ) ;
+      
       // Get all space
       var spaces = GetAllSpaces( doc ) ;
       if ( ! spaces.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
