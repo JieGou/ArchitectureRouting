@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   {
     public static IEnumerable<(string routeName, RouteSegment)> AdjustDuctSize(Document document, Route route, double passPointOffset )
     {
-      const double tolerance = 1000 ;
+      const double tolerance = 0 ;
       var segments = CreateSegments( document, route, passPointOffset.MillimetersToRevitUnits() ) ;
       segments.MergeSegmentsIfSmall( tolerance.MillimetersToRevitUnits() );
       segments.CalcAirFlowAndSetDiameter( document ) ;
@@ -128,14 +128,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       private double? _diameter ;
       
       public Segment( IReadOnlyDictionary<string,BranchPointInfo> branchNameToBranchPointInfo, 
-        string routeName, ITermPoint fromPoint, ITermPoint toPoint, RouteSegment orgSegment, Route childRoute, double passPointOffset )
+        string routeName, ITermPoint fromPoint, ITermPoint toPoint, RouteSegment orgSegment, Route childRoute, double passPointOffset, int subRouteIndex = 0 )
       {
         _routeName = routeName ;
         _fromPoint = fromPoint ;
         _toPoint = toPoint ;
 
         _orgSegment = orgSegment ;
-        _childSegments = new List<Segments>() { new Segments( branchNameToBranchPointInfo, childRoute, passPointOffset) } ;
+        _childSegments = new List<Segments>() { new Segments( branchNameToBranchPointInfo, childRoute, passPointOffset, subRouteIndex) } ;
 
         _diameter = orgSegment.PreferredNominalDiameter ;
       }
@@ -221,8 +221,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private class Segments
     {
       private List<Segment> _segmentList ;
+      private int _subRouteIndex = 0 ;
 
-      public Segments( IReadOnlyDictionary<string,BranchPointInfo> branchNameToBranchPointInfo, Route route, double passPointOffset)
+      public Segments( IReadOnlyDictionary<string, BranchPointInfo> branchNameToBranchPointInfo, Route route, double passPointOffset, int subRouteIndex = 0 )
       {
         var routeSegment = route.RouteSegments.First() ;
         
@@ -243,15 +244,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
         _segmentList = new List<Segment>() ;
         for ( var i = 0 ; i < sortedRoutes.Count ; ++i ) {
-          _segmentList.Add(new Segment( branchNameToBranchPointInfo, route.RouteName, terms[ i ], terms[ i + 1 ], routeSegment, sortedRoutes[ i ], passPointOffset )) ;
+          _segmentList.Add( new Segment( branchNameToBranchPointInfo, route.RouteName, terms[ i ], terms[ i + 1 ], routeSegment, sortedRoutes[ i ], passPointOffset, i ) ) ;
         }
-        _segmentList.Add( new Segment( route.RouteName, terms[sortedRoutes.Count], terms[sortedRoutes.Count+1], routeSegment )  );
+
+        _segmentList.Add( new Segment( route.RouteName, terms[ sortedRoutes.Count ], terms[ sortedRoutes.Count + 1 ], routeSegment ) ) ;
+        _subRouteIndex = subRouteIndex ;
       }
 
-      public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments(Document document)
+      public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments( Document document )
       {
-        for ( var subRouteIndex = 0 ; subRouteIndex < _segmentList.Count ; ++subRouteIndex ) {
-          foreach ( var routeSegment in _segmentList[ subRouteIndex ].CreateRouteSegments( document, subRouteIndex ) ) {
+        for ( var index = 0 ; index < _segmentList.Count ; ++index ) {
+          foreach ( var routeSegment in _segmentList[ index ].CreateRouteSegments( document, _subRouteIndex ) ) {
             yield return routeSegment ;
           }
         }
@@ -333,44 +336,30 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       return new Segments( routeNameToBranchPointInfo, route, passPointOffset ) ;
     }
-    
+
     class BranchPointInfo
     {
-      public BranchPointInfo( string childRouteName, Vector3d branchPosition, FamilyInstance tee)
+      public BranchPointInfo( string childRouteName, Vector3d branchPosition, FamilyInstance tee )
       {
         ChildRouteName = childRouteName ;
         BranchPosition = branchPosition ;
         Tee = tee ;
       }
+
       public string ChildRouteName { get ; }
       public Vector3d BranchPosition { get ; }
       public FamilyInstance Tee { get ; }
     }
-    
-    private static IEnumerable<BranchPointInfo> CollectBranchPointInfos( Document document,IEnumerable<Route> routes)
+
+    private static IEnumerable<BranchPointInfo> CollectBranchPointInfos( Document document, IEnumerable<Route> routes )
     {
-      var routeNameSegmentPairs = Route.GetAllRelatedBranches( routes ).ToSegmentsWithName().EnumerateAll() ;
-
-      var connectorEndPointToRouteName = new Dictionary<EndPointKey, string>() ;
-      foreach ( var (routeName, segment) in routeNameSegmentPairs ) {
-        if ( segment.ToEndPoint is ConnectorEndPoint cep ) connectorEndPointToRouteName.Add( cep.Key, routeName ) ;
-      }
-
       var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
       foreach ( var tee in tees ) {
         var branchRouteName = tee.GetBranchRouteNames().First() ;
         var branchLocation = tee.Location as LocationPoint ;
-  
+
         yield return new BranchPointInfo( branchRouteName, branchLocation!.Point.To3dPoint(), tee ) ;
       }
-    }
-
-    private static string GetChildRouteName(FamilyInstance tee)
-    {
-      var elementsNextToTee = tee.GetConnectors().Select( connector => connector.GetConnectedConnectors().FirstOrDefault()?.Owner ).ToArray() ;
-      var routeNames = elementsNextToTee.OfType<Element>().Select( e => e.GetRouteName() ).ToArray() ;
-
-      return routeNames.FirstOrDefault( name => name != null && name != tee.GetRouteName() )! ;
     }
 
   }
