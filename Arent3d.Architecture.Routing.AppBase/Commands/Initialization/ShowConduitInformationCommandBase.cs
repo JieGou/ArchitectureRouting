@@ -159,7 +159,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         result = @group.Value.Aggregate( result,
           ( current, item ) =>
             current +
-            $"\r{line}\r{item.WireType + item.WireSize}\t-{item.WireStrip}\tX{item.Quantity}\t({CheckEmptyString(item.PipingType + item.PipingSize)})\t{item.Remark}" ) ;
+            $"\r{line}\r{item.WireType + item.WireSize}\t-{item.WireStrip}\tX{item.Quantity}\t{CheckEmptyString(item.PipingType + item.PipingSize)}\t{item.Remark}" ) ;
       }
 
       result += $"\r{line}" ;
