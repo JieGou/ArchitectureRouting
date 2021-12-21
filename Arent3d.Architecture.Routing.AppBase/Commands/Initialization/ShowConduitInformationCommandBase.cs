@@ -34,7 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         var pickedObjects = uiDoc.Selection
           .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-          .Where( p => p is FamilyInstance or Conduit ) ;
+          .Where( p => p is Conduit ) ;
         foreach ( var element in pickedObjects ) {
           string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
           string constructionItem = element.LookupParameter( "Construction Item" ).AsValueString() ;
@@ -88,9 +88,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                     var conduitModels = conduitsModelData
                       .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
                     conduitInformationModels.Add( new ConduitInformationModel( false, floor,
-                      existSymbolDetail.DetailSymbol, master.Type, master.Hinmei, master.Size1, master.Size2,
+                      existSymbolDetail.DetailSymbol, master.Type, master.Size1, master.Size2, "1",
                       string.Empty, string.Empty, string.Empty, master.Type, master.Size1,
-                      conduitModels.Count().ToString(), hiroiCdModel?.ConstructionClassification,
+                      "1", hiroiCdModel?.ConstructionClassification,
                       conduitModels.FirstOrDefault()?.Classification ?? "", constructionItem, constructionItem, "" ) ) ;
                   }
                 }
@@ -103,6 +103,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           .GroupBy( x => new { x?.DetailSymbol, x?.WireType } ).Select( g =>
           {
             g.First().Quantity = g.Count() ;
+            g.First().WireBook = g.Count().ToString() ;
+            g.First().NumberOfPipes = g.Count().ToString() ;
             g.First().Remark = $"x{g.Count()}" ;
             return g.First() ;
           } ).OrderBy( y => y.DetailSymbol ) ) ;
@@ -157,11 +159,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         result = @group.Value.Aggregate( result,
           ( current, item ) =>
             current +
-            $"\r{line}\r{item.WireType + item.WireSize}\t-{item.WireStrip}\tX{item.Quantity}\t({item.PipingType + item.PipingSize})\t{item.Remark}" ) ;
+            $"\r{line}\r{item.WireType + item.WireSize}\t-{item.WireStrip}\tX{item.Quantity}\t({CheckEmptyString(item.PipingType + item.PipingSize)})\t{item.Remark}" ) ;
       }
 
       result += $"\r{line}" ;
       return result ;
     }
+
+    private string CheckEmptyString( string str )
+    {
+      string result = string.Empty ;
+      if ( string.IsNullOrEmpty( str ) ) {
+        result = $"({str})" ;
+      }
+      else {
+        result = new string( ' ', 5 ) ;
+      }
+      return result ;
+    }
+    
   }
 }
