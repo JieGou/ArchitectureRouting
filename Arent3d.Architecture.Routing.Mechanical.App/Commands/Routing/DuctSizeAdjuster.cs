@@ -14,11 +14,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   {
     public static IEnumerable<(string routeName, RouteSegment)> AdjustDuctSize(Document document, Route route, double passPointOffset )
     {
-      const double tolerance = 0 ;
+      const double tolerance = 1000 ;
       var segments = CreateSegments( document, route, passPointOffset.MillimetersToRevitUnits() ) ;
       segments.MergeSegmentsIfSmall( tolerance.MillimetersToRevitUnits() );
       segments.CalcAirFlowAndSetDiameter( document ) ;
-      return segments.CreateRouteSegments( document ) ;
+      return segments.CreateRouteSegments( document, 0 ) ;
     }
 
     private interface ITermPoint
@@ -128,14 +128,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       private double? _diameter ;
       
       public Segment( IReadOnlyDictionary<string,BranchPointInfo> branchNameToBranchPointInfo, 
-        string routeName, ITermPoint fromPoint, ITermPoint toPoint, RouteSegment orgSegment, Route childRoute, double passPointOffset, int subRouteIndex = 0 )
+        string routeName, ITermPoint fromPoint, ITermPoint toPoint, RouteSegment orgSegment, Route childRoute, double passPointOffset )
       {
         _routeName = routeName ;
         _fromPoint = fromPoint ;
         _toPoint = toPoint ;
 
         _orgSegment = orgSegment ;
-        _childSegments = new List<Segments>() { new Segments( branchNameToBranchPointInfo, childRoute, passPointOffset, subRouteIndex) } ;
+        _childSegments = new List<Segments>() { new Segments( branchNameToBranchPointInfo, childRoute, passPointOffset ) } ;
 
         _diameter = orgSegment.PreferredNominalDiameter ;
       }
@@ -191,11 +191,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         
         return totalAirFlow ;
       }
+
+      public void SetParentSubRouteIndex( int parentSubRouteIndex)
+      {
+        if ( _fromPoint is BranchTerm branchTerm) branchTerm.SetSubRouteIndex( parentSubRouteIndex );
+      }
       
       public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments( Document document, int subRouteIndex)
       {
-        if ( _fromPoint is BranchTerm branchTerm) branchTerm.SetSubRouteIndex( subRouteIndex );
-        
         var fromEndPoint = _fromPoint.GetOrCreateEndPoint( document ) ;
         var toEndPoint = _toPoint.GetOrCreateEndPoint( document ) ;
         yield return ( _routeName, new RouteSegment(
@@ -211,7 +214,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           _orgSegment.ShaftElementId ) );
 
         foreach ( var childSegment in _childSegments ) {
-          foreach ( var routeSegment in childSegment.CreateRouteSegments( document) ) {
+          foreach ( var routeSegment in childSegment.CreateRouteSegments( document, subRouteIndex ) ) {
             yield return routeSegment ;
           }
         }
@@ -221,9 +224,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private class Segments
     {
       private List<Segment> _segmentList ;
-      private int _subRouteIndex = 0 ;
 
-      public Segments( IReadOnlyDictionary<string, BranchPointInfo> branchNameToBranchPointInfo, Route route, double passPointOffset, int subRouteIndex = 0 )
+      public Segments( IReadOnlyDictionary<string, BranchPointInfo> branchNameToBranchPointInfo, Route route, double passPointOffset )
       {
         var routeSegment = route.RouteSegments.First() ;
         
@@ -244,17 +246,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
         _segmentList = new List<Segment>() ;
         for ( var i = 0 ; i < sortedRoutes.Count ; ++i ) {
-          _segmentList.Add( new Segment( branchNameToBranchPointInfo, route.RouteName, terms[ i ], terms[ i + 1 ], routeSegment, sortedRoutes[ i ], passPointOffset, i ) ) ;
+          _segmentList.Add( new Segment( branchNameToBranchPointInfo, route.RouteName, terms[ i ], terms[ i + 1 ], routeSegment, sortedRoutes[ i ], passPointOffset ) ) ;
         }
 
         _segmentList.Add( new Segment( route.RouteName, terms[ sortedRoutes.Count ], terms[ sortedRoutes.Count + 1 ], routeSegment ) ) ;
-        _subRouteIndex = subRouteIndex ;
       }
 
-      public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments( Document document )
+      public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments( Document document, int parentSubRouteIndex )
       {
-        for ( var index = 0 ; index < _segmentList.Count ; ++index ) {
-          foreach ( var routeSegment in _segmentList[ index ].CreateRouteSegments( document, _subRouteIndex ) ) {
+        _segmentList.FirstOrDefault()?.SetParentSubRouteIndex( parentSubRouteIndex );
+        for ( var subRouteIndex = 0 ; subRouteIndex < _segmentList.Count ; ++subRouteIndex ) {
+          foreach ( var routeSegment in _segmentList[ subRouteIndex ].CreateRouteSegments( document, subRouteIndex ) ) {
             yield return routeSegment ;
           }
         }
