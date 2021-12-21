@@ -8,9 +8,19 @@
 
         <key>Electrical.App.Panels.Routing.Initialize</key>
         <string>Setup</string>
+        <key>Electrical.App.Panels.Routing.Initialize.Initialize</key>
+        <string>Setup</string>
+        <key>Electrical.App.Panels.Routing.Initialize.PickUp</key>
+        <string>Pick Up</string>
+        <key>Electrical.App.Panels.Routing.Initialize.Panels</key>
+        <string>Panels</string>
 
         <key>Electrical.App.Panels.Routing.Routing</key>
         <string>Routing</string>
+        <key>Electrical.App.Panels.Routing.Routing.Routing</key>
+        <string>Routing</string>
+        <key>Electrical.App.Panels.Routing.Routing.Erase</key>
+        <string>Erase</string>
 
         <key>Electrical.App.Panels.Routing.PassPoints</key>
         <string>Pass Points</string>
@@ -29,6 +39,9 @@
 
         <key>Electrical.App.Panels.Routing.Connectors</key>
         <string>Connectors</string>
+
+        <key>Electrical.App.Panels.Routing.Routing.Erase</key>
+        <string>Dumpers</string>
 
         <key>Electrical.App.Panels.Routing.RackCommand</key>
         <string>Rack</string>
@@ -299,6 +312,12 @@
 
         <key>Dialog.Electrical.SetElementProperty.Title</key>
         <string>Construction item addition result</string>
+
+        <!-- Element Names -->
+        <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
+        <string>M_電線管エルボ - 鉄鋼</string>
+        <key>Routing.Revit.DummyConduit.ConduitTypeName</key>
+        <string>Arent電線</string>
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
