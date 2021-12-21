@@ -27,6 +27,8 @@ After developing it, push into `origin/<yourname>/<featurename>` and create a pu
 	**Nullable reference types** is enabled.
 - **.NET Framework 4.8**  
 	Compatible to **Revit 2021**.
+- **.NET 5.0 SDK
+- **.NET Framework 4.8 Developer Pack
 
 ### Projects in solution
 
