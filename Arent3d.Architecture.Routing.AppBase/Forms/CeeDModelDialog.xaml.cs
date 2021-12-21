@@ -1,9 +1,5 @@
-﻿using System ;
-using System.Collections.Generic ;
-using System.Globalization ;
-using System.IO ;
+﻿using System.Collections.Generic ;
 using System.Linq ;
-using System.Text ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
@@ -15,9 +11,6 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using NPOI.SS.UserModel ;
-using NPOI.XSSF.UserModel ;
-using CellType = NPOI.SS.UserModel.CellType ;
 using MessageBox = System.Windows.MessageBox ;
 using Visibility = System.Windows.Visibility ;
 
@@ -130,7 +123,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
 
         if ( string.IsNullOrEmpty( filePath ) ) return ;
-        var modelNumberUsed = GetModelNumberUsed( filePath ) ;
+        var modelNumberUsed = ExcelToModelConverter.GetModelNumberUsed( filePath ) ;
         if ( ! modelNumberUsed.Any() ) return ;
         List<CeedModel> ceeDModelUsed = new List<CeedModel>() ;
         foreach ( var modelNumber in modelNumberUsed ) {
@@ -200,57 +193,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CbCodeIsUsed.Visibility = ceeDStorable.CeedModelUsedData.Any() ? Visibility.Visible : Visibility.Hidden ;
     }
 
-    private static List<string> GetModelNumberUsed( string path )
-    {
-      List<string> modelNumbers = new List<string>() ;
-
-      try {
-        var extension = Path.GetExtension( path ) ;
-        switch ( string.IsNullOrEmpty( extension ) ) {
-          case false when extension == ".xlsx" :
-          {
-            FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
-            XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
-            ISheet workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
-            var endRow = workSheet.LastRowNum ;
-            for ( var i = 1 ; i <= endRow ; i++ ) {
-              var record = workSheet.GetRow( i ).GetCell( 1 ) ;
-              if ( record == null || record.CellStyle.IsHidden ) continue ;
-              var strModelNumber = GetCellValue( record ) ;
-              if ( string.IsNullOrEmpty( strModelNumber ) ) continue ;
-              var arrModelNumbers = strModelNumber.Split( '\n' ) ;
-              foreach ( var modelNumber in arrModelNumbers ) {
-                if ( ! string.IsNullOrEmpty( modelNumber ) && ! modelNumbers.Contains( modelNumber ) ) {
-                  modelNumbers.Add( modelNumber ) ;
-                }
-              }
-            }
-
-            break ;
-          }
-          case false when extension == ".csv" :
-          {
-            using StreamReader reader = new StreamReader( path, Encoding.GetEncoding( "shift-jis" ), true ) ;
-            List<string> lines = new List<string>() ;
-            while ( ! reader.EndOfStream ) {
-              var line = reader.ReadLine() ;
-              var values = line!.Split( ',' ) ;
-              var modelNumber = values.Length > 1 ? values[ 1 ].Trim() : values[ 0 ].Trim() ;
-              if ( ! string.IsNullOrEmpty( modelNumber ) && ! modelNumbers.Contains( modelNumber ) )
-                modelNumbers.Add( modelNumber ) ;
-            }
-
-            break ;
-          }
-        }
-      }
-      catch ( Exception ) {
-        return new List<string>() ;
-      }
-
-      return modelNumbers ;
-    }
-
     private void CodeIsUse_Checked( object sender, RoutedEventArgs e )
     {
       if ( _ceeDModelUsed == null ) return ;
@@ -268,21 +210,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.DataContext = ceeDViewModel ;
       CmbCeeDModelNumbers.ItemsSource = ceeDViewModel.CeeDModelNumbers ;
       CmbModelNumbers.ItemsSource = ceeDViewModel.ModelNumbers ;
-    }
-
-    private static string GetCellValue( ICell? cell )
-    {
-      string cellValue = string.Empty ;
-      if ( cell == null ) return cellValue ;
-      cellValue = cell.CellType switch
-      {
-        CellType.Blank => string.Empty,
-        CellType.Numeric => DateUtil.IsCellDateFormatted( cell ) ? cell.DateCellValue.ToString( CultureInfo.InvariantCulture ) : cell.NumericCellValue.ToString( CultureInfo.InvariantCulture ),
-        CellType.String => cell.StringCellValue,
-        _ => cellValue
-      } ;
-
-      return cellValue ;
     }
   }
 }

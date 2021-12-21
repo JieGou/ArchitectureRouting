@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Globalization ;
 using System.IO ;
 using System.Linq ;
+using System.Text ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using NPOI.SS.UserModel ;
 using NPOI.XSSF.UserModel ;
@@ -74,15 +75,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
           var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
           if ( ! ceeDModelNumbers.Any() ) {
-            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols,
-              strModelNumbers, floorPlanSymbol, ceeDName ) ;
+            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
             ceedModelData.Add( ceeDModel ) ;
           }
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
-              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols,
-                strModelNumbers, floorPlanSymbol, ceeDName ) ;
+              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
               ceedModelData.Add( ceeDModel ) ;
             }
           }
@@ -97,6 +96,57 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       return ceedModelData ;
     }
 
+    public static List<string> GetModelNumberUsed( string path )
+    {
+      List<string> modelNumbers = new List<string>() ;
+
+      try {
+        var extension = Path.GetExtension( path ) ;
+        switch ( string.IsNullOrEmpty( extension ) ) {
+          case false when extension == ".xlsx" :
+          {
+            FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
+            XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
+            ISheet workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
+            var endRow = workSheet.LastRowNum ;
+            for ( var i = 1 ; i <= endRow ; i++ ) {
+              var record = workSheet.GetRow( i ).GetCell( 1 ) ;
+              if ( record == null || record.CellStyle.IsHidden ) continue ;
+              var strModelNumber = GetCellValue( record ) ;
+              if ( string.IsNullOrEmpty( strModelNumber ) ) continue ;
+              var arrModelNumbers = strModelNumber.Split( '\n' ) ;
+              foreach ( var modelNumber in arrModelNumbers ) {
+                if ( ! string.IsNullOrEmpty( modelNumber ) && ! modelNumbers.Contains( modelNumber ) ) {
+                  modelNumbers.Add( modelNumber ) ;
+                }
+              }
+            }
+
+            break ;
+          }
+          case false when extension == ".csv" :
+          {
+            using StreamReader reader = new StreamReader( path, Encoding.GetEncoding( "shift-jis" ), true ) ;
+            List<string> lines = new List<string>() ;
+            while ( ! reader.EndOfStream ) {
+              var line = reader.ReadLine() ;
+              var values = line!.Split( ',' ) ;
+              var modelNumber = values.Length > 1 ? values[ 1 ].Trim() : values[ 0 ].Trim() ;
+              if ( ! string.IsNullOrEmpty( modelNumber ) && ! modelNumbers.Contains( modelNumber ) )
+                modelNumbers.Add( modelNumber ) ;
+            }
+
+            break ;
+          }
+        }
+      }
+      catch ( Exception ) {
+        return new List<string>() ;
+      }
+
+      return modelNumbers ;
+    }
+
     private static string GetCellValue( ICell? cell )
     {
       string cellValue = string.Empty ;
@@ -104,9 +154,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       cellValue = cell.CellType switch
       {
         CellType.Blank => string.Empty,
-        CellType.Numeric => DateUtil.IsCellDateFormatted( cell )
-          ? cell.DateCellValue.ToString( CultureInfo.InvariantCulture )
-          : cell.NumericCellValue.ToString( CultureInfo.InvariantCulture ),
+        CellType.Numeric => DateUtil.IsCellDateFormatted( cell ) ? cell.DateCellValue.ToString( CultureInfo.InvariantCulture ) : cell.NumericCellValue.ToString( CultureInfo.InvariantCulture ),
         CellType.String => cell.StringCellValue,
         _ => cellValue
       } ;
