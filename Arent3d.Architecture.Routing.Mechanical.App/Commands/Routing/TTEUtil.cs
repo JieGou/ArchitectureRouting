@@ -46,6 +46,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     public static double? GetAirFlowOfSpace( Document document, Vector3d pointInSpace )
     {
+      // TODO Spaceではなく, VAVから取得するようにする
       var spaces = GetAllSpaces( document ).OfType<Space>().ToArray() ;
       var targetSpace = spaces.FirstOrDefault( space => space.get_BoundingBox( document.ActiveView ).ToBox3d().Contains( pointInSpace, 0.0 ) ) ;
 

@@ -8,6 +8,10 @@ using MathLib ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
+  /// <summary>
+  /// 風量->径の変換に高砂用のテーブルを使っているため、他で使わないこと
+  /// 制約 : rootがFrom側. PassPointが入っていないこと.
+  /// </summary>
   public static class DuctSizeAdjusterForTTE
   {
     public static IEnumerable<(string routeName, RouteSegment)> AdjustDuctSize( Document document, Route route, double passPointOffset )

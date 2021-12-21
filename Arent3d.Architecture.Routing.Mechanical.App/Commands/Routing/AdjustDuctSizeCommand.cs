@@ -43,7 +43,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
       var topRoute = GetTopRoute( routes.First() ) ;
       RouteGenerator.CorrectEnvelopes( document ) ;
-      return DuctSizeAdjuster.AdjustDuctSize( document, topRoute, 10.0 ).ToArray() ;
+      return DuctSizeAdjusterForTTE.AdjustDuctSize( document, topRoute, 10.0 ).ToArray() ;
     }
 
     private static Route GetTopRoute( Route route )
