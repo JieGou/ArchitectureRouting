@@ -35,7 +35,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level ) ;
 
           ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-          var noteWidth = .05 ;
+          var noteWidth = .06 ;
 
           // make sure note width works for the text type
           var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
@@ -73,6 +73,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               textSize.Set( .005 ) ;
             }
             conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
+            
+            // Adjust the position of text note
+            var boxOfElement = element.get_BoundingBox( doc.ActiveView ) ;
+            var boxOfConditionTextNode = conditionTextNote.get_BoundingBox( doc.ActiveView ) ;
+            if ( boxOfElement.Max.Y < boxOfConditionTextNode.Max.Y )
+              ElementTransformUtils.MoveElements( doc, new List<ElementId>() { textNote.Id, conditionTextNote.Id }, new XYZ( 0, 1, 0 ) ) ;
             
             groupIds.Add( conditionTextNote.Id ) ;
           }
