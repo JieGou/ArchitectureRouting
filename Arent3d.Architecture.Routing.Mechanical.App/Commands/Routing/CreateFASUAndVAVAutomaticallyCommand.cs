@@ -157,10 +157,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             if ( intersection != null ) {
               var vavLocation = instanceOfVAV.Location as LocationPoint ;
               var (x, y, _) = intersection.Value.To3d( 0 ).ToXYZPoint() ;
-              if ( vavLocation != null && IsInSpace( boxOfSpace,new XYZ( x, y, vavLocation.Point.Z ) ) ) {
+              if ( IsInSpace( boxOfSpace,new XYZ( x, y, vavLocation!.Point.Z ) ) ) {
                 var adjustedDistance = ( intersection.Value - vavLine.Origin ).To3d( 0 ).ToXYZPoint() ;
-                ElementTransformUtils.MoveElement( document, instanceOfFASU.Id, adjustedDistance ) ;
-                ElementTransformUtils.MoveElement( document, instanceOfVAV.Id, adjustedDistance ) ;
+                ElementTransformUtils.MoveElements( document, new List<ElementId>(){instanceOfFASU.Id, instanceOfVAV.Id} , adjustedDistance ) ;
               }
             }
           }
