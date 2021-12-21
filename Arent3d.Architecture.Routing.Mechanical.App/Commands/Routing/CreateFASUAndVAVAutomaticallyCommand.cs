@@ -142,6 +142,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
           var ( instanceOfFASU, instanceOfVAV) = placeResult.Value ;
           
+          // VAVに風量を設定する
+          var designSupplyAirflow = ( space as Space )?.DesignSupplyAirflow ?? 0 ;
+          instanceOfVAV.LookupParameter( "風量" ).Set( designSupplyAirflow ) ;
+          
           // この時点でコネクタの向きとは逆を向いている想定
           // コネクタの裏側にあるときは、ここで向きを反転する
           if ( rootSpaces.Contains( space ) && IsVavLocatedBehindConnector( document, instanceOfVAV, pickedConnector ) ) {
