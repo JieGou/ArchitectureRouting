@@ -239,12 +239,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         foreach ( var connector in connectors ) {
           var strConnectorConstructionItem = connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
           if ( string.IsNullOrEmpty( strConnectorConstructionItem ) ) continue ;
-
+        
           var connectorCnsSetting = currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConnectorConstructionItem ) ;
           if ( connectorCnsSetting == null ) {
             continue ;
           }
-
+        
           string newConstructionItemValue ;
           if ( newCnsSettingData.All( c => c.Position != connectorCnsSetting.Position ) ) {
             newConstructionItemValue = "未設定" ;
@@ -255,7 +255,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             if ( newConnectorCnsSetting.CategoryName == strConnectorConstructionItem ) continue ;
             newConstructionItemValue = newConnectorCnsSetting.CategoryName ;
           }
-
+        
           var parentGroup = document.GetElement( connector.GroupId ) as Group ;
           if ( parentGroup != null ) {
             // ungroup before set property
@@ -267,20 +267,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               listTextNoteIds.AddRange( ids ) ;
               @group.UngroupMembers() ;
             }
-
+        
             parentGroup.UngroupMembers() ;
             connectorGroups.Add( connector.Id, listTextNoteIds ) ;
             updateConnectors.Add( connector, newConstructionItemValue ) ;
           }
         }
-
+        
         // update ConstructionItem for connector 
         foreach ( var updateItem in updateConnectors ) {
           var e = updateItem.Key ;
           string value = updateItem.Value ;
           e.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, value ) ;
         }
-
+        
         document.Regenerate() ;
         // create group for updated connector (with new property) and related text note if any
         foreach ( var item in connectorGroups ) {
@@ -290,9 +290,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           document.Create.NewGroup( groupIds ) ;
         }
       }
-      catch ( Exception e ) {
-        CommandUtils.DebugAlertException( e ) ;
-        throw ;
+      catch ( Exception ) {
+        // ignored
       }
     }
 
