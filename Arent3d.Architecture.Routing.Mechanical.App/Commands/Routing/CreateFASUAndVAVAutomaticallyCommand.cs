@@ -22,12 +22,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   public class CreateFASUAndVAVAutomaticallyCommand : IExternalCommand
   {
     private const double DistanceBetweenFASUAndVAV = 0.25 ;
-    private const string HeightOfFASU = "3100" ;
-    private const string HeightOfVAV = "3275" ;
     private const string DiameterOfVAV = "250" ;
     private const int RootBranchNumber = 0 ;
     private const double MinDistanceSpacesCollinear = 2.5 ;
-    private const string RoundDuctUniqueId = "dee0da15-198f-4f79-aa08-3ce71203da82-00c0cdcf" ;
 
     private class NumberOfFASUAndVAVModel
     {
@@ -73,7 +70,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       if ( ! RoundDuctTypeExists( uiDocument.Document ) )
-        return ( false, $"There no family with UniqueID `{RoundDuctUniqueId}` in the document." ) ;
+        return ( false, "There no RoundDuct family in the document." ) ;
 
       ConnectorPicker.IPickResult iPickResult =
         ConnectorPicker.GetConnector( uiDocument, routingExecutor, true,
@@ -92,6 +89,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private RoutingExecutor CreateRoutingExecutor( Document document, View view ) =>
       AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
+    // コネクタが揃うように VAV, FASU の高さを決める
+    private static void CalcFASUAndVAVHeight( Connector rootConnector, double fasuInConnectorHeight, double vavInConnectorHeight, double vavOutConnectorHeight, out double heightOfFASU, out double heightOfVAV )
+    {
+      var baseHeight = rootConnector.Origin.Z ;
+      heightOfVAV = ( baseHeight - vavInConnectorHeight ) ;
+      heightOfFASU = (heightOfVAV + vavOutConnectorHeight - fasuInConnectorHeight) ;
+    }
+    
     private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector,
       IList<Element> spaces )
     {
@@ -111,8 +116,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         rootSpaces = new List<Element>() ;
       }
 
-      if ( ! IsPreconditionOfFlowDirectionOfFASUAndVAVSatisfied( document, out var vavUpstreamConnectorNormal ) ) return Result.Failed ;
-
+      if ( ! GetFASUAndVAVConnectorInfo( document, out var fasuInCoonectorHeight, out var vavOutConnectorHeight,
+        out var vavUpstreamConnectorHeight, out var vavUpstreamConnectorNormal ) ) return Result.Failed ;
+      CalcFASUAndVAVHeight( pickedConnector, fasuInCoonectorHeight, vavUpstreamConnectorHeight, vavOutConnectorHeight, out var heightOfFASU, out var heightOfVAV ) ;
+      
       Dictionary<string, NumberOfFASUAndVAVModel> numberOfFASUsAndVAVsInSpacesDictionary = CountFASUsAndVAVsBySpace( document, spaces ) ;
       if ( ! IsPreconditionOfFASUsAndVAVsSatisfied( numberOfFASUsAndVAVsInSpacesDictionary ) ) return Result.Failed ;
       
@@ -130,7 +137,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue;
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
-          var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
+          var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, heightOfFASU, heightOfVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
           if ( placeResult == null ) continue ;// Failed to place
 
           var ( instanceOfFASU, instanceOfVAV) = placeResult.Value ;
@@ -143,11 +150,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           }
 
           // TODO : 一直線にならんでいるグループの方向修正
-
           var fasuConnector = instanceOfFASU.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
           var vavConnector = instanceOfVAV.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.Out ) ;
-          if ( fasuConnector != null && vavConnector != null )
-            CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
+          if ( fasuConnector != null && vavConnector != null ) {
+            var duct = CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
+            document.Regenerate() ;
+            if ( duct == null ) continue ;
+            // create group of FASUs, VAVs and RoundDuct
+            var groupIds = new List<ElementId> { instanceOfFASU.Id, instanceOfVAV.Id, duct.Id } ;
+            document.Create.NewGroup( groupIds ) ;
+          }
         }
 
         tr.Commit() ;
@@ -156,16 +168,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Result.Succeeded ;
     }
 
-    private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV(Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double rotationAngle)
+    private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV(Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double heightOfFASU, double heightOfVAV, double rotationAngle)
     {
-      var instanceOfFASU = document.AddFASU( positionOfFASUAndVAV, levelId ) ;
+      var positionOfFASU = new XYZ( positionOfFASUAndVAV.X, positionOfFASUAndVAV.Y, heightOfFASU ) ;
+      var instanceOfFASU = document.AddFASU( positionOfFASU, levelId ) ;
       ElementTransformUtils.RotateElement( document, instanceOfFASU.Id,
         Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI / 2 ) ;
-      instanceOfFASU.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).SetValueString( HeightOfFASU ) ;
 
-      var instanceOfVAV = document.AddVAV( positionOfFASUAndVAV, levelId ) ;
+      var positionOfVAV = new XYZ( positionOfFASUAndVAV.X, positionOfFASUAndVAV.Y, heightOfVAV ) ;
+      var instanceOfVAV = document.AddVAV( positionOfVAV, levelId ) ;
       instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( DiameterOfVAV ) ;
-      instanceOfVAV.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).SetValueString( HeightOfVAV ) ;
 
       BoundingBoxXYZ boxOfFASU = instanceOfFASU.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfFASU == null ) return null ;
@@ -260,28 +272,47 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return true;
     }
 
-    private static bool IsPreconditionOfFlowDirectionOfFASUAndVAVSatisfied( Document document, out Vector3d vavUpstreamConnectorNormal )
+    private static bool GetFASUAndVAVConnectorInfo( Document document, out double fasuInConnectorHeight, out double vavOutConnectorHeight, out double vavUpstreamConnectorHeight, out Vector3d vavUpstreamConnectorNormal )
     {
-      bool fasuInConnectorExists ;
-      bool vavInConnectorExists ;
-      bool vavOutConnectorExists ;
+      bool fasuInConnectorExists = false ;
+      bool vavInConnectorExists = false ;
+      bool vavOutConnectorExists = false ;
+
+      fasuInConnectorHeight = 0 ;
+      vavOutConnectorHeight = 0 ;
+      vavUpstreamConnectorHeight = 0 ;
+
       vavUpstreamConnectorNormal = new Vector3d( 1, 0, 0 ) ;
 
+      void GetConnectorHeight( FamilyInstance fi, FlowDirectionType type, out bool connectorExists, out double connectorHeight )
+      {
+        var targetConnector = fi.GetConnectors().FirstOrDefault( c => c.Direction == type ) ;
+        if ( targetConnector != null ) {
+          connectorExists = true ;
+          connectorHeight = targetConnector.Origin.Z ;
+          return ;
+        }
+
+        connectorExists = false ;
+        connectorHeight = 0 ;
+      }
+      
       using ( Transaction tr = new(document) ) {
         tr.Start( "Check the flow direction of FASU and VAV" ) ;
 
         var instanceOfFASU = document.AddFASU( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
-        var connectorOfFASUInstance = instanceOfFASU.GetConnectors() ;
-        fasuInConnectorExists = connectorOfFASUInstance.Any( c => c.Direction == FlowDirectionType.In ) ;
-
+        GetConnectorHeight( instanceOfFASU, FlowDirectionType.In, out fasuInConnectorExists, out fasuInConnectorHeight );
+        
         var instanceOfVAV = document.AddVAV( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
-        var connectorOfVAVInstance = instanceOfVAV.GetConnectors() ;
-        vavInConnectorExists = connectorOfVAVInstance.Any( c => c.Direction == FlowDirectionType.In ) ;
-        vavOutConnectorExists = connectorOfVAVInstance.Any( c => c.Direction == FlowDirectionType.Out ) ;
-        var inConnectorOfVavInstance = connectorOfVAVInstance.FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
-        if ( inConnectorOfVavInstance != null )
-          vavUpstreamConnectorNormal = inConnectorOfVavInstance.CoordinateSystem.BasisZ.To3dPoint().normalized ;
+        GetConnectorHeight( instanceOfVAV, FlowDirectionType.Out, out vavOutConnectorExists, out vavOutConnectorHeight );
 
+        var vavInConnector = instanceOfVAV.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
+        if ( vavInConnector != null ) {
+          vavInConnectorExists = true ;
+          vavUpstreamConnectorHeight = vavInConnector.Origin.Z ;
+          vavUpstreamConnectorNormal = vavInConnector.CoordinateSystem.BasisZ.To3dPoint().normalized ;
+        }
+        
         tr.RollBack() ;
       }
 
@@ -362,19 +393,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return null != element.get_BoundingBox( document.ActiveView ) ;
     }
 
-    private static void CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
+    private static Duct? CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
       Connector connectorOfVAV, ElementId levelId )
     {
-      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) )
-        .WhereElementIsElementType() ;
-      var ductType = collector.First( e => e.UniqueId == RoundDuctUniqueId ) ;
-      Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
+      var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ).WhereElementIsElementType().AsEnumerable().OfType<DuctType>() ;
+      var ductTypes = collector.Where( e => e.Shape == ConnectorProfileType.Round ).ToArray() ;
+      var ductType = ductTypes.FirstOrDefault( e => e.PreferredJunctionType == JunctionType.Tee ) ?? ductTypes.FirstOrDefault() ;
+      return ductType != null ? Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) : null ;
     }
 
     private static bool RoundDuctTypeExists( Document document )
     {
-      FilteredElementCollector collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ) ;
-      return collector.Any( e => e.UniqueId == RoundDuctUniqueId ) ;
+      var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ).AsEnumerable().OfType<DuctType>() ;
+      return collector.Any( e => e.Shape == ConnectorProfileType.Round ) ;
     }
 
     #region SubFunctionsForRotation

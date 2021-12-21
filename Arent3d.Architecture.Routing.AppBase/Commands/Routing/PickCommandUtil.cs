@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new TempColorWrapper( uiDocument, pickResult.GetAllRelatedElements() ) ;
     }
 
-    private class TempColorWrapper : IDisposable
+    private class TempColorWrapper : MustBeDisposed
     {
       private readonly Document _document ;
       private readonly TempColor _tempColor ;
@@ -35,20 +35,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         } ) ;
       }
 
-      public void Dispose()
+      protected override void Finally()
       {
-        GC.SuppressFinalize( this ) ;
-
         _document.Transaction( "TransactionName.Commands.Routing.Common.RevertColor".GetAppStringByKeyOrDefault( null ), t =>
         {
           _tempColor.Dispose() ;
           return Result.Succeeded ;
         } ) ;
-      }
-
-      ~TempColorWrapper()
-      {
-        throw new InvalidOperationException( $"`{nameof( TempColorWrapper )}` is not disposed. Use `using` statement." ) ;
       }
     }
 

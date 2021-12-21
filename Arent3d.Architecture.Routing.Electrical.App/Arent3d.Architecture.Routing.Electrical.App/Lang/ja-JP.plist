@@ -8,9 +8,19 @@
         
         <key>Electrical.App.Panels.Routing.Initialize</key>
         <string>Setup</string>
+        <key>Electrical.App.Panels.Routing.Initialize.Initialize</key>
+        <string>Setup</string>
+        <key>Electrical.App.Panels.Routing.Initialize.PickUp</key>
+        <string>拾い</string>
+        <key>Electrical.App.Panels.Routing.Initialize.Panels</key>
+        <string>パネル</string>
         
         <key>Electrical.App.Panels.Routing.Routing</key>
         <string>From-To</string>
+        <key>Electrical.App.Panels.Routing.Routing.Routing</key>
+        <string>ルーティング</string>
+        <key>Electrical.App.Panels.Routing.Routing.Erase</key>
+        <string>削除</string>
         
         <key>Electrical.App.Panels.Routing.PassPoints</key>
         <string>通過点</string>
@@ -19,7 +29,7 @@
         <string>PS</string>
 
         <key>Electrical.App.Panels.Routing.Envelope</key>
-        <string>Envelope</string>        
+        <string>Envelope</string>
 
         <key>Electrical.App.Panels.Routing.Shafts</key>
         <string>シャフト</string>
@@ -29,6 +39,9 @@
         
         <key>Electrical.App.Panels.Routing.Connectors</key>
         <string>Connectors</string>
+
+        <key>Electrical.App.Panels.Routing.Routing.Erase</key>
+        <string>ダンパ操作器</string>
 
         <key>Electrical.App.Panels.Routing.RackCommand</key>
         <string>ラック</string>
@@ -293,6 +306,13 @@
 
         <key>Dialog.Electrical.SetElementProperty.Title</key>
         <string>工事項目付加結果</string>
+
+
+        <!-- Element Names -->
+        <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
+        <string>M_電線管エルボ - 鉄鋼</string>
+        <key>Routing.Revit.DummyConduit.ConduitTypeName</key>
+        <string>Arent電線</string>
 
 
         <!-- Parameter Names -->
