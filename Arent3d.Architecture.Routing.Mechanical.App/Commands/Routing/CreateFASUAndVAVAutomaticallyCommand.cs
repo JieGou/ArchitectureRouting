@@ -150,11 +150,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           }
 
           // TODO : 一直線にならんでいるグループの方向修正
-
           var fasuConnector = instanceOfFASU.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
           var vavConnector = instanceOfVAV.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.Out ) ;
-          if ( fasuConnector != null && vavConnector != null )
-            CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
+          if ( fasuConnector != null && vavConnector != null ) {
+            var duct = CreateDuctConnectionFASUAndVAV( document, fasuConnector, vavConnector, space.LevelId ) ;
+            document.Regenerate() ;
+            if ( duct == null ) continue ;
+            // create group of FASUs, VAVs and RoundDuct
+            var groupIds = new List<ElementId> { instanceOfFASU.Id, instanceOfVAV.Id, duct.Id } ;
+            document.Create.NewGroup( groupIds ) ;
+          }
         }
 
         tr.Commit() ;
@@ -388,15 +393,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return null != element.get_BoundingBox( document.ActiveView ) ;
     }
 
-    private static void CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
+    private static Duct? CreateDuctConnectionFASUAndVAV( Document document, Connector connectorOfFASU,
       Connector connectorOfVAV, ElementId levelId )
     {
       var collector = new FilteredElementCollector( document ).OfClass( typeof( DuctType ) ).WhereElementIsElementType().AsEnumerable().OfType<DuctType>() ;
       var ductTypes = collector.Where( e => e.Shape == ConnectorProfileType.Round ).ToArray() ;
       var ductType = ductTypes.FirstOrDefault( e => e.PreferredJunctionType == JunctionType.Tee ) ?? ductTypes.FirstOrDefault() ;
-      if ( ductType != null ) {
-        Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) ;
-      }
+      return ductType != null ? Duct.Create( document, ductType.Id, levelId, connectorOfVAV, connectorOfFASU ) : null ;
     }
 
     private static bool RoundDuctTypeExists( Document document )
