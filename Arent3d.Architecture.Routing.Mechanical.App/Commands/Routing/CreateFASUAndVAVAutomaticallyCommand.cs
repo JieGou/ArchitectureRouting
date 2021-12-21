@@ -134,16 +134,29 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           if ( boxOfSpace == null ) continue;
 
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
-          if ( space == rootSpace ) {
-            var adjustedPositionOfFASUAndVAV = new XYZ( positionOfFASUAndVAV.X, pickedConnector.Origin.Y, positionOfFASUAndVAV.Z ) ;
-            if ( IsInSpace( boxOfSpace, new XYZ( adjustedPositionOfFASUAndVAV.X, adjustedPositionOfFASUAndVAV.Y, ( boxOfSpace.Max.Z + boxOfSpace.Min.Z ) / 2 ) ) )
-              positionOfFASUAndVAV = adjustedPositionOfFASUAndVAV ;
-          }
           var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
           if ( placeResult == null ) continue ;// Failed to place
 
           var ( instanceOfFASU, instanceOfVAV) = placeResult.Value ;
-          
+
+          if ( space == rootSpace ) {
+            var rootConnectorBasisZ = pickedConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
+            var rootConnectorLine = new Line2d( pickedConnector.Origin.To3dPoint().To2d(), rootConnectorBasisZ ) ;
+            var vavDirection = new Vector2d( -rootConnectorBasisZ.y, rootConnectorBasisZ.x ) ;
+            var vavLine = new Line2d( positionOfFASUAndVAV.To3dPoint().To2d(), vavDirection ) ;
+
+            var intersection = rootConnectorLine.GetIntersection( vavLine ) ;
+            if ( intersection != null ) {
+              var vavLocation = instanceOfVAV.Location as LocationPoint ;
+              var (x, y, _) = intersection.Value.To3d( 0 ).ToXYZPoint() ;
+              if ( vavLocation != null && IsInSpace( boxOfSpace,new XYZ( x, y, vavLocation.Point.Z ) ) ) {
+                var adjustedDistance = ( intersection.Value - vavLine.Origin ).To3d( 0 ).ToXYZPoint() ;
+                ElementTransformUtils.MoveElement( document, instanceOfFASU.Id, adjustedDistance ) ;
+                ElementTransformUtils.MoveElement( document, instanceOfVAV.Id, adjustedDistance ) ;
+              }
+            }
+          }
+
           // この時点でコネクタの向きとは逆を向いている想定
           // コネクタの裏側にあるときは、ここで向きを反転する
           if ( rootSpaces.Contains( space ) && IsVavLocatedBehindConnector( document, instanceOfVAV, pickedConnector ) ) {
@@ -474,5 +487,36 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     }
 
     #endregion
+  }
+  
+  public readonly struct Line2d
+  {
+    public Vector2d Origin { get ; }
+    public Vector2d Direction { get ; }
+
+    public Line2d( Vector2d origin, Vector2d direction )
+    {
+      Origin = origin ;
+      Direction = direction ;
+    }
+
+    private Vector2d GetPointAt( double t ) => Origin + t * Direction ;
+
+    public Vector2d? GetIntersection( Line2d another ) => GetIntersection( another, out var u, out _ ) ? GetPointAt( u ) : (Vector2d?)null ;
+
+    private bool GetIntersection( Line2d another, out double u, out double v )
+    {
+      var det = Direction.x * another.Direction.y - Direction.y * another.Direction.x ;
+      if ( det == 0.0 ) {
+        u = double.NaN ;
+        v = double.NaN ;
+        return false ;
+      }
+
+      var dist = another.Origin - Origin ;
+      u = ( dist.x * another.Direction.y - dist.y * another.Direction.x ) / det ;
+      v = ( dist.x * Direction.y - dist.y * Direction.x ) / det ;
+      return true ;
+    }
   }
 }
