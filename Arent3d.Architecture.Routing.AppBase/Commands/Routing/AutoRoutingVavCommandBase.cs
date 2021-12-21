@@ -58,11 +58,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var vavInstances = vavs as FamilyInstance[] ?? vavs.ToArray() ;
       if ( ! vavInstances.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoVav ) ;
 
-      // Check IN/OUT connectors
-      var vavInConnectorExists = vavInstances.Last().GetConnectors().Any( c => c.Direction == FlowDirectionType.In ) ;
-      if ( ! vavInConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoInConnector ) ;
-      var vavOutConnectorExists = vavInstances.Last().GetConnectors().Any( c => c.Direction == FlowDirectionType.Out ) ;
-      if ( ! vavOutConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoOutConnector ) ;
+      // Check IN/OUT connectors for all VAV instances
+      foreach ( var vavInstance in vavInstances ) {
+        var vavInConnectorExists = vavInstance.GetConnectors().Any( c => c.Direction == FlowDirectionType.In ) ;
+        if ( ! vavInConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoInConnector ) ;
+        var vavOutConnectorExists = vavInstance.GetConnectors().Any( c => c.Direction == FlowDirectionType.Out ) ;
+        if ( ! vavOutConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoOutConnector ) ;
+      }
       
       // Get all space
       var spaces = GetAllSpaces( doc ) ;
