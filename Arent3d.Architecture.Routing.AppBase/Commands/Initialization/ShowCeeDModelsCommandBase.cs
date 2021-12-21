@@ -9,6 +9,7 @@ using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
+using MathLib ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -35,7 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level ) ;
 
           ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-          var noteWidth = .06 ;
+          var noteWidth = .05 ;
 
           // make sure note width works for the text type
           var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
@@ -57,8 +58,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           ICollection<ElementId> groupIds = new List<ElementId>() ;
           groupIds.Add( element.Id ) ;
           groupIds.Add( textNote.Id ) ;
-          
           if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedCondition ) ) {
+            if ( dlgCeeDModel.SelectedCondition.Length > 6 ) noteWidth += (dlgCeeDModel.SelectedCondition.Length - 6) * 0.007 ;
             var txtConditionPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
             var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeeDModel.SelectedCondition, opts ) ;
 
@@ -68,18 +69,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               Element ele = conditionTextNote.TextNoteType.Duplicate( "1.5 mm" ) ;
               textNoteType = ( ele as TextNoteType )! ;
               TextElementType textType = conditionTextNote.Symbol ;
-              BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
+              const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
               Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
               textSize.Set( .005 ) ;
             }
             conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
-            
-            // Adjust the position of text note
-            var boxOfElement = element.get_BoundingBox( doc.ActiveView ) ;
-            var boxOfConditionTextNode = conditionTextNote.get_BoundingBox( doc.ActiveView ) ;
-            if ( boxOfElement.Max.Y < boxOfConditionTextNode.Max.Y )
-              ElementTransformUtils.MoveElements( doc, new List<ElementId>() { textNote.Id, conditionTextNote.Id }, new XYZ( 0, 1, 0 ) ) ;
-            
             groupIds.Add( conditionTextNote.Id ) ;
           }
           doc.Create.NewGroup( groupIds ) ;
