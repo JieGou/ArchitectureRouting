@@ -239,7 +239,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var sortedRoutes = SortRoutesOrderByDistanceFromStartPosition( childBranches, branchNameToBranchPointInfo, startPosition ) ;
 
         var passPointTerms = sortedRoutes.Select( r =>
-          CreatePassPointTerm( startPosition, branchNameToBranchPointInfo[ r.RouteName ], passPointOffset ) ).ToArray() ;
+          CreatePassPointTerm( branchNameToBranchPointInfo[ r.RouteName ], passPointOffset ) ).ToArray() ;
         var terms = new List<ITermPoint>() ;
         terms.Add( CreateTermPointFromEndPoint( routeSegment.FromEndPoint ) ) ;
         terms.AddRange( passPointTerms ) ;
@@ -311,18 +311,31 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         return result ;
       }
 
-      private static PassPointTerm CreatePassPointTerm( Vector3d startPosition, BranchPointInfo info, double offset )
+      private static PassPointTerm CreatePassPointTerm( BranchPointInfo info, double offset )
       {
-        // TODO コネクタのIn,Outから対象を絞る
-        var behindTeeConnector = info.Tee.GetConnectors().Where( conn => conn.Id == 1 || conn.Id == 2 ).MaxBy( conn =>
-          Vector2d.Distance( conn.Origin.To3dPoint().To2d(), startPosition.To2d() ) ) ;
-        if ( behindTeeConnector == null ) return null! ;
+        var behindTeeConnector = GetHeaderRouteOutDirectionConnectors( info.Tee ) ;
         var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
         var routeName = info.ChildRouteName ;
         var passPointPosition = behindTeeConnector.Origin + passPointDir * offset.MillimetersToRevitUnits() ;
         return new PassPointTerm( routeName, passPointPosition, passPointDir, info.Tee.GetLevelId() ) ;
       }
 
+      private static Connector GetHeaderRouteOutDirectionConnectors( Element tee )
+      {
+        var routeNameOfTee = tee.GetRouteName() ;
+
+        // TODO tee 側にもFrom,ToのConnectorIDが設定されるようになったら書き直し. とりあえずはつながっているコネクタ側の情報を使う.
+        var toSideConnectors = tee.GetConnectors().Where( c => c.GetConnectedConnectors().Any( opposite => opposite.IsRoutingConnector( true ) ) ) ;
+
+        var sideConnectors = toSideConnectors as Connector[] ?? toSideConnectors.ToArray() ;
+        foreach ( var connector in sideConnectors ) {
+          if ( connector.GetConnectedConnectors().Any( c => c.Owner.GetRouteName() == routeNameOfTee ) ) return connector ;
+        }
+
+        // この時点で失敗しているが、完全に失敗させるよりはそのままつづけたほうがましと判断
+        return sideConnectors.FirstOrDefault() ?? tee.GetConnectors().FirstOrDefault()! ;
+      }
+      
       private static ITermPoint CreateTermPointFromEndPoint( IEndPoint endPoint )
       {
         if ( endPoint is RouteEndPoint rep ) return new BranchTerm( rep ) ;
