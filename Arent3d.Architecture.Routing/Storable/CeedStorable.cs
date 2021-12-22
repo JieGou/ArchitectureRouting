@@ -8,7 +8,7 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "998cd31f-ada6-4fbf-ae78-971fc071c030" )]
+  [Guid( "44b305b1-ee5d-4c04-aa0e-7af8df442e91" )]
   [StorableVisibility( AppInfo.VendorId )]
   public class CeedStorable : StorableBase
   {
