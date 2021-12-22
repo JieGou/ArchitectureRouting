@@ -131,17 +131,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         filePath = openFileDialog.FileName ;
       }
 
-      var images=GetListImages(  filePath ) ;
-      MessageBox.Show( images.Count.ToString() ) ;
+      var listHeimenZu = GetListHeimenZu( filePath ) ;
       
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
-        List<CeedModel> ceeDModelData = GetAllCeeDModelNumber( filePath ) ;
+        List<CeedModel> ceeDModelData = GetAllCeeDModelNumber( filePath,listHeimenZu ) ;
         if ( ! ceeDModelData.Any() ) return ;
         ceeDStorable.CeedModelData = ceeDModelData ;
         LoadData( ceeDStorable ) ;
-
+      
         try {
           using Transaction t = new Transaction( _document, "Save data" ) ;
           t.Start() ;
@@ -153,131 +152,89 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    //void ReadFileByOpenXML( string filePath )
-    //{
-      //StringBuilder sb = new StringBuilder() ;
-      // using ( FileStream fs = new FileStream( filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite ) ) {
-      //   using ( SpreadsheetDocument doc = SpreadsheetDocument.Open( fs, false ) ) {
-      //     WorkbookPart? workbookPart = doc.WorkbookPart ;
-      //     if ( workbookPart != null ) {
-      //       var sstpart = workbookPart.GetPartsOfType<SharedStringTablePart>().First() ;
-      //       SharedStringTable sst = sstpart.SharedStringTable ;
-      //
-      //       WorksheetPart worksheetPart = workbookPart.WorksheetParts.First() ;
-      //       Worksheet sheet = worksheetPart.Worksheet ;
-      //
-      //       var cells = sheet.Descendants<Cell>() ;
-      //       var rows = sheet.Descendants<Row>() ;
-      //
-      //       sb.AppendLine( string.Format( "Row count = {0}", rows.LongCount() ) ) ;
-      //       sb.AppendLine( string.Format( "Row count = {0}", cells.LongCount() ) ) ;
-
-            // One way: go through each cell in the sheet
-            // foreach (Cell cell in cells)
-            // {
-            //   if ((cell.DataType != null) && (cell.DataType == CellValues.SharedString))
-            //   {
-            //     if ( cell.CellValue != null ) {
-            //       int ssid = int.Parse(cell.CellValue.Text);
-            //       string str = sst.ChildElements[ssid].InnerText;
-            //       result+=string.Format("Shared string {0}: {1}", ssid, str);
-            //     }
-            //   }
-            //   else if (cell.CellValue != null)
-            //   {
-            //     result+=string.Format("Cell contents: {0}", cell.CellValue.Text);
-            //   }
-            // }
-
-            // Or... via each row
-            // for ( int i = 7 ; i < rows.Count() ; i++ ) {
-            //   Row row = rows.ToList()[ i ] ;
-            //   Cell c = row.Elements<Cell>().ToList()[ 6 ] ;
-            //   if ((c.DataType != null) && (c.DataType == CellValues.SharedString))
-            //   {
-            //     if ( c.CellValue != null ) {
-            //       int ssid = int.Parse(c.CellValue.Text);
-            //       string str = sst.ChildElements[ssid].InnerText;
-            //       if ( str.Contains( "又は" ) ) {
-            //         sb.AppendLine(string.Format("Shared string shape{0}: {1}", ssid, str));  
-            //       }
-            //       
-            //     }
-            //   }
-            //   else if (c.CellValue != null)
-            //   {
-            //     sb.AppendLine(string.Format("Cell contents: {0}", c.CellValue.Text));
-            //   }
-            // }
-    //       }
-    //     }
-    //   }
-    // }
-
-    private List<Image> GetListImages( string filePath )
+   private List<SymbolBytes> GetListHeimenZu( string filePath )
     {
       string workbookPath = filePath ;
-      var _listImage = new List<Image>() ;
-      Application? excelApp = new Microsoft.Office.Interop.Excel.Application() ;
+      var sheetName = "セットコード一覧表" ;
+      var listHeimenZu = new List<SymbolBytes>() ;
+      Application? excelApp = new Application() ;
       var excelWorkbook = excelApp.Workbooks.Open( workbookPath, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing, false, XlPlatform.xlWindows, Type.Missing, true, false, Type.Missing, Type.Missing, Type.Missing, Type.Missing ) ;
-      if ( excelWorkbook != null ) {
-        Worksheet sheet = (Worksheet) excelWorkbook.Sheets[ "セットコード一覧表" ] ;
+      try {
+        if ( excelWorkbook != null ) {
+          Worksheet sheet = (Worksheet) excelWorkbook.Sheets[ sheetName ] ;
+          var xlSheets = excelWorkbook.Sheets as Sheets ;
+          var newSheet = (Worksheet) xlSheets.Add( xlSheets[ 1 ], Type.Missing, Type.Missing, Type.Missing ) ;
+          newSheet.Name = "newsheet" ;
+          var shapes = new List<Shape>() ;
+          Range xlRange = sheet.UsedRange ;
+          var endRow = xlRange.Rows.Count ;
+          for ( var i = 8 ; i <= endRow ; i++ ) {
+            Range cell = (Range) sheet.Cells[ i, 3 ] ; //一般表示用機器記号
+            if ( cell.Value == null ) continue ;
+            var strCellValue = cell.Value.ToString() ;
+            if ( string.IsNullOrEmpty( strCellValue ) ) continue ;
+            var firstIndexGroup = i ;
+            var nextName = cell.Value.ToString() ;
+            do {
+              i++ ;
+              if ( i > endRow ) break ;
+              //strCellValue = nextName ;
+              cell = (Range) sheet.Cells[ i + 1, 3 ] ;
+              if ( cell.Value != null ) {
+                nextName = cell.Value.ToString() ;
+                break ;
+              }
+            } while ( ! string.IsNullOrEmpty( nextName ) ) ;
 
-        if ( sheet == null ) return _listImage ;
+            var lastIndexGroup = i ;
+            //COPY SHAPE TO NEW SHEET
+          
+            var range1 = sheet.Range[ "F" + firstIndexGroup, "F" + lastIndexGroup ] ;
+            //Range range2 = newSheet.get_Range("A1", "A"+(lastIndexGroup-firstIndexGroup).ToString());
+            Range range2 = newSheet.get_Range( "F" + firstIndexGroup, "F" + lastIndexGroup ) ;
+            range1.Copy( range2 ) ;
+            //CONVERT SHARP TO BYTE 
+            if ( newSheet.Shapes.Count > 0 ) {
+              for ( int j = 1 ; j <= newSheet.Shapes.Count ; j++ ) {
+                var shape = newSheet.Shapes.Item( j ) ;
+                shape.Copy() ;
+                if ( ! Clipboard.ContainsImage() ) continue ;
+                var image = Clipboard.GetImage() ;
+                if ( image == null ) continue ;
+                using ( var ms = new MemoryStream() ) {
+                  ms.Position = 0 ;
+                  image.Save( ms, image.RawFormat ) ;
+                  listHeimenZu.Add( new SymbolBytes( firstIndexGroup, ms.ToArray() ) ) ;
+                }
+                shape.Delete();
+                Clipboard.Clear() ;
+              }
+            }
+            else {
+              var symbol = range2.Value.ToString() ;
+              listHeimenZu.Add( new SymbolBytes( firstIndexGroup, Encoding.ASCII.GetBytes( symbol ) ) ) ;
+            }
 
-        var shapes = new List<Microsoft.Office.Interop.Excel.Shape>() ;
-        Range xlRange = sheet.UsedRange ;
-        var endRow = xlRange.Rows.Count ;
-        for ( var i = 7 ; i <= endRow ; i++ ) {
-          Range cell = (Range) sheet.Cells[ i, 3 ] ;
-          if ( cell == null ) continue ;
-          var name = cell.Cells.Value2.ToString() ;
-          var firstIndexGroup = i ;
-          var nextName = cell.Cells.Value2.ToString() ;
-
-          do {
-            i++ ;
-            if ( i > endRow ) break ;
-            name = nextName ;
-            // cell =  sheet.Cells[ i, 3 ].ToString() ;
-            // if ( cell == null ) break ;
-            nextName = cell.Cells.Value2.ToString() ;
-          } while ( ! ( string.IsNullOrEmpty( name ) && ! string.IsNullOrEmpty( nextName ) ) ) ;
-          //COPY SHAPE TO NEW SHEET
-
-          //CONVERT SHARP TO IMAGE 
-          for ( int j = 1 ; i <= sheet.Shapes.Count ; j++ ) {
-            var shape = sheet.Shapes.Item( j ) ;
-            shape.Copy() ;
-            var image = Clipboard.GetImage() ;
-            _listImage.Add( image ) ;
+            range2.Delete() ;
           }
-
-          // foreach ( var shape in shapes ) {
-          //   shape.Copy() ;
-          //   var image = Clipboard.GetImage() ;
-          //   _listImage.Add( image ) ;
-          // }
           //DELETE TEMP SHEET
+          // excelApp.DisplayAlerts = false ;
+          // newSheet.Delete() ;
+          // excelApp.DisplayAlerts = true ;
         }
-
-
-        excelWorkbook.Save() ;
-        excelWorkbook.Close() ;
+      }
+      catch ( Exception e ) {
+        Console.WriteLine( e ) ;
+      }
+      finally {
+       // excelWorkbook?.Save() ;
+        excelWorkbook?.Close( false ) ;
         excelApp.Quit() ;
-
-
-        if ( sheet != null )
-          Marshal.ReleaseComObject( sheet ) ;
-
-        if ( excelWorkbook != null )
-          Marshal.ReleaseComObject( excelWorkbook ) ;
-        if ( excelApp != null )
-          Marshal.ReleaseComObject( excelApp ) ;
-        excelApp = null ;
+        if ( excelWorkbook != null ) Marshal.ReleaseComObject( excelWorkbook ) ;
+        Marshal.ReleaseComObject( excelApp ) ;
       }
 
-      return _listImage ;
+      return listHeimenZu ;
     }
 
     private void LoadData( CeedStorable ceeDStorable )
@@ -289,7 +246,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbModelNumbers.ItemsSource = viewModel.ModelNumbers ;
     }
 
-    private static List<CeedModel> GetAllCeeDModelNumber( string path )
+    private static List<CeedModel> GetAllCeeDModelNumber( string path,List<SymbolBytes> listHeimenZu )
     {
       List<CeedModel> ceedModelData = new List<CeedModel>() ;
 
@@ -299,46 +256,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         ISheet workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
 
         XSSFDrawing drawing = (XSSFDrawing) workSheet.DrawingPatriarch ;
-
-
-        var allFloorShapes = drawing.GetShapes().Where( x => ( (XSSFClientAnchor) x.GetAnchor() ).Col1 is 5 )
-          .OrderBy( x => ( (XSSFClientAnchor) x.GetAnchor() ).Col1 ).ThenBy( x => ( (XSSFClientAnchor) x.GetAnchor() ).Row1 ) ;
-        var allInstrumentationShapes = drawing.GetShapes().Where( x => ( (XSSFClientAnchor) x.GetAnchor() ).Col1 is 6 )
-          .OrderBy( x => ( (XSSFClientAnchor) x.GetAnchor() ).Col1 ).ThenBy( x => ( (XSSFClientAnchor) x.GetAnchor() ).Row1 ) ;
-
-        List<ImageBytes> imageBytesList = new List<ImageBytes>() ;
-        foreach ( var shape in allFloorShapes ) {
-          var clientAnchor = ( (XSSFClientAnchor) shape.GetAnchor() ) ;
-          var position = ( (XSSFClientAnchor) shape.GetAnchor() ).Row1 ;
-          byte[] imageByte = new byte[] { } ;
-          //TODO convert shape to byte[]
-          //1.
-          // ObjectData inpPic = (ObjectData) shape ;
-          // FileOutputStream out = new FileOutputStream("pict.jpg");
-          //imageByte = inpPic.PictureData.Data ;
-          //2.
-          // BinaryFormatter bf = new BinaryFormatter();
-          // using (MemoryStream ms = new MemoryStream())
-          // {
-          //   bf.Serialize(ms, shape);
-          //   imageByte= ms.ToArray();
-          // }
-          //3.
-          // shape.Copy() ;
-          // if (Clipboard.ContainsImage())
-          // {
-          //   var bitmap = Clipboard.GetImage();
-          //   if (bitmap==null) continue;
-          //   JpegBitmapEncoder encoder = new JpegBitmapEncoder();
-          //   using MemoryStream stream  = new MemoryStream() ;
-          //   bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg);
-          // encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
-          // encoder.Save(stream);
-          //   imageByte = stream.ToArray();
-          // }
-          imageBytesList.Add( new ImageBytes( position, imageByte ) ) ;
-        }
-
+       
         const int startRow = 7 ;
         var endRow = workSheet.LastRowNum ;
         for ( var i = startRow ; i <= endRow ; i++ ) {
@@ -399,14 +317,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
-              var imageByPosition = imageBytesList.Where( b => b.ImagePostion == i + 1 ).Select( c => c.ImagePostion ).ToList() ;
+              var symbolPosition = listHeimenZu.FirstOrDefault( b => b.Postion == firstIndexGroup + 1 ) ;
               CeedModel ceeDModel ;
-              if ( imageByPosition is { Count: > 0 } ) {
-                var positionImg = string.Empty ;
-                foreach ( var pos in imageByPosition ) {
-                  positionImg = positionImg + " " + pos ;
-                }
-                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, positionImg, ceeDName ) ;
+              if ( symbolPosition!=null) {
+                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, symbolPosition.SymbolByte,symbolPosition.SymbolByte, ceeDName ) ;
               }
               else {
                 ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
@@ -444,15 +358,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
   }
 
-  public class ImageBytes
+  public class SymbolBytes
   {
-    public ImageBytes( int imagePostion, byte[] imageBytesList )
+    public SymbolBytes( int postion, byte[] symbolByte )
     {
-      this.ImagePostion = imagePostion ;
-      ImageByte = imageBytesList ;
+      this.Postion = postion ;
+      SymbolByte = symbolByte ;
     }
 
-    public int ImagePostion { get ; set ; }
-    public byte[] ImageByte { get ; set ; }
+    public int Postion { get ; set ; }
+    public byte[] SymbolByte { get ; set ; }
   }
 }

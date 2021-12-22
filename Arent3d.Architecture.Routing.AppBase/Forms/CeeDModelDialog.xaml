@@ -58,15 +58,22 @@
 
           <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="200" />
 
-           <DataGridTextColumn Header="平面図" Binding="{Binding FloorPlanSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" /> 
+           <!-- <DataGridTextColumn Header="平面図" Binding="{Binding FloorPlanSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />  -->
 
-          <!-- <DataGridTemplateColumn Header="平面図2" x:Name="Image" Width="SizeToHeader"> -->
-          <!--   <DataGridTemplateColumn.CellTemplate> -->
-          <!--     <DataTemplate> -->
-          <!--       <Image Source="{Binding Image}"/> -->
-          <!--     </DataTemplate> -->
-          <!--   </DataGridTemplateColumn.CellTemplate> -->
-          <!-- </DataGridTemplateColumn> -->
+          <DataGridTemplateColumn Header="平面図" x:Name="Image" Width="SizeToHeader">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <Border BorderThickness="0">
+                <Image Source="{Binding FloorImages}" 
+                       RenderOptions.BitmapScalingMode="Fant"
+                       Stretch="None"
+                       VerticalAlignment="Top"
+                       Margin="0,0,0,0"
+                       HorizontalAlignment="Center" />
+                </Border>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
           
           <DataGridTemplateColumn Header="計装図" x:Name="Image1" Width="SizeToHeader">
             <DataGridTemplateColumn.CellTemplate>

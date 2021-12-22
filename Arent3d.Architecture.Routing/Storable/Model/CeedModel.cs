@@ -14,10 +14,10 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string ModelNumber { get ; set ; }
     public string FloorPlanSymbol { get ; set ; }
     
-    public string InstrumentationSymbol { get ; set ; }
+    public byte[]? InstrumentationSymbol { get ; set ; }
     public List<Byte[]>? FloorPlanShapes { get ; set ; }
     public string Name { get ; set ; }
-    public List<BitmapImage>? FloorImages { get ; set ; }
+    public BitmapImage? FloorImages { get ; set ; }
     public List<BitmapImage>? InstrumentationImages { get ; set ; }
     
     public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string name )
@@ -29,46 +29,59 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       FloorPlanSymbol = floorPlanSymbol ;
       FloorPlanShapes = null ;
       Name = name ;
-      InstrumentationSymbol = "" ;
+      InstrumentationSymbol = null ;
       FloorImages = null ;
     }
     
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Byte[]> floorPlanShapes, string name, string instrumentationSymbol )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, byte[] floorPlanShapes, byte[]? instrumentationSymbol, string name )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
       ModelNumber = modelNumber ;
       FloorPlanSymbol = "" ;
-      FloorPlanShapes = floorPlanShapes ;
+     // FloorPlanShapes = floorPlanShapes ;
       Name = name ;
-      InstrumentationSymbol = instrumentationSymbol ;
+      InstrumentationSymbol =instrumentationSymbol ;
       FloorImages = ConvertToBitmaps( floorPlanShapes) ;
     }
 
-    private List<BitmapImage> ConvertToBitmaps(List<byte[]> floorPlanShapes)
+    private BitmapImage? ConvertToBitmaps( byte[] floorPlanShapes )
     {
-      var images = new List<BitmapImage>() ;
+      var image = new BitmapImage() ;
       try {
-        foreach ( var imageData in floorPlanShapes ) {
-          var bitmap = new BitmapImage();
-          using (var stream = new MemoryStream(imageData))
-          {
-            bitmap.BeginInit();
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.StreamSource = stream;
-            bitmap.EndInit();
-            bitmap.Freeze(); // optionally make it cross-thread accessible
-            images.Add(bitmap);
-          }
+        if ( floorPlanShapes == null ) return image ;
+        using ( var stream = new MemoryStream( floorPlanShapes ) ) {
+          stream.Position = 0 ;
+          image.BeginInit() ;
+          image.CacheOption = BitmapCacheOption.OnLoad ;
+          image.StreamSource = stream ;
+          image.EndInit() ;
+          image.Freeze() ; // optionally make it cross-thread accessible
         }
       }
-      catch ( Exception e ) {
+      catch ( ArgumentException e ) {
         Console.WriteLine( e ) ;
-        throw ;
+        if ( floorPlanShapes != null ) ConvertTextToImage( floorPlanShapes ) ;
       }
 
-      return images ;
+      return image ;
+    }
+
+    private Bitmap ConvertTextToImage(byte[] symbolByte)
+    {
+     var  text =System.Text.Encoding.ASCII.GetString(symbolByte).Trim();
+      Bitmap bmp = new Bitmap(16, 16);
+      using (Graphics graphics = Graphics.FromImage(bmp))
+      {
+        Font font = new Font("ＭＳ Ｐゴシック", 14);
+        graphics.FillRectangle(new SolidBrush(Color.Transparent), 0, 0, bmp.Width, bmp.Height);
+        graphics.DrawString(text, font, new SolidBrush(Color.Black), 0, 0);
+        graphics.Flush();
+        //font.Dispose();
+        graphics.Dispose();
+      }
+      return bmp;
     }
   }
 }
