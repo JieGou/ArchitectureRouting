@@ -15,6 +15,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ShowCeeDModelsCommandBase : IExternalCommand
   {
+    private const string ConditionTextNoteTypeName = "1.5 mm" ;
+    
     protected abstract RoutingFamilyType RoutingFamilyType { get ; }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -62,12 +64,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( dlgCeeDModel.SelectedCondition.Length > 6 ) noteWidth += (dlgCeeDModel.SelectedCondition.Length - 6) * 0.007 ;
             var txtConditionPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
             var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeeDModel.SelectedCondition, opts ) ;
-
-            const string conditionTextNoteTypeName = "1.5 mm" ;
+            
             var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) )
-              .WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( conditionTextNoteTypeName, tt.Name ) ) ;
+              .WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
             if ( textNoteType == null ) {
-              Element ele = conditionTextNote.TextNoteType.Duplicate( conditionTextNoteTypeName ) ;
+              Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
               textNoteType = ( ele as TextNoteType )! ;
               TextElementType textType = conditionTextNote.Symbol ;
               const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
