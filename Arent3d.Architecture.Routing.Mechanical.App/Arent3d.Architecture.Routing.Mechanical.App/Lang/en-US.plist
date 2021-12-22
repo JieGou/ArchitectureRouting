@@ -11,7 +11,10 @@
 
         <key>Mechanical.App.Panels.Routing.Routing</key>
         <string>Routing</string>
-
+        
+        <key>Mechanical.App.Panels.Routing.TTE</key>
+        <string>TTE</string>
+        
         <key>Mechanical.App.Panels.Routing.PassPoints</key>
         <string>Pass Points</string>
 
