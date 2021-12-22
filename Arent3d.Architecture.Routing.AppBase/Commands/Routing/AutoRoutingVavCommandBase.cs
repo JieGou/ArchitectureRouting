@@ -37,8 +37,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      if ( null == GetRoundDuctType( uiDocument.Document ) ) {
-        return ( false, "Duct type whose preferred junction type is tee is not found" ) ;
+      if ( null == GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( uiDocument.Document ) ) {
+        return ( false, "Round duct type whose preferred junction type is tee is not found" ) ;
       }
       
       var (fromPickResult, parentVavs, childVavs, errorMessage) = SelectRootConnectorAndFindVavs( uiDocument, routingExecutor, GetAddInType() ) ;
@@ -225,7 +225,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return sv ;
     }
 
-    private static MEPCurveType? GetRoundDuctType(Document document)
+    private static MEPCurveType? GetRoundDuctTypeWhosePreferredJunctionTypeIsTee(Document document)
     {
       return document.GetAllElements<MEPCurveType>().FirstOrDefault( 
         type  => type.PreferredJunctionType == JunctionType.Tee 
@@ -240,7 +240,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var (rootConnector, parentVavs, childVavs, routeProperty, classificationInfo) = selectState ;
       if ( rootConnector == null ) throw new InvalidOperationException() ;
       var systemType = routeProperty.GetSystemType() ;
-      var curveType = GetRoundDuctType( document )! ; // 取得できることはこれより前に確認済み.
+      var curveType = GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( document )! ; // 取得できることはこれより前に確認済み.
       
       var sensorFixedHeight = routeProperty.GetFromFixedHeight() ;
       var avoidType = routeProperty.GetAvoidType() ;
