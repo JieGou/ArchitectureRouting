@@ -16,12 +16,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class AutoRoutingVavCommandBase : RoutingCommandBase
   {
-    private const int VavConnectorId = 4 ;
     private const int DefaultSubRouteIndex = 0 ;
     private const string ErrorMessageNoVav = "No VAV on the Root Connector level." ;
     private const string ErrorMessageNoRootConnector = "No RootConnector are selected." ;
     private const string ErrorMessageNoSpace = "Find space cannot be found." ;
     private const string ErrorMessageNoParentVav = "No VAV on the space group 0" ;
+    private const string ErrorMessageVavNoInConnector = "VAVの流れの方向[イン]が設定されていないため、処理に失敗しました。" ;
+    private const string ErrorMessageVavNoOutConnector = "VAVの流れの方向[アウト]が設定されていないため、処理に失敗しました。" ;
 
     private Level _rootLevel = null! ;
     
@@ -57,6 +58,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var vavInstances = vavs as FamilyInstance[] ?? vavs.ToArray() ;
       if ( ! vavInstances.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoVav ) ;
 
+      // Check IN/OUT connectors for all VAV instances
+      foreach ( var vavInstance in vavInstances ) {
+        var vavInConnectorExists = vavInstance.GetConnectors().Any( c => c.Direction == FlowDirectionType.In ) ;
+        if ( ! vavInConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoInConnector ) ;
+        var vavOutConnectorExists = vavInstance.GetConnectors().Any( c => c.Direction == FlowDirectionType.Out ) ;
+        if ( ! vavOutConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoOutConnector ) ;
+      }
+      
       // Get all space
       var spaces = GetAllSpaces( doc ) ;
       if ( ! spaces.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
@@ -230,7 +239,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // Main routes
       var rootConnectorEndPoint = new ConnectorEndPoint( rootConnector, null ) ;
-      var vavConnectorEndPoint = new ConnectorEndPoint( parentVavs.Last().GetConnectors().First( c => c.Id != VavConnectorId ), null ) ;
+      var vavConnectorEndPoint = new ConnectorEndPoint( parentVavs.Last().GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
       var mainRouteHeight = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, rootConnector.Origin.Z - _rootLevel.Elevation ) ;
       result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, rootConnectorEndPoint, vavConnectorEndPoint, diameter, false, mainRouteHeight, mainRouteHeight, avoidType, ElementId.InvalidElementId ) ) ) ;
 
@@ -240,7 +249,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var childDiameter = parentVavs.Last().LookupParameter( "ダクト径" ).AsDouble() ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
-        var connectorEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), null ) ;
+        var connectorEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, null, null, avoidType, ElementId.InvalidElementId ) ;
         result.Add( ( subRouteName, segment ) ) ;
       }
@@ -250,7 +259,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var childDiameter = childVav.Last().LookupParameter( "ダクト径" ).AsDouble() * 2 ;
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
-        var connectorEndPoint = new ConnectorEndPoint( childVav.Last().GetConnectors().First( c => c.Id != VavConnectorId ), null ) ;
+        var connectorEndPoint = new ConnectorEndPoint( childVav.Last().GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, sensorFixedHeight, null, avoidType, ElementId.InvalidElementId ) ;
         result.Add( ( subRouteName, segment ) ) ;
         foreach ( var vav in childVav.Take( childVav.Count - 1 ) ) {
@@ -258,7 +267,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           childDiameter = vav.LookupParameter( "ダクト径" ).AsDouble() ;
           var subChildRouteName = nameBase + "_" + ( ++nextIndex ) ;
           var branchChildEndPoint = new RouteEndPoint( document, subRouteName, DefaultSubRouteIndex ) ;
-          var connectorChildEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Id != VavConnectorId ), null ) ;
+          var connectorChildEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
           var childSegment = new RouteSegment( classificationInfo, systemType, curveType, branchChildEndPoint, connectorChildEndPoint, childDiameter, false, null, null, avoidType, ElementId.InvalidElementId ) ;
           result.Add( ( subChildRouteName, childSegment ) ) ;
         }

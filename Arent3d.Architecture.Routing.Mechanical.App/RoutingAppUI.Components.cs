@@ -84,6 +84,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         [Button( typeof( MonitorSelectionCommand ), AvailabilityType = typeof( Commands.Enabler.MonitorSelectionCommandEnabler ) )]
         private static class MonitorSelectionCommandButton { }
       }
+
+      [Panel( "arent3d.architecture.rc.debug", TitleKey = "App.Panels.Rc.Debug" )]
+      private static class DebugPanel
+      {
+
+        [Button( typeof( UninitializeCommand ), OnlyInitialized = true )]
+        private static class UnInitializeCommandButton
+        {
+        }
+      }
     }
   }
 }

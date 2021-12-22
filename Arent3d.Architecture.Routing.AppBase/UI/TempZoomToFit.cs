@@ -1,12 +1,12 @@
 using System ;
-using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.UI
 {
-  public class TempZoomToFit : IDisposable
+  public class TempZoomToFit : MustBeDisposed
   {
     private readonly UIView? _uiView ;
     private readonly View? _view ;
@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.UI
       return ( viewCenter, upDirection, forwardDirection, scale ) ;
     }
 
-    private void RestoreCamera()
+    protected override void Finally()
     {
       if ( null == _uiView ) return ;
 
@@ -77,17 +77,6 @@ namespace Arent3d.Architecture.Routing.AppBase.UI
       else if ( null != _corner1 && null != _corner2 ) {
         _uiView.ZoomAndCenterRectangle( _corner1, _corner2 ) ;
       }
-    }
-
-    public void Dispose()
-    {
-      GC.SuppressFinalize( this ) ;
-      RestoreCamera() ;
-    }
-
-    ~TempZoomToFit()
-    {
-      throw new InvalidOperationException( $"`{nameof( TempZoomToFit )}` is not disposed. Use `using` statement." ) ;
     }
   }
 }

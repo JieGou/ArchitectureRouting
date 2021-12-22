@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
@@ -12,7 +13,7 @@ using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase
 {
-  public sealed class EndPointPicker : IDisposable
+  public sealed class EndPointPicker : MustBeDisposed
   {
     private readonly UIDocument _uiDocument ;
     private readonly TempColor _routeTempColor ;
@@ -43,7 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       } ) ;
     }
 
-    private void DeleteEndPoints()
+    protected override void Finally()
     {
       var document = _uiDocument.Document ;
 
@@ -64,17 +65,6 @@ namespace Arent3d.Architecture.Routing.AppBase
       if ( false == _endPointsByElementId.TryGetValue( elm.ElementId, out var endPoint ) ) return null ;
 
       return endPoint ;
-    }
-
-    public void Dispose()
-    {
-      GC.SuppressFinalize( this ) ;
-      DeleteEndPoints() ;
-    }
-
-    ~EndPointPicker()
-    {
-      throw new InvalidOperationException( $"`{nameof( EndPointPicker )}` is not disposed. Use `using` statement." ) ;
     }
 
     private class GetElementFilter : ISelectionFilter
