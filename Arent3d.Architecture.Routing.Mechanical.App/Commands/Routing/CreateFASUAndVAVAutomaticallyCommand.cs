@@ -148,17 +148,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           var ( instanceOfFASU, instanceOfVAV) = placeResult.Value ;
 
           if ( space == rootSpace ) {
-            var rootConnectorBasisZ = pickedConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
-            var rootConnectorLine = new Line2d( pickedConnector.Origin.To3dPoint().To2d(), rootConnectorBasisZ ) ;
-            var vavDirection = new Vector2d( -rootConnectorBasisZ.y, rootConnectorBasisZ.x ) ;
-            var vavLine = new Line2d( positionOfFASUAndVAV.To3dPoint().To2d(), vavDirection ) ;
+            var rootConnectorNormal2d = pickedConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
+            var rootConnectorNormalLine2d = new Line2d( pickedConnector.Origin.To3dPoint().To2d(), rootConnectorNormal2d ) ;
+            var orthogonalToConnectorNormal2d = new Vector2d( -rootConnectorNormal2d.y, rootConnectorNormal2d.x ) ;
+            var orthogonalToConnectorNormalAndPassThroughVAVLine2d = new Line2d( positionOfFASUAndVAV.To3dPoint().To2d(), orthogonalToConnectorNormal2d ) ;
 
-            var intersection = rootConnectorLine.GetIntersection( vavLine ) ;
+            var intersection = rootConnectorNormalLine2d.GetIntersection( orthogonalToConnectorNormalAndPassThroughVAVLine2d ) ;
             if ( intersection != null ) {
               var vavLocation = instanceOfVAV.Location as LocationPoint ;
               var (x, y, _) = intersection.Value.To3d( 0 ).ToXYZPoint() ;
               if ( IsInSpace( boxOfSpace,new XYZ( x, y, vavLocation!.Point.Z ) ) ) {
-                var adjustedDistance = ( intersection.Value - vavLine.Origin ).To3d( 0 ).ToXYZPoint() ;
+                var adjustedDistance = ( intersection.Value - orthogonalToConnectorNormalAndPassThroughVAVLine2d.Origin ).To3d( 0 ).ToXYZPoint() ;
                 ElementTransformUtils.MoveElements( document, new List<ElementId>(){instanceOfFASU.Id, instanceOfVAV.Id} , adjustedDistance ) ;
               }
             }
