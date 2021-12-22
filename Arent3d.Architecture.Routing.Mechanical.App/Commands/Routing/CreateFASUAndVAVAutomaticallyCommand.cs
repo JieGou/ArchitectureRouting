@@ -198,9 +198,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static double GetComponentOfRootConnectorNormal( IConnector rootConnector, LocationPoint targetConnectorPos )
     {
-      var rootConnectorPos3d = rootConnector.Origin.To3dPoint() ;
+      var rootConnectorNormalPos3d = rootConnector.CoordinateSystem.BasisZ.To3dPoint() ;
       var targetConnectorPos3d = targetConnectorPos.Point.To3dPoint() ;
-      var componentOfRootConnectorNormal = Vector3d.Dot( targetConnectorPos3d - rootConnectorPos3d, rootConnectorPos3d ) ;
+      var componentOfRootConnectorNormal = Vector3d.Dot( targetConnectorPos3d - rootConnectorNormalPos3d, rootConnectorNormalPos3d ) ;
       return componentOfRootConnectorNormal ;
     }
 
