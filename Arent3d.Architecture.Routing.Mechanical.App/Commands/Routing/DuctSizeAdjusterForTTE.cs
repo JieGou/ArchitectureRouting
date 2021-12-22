@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     public static IEnumerable<(string routeName, RouteSegment)> AdjustDuctSize( Document document, Route route, double passPointOffset )
     {
       // TODO tolerance調整
-      const double tolerance = 1000 ;
+      const double tolerance = 500 ;
       var segments = CreateSegments( document, route, passPointOffset.MillimetersToRevitUnits() ) ;
       segments.MergeSegmentsIfSmall( tolerance.MillimetersToRevitUnits() ) ;
       segments.CalcAirFlowAndSetDiameter( document ) ;
