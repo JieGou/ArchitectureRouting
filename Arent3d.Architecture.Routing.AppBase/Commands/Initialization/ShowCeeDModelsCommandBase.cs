@@ -63,10 +63,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var txtConditionPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
             var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeeDModel.SelectedCondition, opts ) ;
 
+            const string conditionTextNoteTypeName = "1.5 mm" ;
             var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) )
-              .WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( "1.5 mm", tt.Name ) ) ;
+              .WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( conditionTextNoteTypeName, tt.Name ) ) ;
             if ( textNoteType == null ) {
-              Element ele = conditionTextNote.TextNoteType.Duplicate( "1.5 mm" ) ;
+              Element ele = conditionTextNote.TextNoteType.Duplicate( conditionTextNoteTypeName ) ;
               textNoteType = ( ele as TextNoteType )! ;
               TextElementType textType = conditionTextNote.Symbol ;
               const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
