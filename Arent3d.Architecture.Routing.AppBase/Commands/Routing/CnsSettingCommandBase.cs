@@ -41,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( dialog.DialogResult ?? false ) {
         Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
 
-        bool applyError = false ;
+        var hasConstructionItemProp = CheckHasConstructionItemProp( document ) ;
         if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None ) {
           try {
             MessageBox.Show(
@@ -75,7 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               }
               case CnsSettingStorable.UpdateItemType.Connector :
               {
-                // pick connectors
+               // pick connectors
                 var selectedElements = UiDocument.Selection
                   .PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
                   .Where( x => x is FamilyInstance or TextNote ) ;
@@ -85,7 +85,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   message = "No Connectors are selected." ;
                   break ;
                 }
-               
+
+                if ( ! hasConstructionItemProp ) {
+                  message = "Dialog.Electrical.SetElementProperty.Failure".GetAppStringByKeyOrDefault( "Failed" ) ;
+                  break ;
+                }
                 using Transaction transaction = new Transaction( document ) ;
                 transaction.Start( "Ungroup members and set connectors property" ) ;
 
@@ -119,14 +123,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
             else {
               MessageBox.Show( message, "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault( "Construction item addition result" ), MessageBoxButtons.OK ) ;
-              applyError = true ;
             }
           }
           catch {
             MessageBox.Show( "Dialog.Electrical.SetElementProperty.Failure".GetAppStringByKeyOrDefault( "Failed" ),
               "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault(
                 "Construction item addition result" ), MessageBoxButtons.OK ) ;
-            applyError = true ;
           }
         }
 
@@ -140,11 +142,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             progress.Message = "Saving CNS Setting..." ;
             using ( progress?.Reserve( 0.5 ) ) {
               SaveCnsList( document, cnsStorables ) ;
-              UpdateConstructionsItem( document, currentCnsSettingData, cnsStorables.CnsSettingData ) ;
+              UpdateConstructionsItem( document, currentCnsSettingData, cnsStorables.CnsSettingData, hasConstructionItemProp ) ;
             }
           }
 
-          if ( ! applyError && cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
+          if ( hasConstructionItemProp && cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
                cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
             foreach ( var item in connectorGroups ) {
               // create group for updated connector (with new property) and related text note if any
@@ -164,6 +166,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return Result.Succeeded ;
     }
 
+    private bool CheckHasConstructionItemProp( Document document )
+    {
+      try {
+        var connector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault( x => x is FamilyInstance or TextNote ) ;
+        if ( connector == null ) return false ;
+        connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+        return true ;
+      }
+      catch {
+        return false ;
+      }
+    }
+    
     private static void SaveCnsList( Document document, CnsSettingStorable list )
     {
       list.Save() ;
@@ -206,9 +221,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static void UpdateConstructionsItem( Document document, ObservableCollection<CnsSettingModel> currentCnsSettingData, ObservableCollection<CnsSettingModel> newCnsSettingData )
+    private static void UpdateConstructionsItem( Document document, ObservableCollection<CnsSettingModel> currentCnsSettingData, ObservableCollection<CnsSettingModel> newCnsSettingData, bool hasConstructionItemProp ) 
     {
-      try {
         var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
         var connectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
         Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
@@ -236,6 +250,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
         //Ungroup, Get Connector to Update
+        if ( ! hasConstructionItemProp ) return ;
         foreach ( var connector in connectors ) {
           var strConnectorConstructionItem = connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
           if ( string.IsNullOrEmpty( strConnectorConstructionItem ) ) continue ;
@@ -289,10 +304,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           groupIds.AddRange( item.Value ) ;
           document.Create.NewGroup( groupIds ) ;
         }
-      }
-      catch ( Exception ) {
-        // ignored
-      }
     }
 
     private static ObservableCollection<T> CopyCnsSetting<T>( IEnumerable<T> listCnsSettingData ) where T : ICloneable
