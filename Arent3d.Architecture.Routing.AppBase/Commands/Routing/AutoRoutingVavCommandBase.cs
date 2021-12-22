@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       if ( null == GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( uiDocument.Document ) ) {
-        return ( false, "Round duct type whose preferred junction type is tee is not found" ) ;
+        return ( false, "Round duct type whose preferred junction type is tee not found" ) ;
       }
       
       var (fromPickResult, parentVavs, childVavs, errorMessage) = SelectRootConnectorAndFindVavs( uiDocument, routingExecutor, GetAddInType() ) ;
