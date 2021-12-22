@@ -148,19 +148,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           var ( instanceOfFASU, instanceOfVAV) = placeResult.Value ;
 
           if ( space == rootSpace ) {
-            var rootConnectorNormal2d = pickedConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
-            var rootConnectorNormalLine2d = new Line2d( pickedConnector.Origin.To3dPoint().To2d(), rootConnectorNormal2d ) ;
-            var orthogonalToConnectorNormal2d = new Vector2d( -rootConnectorNormal2d.y, rootConnectorNormal2d.x ) ;
-            var orthogonalToConnectorNormalAndPassThroughVAVLine2d = new Line2d( positionOfFASUAndVAV.To3dPoint().To2d(), orthogonalToConnectorNormal2d ) ;
-
-            var intersection = rootConnectorNormalLine2d.GetIntersection( orthogonalToConnectorNormalAndPassThroughVAVLine2d ) ;
-            if ( intersection != null ) {
-              var vavLocation = instanceOfVAV.Location as LocationPoint ;
-              var (x, y, _) = intersection.Value.To3d( 0 ).ToXYZPoint() ;
-              if ( IsInSpace( boxOfSpace,new XYZ( x, y, vavLocation!.Point.Z ) ) ) {
-                var adjustedDistance = ( intersection.Value - orthogonalToConnectorNormalAndPassThroughVAVLine2d.Origin ).To3d( 0 ).ToXYZPoint() ;
-                ElementTransformUtils.MoveElements( document, new List<ElementId>(){instanceOfFASU.Id, instanceOfVAV.Id} , adjustedDistance ) ;
-              }
+            var rootConnectorNormal = pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ;
+            var rootConnectorDirection = pickedConnector.Origin.To3dDirection() ;
+            var vavConnectorDirection = ((instanceOfVAV.Location as LocationPoint)!).Point.To3dDirection() ;
+            var rootToVavVector = vavConnectorDirection - rootConnectorDirection ;
+            
+            var angleBetweenRootAndVAV = Math.Acos( Vector3d.Dot( rootConnectorNormal, rootToVavVector ) / ( rootConnectorNormal.magnitude * rootToVavVector.magnitude ) ) ;
+            var distanceBetweenRootAndVAV = Math.Sin( angleBetweenRootAndVAV ) * rootToVavVector.magnitude ;
+            
+            var orthogonalToConnectorNormal = new Vector3d( rootConnectorNormal.y, -rootConnectorNormal.x, 0 ) ;
+            var sign = Vector3d.Dot( rootToVavVector, orthogonalToConnectorNormal ) > 0 ? -1 : 1 ;
+            var translationOfVAV = orthogonalToConnectorNormal * distanceBetweenRootAndVAV * sign ;
+            if ( IsInSpace( boxOfSpace, (vavConnectorDirection + translationOfVAV).ToXYZDirection() ) ) {
+              ElementTransformUtils.MoveElements( document, new List<ElementId>(){instanceOfFASU.Id, instanceOfVAV.Id} , translationOfVAV.ToXYZDirection() ) ;
             }
           }
 
@@ -198,8 +198,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static double GetComponentOfRootConnectorNormal( IConnector rootConnector, LocationPoint targetConnectorPos )
     {
-      var rootConnectorNormalPos3d = rootConnector.CoordinateSystem.BasisZ.To3dPoint() ;
-      var targetConnectorPos3d = targetConnectorPos.Point.To3dPoint() ;
+      var rootConnectorNormalPos3d = rootConnector.CoordinateSystem.BasisZ.To3dDirection() ;
+      var targetConnectorPos3d = targetConnectorPos.Point.To3dDirection() ;
       var componentOfRootConnectorNormal = Vector3d.Dot( targetConnectorPos3d - rootConnectorNormalPos3d, rootConnectorNormalPos3d ) ;
       return componentOfRootConnectorNormal ;
     }
@@ -516,36 +516,5 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     }
 
     #endregion
-  }
-  
-  public readonly struct Line2d
-  {
-    public Vector2d Origin { get ; }
-    public Vector2d Direction { get ; }
-
-    public Line2d( Vector2d origin, Vector2d direction )
-    {
-      Origin = origin ;
-      Direction = direction ;
-    }
-
-    private Vector2d GetPointAt( double t ) => Origin + t * Direction ;
-
-    public Vector2d? GetIntersection( Line2d another ) => GetIntersection( another, out var u, out _ ) ? GetPointAt( u ) : (Vector2d?)null ;
-
-    private bool GetIntersection( Line2d another, out double u, out double v )
-    {
-      var det = Direction.x * another.Direction.y - Direction.y * another.Direction.x ;
-      if ( det == 0.0 ) {
-        u = double.NaN ;
-        v = double.NaN ;
-        return false ;
-      }
-
-      var dist = another.Origin - Origin ;
-      u = ( dist.x * another.Direction.y - dist.y * another.Direction.x ) / det ;
-      v = ( dist.x * Direction.y - dist.y * Direction.x ) / det ;
-      return true ;
-    }
   }
 }
