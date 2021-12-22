@@ -323,17 +323,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       private static Connector GetHeaderRouteOutDirectionConnectors( Element tee )
       {
         var routeNameOfTee = tee.GetRouteName() ;
+        var toSideConnectors = tee.GetConnectors().Where( c => c.IsRoutingConnector( false ) ).ToArray() ;
 
-        // TODO tee 側にもFrom,ToのConnectorIDが設定されるようになったら書き直し. とりあえずはつながっているコネクタ側の情報を使う.
-        var toSideConnectors = tee.GetConnectors().Where( c => c.GetConnectedConnectors().Any( opposite => opposite.IsRoutingConnector( true ) ) ) ;
-
-        var sideConnectors = toSideConnectors as Connector[] ?? toSideConnectors.ToArray() ;
-        foreach ( var connector in sideConnectors ) {
+        foreach ( var connector in toSideConnectors ) {
           if ( connector.GetConnectedConnectors().Any( c => c.Owner.GetRouteName() == routeNameOfTee ) ) return connector ;
         }
 
         // この時点で失敗しているが、完全に失敗させるよりはそのままつづけたほうがましと判断
-        return sideConnectors.FirstOrDefault() ?? tee.GetConnectors().FirstOrDefault()! ;
+        return toSideConnectors.FirstOrDefault() ?? tee.GetConnectors().FirstOrDefault()! ;
       }
       
       private static ITermPoint CreateTermPointFromEndPoint( IEndPoint endPoint )
