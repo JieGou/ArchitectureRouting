@@ -118,7 +118,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document, branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
 
       var parentSpaces = spaces.Where( s => s.GetSpaceBranchNumber() == RootBranchNumber ).ToList() ;
-      var rootSpace = parentSpaces.MaxBy( x => GetComponentOfRootConnectorNormal( pickedConnector, ( x.Location as LocationPoint )! ) ) ;
+      var rootSpace = parentSpaces.MaxBy( s => GetComponentOfRootConnectorNormal( pickedConnector, ( s.Location as LocationPoint )! ) ) ;
       
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
@@ -147,22 +147,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           // VAVに風量を設定する
           instanceOfVAV.LookupParameter( VAVAirflowName ).Set( designSupplyAirflow ) ;
 
-          if ( space == rootSpace ) {
-            var rootConnectorNormal = pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ;
-            var rootConnectorDirection = pickedConnector.Origin.To3dDirection() ;
-            var vavConnectorDirection = instanceOfVAV.GetConnectors().First( c => c.Direction == FlowDirectionType.In ).Origin.To3dDirection() ;
-            var rootConnectorToVAVVector = vavConnectorDirection - rootConnectorDirection ;
-            
-            var angleBetweenRootConnectorNormalAndRootConnectorToVAVVector = Math.Acos( Vector3d.Dot( rootConnectorNormal, rootConnectorToVAVVector ) / ( rootConnectorNormal.magnitude * rootConnectorToVAVVector.magnitude ) ) ;
-            var distanceBetweenRootAndVAV = Math.Sin( angleBetweenRootConnectorNormalAndRootConnectorToVAVVector ) * rootConnectorToVAVVector.magnitude ;
-            
-            var orthogonalToConnectorNormal = new Vector3d( rootConnectorNormal.y, -rootConnectorNormal.x, 0 ) ;
-            var sign = Vector3d.Dot( rootConnectorToVAVVector, orthogonalToConnectorNormal ) > 0 ? -1 : 1 ;
-            var translationOfVAV = orthogonalToConnectorNormal * distanceBetweenRootAndVAV * sign ;
-            if ( IsInSpace( boxOfSpace, (vavConnectorDirection + translationOfVAV).ToXYZDirection() ) ) {
-              ElementTransformUtils.MoveElements( document, new List<ElementId>(){instanceOfFASU.Id, instanceOfVAV.Id} , translationOfVAV.ToXYZDirection() ) ;
-            }
-          }
+          if ( space == rootSpace ) MoveFASUAndVAVInRootSpace( document, pickedConnector, instanceOfFASU, instanceOfVAV, boxOfSpace ) ;
 
           // この時点でコネクタの向きとは逆を向いている想定
           // コネクタの裏側にあるときは、ここで向きを反転する
@@ -197,6 +182,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return componentOfRootConnectorNormal ;
     }
 
+    private static void MoveFASUAndVAVInRootSpace( Document document, Connector pickedConnector, FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV, BoundingBoxXYZ boxOfSpace )
+    {
+      var rootConnectorPosition = pickedConnector.CoordinateSystem.BasisZ.To3dPoint() ;
+      var rootConnectorDirection = pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ;
+      var vavConnectorPosition = instanceOfVAV.GetConnectors().First( c => c.Direction == FlowDirectionType.In ).Origin.To3dPoint() ;
+      var translationOfVAV = Vector3d.Dot( ( vavConnectorPosition - rootConnectorPosition ), rootConnectorDirection ) * rootConnectorDirection ;
+      if ( IsInSpace( boxOfSpace, ( vavConnectorPosition + translationOfVAV ).ToXYZDirection() ) ) {
+        ElementTransformUtils.MoveElements( document, new List<ElementId>() { instanceOfFASU.Id, instanceOfVAV.Id }, translationOfVAV.ToXYZDirection() ) ;
+      }
+    }
+    
     private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV( Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double heightOfFASU, double heightOfVAV, double rotationAngle )
     {
       var positionOfFASU = new XYZ( positionOfFASUAndVAV.X, positionOfFASUAndVAV.Y, heightOfFASU ) ;
