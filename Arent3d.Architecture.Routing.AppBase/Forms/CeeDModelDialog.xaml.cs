@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     private readonly Document _document ;
     private CeedViewModel? _allCeeDModels ;
-    private CeedViewModel? _ceeDModelUsed ;
+    private CeedViewModel? _usingCeeDModel ;
     private string _ceeDModelNumberSearch ;
     private string _modelNumberSearch ;
     public string SelectedSetCode ;
@@ -35,7 +35,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       InitializeComponent() ;
       _document = document ;
       _allCeeDModels = null ;
-      _ceeDModelUsed = null ;
+      _usingCeeDModel = null ;
       _ceeDModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
       SelectedSetCode = string.Empty ;
@@ -70,7 +70,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbCeeDModelNumbers.Text = "" ;
       CmbModelNumbers.SelectedIndex = -1 ;
       CmbModelNumbers.Text = "" ;
-      var ceeDViewModels = CbCodeIsUsed.IsChecked == true ? _ceeDModelUsed : _allCeeDModels ;
+      var ceeDViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeeDModel : _allCeeDModels ;
       if ( ceeDViewModels != null )
         LoadData( ceeDViewModels ) ;
     }
@@ -87,8 +87,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_Search( object sender, RoutedEventArgs e )
     {
-      if ( _allCeeDModels == null && _ceeDModelUsed == null ) return ;
-      var ceeDViewModels = CbCodeIsUsed.IsChecked == true ? _ceeDModelUsed : _allCeeDModels ;
+      if ( _allCeeDModels == null && _usingCeeDModel == null ) return ;
+      var ceeDViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeeDModel : _allCeeDModels ;
       if ( ceeDViewModels == null ) return ;
       if ( string.IsNullOrEmpty( _ceeDModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) ) {
         this.DataContext = ceeDViewModels ;
@@ -123,24 +123,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
 
         if ( string.IsNullOrEmpty( filePath ) ) return ;
-        var modelNumberUsed = ExcelToModelConverter.GetModelNumberUsed( filePath ) ;
-        if ( ! modelNumberUsed.Any() ) return ;
-        List<CeedModel> ceeDModelUsed = new List<CeedModel>() ;
-        foreach ( var modelNumber in modelNumberUsed ) {
+        var modelNumberToUse = ExcelToModelConverter.GetModelNumberToUse( filePath ) ;
+        if ( ! modelNumberToUse.Any() ) return ;
+        List<CeedModel> usingCeeDModel = new List<CeedModel>() ;
+        foreach ( var modelNumber in modelNumberToUse ) {
           var ceeDModels = ceeDStorable.CeedModelData.Where( c => c.ModelNumber.Contains( modelNumber ) ).Distinct().ToList() ;
-          ceeDModelUsed.AddRange( ceeDModels ) ;
+          usingCeeDModel.AddRange( ceeDModels ) ;
         }
 
-        ceeDModelUsed = ceeDModelUsed.Distinct().ToList() ;
-        _ceeDModelUsed = new CeedViewModel( ceeDStorable, ceeDModelUsed ) ;
-        LoadData( _ceeDModelUsed ) ;
-        CbCodeIsUsed.Visibility = Visibility.Visible ;
-        CbCodeIsUsed.IsChecked = true ;
-        if ( _ceeDModelUsed == null || ! _ceeDModelUsed.CeedModels.Any() ) return ;
+        usingCeeDModel = usingCeeDModel.Distinct().ToList() ;
+        _usingCeeDModel = new CeedViewModel( ceeDStorable, usingCeeDModel ) ;
+        LoadData( _usingCeeDModel ) ;
+        CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
+        CbShowOnlyUsingCode.IsChecked = true ;
+        if ( _usingCeeDModel == null || ! _usingCeeDModel.CeedModels.Any() ) return ;
         try {
           using Transaction t = new Transaction( _document, "Save data" ) ;
           t.Start() ;
-          ceeDStorable.CeedModelUsedData = _ceeDModelUsed.CeedModels ;
+          ceeDStorable.CeedModelUsedData = _usingCeeDModel.CeedModels ;
           ceeDStorable.Save() ;
           t.Commit() ;
         }
@@ -168,8 +168,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         ceeDStorable.CeedModelData = ceeDModelData ;
         ceeDStorable.CeedModelUsedData = new List<CeedModel>() ;
         LoadData( ceeDStorable ) ;
-        CbCodeIsUsed.Visibility = Visibility.Hidden ;
-        CbCodeIsUsed.IsChecked = false ;
+        CbShowOnlyUsingCode.Visibility = Visibility.Hidden ;
+        CbShowOnlyUsingCode.IsChecked = false ;
 
         try {
           using Transaction t = new Transaction( _document, "Save data" ) ;
@@ -188,18 +188,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! ceeDModelData.Any() ) return ;
       var viewModelUsed = new ViewModel.CeedViewModel( ceeDStorable, ceeDModelData ) ;
       LoadData( viewModelUsed ) ;
-      _ceeDModelUsed = viewModelUsed ;
+      _usingCeeDModel = viewModelUsed ;
       _allCeeDModels = ceeDStorable.CeedModelUsedData.Any() ? new ViewModel.CeedViewModel( ceeDStorable, ceeDStorable.CeedModelData ) : viewModelUsed ;
-      CbCodeIsUsed.Visibility = ceeDStorable.CeedModelUsedData.Any() ? Visibility.Visible : Visibility.Hidden ;
+      CbShowOnlyUsingCode.Visibility = ceeDStorable.CeedModelUsedData.Any() ? Visibility.Visible : Visibility.Hidden ;
     }
 
-    private void CodeIsUse_Checked( object sender, RoutedEventArgs e )
+    private void ShowOnlyUsingCode_Checked( object sender, RoutedEventArgs e )
     {
-      if ( _ceeDModelUsed == null ) return ;
-      LoadData( _ceeDModelUsed ) ;
+      if ( _usingCeeDModel == null ) return ;
+      LoadData( _usingCeeDModel ) ;
     }
 
-    private void CodeIsUse_UnChecked( object sender, RoutedEventArgs e )
+    private void ShowOnlyUsingCode_UnChecked( object sender, RoutedEventArgs e )
     {
       if ( _allCeeDModels == null ) return ;
       LoadData( _allCeeDModels ) ;

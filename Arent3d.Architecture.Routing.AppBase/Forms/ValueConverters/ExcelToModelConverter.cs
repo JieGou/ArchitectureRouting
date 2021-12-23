@@ -96,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       return ceedModelData ;
     }
 
-    public static List<string> GetModelNumberUsed( string path )
+    public static List<string> GetModelNumberToUse( string path )
     {
       List<string> modelNumbers = new List<string>() ;
 

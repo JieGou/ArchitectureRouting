@@ -42,7 +42,7 @@
               HorizontalAlignment="Right"
               Width="100" />
       
-      <CheckBox Grid.Row="1" Name="CbCodeIsUsed" IsChecked="True" Content="使用するものだけ表示" Width="200" HorizontalAlignment="Left" Margin="15, 0, 0, 0" Checked="CodeIsUse_Checked" Unchecked="CodeIsUse_UnChecked" Visibility="Hidden"/>
+      <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="True" Content="使用するものだけ表示" Width="200" HorizontalAlignment="Left" Margin="15, 0, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden"/>
       
       <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
         <DataGrid.Resources>
