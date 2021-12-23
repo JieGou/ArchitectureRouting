@@ -17,6 +17,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public string ApplyToSymbolsText { get ; set ; }
 
+    public bool IsImported { get ; set ; }
+    
     public CnsSettingViewModel( CnsSettingStorable cnsStorables )
     {
       CnsSettingStorable = cnsStorables ;
@@ -70,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       // Show open file dialog box
       bool? result = dlg.ShowDialog() ;
-
+      IsImported = false ;
       // Process open file dialog box results
       if ( result == true ) {
         // Open document
@@ -86,6 +88,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         AddDefaultValue() ;
+        CnsSettingStorable.CnsSettingData = CnsSettingModels ;
+        IsImported = true ;
       }
     }
 

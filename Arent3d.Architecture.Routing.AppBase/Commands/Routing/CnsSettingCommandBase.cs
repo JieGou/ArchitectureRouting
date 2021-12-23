@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Collections ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
@@ -33,49 +32,47 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // get data of Cns Category from snoop DB
       CnsSettingStorable cnsStorables = document.GetCnsSettingStorable() ;
       cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.None ;
-      ObservableCollection<CnsSettingModel> currentCnsSettingData = CopyCnsSetting( cnsStorables.CnsSettingData ) ;
+      var currentCnsSettingData = CopyCnsSetting( cnsStorables.CnsSettingData ) ;
       CnsSettingViewModel viewModel = new CnsSettingViewModel( cnsStorables ) ;
-      var dialog = new CnsSettingDialog( viewModel ) ;
-
+      var hasConstructionItemProp = CheckHasConstructionItemProp( document ) ;
+      var dialog = new CnsSettingDialog( viewModel, document, currentCnsSettingData, hasConstructionItemProp ) ;
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {
         Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
 
-        var hasConstructionItemProp = CheckHasConstructionItemProp( document ) ;
         if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None ) {
           try {
-            MessageBox.Show(
-              "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( "Please select a range." ),
-              "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
-            string returnMessage = string.Empty ;
+            if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector && ! hasConstructionItemProp ) {
+              message = "Dialog.Electrical.SetElementProperty.NoConstructionItem".GetAppStringByKeyOrDefault( "The property Construction Item does not exist." ) ;
+            }
+            else {
+              MessageBox.Show( "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( "Please select a range." ), "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
+            }
 
             switch ( cnsStorables.ElementType ) {
               case CnsSettingStorable.UpdateItemType.Conduit :
               {
                 // pick conduits
-                var selectedElements = UiDocument.Selection
-                  .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-                  .Where( p => p is FamilyInstance or Conduit ) ;
+                var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit ) ;
                 var conduitList = selectedElements.ToList() ;
                 if ( ! conduitList.Any() ) {
                   message = "No Conduits are selected." ;
                   break ;
                 }
 
-                  // set value to "Construction Item" property
-                  var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
-                  using Transaction transaction = new Transaction( document ) ;
-                  transaction.Start( "Set conduits property" ) ;
-
-                  SetConstructionItemForElements( conduitList.ToList(), categoryName ) ;
-
-                  transaction.Commit() ;
+                // set value to "Construction Item" property
+                var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
+                using var transaction = new Transaction( document ) ;
+                transaction.Start( "Set conduits property" ) ;
+                SetConstructionItemForElements( conduitList.ToList(), categoryName ) ;
+                transaction.Commit() ;
 
                 break ;
               }
               case CnsSettingStorable.UpdateItemType.Connector :
               {
-               // pick connectors
+                if ( ! hasConstructionItemProp ) break ;
+                // pick connectors
                 var selectedElements = UiDocument.Selection
                   .PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
                   .Where( x => x is FamilyInstance or TextNote ) ;
@@ -85,11 +82,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   message = "No Connectors are selected." ;
                   break ;
                 }
-
-                if ( ! hasConstructionItemProp ) {
-                  message = "Dialog.Electrical.SetElementProperty.Failure".GetAppStringByKeyOrDefault( "Failed" ) ;
-                  break ;
-                }
+               
                 using Transaction transaction = new Transaction( document ) ;
                 transaction.Start( "Ungroup members and set connectors property" ) ;
 
@@ -142,7 +135,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             progress.Message = "Saving CNS Setting..." ;
             using ( progress?.Reserve( 0.5 ) ) {
               SaveCnsList( document, cnsStorables ) ;
-              UpdateConstructionsItem( document, currentCnsSettingData, cnsStorables.CnsSettingData, hasConstructionItemProp ) ;
+              CnsSettingDialog.UpdateConstructionsItem( document, currentCnsSettingData, cnsStorables.CnsSettingData, hasConstructionItemProp ) ;
             }
           }
 
@@ -166,10 +159,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return Result.Succeeded ;
     }
 
-    private bool CheckHasConstructionItemProp( Document document )
+    private static bool CheckHasConstructionItemProp( Document document )
     {
       try {
-        var connector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault( x => x is FamilyInstance or TextNote ) ;
+        var connector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault() ;
         if ( connector == null ) return false ;
         connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
         return true ;
@@ -219,91 +212,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var conduit in elements ) {
         conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, categoryName ) ;
       }
-    }
-
-    private static void UpdateConstructionsItem( Document document, ObservableCollection<CnsSettingModel> currentCnsSettingData, ObservableCollection<CnsSettingModel> newCnsSettingData, bool hasConstructionItemProp ) 
-    {
-        var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
-        var connectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
-        Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
-        Dictionary<Element, string> updateConnectors = new Dictionary<Element, string>() ;
-
-        //update Constructions Item for Conduits
-        foreach ( var conduit in conduits ) {
-          var strConduitConstructionItem = conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
-          if ( string.IsNullOrEmpty( strConduitConstructionItem ) ) continue ;
-
-          var conduitCnsSetting = currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConduitConstructionItem ) ;
-          if ( conduitCnsSetting == null ) {
-            continue ;
-          }
-
-          if ( newCnsSettingData.All( c => c.Position != conduitCnsSetting.Position ) ) {
-            conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, "未設定" ) ;
-            continue ;
-          }
-
-          var newConduitCnsSetting = newCnsSettingData.First( c => c.Position == conduitCnsSetting.Position ) ;
-          if ( newConduitCnsSetting == null ) continue ;
-          if ( newConduitCnsSetting.CategoryName == strConduitConstructionItem ) continue ;
-          conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, newConduitCnsSetting.CategoryName ) ;
-        }
-
-        //Ungroup, Get Connector to Update
-        if ( ! hasConstructionItemProp ) return ;
-        foreach ( var connector in connectors ) {
-          var strConnectorConstructionItem = connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
-          if ( string.IsNullOrEmpty( strConnectorConstructionItem ) ) continue ;
-        
-          var connectorCnsSetting = currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConnectorConstructionItem ) ;
-          if ( connectorCnsSetting == null ) {
-            continue ;
-          }
-        
-          string newConstructionItemValue ;
-          if ( newCnsSettingData.All( c => c.Position != connectorCnsSetting.Position ) ) {
-            newConstructionItemValue = "未設定" ;
-          }
-          else {
-            var newConnectorCnsSetting = newCnsSettingData.First( c => c.Position == connectorCnsSetting.Position ) ;
-            if ( newConnectorCnsSetting == null ) continue ;
-            if ( newConnectorCnsSetting.CategoryName == strConnectorConstructionItem ) continue ;
-            newConstructionItemValue = newConnectorCnsSetting.CategoryName ;
-          }
-        
-          var parentGroup = document.GetElement( connector.GroupId ) as Group ;
-          if ( parentGroup != null ) {
-            // ungroup before set property
-            var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-            List<ElementId> listTextNoteIds = new List<ElementId>() ;
-            // ungroup textNote before ungroup connector
-            foreach ( var group in attachedGroup ) {
-              var ids = @group.GetMemberIds() ;
-              listTextNoteIds.AddRange( ids ) ;
-              @group.UngroupMembers() ;
-            }
-        
-            parentGroup.UngroupMembers() ;
-            connectorGroups.Add( connector.Id, listTextNoteIds ) ;
-            updateConnectors.Add( connector, newConstructionItemValue ) ;
-          }
-        }
-        
-        // update ConstructionItem for connector 
-        foreach ( var updateItem in updateConnectors ) {
-          var e = updateItem.Key ;
-          string value = updateItem.Value ;
-          e.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, value ) ;
-        }
-        
-        document.Regenerate() ;
-        // create group for updated connector (with new property) and related text note if any
-        foreach ( var item in connectorGroups ) {
-          List<ElementId> groupIds = new List<ElementId>() ;
-          groupIds.Add( item.Key ) ;
-          groupIds.AddRange( item.Value ) ;
-          document.Create.NewGroup( groupIds ) ;
-        }
     }
 
     private static ObservableCollection<T> CopyCnsSetting<T>( IEnumerable<T> listCnsSettingData ) where T : ICloneable
