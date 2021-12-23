@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string DiameterOfVAV = "250" ;
     private const int RootBranchNumber = 0 ;
     private const double MinDistanceSpacesCollinear = 2.5 ;
+    private const string VAVAirflowName = "風量" ;
 
     private class FASUsAndVAVsInSpaceModel
     {
@@ -136,7 +137,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
           if ( listOfFASUsAndVAVsInSpace.listOfFASUs.Count == 1 && listOfFASUsAndVAVsInSpace.listOfVAVs.Count == 1 ) {
             // 既存のVAVに風量を設定する
-            listOfFASUsAndVAVsInSpace.listOfVAVs.First().LookupParameter( "風量" ).Set( designSupplyAirflow ) ;
+            listOfFASUsAndVAVsInSpace.listOfVAVs.First().LookupParameter( VAVAirflowName ).Set( designSupplyAirflow ) ;
             continue ;
           }
           
@@ -149,7 +150,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           var ( instanceOfFASU, instanceOfVAV) = placeResult.Value ;
           
           // VAVに風量を設定する
-          instanceOfVAV.LookupParameter( "風量" ).Set( designSupplyAirflow ) ;
+          instanceOfVAV.LookupParameter( VAVAirflowName ).Set( designSupplyAirflow ) ;
           
           // この時点でコネクタの向きとは逆を向いている想定
           // コネクタの裏側にあるときは、ここで向きを反転する
