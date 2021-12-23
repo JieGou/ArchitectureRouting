@@ -195,7 +195,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       var listOfFASUsAndVAVsBySpace = new Dictionary<string, FASUsAndVAVsInSpaceModel>() ;
 
-      var fasus = document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_200Phi ).Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_250Phi ) ).Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F5_150_250Phi ) ).Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F6_150_250Phi ) ).Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F6_150_300Phi ) ).Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F7_150_300Phi ) ).Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_250Phi ) ).Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_300Phi ) ) ;
+      var fasus = document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_200Phi )
+        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_250Phi ) )
+        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F5_150_250Phi ) )
+        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F6_150_250Phi ) )
+        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F6_150_300Phi ) )
+        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F7_150_300Phi ) )
+        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_250Phi ) )
+        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_300Phi ) ) ;
       var fasuInstances = fasus as FamilyInstance[] ?? fasus.ToArray() ;
       var vavs = document.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
       var vavInstances = vavs as FamilyInstance[] ?? vavs.ToArray() ;
