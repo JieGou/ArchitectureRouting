@@ -89,7 +89,7 @@
         <string>自動ルーティング&#xA;(AHU-VAV)</string>
 
         <key>Mechanical.App.Commands.Routing.AdjustDuctSizeCommand</key>
-        <string>ダクト径&#xA;調整</string>        
+        <string>ダクト径&#xA;自動調整</string>        
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

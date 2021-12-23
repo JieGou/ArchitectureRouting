@@ -53,6 +53,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
         [Button( typeof( AutoRoutingVavCommand ), OnlyInitialized = true )]
         private static class AutoRoutingVavCommandButton { }
+        
+        [Button( typeof( AdjustDuctSizeCommand ), OnlyInitialized = true )]
+        private static class AdjustDuctSizeCommandButton { }        
       }      
     }
 #else
