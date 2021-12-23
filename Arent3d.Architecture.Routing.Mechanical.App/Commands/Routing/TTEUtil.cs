@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var spaces = GetAllSpaces( document ).OfType<Space>().ToArray() ;
       var targetSpace = spaces.FirstOrDefault( space => space.get_BoundingBox( document.ActiveView ).ToBox3d().Contains( pointInSpace, 0.0 ) ) ;
 
-#if REVIT2019
+#if REVIT2019 || REVIT2020
       return targetSpace == null
         ? 0.0
         : UnitUtils.ConvertFromInternalUnits( targetSpace.DesignSupplyAirflow, Autodesk.Revit.DB.DisplayUnitType.DUT_CUBIC_METERS_PER_HOUR ) ;
