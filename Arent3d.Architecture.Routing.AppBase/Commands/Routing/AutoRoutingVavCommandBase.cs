@@ -2,7 +2,6 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
@@ -29,10 +28,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     protected abstract AddInType GetAddInType() ;
 
-    private record SelectState( Connector? RootConnector, IReadOnlyList<FamilyInstance> ParentVavs, Dictionary<int, List<FamilyInstance>> ChildVavs, AutoVavRoutePropertyDialog PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
+    private record SelectState( Connector? RootConnector, IReadOnlyList<FamilyInstance> ParentVavs, Dictionary<int, List<FamilyInstance>> ChildVavs, MEPSystemClassificationInfo ClassificationInfo ) ;
 
-    protected abstract DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo ) ;
-    protected abstract MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType ) ;
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
@@ -44,9 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var (fromPickResult, parentVavs, childVavs, errorMessage) = SelectRootConnectorAndFindVavs( uiDocument, routingExecutor, GetAddInType() ) ;
       if ( null != errorMessage ) return ( false, errorMessage ) ;
       _rootLevel = uiDocument.Document.GuessLevel( fromPickResult.GetOrigin() ) ;
-      var property = ShowPropertyDialog( uiDocument.Document, fromPickResult ) ;
-      if ( true != property?.DialogResult ) return ( false, null ) ;
-      if ( GetMEPSystemClassificationInfoFromSystemType( property.GetSystemType() ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, parentVavs, childVavs, property, classificationInfo ) ) ;
+      if ( fromPickResult.PickedConnector != null && MEPSystemClassificationInfo.From( fromPickResult.PickedConnector ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, parentVavs, childVavs, classificationInfo ) ) ;
       return ( false, null ) ;
     }
 
@@ -91,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     private static FamilyInstance GetVavFromSpace( Document doc, IEnumerable<FamilyInstance> vavInstances, Element space )
     {
-      BoundingBoxXYZ spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
+      var spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
       foreach ( var vavInstance in vavInstances ) {
         var vavPosition = vavInstance.Location as LocationPoint ;
         if ( vavPosition == null || ( ! IsInSpace( spaceBox, vavPosition.Point ) ) ) continue ;
@@ -109,7 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var result = new Dictionary<int, List<FamilyInstance>>() ;
       foreach ( var (branchNum, spaces) in childSpacesGroupedByBranchNum ) {
         foreach ( var space in spaces ) {
-          BoundingBoxXYZ spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
+          var spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
           foreach ( var vavInstance in vavInstances ) {
             var vavPosition = vavInstance.Location as LocationPoint ;
             if ( vavPosition == null ) continue ;
@@ -135,11 +130,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
     }
 
-    private static (IReadOnlyList<Element> parentSpaces, Dictionary<int, List<Element>> childSpacesGroupedByBranchNum) GetSortedSpaceGroups( IEnumerable<Element> spaceBoxes, Connector rootConnector )
+    private static (IReadOnlyList<Element> parentSpaces, Dictionary<int, List<Element>> childSpacesGroupedByBranchNum) GetSortedSpaceGroups( IEnumerable<Element> spaceBoxes, IConnector rootConnector )
     {
       List<Element> parentSpaces = new() ;
       Dictionary<int, List<Element>> childSpacesGroupedByBranchNum = new() ;
-      foreach ( Element space in spaceBoxes ) {
+      foreach ( var space in spaceBoxes ) {
         var branchNumber = space.GetSpaceBranchNumber() ;
         switch ( branchNumber ) {
           case (int)SpaceType.Invalid :
@@ -165,7 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       parentSpaces.Sort( ( a, b ) => CompareDistanceBasisZ( rootConnector, a, b, false ) ) ;
 
-      foreach ( var (key, value) in childSpacesGroupedByBranchNum ) {
+      foreach ( var (key, _) in childSpacesGroupedByBranchNum ) {
         childSpacesGroupedByBranchNum[ key ].Sort( ( a, b ) => CompareDistanceBasisZ( rootConnector, a, b, true ) ) ;
       }
 
@@ -208,23 +203,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return spaces ;
     }
 
-    private AutoVavRoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult )
-    {
-      if ( fromPickResult.PickedConnector == null ) return null ;
-      if ( MEPSystemClassificationInfo.From( fromPickResult.PickedConnector ) is not { } classificationInfo ) return null ;
-      return CreateSegmentDialogDefaultValuesWithConnector( document, fromPickResult.PickedConnector, classificationInfo ) is not { } initValues ? null : ShowDialog( document, initValues, _rootLevel.Id ) ;
-    }
-
-    protected static AutoVavRoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId )
-    {
-      var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, fromLevelId ) ;
-      var sv = new AutoVavRoutePropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ) ;
-
-      sv.ShowDialog() ;
-
-      return sv ;
-    }
-
     private static MEPCurveType? GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( Document document )
     {
       return document.GetAllElements<MEPCurveType>().FirstOrDefault(
@@ -233,19 +211,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 && type.Shape == ConnectorProfileType.Round
       ) ;
     }
-    
+
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var selectState = state as SelectState ?? throw new InvalidOperationException() ;
-      var (rootConnector, parentVavs, childVavs, routeProperty, classificationInfo) = selectState ;
+      var (rootConnector, parentVavs, childVavs, classificationInfo) = selectState ;
       if ( rootConnector == null ) throw new InvalidOperationException() ;
-      var systemType = routeProperty.GetSystemType() ;
+      var systemType = document.GetAllElements<MEPSystemType>().Where( classificationInfo.IsCompatibleTo ).FirstOrDefault() ;
       var curveType = GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( document )! ; // 取得できることはこれより前に確認済み.
-      
-      var sensorFixedHeight = routeProperty.GetFromFixedHeight() ;
-      var avoidType = routeProperty.GetAvoidType() ;
-      var diameter = routeProperty.GetDiameter() ;
-      var radius = diameter * 0.5 ;
       var nameBase = GetNameBase( systemType, curveType ) ;
       var nextIndex = GetRouteNameIndex( RouteCache.Get( document ), nameBase ) ;
       var routeName = nameBase + "_" + nextIndex ;
@@ -256,7 +229,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var rootConnectorEndPoint = new ConnectorEndPoint( rootConnector, null ) ;
       var vavConnectorEndPoint = new ConnectorEndPoint( parentVavs.Last().GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
       var mainRouteHeight = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, rootConnector.Origin.Z - _rootLevel.Elevation ) ;
-      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, rootConnectorEndPoint, vavConnectorEndPoint, diameter, false, mainRouteHeight, mainRouteHeight, avoidType, ElementId.InvalidElementId ) ) ) ;
+      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, rootConnectorEndPoint, vavConnectorEndPoint, null, false, mainRouteHeight, mainRouteHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ) ) ;
 
       // Branch routes
       foreach ( var vav in parentVavs.Take( parentVavs.Count - 1 ) ) {
@@ -265,7 +238,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
         var connectorEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, null, null, avoidType, ElementId.InvalidElementId ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, null, null, AvoidType.Whichever, ElementId.InvalidElementId ) ;
         result.Add( ( subRouteName, segment ) ) ;
       }
 
@@ -275,7 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
         var connectorEndPoint = new ConnectorEndPoint( childVav.Last().GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, sensorFixedHeight, null, avoidType, ElementId.InvalidElementId ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, mainRouteHeight, mainRouteHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ;
         result.Add( ( subRouteName, segment ) ) ;
         foreach ( var vav in childVav.Take( childVav.Count - 1 ) ) {
           // サブメインダクト - VAV
@@ -283,7 +256,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var subChildRouteName = nameBase + "_" + ( ++nextIndex ) ;
           var branchChildEndPoint = new RouteEndPoint( document, subRouteName, DefaultSubRouteIndex ) ;
           var connectorChildEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
-          var childSegment = new RouteSegment( classificationInfo, systemType, curveType, branchChildEndPoint, connectorChildEndPoint, childDiameter, false, null, null, avoidType, ElementId.InvalidElementId ) ;
+          var childSegment = new RouteSegment( classificationInfo, systemType, curveType, branchChildEndPoint, connectorChildEndPoint, childDiameter, false, null, null, AvoidType.Whichever, ElementId.InvalidElementId ) ;
           result.Add( ( subChildRouteName, childSegment ) ) ;
         }
       }
@@ -300,7 +273,5 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return lastIndex + 1 ;
     }
-
-    protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
   }
 }

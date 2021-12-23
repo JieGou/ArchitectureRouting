@@ -18,20 +18,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    protected override DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo )
-    {
-      if ( RouteMEPSystem.GetSystemType( document, connector ) is not { } defaultSystemType ) return null ;
-
-      var curveType = RouteMEPSystem.GetMEPCurveType( document, new[] { connector }, defaultSystemType ) ;
-
-      return new DialogInitValues( classificationInfo, defaultSystemType, curveType, connector.GetDiameter() ) ;
-    }
-
     protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => systemType?.Name ?? curveType.Category.Name ;
-
-    protected override MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType )
-    {
-      return null == systemType ? null : MEPSystemClassificationInfo.From( systemType! ) ;
-    }
   }
 }
