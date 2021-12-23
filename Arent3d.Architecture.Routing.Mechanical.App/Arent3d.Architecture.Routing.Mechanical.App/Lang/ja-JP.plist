@@ -88,6 +88,9 @@
         <key>Mechanical.App.Commands.Routing.AutoRoutingVavCommand</key>
         <string>自動ルーティング&#xA;(AHU-VAV)</string>
 
+        <key>Mechanical.App.Commands.Routing.AdjustDuctSizeCommand</key>
+        <string>ダクト径&#xA;調整</string>        
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
@@ -115,6 +118,9 @@
 
         <key>TransactionName.Commands.Routing.PickAndReRoute</key>
         <string>選択From-Toを再ルーティング</string>
+
+        <key>TransactionName.Commands.Routing.PickAndAdjustDuctSize</key>
+        <string>ダクト径調整</string>        
 
         <key>TransactionName.Commands.Routing.RerouteAll</key>
         <string>全て再ルーティング</string>
