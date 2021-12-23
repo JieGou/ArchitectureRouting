@@ -8,6 +8,7 @@ using System ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit ;
 using System.Linq ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB.Mechanical ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
@@ -127,8 +128,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
 
       var parentSpaces = spaces.Where( s => s.GetSpaceBranchNumber() == RootBranchNumber ).ToList() ;
-      parentSpaces.Sort( ( a, b ) => CompareComponentOfRootConnectorNormal( pickedConnector, a, b ) ) ;
-      var rootSpace = parentSpaces.LastOrDefault() ;
+      var rootSpace = parentSpaces.MaxBy( x => GetComponentOfRootConnectorNormal( pickedConnector, ( x.Location as LocationPoint )! ) ) ;
       
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
@@ -188,12 +188,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return Result.Succeeded ;
-    }
-
-    private static int CompareComponentOfRootConnectorNormal( IConnector rootConnector, Element a, Element b )
-    {
-      if ( a.Location is not LocationPoint aPos || b.Location is not LocationPoint bPos ) return default ;
-      return GetComponentOfRootConnectorNormal( rootConnector, aPos ).CompareTo( GetComponentOfRootConnectorNormal( rootConnector, bPos ) ) ;
     }
 
     private static double GetComponentOfRootConnectorNormal( IConnector rootConnector, LocationPoint targetConnectorPos )
