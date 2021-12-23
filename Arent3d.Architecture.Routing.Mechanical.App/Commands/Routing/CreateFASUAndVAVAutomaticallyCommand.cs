@@ -150,14 +150,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           if ( space == rootSpace ) {
             var rootConnectorNormal = pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ;
             var rootConnectorDirection = pickedConnector.Origin.To3dDirection() ;
-            var vavConnectorDirection = ((instanceOfVAV.Location as LocationPoint)!).Point.To3dDirection() ;
-            var rootToVavVector = vavConnectorDirection - rootConnectorDirection ;
+            var vavConnectorDirection = instanceOfVAV.GetConnectors().First( c => c.Direction == FlowDirectionType.In ).Origin.To3dDirection() ;
+            var rootConnectorToVAVVector = vavConnectorDirection - rootConnectorDirection ;
             
-            var angleBetweenRootAndVAV = Math.Acos( Vector3d.Dot( rootConnectorNormal, rootToVavVector ) / ( rootConnectorNormal.magnitude * rootToVavVector.magnitude ) ) ;
-            var distanceBetweenRootAndVAV = Math.Sin( angleBetweenRootAndVAV ) * rootToVavVector.magnitude ;
+            var angleBetweenRootConnectorNormalAndRootConnectorToVAVVector = Math.Acos( Vector3d.Dot( rootConnectorNormal, rootConnectorToVAVVector ) / ( rootConnectorNormal.magnitude * rootConnectorToVAVVector.magnitude ) ) ;
+            var distanceBetweenRootAndVAV = Math.Sin( angleBetweenRootConnectorNormalAndRootConnectorToVAVVector ) * rootConnectorToVAVVector.magnitude ;
             
             var orthogonalToConnectorNormal = new Vector3d( rootConnectorNormal.y, -rootConnectorNormal.x, 0 ) ;
-            var sign = Vector3d.Dot( rootToVavVector, orthogonalToConnectorNormal ) > 0 ? -1 : 1 ;
+            var sign = Vector3d.Dot( rootConnectorToVAVVector, orthogonalToConnectorNormal ) > 0 ? -1 : 1 ;
             var translationOfVAV = orthogonalToConnectorNormal * distanceBetweenRootAndVAV * sign ;
             if ( IsInSpace( boxOfSpace, (vavConnectorDirection + translationOfVAV).ToXYZDirection() ) ) {
               ElementTransformUtils.MoveElements( document, new List<ElementId>(){instanceOfFASU.Id, instanceOfVAV.Id} , translationOfVAV.ToXYZDirection() ) ;
