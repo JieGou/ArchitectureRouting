@@ -1,4 +1,5 @@
-#define TTE_BUILD
+// 高砂熱学用メニュー 
+//#define TTE_BUILD
 using Arent3d.Architecture.Routing.Mechanical.App.Commands ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint ;
