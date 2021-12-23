@@ -138,7 +138,7 @@
         <string>Pickup Display&#xA;Information</string>
 
         <key>Electrical.App.Commands.Initialization.ShowConduitInformationCommand</key>
-        <string>Create Line</string>
+        <string>Schedule Creation</string>
         
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>Load&#xA;Save To DB</string>

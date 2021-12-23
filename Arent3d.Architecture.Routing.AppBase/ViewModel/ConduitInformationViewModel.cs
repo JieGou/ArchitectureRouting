@@ -39,7 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
             dlg.FileName = ""; // Default file name
             dlg.DefaultExt = ".ctl"; // Default file extension
-            dlg.Filter = "CNS files|*.ctl"; // Filter files by extension
+            dlg.Filter = "CTL files|*.ctl"; // Filter files by extension
 
             // Show open file dialog box
             bool? result = dlg.ShowDialog();

@@ -31,6 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         new ObservableCollection<ConduitInformationModel>() ;
       var detailSymbolStorable =
         doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
+      var processedDetailSymbol = new List<string>() ;
       try {
         var pickedObjects = uiDoc.Selection
           .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
@@ -41,57 +42,61 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var existSymbolDetail =
             detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => element.Id.ToString() == x.ConduitId ) ;
           if ( existSymbolDetail != null && ceedStorable != null ) {
-            var ceedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
-            if ( ceedModel != null ) {
-              var hiroiCdModel =
-                hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
-              var hiroiSetModels =
-                hiroiSetMasterNormalModelData.Where(
-                  x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ) ;
-              foreach ( var item in hiroiSetModels ) {
-                List<string> listMaterialCode = new List<string>() ;
-                if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
-                  listMaterialCode.Add( item.MaterialCode1 ) ;
-                }
+             if ( ! processedDetailSymbol.Contains( existSymbolDetail.FromConnectorId+existSymbolDetail.ToConnectorId ) ) {
+              processedDetailSymbol.Add( existSymbolDetail.FromConnectorId+existSymbolDetail.ToConnectorId ) ;
+              var ceedModel =
+                ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
+              if ( ceedModel != null ) {
+                var hiroiCdModel =
+                  hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
+                var hiroiSetModels =
+                  hiroiSetMasterNormalModelData.Where( x =>
+                    x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ) ;
+                foreach ( var item in hiroiSetModels ) {
+                  List<string> listMaterialCode = new List<string>() ;
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
+                    listMaterialCode.Add( item.MaterialCode1 ) ;
+                  }
 
-                if ( ! string.IsNullOrWhiteSpace( item.MaterialCode2 ) ) {
-                  listMaterialCode.Add( item.MaterialCode2 ) ;
-                }
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode2 ) ) {
+                    listMaterialCode.Add( item.MaterialCode2 ) ;
+                  }
 
-                if ( ! string.IsNullOrWhiteSpace( item.MaterialCode3 ) ) {
-                  listMaterialCode.Add( item.MaterialCode3 ) ;
-                }
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode3 ) ) {
+                    listMaterialCode.Add( item.MaterialCode3 ) ;
+                  }
 
-                if ( ! string.IsNullOrWhiteSpace( item.MaterialCode4 ) ) {
-                  listMaterialCode.Add( item.MaterialCode4 ) ;
-                }
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode4 ) ) {
+                    listMaterialCode.Add( item.MaterialCode4 ) ;
+                  }
 
-                if ( ! string.IsNullOrWhiteSpace( item.MaterialCode5 ) ) {
-                  listMaterialCode.Add( item.MaterialCode5 ) ;
-                }
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode5 ) ) {
+                    listMaterialCode.Add( item.MaterialCode5 ) ;
+                  }
 
-                if ( ! string.IsNullOrWhiteSpace( item.MaterialCode6 ) ) {
-                  listMaterialCode.Add( item.MaterialCode6 ) ;
-                }
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode6 ) ) {
+                    listMaterialCode.Add( item.MaterialCode6 ) ;
+                  }
 
-                if ( ! string.IsNullOrWhiteSpace( item.MaterialCode7 ) ) {
-                  listMaterialCode.Add( item.MaterialCode7 ) ;
-                }
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode7 ) ) {
+                    listMaterialCode.Add( item.MaterialCode7 ) ;
+                  }
 
-                if ( ! string.IsNullOrWhiteSpace( item.MaterialCode8 ) ) {
-                  listMaterialCode.Add( item.MaterialCode8 ) ;
-                }
+                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode8 ) ) {
+                    listMaterialCode.Add( item.MaterialCode8 ) ;
+                  }
 
-                if ( listMaterialCode.Any() ) {
-                  var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( x.Buzaicd ) ) ;
-                  foreach ( var master in masterModels ) {
-                    var conduitModels = conduitsModelData
-                      .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
-                    conduitInformationModels.Add( new ConduitInformationModel( false, floor,
-                      existSymbolDetail.DetailSymbol, master.Type, master.Size1, master.Size2, "1",
-                      string.Empty, string.Empty, string.Empty, master.Type, master.Size1,
-                      "1", hiroiCdModel?.ConstructionClassification,
-                      conduitModels.FirstOrDefault()?.Classification ?? "", constructionItem, constructionItem, "" ) ) ;
+                  if ( listMaterialCode.Any() ) {
+                    var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( x.Buzaicd ) ) ;
+                    foreach ( var master in masterModels ) {
+                      var conduitModels = conduitsModelData
+                        .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
+                      conduitInformationModels.Add( new ConduitInformationModel( false, floor,
+                        existSymbolDetail.DetailSymbol, master.Type, master.Size1, master.Size2, "1", string.Empty,
+                        string.Empty, string.Empty, master.Type, master.Size1, "1",
+                        hiroiCdModel?.ConstructionClassification, conduitModels.FirstOrDefault()?.Classification ?? "",
+                        constructionItem, constructionItem, "" ) ) ;
+                    }
                   }
                 }
               }
@@ -151,32 +156,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       string result = string.Empty ;
       var conduitInformationModels = viewModel.ConduitInformationModels ;
       var maxWireType = conduitInformationModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
+      var maxWireStrip = conduitInformationModels.Max( x => x.WireStrip?.Length ) ?? 0 ;
+      var maxPipingType = conduitInformationModels.Max( x => ( x.PipingType + x.PipingSize ).Length ) ;
       var conduitInformationDictionary = conduitInformationModels.GroupBy( x => x.DetailSymbol )
         .ToDictionary( g => g.Key, g => g.ToList() ) ;
       result += $"{line}\r{level}階平面图" ;
       foreach ( var group in conduitInformationDictionary ) {
         result += $"\r{line}\r{group.Key}" ;
         result = @group.Value.Aggregate( result,
-          ( current, item ) =>
-            current +
-            $"\r{line}\r{item.WireType + item.WireSize}\t-{item.WireStrip}\tX{item.Quantity}\t{CheckEmptyString(item.PipingType + item.PipingSize)}\t{item.Remark}" ) ;
+          ( current, item ) => current +
+                               $"\r{line}\r{AddFullString( item.WireType + item.WireSize, maxWireType )}\t-{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}\tX{item.Quantity}\t{AddFullString( CheckEmptyString( item.PipingType + item.PipingSize, maxPipingType ), maxPipingType )}\t{item.Remark}" ) ;
       }
 
       result += $"\r{line}" ;
       return result ;
     }
 
-    private string CheckEmptyString( string str )
+    private string CheckEmptyString( string str, int lenght )
     {
-      string result = string.Empty ;
-      if ( string.IsNullOrEmpty( str ) ) {
-        result = $"({str})" ;
-      }
-      else {
-        result = new string( ' ', 5 ) ;
-      }
-      return result ;
+      return ! string.IsNullOrEmpty( str ) ? $"({str})" : new string( '　', lenght ) ;
     }
-    
+
+    private string AddFullString( string str, int length )
+    {
+      if ( str.Length < length ) {
+        str += new string( '　', length - str.Length ) ;
+      }
+
+      return str ;
+    }
   }
 }
