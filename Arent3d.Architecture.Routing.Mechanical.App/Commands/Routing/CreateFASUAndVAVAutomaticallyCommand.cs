@@ -21,10 +21,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   public class CreateFASUAndVAVAutomaticallyCommand : IExternalCommand
   {
     private const double DistanceBetweenFASUAndVAV = 0.25 ;
-    private const string DiameterOfVAV = "250" ;
+    private const string DiameterOfVAV_250Phi = "250" ;
+    private const string DiameterOfVAV_300Phi = "300" ;
     private const int RootBranchNumber = 0 ;
     private const double MinDistanceSpacesCollinear = 2.5 ;
     private const string VAVAirflowName = "風量" ;
+    private const int Airflow_250Phi = 765 ;
 
     private class FASUsAndVAVsInSpaceModel
     {
@@ -131,10 +133,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             continue ;
           }
 
+          var airflowOfSpace = UnitUtils.ConvertFromInternalUnits( designSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
+          var fasuFamilyType = airflowOfSpace <= Airflow_250Phi ? RoutingFamilyType.FASU_F8_150_250Phi : RoutingFamilyType.FASU_F8_150_300Phi ;
+          
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
-          var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, heightOfFASU, heightOfVAV, rotationAnglesOfFASUsAndVAVs[ space ] ) ;
+          var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, heightOfFASU, heightOfVAV, rotationAnglesOfFASUsAndVAVs[ space ], fasuFamilyType ) ;
           if ( placeResult == null ) continue ; // Failed to place
 
           var (instanceOfFASU, instanceOfVAV) = placeResult.Value ;
@@ -167,15 +172,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Result.Succeeded ;
     }
 
-    private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV( Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double heightOfFASU, double heightOfVAV, double rotationAngle )
+    private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV( Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double heightOfFASU, double heightOfVAV, double rotationAngle, RoutingFamilyType fasuFamilyType )
     {
       var positionOfFASU = new XYZ( positionOfFASUAndVAV.X, positionOfFASUAndVAV.Y, heightOfFASU ) ;
-      var instanceOfFASU = document.AddFASU( positionOfFASU, levelId ) ;
+      var instanceOfFASU = document.AddFASU( fasuFamilyType, positionOfFASU, levelId ) ;
       ElementTransformUtils.RotateElement( document, instanceOfFASU.Id, Line.CreateBound( positionOfFASUAndVAV, positionOfFASUAndVAV + XYZ.BasisZ ), Math.PI / 2 ) ;
 
       var positionOfVAV = new XYZ( positionOfFASUAndVAV.X, positionOfFASUAndVAV.Y, heightOfVAV ) ;
       var instanceOfVAV = document.AddVAV( positionOfVAV, levelId ) ;
-      instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( DiameterOfVAV ) ;
+      instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( fasuFamilyType == RoutingFamilyType.FASU_F8_150_250Phi ? DiameterOfVAV_250Phi : DiameterOfVAV_300Phi ) ;
 
       BoundingBoxXYZ boxOfFASU = instanceOfFASU.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfFASU == null ) return null ;
@@ -286,7 +291,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       using ( Transaction tr = new(document) ) {
         tr.Start( "Check the flow direction of FASU and VAV" ) ;
 
-        var instanceOfFASU = document.AddFASU( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
+        var instanceOfFASU = document.AddFASU( RoutingFamilyType.FASU_F8_150_250Phi, new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
         GetConnectorHeight( instanceOfFASU, FlowDirectionType.In, out fasuInConnectorExists, out fasuInConnectorHeight ) ;
 
         var instanceOfVAV = document.AddVAV( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;

@@ -434,9 +434,9 @@ namespace Arent3d.Architecture.Routing
     {
       return document.CreateFamilyInstance( RoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
     }
-    public static FamilyInstance AddFASU(this Document document, XYZ position, ElementId levelId)
+    public static FamilyInstance AddFASU(this Document document, RoutingFamilyType fasuFamilyType, XYZ position, ElementId levelId)
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.FASU_F8_150_250Phi, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
+      return document.CreateFamilyInstance( fasuFamilyType, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
     }
     public static FamilyInstance AddVAV(this Document document, XYZ position, ElementId levelId)
     {
