@@ -94,7 +94,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( CheckDuplicateName( e ) ) return ;
       if ( _cnsSettingViewModel.ReadFileCommand.CanExecute( null ) )
         _cnsSettingViewModel.ReadFileCommand.Execute( null ) ;
-      if ( ! _cnsSettingViewModel.IsImported ) return ;
       try {
         using Transaction t = new Transaction( _document, "Save construction item" ) ;
         var cnsSettingStorable = _cnsSettingViewModel.CnsSettingStorable ;
