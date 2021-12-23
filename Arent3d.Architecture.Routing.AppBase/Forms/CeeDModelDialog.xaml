@@ -58,11 +58,12 @@
 
           <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="200" />
 
-           <!-- <DataGridTextColumn Header="平面図" Binding="{Binding FloorPlanSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />  -->
+          <!-- <DataGridTextColumn Header="平面図" Binding="{Binding FloorPlanSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />   -->
 
-          <DataGridTemplateColumn Header="平面図" x:Name="Image" Width="SizeToHeader">
+          <DataGridTemplateColumn Header="平面図" x:Name="Image" Width="SizeToHeader" MinWidth="100" >
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border BorderThickness="0">
                 <Image Source="{Binding FloorImages}" 
                        RenderOptions.BitmapScalingMode="Fant"
@@ -71,13 +72,34 @@
                        Margin="0,0,0,0"
                        HorizontalAlignment="Center" />
                 </Border>
+                <TextBlock Text="{Binding FloorPlanSymbol}" TextAlignment="Center">
+                <TextBlock.RenderTransform>
+                  <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
+                </TextBlock.RenderTransform>
+                </TextBlock>
+                </StackPanel>
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
           
-          <DataGridTemplateColumn Header="計装図" x:Name="Image1" Width="SizeToHeader">
+          <DataGridTemplateColumn Header="計装図" x:Name="Image1" Width="SizeToHeader" MinWidth="100" >
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <Border BorderThickness="0">
+                    <Image Source="{Binding InstrumentationImages}" 
+                           RenderOptions.BitmapScalingMode="Fant"
+                           Stretch="None"
+                           VerticalAlignment="Top"
+                           Margin="0,0,0,0"
+                           HorizontalAlignment="Center" />
+                  </Border>
+                  <TextBlock Text="{Binding InstrumentationSymbol}" TextAlignment="Center">
+                    <TextBlock.RenderTransform>
+                      <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
+                    </TextBlock.RenderTransform>
+                  </TextBlock>
+                </StackPanel>
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
