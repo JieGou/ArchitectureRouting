@@ -11,7 +11,6 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using MessageBox = System.Windows.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -21,12 +20,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private CeedViewModel? _allCeeDModels ;
     private string _ceeDModelNumberSearch ;
     private string _modelNumberSearch ;
-    public string SelectedSetCode ;
+    public string SelectedDeviceSymbol ;
+    public string SelectedCondition ;
 
-    private void Row_DoubleClick( object sender, DataGridViewCellEventArgs e )
-    {
-      MessageBox.Show( e.RowIndex.ToString() ) ;
-    }
     public CeeDModelDialog( Document document )
     {
       InitializeComponent() ;
@@ -34,24 +30,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allCeeDModels = null ;
       _ceeDModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
-      SelectedSetCode = string.Empty ;
-      
+      SelectedDeviceSymbol = string.Empty ;
+      SelectedCondition = string.Empty ;
+
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
-        LoadData( oldCeeDStorable );
+        LoadData( oldCeeDStorable ) ;
       }
 
       Style rowStyle = new Style( typeof( DataGridRow ) ) ;
-      rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
+      rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent,
+        new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
     }
 
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
     {
-      var selectedItem = (CeedModel)DtGrid.SelectedValue ;
-      SelectedSetCode = selectedItem.CeeDSetCode ;
+      var selectedItem = (CeedModel) DtGrid.SelectedValue ;
+      var dlgSelectDeviceSymbol = new SelectDeviceSymbol( selectedItem.GeneralDisplayDeviceSymbol ) ;
+      dlgSelectDeviceSymbol.ShowDialog() ;
+      if ( dlgSelectDeviceSymbol.DialogResult == false ) return ;
+      SelectedDeviceSymbol = dlgSelectDeviceSymbol.GetSelectedDeviceSymbol() ;
+      SelectedCondition = selectedItem.Condition ;
+      if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) ) return ;
       DialogResult = true ;
-      Close() ;      
+      Close() ;
     }
 
     private void Button_Click( object sender, RoutedEventArgs e )
@@ -71,9 +74,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void CmbCeeDModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
     {
-      _ceeDModelNumberSearch = ! string.IsNullOrEmpty( CmbCeeDModelNumbers.Text ) ? CmbCeeDModelNumbers.Text : string.Empty ;
+      _ceeDModelNumberSearch =
+        ! string.IsNullOrEmpty( CmbCeeDModelNumbers.Text ) ? CmbCeeDModelNumbers.Text : string.Empty ;
     }
-    
+
     private void CmbModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
     {
       _modelNumberSearch = ! string.IsNullOrEmpty( CmbModelNumbers.Text ) ? CmbModelNumbers.Text : string.Empty ;
@@ -89,15 +93,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         List<CeedModel> ceeDModels = new List<CeedModel>() ;
         switch ( string.IsNullOrEmpty( _ceeDModelNumberSearch ) ) {
           case false when ! string.IsNullOrEmpty( _modelNumberSearch ) :
-            ceeDModels = _allCeeDModels.CeedModels.Where( c => c.CeeDModelNumber.Contains( _ceeDModelNumberSearch ) && c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
+            ceeDModels = _allCeeDModels.CeedModels.Where( c =>
+                c.CeeDModelNumber.Contains( _ceeDModelNumberSearch ) && c.ModelNumber.Contains( _modelNumberSearch ) )
+              .ToList() ;
             break ;
           case false when string.IsNullOrEmpty( _modelNumberSearch ) :
-            ceeDModels = _allCeeDModels.CeedModels.Where( c => c.CeeDModelNumber.Contains( _ceeDModelNumberSearch ) ).ToList() ;
+            ceeDModels = _allCeeDModels.CeedModels.Where( c => c.CeeDModelNumber.Contains( _ceeDModelNumberSearch ) )
+              .ToList() ;
             break ;
           case true when ! string.IsNullOrEmpty( _modelNumberSearch ) :
             ceeDModels = _allCeeDModels.CeedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
             break ;
         }
+
         CeedViewModel ceeDModelsSearch = new CeedViewModel( _allCeeDModels.CeedStorable, ceeDModels ) ;
         this.DataContext = ceeDModelsSearch ;
       }
@@ -106,7 +114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
       OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx)|*.xlsx", Multiselect = false } ;
-      string filePath = string.Empty;
+      string filePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
       }
