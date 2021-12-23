@@ -23,12 +23,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private CeedViewModel? _usingCeeDModel ;
     private string _ceeDModelNumberSearch ;
     private string _modelNumberSearch ;
-    public string SelectedSetCode ;
-
-    private void Row_DoubleClick( object sender, DataGridViewCellEventArgs e )
-    {
-      MessageBox.Show( e.RowIndex.ToString() ) ;
-    }
+    public string SelectedDeviceSymbol ;
+    public string SelectedCondition ;
 
     public CeeDModelDialog( Document document )
     {
@@ -38,7 +34,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _usingCeeDModel = null ;
       _ceeDModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
-      SelectedSetCode = string.Empty ;
+      SelectedDeviceSymbol = string.Empty ;
+      SelectedCondition = string.Empty ;
 
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
@@ -46,14 +43,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       Style rowStyle = new Style( typeof( DataGridRow ) ) ;
-      rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
+      rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent,
+        new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
     }
 
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
     {
       var selectedItem = (CeedModel) DtGrid.SelectedValue ;
-      SelectedSetCode = selectedItem.CeeDSetCode ;
+      var dlgSelectDeviceSymbol = new SelectDeviceSymbol( selectedItem.GeneralDisplayDeviceSymbol ) ;
+      dlgSelectDeviceSymbol.ShowDialog() ;
+      if ( dlgSelectDeviceSymbol.DialogResult == false ) return ;
+      SelectedDeviceSymbol = dlgSelectDeviceSymbol.GetSelectedDeviceSymbol() ;
+      SelectedCondition = selectedItem.Condition ;
+      if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) ) return ;
       DialogResult = true ;
       Close() ;
     }

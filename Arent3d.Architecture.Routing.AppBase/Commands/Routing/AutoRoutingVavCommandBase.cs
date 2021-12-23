@@ -9,6 +9,7 @@ using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.UI ;
 using MathLib ;
 
@@ -36,6 +37,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
+      if ( null == GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( uiDocument.Document ) ) {
+        return ( false, "Round duct type whose preferred junction type is tee not found" ) ;
+      }
+      
       var (fromPickResult, parentVavs, childVavs, errorMessage) = SelectRootConnectorAndFindVavs( uiDocument, routingExecutor, GetAddInType() ) ;
       if ( null != errorMessage ) return ( false, errorMessage ) ;
       _rootLevel = uiDocument.Document.GuessLevel( fromPickResult.GetOrigin() ) ;
@@ -220,13 +225,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return sv ;
     }
 
+    private static MEPCurveType? GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( Document document )
+    {
+      return document.GetAllElements<MEPCurveType>().FirstOrDefault(
+        type => type.PreferredJunctionType == JunctionType.Tee
+                && type is DuctType
+                && type.Shape == ConnectorProfileType.Round
+      ) ;
+    }
+    
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
     {
       var selectState = state as SelectState ?? throw new InvalidOperationException() ;
       var (rootConnector, parentVavs, childVavs, routeProperty, classificationInfo) = selectState ;
       if ( rootConnector == null ) throw new InvalidOperationException() ;
       var systemType = routeProperty.GetSystemType() ;
-      var curveType = routeProperty.GetCurveType() ;
+      var curveType = GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( document )! ; // 取得できることはこれより前に確認済み.
+      
       var sensorFixedHeight = routeProperty.GetFromFixedHeight() ;
       var avoidType = routeProperty.GetAvoidType() ;
       var diameter = routeProperty.GetDiameter() ;
