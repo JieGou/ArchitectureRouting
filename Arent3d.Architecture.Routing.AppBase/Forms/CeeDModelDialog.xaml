@@ -36,7 +36,7 @@
               Width="100" />
       
       <Button Grid.Row="0" x:Name="BtnLoadData"
-              Content="csv読み込み"
+              Content="マスター読み込み"
               Click="Button_LoadData"
               Margin="10,10,10,10"
               HorizontalAlignment="Right"
