@@ -225,12 +225,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return sv ;
     }
 
-    private static MEPCurveType? GetRoundDuctTypeWhosePreferredJunctionTypeIsTee(Document document)
+    private static MEPCurveType? GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( Document document )
     {
-      return document.GetAllElements<MEPCurveType>().FirstOrDefault( 
-        type  => type.PreferredJunctionType == JunctionType.Tee 
-                 && type is DuctType
-                 && type.Shape == ConnectorProfileType.Round
+      return document.GetAllElements<MEPCurveType>().FirstOrDefault(
+        type => type.PreferredJunctionType == JunctionType.Tee
+                && type is DuctType
+                && type.Shape == ConnectorProfileType.Round
       ) ;
     }
     
