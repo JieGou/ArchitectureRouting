@@ -147,7 +147,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           // VAVに風量を設定する
           instanceOfVAV.LookupParameter( VAVAirflowName ).Set( designSupplyAirflow ) ;
 
-          if ( space == rootSpace ) MoveFASUAndVAVInRootSpace( document, pickedConnector, instanceOfFASU, instanceOfVAV, boxOfSpace ) ;
+          if ( space == rootSpace ) MoveFasuAndVavInRootSpace( document, pickedConnector, instanceOfFASU, instanceOfVAV, boxOfSpace ) ;
 
           // この時点でコネクタの向きとは逆を向いている想定
           // コネクタの裏側にあるときは、ここで向きを反転する
@@ -182,13 +182,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return componentOfRootConnectorNormal ;
     }
 
-    private static void MoveFASUAndVAVInRootSpace( Document document, Connector pickedConnector, FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV, BoundingBoxXYZ boxOfSpace )
+    private static void MoveFasuAndVavInRootSpace( Document document, Connector pickedConnector, FamilyInstance instanceOfFasu, FamilyInstance instanceOfVav, BoundingBoxXYZ boxOfSpace )
     {
-      var rootConnectorPosition = pickedConnector.Origin.To3dPoint() ;
-      var rootConnectorDirection = pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ;
-      var vavConnectorPosition = instanceOfVAV.GetConnectors().First( c => c.Direction == FlowDirectionType.In ).Origin.To3dPoint() ;
-      var translationOfVAV = Vector3d.Dot( ( vavConnectorPosition - rootConnectorPosition ), rootConnectorDirection ) * rootConnectorDirection ;
-      ElementTransformUtils.MoveElements( document, new List<ElementId>() { instanceOfFASU.Id, instanceOfVAV.Id }, translationOfVAV.ToXYZPoint() ) ;
+      var vavConnectorPosition3d = instanceOfVav.GetConnectors().First( c => c.Direction == FlowDirectionType.In ).Origin.To3dPoint() ;
+
+      // 2D上でグループ0の一番はしのVAVを、AHU側のコネクタからまっすぐつなげられる位置へFASUとVAVを移動させる
+      var rootConnectorPosition = pickedConnector.Origin.To3dPoint().To2d() ;
+      var rootConnectorDirection = pickedConnector.CoordinateSystem.BasisZ.To3dDirection().To2d() ;
+      var orthogonalToRootConnectorDirection = new Vector2d( rootConnectorDirection.y, -rootConnectorDirection.x ) ;
+      var vavConnectorPosition = vavConnectorPosition3d.To2d() ;
+      var sign = Vector2d.Dot( vavConnectorPosition - rootConnectorPosition, orthogonalToRootConnectorDirection ) > 0 ? -1 : 1 ;
+      var translation = Vector2d.Dot( ( vavConnectorPosition - rootConnectorPosition ), orthogonalToRootConnectorDirection ) * orthogonalToRootConnectorDirection * sign ;
+      var newPositionOfVavConnector = translation + vavConnectorPosition ;
+
+      var newPositionOfVavConnector3d = newPositionOfVavConnector.To3d( vavConnectorPosition3d.z ) ;
+      if ( IsInSpace( boxOfSpace, newPositionOfVavConnector3d.ToXYZPoint() ) ) {
+        ElementTransformUtils.MoveElements( document, new List<ElementId>() { instanceOfFasu.Id, instanceOfVav.Id }, translation.To3d( 0 ).ToXYZPoint() ) ; // 2D以上の移動のためzを０とする
+      }
     }
     
     private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV( Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double heightOfFASU, double heightOfVAV, double rotationAngle )
