@@ -21,12 +21,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   public class CreateFASUAndVAVAutomaticallyCommand : IExternalCommand
   {
     private const double DistanceBetweenFASUAndVAV = 0.25 ;
-    private const string DiameterOfVAV_250Phi = "250" ;
-    private const string DiameterOfVAV_300Phi = "300" ;
+    private const string DiameterOfVAVForFASU250Phi = "250" ;
+    private const string DiameterOfVAVForFASU300Phi = "300" ;
     private const int RootBranchNumber = 0 ;
     private const double MinDistanceSpacesCollinear = 2.5 ;
     private const string VAVAirflowName = "風量" ;
-    private const int Airflow_250Phi = 765 ;
+    private const int AirflowThresholdForUseDiameter250Phi = 765 ;
 
     private class FASUsAndVAVsInSpaceModel
     {
@@ -134,7 +134,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           }
 
           var airflowOfSpace = UnitUtils.ConvertFromInternalUnits( designSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
-          var fasuFamilyType = airflowOfSpace <= Airflow_250Phi ? RoutingFamilyType.FASU_F8_150_250Phi : RoutingFamilyType.FASU_F8_150_300Phi ;
+          var fasuFamilyType = airflowOfSpace <= AirflowThresholdForUseDiameter250Phi ? RoutingFamilyType.FASU_F8_150_250Phi : RoutingFamilyType.FASU_F8_150_300Phi ;
           
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
@@ -180,7 +180,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       var positionOfVAV = new XYZ( positionOfFASUAndVAV.X, positionOfFASUAndVAV.Y, heightOfVAV ) ;
       var instanceOfVAV = document.AddVAV( positionOfVAV, levelId ) ;
-      instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( fasuFamilyType == RoutingFamilyType.FASU_F8_150_250Phi ? DiameterOfVAV_250Phi : DiameterOfVAV_300Phi ) ;
+      instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( fasuFamilyType == RoutingFamilyType.FASU_F8_150_250Phi ? DiameterOfVAVForFASU250Phi : DiameterOfVAVForFASU300Phi ) ;
 
       BoundingBoxXYZ boxOfFASU = instanceOfFASU.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfFASU == null ) return null ;
