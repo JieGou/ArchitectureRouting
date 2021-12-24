@@ -189,12 +189,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       // 2D上でグループ0の一番はしのVAVを、AHU側のコネクタからまっすぐつなげられる位置へFASUとVAVを移動させる
       var rootConnectorPosition = pickedConnector.Origin.To3dPoint().To2d() ;
       var rootConnectorDirection = pickedConnector.CoordinateSystem.BasisZ.To3dDirection().To2d() ;
-      var orthogonalToRootConnectorDirection = new Vector2d( rootConnectorDirection.y, -rootConnectorDirection.x ) ;
       var vavConnectorPosition = vavConnectorPosition3d.To2d() ;
-      var sign = Vector2d.Dot( vavConnectorPosition - rootConnectorPosition, orthogonalToRootConnectorDirection ) > 0 ? -1 : 1 ;
-      var translation = Vector2d.Dot( ( vavConnectorPosition - rootConnectorPosition ), orthogonalToRootConnectorDirection ) * orthogonalToRootConnectorDirection * sign ;
-      var newPositionOfVavConnector = translation + vavConnectorPosition ;
-
+      var newPositionOfVavConnector = rootConnectorPosition + Vector2d.Dot( ( vavConnectorPosition - rootConnectorPosition ), rootConnectorDirection ) * rootConnectorDirection ;
+      var translation = newPositionOfVavConnector - vavConnectorPosition ;
       var newPositionOfVavConnector3d = newPositionOfVavConnector.To3d( vavConnectorPosition3d.z ) ;
       if ( IsInSpace( boxOfSpace, newPositionOfVavConnector3d.ToXYZPoint() ) ) {
         ElementTransformUtils.MoveElements( document, new List<ElementId>() { instanceOfFasu.Id, instanceOfVav.Id }, translation.To3d( 0 ).ToXYZPoint() ) ; // 2D以上の移動のためzを０とする
