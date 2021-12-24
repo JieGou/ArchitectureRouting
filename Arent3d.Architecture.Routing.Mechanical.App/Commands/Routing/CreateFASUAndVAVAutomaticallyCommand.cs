@@ -8,6 +8,7 @@ using System ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit ;
 using System.Linq ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB.Mechanical ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
@@ -118,6 +119,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       Dictionary<Element, double> rotationAnglesOfFASUsAndVAVs = CalculateRotationAnglesOfFASUsAndVAVs( document, branchNumberToSpacesDictionary, pickedConnector, vavUpstreamConnectorNormal ) ;
 
+      var parentSpaces = spaces.Where( s => s.GetSpaceBranchNumber() == RootBranchNumber ).ToList() ;
+      var rootSpace = parentSpaces.MaxBy( s => GetComponentOfRootConnectorNormal( pickedConnector, ( s.Location as LocationPoint )! ) ) ;
+      
       using ( Transaction tr = new(document) ) {
         tr.Start( "Create FASUs and VAVs Automatically" ) ;
 
@@ -138,6 +142,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
+
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
           var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, heightOfFASU, heightOfVAV, rotationAnglesOfFASUsAndVAVs[ space ], fasuFamilyType ) ;
           if ( placeResult == null ) continue ; // Failed to place
@@ -146,6 +151,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
           // VAVに風量を設定する
           instanceOfVAV.LookupParameter( VAVAirflowName ).Set( designSupplyAirflow ) ;
+
+          if ( space == rootSpace ) MoveFasuAndVavInRootSpace( document, pickedConnector, instanceOfFASU, instanceOfVAV, boxOfSpace ) ;
 
           // この時点でコネクタの向きとは逆を向いている想定
           // コネクタの裏側にあるときは、ここで向きを反転する
@@ -170,6 +177,31 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return Result.Succeeded ;
+    }
+
+    private static double GetComponentOfRootConnectorNormal( IConnector rootConnector, LocationPoint targetConnectorPos )
+    {
+      var rootConnectorNormalDirection = rootConnector.CoordinateSystem.BasisZ.To3dDirection() ;
+      var rootConnectorPos3d = rootConnector.Origin.To3dPoint() ;
+      var targetConnectorPos3d = targetConnectorPos.Point.To3dPoint() ;
+      var componentOfRootConnectorNormal = Vector3d.Dot( targetConnectorPos3d - rootConnectorPos3d, rootConnectorNormalDirection ) ;
+      return componentOfRootConnectorNormal ;
+    }
+
+    private static void MoveFasuAndVavInRootSpace( Document document, Connector pickedConnector, FamilyInstance instanceOfFasu, FamilyInstance instanceOfVav, BoundingBoxXYZ boxOfSpace )
+    {
+      var vavConnectorPosition3d = instanceOfVav.GetConnectors().First( c => c.Direction == FlowDirectionType.In ).Origin.To3dPoint() ;
+
+      // 2D上でグループ0の一番はしのVAVを、AHU側のコネクタからまっすぐつなげられる位置へFASUとVAVを移動させる
+      var rootConnectorPosition = pickedConnector.Origin.To3dPoint().To2d() ;
+      var rootConnectorDirection = pickedConnector.CoordinateSystem.BasisZ.To3dDirection().To2d() ;
+      var vavConnectorPosition = vavConnectorPosition3d.To2d() ;
+      var newPositionOfVavConnector = rootConnectorPosition + Vector2d.Dot( ( vavConnectorPosition - rootConnectorPosition ), rootConnectorDirection ) * rootConnectorDirection ;
+      var translation = newPositionOfVavConnector - vavConnectorPosition ;
+      var newPositionOfVavConnector3d = newPositionOfVavConnector.To3d( vavConnectorPosition3d.z ) ;
+      if ( IsInSpace( boxOfSpace, newPositionOfVavConnector3d.ToXYZPoint() ) ) {
+        ElementTransformUtils.MoveElements( document, new List<ElementId>() { instanceOfFasu.Id, instanceOfVav.Id }, translation.To3d( 0 ).ToXYZPoint() ) ; // 2D以上の移動のためzを０とする
+      }
     }
 
     private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV( Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double heightOfFASU, double heightOfVAV, double rotationAngle, RoutingFamilyType fasuFamilyType )
