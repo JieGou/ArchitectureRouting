@@ -184,13 +184,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static void MoveFASUAndVAVInRootSpace( Document document, Connector pickedConnector, FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV, BoundingBoxXYZ boxOfSpace )
     {
-      var rootConnectorPosition = pickedConnector.CoordinateSystem.BasisZ.To3dPoint() ;
+      var rootConnectorPosition = pickedConnector.Origin.To3dPoint() ;
       var rootConnectorDirection = pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ;
       var vavConnectorPosition = instanceOfVAV.GetConnectors().First( c => c.Direction == FlowDirectionType.In ).Origin.To3dPoint() ;
       var translationOfVAV = Vector3d.Dot( ( vavConnectorPosition - rootConnectorPosition ), rootConnectorDirection ) * rootConnectorDirection ;
-      if ( IsInSpace( boxOfSpace, ( vavConnectorPosition + translationOfVAV ).ToXYZDirection() ) ) {
-        ElementTransformUtils.MoveElements( document, new List<ElementId>() { instanceOfFASU.Id, instanceOfVAV.Id }, translationOfVAV.ToXYZDirection() ) ;
-      }
+      ElementTransformUtils.MoveElements( document, new List<ElementId>() { instanceOfFASU.Id, instanceOfVAV.Id }, translationOfVAV.ToXYZPoint() ) ;
     }
     
     private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV( Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double heightOfFASU, double heightOfVAV, double rotationAngle )
