@@ -1,5 +1,5 @@
-// 高砂熱学用メニュー 
-//#define TTE_BUILD
+// #define TTE_BUILD // 高砂熱学用メニュー
+
 using Arent3d.Architecture.Routing.Mechanical.App.Commands ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint ;
@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
       }
       
       [Panel( "arent3d.architecture.routing.tte", TitleKey = "Mechanical.App.Panels.Routing.TTE" )]
-      private static class TTTE
+      private static class TTE
       {
         [Button( typeof( CreateFASUAndVAVAutomaticallyCommand ), OnlyInitialized = true )]
         private static class CreateFASUAndVAVAutomaticallyCommandButton { }
