@@ -11,10 +11,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 {
   partial class RoutingAppUI
   {
-    [Tab( "Mechanical.App.Routing.TabName", VisibilityMode = TabVisibilityMode.NormalDocument )]
-    
 #if TTE_BUILD
-    
+    [Tab( "Mechanical.App.Routing.TabName", VisibilityMode = TabVisibilityMode.NormalDocument )]
     private static class RoutingTab
     {
       [Panel( "arent3d.architecture.routing.init", TitleKey = "Mechanical.App.Panels.Routing.Initialize" )]
@@ -60,6 +58,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
       }      
     }
 #else
+    [Tab( "Mechanical.App.Routing.TabName", VisibilityMode = TabVisibilityMode.NormalDocument )]
     private static class RoutingTab
     {
       [Panel( "arent3d.architecture.routing.init", TitleKey = "Mechanical.App.Panels.Routing.Initialize" )]
