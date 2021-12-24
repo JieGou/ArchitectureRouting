@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
       }
       
       [Panel( "arent3d.architecture.routing.tte", TitleKey = "Mechanical.App.Panels.Routing.TTE" )]
-      private static class TTE
+      private static class TTEPanel
       {
         [Button( typeof( CreateFASUAndVAVAutomaticallyCommand ), OnlyInitialized = true )]
         private static class CreateFASUAndVAVAutomaticallyCommandButton { }
