@@ -31,8 +31,8 @@
     <Choose>
         <When Condition=" $(Configuration.EndsWith(' 2019')) ">
             <PropertyGroup>
-                <RevitVersion>2020</RevitVersion>
-                <TargetFramework>net472</TargetFramework>
+                <RevitVersion>2019</RevitVersion>
+                <TargetFramework>net47</TargetFramework>
             </PropertyGroup>
         </When>
         <When Condition=" $(Configuration.EndsWith(' 2020')) ">
