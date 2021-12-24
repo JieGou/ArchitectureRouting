@@ -139,12 +139,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
           var airflowOfSpace = UnitUtils.ConvertFromInternalUnits( designSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
           var fasuFamilyType = airflowOfSpace <= AirflowThresholdForUseDiameter250Phi ? RoutingFamilyType.FASU_F8_150_250Phi : RoutingFamilyType.FASU_F8_150_300Phi ;
+          var diameterOfVAV = fasuFamilyType == RoutingFamilyType.FASU_F8_150_250Phi ? DiameterOfVAVForFASU250Phi : DiameterOfVAVForFASU300Phi ;
           
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
 
           var positionOfFASUAndVAV = new XYZ( ( boxOfSpace.Max.X + boxOfSpace.Min.X ) / 2, ( boxOfSpace.Max.Y + boxOfSpace.Min.Y ) / 2, 0 ) ;
-          var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, heightOfFASU, heightOfVAV, rotationAnglesOfFASUsAndVAVs[ space ], fasuFamilyType ) ;
+          var placeResult = PlaceFASUAndVAV( document, space.LevelId, positionOfFASUAndVAV, heightOfFASU, heightOfVAV, rotationAnglesOfFASUsAndVAVs[ space ], fasuFamilyType, diameterOfVAV ) ;
           if ( placeResult == null ) continue ; // Failed to place
 
           var (instanceOfFASU, instanceOfVAV) = placeResult.Value ;
@@ -204,7 +205,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
     }
 
-    private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV( Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double heightOfFASU, double heightOfVAV, double rotationAngle, RoutingFamilyType fasuFamilyType )
+    private static (FamilyInstance instanceOfFASU, FamilyInstance instanceOfVAV)? PlaceFASUAndVAV( Document document, ElementId levelId, XYZ positionOfFASUAndVAV, double heightOfFASU, double heightOfVAV, double rotationAngle, RoutingFamilyType fasuFamilyType, String diameterOfVAV )
     {
       var positionOfFASU = new XYZ( positionOfFASUAndVAV.X, positionOfFASUAndVAV.Y, heightOfFASU ) ;
       var instanceOfFASU = document.AddFASU( fasuFamilyType, positionOfFASU, levelId ) ;
@@ -212,7 +213,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       var positionOfVAV = new XYZ( positionOfFASUAndVAV.X, positionOfFASUAndVAV.Y, heightOfVAV ) ;
       var instanceOfVAV = document.AddVAV( positionOfVAV, levelId ) ;
-      instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( fasuFamilyType == RoutingFamilyType.FASU_F8_150_250Phi ? DiameterOfVAVForFASU250Phi : DiameterOfVAVForFASU300Phi ) ;
+      instanceOfVAV.LookupParameter( "ダクト径" ).SetValueString( diameterOfVAV ) ;
 
       BoundingBoxXYZ boxOfFASU = instanceOfFASU.get_BoundingBox( document.ActiveView ) ;
       if ( boxOfFASU == null ) return null ;
@@ -297,7 +298,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static bool GetFASUAndVAVConnectorInfo( Document document, out double fasuInConnectorHeight, out double vavOutConnectorHeight, out double vavUpstreamConnectorHeight, out Vector3d vavUpstreamConnectorNormal )
     {
-      bool fasuInConnectorExists = false ;
+      bool fasu250PhiInConnectorExists = false ;
+      bool fasu300PhiInConnectorExists = false ;
       bool vavInConnectorExists = false ;
       bool vavOutConnectorExists = false ;
 
@@ -323,8 +325,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       using ( Transaction tr = new(document) ) {
         tr.Start( "Check the flow direction of FASU and VAV" ) ;
 
-        var instanceOfFASU = document.AddFASU( RoutingFamilyType.FASU_F8_150_250Phi, new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
-        GetConnectorHeight( instanceOfFASU, FlowDirectionType.In, out fasuInConnectorExists, out fasuInConnectorHeight ) ;
+        var instanceOfFASU250Phi = document.AddFASU( RoutingFamilyType.FASU_F8_150_250Phi, new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
+        GetConnectorHeight( instanceOfFASU250Phi, FlowDirectionType.In, out fasu250PhiInConnectorExists, out fasuInConnectorHeight ) ;
+        
+        var instanceOfFASU300Phi = document.AddFASU( RoutingFamilyType.FASU_F8_150_300Phi, new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
+        GetConnectorHeight( instanceOfFASU300Phi, FlowDirectionType.In, out fasu300PhiInConnectorExists, out fasuInConnectorHeight ) ;
 
         var instanceOfVAV = document.AddVAV( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
         GetConnectorHeight( instanceOfVAV, FlowDirectionType.Out, out vavOutConnectorExists, out vavOutConnectorHeight ) ;
@@ -339,8 +344,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         tr.RollBack() ;
       }
 
-      if ( ! fasuInConnectorExists ) {
-        TaskDialog.Show( "FASUとVAVの自動配置", "FASUの流れの方向[イン]が設定されていないため、処理に失敗しました。" ) ;
+      if ( ! fasu250PhiInConnectorExists ) {
+        TaskDialog.Show( "FASUとVAVの自動配置", "FASU(F8-150 250Φ)の流れの方向[イン]が設定されていないため、処理に失敗しました。" ) ;
+        return false ;
+      }
+      
+      if ( ! fasu300PhiInConnectorExists ) {
+        TaskDialog.Show( "FASUとVAVの自動配置", "FASU(F8-150 300Φ)の流れの方向[イン]が設定されていないため、処理に失敗しました。" ) ;
         return false ;
       }
 
