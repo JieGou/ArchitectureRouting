@@ -10,6 +10,7 @@
     <Grid>
         <Grid.RowDefinitions>
       <RowDefinition Height="50"/>
+      <RowDefinition Height="25"/>
       <RowDefinition Height="*"/>
       <RowDefinition Height="35"/>
     </Grid.RowDefinitions>
@@ -27,14 +28,23 @@
                 Width="80" />
       </StackPanel>
       
+      <Button Grid.Row="0" x:Name="BtnSymbolRegistration"
+              Content="使用シンボル登録"
+              Click="Button_SymbolRegistration"
+              Margin="10,10,120,10"
+              HorizontalAlignment="Right"
+              Width="100" />
+      
       <Button Grid.Row="0" x:Name="BtnLoadData"
-              Content="csv読み込み"
+              Content="マスター読み込み"
               Click="Button_LoadData"
               Margin="10,10,10,10"
               HorizontalAlignment="Right"
               Width="100" />
       
-      <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="1" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+      <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="True" Content="使用するものだけ表示" Width="200" HorizontalAlignment="Left" Margin="15, 0, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden"/>
+      
+      <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
         <DataGrid.Resources>
           <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
             <Setter Property="Padding" Value="-2"/>
@@ -71,15 +81,15 @@
         </DataGrid.Columns>
       </DataGrid>
       
-      <Button Grid.Row="2" Grid.Column="0" x:Name="BtnReset"
+      <Button Grid.Row="3" Grid.Column="0" x:Name="BtnReset"
               Content="Reset"
               Click="Button_Reset"
               Margin="10,5,90,5"
               HorizontalAlignment="Right"
               Width="80" />
-      <Button Grid.Row="2" Grid.Column="0" x:Name="BtnOK"
+      <Button Grid.Row="3" Grid.Column="0" x:Name="BtnOK"
               Content="OK"
-              Click="Button_Click"
+              Click="Button_OK"
               Margin="10,5,5,5"
               HorizontalAlignment="Right"
               Width="80" />
