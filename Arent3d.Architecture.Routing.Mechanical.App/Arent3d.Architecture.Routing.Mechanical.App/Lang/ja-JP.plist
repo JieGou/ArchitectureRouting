@@ -11,6 +11,9 @@
         
         <key>Mechanical.App.Panels.Routing.Routing</key>
         <string>From-To</string>
+
+        <key>Mechanical.App.Panels.Routing.TTE</key>
+        <string>TTE</string>        
         
         <key>Mechanical.App.Panels.Routing.PassPoints</key>
         <string>通過点</string>
@@ -80,13 +83,13 @@
         <string>Change&#xA;FixedBopHeight</string>
 
         <key>Mechanical.App.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand</key>
-        <string>Create&#xA;FASUsAndVAVs</string>
+        <string>FASU, VAV&#xA;自動配置</string>
 
         <key>Mechanical.App.Commands.Routing.AutoRoutingVavCommand</key>
-        <string>自動&#xA;VAVsルーティング</string>
+        <string>AHU-VAV&#xA;自動ルーティング</string>
 
         <key>Mechanical.App.Commands.Routing.AdjustDuctSizeCommand</key>
-        <string>ダクト径&#xA;調整</string>        
+        <string>ダクト径&#xA;自動調整</string>        
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
