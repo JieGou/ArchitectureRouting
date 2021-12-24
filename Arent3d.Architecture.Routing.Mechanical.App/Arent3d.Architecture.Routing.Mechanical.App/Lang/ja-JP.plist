@@ -86,7 +86,7 @@
         <string>FASU, VAV&#xA;自動配置</string>
 
         <key>Mechanical.App.Commands.Routing.AutoRoutingVavCommand</key>
-        <string>自動ルーティング&#xA;(AHU-VAV)</string>
+        <string>(AHU-VAV)&#xA;自動ルーティング</string>
 
         <key>Mechanical.App.Commands.Routing.AdjustDuctSizeCommand</key>
         <string>ダクト径&#xA;自動調整</string>        
