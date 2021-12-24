@@ -42,48 +42,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var existSymbolDetail =
             detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => element.Id.ToString() == x.ConduitId ) ;
           if ( existSymbolDetail != null && ceedStorable != null ) {
-             if ( ! processedDetailSymbol.Contains( existSymbolDetail.FromConnectorId+existSymbolDetail.ToConnectorId ) ) {
-              processedDetailSymbol.Add( existSymbolDetail.FromConnectorId+existSymbolDetail.ToConnectorId ) ;
+            if ( ! processedDetailSymbol.Contains( existSymbolDetail.FromConnectorId +
+                                                   existSymbolDetail.ToConnectorId ) ) {
+              processedDetailSymbol.Add( existSymbolDetail.FromConnectorId + existSymbolDetail.ToConnectorId ) ;
               var ceedModel =
                 ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
               if ( ceedModel != null ) {
                 var hiroiCdModel =
                   hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
-                var hiroiSetModels =
-                  hiroiSetMasterNormalModelData.Where( x =>
-                    x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ) ;
+                var hiroiSetModels = hiroiSetMasterNormalModelData
+                  .Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) ;
                 foreach ( var item in hiroiSetModels ) {
                   List<string> listMaterialCode = new List<string>() ;
                   if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
                     listMaterialCode.Add( item.MaterialCode1 ) ;
-                  }
-
-                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode2 ) ) {
-                    listMaterialCode.Add( item.MaterialCode2 ) ;
-                  }
-
-                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode3 ) ) {
-                    listMaterialCode.Add( item.MaterialCode3 ) ;
-                  }
-
-                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode4 ) ) {
-                    listMaterialCode.Add( item.MaterialCode4 ) ;
-                  }
-
-                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode5 ) ) {
-                    listMaterialCode.Add( item.MaterialCode5 ) ;
-                  }
-
-                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode6 ) ) {
-                    listMaterialCode.Add( item.MaterialCode6 ) ;
-                  }
-
-                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode7 ) ) {
-                    listMaterialCode.Add( item.MaterialCode7 ) ;
-                  }
-
-                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode8 ) ) {
-                    listMaterialCode.Add( item.MaterialCode8 ) ;
                   }
 
                   if ( listMaterialCode.Any() ) {
@@ -93,9 +65,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                         .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
                       conduitInformationModels.Add( new ConduitInformationModel( false, floor,
                         existSymbolDetail.DetailSymbol, master.Type, master.Size1, master.Size2, "1", string.Empty,
-                        string.Empty, string.Empty, master.Type, master.Size1, "1",
-                        hiroiCdModel?.ConstructionClassification, conduitModels.FirstOrDefault()?.Classification ?? "",
-                        constructionItem, constructionItem, "" ) ) ;
+                        string.Empty, string.Empty, master.Type,
+                        master.Size1, "1", hiroiCdModel?.ConstructionClassification,
+                        conduitModels.FirstOrDefault()?.Classification ?? "", constructionItem, constructionItem,
+                        "" ) ) ;
                     }
                   }
                 }
@@ -110,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             g.First().Quantity = g.Count() ;
             g.First().WireBook = g.Count().ToString() ;
             g.First().NumberOfPipes = g.Count().ToString() ;
-            g.First().Remark = $"x{g.Count()}" ;
+            g.First().Remark = g.Count() > 1 ? $"x{g.Count()}" : string.Empty ;
             return g.First() ;
           } ).OrderBy( y => y.DetailSymbol ) ) ;
       }
