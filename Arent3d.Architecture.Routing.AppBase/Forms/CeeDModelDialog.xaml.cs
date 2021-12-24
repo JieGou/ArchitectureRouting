@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private string _modelNumberSearch ;
     public string SelectedDeviceSymbol ;
     public string SelectedCondition ;
+    public string SelectedCeeDCode ;
 
     public CeeDModelDialog( Document document )
     {
@@ -36,6 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _modelNumberSearch = string.Empty ;
       SelectedDeviceSymbol = string.Empty ;
       SelectedCondition = string.Empty ;
+      SelectedCeeDCode = string.Empty ;
 
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
@@ -56,6 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( dlgSelectDeviceSymbol.DialogResult == false ) return ;
       SelectedDeviceSymbol = dlgSelectDeviceSymbol.GetSelectedDeviceSymbol() ;
       SelectedCondition = selectedItem.Condition ;
+      SelectedCeeDCode = selectedItem.CeeDSetCode ;
       if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) ) return ;
       DialogResult = true ;
       Close() ;

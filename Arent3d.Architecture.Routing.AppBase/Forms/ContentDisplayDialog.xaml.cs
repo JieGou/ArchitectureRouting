@@ -248,12 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private string GetCeeDSetCodeOfElement( Element element )
     {
-      var ceeDSetCode = string.Empty ;
-      if ( element.GroupId == ElementId.InvalidElementId ) return ceeDSetCode ?? string.Empty ;
-      var groupId = _document.GetAllElements<Group>().FirstOrDefault( g => g.AttachedParentId == element.GroupId )?.Id ;
-      if ( groupId != null )
-        ceeDSetCode = _document.GetAllElements<TextNote>().FirstOrDefault( t => t.GroupId == groupId )?.Text.Trim( '\r' ) ;
-
+      element.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCode ) ;
       return ceeDSetCode ?? string.Empty ;
     }
 

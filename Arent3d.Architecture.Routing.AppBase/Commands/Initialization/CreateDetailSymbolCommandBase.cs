@@ -321,7 +321,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
 
           if ( toConnector != null )
-            code = GetCeeDSetCodeOfElement( doc, toConnector ) ;
+            code = GetCeeDSetCodeOfElement( toConnector ) ;
         }
       }
 
@@ -329,14 +329,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return detailSymbolModel ;
     }
 
-    private string GetCeeDSetCodeOfElement( Document doc, Element element )
+    private string GetCeeDSetCodeOfElement( Element element )
     {
-      var ceeDSetCode = string.Empty ;
-      if ( element.GroupId == ElementId.InvalidElementId ) return ceeDSetCode ;
-      var groupId = doc.GetAllElements<Group>().FirstOrDefault( g => g.AttachedParentId == element.GroupId )?.Id ;
-      if ( groupId != null )
-        ceeDSetCode = doc.GetAllElements<TextNote>().FirstOrDefault( t => t.GroupId == groupId )?.Text.Trim( '\r' ) ;
-
+      element.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCode ) ;
       return ceeDSetCode ?? string.Empty ;
     }
 
@@ -468,7 +463,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       if ( toConnector == null ) return true ;
-      var code = GetCeeDSetCodeOfElement( doc, toConnector ) ;
+      var code = GetCeeDSetCodeOfElement( toConnector ) ;
       if ( string.IsNullOrEmpty( code ) ) return true ;
       var detailSymbolModel = conduitSamePosition.Any() ? detailSymbolModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Code ) && d.Code != code && d.DetailSymbol == detailSymbol && d.IsParentSymbol && ! conduitSamePosition.Contains( d.ConduitId ) ) : detailSymbolModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Code ) && d.Code != code && d.DetailSymbol == detailSymbol && d.IsParentSymbol ) ;
       return detailSymbolModel == null ;
