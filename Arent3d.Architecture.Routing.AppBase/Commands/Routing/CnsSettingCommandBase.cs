@@ -32,17 +32,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // get data of Cns Category from snoop DB
       CnsSettingStorable cnsStorables = document.GetCnsSettingStorable() ;
       cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.None ;
-      var currentCnsSettingData = CopyCnsSetting( cnsStorables.CnsSettingData ) ;
+      var currentCnsSettingData = CnsSettingDialog.CopyCnsSetting( cnsStorables.CnsSettingData ) ;
       CnsSettingViewModel viewModel = new CnsSettingViewModel( cnsStorables ) ;
-      var hasConstructionItemProp = CheckHasConstructionItemProp( document ) ;
-      var dialog = new CnsSettingDialog( viewModel, document, currentCnsSettingData, hasConstructionItemProp ) ;
+      var dialog = new CnsSettingDialog( viewModel, document ) ;
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {
         Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
-
+        var isConnectorsHaveConstructionItem = dialog.IsConnectorsHaveConstructionItem() ;
+        var isConduitsHaveConstructionItem = dialog.IsConduitsHaveConstructionItem() ;
         if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None ) {
           try {
-            if ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector && ! hasConstructionItemProp ) {
+            if ( ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector && ! isConnectorsHaveConstructionItem ) || ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Conduit && ! isConduitsHaveConstructionItem ) ) {
               message = "Dialog.Electrical.SetElementProperty.NoConstructionItem".GetAppStringByKeyOrDefault( "The property Construction Item does not exist." ) ;
             }
             else {
@@ -52,6 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             switch ( cnsStorables.ElementType ) {
               case CnsSettingStorable.UpdateItemType.Conduit :
               {
+                if ( ! isConduitsHaveConstructionItem ) break ;
                 // pick conduits
                 var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit ) ;
                 var conduitList = selectedElements.ToList() ;
@@ -71,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               }
               case CnsSettingStorable.UpdateItemType.Connector :
               {
-                if ( ! hasConstructionItemProp ) break ;
+                if ( ! isConnectorsHaveConstructionItem ) break ;
                 // pick connectors
                 var selectedElements = UiDocument.Selection
                   .PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
@@ -135,11 +136,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             progress.Message = "Saving CNS Setting..." ;
             using ( progress?.Reserve( 0.5 ) ) {
               SaveCnsList( document, cnsStorables ) ;
-              CnsSettingDialog.UpdateConstructionsItem( document, currentCnsSettingData, cnsStorables.CnsSettingData, hasConstructionItemProp ) ;
+              dialog.UpdateConstructionsItem() ;
             }
           }
 
-          if ( hasConstructionItemProp && cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
+          if ( isConnectorsHaveConstructionItem && cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
                cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
             foreach ( var item in connectorGroups ) {
               // create group for updated connector (with new property) and related text note if any
@@ -157,19 +158,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       cnsStorables.CnsSettingData = currentCnsSettingData ;
       return Result.Succeeded ;
-    }
-
-    private static bool CheckHasConstructionItemProp( Document document )
-    {
-      try {
-        var connector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault() ;
-        if ( connector == null ) return false ;
-        connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
-        return true ;
-      }
-      catch {
-        return false ;
-      }
     }
     
     private static void SaveCnsList( Document document, CnsSettingStorable list )
@@ -214,9 +202,5 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static ObservableCollection<T> CopyCnsSetting<T>( IEnumerable<T> listCnsSettingData ) where T : ICloneable
-    {
-      return new ObservableCollection<T>( listCnsSettingData.Select( x => x.Clone() ).Cast<T>() ) ;
-    }
   }
 }

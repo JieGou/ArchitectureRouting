@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -6,6 +7,7 @@ using System.Windows ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using System.ComponentModel ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
@@ -17,16 +19,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly CnsSettingViewModel _cnsSettingViewModel ;
     private readonly Document _document ;
     private readonly ObservableCollection<CnsSettingModel> _currentCnsSettingData ;
-    private readonly bool _hasConstructionItemProp ;
 
-    public CnsSettingDialog( CnsSettingViewModel viewModel, Document document, ObservableCollection<CnsSettingModel> currentCnsSettingData, bool hasConstructionItemProp )
+    public CnsSettingDialog( CnsSettingViewModel viewModel, Document document)
     {
       InitializeComponent() ;
       DataContext = viewModel ;
       _cnsSettingViewModel = viewModel ;
       _document = document ;
-      _currentCnsSettingData = currentCnsSettingData ;
-      _hasConstructionItemProp = hasConstructionItemProp ;
+      _currentCnsSettingData = CopyCnsSetting(document.GetCnsSettingStorable().CnsSettingData) ;
+      
     }
 
     private void Update_Click( object sender, RoutedEventArgs e )
@@ -99,7 +100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var cnsSettingStorable = _cnsSettingViewModel.CnsSettingStorable ;
         t.Start() ;
         cnsSettingStorable.Save() ;
-        UpdateConstructionsItem( _document, _currentCnsSettingData, cnsSettingStorable.CnsSettingData, _hasConstructionItemProp ) ;
+        UpdateConstructionsItem() ;
         t.Commit() ;
       }
       catch {
@@ -152,41 +153,44 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    public static void UpdateConstructionsItem( Document document, ObservableCollection<CnsSettingModel> currentCnsSettingData, ObservableCollection<CnsSettingModel> newCnsSettingData, bool hasConstructionItemProp )
+    public void UpdateConstructionsItem()
     {
-      var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
-      var connectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
+      var newCnsSettingData = _cnsSettingViewModel.CnsSettingStorable.CnsSettingData ;
+      var conduits = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
+      var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
       Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       Dictionary<Element, string> updateConnectors = new Dictionary<Element, string>() ;
 
-      //update Constructions Item for Conduits
-      foreach ( var conduit in conduits ) {
-        var strConduitConstructionItem = conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
-        if ( string.IsNullOrEmpty( strConduitConstructionItem ) ) continue ;
+      if ( IsConduitsHaveConstructionItem() ) {
+        //update Constructions Item for Conduits
+        foreach ( var conduit in conduits ) {
+          var strConduitConstructionItem = conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+          if ( string.IsNullOrEmpty( strConduitConstructionItem ) ) continue ;
 
-        var conduitCnsSetting = currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConduitConstructionItem ) ;
-        if ( conduitCnsSetting == null ) {
-          continue ;
+          var conduitCnsSetting = _currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConduitConstructionItem ) ;
+          if ( conduitCnsSetting == null ) {
+            continue ;
+          }
+
+          if ( newCnsSettingData.All( c => c.Position != conduitCnsSetting.Position ) ) {
+            conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, "未設定" ) ;
+            continue ;
+          }
+
+          var newConduitCnsSetting = newCnsSettingData.First( c => c.Position == conduitCnsSetting.Position ) ;
+          if ( newConduitCnsSetting == null ) continue ;
+          if ( newConduitCnsSetting.CategoryName == strConduitConstructionItem ) continue ;
+          conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, newConduitCnsSetting.CategoryName ) ;
         }
-
-        if ( newCnsSettingData.All( c => c.Position != conduitCnsSetting.Position ) ) {
-          conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, "未設定" ) ;
-          continue ;
-        }
-
-        var newConduitCnsSetting = newCnsSettingData.First( c => c.Position == conduitCnsSetting.Position ) ;
-        if ( newConduitCnsSetting == null ) continue ;
-        if ( newConduitCnsSetting.CategoryName == strConduitConstructionItem ) continue ;
-        conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, newConduitCnsSetting.CategoryName ) ;
       }
 
       //Ungroup, Get Connector to Update
-      if ( ! hasConstructionItemProp ) return ;
+      if ( ! IsConnectorsHaveConstructionItem() ) return ;
       foreach ( var connector in connectors ) {
         var strConnectorConstructionItem = connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
         if ( string.IsNullOrEmpty( strConnectorConstructionItem ) ) continue ;
 
-        var connectorCnsSetting = currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConnectorConstructionItem ) ;
+        var connectorCnsSetting = _currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConnectorConstructionItem ) ;
         if ( connectorCnsSetting == null ) {
           continue ;
         }
@@ -202,10 +206,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           newConstructionItemValue = newConnectorCnsSetting.CategoryName ;
         }
 
-        var parentGroup = document.GetElement( connector.GroupId ) as Group ;
+        var parentGroup = _document.GetElement( connector.GroupId ) as Group ;
         if ( parentGroup != null ) {
           // ungroup before set property
-          var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
+          var attachedGroup = _document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
           List<ElementId> listTextNoteIds = new List<ElementId>() ;
           // ungroup textNote before ungroup connector
           foreach ( var group in attachedGroup ) {
@@ -227,14 +231,45 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         e.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, value ) ;
       }
 
-      document.Regenerate() ;
+      _document.Regenerate() ;
       // create group for updated connector (with new property) and related text note if any
       foreach ( var item in connectorGroups ) {
         List<ElementId> groupIds = new List<ElementId>() ;
         groupIds.Add( item.Key ) ;
         groupIds.AddRange( item.Value ) ;
-        document.Create.NewGroup( groupIds ) ;
+        _document.Create.NewGroup( groupIds ) ;
       }
+    }
+
+    public bool IsConnectorsHaveConstructionItem()
+    {
+      try {
+        var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault() ;
+        if ( connector == null ) return false ;
+        connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+        return true ;
+      }
+      catch {
+        return false ;
+      }
+    }
+
+    public bool IsConduitsHaveConstructionItem()
+    {
+      try {
+        var conduit = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).FirstOrDefault() ;
+        if ( conduit == null ) return false ;
+        conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+        return true ;
+      }
+      catch {
+        return false ;
+      }
+    }
+
+    public static ObservableCollection<T> CopyCnsSetting<T>( IEnumerable<T>? listCnsSettingData ) where T : ICloneable
+    {
+      return listCnsSettingData != null ? new ObservableCollection<T>( listCnsSettingData.Select( x => x.Clone() ).Cast<T>() ) : null! ;
     }
   }
 }
