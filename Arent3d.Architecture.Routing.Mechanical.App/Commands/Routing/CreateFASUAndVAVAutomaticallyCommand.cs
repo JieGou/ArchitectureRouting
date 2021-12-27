@@ -109,6 +109,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         rootSpaces = new List<Element>() ;
       }
 
+      GetAHUNumberOfAHU( pickedConnector, out int ahuNumberOfAHU ) ;
       if ( ! GetFASUAndVAVConnectorInfo( document, out var fasuInCoonectorHeight, out var vavOutConnectorHeight, out var vavUpstreamConnectorHeight, out var vavUpstreamConnectorNormal ) ) return Result.Failed ;
       CalcFASUAndVAVHeight( pickedConnector, fasuInCoonectorHeight, vavUpstreamConnectorHeight, vavOutConnectorHeight, out var heightOfFASU, out var heightOfVAV ) ;
 
@@ -134,6 +135,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             listOfFASUsAndVAVsInSpace.listOfVAVs.First().LookupParameter( VAVAirflowName ).Set( designSupplyAirflow ) ;
             continue ;
           }
+
+          // AHUのAHUNumberのものだけを対象にする
+          space.TryGetProperty( AHUNumberParameter.AHUNumber, out int ahuNumberOfSpace ) ;
+          if ( ahuNumberOfSpace != ahuNumberOfAHU ) continue ;
 
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
@@ -172,6 +177,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return Result.Succeeded ;
+    }
+
+    private static void GetAHUNumberOfAHU( Connector rootConnector, out int ahuNumberOfAHU )
+    {
+      var parentElement = rootConnector.GetConnectedConnectors().Select( c => c.Owner ).FirstOrDefault() ;
+      var AHUElement = parentElement!.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).Where( c => c.IsConnected ).Select( c => c.Owner ).FirstOrDefault() ;
+      AHUElement!.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
     }
 
     private static double GetComponentOfRootConnectorNormal( IConnector rootConnector, LocationPoint targetConnectorPos )
