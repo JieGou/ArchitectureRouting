@@ -106,6 +106,52 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                 break ;
               }
+              case CnsSettingStorable.UpdateItemType.Rack :
+              {
+                var selectedElements = UiDocument.Selection
+                  .PickElementsByRectangle( CableTraySelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
+                  .Where( x => x is FamilyInstance  or CableTray) ;
+                
+                var rackList = selectedElements.ToList() ;
+                if ( ! rackList.Any() ) {
+                  message = "No Racks are selected." ;
+                  return Result.Cancelled ;
+                }
+
+                // set value to "Construction Item" property
+                var categoryName = viewModel.ApplyToSymbolsText ;
+                using Transaction transaction = new Transaction( document ) ;
+                transaction.Start( "Set rack property" ) ;
+
+                SetConstructionItemForElements( rackList.ToList(), categoryName ) ;
+
+                transaction.Commit() ;
+
+                break;
+              }
+              case CnsSettingStorable.UpdateItemType.All :
+              {
+                var selectedElements = UiDocument.Selection
+                  .PickElementsByRectangle( ConstructionItemSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
+                  .Where( x => x is FamilyInstance  or CableTray or Conduit) ;
+                
+                var elementList = selectedElements.ToList() ;
+                if ( ! elementList.Any() ) {
+                  message = "No Elements are selected." ;
+                  return Result.Cancelled ;
+                }
+
+                // set value to "Construction Item" property
+                var categoryName = viewModel.ApplyToSymbolsText ;
+                using Transaction transaction = new Transaction( document ) ;
+                transaction.Start( "Set element property" ) ;
+
+                SetConstructionItemForElements( elementList.ToList(), categoryName ) ;
+
+                transaction.Commit() ;
+
+                break;
+              }
             }
 
             MessageBox.Show( "Dialog.Electrical.SetElementProperty.Success".GetAppStringByKeyOrDefault( "Success" ),
