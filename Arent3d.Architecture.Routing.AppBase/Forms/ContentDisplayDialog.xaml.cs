@@ -309,14 +309,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems, string constructionItem )
     {
-      var toEndPoint = conduit.GetNearestEndPoints( false ) ;
-      var endPointKey = toEndPoint.FirstOrDefault()?.Key ;
-      var elementId = endPointKey!.GetElementId() ;
-      var fromEndPoint = conduit.GetNearestEndPoints( true ) ;
-      var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;
-      var fromElementId = fromEndPointKey!.GetElementId() ;
-      if ( string.IsNullOrEmpty( elementId ) ) return ;
-      var checkPickUp = AddPickUpConnectors( allConnectors, pickUpConnectors, elementId, fromElementId, pickUpNumbers ) ;
+      var routeName = conduit.GetRouteName() ;
+      if ( string.IsNullOrEmpty( routeName ) ) return ;
+      var checkPickUp = AddPickUpConnectors( allConnectors, pickUpConnectors, routeName!, pickUpNumbers ) ;
       if ( ! checkPickUp ) return ;
       quantities.Add( Math.Round( quantity, 2 ) ) ;
       switch ( conduitType ) {
@@ -332,6 +327,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem ) ;
+    }
+
+    private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers )
+    {
+      var toConnector = GetToConnectorOfRoute( allConnectors, routeName ) ;
+      if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
+      pickUpConnectors.Add( toConnector ) ;
+      if ( ! _pickUpNumbers.ContainsValue( routeName ) ) {
+        _pickUpNumbers.Add( _pickUpNumber, routeName ) ;
+        pickUpNumbers.Add( _pickUpNumber ) ;
+        _pickUpNumber++ ;
+      }
+      else {
+        var pickUpNumber = _pickUpNumbers.FirstOrDefault( n => n.Value == routeName ).Key ;
+        pickUpNumbers.Add( pickUpNumber ) ;
+      }
+
+      return true ;
     }
 
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string elementId, string fromElementId, List<int> pickUpNumbers )
@@ -385,6 +398,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       return pickUpModels ;
+    }
+
+    private Element? GetToConnectorOfRoute( IReadOnlyCollection<Element> allConnectors, string routeName )
+    {
+      var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      foreach ( var conduit in conduitsOfRoute ) {
+        var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
+        if ( ! toEndPoint.Any() ) continue ;
+        var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
+        var toElementId = toEndPointKey!.GetElementId() ;
+        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
+        if ( toConnector == null || toConnector!.IsTerminatePoint() || toConnector!.IsPassPoint() ) continue ;
+        return toConnector ;
+      }
+
+      return null ;
     }
   }
 }
