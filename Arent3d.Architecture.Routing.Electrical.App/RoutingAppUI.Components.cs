@@ -18,66 +18,92 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       [Panel( "arent3d.architecture.routing.init", TitleKey = "Electrical.App.Panels.Routing.Initialize" )]
       private static class InitPanel
       {
-        [Button( typeof( InitializeCommand ), InitializeButton = true )]
-        private static class InitializeCommandButton { }
+        [SplitButton( "arent3d.architecture.routing.init.init", TitleKey = "Electrical.App.Panels.Routing.Initialize.Initialize" )]
+        private static class InitSplitButton
+        {
+          [Button( typeof( InitializeCommand ), InitializeButton = true )]
+          private static class InitializeCommandButton { }
 
-        [Button( typeof( ShowRoutingViewsCommand ), OnlyInitialized = true )]
-        private static class ShowRoutingViewsCommandButton { }
+          [Button( typeof( ShowRoutingViewsCommand ), OnlyInitialized = true )]
+          private static class ShowRoutingViewsCommandButton { }
+
+          [Button( typeof( Show3DViewsCommand ), OnlyInitialized = true )]
+          private static class Show3DViewsCommandButton { }
+
+          [Button(typeof(CnsSettingCommand), OnlyInitialized = true)]
+          private static class CnsSettingCommandButton { }
+
+          [Button( typeof( ShowCeeDModelsCommand ), OnlyInitialized = true )]
+          private static class ShowCeeDModelsCommandButton { }
+
+          [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
+          private static class ShowHeightSettingCommandButton { }
+        }
+
+        [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
+        private static class PickupSplitButton
+        {
+          [Button( typeof( ShowCeeDDetailInformationCommand ), OnlyInitialized = true )]
+          private static class ShowCeeDDetailInformationCommandButton { }
+
+          [Button(typeof(LoadCsvFilesCommand), OnlyInitialized = true)]
+          private static class LoadCsvFilesCommandButton { }
+
+          [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
+          private static class ShowPickUpInformationCommandButton { }
+
+          [Button(typeof(PickUpReportCommand), OnlyInitialized = true)]
+          private static class PickUpReportCommandButton { }
         
-        [Button( typeof( Show3DViewsCommand ), OnlyInitialized = true )]
-        private static class Show3DViewsCommandButton { }
-        
-        [Button(typeof(CnsSettingCommand), OnlyInitialized = true)]
-        private static class CnsSettingCommandButton { }
-        
-        [Button( typeof( ShowCeeDModelsCommand ), OnlyInitialized = true )]
-        private static class ShowCeeDModelsCommandButton { }
-        
-        [Button( typeof( ShowCeeDDetailInformationCommand ), OnlyInitialized = true )]
-        private static class ShowCeeDDetailInformationCommandButton { }
-        
-        [Button(typeof(LoadCsvFilesCommand), OnlyInitialized = true)]
-        private static class LoadCsvFilesCommandButton { }
-        
-        [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
-        private static class ShowPickUpInformationCommandButton { }
+          [Button( typeof( CreateDetailSymbolCommand ), OnlyInitialized = true )]
+          private static class CreateDetailSymbolCommandButton { }
+        }
+
+        [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
+        private static class PanelsSplitButton
+        {
+          [Button( typeof( ShowFrom_ToWindowCommand ), OnlyInitialized = true )]
+          private static class ShowFrom_ToWindowCommandButton { }
+
+          [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
+          private static class ShowFromToTreeCommandButton { }
+        }
       }
 
       [Panel("arent3d.architecture.routing.routing", TitleKey = "Electrical.App.Panels.Routing.Routing" )]
       private static class RoutingPanel
       {
-        [Button( typeof( PickRoutingCommand ), OnlyInitialized = true )]
-        private static class PickRoutingCommandButton { }
+        [SplitButton( "arent3d.architecture.routing.routing.routing", TitleKey = "Electrical.App.Panels.Routing.Routing.Routing" )]
+        private static class RoutingSplitButton
+        {
+          [Button( typeof( PickRoutingCommand ), OnlyInitialized = true )]
+          private static class PickRoutingCommandButton { }
 
-        [Button( typeof( PickAndReRouteCommand ), OnlyInitialized = true )]
-        private static class PickAndReRouteCommandButton { }
+          [Button( typeof( ReplaceFromToCommand ), OnlyInitialized = true )]
+          private static class ReplaceFromToCommandButton { }
 
-        [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
-        private static class AllReRouteCommandButton { }
+          [Button( typeof( PickAndReRouteCommand ), OnlyInitialized = true )]
+          private static class PickAndReRouteCommandButton { }
+
+          [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
+          private static class AllReRouteCommandButton { }
+        }
+
+        [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
+        private static class SelectionRangeRouteCommandButton { }
 
         [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]
         private static class InsertPassPointCommandButton { }
 
-        [Button( typeof( EraseSelectedRoutesCommand ), OnlyInitialized = true )]
-        private static class EraseSelectedRoutesCommandButton { }
+        [SplitButton( "arent3d.architecture.routing.routing.erase", TitleKey = "Electrical.App.Panels.Routing.Routing.Erase" )]
+        private static class EraseSplitButton
+        {
+          [Button( typeof( EraseSelectedRoutesCommand ), OnlyInitialized = true )]
+          private static class EraseSelectedRoutesCommandButton { }
 
-        [Button( typeof( EraseAllRoutesCommand ), OnlyInitialized = true )]
-        private static class EraseAllRoutesCommandButton { }
-
-        [Button( typeof( ReplaceFromToCommand ), OnlyInitialized = true )]
-        private static class ReplaceFromToCommandButton { }
-
-        [Button( typeof( ShowFrom_ToWindowCommand ), OnlyInitialized = true )]
-        private static class ShowFrom_ToWindowCommandButton { }
-
-        [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
-        private static class ShowFromToTreeCommandButton { }
-        
-        [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
-        private static class SelectionRangeRouteCommandButton { }
-
-        [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
-        private static class ShowHeightSettingCommandButton { }
+          [Button( typeof( EraseAllRoutesCommand ), OnlyInitialized = true )]
+          private static class EraseAllRoutesCommandButton { }
+        }
       }
 
       [Panel("arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors")]
@@ -85,30 +111,34 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button(typeof(NewConnectorCommand), OnlyInitialized = true)]
         private static class NewConnectorCommandButton { }
-        
+
         [Button(typeof(NewConnectorBsCommand), OnlyInitialized = true)]
         private static class NewConnectorBsCommandButton { }
 
-        [Button(typeof(NewDamperActuatorCommand), OnlyInitialized = true)]
-        private static class NewDamperActuatorCommandButton { }
+        [SplitButton( "arent3d.architecture.routing.connectors.dumper", TitleKey = "Electrical.App.Panels.Routing.Connectors.Dumper" )]
+        private static class EraseSplitButton
+        {
+          [Button(typeof(NewDamperActuatorCommand), OnlyInitialized = true)]
+          private static class NewDamperActuatorCommandButton { }
 
-        [Button(typeof(NewElectricTwoWayValveWithLogoCommand), OnlyInitialized = true)]
-        private static class NewElectricTwoWayValveWithLogoCommandButton { }
+          [Button(typeof(NewElectricTwoWayValveWithLogoCommand), OnlyInitialized = true)]
+          private static class NewElectricTwoWayValveWithLogoCommandButton { }
 
-        [Button(typeof(NewElectricTwoWayValveWithoutLogoCommand), OnlyInitialized = true)]
-        private static class NewElectricTwoWayValveWithoutLogoCommandButton { }
+          [Button(typeof(NewElectricTwoWayValveWithoutLogoCommand), OnlyInitialized = true)]
+          private static class NewElectricTwoWayValveWithoutLogoCommandButton { }
 
-        [Button(typeof(NewHumiditySensorForDuctWithLogoCommand), OnlyInitialized = true)]
-        private static class NewHumiditySensorForDuctWithLogoCommandButton { }
+          [Button(typeof(NewHumiditySensorForDuctWithLogoCommand), OnlyInitialized = true)]
+          private static class NewHumiditySensorForDuctWithLogoCommandButton { }
 
-        [Button(typeof(NewHumiditySensorForDuctWithoutLogoCommand), OnlyInitialized = true)]
-        private static class NewHumiditySensorForDuctWithoutLogoCommandButton { }
+          [Button(typeof(NewHumiditySensorForDuctWithoutLogoCommand), OnlyInitialized = true)]
+          private static class NewHumiditySensorForDuctWithoutLogoCommandButton { }
 
-        [Button(typeof(NewIndoorHumiditySensorWithLogoCommand), OnlyInitialized = true)]
-        private static class NewIndoorHumiditySensorWithLogoCommandButton { }
+          [Button(typeof(NewIndoorHumiditySensorWithLogoCommand), OnlyInitialized = true)]
+          private static class NewIndoorHumiditySensorWithLogoCommandButton { }
 
-        [Button(typeof(NewIndoorHumiditySensorWithoutLogoCommand), OnlyInitialized = true)]
-        private static class NewIndoorHumiditySensorWithoutLogoCommandButton { }
+          [Button(typeof(NewIndoorHumiditySensorWithoutLogoCommand), OnlyInitialized = true)]
+          private static class NewIndoorHumiditySensorWithoutLogoCommandButton { }
+        }
       }
 
       [Panel( "arent3d.architecture.routing.rack", TitleKey = "Electrical.App.Panels.Routing.Racks" )]
@@ -132,12 +162,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button(typeof(NewEnvelopeCommand), OnlyInitialized = true)]
         private static class NewEnvelopeCommandButton { }
-        
+
         [Button(typeof(CeilingEnvelopeCommand), OnlyInitialized = true)]
-        private static class CeilingEnvelopeCommandButton { }        
-        
+        private static class CeilingEnvelopeCommandButton { }
+
         [Button( typeof( OffsetSettingCommand ), OnlyInitialized = true )]
-        private static class OffsetSettingCommandButton { }   
+        private static class OffsetSettingCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.rackcommand", TitleKey = "Electrical.App.Panels.Routing.RackCommand" )]
@@ -164,7 +194,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof(CreateArentShaftCommand), OnlyInitialized = true )]
         private static class CreateArentShaftCommandButton { }
-        
+
         [Button( typeof(CreateCylindricalShaftCommand), OnlyInitialized = true )]
         private static class CreateCylindricalShaftCommandButton { }
       }
@@ -180,6 +210,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( Demo_DeleteAllRoutedElements ) )]
         private static class Demo_DeleteAllRoutedElementsCommandButton { }
+      }
+
+      [Panel( "arent3d.architecture.rc.debug", TitleKey = "App.Panels.Rc.Debug" )]
+      private static class DebugPanel
+      {
+        [Button( typeof( UninitializeCommand ), OnlyInitialized = true )]
+        private static class UnInitializeCommandButton
+        {
+        }
       }
     }
   }

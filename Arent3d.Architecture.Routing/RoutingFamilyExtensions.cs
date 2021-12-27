@@ -96,9 +96,37 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
     CableTrayReducer,
 
+    [NameOnRevit( "FASU(F4-150 200Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F4_150_200Phi,
+    
+    [NameOnRevit( "FASU(F4-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F4_150_250Phi,
+    
+    [NameOnRevit( "FASU(F5-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F5_150_250Phi,
+    
+    [NameOnRevit( "FASU(F6-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F6_150_250Phi,
+    
+    [NameOnRevit( "FASU(F6-150 300Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F6_150_300Phi,
+    
+    [NameOnRevit( "FASU(F7-150 300Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F7_150_300Phi,
+    
     [NameOnRevit( "FASU(F8-150 250Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F8_150_250Phi,
+    
+    [NameOnRevit( "FASU(F8-150 300Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F8_150_300Phi,
 
     [NameOnRevit( "140_VAV_変風量ユニット_丸ダクト用" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
@@ -110,6 +138,7 @@ namespace Arent3d.Architecture.Routing
     public static bool AllRoutingFamiliesAreLoaded( this Document document ) => document.AllFamiliesAreLoaded<RoutingFamilyType>() ;
 
     public static void MakeCertainAllRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<RoutingFamilyType>( AssetManager.GetFamilyPath ) ;
+    public static void EraseAllRoutingFamilies( this Document document ) => document.UnloadAllFamilies<RoutingFamilyType>() ;
 
     public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, string levelName, StructuralType structuralType )
     {

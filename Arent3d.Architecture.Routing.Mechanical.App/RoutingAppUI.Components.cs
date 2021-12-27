@@ -1,3 +1,5 @@
+// #define TTE_BUILD // 高砂熱学用メニュー
+
 using Arent3d.Architecture.Routing.Mechanical.App.Commands ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Mechanical.App.Commands.PassPoint ;
@@ -9,6 +11,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 {
   partial class RoutingAppUI
   {
+#if TTE_BUILD
     [Tab( "Mechanical.App.Routing.TabName", VisibilityMode = TabVisibilityMode.NormalDocument )]
     private static class RoutingTab
     {
@@ -17,9 +20,52 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
       {
         [Button( typeof( InitializeCommand ), InitializeButton = true )]
         private static class InitializeCommandButton { }
+      }      
+      
+      [Panel("arent3d.architecture.routing.routing", TitleKey = "Mechanical.App.Panels.Routing.Routing" )]
+      private static class RoutingPanel
+      {
+        [Button( typeof( SimplePickRoutingCommand ), OnlyInitialized = true )]
+        private static class SimplePickRoutingCommandButton { }
+
+        [Button( typeof( PickAndReRouteCommand ), OnlyInitialized = true )]
+        private static class PickAndReRouteCommandButton { }
+
+        [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
+        private static class AllReRouteCommandButton { }
+
+        [Button( typeof( EraseSelectedRoutesCommand ), OnlyInitialized = true )]
+        private static class EraseSelectedRoutesCommandButton { }
+
+        [Button( typeof( EraseAllRoutesCommand ), OnlyInitialized = true )]
+        private static class EraseAllRoutesCommandButton { }
+
+        [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
+        private static class ShowFromToTreeCommandButton { }
+      }
+      
+      [Panel( "arent3d.architecture.routing.tte", TitleKey = "Mechanical.App.Panels.Routing.TTE" )]
+      private static class TTEPanel
+      {
+        [Button( typeof( CreateFASUAndVAVAutomaticallyCommand ), OnlyInitialized = true )]
+        private static class CreateFASUAndVAVAutomaticallyCommandButton { }
+
+        [Button( typeof( AutoRoutingVavCommand ), OnlyInitialized = true )]
+        private static class AutoRoutingVavCommandButton { }
         
-        [Button( typeof( InitializeParametersCommand ), OnlyInitialized = true )]
-        private static class InitializeParametersCommandButton { }
+        [Button( typeof( AdjustDuctSizeCommand ), OnlyInitialized = true )]
+        private static class AdjustDuctSizeCommandButton { }        
+      }      
+    }
+#else
+    [Tab( "Mechanical.App.Routing.TabName", VisibilityMode = TabVisibilityMode.NormalDocument )]
+    private static class RoutingTab
+    {
+      [Panel( "arent3d.architecture.routing.init", TitleKey = "Mechanical.App.Panels.Routing.Initialize" )]
+      private static class InitPanel
+      {
+        [Button( typeof( InitializeCommand ), InitializeButton = true )]
+        private static class InitializeCommandButton { }
 
         [Button( typeof( ShowRoutingViewsCommand ), OnlyInitialized = true )]
         private static class ShowRoutingViewsCommandButton { }
@@ -79,6 +125,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
 
         [Button( typeof( AutoRoutingVavCommand ), OnlyInitialized = true )]
         private static class AutoRoutingVavCommandButton { }
+        
+        [Button( typeof( AdjustDuctSizeCommand ), OnlyInitialized = true )]
+        private static class AdjustDuctSizeCommandButton { }        
       }
 
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Mechanical.App.Panels.Routing.Monitor" )]
@@ -87,6 +136,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         [Button( typeof( MonitorSelectionCommand ), AvailabilityType = typeof( Commands.Enabler.MonitorSelectionCommandEnabler ) )]
         private static class MonitorSelectionCommandButton { }
       }
+
+      [Panel( "arent3d.architecture.rc.debug", TitleKey = "App.Panels.Rc.Debug" )]
+      private static class DebugPanel
+      {
+
+        [Button( typeof( UninitializeCommand ), OnlyInitialized = true )]
+        private static class UnInitializeCommandButton
+        {
+        }
+      }
     }
+    
+#endif
+    
   }
 }

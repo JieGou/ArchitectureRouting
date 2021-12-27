@@ -143,23 +143,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
 
-    private class UpdateSuppressor : IDisposable
+    private class UpdateSuppressor : MustBeDisposed
     {
       public UpdateSuppressor()
       {
         IncreaseSuppressCount() ;
       }
 
-      public void Dispose()
+      protected override void Finally()
       {
-        GC.SuppressFinalize( this ) ;
-
         DecreaseSuppressCount() ;
-      }
-
-      ~UpdateSuppressor()
-      {
-        throw new InvalidOperationException( $"`{nameof( UpdateSuppressor )}` is not disposed. Use `using` statement." ) ;
       }
     }
 

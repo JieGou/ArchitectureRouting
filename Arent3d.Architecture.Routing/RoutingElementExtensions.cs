@@ -4,6 +4,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -45,24 +46,49 @@ namespace Arent3d.Architecture.Routing
 
       return document.RoutingSettingsAreInitialized() ;
     }
+
+    /// <summary>
+    /// Setup all families and parameters used for routing application.
+    /// </summary>
+    /// <param name="document"></param>
+    public static void UnsetupRoutingFamiliesAndParameters( this Document document )
+    {
+      EraseArentConduitType( document ) ;
+      document.EraseAllRoutingFamilies() ;
+      document.UnloadAllRoutingParameters() ;
+    }
+
+    private static string GetElbowTypeName( Document document )
+    {
+      return "Routing.Revit.DummyConduit.ElbowTypeName".GetDocumentStringByKeyOrDefault( document, "M_電線管エルボ - 鉄鋼" ) ;
+    }
+    private static string GetConduitTypeName( Document document )
+    {
+      return "Routing.Revit.DummyConduit.ConduitTypeName".GetDocumentStringByKeyOrDefault( document, "Arent電線" ) ;
+    }
+
+    private static double GetConduitTypeNominalDiameter( Document document )
+    {
+      return ( 1.0 ).MillimetersToRevitUnits() ;
+    }
     
     private static void AddArentConduitType( Document document )
     {
-      const string elbowTypeName = "M_電線管エルボ - 鉄鋼" ;
-      const string conduitTypeName = "Arent電線" ;
+      var elbowTypeName = GetElbowTypeName( document ) ;
+      var conduitTypeName = GetConduitTypeName( document ) ;
       var sizes = ConduitSizeSettings.GetConduitSizeSettings( document ) ;
       var standards = document.GetStandardTypes().ToList() ;
       if ( ! standards.Contains( conduitTypeName ) ) {
         var conduitStandard = sizes.CreateConduitStandardTypeFromExisingStandardType( document, conduitTypeName, standards.Last() ) ;
         if ( conduitStandard ) {
-          ConduitSize sizeInfo = new ConduitSize( ( 1.0 ).MillimetersToRevitUnits(), ( 0.8 ).MillimetersToRevitUnits(), ( 1.2 ).MillimetersToRevitUnits(), ( 16.0 ).MillimetersToRevitUnits(), true, true ) ;
+          ConduitSize sizeInfo = new ConduitSize( GetConduitTypeNominalDiameter( document ), ( 0.8 ).MillimetersToRevitUnits(), ( 1.2 ).MillimetersToRevitUnits(), ( 16.0 ).MillimetersToRevitUnits(), true, true ) ;
           sizes.AddSize( standards.Last(), sizeInfo ) ;
           sizes.AddSize( conduitTypeName, sizeInfo ) ;
         }
       }
 
       var elbowCurveType = document.GetAllElements<FamilySymbol>().OfCategory( BuiltInCategory.OST_ConduitFitting ).FirstOrDefault( x => x.FamilyName == elbowTypeName ) ;
-      
+
       // Get type by "Standard" parameter
       var curveTypes = document.GetAllElements<ConduitType>().Where( c => c.get_Parameter( BuiltInParameter.CONDUIT_STANDARD_TYPE_PARAM ).AsValueString() == standards.Last() ).OfType<MEPCurveType>().ToList() ;
       foreach ( var curveType in curveTypes ) {
@@ -74,6 +100,23 @@ namespace Arent3d.Architecture.Routing
         var arentBend = arentCurveType.get_Parameter( BuiltInParameter.RBS_CURVETYPE_DEFAULT_BEND_PARAM ).Element as ConduitType ;
         arentBend!.Elbow = elbowCurveType ;
       }
+    }
+
+    private static void EraseArentConduitType( Document document )
+    {
+      var elbowTypeName = GetElbowTypeName( document ) ;
+      var conduitTypeName = GetConduitTypeName( document ) ;
+      var sizes = ConduitSizeSettings.GetConduitSizeSettings( document ) ;
+      var standards = document.GetStandardTypes().ToList() ;
+      if ( standards.Contains( conduitTypeName ) ) {
+        // todo check existence
+        sizes.RemoveSize( conduitTypeName, GetConduitTypeNominalDiameter( document ) ) ;
+        sizes.RemoveSize( standards.Last(), GetConduitTypeNominalDiameter( document ) ) ;
+      }
+
+      var curveTypes = document.GetAllElements<ConduitType>().Where( c => c.get_Parameter( BuiltInParameter.CONDUIT_STANDARD_TYPE_PARAM ).AsValueString() == standards.Last() ).OfType<MEPCurveType>().ToList() ;
+      var eraseIds = curveTypes.Where( curveType => curveType.Name == conduitTypeName ).Select( curveType => curveType.Id ).ToList() ;
+      document.Delete( eraseIds ) ;
     }
 
     #endregion
@@ -195,7 +238,7 @@ namespace Arent3d.Architecture.Routing
 
     public static Connector GetTopConnectorOfConnectorFamily( this FamilyInstance elm )
     {
-      var topItem = elm.GetConnectors().MaxItemOrDefault( conn => conn.Origin.Z ) ;
+      var topItem = elm.GetConnectors().MaxBy( conn => conn.Origin.Z ) ;
       return topItem ?? elm.GetConnectors().First() ;
     }
 
@@ -710,6 +753,21 @@ namespace Arent3d.Architecture.Routing
       return new SubRouteInfo( routeName, subRouteIndex ) ;
     }
 
+    /// <summary>
+    /// 分岐管(Tee, Cross)のBranch側のRoute名を取得する
+    /// </summary>
+    /// <param name="elemnt"></param>
+    /// <returns></returns>
+    public static IEnumerable<string> GetBranchRouteNames( this Element element )
+    {
+      if ( false == element.TryGetProperty( RoutingParameter.BranchRouteNames, out string? str )) yield break;
+      if ( str == null ) yield break;
+
+      foreach ( var routeName in RouteNamesUtil.ParseRouteNames( str ) ) {
+        yield return routeName ;
+      }
+    }
+    
     #endregion
 
     #region Center Lines
