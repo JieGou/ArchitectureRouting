@@ -60,46 +60,52 @@
 
           <!-- <DataGridTextColumn Header="平面図" Binding="{Binding FloorPlanSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />   -->
 
-          <DataGridTemplateColumn Header="平面図" x:Name="Image" Width="SizeToHeader" MinWidth="100" >
+          <DataGridTemplateColumn Header="平面図" x:Name="Image" Width="SizeToHeader" MinWidth="120" >
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Border BorderThickness="0">
-                <Image Source="{Binding FloorImages}" 
-                       RenderOptions.BitmapScalingMode="Fant"
-                       Stretch="None"
-                       VerticalAlignment="Top"
-                       Margin="0,0,0,0"
-                       HorizontalAlignment="Center" />
-                </Border>
-                <TextBlock Text="{Binding FloorPlanSymbol}" TextAlignment="Center">
-                <TextBlock.RenderTransform>
-                  <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
-                </TextBlock.RenderTransform>
-                </TextBlock>
-                </StackPanel>
+                <!-- <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"> -->
+                <!-- <Border BorderThickness="0"> -->
+                <!-- <Image Source="{Binding FloorImages}"  -->
+                <!--        RenderOptions.BitmapScalingMode="Fant" -->
+                <!--        Stretch="None" -->
+                <!--        VerticalAlignment="Top" -->
+                <!--        Margin="0,0,0,0" -->
+                <!--        HorizontalAlignment="Center" /> -->
+                <!-- </Border> -->
+                <!-- <TextBlock Text="{Binding FloorPlanSymbol}" TextAlignment="Center"> -->
+                <!-- <TextBlock.RenderTransform> -->
+                <!--   <ScaleTransform ScaleX="1.5" ScaleY="1.5" /> -->
+                <!-- </TextBlock.RenderTransform> -->
+                <!-- </TextBlock> -->
+                <!-- </StackPanel> -->
+                <Grid>
+                  <Image Source="{Binding FloorImages}" Stretch="None"/>
+                  <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center" >
+                    <TextBlock.RenderTransform>
+                      <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
+                    </TextBlock.RenderTransform>
+                  </TextBlock>
+                </Grid>
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
           
-          <DataGridTemplateColumn Header="計装図" x:Name="Image1" Width="SizeToHeader" MinWidth="100" >
+          <DataGridTemplateColumn Header="計装図" x:Name="Image1" Width="SizeToHeader" MinWidth="100"  >
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                  <Border BorderThickness="0">
-                    <Image Source="{Binding InstrumentationImages}" 
-                           RenderOptions.BitmapScalingMode="Fant"
-                           Stretch="None"
-                           VerticalAlignment="Top"
-                           Margin="0,0,0,0"
-                           HorizontalAlignment="Center" />
-                  </Border>
-                  <TextBlock Text="{Binding InstrumentationSymbol}" TextAlignment="Center">
+                <Grid>
+                  <Image Source="{Binding InstrumentationImages}" 
+                         RenderOptions.BitmapScalingMode="Fant"
+                         Stretch="None"
+                         VerticalAlignment="Top"
+                         Margin="0,0,0,0"
+                         HorizontalAlignment="Center" />
+                  <TextBlock Text="{Binding InstrumentationSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center" >
                     <TextBlock.RenderTransform>
-                      <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
+                      <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
                     </TextBlock.RenderTransform>
                   </TextBlock>
-                </StackPanel>
+                </Grid>
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>

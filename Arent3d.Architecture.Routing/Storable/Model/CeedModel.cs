@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis ;
 using System.Drawing ;
 using System.IO ;
 using System.Linq ;
+using System.Text ;
 using System.Windows.Media.Imaging ;
 using Autodesk.Revit.DB.Electrical ;
 
@@ -48,17 +49,17 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       InstrumentationImages = null ;
       FloorImages = null ;
     }
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<byte[]>? symbolBytesList,  List<byte[]>? instrumentationSymbol, string name )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? symbolBytesList, string floorPlanSymbol,  string name )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
       ModelNumber = modelNumber ;
-      FloorPlanSymbol = "" ;
+      FloorPlanSymbol = floorPlanSymbol ;
       InstrumentationSymbol = "" ;
       Name = name ;
       InstrumentationImages = null ;// BitmapToImageSource(ConvertByteToImage( instrumentationSymbol)) ;
-      FloorImages = BitmapToImageSource(ConvertByteToImage( symbolBytesList)) ;
+      FloorImages = BitmapToImageSource(GetImage( symbolBytesList)) ;
     }
 
     BitmapImage? BitmapToImageSource( Bitmap? bitmap )
@@ -75,22 +76,23 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         return bitmapimage ;
       }
     }
-
-    private Bitmap? ConvertByteToImage( List<byte[]>? symbolBytesList )
-    {
-      List<Bitmap> images = new List<Bitmap>() ;
-      try {
-        if ( symbolBytesList != null )
-          foreach ( var symbolByte in symbolBytesList ) {
-            using ( var ms = new MemoryStream( symbolByte ) ) {
-              var image = (Bitmap) Image.FromStream( ms ) ;
-              image.MakeTransparent() ;
-              images.Add( image ) ;
-            }
-          }
-
-        if ( images.Count == 1 ) return images.First() ;
-        return MergeImages( images ) ;
+    private Bitmap? GetImage( List<Image>? symbolImages )
+    { try {
+      if ( symbolImages != null && symbolImages.Count == 1 ) return (Bitmap) symbolImages[0] ;
+      return MergeImages( symbolImages ) ;
+      // List<Bitmap> images = new List<Bitmap>() ;
+      //
+      //   if ( symbolImages != null )
+      //     foreach ( var image in symbolImages ) {
+      //       using ( var ms = new MemoryStream( image ) ) {
+      //         var new = (Bitmap) Image.FromStream( ms ) ;
+      //         images.Add(image);
+      //       }
+      //    
+      //     }
+      //
+      //   if ( images.Count == 1 ) return images.First() ;
+      //   return MergeImages( images ) ;
       }
       catch ( Exception e ) {
         Console.WriteLine( e ) ;
@@ -98,36 +100,82 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         //ConvertTextToImage( floorPlanShapes ) ;
       }
     }
+    // private Bitmap? ConvertByteToImage( List<byte[]>? symbolBytesList )
+    // {
+    //   List<Bitmap> images = new List<Bitmap>() ;
+    //   try {
+    //     if ( symbolBytesList != null )
+    //       foreach ( var symbolByte in symbolBytesList ) {
+    //         using ( var ms = new MemoryStream( symbolByte ) ) {
+    //           var image = (Bitmap) Image.FromStream( ms ) ;
+    //           //Bitmap newImg = new Bitmap(image.Width, image.Height);
+    //           // Graphics g = Graphics.FromImage(image);
+    //           // g.Clear(Color.Green);
+    //           // g.DrawImage( newImg, new System.Drawing.Rectangle( 0, 0, image.Width, image.Height ) ) ;
+    //           images.Add(image);
+    //         }
+    //      
+    //       }
+    //
+    //     if ( images.Count == 1 ) return images.First() ;
+    //     return MergeImages( images ) ;
+    //   }
+    //   catch ( Exception e ) {
+    //     Console.WriteLine( e ) ;
+    //     return null;
+    //     //ConvertTextToImage( floorPlanShapes ) ;
+    //   }
+    // }
 
-    private static Bitmap MergeImages( List<Bitmap> images )
+    private static Bitmap MergeImages( List<Image>? images )
     {
-      int outputImageHeight = images.OrderByDescending( c => c.Height ).Select( c => c.Height ).First() ;
-      int outputImageWidth = images.Sum( item => item.Width ) + ( images.Count - 1 ) * 10 ;
+      try {
+        if ( images != null ) {
+          var maxImageHeight = images.OrderByDescending( c => c.Height ).Select( c => c.Height ).First() ;
+          //var minImageHeight = images.OrderBy( c => c.Height ).Select( c => c.Height ).First() ;
+          // var centerPoint = ( maxImageHeight - minImageHeight ) / 2 ;
+          var padding = 50 ;
+          var imageWidth = images.Sum( item => item.Width ) + ( images.Count - 1 ) * padding ;
+          var finalImage = new Bitmap( imageWidth, maxImageHeight,System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ;
+          var textImage = ConvertTextToImage( "又は", 25 ) ; //fix default height
+          using ( Graphics g = Graphics.FromImage( finalImage ) ) {
+            g.Clear(Color.White);
+            var offset = 0 ;
 
-      //Bitmap outputImage = new Bitmap( outputImageWidth, outputImageHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ;
-      var finalImage = new Bitmap( outputImageWidth, outputImageHeight ) ;
-      using ( Graphics g = Graphics.FromImage( finalImage ) ) {
-        g.Clear( Color.White ) ;
-       // finalImage.MakeTransparent(Color.Transparent) ;
-        int offset = 0 ;
-        foreach ( Bitmap image in images ) {
-          //image.MakeTransparent(Color.Transparent) ;
-          g.DrawImage( image, new System.Drawing.Rectangle( offset, 0, image.Width, image.Height ) ) ;
-          offset += image.Width + 10 ;
-          // g.DrawImage(finalImage, finalImage.Width, 0, finalImage.Width, finalImage.Height);
+            for ( var i = 0 ; i < images.Count ; i++ ) {
+              Image image = images[ i ] ;
+              //image.Save( @"D:\GIT\Arent\a" + i + ".png" ) ;
+              //g.DrawImage( image, new System.Drawing.Rectangle( offset, 0, image.Width, image.Height ) ) ;
+              g.DrawImage(image, new Rectangle(new Point(offset,0), image.Size), new Rectangle(new Point(), image.Size), GraphicsUnit.Pixel);  
+              offset += image.Width + padding ;
+             // g.DrawImage(finalImage, finalImage.Width, 0, finalImage.Width, finalImage.Height);
+             
+            
+              // if ( i == images.Count - 1 ) continue ;
+              // g.DrawImage( textImage, new System.Drawing.Rectangle( offset, 2, textImage.Width, textImage.Height ) ) ;
+              // offset += textImage.Width + 4 ;
+            }
+            // Color backColor = finalImage.GetPixel(1, 1);
+            // finalImage.MakeTransparent(backColor);
+           // g.DrawImage(finalImage, finalImage.Width, 0, finalImage.Width, finalImage.Height);
+          }
+
+          return finalImage ;
         }
-      //g.DrawImage(finalImage, finalImage.Width, 0, finalImage.Width, finalImage.Height);
       }
-
-      return finalImage ;
+      catch ( Exception e ) {
+        Console.WriteLine( e ) ;
+        throw ;
+      }
+      return new Bitmap(1,1) ;
     }
-    private Bitmap ConvertTextToImage( byte[] symbolByte )
+
+    private static Bitmap ConvertTextToImage(string text,int height )
     {
-      var text = System.Text.Encoding.ASCII.GetString( symbolByte ).Trim() ;
-      Bitmap bmp = new Bitmap( 16, 16 ) ;
+      Bitmap bmp = new Bitmap( 30, height ) ;
       try {
         using ( Graphics graphics = Graphics.FromImage( bmp ) ) {
-          Font font = new Font( "ＭＳ Ｐゴシック", 14 ) ;
+          Font font = new Font( "ＭＳ Ｐゴシック", 10 ) ;
           graphics.FillRectangle( new SolidBrush( Color.Transparent ), 0, 0, bmp.Width, bmp.Height ) ;
           graphics.DrawString( text, font, new SolidBrush( Color.Black ), 0, 0 ) ;
           graphics.Flush() ;
