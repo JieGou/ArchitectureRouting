@@ -66,6 +66,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 using var transaction = new Transaction( document ) ;
                 transaction.Start( "Set conduits property" ) ;
                 SetConstructionItemForElements( conduitList.ToList(), categoryName ) ;
+                ChangeElementColor( document, conduitList.ToList() ) ;
                 transaction.Commit() ;
 
                 break ;
@@ -106,6 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   }
                 }
                 SetConstructionItemForElements( connectorList.ToList(), categoryName ) ;
+                ChangeElementColor( document, connectorList.ToList() ) ;
                 transaction.Commit() ;
 
                 break ;
@@ -202,5 +204,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
+    private void ChangeElementColor( Document document, List<Element> elements )
+    {
+      OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
+      ogs.SetProjectionLineColor( new Color( 0, 0, 0 ) ) ;
+      foreach ( var element in elements ) {
+        document.ActiveView.SetElementOverrides( element.Id, ogs ) ;
+      }
+    }
   }
 }
