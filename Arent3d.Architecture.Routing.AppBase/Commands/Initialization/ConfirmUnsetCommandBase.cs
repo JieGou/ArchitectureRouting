@@ -17,9 +17,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         return document.Transaction( "TransactionName.Commands.Routing.ConfirmUnset".GetAppStringByKeyOrDefault( "Confirm Unset" ), _ =>
         {
-          var conduitIdNotConstruction = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.TryGetProperty( RoutingFamilyLinkedParameter.ConstructionItem, out string? constructionItem ) == true && string.IsNullOrEmpty( constructionItem ) ).Select( c => c.Id ).ToList() ;
-          var connectorIdNotConstruction = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( c => c.TryGetProperty( RoutingFamilyLinkedParameter.ConstructionItem, out string? constructionItem ) == true && string.IsNullOrEmpty( constructionItem ) ).Select( c => c.Id ).ToList() ;
-          ChangeConduitAndConnectorColor( document, conduitIdNotConstruction, connectorIdNotConstruction ) ;
+          var elementNotConstruction = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( RoutingFamilyLinkedParameter.ConstructionItem, out string? constructionItem ) && string.IsNullOrEmpty( constructionItem ) ).ToList() ;
+          var color = new Color( 255, 0, 0 ) ;
+          ChangeElementColor( document, elementNotConstruction, color ) ;
 
           return Result.Succeeded ;
         } ) ;
@@ -30,16 +30,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void ChangeConduitAndConnectorColor( Document document, List<ElementId> conduitIds, List<ElementId> connectorIds )
+    public static void ChangeElementColor( Document document, IEnumerable<Element> elements, Color color )
     {
       OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
-      ogs.SetProjectionLineColor( new Color( 255, 0, 0 ) ) ;
-      foreach ( var conduitId in conduitIds ) {
-        document.ActiveView.SetElementOverrides( conduitId, ogs ) ;
-      }
-
-      foreach ( var connectorId in connectorIds ) {
-        document.ActiveView.SetElementOverrides( connectorId, ogs ) ;
+      ogs.SetProjectionLineColor( color ) ;
+      foreach ( var element in elements ) {
+        document.ActiveView.SetElementOverrides( element.Id, ogs ) ;
       }
     }
   }
