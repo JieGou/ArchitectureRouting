@@ -137,7 +137,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             continue ;
           }
 
-          var airflowOfSpace = UnitUtils.ConvertFromInternalUnits( designSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
+          var airflowOfSpace = TTEUtil.ConvertDesignSupplyAirflowFromInternalUnits( designSupplyAirflow ) ;
           var fasuFamilyType = airflowOfSpace <= AirflowThresholdForUseDiameter250Phi ? RoutingFamilyType.FASU_F8_150_250Phi : RoutingFamilyType.FASU_F8_150_300Phi ;
           var diameterOfVAV = fasuFamilyType == RoutingFamilyType.FASU_F8_150_250Phi ? DiameterOfVAVForFASU250Phi : DiameterOfVAVForFASU300Phi ;
           
@@ -329,7 +329,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         GetConnectorHeight( instanceOfFASU250Phi, FlowDirectionType.In, out fasu250PhiInConnectorExists, out fasuInConnectorHeight ) ;
         
         var instanceOfFASU300Phi = document.AddFASU( RoutingFamilyType.FASU_F8_150_300Phi, new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
-        GetConnectorHeight( instanceOfFASU300Phi, FlowDirectionType.In, out fasu300PhiInConnectorExists, out fasuInConnectorHeight ) ;
+        GetConnectorHeight( instanceOfFASU300Phi, FlowDirectionType.In, out fasu300PhiInConnectorExists, out _ ) ;
 
         var instanceOfVAV = document.AddVAV( new XYZ( 0, 0, 0 ), ElementId.InvalidElementId ) ;
         GetConnectorHeight( instanceOfVAV, FlowDirectionType.Out, out vavOutConnectorExists, out vavOutConnectorHeight ) ;

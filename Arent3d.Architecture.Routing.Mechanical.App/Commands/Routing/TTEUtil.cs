@@ -60,5 +60,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         : UnitUtils.ConvertFromInternalUnits( targetSpace.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
 #endif
     } 
+    
+    public static double? ConvertDesignSupplyAirflowFromInternalUnits( double designSupplyAirflowInternalUnits )
+    {
+#if REVIT2019 || REVIT2020
+      return UnitUtils.ConvertFromInternalUnits( designSupplyAirflowInternalUnits, Autodesk.Revit.DB.DisplayUnitType.DUT_CUBIC_METERS_PER_HOUR ) ;
+#else
+      return UnitUtils.ConvertFromInternalUnits( designSupplyAirflowInternalUnits, UnitTypeId.CubicMetersPerHour ) ;
+#endif
+    }
   }
 }
