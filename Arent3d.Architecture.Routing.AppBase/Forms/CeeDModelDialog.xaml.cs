@@ -1,21 +1,14 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Diagnostics ;
-using System.Drawing ;
-using System.Drawing.Imaging ;
 using System.Globalization ;
 using System.IO ;
 using System.Linq ;
-using System.Net ;
 using System.Runtime.InteropServices ;
-using System.Runtime.Serialization.Formatters.Binary ;
-using System.Text ;
-using System.Threading ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
-using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -28,7 +21,6 @@ using NPOI.XSSF.UserModel ;
 using Application = Microsoft.Office.Interop.Excel.Application ;
 using CellType = NPOI.SS.UserModel.CellType ;
 using Clipboard = System.Windows.Forms.Clipboard ;
-using DataFormats = System.Windows.DataFormats ;
 using Image = System.Drawing.Image ;
 using MessageBox = System.Windows.MessageBox ;
 using Style = System.Windows.Style ;
@@ -130,18 +122,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
-      Stopwatch stopWatch = new Stopwatch() ;
       OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx)|*.xlsx", Multiselect = false } ;
       string filePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
       }
-
-
-      var listKeisoZu = new List<SymbolBytes>() ; // GetListKeisoZu( filePath ) ;
-
       if ( string.IsNullOrEmpty( filePath ) ) return ;
-      stopWatch.Start();
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
         List<CeedModel> ceeDModelData = GetAllCeeDModelNumber( filePath ) ;
@@ -157,47 +143,50 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         }
-        stopWatch.Stop() ;
-        TimeSpan ts = stopWatch.Elapsed ;
-        MessageBox.Show( " Total times: " + ts.TotalSeconds ) ;
       }
     }
 
-    private static List<SymbolBytes> GetListHeimenZu( string filePath, Dictionary<int, int> blocks )
+    private static List<SymbolImage> GetSymbolImages( string filePath, Dictionary<int, int> rowBlocks )
     {
-     Stopwatch stopWatch = new Stopwatch() ;
-      string workbookPath = filePath ;
+     
       const string sheetName = "セットコード一覧表" ;
       const string startCell = "F8" ;
       const string selectColumn = "F" ;
-      var listHeimenZu = new List<SymbolBytes>() ;
-      var excelApp = new Application { Visible = false, ScreenUpdating = false } ;
-      
-      var excelWorkbook = excelApp.Workbooks.Open( workbookPath, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing, false, XlPlatform.xlWindows, Type.Missing, true, false, Type.Missing, Type.Missing, Type.Missing, Type.Missing ) ;
+      var symbolImages = new List<SymbolImage>() ;
+      var excelApp = new Application
+      {
+        Visible = false,
+        ScreenUpdating = false,
+        DisplayStatusBar = false,
+        //Calculation = XlCalculation.xlCalculationManual,
+        EnableEvents = false
+      } ;
+
+      var excelWorkbook = excelApp.Workbooks.Open( filePath, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing, false, XlPlatform.xlWindows, Type.Missing, true, false, Type.Missing, Type.Missing, Type.Missing, Type.Missing ) ;
       try {
         if ( excelWorkbook != null ) {
-          Worksheet sheet = (Worksheet) excelWorkbook.Sheets[ sheetName ] ;
+          var sheet = (Worksheet) excelWorkbook.Sheets[ sheetName ] ;
+          sheet.DisplayPageBreaks = false ;
           var xlSheets = excelWorkbook.Sheets as Sheets ;
           var newSheet = (Worksheet) xlSheets.Add( xlSheets[ 1 ], Type.Missing, Type.Missing, Type.Missing ) ;
-          Range xlRange = sheet.UsedRange ;
+          var xlRange = sheet.UsedRange ;
           var endRow = xlRange.Rows.Count ;
-        
-          //COPY SHAPE TO NEW SHEET
-          var range1 = sheet.Range[ startCell, selectColumn+ endRow ] ;
-          Range range2 = newSheet.Range[ startCell, selectColumn + endRow ] ;
+
+          //Copy shapes to new sheet
+          var range1 = sheet.Range[ startCell, selectColumn + endRow ] ;
+          var range2 = newSheet.Range[ startCell, selectColumn + endRow ] ;
           range2.ColumnWidth = range1.ColumnWidth ;
           range1.Copy( range2 ) ;
-          //CONVERT SHARP TO BYTE 
-         // stopWatch.Start() ;
+          
+          //convert shapes to image
           if ( newSheet.Shapes.Count > 0 ) {
-            KeyValuePair<int, int> block ;
-            int topShapeRow ;
+            int rowNumber ;
+            Clipboard.Clear() ;
             foreach ( Shape shape in newSheet.Shapes ) {
-            
-              topShapeRow = shape.TopLeftCell.Row ;
-              Clipboard.Clear() ;
-              block = blocks.LastOrDefault( c => c.Key <= topShapeRow ) ;
-              shape.Copy() ;
+              rowNumber = shape.TopLeftCell.Row ;
+              var marginLeft = shape.Left ;
+              var block = rowBlocks.LastOrDefault( c => c.Key <= rowNumber ) ;
+              shape.Copy() ; // sometime get error here
               if ( ! Clipboard.ContainsImage() ) continue ;
               var image = Clipboard.GetImage() ;
               if ( image == null ) continue ;
@@ -206,128 +195,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               //   image.Save( ms, ImageFormat.Png ) ;
               //   var imgData = ms.ToArray() ;
               // }
-              listHeimenZu.Add( new SymbolBytes( block.Key, image, 1 ) ) ;
+              symbolImages.Add( new SymbolImage( block.Key, image, marginLeft) ) ;
             }
           }
-          // stopWatch.Stop() ;
-          // MessageBox.Show( " time_abc: " + stopWatch.Elapsed.TotalSeconds ) ;
         }
       }
       catch ( Exception e ) {
         MessageBox.Show( " Error: " + e) ;
       }
       finally {
-        //excelWorkbook?.Save() ;
         excelWorkbook?.Close( false ) ;
-        excelApp.Quit() ;
         if ( excelWorkbook != null ) Marshal.ReleaseComObject( excelWorkbook ) ;
+        excelApp.Quit() ;
         Marshal.ReleaseComObject( excelApp ) ;
       }
-
-      return listHeimenZu ;
+      
+      return symbolImages ;
     }
-
-    // private List<SymbolBytes> GetListHeimenZu( string filePath )
-    // {
-    //   Stopwatch stopWatch = new Stopwatch() ;
-    //   stopWatch.Start() ;
-    //   string workbookPath = filePath ;
-    //   var sheetName = "セットコード一覧表" ;
-    //   var listHeimenZu = new List<SymbolBytes>() ;
-    //   Application? excelApp = new Application() ;
-    //   var excelWorkbook = excelApp.Workbooks.Open( workbookPath, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing, false, XlPlatform.xlWindows, Type.Missing, true, false, Type.Missing, Type.Missing, Type.Missing, Type.Missing ) ;
-    //   try {
-    //     if ( excelWorkbook != null ) {
-    //       Worksheet sheet = (Worksheet) excelWorkbook.Sheets[ sheetName ] ;
-    //       var xlSheets = excelWorkbook.Sheets as Sheets ;
-    //       var newSheet = (Worksheet) xlSheets.Add( xlSheets[ 1 ], Type.Missing, Type.Missing, Type.Missing ) ;
-    //       newSheet.Name = "newsheet" ;
-    //       var shapes = new List<Shape>() ;
-    //       Range xlRange = sheet.UsedRange ;
-    //       var endRow = xlRange.Rows.Count ;
-    //
-    //       for ( var i = 8 ; i <= endRow ; i++ ) {
-    //         // var cellValue = (sheet.Cells[i, 1] as Range)?.Value.ToString();
-    //         // if(string.IsNullOrEmpty(cellValue)) break;
-    //
-    //         Range cell = (Range) sheet.Cells[ i, 3 ] ; //一般表示用機器記号
-    //         if ( cell.Value == null ) continue ;
-    //         var strCellValue = cell.Value.ToString() ;
-    //         if ( string.IsNullOrEmpty( strCellValue ) ) continue ;
-    //         var firstIndexGroup = i ;
-    //         var nextName = cell.Value.ToString() ;
-    //         do {
-    //           i++ ;
-    //           if ( i > endRow ) break ;
-    //           //strCellValue = nextName ;
-    //           cell = (Range) sheet.Cells[ i + 1, 3 ] ;
-    //           if ( cell.Value != null ) {
-    //             nextName = cell.Value.ToString() ;
-    //             break ;
-    //           }
-    //         } while ( ! string.IsNullOrEmpty( nextName ) ) ;
-    //
-    //         var lastIndexGroup = i ;
-    //
-    //         //COPY SHAPE TO NEW SHEET
-    //         var range1 = sheet.Range[ "F" + firstIndexGroup, "F" + lastIndexGroup ] ;
-    //         //Range range2 = newSheet.get_Range("A1", "A"+(lastIndexGroup-firstIndexGroup).ToString());
-    //         Range range2 = newSheet.get_Range( "F" + firstIndexGroup, "F" + lastIndexGroup ) ;
-    //         range1.Copy( range2 ) ;
-    //         //CONVERT SHARP TO BYTE 
-    //         if ( newSheet.Shapes.Count > 0 ) {
-    //           for ( int j = 1 ; j <= newSheet.Shapes.Count ; j++ ) {
-    //             var shape = newSheet.Shapes.Item( j ) ;
-    //             shape.Copy() ;
-    //             if ( ! Clipboard.ContainsImage() ) continue ;
-    //             var image = Clipboard.GetImage() ;
-    //             if ( image == null ) continue ;
-    //             using ( var ms = new MemoryStream() ) {
-    //               ms.Position = 0 ;
-    //               image.Save( ms, ImageFormat.Png ) ;
-    //               var imgData = ms.ToArray() ;
-    //               listHeimenZu.Add( new SymbolBytes( firstIndexGroup, imgData, 1 ) ) ;
-    //             }
-    //
-    //             Clipboard.Clear() ;
-    //           }
-    //         }
-    //
-    //         foreach ( Shape s in newSheet.Shapes ) {
-    //           s.Delete() ;
-    //         }
-    //         // else {
-    //         //   var symbols = ((Array)range2.Value) ;
-    //         //   string symbol = string.Empty ;
-    //         //   foreach (object s in symbols) {
-    //         //     if(s!=null) symbol += s.ToString() ;
-    //         //   }
-    //         //   listHeimenZu.Add( new SymbolBytes( firstIndexGroup, Encoding.ASCII.GetBytes( symbol ), 2 ) ) ;
-    //         // }
-    //
-    //         range2.Delete() ;
-    //       }
-    //     }
-    //   }
-    //   catch ( Exception e ) {
-    //     Console.WriteLine( e ) ;
-    //   }
-    //   finally {
-    //     //excelWorkbook?.Save() ;
-    //     excelWorkbook?.Close( false ) ;
-    //     excelApp.Quit() ;
-    //     if ( excelWorkbook != null ) Marshal.ReleaseComObject( excelWorkbook ) ;
-    //     Marshal.ReleaseComObject( excelApp ) ;
-    //   }
-    //
-    //   stopWatch.Stop() ;
-    //   TimeSpan ts = stopWatch.Elapsed ;
-    //   // MessageBox.Show( listHeimenZu.Count +"time: "+ts.TotalSeconds) ;
-    //   return listHeimenZu ;
-    // }
-
-   
-
+    
     private void LoadData( CeedStorable ceeDStorable )
     {
       var viewModel = new ViewModel.CeedViewModel( ceeDStorable ) ;
@@ -351,7 +236,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         const int startRow = 7 ;
         var endRow = workSheet.LastRowNum ;
 
-        //test
+        //get list block row in column C
         for ( var i = startRow ; i <= endRow ; i++ ) {
           var record = workSheet.GetRow( i ).GetCell( 3 ) ;
           if ( record == null || record.CellStyle.IsHidden ) continue ;
@@ -372,8 +257,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           blocks.Add( firstIndexGroup + 1, lastIndexGroup+1 ) ;
           i-- ;
         }
-
-        var listHeimenZu = GetListHeimenZu( path, blocks ) ;
+        var listFloorPlan = GetSymbolImages( path, blocks ) ;
         
         for ( var i = startRow ; i <= endRow ; i++ ) {
           List<string> ceeDModelNumbers = new List<string>() ;
@@ -383,7 +267,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           string floorPlanSymbol = string.Empty ;
           string instrumentationSymbol = string.Empty ;
           string ceeDName = string.Empty ;
-          // int startBlock, endBock ;
           var record = workSheet.GetRow( i ).GetCell( 3 ) ;
           if ( record == null || record.CellStyle.IsHidden ) continue ;
           var name = GetCellValue( record ) ;
@@ -433,18 +316,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       
           var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
           if ( ! ceeDModelNumbers.Any() ) {
-            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName ) ;
+            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName ) ;
             ceedModelData.Add( ceeDModel ) ;
           }
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
-              List<Image>? heimenSymbolBytes = listHeimenZu.Where( b => b.Postion == firstIndexGroup + 1 && b.SymbolType == 1 ).Select( b => b.Image ).ToList() ;
+              var symbolBytes = listFloorPlan.Where( b => b.Postion == firstIndexGroup + 1).ToList().OrderBy(b=>b.MarginLeft) ;
+              var floorPlanImages = symbolBytes.Select( b => b.Image ).ToList() ;
              
-              //List<byte[]> keisoSymbolBytes = listKeisoZu.Where( b => b.Postion == firstIndexGroup + 1 && b.SymbolType == 1 ).Select( b => b.SymbolByte ).ToList() ;
               CeedModel ceeDModel ;
-              if ( heimenSymbolBytes.Any()  ) {
-                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, heimenSymbolBytes, floorPlanSymbol, ceeDName ) ;
+              if ( floorPlanImages.Any()  ) {
+                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanImages, floorPlanSymbol, ceeDName ) ;
               }
               else {
                 ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol,instrumentationSymbol, ceeDName ) ;
@@ -483,19 +366,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
   }
 
-  public class SymbolBytes
+  public class SymbolImage
   {
-    public SymbolBytes( int postion, Image image, int symbolType )
+    public SymbolImage( int postion, Image image, float marginLeft )
     {
       this.Postion = postion ;
       // SymbolByte = symbolByte ;
       Image = image ;
-      SymbolType = symbolType ;
+      MarginLeft = marginLeft ;
     }
 
     public int Postion { get ; set ; }
     // public byte[] SymbolByte { get ; set ; }
     public Image Image { get ; set ; }
-    public int SymbolType { get ; set ; } //1: image; 2: text
+    public float MarginLeft { get ; set ; } 
   }
 }
