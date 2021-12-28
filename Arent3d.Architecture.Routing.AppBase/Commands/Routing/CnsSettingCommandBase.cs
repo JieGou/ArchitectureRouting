@@ -58,10 +58,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                 // set value to "Construction Item" property
                 var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
+                var listApplyConduit = GetConduitRelated(document, conduitList) ;
                 using Transaction transaction = new Transaction( document ) ;
                 transaction.Start( "Set conduits property" ) ;
 
-                SetConstructionItemForElements( conduitList.ToList(), categoryName ) ;
+                SetConstructionItemForElements( listApplyConduit.ToList(), categoryName ) ;
 
                 transaction.Commit() ;
 
@@ -146,7 +147,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 using Transaction transaction = new Transaction( document ) ;
                 transaction.Start( "Set element property" ) ;
 
-                SetConstructionItemForElements( elementList.ToList(), categoryName ) ;
+                foreach ( var connector in elementList ) {
+                  var parentGroup = document.GetElement( connector.GroupId ) as Group ;
+                  if ( parentGroup != null ) {
+                    // ungroup before set property
+                    var attachedGroup = document.GetAllElements<Group>()
+                      .Where( x => x.AttachedParentId == parentGroup.Id ) ;
+                    List<ElementId> listTextNoteIds = new List<ElementId>() ;
+                    // ungroup textNote before ungroup connector
+                    foreach ( var group in attachedGroup ) {
+                      var ids = @group.GetMemberIds() ;
+                      listTextNoteIds.AddRange( ids ) ;
+                      @group.UngroupMembers() ;
+                    }
+
+                    connectorGroups.Add( connector.Id, listTextNoteIds ) ;
+                    parentGroup.UngroupMembers() ;
+                  }
+                }
+
+                var listConduits = elementList.Where( x => x is Conduit ).ToList() ;
+                var listApplyElement = new List<Element>() ;
+                listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
+                listApplyElement.AddRange(  GetConduitRelated(document, listConduits) );
+                SetConstructionItemForElements( listApplyElement.ToList(), categoryName ) ;
 
                 transaction.Commit() ;
 
@@ -180,7 +204,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None &&
-               cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector ) {
+               (cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector || cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.All )) {
             foreach ( var item in connectorGroups ) {
               // create group for updated connector (with new property) and related text note if any
               List<ElementId> groupIds = new List<ElementId>() ;
@@ -196,6 +220,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return Result.Succeeded ;
+    }
+
+    private List<Element> GetConduitRelated(Document doc, List<Element> conduits)
+    {
+      var result = new List<Element>() ;
+      var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
+      var allConduits = doc.GetAllElements<Conduit>() ;
+      var availableDetail =
+        detailSymbolStorable.DetailSymbolModelData.Where( x => conduits.Any( y => y.Id.ToString() == x.ConduitId ) ) ;
+      foreach ( var detailSymbol in availableDetail ) {
+        var relatedDetail = detailSymbolStorable.DetailSymbolModelData.Where( x =>
+          x.FromConnectorId == detailSymbol.FromConnectorId && x.ToConnectorId == detailSymbol.ToConnectorId ).ToList() ;
+        if ( relatedDetail.Any() ) {
+          var relateConduits = allConduits.Where( x => relatedDetail.Any( y => y.ConduitId == x.Id.ToString() ) ) ;
+          result.AddRange( relateConduits );
+        }
+      }
+      return result ;
     }
 
     private static void SaveCnsList( Document document, CnsSettingStorable list )
