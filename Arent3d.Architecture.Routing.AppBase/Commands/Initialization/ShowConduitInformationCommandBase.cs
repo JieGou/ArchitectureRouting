@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                     foreach ( var master in masterModels ) {
                       var conduitModels = conduitsModelData
                         .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
-                      conduitInformationModels.Add( new ConduitInformationModel( false, floor,
+                      conduitInformationModels.Add( new ConduitInformationModel( false, floor, ceedModel.CeeDSetCode,
                         existSymbolDetail.DetailSymbol, master.Type, master.Size1, master.Size2, "1", string.Empty,
                         string.Empty, string.Empty, master.Type,
                         master.Size1, "1", hiroiCdModel?.ConstructionClassification,
@@ -76,16 +76,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
           }
         }
-
-        conduitInformationModels = new ObservableCollection<ConduitInformationModel>( conduitInformationModels
-          .GroupBy( x => new { x?.DetailSymbol, x?.WireType } ).Select( g =>
-          {
-            g.First().Quantity = g.Count() ;
-            g.First().WireBook = g.Count().ToString() ;
-            g.First().NumberOfPipes = g.Count().ToString() ;
-            g.First().Remark = g.Count() > 1 ? $"x{g.Count()}" : string.Empty ;
-            return g.First() ;
-          } ).OrderBy( y => y.DetailSymbol ) ) ;
       }
       catch {
         return Result.Cancelled ;
@@ -138,7 +128,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         result += $"\r{line}\r{group.Key}" ;
         result = @group.Value.Aggregate( result,
           ( current, item ) => current +
-                               $"\r{line}\r{AddFullString( item.WireType + item.WireSize, maxWireType )}\t-{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}\tX{item.Quantity}\t{AddFullString( CheckEmptyString( item.PipingType + item.PipingSize, maxPipingType ), maxPipingType )}\t{item.Remark}" ) ;
+                               $"\r{line}\r{AddFullString( item.WireType + item.WireSize, maxWireType )}\t-{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}\tX1\t{AddFullString( CheckEmptyString( item.PipingType + item.PipingSize, maxPipingType ), maxPipingType )}\t{item.Remark}" ) ;
       }
 
       result += $"\r{line}" ;

@@ -6,6 +6,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
   {
     public bool? CalculationExclusion { get ; set ; }
     public string? Floor { get ; set ; }
+    public string? CeeDCode { get ; set ; }
     public string? DetailSymbol { get ; set ; }
     public string? WireType { get ; set ; }
     public string? WireSize { get ; set ; }
@@ -28,6 +29,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public ConduitInformationModel( 
       bool? calculationExclusion, 
       string? floor, 
+      string? ceeDCode,
       string? detailSymbol,
       string? wireType, 
       string? wireSize, 
@@ -47,6 +49,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     {
       CalculationExclusion = calculationExclusion ;
       Floor = floor ;
+      CeeDCode = ceeDCode ;
       DetailSymbol = detailSymbol ;
       WireType = wireType ;
       WireSize = wireSize ;
