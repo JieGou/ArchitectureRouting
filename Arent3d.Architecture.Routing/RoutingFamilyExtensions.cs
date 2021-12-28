@@ -31,6 +31,10 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Routing Corn Point" )]
     [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
     CornPoint,
+    
+    [NameOnRevit( "AHU※※2，3，6，7." )]
+    [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
+    AHU_2367,
 
     [NameOnRevit( "Routing Connector Point" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]

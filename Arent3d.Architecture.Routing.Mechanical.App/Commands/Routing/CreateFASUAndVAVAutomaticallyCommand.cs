@@ -61,8 +61,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      IList<Element> spaces = GetAllSpaces( uiDocument.Document ).Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) ).ToArray() ;
+      ConnectorPicker.IPickResult iPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand.PickConnector", null, GetAddInType() ) ;
+      GetAHUNumberOfAHU( iPickResult.PickedConnector!, out int ahuNumberOfAHU ) ;
 
+      IList<Element> spaces = GetAllSpaces( uiDocument.Document )
+        .Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) && space.HasParameter( AHUNumberParameter.AHUNumber ) && space.GetPropertyInt( AHUNumberParameter.AHUNumber ) == ahuNumberOfAHU ).ToArray() ;
+      
       foreach ( var space in spaces ) {
         if ( ! HasBoundingBox( uiDocument.Document, space ) ) {
           return ( false, $"`{space.Name}` have not bounding box." ) ;
@@ -72,12 +76,20 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( ! RoundDuctTypeExists( uiDocument.Document ) )
         return ( false, "There no RoundDuct family in the document." ) ;
 
-      ConnectorPicker.IPickResult iPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand.PickConnector", null, GetAddInType() ) ;
       if ( iPickResult.PickedConnector != null && CreateFASUAndVAVAutomatically( uiDocument.Document, iPickResult.PickedConnector, spaces ) == Result.Succeeded ) {
         TaskDialog.Show( "FASUとVAVの自動配置", "FASUとVAVを配置しました。" ) ;
       }
 
       return ( true, null ) ;
+    }
+    
+    private static void GetAHUNumberOfAHU( Connector rootConnector, out int ahuNumberOfAHU )
+    {
+      var AHUElements = rootConnector.GetConnectedConnectors().Select( c => c.Owner.GetConnectors()
+        .SelectMany( s => s.GetConnectedConnectors() ).Where( s => s.IsConnected )
+        .Select( s => s.Owner ).OfType<FamilyInstance>().FirstOrDefault( f => f.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) ) ;
+      var AHUElement = AHUElements.OfType<Element>().FirstOrDefault() ;
+      AHUElement!.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
     }
 
     private AddInType GetAddInType() => AppCommandSettings.AddInType ;
@@ -108,8 +120,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( ! branchNumberToSpacesDictionary.TryGetValue( 0, out var rootSpaces ) ) {
         rootSpaces = new List<Element>() ;
       }
-
-      GetAHUNumberOfAHU( pickedConnector, out int ahuNumberOfAHU ) ;
+      
       if ( ! GetFASUAndVAVConnectorInfo( document, out var fasuInCoonectorHeight, out var vavOutConnectorHeight, out var vavUpstreamConnectorHeight, out var vavUpstreamConnectorNormal ) ) return Result.Failed ;
       CalcFASUAndVAVHeight( pickedConnector, fasuInCoonectorHeight, vavUpstreamConnectorHeight, vavOutConnectorHeight, out var heightOfFASU, out var heightOfVAV ) ;
 
@@ -135,10 +146,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
             listOfFASUsAndVAVsInSpace.listOfVAVs.First().LookupParameter( VAVAirflowName ).Set( designSupplyAirflow ) ;
             continue ;
           }
-
-          // AHUのAHUNumberのものだけを対象にする
-          space.TryGetProperty( AHUNumberParameter.AHUNumber, out int ahuNumberOfSpace ) ;
-          if ( ahuNumberOfSpace != ahuNumberOfAHU ) continue ;
 
           BoundingBoxXYZ boxOfSpace = space.get_BoundingBox( document.ActiveView ) ;
           if ( boxOfSpace == null ) continue ;
@@ -177,13 +184,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return Result.Succeeded ;
-    }
-
-    private static void GetAHUNumberOfAHU( Connector rootConnector, out int ahuNumberOfAHU )
-    {
-      var parentElement = rootConnector.GetConnectedConnectors().Select( c => c.Owner ).FirstOrDefault() ;
-      var AHUElement = parentElement!.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).Where( c => c.IsConnected ).Select( c => c.Owner ).FirstOrDefault() ;
-      AHUElement!.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
     }
 
     private static double GetComponentOfRootConnectorNormal( IConnector rootConnector, LocationPoint targetConnectorPos )
