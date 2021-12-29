@@ -2,6 +2,7 @@ using System ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using System.Collections.ObjectModel ;
+using System.IO ;
 using System.Linq ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
@@ -77,7 +78,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       // Show open file dialog box
       bool? result = dlg.ShowDialog() ;
-
       // Process open file dialog box results
       if ( result == true ) {
         // Open document
@@ -93,6 +93,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         AddDefaultValue() ;
+        CnsSettingStorable.CnsSettingData = CnsSettingModels ;
       }
     }
 
@@ -115,6 +116,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             createText += item.CategoryName.Trim() + Environment.NewLine + Environment.NewLine ;
           }
         }
+        
+        File.WriteAllText(dlg.FileName, createText);
       }
     }
 
@@ -154,6 +157,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var item = CnsSettingModels.ElementAt( seletectedIndex ) ;
         ApplyToSymbolsText = item.CategoryName ;
         cnsStorables.ElementType = UpdateType ;
+        cnsStorables.CnsSettingData = CnsSettingModels ;
       }
     }
 
