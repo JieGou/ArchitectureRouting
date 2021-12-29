@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new TempColorWrapper( uiDocument, pickResult.GetAllRelatedElements() ) ;
     }
 
-    private class TempColorWrapper : IDisposable
+    private class TempColorWrapper : MustBeDisposed
     {
       private readonly Document _document ;
       private readonly TempColor _tempColor ;
@@ -35,20 +35,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         } ) ;
       }
 
-      public void Dispose()
+      protected override void Finally()
       {
-        GC.SuppressFinalize( this ) ;
-
         _document.Transaction( "TransactionName.Commands.Routing.Common.RevertColor".GetAppStringByKeyOrDefault( null ), t =>
         {
           _tempColor.Dispose() ;
           return Result.Succeeded ;
         } ) ;
-      }
-
-      ~TempColorWrapper()
-      {
-        throw new InvalidOperationException( $"`{nameof( TempColorWrapper )}` is not disposed. Use `using` statement." ) ;
       }
     }
 
@@ -100,6 +93,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // Create Pass Point
       var routeName = subRoute.Route.Name ;
       if ( InsertBranchingPassPointElement( document, subRoute, element, pos ) is not { } passPointElement ) throw new InvalidOperationException() ;
+      if ( isFrom ) {
+        var fromEndPointKey = subRoute.FromEndPoints.FirstOrDefault()!.Key ;
+        var fromElementId = fromEndPointKey!.GetElementId() ;
+        var endPointKey = subRoute.ToEndPoints.FirstOrDefault()?.Key ;
+        var elementId = endPointKey!.GetElementId() ;
+        passPointElement.SetProperty( PassPointParameter.RelatedConnectorId, elementId ) ;
+        passPointElement.SetProperty( PassPointParameter.RelatedFromConnectorId, fromElementId ) ;
+      }
       var otherSegments = GetNewSegmentList( subRoute, element, passPointElement ).Select( segment => ( routeName, segment ) ).EnumerateAll() ;
 
       // Create PassPointBranchEndPoint

@@ -18,26 +18,12 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string FloorPlanSymbol { get ; set ; }
     public string InstrumentationSymbol { get ; set ; }
     public string Name { get ; set ; }
-    
-    public  BitmapImage? InstrumentationImages { get ; set ; }
+    public string Condition { get ; set ; }
+    public BitmapImage? InstrumentationImages { get ; set ; }
     public BitmapImage? FloorImages { get ; set ; }
-    
     public List<BitmapImage?>? ListImages { get ; set ; }
-  
-    
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol,  string name )
-    {
-      CeeDModelNumber = ceeDModelNumber ;
-      CeeDSetCode = ceeDSetCode ;
-      GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
-      ModelNumber = modelNumber ;
-      FloorPlanSymbol = floorPlanSymbol ;
-      InstrumentationSymbol = string.Empty ;
-      Name = name ;
-      ListImages = null ;
-      FloorImages = null ;
-    }
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol,  string instrumentationSymbol, string name )
+
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
@@ -46,23 +32,26 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       FloorPlanSymbol = floorPlanSymbol ;
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
+      Condition = condition ;
       ListImages = null ;
       FloorImages = null ;
     }
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, string floorPlanSymbol,  string name )
+
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, string floorPlanSymbol, string instrumentationSymbol, string name, string condition )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
       ModelNumber = modelNumber ;
       FloorPlanSymbol = floorPlanSymbol ;
-      InstrumentationSymbol = string.Empty ;
+      InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
-      FloorImages = BitmapToImageSource(GetImage( floorPlanImages)) ;
+      Condition = condition ;
+      FloorImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
       ListImages = GetImages( floorPlanImages ) ;
     }
 
-    static BitmapImage? BitmapToImageSource( Bitmap? bitmap )
+    private static BitmapImage? BitmapToImageSource( Bitmap? bitmap )
     {
       using ( MemoryStream memory = new MemoryStream() ) {
         if ( bitmap != null ) bitmap.Save( memory, System.Drawing.Imaging.ImageFormat.Bmp ) ;
@@ -76,6 +65,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         return bitmapimage ;
       }
     }
+
     private List<BitmapImage?>? GetImages( List<Image>? images )
     {
       List<BitmapImage?>? listImages = new List<BitmapImage?>() ;
@@ -85,25 +75,26 @@ namespace Arent3d.Architecture.Routing.Storable.Model
             var bitmapImage = BitmapToImageSource( (Bitmap) image ) ;
             listImages.Add( bitmapImage ) ;
           }
-
-       
       }
       catch ( Exception e ) {
         Console.WriteLine( e ) ;
       }
+
       return listImages ;
     }
+
     private Bitmap? GetImage( List<Image>? symbolImages )
-    { try {
-      if ( symbolImages is { Count: 1 } ) return (Bitmap) symbolImages[0] ;
-      return MergeImages( symbolImages ) ;
+    {
+      try {
+        if ( symbolImages is { Count: 1 } ) return (Bitmap) symbolImages[ 0 ] ;
+        return MergeImages( symbolImages ) ;
       }
       catch ( Exception e ) {
         Console.WriteLine( e ) ;
-        return null;
+        return null ;
       }
     }
-   
+
     private static Bitmap MergeImages( List<Image>? images )
     {
       try {
@@ -113,14 +104,14 @@ namespace Arent3d.Architecture.Routing.Storable.Model
           // var centerPoint = ( maxImageHeight - minImageHeight ) / 2 ;
           var padding = 45 ;
           var imageWidth = images.Sum( item => item.Width ) + ( images.Count - 1 ) * padding ;
-          var finalImage = new Bitmap( imageWidth, maxImageHeight,System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ;
+          var finalImage = new Bitmap( imageWidth, maxImageHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ;
           using ( Graphics g = Graphics.FromImage( finalImage ) ) {
-            g.Clear(Color.White);
+            g.Clear( Color.White ) ;
             var offset = 0 ;
 
             for ( var i = 0 ; i < images.Count ; i++ ) {
               Image image = images[ i ] ;
-              g.DrawImage(image, new Rectangle(new Point(offset,0), image.Size), new Rectangle(new Point(), image.Size), GraphicsUnit.Pixel);  
+              g.DrawImage( image, new Rectangle( new Point( offset, 0 ), image.Size ), new Rectangle( new Point(), image.Size ), GraphicsUnit.Pixel ) ;
               offset += image.Width + padding ;
             }
           }
@@ -132,26 +123,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         Console.WriteLine( e ) ;
         throw ;
       }
-      return new Bitmap(1,1) ;
-    }
-    private static Bitmap ConvertTextToImage(string text,int height )
-    {
-      Bitmap bmp = new Bitmap( 30, height ) ;
-      try {
-        using ( Graphics graphics = Graphics.FromImage( bmp ) ) {
-          Font font = new Font( "ＭＳ Ｐゴシック", 10 ) ;
-          graphics.FillRectangle( new SolidBrush( Color.Transparent ), 0, 0, bmp.Width, bmp.Height ) ;
-          graphics.DrawString( text, font, new SolidBrush( Color.Black ), 0, 0 ) ;
-          graphics.Flush() ;
-          //font.Dispose();
-          graphics.Dispose() ;
-        }
-      }
-      catch ( Exception e ) {
-        Console.WriteLine( e ) ;
-      }
 
-      return bmp ;
+      return new Bitmap( 1, 1 ) ;
     }
-    }
+  }
 }

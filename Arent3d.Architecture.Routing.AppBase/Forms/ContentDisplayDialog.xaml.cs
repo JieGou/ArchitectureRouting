@@ -56,8 +56,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _pickUpStorable = _document.GetPickUpStorable() ;
       if ( ! _pickUpModels.Any() ) MessageBox.Show( "Don't have element.", "Result Message" ) ;
       else {
-        _pickUpModels = ( from pickUpModel in _pickUpModels orderby pickUpModel.Floor ascending select pickUpModel ).ToList() ;
-        var viewModel = new PickUpViewModel( _pickUpStorable, _pickUpModels ) ;
+        List<PickUpModel> pickUpConduitByNumbers = PickUpModelByNumber( ProductType.Conduit ) ;
+        List<PickUpModel> pickUpRackByNumbers = PickUpModelByNumber( ProductType.Cable ) ;
+        var pickUpModels = _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
+        if ( pickUpConduitByNumbers.Any() ) pickUpModels.AddRange( pickUpConduitByNumbers ) ;
+        if ( pickUpRackByNumbers.Any() ) pickUpModels.AddRange( pickUpRackByNumbers ) ;
+        pickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor ascending select pickUpModel ).ToList() ;
+        var viewModel = new PickUpViewModel( _pickUpStorable, pickUpModels ) ;
         this.DataContext = viewModel ;
       }
     }
@@ -206,7 +211,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             modelNumber = ceeDModel.ModelNumber ;
             specification2 = ceeDModel.CeeDSetCode ;
             supplement = ceeDModel.Name ;
-            
+
             var ceeDModelNumber = string.Empty ;
             if ( _hiroiSetCdMasterNormalModels.Any() ) {
               var hiroiSetCdMasterNormalModel = _hiroiSetCdMasterNormalModels.FirstOrDefault( h => h.SetCode == ceeDSetCode ) ;
@@ -243,12 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private string GetCeeDSetCodeOfElement( Element element )
     {
-      var ceeDSetCode = string.Empty ;
-      if ( element.GroupId == ElementId.InvalidElementId ) return ceeDSetCode ?? string.Empty ;
-      var groupId = _document.GetAllElements<Group>().FirstOrDefault( g => g.AttachedParentId == element.GroupId )?.Id ;
-      if ( groupId != null )
-        ceeDSetCode = _document.GetAllElements<TextNote>().FirstOrDefault( t => t.GroupId == groupId )?.Text.Trim( '\r' ) ;
-
+      element.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCode ) ;
       return ceeDSetCode ?? string.Empty ;
     }
 
@@ -309,14 +309,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems, string constructionItem )
     {
-      var toEndPoint = conduit.GetNearestEndPoints( false ) ;
-      var endPointKey = toEndPoint.FirstOrDefault()?.Key ;
-      var elementId = endPointKey!.GetElementId() ;
-      var fromEndPoint = conduit.GetNearestEndPoints( true ) ;
-      var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;
-      var fromElementId = fromEndPointKey!.GetElementId() ;
-      if ( string.IsNullOrEmpty( elementId ) ) return ;
-      var checkPickUp = AddPickUpConnectors( allConnectors, pickUpConnectors, elementId, fromElementId, pickUpNumbers ) ;
+      var routeName = conduit.GetRouteName() ;
+      if ( string.IsNullOrEmpty( routeName ) ) return ;
+      var checkPickUp = AddPickUpConnectors( allConnectors, pickUpConnectors, routeName!, pickUpNumbers ) ;
       if ( ! checkPickUp ) return ;
       quantities.Add( Math.Round( quantity, 2 ) ) ;
       switch ( conduitType ) {
@@ -332,6 +327,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem ) ;
+    }
+
+    private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers )
+    {
+      var toConnector = GetToConnectorOfRoute( allConnectors, routeName ) ;
+      if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
+      pickUpConnectors.Add( toConnector ) ;
+      if ( ! _pickUpNumbers.ContainsValue( routeName ) ) {
+        _pickUpNumbers.Add( _pickUpNumber, routeName ) ;
+        pickUpNumbers.Add( _pickUpNumber ) ;
+        _pickUpNumber++ ;
+      }
+      else {
+        var pickUpNumber = _pickUpNumbers.FirstOrDefault( n => n.Value == routeName ).Key ;
+        pickUpNumbers.Add( pickUpNumber ) ;
+      }
+
+      return true ;
     }
 
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string elementId, string fromElementId, List<int> pickUpNumbers )
@@ -369,6 +382,39 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       return false ;
+    }
+
+    private List<PickUpModel> PickUpModelByNumber( ProductType productType )
+    {
+      List<PickUpModel> pickUpModels = new List<PickUpModel>() ;
+      var equipmentType = productType.GetFieldName() ;
+      var pickUpModelsByNumber = _pickUpModels.Where( p => p.EquipmentType == equipmentType ).GroupBy( x => x.PickUpNumber, ( key, p ) => new { Number = key, PickUpModels = p.ToList() } ) ;
+      foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
+        var sumQuantity = pickUpModelByNumber.PickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
+        var pickUpModel = pickUpModelByNumber.PickUpModels.FirstOrDefault() ;
+        if ( pickUpModel == null ) continue ;
+        PickUpModel newPickUpModel = new PickUpModel( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction ) ;
+        pickUpModels.Add( newPickUpModel ) ;
+      }
+
+      return pickUpModels ;
+    }
+
+    private Element? GetToConnectorOfRoute( IReadOnlyCollection<Element> allConnectors, string routeName )
+    {
+      var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      foreach ( var conduit in conduitsOfRoute ) {
+        var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
+        if ( ! toEndPoint.Any() ) continue ;
+        var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
+        var toElementId = toEndPointKey!.GetElementId() ;
+        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
+        if ( toConnector == null || toConnector!.IsTerminatePoint() || toConnector!.IsPassPoint() ) continue ;
+        return toConnector ;
+      }
+
+      return null ;
     }
   }
 }

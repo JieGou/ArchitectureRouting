@@ -9,7 +9,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
 {
-  [DisplayName( "Demo: Delete All Routed Elements" )]
+  [DisplayName( "ルーティング要素\nのみ削除" )]
   [Transaction( TransactionMode.Manual )]
   public class Demo_DeleteAllRoutedElements : IExternalCommand
   {

@@ -23,6 +23,9 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     protected override IAppUIBase? CreateAppUI( UIControlledApplication application )
     {
+      // Validate StorableBase classes
+      StorableBase.ValidateAllStorableClassDefinitions( typeof( AppInfo ).Assembly ) ;
+
       return null ;
     }
 
