@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
@@ -107,6 +108,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var (fromPickResult, toPickResult, routeProperty, classificationInfo) = pickState ;
       
       RouteGenerator.CorrectEnvelopes( document ) ;
+      ChangeFromConnectorAndToConnectorColor( document, fromPickResult, toPickResult ) ;
 
       if ( null != fromPickResult.SubRoute ) {
         return CreateNewSegmentListForRoutePick( fromPickResult, toPickResult, false, routeProperty, classificationInfo ) ;
@@ -286,6 +288,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
 
       return lastIndex + 1 ;
+    }
+
+    private static void ChangeFromConnectorAndToConnectorColor( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
+    {
+      var connectors = new List<Element>() ;
+      var fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault( c => c.Id == fromPickResult.PickedElement.Id ) ;
+      if ( fromConnector != null )
+        connectors.Add( fromConnector ) ;
+      
+      var toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault( c => c.Id == toPickResult.PickedElement.Id ) ;
+      if ( toConnector != null )
+        connectors.Add( toConnector ) ;
+
+      if ( ! connectors.Any() ) return ;
+      var color = new Color( 0, 0, 0 ) ;
+      ConfirmUnsetCommandBase.ChangeElementColor( document, connectors, color ) ;
     }
   }
 }

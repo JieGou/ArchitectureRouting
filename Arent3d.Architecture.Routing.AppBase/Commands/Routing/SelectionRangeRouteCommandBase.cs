@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.EndPoints ;
@@ -245,6 +246,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
         return ( subRouteName, segment ) ;
       } ) ) ;
+      
+      // change color connectors
+      var allConnectors = new List<FamilyInstance> { powerConnector } ;
+      allConnectors.AddRange( sensorConnectors ) ;
+      var color = new Color( 0, 0, 0 ) ;
+      ConfirmUnsetCommandBase.ChangeElementColor( document, allConnectors, color ) ;
 
       return result ;
 
