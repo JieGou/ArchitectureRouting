@@ -64,8 +64,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       ConnectorPicker.IPickResult iPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand.PickConnector", null, GetAddInType() ) ;
       GetAHUNumberOfAHU( iPickResult.PickedConnector!, out int ahuNumberOfAHU ) ;
 
-      IList<Element> spaces = GetAllSpaces( uiDocument.Document )
-        .Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) && space.HasParameter( AHUNumberParameter.AHUNumber ) && space.GetPropertyInt( AHUNumberParameter.AHUNumber ) == ahuNumberOfAHU ).ToArray() ;
+      IList<Element> spaces = GetAllSpaces( uiDocument.Document ).Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) && space.GetSpaceAHUNumber() == ahuNumberOfAHU ).ToArray() ;
       
       foreach ( var space in spaces ) {
         if ( ! HasBoundingBox( uiDocument.Document, space ) ) {
@@ -82,14 +81,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       return ( true, null ) ;
     }
-    
+
     private static void GetAHUNumberOfAHU( Connector rootConnector, out int ahuNumberOfAHU )
     {
-      var AHUElements = rootConnector.GetConnectedConnectors().Select( c => c.Owner.GetConnectors()
-        .SelectMany( s => s.GetConnectedConnectors() ).Where( s => s.IsConnected )
-        .Select( s => s.Owner ).OfType<FamilyInstance>().FirstOrDefault( f => f.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) ) ;
-      var AHUElement = AHUElements.OfType<Element>().FirstOrDefault() ;
-      AHUElement!.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
+      ahuNumberOfAHU = -1 ;
+      if ( rootConnector.Owner is FamilyInstance parentElement && parentElement.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) {
+        parentElement.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
+        return ;
+      }
+
+      var connectors = rootConnector.GetConnectedConnectors() ;
+      foreach ( var connector in connectors ) {
+        var connectedElements = connector.Owner.GetConnectors().SelectMany( s => s.GetConnectedConnectors() ).Where( s => s.IsConnected ).Select( s => s.Owner ) ;
+        var AHUElement = connectedElements.OfType<FamilyInstance>().FirstOrDefault( f => f.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) ;
+        if ( AHUElement == null ) continue ;
+        AHUElement.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
+        return ;
+      }
     }
 
     private AddInType GetAddInType() => AppCommandSettings.AddInType ;
