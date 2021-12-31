@@ -131,6 +131,10 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "140_VAV_変風量ユニット_丸ダクト用" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     TTE_VAV_140,
+
+    [NameOnRevit( "Arent Room" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Room,
   }
 
   public static class RoutingFamilyExtensions
