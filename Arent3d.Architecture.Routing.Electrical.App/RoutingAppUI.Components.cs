@@ -168,6 +168,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( OffsetSettingCommand ), OnlyInitialized = true )]
         private static class OffsetSettingCommandButton { }
+
+        [Button( typeof( CreateRoomCommand ), OnlyInitialized = true )]
+        private static class CreateRoomCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.rackcommand", TitleKey = "Electrical.App.Panels.Routing.RackCommand" )]
