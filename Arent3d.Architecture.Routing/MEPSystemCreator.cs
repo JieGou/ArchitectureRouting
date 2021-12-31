@@ -610,15 +610,13 @@ namespace Arent3d.Architecture.Routing
 
     private static void SetRoutingFromToConnectorIdsForFitting( Element element )
     {
-      var connectorSet = element.GetConnectors().Select( c => new ConnectorId( c ) ).ToHashSet() ;
-
       var fromList = new List<int>() ;
       var toList = new List<int>() ;
       element.GetConnectors().ForEach( conn =>
       {
         if ( false == conn.IsAnyEnd() ) return ;
 
-        foreach ( var partner in conn.GetConnectedConnectors().Where( c => connectorSet.Contains( new ConnectorId( c ) ) ) ) {
+        foreach ( var partner in conn.GetConnectedConnectors() ) {
           if ( null == partner ) return ;
           if ( partner.IsRoutingConnector( true ) ) {
             toList.Add( conn.Id ) ;
