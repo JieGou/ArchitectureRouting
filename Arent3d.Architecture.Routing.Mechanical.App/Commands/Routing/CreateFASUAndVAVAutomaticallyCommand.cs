@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       ConnectorPicker.IPickResult iPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand.PickConnector", null, GetAddInType() ) ;
-      var ahuNumberOfAHU = GetAHUNumberOfAHU( iPickResult.PickedConnector! ) ;
+      var ahuNumberOfAHU = RoutingVAVUtil.GetAHUNumberOfAHU( iPickResult.PickedConnector! ) ;
       IList<Element> spaces = GetAllSpaces( uiDocument.Document ).Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) && ( ahuNumberOfAHU != (int) AHUNumberType.Invalid && space.GetSpaceAHUNumber() == ahuNumberOfAHU ) ).ToArray() ;
       
       foreach ( var space in spaces ) {
@@ -79,28 +79,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return ( true, null ) ;
-    }
-
-    private static int GetAHUNumberOfAHU( Connector rootConnector )
-    {
-      var ahuNumberOfAHU = (int) AHUNumberType.Invalid ;
-      if ( rootConnector.Owner is FamilyInstance parentElement && parentElement.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) {
-        parentElement.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
-        return ahuNumberOfAHU ;
-      }
-
-      var connectors = rootConnector.GetConnectedConnectors() ;
-      foreach ( var connector in connectors ) {
-        // Get all the connected elements
-        var connectedElements = connector.Owner.GetConnectors().SelectMany( s => s.GetConnectedConnectors() ).Where( s => s.IsConnected ).Select( s => s.Owner ) ;
-        // Get the AHU element
-        var ahuElement = connectedElements.OfType<FamilyInstance>().FirstOrDefault( f => f.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) ;
-        if ( ahuElement == null ) continue ;
-        ahuElement.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
-        break ;
-      }
-
-      return ahuNumberOfAHU ;
     }
 
     private AddInType GetAddInType() => AppCommandSettings.AddInType ;
