@@ -13,6 +13,7 @@ using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
+using NPOI.XSSF.UserModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -39,6 +40,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         foreach ( var element in pickedObjects ) {
           string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
           string constructionItem = element.LookupParameter( "Construction Item" ).AsValueString() ;
+          string pipingType = element.Name;
+          string pipingNumber = "↑" ;
+          var routeName = element.GetRouteName() ;
+          if ( !string.IsNullOrEmpty( routeName ) ) {
+            var route =  uiDoc.Document.CollectRoutes( AddInType.Electrical ).FirstOrDefault( x=>x.RouteName==routeName ) ;
+            if ( route != null ) {
+              var parentRouteName = route.GetParentBranches().ToList().LastOrDefault()?.RouteName ;
+              var childBranches = route.GetChildBranches().ToList() ;
+              if ( string.IsNullOrEmpty( parentRouteName ) && childBranches.Any() ) {
+                pipingNumber = "1" ;
+              }
+            }
+          }
           var existSymbolDetail =
             detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => element.Id.ToString() == x.ConduitId ) ;
           if ( existSymbolDetail != null && ceedStorable != null ) {
@@ -65,8 +79,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                         .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
                       conduitInformationModels.Add( new ConduitInformationModel( false, floor, ceedModel.CeeDSetCode,
                         existSymbolDetail.DetailSymbol, master.Type, master.Size1, master.Size2, "1", string.Empty,
-                        string.Empty, string.Empty, master.Type,
-                        master.Size1, "1", hiroiCdModel?.ConstructionClassification,
+                        string.Empty, string.Empty, pipingType,
+                        string.Empty, pipingNumber, hiroiCdModel?.ConstructionClassification,
                         conduitModels.FirstOrDefault()?.Classification ?? "", constructionItem, constructionItem,
                         "" ) ) ;
                     }
