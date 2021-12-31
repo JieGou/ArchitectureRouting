@@ -40,11 +40,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         foreach ( var element in pickedObjects ) {
           string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
           string constructionItem = element.LookupParameter( "Construction Item" ).AsValueString() ;
-          string pipingType = element.Name;
+          string pipingType = element.Name ;
           string pipingNumber = "↑" ;
           var routeName = element.GetRouteName() ;
-          if ( !string.IsNullOrEmpty( routeName ) ) {
-            var route =  uiDoc.Document.CollectRoutes( AddInType.Electrical ).FirstOrDefault( x=>x.RouteName==routeName ) ;
+          if ( ! string.IsNullOrEmpty( routeName ) ) {
+            var route = uiDoc.Document.CollectRoutes( AddInType.Electrical )
+              .FirstOrDefault( x => x.RouteName == routeName ) ;
             if ( route != null ) {
               var parentRouteName = route.GetParentBranches().ToList().LastOrDefault()?.RouteName ;
               var childBranches = route.GetChildBranches().ToList() ;
@@ -55,12 +56,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
           var existSymbolDetail =
             detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => element.Id.ToString() == x.ConduitId ) ;
-          if ( existSymbolDetail != null && ceedStorable != null ) {
-            if ( ! processedDetailSymbol.Contains( existSymbolDetail.FromConnectorId +
-                                                   existSymbolDetail.ToConnectorId ) ) {
-              processedDetailSymbol.Add( existSymbolDetail.FromConnectorId + existSymbolDetail.ToConnectorId ) ;
+          var existSymbolRoute = element.GetRouteName() ?? string.Empty ;
+          if ( !string.IsNullOrEmpty( existSymbolRoute ) && ceedStorable != null ) {
+            if ( ! processedDetailSymbol.Contains( existSymbolRoute ) ) {
+              processedDetailSymbol.Add( existSymbolRoute ) ;
               var ceedModel =
-                ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
+                ceedStorable.CeedModelData.FirstOrDefault( x => existSymbolDetail != null && x.CeeDSetCode == existSymbolDetail.Code ) ;
               if ( ceedModel != null ) {
                 var hiroiCdModel =
                   hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
@@ -77,12 +78,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                     foreach ( var master in masterModels ) {
                       var conduitModels = conduitsModelData
                         .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
-                      conduitInformationModels.Add( new ConduitInformationModel( false, floor, ceedModel.CeeDSetCode,
-                        existSymbolDetail.DetailSymbol, master.Type, master.Size1, master.Size2, "1", string.Empty,
-                        string.Empty, string.Empty, pipingType,
-                        string.Empty, pipingNumber, hiroiCdModel?.ConstructionClassification,
-                        conduitModels.FirstOrDefault()?.Classification ?? "", constructionItem, constructionItem,
-                        "" ) ) ;
+                      if ( existSymbolDetail != null )
+                        conduitInformationModels.Add( new ConduitInformationModel( false, floor, ceedModel.CeeDSetCode,
+                          existSymbolDetail.DetailSymbol, master.Type, master.Size1, master.Size2, "1", string.Empty,
+                          string.Empty, string.Empty, pipingType, string.Empty, pipingNumber,
+                          hiroiCdModel?.ConstructionClassification,
+                          conduitModels.FirstOrDefault()?.Classification ?? "", constructionItem, constructionItem,
+                          "" ) ) ;
                     }
                   }
                 }
