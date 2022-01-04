@@ -7,13 +7,14 @@ using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class SelectionRangeRouteCommandBase : RoutingCommandBase
+  public abstract class SelectionRangeRouteCommandBase : RoutingCommandBase<SelectionRangeRouteCommandBase.SelectState>
   {
     private const string ErrorMessageNoPowerAndSensorConnector = "No power connectors and sensor connectors are selected." ;
     private const string ErrorMessageNoPowerConnector = "No power connectors are selected." ;
@@ -22,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const string ErrorMessageSensorConnector = "At least two sensor connectors on the power connector level must be selected." ;
     private const string ErrorMessageCannotDetermineSensorConnectorArrayDirection = "Couldn't determine sensor array direction" ;
 
-    private enum SensorArrayDirection
+    public enum SensorArrayDirection
     {
       Invalid,
       XMinus,
@@ -42,7 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         _ => throw new ArgumentOutOfRangeException( nameof( displayUnitSystem ), displayUnitSystem, null ),
       } ;
 
-    private record SelectState( FamilyInstance PowerConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SensorArrayDirection SensorDirection, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
+    public record SelectState( FamilyInstance PowerConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SensorArrayDirection SensorDirection, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
@@ -56,20 +57,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom ) ;
 
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override OperationResult<SelectState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var routingExecutor = GetRoutingExecutor() ;
+
       var (powerConnector, sensorConnectors, sensorDirection, errorMessage ) = SelectionRangeRoute( uiDocument ) ;
-      if ( null != errorMessage ) return ( false, errorMessage ) ;
+      if ( null != errorMessage ) return OperationResult<SelectState>.FailWithMessage( errorMessage ) ;
 
       var farthestSensorConnector = sensorConnectors.Last() ;
       var property = ShowPropertyDialog( uiDocument.Document, powerConnector!, farthestSensorConnector ) ;
-      if ( true != property?.DialogResult ) return ( false, null ) ;
+      if ( true != property?.DialogResult ) return OperationResult<SelectState>.Cancelled ;
 
-      if ( GetMEPSystemClassificationInfo( powerConnector!, farthestSensorConnector, property.GetSystemType() ) is not { } classificationInfo ) return ( false, null ) ;
+      if ( GetMEPSystemClassificationInfo( powerConnector!, farthestSensorConnector, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<SelectState>.Failed ;
 
       var pipeSpec = new MEPSystemPipeSpec( new RouteMEPSystem( uiDocument.Document, property.GetSystemType(), property.GetCurveType() ), routingExecutor.FittingSizeCalculator ) ;
 
-      return ( true, new SelectState( powerConnector!, sensorConnectors, sensorDirection, property, classificationInfo, pipeSpec ) ) ;
+      return new OperationResult<SelectState>( new SelectState( powerConnector!, sensorConnectors, sensorDirection, property, classificationInfo, pipeSpec ) ) ;
     }
 
     private static ( FamilyInstance? PowerConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SensorArrayDirection SensorDirection, string? ErrorMessage ) SelectionRangeRoute( UIDocument iuDocument )
@@ -200,9 +204,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return sv ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, SelectState selectState )
     {
-      var selectState = state as SelectState ?? throw new InvalidOperationException() ;
       var (powerConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec) = selectState ;
 
       var systemType = routeProperty.GetSystemType() ;
