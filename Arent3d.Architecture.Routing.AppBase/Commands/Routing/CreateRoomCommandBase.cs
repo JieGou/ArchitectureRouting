@@ -49,7 +49,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           rectangleExternal.Dispose() ;
         }
 
-        // If second point is null. Return failed to end command
+        // If last point is null. Return failed to end command
         if ( lastPoint == null || checkEx ) return Result.Failed ;
 
         using Transaction trans = new Transaction( document, "Create Arent Room" ) ;
@@ -60,6 +60,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var plane = Plane.CreateByNormalAndOrigin( currView.RightDirection, mpt ) ;
         var mirrorMat = Transform.CreateReflection( plane ) ;
         var secondPoint = mirrorMat.OfPoint( firstPoint ) ;
+        var thirdPoint = mirrorMat.OfPoint( lastPoint ) ;
 
         var levelId = currView.GenLevel.Id ;
         HeightSettingStorable heightSetting = document.GetHeightSettingStorable() ;
@@ -78,9 +79,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var heightOfLevel = aboveLevel == level ? wallHeightDefault : aboveLevel.Elevation - level!.Elevation - thickness ;
         var lenght = firstPoint.DistanceTo( secondPoint ) ;
         var width = secondPoint.DistanceTo( lastPoint ) ;
+        var originPoint = GetOriginPoint( firstPoint, secondPoint, thirdPoint, lastPoint ) ;
 
         var symbol = document.GetFamilySymbols( RoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        var instance = symbol.Instantiate( firstPoint, level, StructuralType.NonStructural ) ;
+        var instance = symbol.Instantiate( originPoint, level!, StructuralType.NonStructural ) ;
         // Set room's parameters
         instance.LookupParameter( "Elevation from Level" ).Set( 0.0 ) ;
         instance.LookupParameter( "Lenght" ).Set( lenght ) ;
@@ -117,6 +119,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           // Todo catch handle
         }
       }
+    }
+
+    private XYZ GetOriginPoint( XYZ firstPoint, XYZ secondPoint, XYZ thirdPoint, XYZ lastPoint )
+    {
+      XYZ originPoint = XYZ.Zero ;
+      if ( firstPoint.X < lastPoint.X && firstPoint.Y > lastPoint.Y )
+        originPoint = firstPoint ;
+      if ( firstPoint.X < lastPoint.X && firstPoint.Y < lastPoint.Y )
+        originPoint = thirdPoint ;
+      if ( firstPoint.X > lastPoint.X && firstPoint.Y > lastPoint.Y )
+        originPoint = secondPoint ;
+      if ( firstPoint.X > lastPoint.X && firstPoint.Y < lastPoint.Y )
+        originPoint = lastPoint ;
+      return originPoint ;
     }
   }
 }
