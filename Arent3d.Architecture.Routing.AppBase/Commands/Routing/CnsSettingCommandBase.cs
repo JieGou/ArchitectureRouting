@@ -4,6 +4,7 @@ using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Threading ;
 using System.Windows.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -37,6 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var dialog = new CnsSettingDialog( viewModel, document ) ;
       dialog.ShowDialog() ;
       if ( dialog.DialogResult ?? false ) {
+        var color = new Color( 0, 0, 0 ) ;
         Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
         var isConnectorsHaveConstructionItem = dialog.IsConnectorsHaveConstructionItem() ;
         var isConduitsHaveConstructionItem = dialog.IsConduitsHaveConstructionItem() ;
@@ -66,6 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 using var transaction = new Transaction( document ) ;
                 transaction.Start( "Set conduits property" ) ;
                 SetConstructionItemForElements( conduitList.ToList(), categoryName ) ;
+                ConfirmUnsetCommandBase.ChangeElementColor( document, conduitList.ToList(), color ) ;
                 transaction.Commit() ;
 
                 break ;
@@ -106,6 +109,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   }
                 }
                 SetConstructionItemForElements( connectorList.ToList(), categoryName ) ;
+                ConfirmUnsetCommandBase.ChangeElementColor( document, connectorList.ToList(), color ) ;
                 transaction.Commit() ;
 
                 break ;
@@ -201,6 +205,5 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, categoryName ) ;
       }
     }
-
   }
 }
