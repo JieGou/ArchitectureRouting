@@ -8,6 +8,12 @@ using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
+using System.Windows.Media ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Utility ;
+using Autodesk.Revit.ApplicationServices ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -20,6 +26,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
     private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
     private const double RATIO_BEND_RADIUS = 3.45 ;
+    private const string Notation = "CR (W:400)" ;
+    private const char XChar = 'x' ;
 
     public static IReadOnlyDictionary<byte, string> RackTypes { get ; } = new Dictionary<byte, string> { { 0, "Normal Rack" }, { 1, "Limit Rack" } } ;
 
@@ -29,6 +37,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+      UIApplication uiApp = commandData.Application ;
+      Application app = uiApp.Application ;
       try {
         var result = document.Transaction(
           "TransactionName.Commands.Rack.CreateCableRackFroAllRoute".GetAppStringByKeyOrDefault(
@@ -47,9 +57,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               .Select( x => x.GetRouteName() ).Distinct() ;
 
             // create cable rack for each route
+            var racks = new List<FamilyInstance>() ;
             foreach ( var routeName in routeNames ) {
-              CreateCableRackForRoute( uiDocument, routeName ) ;
+              CreateCableRackForRoute( uiDocument, app, routeName, racks ) ;
             }
+            
+            // insert notation for racks
+            CreateNotationForRack( document, app, racks ) ;
 
             return Result.Succeeded ;
           } ) ;
@@ -80,13 +94,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     /// <param name="uiDocument"></param>
     /// <param name="routeName"></param>
-    private void CreateCableRackForRoute( UIDocument uiDocument, string? routeName )
+    private void CreateCableRackForRoute( UIDocument uiDocument, Application app, string? routeName, List<FamilyInstance> racks )
     {
       if ( routeName != null ) {
         var document = uiDocument.Document ;
         // get all elements in route
         var allElementsInRoute = document.GetAllElementsOfRouteName<Element>( routeName ) ;
-        CreateRackForConduit( uiDocument, allElementsInRoute ) ;
+        CreateRackForConduit( uiDocument, app, allElementsInRoute, racks ) ;
       }
     }
 
@@ -182,7 +196,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return location.Equals( otherLocation ) ;
     }
 
-    public static void CreateRackForConduit( UIDocument uiDocument, IEnumerable<Element> allElementsInRoute )
+    public static void CreateRackForConduit( UIDocument uiDocument, Application app, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks )
     {
       var document = uiDocument.Document ;
       var connectors = new List<Connector>() ;
@@ -204,6 +218,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             foreach ( Connector connector in instance.GetConnectorManager()!.Connectors ) {
               connectors.Add( connector ) ;
             }
+            
+            racks.Add( instance );
           }
           else // element is conduit fitting
           {
@@ -226,6 +242,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
             // save connectors of cable rack
             connectors.AddRange( instance.GetConnectors() ) ;
+            
+            racks.Add( instance );
           }
 
           transaction.Commit() ;
@@ -283,7 +301,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! string.IsNullOrEmpty( toConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
-        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), toConnectorId ) ;
+        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), fromConnectorId ) ;
 
       // set cable tray direction
       if ( 1.0 == line.Direction.Y ) {
@@ -342,7 +360,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! string.IsNullOrEmpty( toConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
-        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), toConnectorId ) ;
+        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), fromConnectorId ) ;
 
       // set cable tray fitting direction
       if ( 1.0 == conduit.FacingOrientation.X ) {
@@ -384,6 +402,190 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var toConnectorId = toEndPointKey!.GetElementId() ;
 
       return ( fromConnectorId, toConnectorId ) ;
+    }
+
+    public static void CreateNotationForRack(Document doc, Application app, IEnumerable<FamilyInstance> racks )
+    {
+      var rackNotationStorable = doc.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? doc.GetRackNotationStorable() ;
+      RemoveNotationUnused( doc, rackNotationStorable ) ;
+      Dictionary<string, Dictionary<double, List<FamilyInstance>>> directionXRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
+      Dictionary<string, Dictionary<double, List<FamilyInstance>>> directionYRacks = new Dictionary<string, Dictionary<double, List<FamilyInstance>>>() ;
+      foreach ( var rack in racks ) {
+        var widthRack = Math.Round( rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble(), 4 ) ;
+        var fromConnectorId = GetFromConnectorId( doc, rack ) ;
+        if ( rack.HandOrientation.X is 1.0 or -1.0 ) {
+          if ( directionXRacks.ContainsKey( fromConnectorId ) ) {
+            Dictionary<double, List<FamilyInstance>> xRacks = directionXRacks[ fromConnectorId ] ;
+            if ( xRacks.ContainsKey( widthRack ))
+              xRacks[ widthRack ].Add( rack );
+            else {
+              xRacks.Add( widthRack, new List<FamilyInstance>() { rack } );
+            }
+          }
+          else {
+            Dictionary<double, List<FamilyInstance>> xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
+            directionXRacks.Add( fromConnectorId, xRacks ) ;
+          }
+        }
+        else if ( rack.HandOrientation.Y is 1.0 or -1.0 ) {
+          if ( directionYRacks.ContainsKey( fromConnectorId ) ) {
+            Dictionary<double, List<FamilyInstance>> yRacks = directionYRacks[ fromConnectorId ] ;
+            if ( yRacks.ContainsKey( widthRack ))
+              yRacks[ widthRack ].Add( rack );
+            else {
+              yRacks.Add( widthRack, new List<FamilyInstance>() { rack } );
+            }
+          }
+          else {
+            Dictionary<double, List<FamilyInstance>> xRacks = new Dictionary<double, List<FamilyInstance>> { { widthRack, new List<FamilyInstance>() { rack } } } ;
+            directionYRacks.Add( fromConnectorId, xRacks ) ;
+          }
+        }
+      }
+
+      if ( directionXRacks.Any() ) {
+        foreach ( var (key, value) in directionXRacks ) {
+          foreach ( var xRack in value ) {
+            CreateNotation( doc, app, rackNotationStorable, xRack.Value, key, true ) ;
+          }
+        }
+      }
+
+      if ( directionYRacks.Any() ) {
+        foreach ( var (key, value) in directionYRacks ) {
+          foreach ( var yRack in value ) {
+            CreateNotation( doc, app, rackNotationStorable, yRack.Value, key, false ) ;
+          }
+        }
+      }
+
+      rackNotationStorable.Save() ;
+    }
+
+    private static string GetFromConnectorId(Document doc, Element rack )
+    {
+      var fromElementId = rack.ParametersMap.get_Item( "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( doc, "From-Side Connector Id" ) ).AsString() ;
+      if ( string.IsNullOrEmpty( fromElementId ) ) return string.Empty ;
+      var fromConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
+      if ( ! fromConnector!.IsTerminatePoint() && ! fromConnector!.IsPassPoint() ) return fromElementId ;
+      fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorId, out string? fromConnectorId ) ;
+      fromElementId = fromConnectorId! ;
+
+      return fromElementId ;
+    }
+
+    private static void CreateNotation( Document doc, Application app, RackNotationStorable rackNotationStorable, IReadOnlyCollection<FamilyInstance> racks, string fromConnectorId, bool isDirectionX )
+    {
+      const string xSymbol = " x " ;
+      var count = racks.Count ;
+      var rack = racks.OrderByDescending( x => x.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).AsDouble() ).FirstOrDefault() ;
+      if ( rack != null ) {
+        var bendRadiusRack = rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( doc, "トレイ幅" ) ).AsDouble() ;
+        var notationModel = rackNotationStorable.RackNotationModelData.FirstOrDefault( n => n.FromConnectorId == fromConnectorId && n.IsDirectionX == isDirectionX && Math.Abs( n.RackWidth - Math.Round( bendRadiusRack, 4 ) ) == 0 ) ;
+        if ( notationModel == null ) {
+          const double baseLengthOfLine = 0.5 ;
+          const double minBaseLengthOfLine = 0.1 ;
+
+          var lenghtRack = rack.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( doc, "トレイ長さ" ) ).AsDouble() / 2 ;
+          var (x, y, z) = ( rack.Location as LocationPoint )!.Point ;
+          var endPoint = isDirectionX ? new XYZ( rack.HandOrientation.X is 1.0 ? x + lenghtRack : x - lenghtRack, y + bendRadiusRack / 2, z ) : new XYZ( x - bendRadiusRack / 2, rack.HandOrientation.Y is 1.0 ? y + lenghtRack : y - lenghtRack, z ) ;
+          ( x, y, z ) = isDirectionX ? new XYZ( endPoint.X + baseLengthOfLine * 15, endPoint.Y + baseLengthOfLine * 7, endPoint.Z ) : new XYZ( endPoint.X - baseLengthOfLine * 4, endPoint.Y + baseLengthOfLine * 4, endPoint.Z ) ;
+
+          ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+          var noteWidth = racks.Count > 1 ? 0.16 : 0.12 ;
+
+          // make sure note width works for the text type
+          var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
+          var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
+          if ( noteWidth < minWidth ) {
+            noteWidth = minWidth ;
+          }
+          else if ( noteWidth > maxWidth ) {
+            noteWidth = maxWidth ;
+          }
+
+          TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = isDirectionX ? HorizontalTextAlignment.Left : HorizontalTextAlignment.Right } ;
+
+          var notation = count > 1 ? Notation + xSymbol + racks.Count : Notation ;
+          var txtPosition = new XYZ( isDirectionX ? x - baseLengthOfLine * 12 : x, y + baseLengthOfLine * 3, z ) ;
+          var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, notation, opts ) ;
+          CreateNewTextNoteType( doc, textNote ) ;
+
+          Leader noteLeader = textNote.AddLeader( TextNoteLeaderTypes.TNLT_STRAIGHT_R ) ;
+          noteLeader.Elbow = new XYZ( endPoint.X + ( isDirectionX ? baseLengthOfLine * 3 : -baseLengthOfLine * 4 ), noteLeader.Elbow.Y - minBaseLengthOfLine * 8.5, endPoint.Z ) ;
+          noteLeader.End = endPoint ;
+
+          foreach ( var item in racks ) {
+            var rackNotationModel = new RackNotationModel( item.Id.IntegerValue.ToString(), textNote.Id.IntegerValue.ToString(), rack.Id.IntegerValue.ToString(), fromConnectorId, isDirectionX, Math.Round( bendRadiusRack, 4 ) ) ;
+            rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
+          }
+        }
+        else {
+          var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == notationModel.NotationId ) ;
+          if ( textElement == null ) return ;
+          var textNote = textElement as TextNote ;
+          var text = textNote!.Text ;
+          if ( text.Contains( XChar ) ) {
+            var number = text.Substring( text.IndexOf( XChar ) + 1 ).Trim( '\r' ) ;
+            textNote.Text = text.Substring( 0, text.IndexOf( XChar ) + 2 ) + ( Convert.ToInt16( number ) + count ) ;
+          }
+          else {
+            textNote.Text = text.Trim( '\r' ) + xSymbol + ( 1 + count ) ;
+          }
+
+          foreach ( var item in racks ) {
+            var rackNotationModel = new RackNotationModel( item.Id.IntegerValue.ToString(), notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth ) ;
+            rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
+          }
+        }
+      }
+    }
+
+    private static void RemoveNotationUnused( Document doc, RackNotationStorable rackNotationStorable )
+    {
+      var notationUnused = new List<RackNotationModel>() ;
+      if ( ! rackNotationStorable.RackNotationModelData.Any() ) return ;
+      foreach ( var notationModel in rackNotationStorable.RackNotationModelData ) {
+        var rack = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.RackTypeElements ).FirstOrDefault( c => c.Id.IntegerValue.ToString() == notationModel.RackId ) ;
+        if ( rack != null ) continue ;
+        notationUnused.Add( notationModel ) ;
+        var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( e => e.Id.IntegerValue.ToString() == notationModel.NotationId ) ;
+        if ( textElement == null ) continue ;
+        var textNote = textElement as TextNote ;
+        var text = textNote!.Text ;
+        if ( text.Contains( XChar ) ) {
+          var number = text.Substring( text.IndexOf( XChar ) + 1 ).Trim( '\r' ) ;
+          textNote.Text = Convert.ToInt16( number ) - 1 == 1 ? text.Substring( 0, text.IndexOf( XChar ) - 1 ) : text.Substring( 0, text.IndexOf( XChar ) + 2 ) + ( Convert.ToInt16( number ) - 1 ) ;
+        }
+        else {
+          doc.Delete( textElement.Id ) ;
+        }
+      }
+
+      if ( ! notationUnused.Any() ) return ;
+      foreach ( var notationModel in notationUnused ) {
+        rackNotationStorable.RackNotationModelData.Remove( notationModel ) ;
+      }
+
+      rackNotationStorable.Save() ;
+    }
+
+    private static void CreateNewTextNoteType( Document doc, TextNote textNote )
+    {
+      //Create new text type
+      string strStyleName = "Rack Notation Type" ;
+
+      var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( strStyleName, tt.Name ) ) ;
+      if ( textNoteType == null ) {
+        // Create new Note type
+        Element ele = textNote.TextNoteType.Duplicate( strStyleName ) ;
+        textNoteType = ( ele as TextNoteType ) ! ;
+        textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( ( 1.0 / 32.0 ) * ( 1.0 / 12.0 ) ) ;
+        textNoteType.get_Parameter( BuiltInParameter.LEADER_ARROWHEAD ).Set( ElementId.InvalidElementId ) ;
+      }
+
+      // Change the text notes type to the new type
+      textNote.ChangeTypeId( textNoteType!.Id ) ;
     }
   }
 }
