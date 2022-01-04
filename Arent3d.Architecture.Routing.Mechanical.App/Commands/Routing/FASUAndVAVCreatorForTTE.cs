@@ -91,11 +91,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     public bool IsVAVDiameterAndAirflowSet( FamilyInstance vav, double airflow )
     {
+      const double DiameterToleranceMillimeter = 1.0 ;
+
       var diameterString = _fasuTypeToInfoDictionary[ SelectFASUTypeAndDiameter( airflow ).Item1 ].VAVDiameterString ;
       var param = vav.LookupParameter( VAVDiameterParameterName ) ;
       if ( ! param.HasValue ) return false ;
 
-      return param.AsString() == diameterString ;
+      double.TryParse( diameterString, out var diameter ) ;
+      return Math.Abs( param.AsDouble().RevitUnitsToMillimeters() - diameter ) < DiameterToleranceMillimeter ;
     }
 
     public void UpdateVAVDiameter( FamilyInstance vav, double airflow )

@@ -35,8 +35,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         FASUAndVAVOriginaryExist = fasuInstance != null && vavInstance != null ;
         VAVBoundingBox = _vavInstance?.get_BoundingBox( _vavInstance.Document.ActiveView )?.ToBox3d() ;
 
-        ToBeGrouping = _fasuInstance == null ;
-        ToBeConnected = _fasuInstance == null ;
+        ToBeConnectedAndGrouped = _fasuInstance == null ;
       }
 
       public Box3d SpaceBoundingBox { get ; }
@@ -69,8 +68,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         ElementTransformUtils.MoveElements( document, target, vec.ToXYZPoint() ) ;
       }
 
-      private bool ToBeGrouping { get ; set ; }
-      private bool ToBeConnected { get ; set ; }
+      private bool ToBeConnectedAndGrouped { get ; set ; }
 
       public void CreateFASUAndVAV( FASUAndVAVCreatorForTTE creatorForTte, double upstreamConnectorHeight )
       {
@@ -100,12 +98,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         result.Add( current.Owner.Id ) ;
 
         for ( var i = 0 ; i < limit ; ++i ) {
-          if ( current == end ) return result ;
+          if ( current.Owner.Id == end.Owner.Id && current.Id == end.Id ) return result ;
 
-          var nextCandidates = current.Owner.GetConnectors().Where( connector => connector != current ).ToArray() ;
-          if ( nextCandidates.Length == 0 ) return result ; // 途切れているケース
-          if ( nextCandidates.Length != 1 ) return new List<ElementId>() ;
-          current = nextCandidates.First() ;
+          var oppositeConnectors = current.Owner.GetConnectors().Where( connector => connector.Id != current.Id ).ToArray() ;
+          if ( oppositeConnectors.Length == 0 ) return result ; // 途切れているケース
+          if ( oppositeConnectors.Length != 1 ) return Array.Empty<ElementId>() ;
+
+          var nextConnectors = oppositeConnectors.First().GetConnectedConnectors().ToArray() ;
+          if ( nextConnectors.Length != 1 ) return Array.Empty<ElementId>() ;
+
+          current = nextConnectors.First() ;
         }
 
         return new List<ElementId>() ; // limitでたどりきれなかった
@@ -119,24 +121,30 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var vavDownstreamConnector = _vavInstance!.GetConnectors().FirstOrDefault( connector => connector.Direction == FlowDirectionType.Out ) ;
         if ( vavDownstreamConnector == null ) return ;
 
-        // TODO 既存グループに追加しないと行けないケースがあるため、とりあえずはグルーピングなし.
-        // ToBeGrouping = _fasuInstance!.GroupId != ElementId.InvalidElementId ;
+        var groupId = _fasuInstance!.GroupId ;
+
+        if ( groupId != ElementId.InvalidElementId ) {
+          var collector = new FilteredElementCollector( _fasuInstance!.Document ) ;
+          var group = collector.OfClass( typeof( Group ) ).FirstOrDefault( group => group.Id == groupId ) as Group ;
+          group?.UngroupMembers() ;
+        }
 
         var ductElementIds = GetDuctElementIdsBetween2Connectors( fasuUpstreamConnector, vavDownstreamConnector ) ;
         _fasuInstance!.Document.Delete( ductElementIds ) ;
 
+        _fasuInstance!.Document.Regenerate() ;
+
         _fasuInstance!.ChangeTypeId( creatorForTte.GetFASUTypeId( airflow ) ) ;
         creatorForTte.UpdateVAVDiameter( _vavInstance!, airflow ) ;
 
-        ToBeConnected = true ;
+        ToBeConnectedAndGrouped = true ;
       }
 
       public void ExecutePostProcess( bool needReverseDirection )
       {
         if ( _fasuInstance == null || _vavInstance == null ) return ;
-        if ( FASUAndVAVOriginaryExist ) return ;
 
-        if ( needReverseDirection ) {
+        if ( ! FASUAndVAVOriginaryExist && needReverseDirection ) {
           var rotateCenter = Position.ToXYZPoint() ;
           ElementTransformUtils.RotateElements( _fasuInstance.Document, new List<ElementId>() { _fasuInstance.Id, _vavInstance.Id }, Line.CreateBound( rotateCenter, rotateCenter + XYZ.BasisZ ), Math.PI ) ;
         }
@@ -146,11 +154,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
         if ( fasuUpstreamConnector == null || vavDownstreamConnector == null ) return ;
 
+        if ( ! ToBeConnectedAndGrouped ) return ;
+
         var duct = ConnectByRoundDuct( _fasuInstance.Document, vavDownstreamConnector, fasuUpstreamConnector, _fasuInstance.LevelId ) ;
+        if ( duct == null ) return ; // 接続できなかった場合はグループ化も行わない
 
         // TODO Regenerateの回数は減らしたいので外側で
         _fasuInstance.Document.Regenerate() ;
-        _fasuInstance.Document.Create.NewGroup( new ElementId[] { _fasuInstance.Id, _vavInstance.Id, duct!.Id } ) ;
+        _fasuInstance.Document.Create.NewGroup( new[] { _fasuInstance.Id, _vavInstance.Id, duct.Id } ) ;
       }
 
       private static Duct? ConnectByRoundDuct( Document document, Connector fromConnector, Connector toConnector, ElementId levelId )
@@ -313,7 +324,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var multipleInstanceSpace = new List<Element>() ;
 
       foreach ( var familyInstance in targetInstances ) {
-        //var space = familyInstance.Space ;
         var locationPoint = (LocationPoint)familyInstance.Location ;
         var space = GetSpaceWhichContainsPosition( spaceBoxPairs, locationPoint.Point.To3dPoint() ) ;
 
@@ -347,7 +357,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var errorSpaces = new List<Element>() ;
       foreach ( var spaceFASUPair in spaceToFASU ) {
         if ( spaceFASUPair.Value == null ) continue ;
-        if ( spaceToVAV.TryGetValue( spaceFASUPair.Key, out var vavInstance ) ) continue ;
+        if ( ! spaceToVAV.TryGetValue( spaceFASUPair.Key, out var vavInstance ) ) continue ;
         if ( vavInstance != null ) continue ;
 
         errorSpaces.Add( spaceFASUPair.Key ) ;
@@ -359,7 +369,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       foreach ( var spaceVAVPair in spaceToVAV ) {
         if ( spaceVAVPair.Value == null ) continue ;
-        if ( spaceToFASU.TryGetValue( spaceVAVPair.Key, out var fasuInstance ) ) continue ;
+        if ( ! spaceToFASU.TryGetValue( spaceVAVPair.Key, out var fasuInstance ) ) continue ;
         if ( fasuInstance != null ) continue ;
 
         errorSpaces.Add( spaceVAVPair.Key ) ;
