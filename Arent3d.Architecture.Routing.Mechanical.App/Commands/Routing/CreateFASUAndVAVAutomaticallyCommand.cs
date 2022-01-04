@@ -74,9 +74,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector, IList<Element> spaces )
     {
       var maintainer = new FASUAndVAVMaintainerForTTE() ;
-      var (error, errorMessage) = maintainer.Setup( document, pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ) ;
+      var (success, errorMessage) = maintainer.Setup( document, pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ) ;
 
-      if ( error ) {
+      if ( ! success ) {
         TaskDialog.Show( CommandName, errorMessage ) ;
         return Result.Failed ;
       }

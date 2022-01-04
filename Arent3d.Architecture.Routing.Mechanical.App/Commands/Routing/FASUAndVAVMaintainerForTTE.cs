@@ -44,6 +44,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       public Vector3d VAVUpstreamDirection { get ; set ; }
       public bool FASUAndVAVOriginaryExist { get ; }
       public Box3d? VAVBoundingBox { get ; private set ; }
+      private Document Document => _space.Document ;
 
       public Vector3d? VAVUpstreamConnectorPosition
       {
@@ -63,9 +64,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         if ( _fasuInstance != null ) target.Add( _fasuInstance.Id ) ;
         if ( _vavInstance != null ) target.Add( _vavInstance.Id ) ;
         if ( ! target.Any() ) return ;
-
-        var document = _fasuInstance?.Document ?? _vavInstance?.Document ;
-        ElementTransformUtils.MoveElements( document, target, vec.ToXYZPoint() ) ;
+        
+        ElementTransformUtils.MoveElements( Document, target, vec.ToXYZPoint() ) ;
       }
 
       private bool ToBeConnectedAndGrouped { get ; set ; }
@@ -436,17 +436,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       _creatorForTte = new FASUAndVAVCreatorForTTE() ;
       var (success, errorMessage) = _creatorForTte.Setup( document ) ;
-      if ( ! success ) return ( true, errorMessage ) ;
+      if ( ! success ) return ( false, errorMessage ) ;
 
       ( success, errorMessage ) = CreateMaintainersGroupedByBranchNumber( document, out var branchNumberToGroup ) ;
-      if ( ! success ) return ( true, errorMessage ) ;
+      if ( ! success ) return ( false, errorMessage ) ;
 
       _groups = branchNumberToGroup.Select( branchNumSpacePair => CreateMaintainerGroup( rootConnectorNormal, branchNumSpacePair.Key, branchNumSpacePair.Value ) ).ToArray() ;
       foreach ( var maintainerGroup in _groups ) {
         maintainerGroup.DecideTemporaryRotation( rootConnectorNormal ) ;
       }
 
-      return ( false, "" ) ;
+      return ( true, "" ) ;
     }
 
     public void Execute( Vector3d rootConnectorPosition, Vector3d rootConnectorDirection, double vavUpstreamConnectorHeight )
