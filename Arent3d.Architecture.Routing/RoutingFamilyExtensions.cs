@@ -132,9 +132,9 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     TTE_VAV_140,
     
-    [NameOnRevit( "AR_DI_SYMBOL-CYLINDRICAL-SHAFT" )]
+    [NameOnRevit( "Direction Cylindrical Shaft" )]
     [FamilyCategory( BuiltInCategory.OST_DetailComponents)]
-    SYMBOL_CYLINDRICAL_SHAFT,
+    DirectionCylindricalShaft,
   }
 
   public static class RoutingFamilyExtensions

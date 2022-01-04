@@ -13,10 +13,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 {
   public class CreateCylindricalShaftCommandBase : IExternalCommand
   {
-    private const double feetMilimeter = 304.8 ;
     private double rotateAngle = Math.PI / 3 ;
-    private double lengthEndOne = 6000 ;
-    private double lengthEndTwo = 6000 ;
+    private double lengthEndOne = 6000.0.MillimetersToRevitUnits() ;
+    private double lengthEndTwo = 6000.0.MillimetersToRevitUnits() ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       UIApplication uiApp = commandData.Application ;
@@ -87,45 +86,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           // Set top level is highest level
           shaftOpening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).Set( highestLevel!.Id ) ;
 
-          trans.Commit() ;
-          
-          if ( Math.Abs( lengthEndOne / feetMilimeter ) + Math.Abs( lengthEndTwo / feetMilimeter ) <=
+          if ( Math.Abs( lengthEndOne ) + Math.Abs( lengthEndTwo ) <=
                document.Application.ShortCurveTolerance ) {
             message =
-              $"Direction symbol length must be greater than {Math.Round( document.Application.ShortCurveTolerance * feetMilimeter, 2 )}mm!" ;
+              $"Direction symbol length must be greater than {document.Application.ShortCurveTolerance.RevitUnitsToMillimeters()}mm!" ;
             return Result.Cancelled ;
           }
 
-          var familySymbol = document.GetFamilySymbols( RoutingFamilyType.SYMBOL_CYLINDRICAL_SHAFT ).FirstOrDefault() ;
-          if ( null == familySymbol ) {
+          var symbol = document.GetFamilySymbols( RoutingFamilyType.DirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException();
+          if ( null == symbol ) {
             message =
-              $"Not found \"{NameOnRevitAttribute.ToDictionary<RoutingFamilyType>()[ RoutingFamilyType.SYMBOL_CYLINDRICAL_SHAFT ]}\" family symbol!" ;
+              $"Not found \"{NameOnRevitAttribute.ToDictionary<RoutingFamilyType>()[ RoutingFamilyType.DirectionCylindricalShaft ]}\" family symbol!" ;
             return Result.Cancelled ;
           }
 
-          if ( ! familySymbol.IsActive ) {
-            trans.Start(
-              $"Active {NameOnRevitAttribute.ToDictionary<RoutingFamilyType>()[ RoutingFamilyType.SYMBOL_CYLINDRICAL_SHAFT ]} family symbol!" ) ;
-            familySymbol.Activate() ;
-            trans.Commit() ;
-          }
+          if ( ! symbol.IsActive ) symbol.Activate() ;
 
           if ( document.ActiveView.ViewType != ViewType.FloorPlan ) {
             message = "Only created in floor plan view!" ;
             return Result.Cancelled ;
           }
 
-          trans.Start( "Create Direction Symbol" ) ;
-
           //Place symbol family
-          var symbolFamilyInstance =
-            document.Create.NewFamilyInstance( firstPoint, familySymbol, document.ActiveView ) ;
+          var instance =
+            document.Create.NewFamilyInstance( firstPoint, symbol, document.ActiveView ) ;
           var axis = Line.CreateBound( firstPoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( firstPoint ) ) ;
-          ElementTransformUtils.RotateElement( document, symbolFamilyInstance.Id, axis, rotateAngle ) ;
+          ElementTransformUtils.RotateElement( document, instance.Id, axis, rotateAngle ) ;
 
           //Set parameters
-          symbolFamilyInstance.LookupParameter( "Length End One" ).Set( lengthEndOne / feetMilimeter ) ;
-          symbolFamilyInstance.LookupParameter( "Length End Two" ).Set( lengthEndTwo / feetMilimeter) ;
+          instance.LookupParameter( "Length End One" ).Set( lengthEndOne ) ;
+          instance.LookupParameter( "Length End Two" ).Set( lengthEndTwo ) ;
 
           trans.Commit() ;
           
