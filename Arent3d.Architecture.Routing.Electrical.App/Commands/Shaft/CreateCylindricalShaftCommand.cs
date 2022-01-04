@@ -6,10 +6,9 @@ using ImageType = Arent3d.Revit.UI.ImageType;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
 {
-  [Transaction(TransactionMode.Manual)]
-  [DisplayNameKey("Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand", DefaultString = "Create\nCylindrical Shaft")]
-  [Image("resources/Initialize-16.bmp", ImageType = ImageType.Normal)]
-  [Image("resources/Initialize-32.bmp", ImageType = ImageType.Large)]
+  [Transaction( TransactionMode.Manual )]
+  [DisplayNameKey( "Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand", DefaultString = "Create\nCylindrical Shaft" )]
+  [Image( "resources/shaft_02.png" )]
   public class CreateCylindricalShaftCommand : CreateCylindricalShaftCommandBase
   {
     
