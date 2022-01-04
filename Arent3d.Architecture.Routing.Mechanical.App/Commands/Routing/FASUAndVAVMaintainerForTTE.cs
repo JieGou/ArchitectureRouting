@@ -33,6 +33,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         Position = fasuInstance?.Location is LocationPoint lp ? lp.Point.To3dPoint() : SpaceBoundingBoxCenter ;
         VAVUpstreamDirection = new Vector3d( 1, 0, 0 ) ;
         FASUAndVAVOriginaryExist = fasuInstance != null && vavInstance != null ;
+        FASUBoundingBox = _fasuInstance?.get_BoundingBox( _fasuInstance.Document.ActiveView )?.ToBox3d() ;
         VAVBoundingBox = _vavInstance?.get_BoundingBox( _vavInstance.Document.ActiveView )?.ToBox3d() ;
 
         ToBeConnectedAndGrouped = _fasuInstance == null ;
@@ -44,6 +45,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       public Vector3d VAVUpstreamDirection { get ; set ; }
       public bool FASUAndVAVOriginaryExist { get ; }
       public Box3d? VAVBoundingBox { get ; private set ; }
+      private Box3d? FASUBoundingBox { get ; set ; }
       private Document Document => _space.Document ;
 
       public Vector3d? VAVUpstreamConnectorPosition
@@ -56,8 +58,34 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      public void Move( Vector3d vec )
+      private bool IsMoveable( Vector3d moveVec )
       {
+        var moveVec2d = moveVec.To2d() ;
+        var spaceBox2d = SpaceBoundingBox.ToBox2d() ;
+
+        var newPosition2d = Position.To2d() + moveVec2d ;
+        if ( ! spaceBox2d.IsInclude( newPosition2d, 0.0 ) ) return false ;
+
+        // FASU, VAVがあるときは、Boxがはみ出さないかもチェックする
+        if ( FASUBoundingBox != null ) {
+          var fasuBox2d = FASUBoundingBox.Value.ToBox2d() ;
+          if ( ! spaceBox2d.IsInclude( fasuBox2d.Min + moveVec2d, 0.0 )
+               || ! spaceBox2d.IsInclude( fasuBox2d.Max + moveVec2d, 0.0 ) ) return false ;
+        }
+
+        if ( VAVBoundingBox != null ) {
+          var vavBox2d = VAVBoundingBox.Value.ToBox2d() ;
+          if ( ! spaceBox2d.IsInclude( vavBox2d.Min + moveVec2d, 0.0 )
+               || ! spaceBox2d.IsInclude( vavBox2d.Max + moveVec2d, 0.0 ) ) return false ;
+        }
+
+        return true ;
+      }
+
+      public void TryToMove( Vector3d vec )
+      {
+        if ( ! IsMoveable( vec ) ) return ;
+
         Position += vec ;
 
         var target = new List<ElementId>() ;
@@ -74,6 +102,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       {
         var airflow = TTEUtil.ConvertDesignSupplyAirflowFromInternalUnits( ( _space as Space )?.DesignSupplyAirflow ?? 0 ) ;
         ( _fasuInstance, _vavInstance ) = creatorForTte.Create( Position.ToXYZPoint(), VAVUpstreamDirection.ToXYZDirection(), upstreamConnectorHeight, airflow, _space.LevelId ) ;
+        FASUBoundingBox = _fasuInstance?.get_BoundingBox( _fasuInstance.Document.ActiveView )?.ToBox3d() ;
         VAVBoundingBox = _vavInstance?.get_BoundingBox( _vavInstance.Document.ActiveView )?.ToBox3d() ;
       }
 
@@ -242,7 +271,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         if ( ! farthestMaintainer!.FASUAndVAVOriginaryExist && farthestMaintainer.VAVUpstreamConnectorPosition is { } upstreamPosition ) {
           var originalDiffVec = upstreamPosition - rootPosition ;
           var moveVec = -( originalDiffVec - Vector3d.Dot( originalDiffVec, rootDirection ) * rootDirection ) ;
-          farthestMaintainer.Move( moveVec ) ;
+          farthestMaintainer.TryToMove( moveVec ) ;
         }
 
         foreach ( var maintainer in Maintainers ) {
