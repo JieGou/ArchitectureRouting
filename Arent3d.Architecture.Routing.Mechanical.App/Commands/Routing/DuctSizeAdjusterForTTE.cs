@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.FittingSizeCalculators.MEPCurveGenerators ;
 using Arent3d.Revit ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using MathLib ;
 
@@ -12,16 +13,59 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   /// 風量->径の変換に高砂用のテーブルを使っているため、他で使わないこと
   /// 制約 : rootがFrom側. PassPointが入っていないこと.
   /// </summary>
-  public static class DuctSizeAdjusterForTTE
+  public class DuctSizeAdjusterForTTE
   {
-    public static IEnumerable<(string routeName, RouteSegment)> AdjustDuctSize( Document document, Route route, double passPointOffset )
+    private Document _document = null! ;
+    private Segments _topSegments = null! ;
+
+    public void Setup( Document document, Route route, double passPointOffsetMilliMeters )
     {
-      // TODO tolerance調整
-      const double tolerance = 500 ;
-      var segments = CreateSegments( document, route, passPointOffset.MillimetersToRevitUnits() ) ;
-      segments.MergeSegmentsIfSmall( tolerance.MillimetersToRevitUnits() ) ;
-      segments.CalcAirFlowAndSetDiameter( document ) ;
-      return segments.CreateRouteSegments( document, 0 ) ;
+      _document = document ;
+      var sizeCalculator = new FittingSizeCalculator( document, route ) ;
+
+      _topSegments = CreateSegments( document, route ) ;
+
+      var mergeFinished = false ;
+      while ( ! mergeFinished ) {
+        _topSegments.CalcAirFlowAndSetDiameter( document ) ;
+        _topSegments.UpdatePassPointPosition( sizeCalculator, passPointOffsetMilliMeters ) ;
+        mergeFinished = ! _topSegments.MergeSegmentsIfSmall( sizeCalculator ) ;
+      }
+    }
+
+    public IEnumerable<(string routeName, RouteSegment)> Execute()
+    {
+      if ( _topSegments != null ) return _topSegments.CreateRouteSegments( _document, 0 ) ;
+      return Enumerable.Empty<(string routeName, RouteSegment)>() ;
+    }
+
+    private class FittingSizeCalculator
+    {
+      private Document _document ;
+      private IMEPCurveGenerator _curveGenerator ;
+      private FittingSizeCalculators.IFittingSizeCalculator _calculator ;
+
+      public FittingSizeCalculator( Document document, Route route )
+      {
+        _document = document ;
+        _curveGenerator = new DuctCurveGenerator( document, route.GetMEPSystemType(), route.GetDefaultCurveType() ) ;
+        _calculator = FittingSizeCalculators.DefaultFittingSizeCalculator.Instance ;
+      }
+
+      public double GetTeeHeaderLength( double headerDiameter, double branchDiameter )
+      {
+        return _calculator.CalculateTeeLengths( _document, _curveGenerator, headerDiameter, branchDiameter ).Header ;
+      }
+
+      public double GetTeeBranchLength( double headerDiameter, double branchDiameter )
+      {
+        return _calculator.CalculateTeeLengths( _document, _curveGenerator, headerDiameter, branchDiameter ).Branch ;
+      }
+
+      public double GetReducerLength( double diameter1, double diameter2 )
+      {
+        return _calculator.CalculateReducerLength( _document, _curveGenerator, diameter1, diameter2 ) ;
+      }
     }
 
     private interface ITermPoint
@@ -82,15 +126,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       private PassPointEndPoint? _endPoint = null ;
       private readonly string _routeName ;
-      private readonly XYZ _position ;
+      private readonly XYZ _teePosition ;
       private readonly XYZ _direction ;
+      private XYZ _position ;
       private readonly ElementId _levelId ;
       private double? _radius ;
 
-      public PassPointTerm( string routeName, XYZ position, XYZ direction, ElementId levelId )
+      public PassPointTerm( string routeName, XYZ teePosition, XYZ direction, ElementId levelId )
       {
         _routeName = routeName ;
-        _position = position ;
+        _teePosition = teePosition ;
+        _position = teePosition ;
         _direction = direction ;
         _levelId = levelId ;
       }
@@ -110,9 +156,20 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         return _position.To3dPoint() ;
       }
 
+      public double? GetRadius()
+      {
+        return _radius ;
+      }
+
       public void UpdateRadius( double radius )
       {
         _radius = radius ;
+      }
+
+      public void UpdateDistanceFromTee( double distanceMillimeters )
+      {
+        var d = distanceMillimeters.MillimetersToRevitUnits() ;
+        _position = _teePosition.Add( d * _direction ) ;
       }
     }
 
@@ -129,14 +186,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       private double? _diameter ;
 
       public Segment( IReadOnlyDictionary<string, BranchPointInfo> branchNameToBranchPointInfo,
-        string routeName, ITermPoint fromPoint, ITermPoint toPoint, RouteSegment orgSegment, Route childRoute, double passPointOffset )
+        string routeName, ITermPoint fromPoint, ITermPoint toPoint, RouteSegment orgSegment, Route childRoute, bool branchSideOfParentTee )
       {
         _routeName = routeName ;
         _fromPoint = fromPoint ;
         _toPoint = toPoint ;
 
         _orgSegment = orgSegment ;
-        _childSegments = new List<Segments>() { new Segments( branchNameToBranchPointInfo, childRoute, passPointOffset ) } ;
+        _childSegments = new List<Segments>() { new Segments( branchNameToBranchPointInfo, childRoute, branchSideOfParentTee ) } ;
 
         _diameter = orgSegment.PreferredNominalDiameter ;
       }
@@ -150,9 +207,62 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         _childSegments = new List<Segments>() ;
       }
 
-      public bool IsSmallSegment( double distancePerBranch )
+      static double GetTeeLengthRequiredForParentSegment( FittingSizeCalculator sizeCalculator, double parentSegmentDiameter, Segments childSegments )
       {
-        return Vector3d.Distance( _fromPoint.GetPosition(), _toPoint.GetPosition() ) < distancePerBranch * _childSegments.Count ;
+        var childRouteDiameter = childSegments.GetRootDiameter() ;
+        if ( childRouteDiameter == null ) {
+          throw new InvalidOperationException() ;
+        }
+
+        var isPassPointBranchSide = ! childSegments.IsBranchSideOfParentTee() ;
+        return isPassPointBranchSide
+          ? sizeCalculator.GetTeeBranchLength( parentSegmentDiameter, childRouteDiameter.Value )
+          : sizeCalculator.GetTeeHeaderLength( parentSegmentDiameter, childRouteDiameter.Value ) ;
+      }
+
+      public bool IsSmallSegment( FittingSizeCalculator sizeCalculator )
+      {
+        // TODO 本来はレデューサとTEEサイズから計算. 現状ではおそらくルーティング側の問題でTEEがうまく入らないケースがあるので広めに確保しておく.
+
+        // if ( ! _diameter.HasValue ) return false ; // こないはず
+        //
+        // var requiredLength = 0.0 ;
+        //
+        // // PassPointのあとにはいるReducer分
+        // if ( _fromPoint is PassPointTerm ppt ) {
+        //   var radius = ppt.GetRadius() ;
+        //   if ( radius.HasValue ) {
+        //     requiredLength += sizeCalculator.GetReducerLength( 2 * radius.Value, _diameter.Value ) ;
+        //   }
+        // }
+        //
+        // foreach ( var segments in _childSegments ) {
+        //   requiredLength += GetTeeLengthRequiredForParentSegment( sizeCalculator, _diameter.Value, segments ) ;
+        // }
+        //
+        // requiredLength += 10.0.MillimetersToRevitUnits() ;
+
+        // TODO 仮の値
+        var requiredLength = ( 0.5 ).MetersToRevitUnits() * ( _childSegments.Count + 1 ) ;
+        return Vector3d.Distance( _fromPoint.GetPosition(), _toPoint.GetPosition() ) < requiredLength.RevitUnitsToMeters() ;
+      }
+
+      public double? GetDiameter()
+      {
+        return _diameter ;
+      }
+
+      public void UpdatePassPointPosition( FittingSizeCalculator sizeCalculator, double passPointOffsetMilliMeters )
+      {
+        if ( ! _childSegments.Any() ) return ;
+        if ( ! ( _toPoint is PassPointTerm ppt ) ) return ;
+
+        var requiredLength = GetTeeLengthRequiredForParentSegment( sizeCalculator, _diameter!.Value, _childSegments.Last() ) ;
+        ppt.UpdateDistanceFromTee( requiredLength.RevitUnitsToMillimeters() + passPointOffsetMilliMeters ) ;
+
+        foreach ( var childSegments in _childSegments ) {
+          childSegments.UpdatePassPointPosition( sizeCalculator, passPointOffsetMilliMeters ) ;
+        }
       }
 
       public void Merge( Segment toSideSegment )
@@ -161,11 +271,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         _childSegments.AddRange( toSideSegment._childSegments ) ;
       }
 
-      public void MergeChildSegmentsIfSmall( double distancePerBranch )
+      public bool MergeChildSegmentsIfSmall( FittingSizeCalculator sizeCalculator )
       {
+        var merged = false ;
         foreach ( var childSegment in _childSegments ) {
-          childSegment.MergeSegmentsIfSmall( distancePerBranch ) ;
+          merged |= childSegment.MergeSegmentsIfSmall( sizeCalculator ) ;
         }
+
+        return merged ;
       }
 
       public double CalcAirFlowAndSetDiameter( Document document, double nextSegmentAirFlow )
@@ -225,9 +338,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private class Segments
     {
       private List<Segment> _segmentList ;
+      private readonly bool _branchSideOfParentTee ;
 
-      public Segments( IReadOnlyDictionary<string, BranchPointInfo> branchNameToBranchPointInfo, Route route, double passPointOffset )
+      public Segments( IReadOnlyDictionary<string, BranchPointInfo> branchNameToBranchPointInfo, Route route, bool branchSideOfParentTee )
       {
+        _branchSideOfParentTee = branchSideOfParentTee ;
+
         var routeSegment = route.RouteSegments.First() ;
 
         var childBranches = route.GetChildBranches().ToList() ;
@@ -238,8 +354,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           : fromEndPoint.RoutingStartPosition.To3dPoint() ;
         var sortedRoutes = SortRoutesOrderByDistanceFromStartPosition( childBranches, branchNameToBranchPointInfo, startPosition ) ;
 
-        var passPointTerms = sortedRoutes.Select( r =>
-          CreatePassPointTerm( branchNameToBranchPointInfo[ r.RouteName ], passPointOffset ) ).ToArray() ;
+        var passPointTerms = sortedRoutes.Select( r => CreatePassPointTerm( branchNameToBranchPointInfo[ r.RouteName ] ) ).ToArray() ;
         var terms = new List<ITermPoint>() ;
         terms.Add( CreateTermPointFromEndPoint( routeSegment.FromEndPoint ) ) ;
         terms.AddRange( passPointTerms ) ;
@@ -247,10 +362,28 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
         _segmentList = new List<Segment>() ;
         for ( var i = 0 ; i < sortedRoutes.Count ; ++i ) {
-          _segmentList.Add( new Segment( branchNameToBranchPointInfo, route.RouteName, terms[ i ], terms[ i + 1 ], routeSegment, sortedRoutes[ i ], passPointOffset ) ) ;
+          var connectedToBranchSide = IsChildRouteConnectedToBranchSideConnector( branchNameToBranchPointInfo[ sortedRoutes[ i ].RouteName ].Tee ) ;
+          _segmentList.Add( new Segment( branchNameToBranchPointInfo, route.RouteName, terms[ i ], terms[ i + 1 ], routeSegment, sortedRoutes[ i ], connectedToBranchSide ) ) ;
         }
 
         _segmentList.Add( new Segment( route.RouteName, terms[ sortedRoutes.Count ], terms[ sortedRoutes.Count + 1 ], routeSegment ) ) ;
+      }
+
+      public double? GetRootDiameter()
+      {
+        return _segmentList.First().GetDiameter() ;
+      }
+
+      public bool IsBranchSideOfParentTee()
+      {
+        return _branchSideOfParentTee ;
+      }
+
+      public void UpdatePassPointPosition( FittingSizeCalculator sizeCalculator, double passPointOffset )
+      {
+        foreach ( var segment in _segmentList ) {
+          segment.UpdatePassPointPosition( sizeCalculator, passPointOffset ) ;
+        }
       }
 
       public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments( Document document, int parentSubRouteIndex )
@@ -263,15 +396,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      public void MergeSegmentsIfSmall( double distancePerBranch )
+      public bool MergeSegmentsIfSmall( FittingSizeCalculator sizeCalculator )
       {
-        if ( ! _segmentList.Any() ) return ;
+        if ( ! _segmentList.Any() ) return false ;
 
+        var merged = false ;
         var segmentList = new List<Segment> { _segmentList.First() } ;
 
         foreach ( var segment in _segmentList.Skip( 1 ) ) {
-          if ( segment.IsSmallSegment( distancePerBranch ) ) {
+          if ( segment.IsSmallSegment( sizeCalculator ) ) {
             segmentList.Last().Merge( segment ) ;
+            merged = true ;
             continue ;
           }
 
@@ -280,8 +415,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
         _segmentList = segmentList ;
         foreach ( var segment in _segmentList ) {
-          segment.MergeChildSegmentsIfSmall( distancePerBranch ) ;
+          merged |= segment.MergeChildSegmentsIfSmall( sizeCalculator ) ;
         }
+
+        return merged ;
       }
 
       public double CalcAirFlowAndSetDiameter( Document document )
@@ -311,13 +448,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         return result ;
       }
 
-      private static PassPointTerm CreatePassPointTerm( BranchPointInfo info, double offset )
+      private static PassPointTerm CreatePassPointTerm( BranchPointInfo info )
       {
         var behindTeeConnector = GetHeaderRouteOutDirectionConnectors( info.Tee ) ;
         var passPointDir = behindTeeConnector.CoordinateSystem.BasisZ ;
         var routeName = info.ChildRouteName ;
-        var passPointPosition = behindTeeConnector.Origin + passPointDir * offset.MillimetersToRevitUnits() ;
-        return new PassPointTerm( routeName, passPointPosition, passPointDir, info.Tee.GetLevelId() ) ;
+        return new PassPointTerm( routeName, behindTeeConnector.Origin, passPointDir, info.Tee.GetLevelId() ) ;
+      }
+
+      private static bool IsChildRouteConnectedToBranchSideConnector( Element tee )
+      {
+        return GetHeaderRouteOutDirectionConnectors( tee ).Id == 3 ;
       }
 
       private static Connector GetHeaderRouteOutDirectionConnectors( Element tee )
@@ -332,7 +473,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         // この時点で失敗しているが、完全に失敗させるよりはそのままつづけたほうがましと判断
         return toSideConnectors.FirstOrDefault() ?? tee.GetConnectors().FirstOrDefault()! ;
       }
-      
+
       private static ITermPoint CreateTermPointFromEndPoint( IEndPoint endPoint )
       {
         if ( endPoint is RouteEndPoint rep ) return new BranchTerm( rep ) ;
@@ -340,14 +481,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
     }
 
-    private static Segments CreateSegments( Document document, Route route, double passPointOffset )
+    private static Segments CreateSegments( Document document, Route route )
     {
       var routeNameToBranchPointInfo = new Dictionary<string, BranchPointInfo>() ;
       foreach ( var info in CollectBranchPointInfos( document, new Route[] { route } ) ) {
         routeNameToBranchPointInfo.Add( info.ChildRouteName, info ) ;
       }
 
-      return new Segments( routeNameToBranchPointInfo, route, passPointOffset ) ;
+      const bool dummyValue = true ;
+      return new Segments( routeNameToBranchPointInfo, route, dummyValue ) ;
     }
 
     private class BranchPointInfo
