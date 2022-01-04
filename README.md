@@ -28,7 +28,8 @@ After developing it, push into `origin/<yourname>/<featurename>` and create a pu
 - **.NET Framework 4.8**  
 	Compatible to **Revit 2021**.
 - **.NET 5.0 SDK(v5.0.404)** 
-- **.NET Framework 4.8 Developer Pack** 
+- **.NET Framework 4.8 Developer Pack for Revit2022** 
+- **.NET Framework 4.7.2 Developer Pack for Revit2020** 
 
 ### Projects in solution
 

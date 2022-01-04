@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       CeedStorable = ceedStorable ;
       CeedModels = ceedModels ;
-      AddModelNumber( ceedStorable.CeedModelData ) ;
+      AddModelNumber( ceedModels ) ;
     }
 
     private void AddModelNumber( List<CeedModel> ceedModels )
