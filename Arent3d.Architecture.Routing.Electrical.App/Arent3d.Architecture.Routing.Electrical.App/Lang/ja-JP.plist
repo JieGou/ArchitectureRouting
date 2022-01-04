@@ -152,6 +152,9 @@
         <key>Electrical.App.Commands.Initialization.CreateDetailSymbolCommand</key>
         <string>明細記号作成</string>
 
+        <key>Electrical.App.Commands.Initialization.ConfirmUnsetCommand</key>
+        <string>未設定確認</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
