@@ -140,6 +140,22 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         ToBeConnectedAndGrouped = true ;
       }
 
+      private static void SetSupplyAirDuctType( Duct duct )
+      {
+        var param = duct.get_Parameter( BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM ) ;
+
+        var currentSystemTypeId = param.AsElementId() ;
+        var ductSystemTypes = new FilteredElementCollector( duct.Document ).OfCategory( BuiltInCategory.OST_DuctSystem ).OfType<MechanicalSystemType>().ToList() ;
+
+        var currentSystemType = ductSystemTypes.FirstOrDefault( type => type.Id == currentSystemTypeId ) ;
+        if ( currentSystemType is { SystemClassification: MEPSystemClassification.SupplyAir } ) return ;
+
+        var type = ductSystemTypes.FirstOrDefault( type => type.SystemClassification == MEPSystemClassification.SupplyAir ) ;
+        if ( type != null ) {
+          param.Set( type.Id ) ;
+        }
+      }
+
       public void ExecutePostProcess( bool needReverseDirection )
       {
         if ( _fasuInstance == null || _vavInstance == null ) return ;
@@ -158,6 +174,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
         var duct = ConnectByRoundDuct( _fasuInstance.Document, vavDownstreamConnector, fasuUpstreamConnector, _fasuInstance.LevelId ) ;
         if ( duct == null ) return ; // 接続できなかった場合はグループ化も行わない
+        
+        SetSupplyAirDuctType( duct );
 
         // TODO Regenerateの回数は減らしたいので外側で
         _fasuInstance.Document.Regenerate() ;
