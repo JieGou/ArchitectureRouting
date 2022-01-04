@@ -11,6 +11,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   internal class FASUAndVAVCreatorForTTE
   {
     private const string VAVDiameterParameterName = "ダクト径" ;
+    private const string VAVAirflowName = "風量" ;
     private const double DistanceBetweenFASUAndVAV = 0.25 ;
 
     private Document _document = null! ;
@@ -89,23 +90,40 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return _fasuTypeToInfoDictionary[ SelectFASUTypeAndDiameter( airflow ).Item1 ].FASUTypeId ;
     }
 
-    public bool IsVAVDiameterAndAirflowSet( FamilyInstance vav, double airflow )
+    public bool IsVAVDiameterUpdateRequired( FamilyInstance vav, double airflow )
     {
-      const double DiameterToleranceMillimeter = 1.0 ;
+      const double diameterToleranceMillimeter = 1.0 ;
 
       var diameterString = _fasuTypeToInfoDictionary[ SelectFASUTypeAndDiameter( airflow ).Item1 ].VAVDiameterString ;
-      var param = vav.LookupParameter( VAVDiameterParameterName ) ;
-      if ( ! param.HasValue ) return false ;
+      var diameterParam = vav.LookupParameter( VAVDiameterParameterName ) ;
+      if ( ! diameterParam.HasValue ) return false ;
 
       double.TryParse( diameterString, out var diameter ) ;
-      return Math.Abs( param.AsDouble().RevitUnitsToMillimeters() - diameter ) < DiameterToleranceMillimeter ;
+      return Math.Abs( diameterParam.AsDouble().RevitUnitsToMillimeters() - diameter ) > diameterToleranceMillimeter ;
+    }
+
+    public bool IsVAVAirflowUpdateRequired( FamilyInstance vav, double airflow )
+    {
+      const double airflowToleranceCubicPerMeter = 0.1 ;
+
+      var airflowParam = vav.LookupParameter( VAVAirflowName ) ;
+      if ( airflowParam == null || airflowParam.IsReadOnly ) return true ; // 設定自体がない or 変更できない場合はOKとする
+      if ( ! airflowParam.HasValue ) return false ; // 設定自体はあるが、値が入っていない場合はNG
+
+      return Math.Abs( TTEUtil.ConvertDesignSupplyAirflowFromInternalUnits( airflowParam.AsDouble() ) - airflow ) > airflowToleranceCubicPerMeter ;
     }
 
     public void UpdateVAVDiameter( FamilyInstance vav, double airflow )
     {
       var diameterString = _fasuTypeToInfoDictionary[ SelectFASUTypeAndDiameter( airflow ).Item1 ].VAVDiameterString ;
-      var param = vav.LookupParameter( VAVDiameterParameterName ) ;
-      param.SetValueString( diameterString ) ;
+      var diameterParam = vav.LookupParameter( VAVDiameterParameterName ) ;
+      diameterParam.SetValueString( diameterString ) ;
+    }
+
+    public void UpdateVAVAirflow( FamilyInstance vav, double airflow )
+    {
+      var airflowParam = vav.LookupParameter( VAVAirflowName ) ;
+      if ( airflowParam is { IsReadOnly: false } ) airflowParam.Set( TTEUtil.ConvertDesignSupplyAirflowToInternalUnits( airflow ) ) ;
     }
 
     public (bool Success, string ErrorMessage) Setup( Document document )
@@ -171,6 +189,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var vavPosition = new XYZ( fasuPosition2d.X, fasuPosition2d.Y, info.CalcVAVHeight( vavUpstreamHeight ) ) ;
       var vavInstance = _document.AddVAV( vavPosition, levelId ) ;
       UpdateVAVDiameter( vavInstance, airflow ) ;
+      UpdateVAVAirflow( vavInstance, airflow ) ;
 
       BoundingBoxXYZ fasuBox = fasuInstance.get_BoundingBox( _document.ActiveView ) ;
       BoundingBoxXYZ vavBox = vavInstance.get_BoundingBox( _document.ActiveView ) ;
