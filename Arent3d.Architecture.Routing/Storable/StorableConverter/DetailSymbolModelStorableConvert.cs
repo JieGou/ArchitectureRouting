@@ -13,8 +13,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       DetailSymbolId,
       DetailSymbol,
       ConduitId,
-      FromConnectorId,
-      ToConnectorId,
+      RouteName,
       Code,
       LineIds,
       IsParentSymbol
@@ -27,13 +26,12 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var detailSymbolId = deserializer.GetString( SerializeField.DetailSymbolId ) ;
       var detailSymbol = deserializer.GetString( SerializeField.DetailSymbol ) ;
       var conduitId = deserializer.GetString( SerializeField.ConduitId ) ;
-      var fromConnectorId = deserializer.GetString( SerializeField.FromConnectorId ) ;
-      var toConnectorId = deserializer.GetString( SerializeField.ToConnectorId ) ;
+      var routeName = deserializer.GetString( SerializeField.RouteName ) ;
       var code = deserializer.GetString( SerializeField.Code ) ;
       var lineIds = deserializer.GetString( SerializeField.LineIds ) ;
       var isParentSymbol = deserializer.GetBool( SerializeField.IsParentSymbol ) ;
 
-      return new DetailSymbolModel( detailSymbolId, detailSymbol, conduitId, fromConnectorId, toConnectorId, code, lineIds, isParentSymbol ) ;
+      return new DetailSymbolModel( detailSymbolId, detailSymbol, conduitId, routeName, code, lineIds, isParentSymbol ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailSymbolModel customTypeValue )
@@ -43,8 +41,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.DetailSymbolId, customTypeValue.DetailSymbolId ) ;
       serializerObject.AddNonNull( SerializeField.DetailSymbol, customTypeValue.DetailSymbol ) ;
       serializerObject.AddNonNull( SerializeField.ConduitId, customTypeValue.ConduitId ) ;
-      serializerObject.AddNonNull( SerializeField.FromConnectorId, customTypeValue.FromConnectorId ) ;
-      serializerObject.AddNonNull( SerializeField.ToConnectorId, customTypeValue.ToConnectorId ) ;
+      serializerObject.AddNonNull( SerializeField.RouteName, customTypeValue.RouteName ) ;
       serializerObject.AddNonNull( SerializeField.Code, customTypeValue.Code ) ;
       serializerObject.AddNonNull( SerializeField.LineIds, customTypeValue.LineIds ) ;
       serializerObject.Add( SerializeField.IsParentSymbol, customTypeValue.IsParentSymbol ) ;
