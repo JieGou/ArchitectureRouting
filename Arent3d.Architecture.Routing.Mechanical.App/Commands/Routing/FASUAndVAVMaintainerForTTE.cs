@@ -14,8 +14,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   {
     private const double MinDistanceSpacesCollinear = 2.5 ;
 
-    private IReadOnlyCollection<MaintainerGroup> _groups = null! ;
-    private FASUAndVAVCreator _creator = null! ;
+    private IReadOnlyCollection<MaintainerGroup> _groups = Array.Empty<MaintainerGroup>() ;
+    private FASUAndVAVCreatorForTTE _creatorForTte = null! ;
 
     private class Maintainer
     {
@@ -72,18 +72,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       private bool ToBeGrouping { get ; set ; }
       private bool ToBeConnected { get ; set ; }
 
-      public void CreateFASUAndVAV( FASUAndVAVCreator creator, double upstreamConnectorHeight )
+      public void CreateFASUAndVAV( FASUAndVAVCreatorForTTE creatorForTte, double upstreamConnectorHeight )
       {
         var airflow = TTEUtil.ConvertDesignSupplyAirflowFromInternalUnits( ( _space as Space )?.DesignSupplyAirflow ?? 0 ) ;
-        ( _fasuInstance, _vavInstance ) = creator.Create( Position.ToXYZPoint(), VAVUpstreamDirection.ToXYZDirection(), upstreamConnectorHeight, airflow, _space.LevelId ) ;
+        ( _fasuInstance, _vavInstance ) = creatorForTte.Create( Position.ToXYZPoint(), VAVUpstreamDirection.ToXYZDirection(), upstreamConnectorHeight, airflow, _space.LevelId ) ;
         VAVBoundingBox = _vavInstance?.get_BoundingBox( _vavInstance.Document.ActiveView )?.ToBox3d() ;
       }
 
-      public bool AreFASUAndVAVUpdateNeeded( FASUAndVAVCreator creator )
+      public bool AreFASUAndVAVUpdateNeeded( FASUAndVAVCreatorForTTE creatorForTte )
       {
         if ( _vavInstance == null ) return false ;
         var airflow = TTEUtil.ConvertDesignSupplyAirflowFromInternalUnits( ( _space as Space )?.DesignSupplyAirflow ?? 0 ) ;
-        return ! creator.IsVAVDiameterAndAirflowSet( _vavInstance, airflow ) ;
+        return ! creatorForTte.IsVAVDiameterAndAirflowSet( _vavInstance, airflow ) ;
       }
 
       private static ICollection<ElementId> GetDuctElementIdsBetween2Connectors( Connector start, Connector end )
@@ -111,7 +111,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         return new List<ElementId>() ; // limitでたどりきれなかった
       }
 
-      public void UpdateFASUAndVAV( FASUAndVAVCreator creator )
+      public void UpdateFASUAndVAV( FASUAndVAVCreatorForTTE creatorForTte )
       {
         var airflow = TTEUtil.ConvertDesignSupplyAirflowFromInternalUnits( ( _space as Space )?.DesignSupplyAirflow ?? 0 ) ;
         var fasuUpstreamConnector = _fasuInstance!.GetConnectors().FirstOrDefault( connector => connector.Direction == FlowDirectionType.In ) ;
@@ -125,8 +125,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var ductElementIds = GetDuctElementIdsBetween2Connectors( fasuUpstreamConnector, vavDownstreamConnector ) ;
         _fasuInstance!.Document.Delete( ductElementIds ) ;
 
-        _fasuInstance!.ChangeTypeId( creator.GetFASUTypeId( airflow ) ) ;
-        creator.UpdateVAVDiameter( _vavInstance!, airflow ) ;
+        _fasuInstance!.ChangeTypeId( creatorForTte.GetFASUTypeId( airflow ) ) ;
+        creatorForTte.UpdateVAVDiameter( _vavInstance!, airflow ) ;
 
         ToBeConnected = true ;
       }
@@ -174,14 +174,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       public abstract void DecideTemporaryRotation( Vector3d rootDirection ) ;
       public abstract void ExecutePostProcess( Vector3d rootPosition, Vector3d rootDirection ) ;
 
-      public void CreateFASUAndVAV( FASUAndVAVCreator creator, double upstreamConnectorHeight )
+      public void CreateFASUAndVAV( FASUAndVAVCreatorForTTE creatorForTte, double upstreamConnectorHeight )
       {
         foreach ( var maintainer in Maintainers ) {
           if ( maintainer.FASUAndVAVOriginaryExist ) {
-            if ( maintainer.AreFASUAndVAVUpdateNeeded( creator ) ) maintainer.UpdateFASUAndVAV( creator ) ;
+            if ( maintainer.AreFASUAndVAVUpdateNeeded( creatorForTte ) ) maintainer.UpdateFASUAndVAV( creatorForTte ) ;
           }
           else {
-            maintainer.CreateFASUAndVAV( creator, upstreamConnectorHeight ) ;
+            maintainer.CreateFASUAndVAV( creatorForTte, upstreamConnectorHeight ) ;
           }
         }
       }
@@ -301,7 +301,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return null ;
     }
 
-    private static (bool Successed, IReadOnlyCollection<Element> multipleInstanceSpaces) CreateSpaceToFamilyInstanceDictionary( IEnumerable<Element> targetSpaces, IEnumerable<FamilyInstance> targetInstances, out Dictionary<Element, FamilyInstance?> result )
+    private static (bool Success, IReadOnlyCollection<Element> multipleInstanceSpaces) CreateSpaceToFamilyInstanceDictionary( IEnumerable<Element> targetSpaces, IEnumerable<FamilyInstance> targetInstances, out Dictionary<Element, FamilyInstance?> result )
     {
       var spaceBoxPairs = new List<(Element, Box3d)>() ;
       result = new Dictionary<Element, FamilyInstance?>() ;
@@ -332,7 +332,47 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return ( multipleInstanceSpace.Count == 0, multipleInstanceSpace ) ;
     }
 
-    private static (bool Error, string ErrorMessage) CreateMaintainersGroupedByBranchNumber( Document document, out Dictionary<int, List<Maintainer>> result )
+    private static string CreateErrorMessageAboutElements( string errorMessage, IEnumerable<Element> elements )
+    {
+      string message = errorMessage + Environment.NewLine ;
+      foreach ( var element in elements ) {
+        message += Environment.NewLine + element.Name ;
+      }
+
+      return message ;
+    }
+
+    private static (bool Success, string ErrorMessage) CheckOnlyOneOfFASUAndVAVExistInSpace( IReadOnlyDictionary<Element, FamilyInstance?> spaceToFASU, IReadOnlyDictionary<Element, FamilyInstance?> spaceToVAV )
+    {
+      var errorSpaces = new List<Element>() ;
+      foreach ( var spaceFASUPair in spaceToFASU ) {
+        if ( spaceFASUPair.Value == null ) continue ;
+        if ( spaceToVAV.TryGetValue( spaceFASUPair.Key, out var vavInstance ) ) continue ;
+        if ( vavInstance != null ) continue ;
+
+        errorSpaces.Add( spaceFASUPair.Key ) ;
+      }
+
+      if ( errorSpaces.Any() ) {
+        return ( false, CreateErrorMessageAboutElements( "FASU exists in the space, but VAV not.", errorSpaces ) ) ;
+      }
+
+      foreach ( var spaceVAVPair in spaceToVAV ) {
+        if ( spaceVAVPair.Value == null ) continue ;
+        if ( spaceToFASU.TryGetValue( spaceVAVPair.Key, out var fasuInstance ) ) continue ;
+        if ( fasuInstance != null ) continue ;
+
+        errorSpaces.Add( spaceVAVPair.Key ) ;
+      }
+
+      if ( errorSpaces.Any() ) {
+        return ( false, CreateErrorMessageAboutElements( "VAV exists in the space, but FASU not.", errorSpaces ) ) ;
+      }
+
+      return ( true, string.Empty ) ;
+    }
+
+    private static (bool Success, string ErrorMessage) CreateMaintainersGroupedByBranchNumber( Document document, out Dictionary<int, List<Maintainer>> result )
     {
       ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
       FilteredElementCollector collector = new(document) ;
@@ -341,17 +381,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       result = new Dictionary<int, List<Maintainer>>() ;
 
-      var (successed, multipleInstanceSpaces) = CreateSpaceToFamilyInstanceDictionary( targetSpaces, GetAllFASUs( document ), out var spaceToFASU ) ;
-      if ( ! successed ) {
-        return ( true, "" ) ;
+      foreach ( var space in targetSpaces ) {
+        if ( space.get_BoundingBox( document.ActiveView ) == null ) return ( false, $"{space.Name} doesn't have bounding box." ) ;
       }
 
-      ( successed, multipleInstanceSpaces ) = CreateSpaceToFamilyInstanceDictionary( targetSpaces, document.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ), out var spaceToVAV ) ;
-      if ( ! successed ) {
-        return ( true, "" ) ;
-      }
+      var (success, multipleInstanceSpaces) = CreateSpaceToFamilyInstanceDictionary( targetSpaces, GetAllFASUs( document ), out var spaceToFASU ) ;
+      if ( ! success ) return ( false, CreateErrorMessageAboutElements( "Multiple FASUs exist in the space.", multipleInstanceSpaces ) ) ;
 
-      // TODO fasu, vav の片方だけあるケースのチェック
+      ( success, multipleInstanceSpaces ) = CreateSpaceToFamilyInstanceDictionary( targetSpaces, document.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ), out var spaceToVAV ) ;
+      if ( ! success ) return ( false, CreateErrorMessageAboutElements( "Multiple VAVs exist in the space.", multipleInstanceSpaces ) ) ;
+
+      string errorMessage ;
+      ( success, errorMessage ) = CheckOnlyOneOfFASUAndVAVExistInSpace( spaceToFASU, spaceToVAV ) ;
+      if ( ! success ) return ( false, errorMessage ) ;
 
       foreach ( var space in targetSpaces ) {
         space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ;
@@ -365,7 +407,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      return ( false, string.Empty ) ;
+      return ( true, string.Empty ) ;
     }
 
     private static MaintainerGroup CreateMaintainerGroup( Vector3d rootConnectorNormal, int branchNumber, IReadOnlyCollection<Maintainer> maintainers )
@@ -380,14 +422,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return new NonCollinearGroup( maintainers ) ;
     }
 
-    public (bool Error, string ErrorMessage) Setup( Document document, Vector3d rootConnectorNormal )
+    public (bool Success, string ErrorMessage) Setup( Document document, Vector3d rootConnectorNormal )
     {
-      _creator = new FASUAndVAVCreator() ;
-      var (error, errorMessage) = _creator.Setup( document ) ;
-      if ( error ) return ( true, errorMessage ) ;
+      _creatorForTte = new FASUAndVAVCreatorForTTE() ;
+      var (success, errorMessage) = _creatorForTte.Setup( document ) ;
+      if ( ! success ) return ( true, errorMessage ) ;
 
-      ( error, errorMessage ) = CreateMaintainersGroupedByBranchNumber( document, out var branchNumberToGroup ) ;
-      if ( error ) return ( true, errorMessage ) ;
+      ( success, errorMessage ) = CreateMaintainersGroupedByBranchNumber( document, out var branchNumberToGroup ) ;
+      if ( ! success ) return ( true, errorMessage ) ;
 
       _groups = branchNumberToGroup.Select( branchNumSpacePair => CreateMaintainerGroup( rootConnectorNormal, branchNumSpacePair.Key, branchNumSpacePair.Value ) ).ToArray() ;
       foreach ( var maintainerGroup in _groups ) {
@@ -399,9 +441,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     public void Execute( Vector3d rootConnectorPosition, Vector3d rootConnectorDirection, double vavUpstreamConnectorHeight )
     {
-      if ( _groups == null ) return ;
       foreach ( var maintainerGroup in _groups ) {
-        maintainerGroup.CreateFASUAndVAV( _creator, vavUpstreamConnectorHeight ) ;
+        maintainerGroup.CreateFASUAndVAV( _creatorForTte, vavUpstreamConnectorHeight ) ;
       }
 
       foreach ( var maintainerGroup in _groups ) {

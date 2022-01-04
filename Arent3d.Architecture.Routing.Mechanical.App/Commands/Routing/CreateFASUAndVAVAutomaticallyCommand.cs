@@ -52,21 +52,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElements() ;
       return spaces ;
     }
-
-    bool HasBoundingBox( Element elm )
-    {
-      return elm.get_BoundingBox( elm.Document.ActiveView ) != null ;
-    }
-
+    
     private (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       IList<Element> spaces = GetAllSpaces( uiDocument.Document ).Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) ).ToArray() ;
-
-      foreach ( var space in spaces ) {
-        if ( ! HasBoundingBox( space ) ) {
-          return ( false, $"`{space.Name}` doesn't have bounding box." ) ;
-        }
-      }
 
       if ( ! RoundDuctTypeExists( uiDocument.Document ) ) return ( false, "There is no RoundDuct family in the document." ) ;
 
