@@ -131,6 +131,10 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "140_VAV_変風量ユニット_丸ダクト用" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     TTE_VAV_140,
+    
+    [NameOnRevit( "AR_DI_SYMBOL-CYLINDRICAL-SHAFT" )]
+    [FamilyCategory( BuiltInCategory.OST_DetailComponents)]
+    SYMBOL_CYLINDRICAL_SHAFT,
   }
 
   public static class RoutingFamilyExtensions
