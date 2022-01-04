@@ -6,7 +6,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Routing.NewRackCommand", DefaultString = "Create Rack\nFor All" )]
-  [Image("resources/rack.png")]
+  [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
+  [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class NewRackCommand : NewRackCommandBase
   {
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
