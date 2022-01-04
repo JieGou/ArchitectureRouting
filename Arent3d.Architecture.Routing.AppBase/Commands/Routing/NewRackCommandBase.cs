@@ -283,7 +283,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! string.IsNullOrEmpty( toConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
-        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), toConnectorId ) ;
+        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), fromConnectorId ) ;
 
       // set cable tray direction
       if ( 1.0 == line.Direction.Y ) {
@@ -342,7 +342,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( ! string.IsNullOrEmpty( toConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
-        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), toConnectorId ) ;
+        SetParameter( instance, "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( document, "From-Side Connector Id" ), fromConnectorId ) ;
 
       // set cable tray fitting direction
       if ( 1.0 == conduit.FacingOrientation.X ) {

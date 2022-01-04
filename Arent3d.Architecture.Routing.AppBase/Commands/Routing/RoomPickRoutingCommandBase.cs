@@ -155,8 +155,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter ) ;
       var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult, useConnectorDiameter ) ;
       var fromOrigin = fromPickResult.GetOrigin() ;
+      var fromConnectorId = fromPickResult.PickedElement.Id.IntegerValue.ToString() ;
+      var toConnectorId = toPickResult.PickedElement.Id.IntegerValue.ToString() ;
 
-      var routeSegments = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, room, fromOrigin, routeProperty, classificationInfo ) ;
+      var routeSegments = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, room, fromOrigin, fromConnectorId, toConnectorId, routeProperty, classificationInfo ) ;
 
       return routeSegments ;
     }
@@ -169,7 +171,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       Back
     }
 
-    private static FamilyInstance InsertPassPointElement( Document document, string routeName, ElementId? levelId, double radius, Reference room, FixedHeight? fromFixedHeight, bool isOut )
+    private static FamilyInstance InsertPassPointElement( Document document, string routeName, ElementId? levelId, double radius, Reference room, FixedHeight? fromFixedHeight, bool isOut, string fromConnectorId, string toConnectorId )
     {
       IList<Element> levels = new FilteredElementCollector( document ).OfClass( typeof( Level ) ).ToElements() ;
       if ( levels.FirstOrDefault( l => l.Id == levelId ) == null ) throw new InvalidOperationException() ;
@@ -194,7 +196,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           break ;
       }
 
-      return document.AddPassPoint( routeName, position, direction.normalized.ToXYZRaw(), radius, levelId! ) ;
+      var passPoint = document.AddPassPoint( routeName, position, direction.normalized.ToXYZRaw(), radius, levelId! ) ;
+      passPoint.SetProperty( PassPointParameter.RelatedConnectorId, toConnectorId ) ;
+      passPoint.SetProperty( PassPointParameter.RelatedFromConnectorId, fromConnectorId ) ;
+      return passPoint ;
     }
 
     private static RoomEdge GetRoomEdgeInsertPassPoint( Document document, Reference element )
@@ -231,11 +236,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var p1 = locationPoint.Point ;
       var p2 = new XYZ( p1.X + lenght, p1.Y, p1.Z ) ;
       var p3 = new XYZ( p2.X, p2.Y - width, p2.Z ) ;
-      if ( fromEndPoint.X > p1.X && fromEndPoint.X < p2.X && fromEndPoint.Y < p1.Y && fromEndPoint.Y > p3.Y ) return false ;
-      return true ;
+      return ! (fromEndPoint.X > p1.X) || ! (fromEndPoint.X < p2.X) || ! (fromEndPoint.Y < p1.Y) || ! (fromEndPoint.Y > p3.Y) ;
     }
 
-    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, Reference? room, XYZ fromOrigin, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, Reference? room, XYZ fromOrigin, string fromConnectorId, string toConnectorId, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
       var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
@@ -258,7 +262,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var pickRoom = document.GetElement( room.ElementId ) ;
         ElementId levelId = GetTrueLevelId( document, pickRoom ) ;
         var isOut = CheckFromPickElementIsInOrOutRoom( document, room, fromOrigin ) ;
-        var passPoint = new PassPointEndPoint( InsertPassPointElement( document, name, levelId, diameter / 2, room, fromFixedHeight, isOut ) ) ;
+        var passPoint = new PassPointEndPoint( InsertPassPointElement( document, name, levelId, diameter / 2, room, fromFixedHeight, isOut, fromConnectorId, toConnectorId ) ) ;
         routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
         routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
       }
@@ -293,8 +297,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var document = routePickResult.SubRoute!.Route.Document ;
       var fromOrigin = anotherIndicatorIsFromSide ? anotherPickResult.GetOrigin() : routePickResult.GetOrigin() ;
+      var fromConnectorId = anotherIndicatorIsFromSide ? anotherPickResult.PickedElement.Id.IntegerValue.ToString() : routePickResult.EndPointOverSubRoute!.GetElementId() ;
+      string toConnectorId ;
+      if ( anotherIndicatorIsFromSide )
+        toConnectorId = routePickResult.EndPointOverSubRoute!.GetElementId() ;
+      else
+        toConnectorId = null != anotherPickResult.SubRoute ? anotherPickResult.EndPointOverSubRoute!.GetElementId() : anotherPickResult.PickedElement.Id.IntegerValue.ToString() ;
 
-      var routeSegments = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, room, fromOrigin, routeProperty, classificationInfo ) ;
+      var routeSegments = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, room, fromOrigin, fromConnectorId, toConnectorId, routeProperty, classificationInfo ) ;
 
       // Inserted segment
       foreach ( var (name, segment) in routeSegments ) {
