@@ -38,6 +38,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
           private static class ShowHeightSettingCommandButton { }
+          
+          [Button( typeof( ConfirmUnsetCommand ), OnlyInitialized = true )]
+          private static class ConfirmUnsetCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
