@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using MathLib ;
@@ -44,8 +45,32 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       public Vector3d VAVUpstreamDirection { get ; set ; }
       public bool FASUAndVAVOriginaryExist { get ; }
       public Box3d? VAVBoundingBox { get ; private set ; }
-      public bool ToBeGrouping { get ; private set ; }
-      public bool ToBeConnected { get ; private set ; }
+
+      public Vector3d? VAVUpstreamConnectorPosition
+      {
+        get
+        {
+          var upstreamConnector = _vavInstance?.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In ) ;
+          if ( upstreamConnector == null ) return null ;
+          return upstreamConnector.Origin.To3dPoint() ;
+        }
+      }
+
+      public void Move( Vector3d vec )
+      {
+        Position += vec ;
+
+        var target = new List<ElementId>() ;
+        if ( _fasuInstance != null ) target.Add( _fasuInstance.Id ) ;
+        if ( _vavInstance != null ) target.Add( _vavInstance.Id ) ;
+        if ( ! target.Any() ) return ;
+
+        var document = _fasuInstance?.Document ?? _vavInstance?.Document ;
+        ElementTransformUtils.MoveElements( document, target, vec.ToXYZPoint() ) ;
+      }
+
+      private bool ToBeGrouping { get ; set ; }
+      private bool ToBeConnected { get ; set ; }
 
       public void CreateFASUAndVAV( FASUAndVAVCreator creator, double upstreamConnectorHeight )
       {
@@ -183,6 +208,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       public override void ExecutePostProcess( Vector3d rootPosition, Vector3d rootDirection )
       {
+        // rootDirection方向に一番とおいものを、rootPositionと並ぶように移動
+        var farthestMaintainer = Maintainers.MaxBy( maintainer => Vector3d.Dot( maintainer.Position - rootPosition, rootDirection ) ) ;
+        if ( ! farthestMaintainer!.FASUAndVAVOriginaryExist && farthestMaintainer.VAVUpstreamConnectorPosition is { } upstreamPosition ) {
+          var originalDiffVec = upstreamPosition - rootPosition ;
+          var moveVec = -( originalDiffVec - Vector3d.Dot( originalDiffVec, rootDirection ) * rootDirection ) ;
+          farthestMaintainer.Move( moveVec ) ;
+        }
+
         foreach ( var maintainer in Maintainers ) {
           if ( maintainer.FASUAndVAVOriginaryExist || ! maintainer.VAVBoundingBox.HasValue ) {
             maintainer.ExecutePostProcess( false ) ;
