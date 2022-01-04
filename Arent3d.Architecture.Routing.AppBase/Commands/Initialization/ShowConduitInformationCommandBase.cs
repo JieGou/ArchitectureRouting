@@ -41,6 +41,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
           string constructionItem = element.LookupParameter( "Construction Item" ).AsValueString() ;
           string pipingType = element.Name ;
+          var existSymbolDetail =
+            detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => element.Id.ToString() == x.ConduitId ) ;
           string pipingNumber = "↑" ;
           var routeName = element.GetRouteName() ;
           if ( ! string.IsNullOrEmpty( routeName ) ) {
@@ -49,45 +51,54 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( route != null ) {
               var parentRouteName = route.GetParentBranches().ToList().LastOrDefault()?.RouteName ;
               var childBranches = route.GetChildBranches().ToList() ;
-              if ( string.IsNullOrEmpty( parentRouteName ) && childBranches.Any() ) {
+              if ( (string.IsNullOrEmpty( parentRouteName ) && childBranches.Any()) || !conduitInformationModels.Any(x=>existSymbolDetail != null && x.DetailSymbol == existSymbolDetail.DetailSymbol ) ) {
                 pipingNumber = "1" ;
               }
             }
           }
-          var existSymbolDetail =
-            detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => element.Id.ToString() == x.ConduitId ) ;
-          var existSymbolRoute = element.GetRouteName() ?? string.Empty ;
-          if ( !string.IsNullOrEmpty( existSymbolRoute ) && ceedStorable != null ) {
-            if ( ! processedDetailSymbol.Contains( existSymbolRoute ) ) {
-              processedDetailSymbol.Add( existSymbolRoute ) ;
-              var ceedModel =
-                ceedStorable.CeedModelData.FirstOrDefault( x => existSymbolDetail != null && x.CeeDSetCode == existSymbolDetail.Code ) ;
-              if ( ceedModel != null ) {
-                var hiroiCdModel =
-                  hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
-                var hiroiSetModels = hiroiSetMasterNormalModelData
-                  .Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) ;
-                foreach ( var item in hiroiSetModels ) {
-                  List<string> listMaterialCode = new List<string>() ;
-                  if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
-                    listMaterialCode.Add( item.MaterialCode1 ) ;
-                  }
 
-                  if ( listMaterialCode.Any() ) {
-                    var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( x.Buzaicd ) ) ;
-                    foreach ( var master in masterModels ) {
-                      var conduitModels = conduitsModelData
-                        .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
-                      if ( existSymbolDetail != null )
-                        conduitInformationModels.Add( new ConduitInformationModel( false, floor, ceedModel.CeeDSetCode,
-                          existSymbolDetail.DetailSymbol, master.Type, master.Size1, master.Size2, "1", string.Empty,
-                          string.Empty, string.Empty, pipingType, string.Empty, pipingNumber,
-                          hiroiCdModel?.ConstructionClassification,
-                          conduitModels.FirstOrDefault()?.Classification ?? "", constructionItem, constructionItem,
-                          "" ) ) ;
+
+          if ( existSymbolDetail != null ) {
+            var existSymbolRoute = element.GetRouteName() ?? string.Empty ;
+            if ( ! string.IsNullOrEmpty( existSymbolRoute ) && ceedStorable != null ) {
+              if ( ! processedDetailSymbol.Contains( existSymbolRoute ) ) {
+                var conduitInformationModel = new ConduitInformationModel( false, floor, string.Empty,
+                  existSymbolDetail.DetailSymbol, string.Empty, string.Empty, string.Empty, "1", string.Empty,
+                  string.Empty, string.Empty, pipingType, string.Empty, pipingNumber, string.Empty, string.Empty,
+                  constructionItem, constructionItem, "" ) ;
+                processedDetailSymbol.Add( existSymbolRoute ) ;
+                var ceedModel =
+                  ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
+                if ( ceedModel != null ) {
+                  conduitInformationModel.CeeDCode = ceedModel.CeeDSetCode ;
+
+                  var hiroiCdModel =
+                    hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
+                  var hiroiSetModels = hiroiSetMasterNormalModelData
+                    .Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) ;
+                  conduitInformationModel.ConstructionClassification = hiroiCdModel?.ConstructionClassification ;
+                  foreach ( var item in hiroiSetModels ) {
+                    List<string> listMaterialCode = new List<string>() ;
+                    if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
+                      listMaterialCode.Add( item.MaterialCode1 ) ;
+                    }
+
+                    if ( listMaterialCode.Any() ) {
+                      var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( x.Buzaicd ) ) ;
+                      foreach ( var master in masterModels ) {
+                        var conduitModels = conduitsModelData
+                          .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
+                        conduitInformationModel.Classification = conduitModels.FirstOrDefault()?.Classification ?? "" ;
+                        if ( existSymbolDetail != null ) {
+                          conduitInformationModel.WireType = master.Type ;
+                          conduitInformationModel.WireSize = master.Size1 ;
+                          conduitInformationModel.WireStrip = master.Size2 ;
+                        }
+                      }
                     }
                   }
                 }
+                conduitInformationModels.Add( conduitInformationModel ) ;
               }
             }
           }
