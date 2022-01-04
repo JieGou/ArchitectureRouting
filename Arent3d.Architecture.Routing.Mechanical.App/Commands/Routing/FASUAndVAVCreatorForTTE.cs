@@ -175,9 +175,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       BoundingBoxXYZ fasuBox = fasuInstance.get_BoundingBox( _document.ActiveView ) ;
       BoundingBoxXYZ vavBox = vavInstance.get_BoundingBox( _document.ActiveView ) ;
 
-      var moveVAVNextToFASUVector = 0.5 * Vector3d.Dot( fasuBox.To3dRaw().Size + vavBox.To3dRaw().Size, vavUpstreamDirection.To3dDirection() ) * vavUpstreamDirection ;
+      var vavUpstreamConnectorNomralXYZ = info.VAVUpstreamConnectorNormal.ToXYZDirection() ;
+      var moveVAVNextToFASUVector = 0.5 * Vector3d.Dot( fasuBox.To3dRaw().Size + vavBox.To3dRaw().Size, info.VAVUpstreamConnectorNormal ) * vavUpstreamConnectorNomralXYZ ;
 
-      ElementTransformUtils.MoveElement( _document, vavInstance.Id, moveVAVNextToFASUVector + DistanceBetweenFASUAndVAV * vavUpstreamDirection ) ;
+      ElementTransformUtils.MoveElement( _document, vavInstance.Id, moveVAVNextToFASUVector + DistanceBetweenFASUAndVAV * vavUpstreamConnectorNomralXYZ ) ;
       ElementTransformUtils.RotateElements( _document, new List<ElementId>() { fasuInstance.Id, vavInstance.Id }, Line.CreateBound( fasuPosition2d, fasuPosition2d + XYZ.BasisZ ), rotation ) ;
 
       return ( fasuInstance, vavInstance ) ;
