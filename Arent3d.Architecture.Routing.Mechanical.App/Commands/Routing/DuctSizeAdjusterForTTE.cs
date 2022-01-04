@@ -484,7 +484,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static Segments CreateSegments( Document document, Route route )
     {
       var routeNameToBranchPointInfo = new Dictionary<string, BranchPointInfo>() ;
-      foreach ( var info in CollectBranchPointInfos( document, new Route[] { route } ) ) {
+      foreach ( var info in CollectBranchPointInfos( document, route ) ) {
         routeNameToBranchPointInfo.Add( info.ChildRouteName, info ) ;
       }
 
@@ -506,11 +506,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       public FamilyInstance Tee { get ; }
     }
 
-    private static IEnumerable<BranchPointInfo> CollectBranchPointInfos( Document document, IEnumerable<Route> routes )
+    private static IEnumerable<BranchPointInfo> CollectBranchPointInfos( Document document, Route route )
     {
-      // TODO FamilyNameを使わない. Tee, Tapで探して、Routeに組み込まれているものを対象にする
-      var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.Symbol.FamilyName == "022_丸型 T 型" ) ;
+      var childBranches = route.GetChildBranches().ToList() ;
+
+      // Tee, Tapで探して、Routeに組み込まれているものを対象にする。現状内部処理的にコネクタが3つあることを前提としていますのでコネクタが3つあるものを取得
+      var tees = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategory.OST_DuctFitting ).Where( tee => tee.GetConnectors().Count() == 3 ) ;
       foreach ( var tee in tees ) {
+        // Ignore tee out of selected routes
+        if ( childBranches.All( childRoute => childRoute.RouteName != tee.GetRouteName() ) && route.RouteName != tee.GetRouteName() ) continue ;
         var branchRouteName = tee.GetBranchRouteNames().First() ;
         var branchLocation = tee.Location as LocationPoint ;
 
