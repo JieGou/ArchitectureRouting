@@ -22,7 +22,9 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       None, // デフォルト：工事項目を設定しない
       Conduit, //配線に工事項目を設定する
-      Connector
+      Connector,
+      Rack,
+      All
     }
 
     public int SelectedIndex { get ; set ; }
