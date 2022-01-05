@@ -21,11 +21,5 @@ namespace Arent3d.Architecture.Routing
       if ( ! space.HasParameter( BranchNumberParameter.BranchNumber ) ) return (int)SpaceType.Invalid ;
       return space.GetPropertyInt( BranchNumberParameter.BranchNumber ) ;
     }
-    
-    public static int GetSpaceAHUNumber( this Element space )
-    {
-      if ( ! space.HasParameter( AHUNumberParameter.AHUNumber ) ) return (int)AHUNumberType.Invalid ;
-      return space.GetPropertyInt( AHUNumberParameter.AHUNumber ) ;
-    }
   }
 }

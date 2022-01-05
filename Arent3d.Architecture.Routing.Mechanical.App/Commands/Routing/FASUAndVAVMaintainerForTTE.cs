@@ -435,7 +435,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static bool HasValidAHUNumber( Element space, int ahuNumberOfAHU )
     {
       if ( ! space.TryGetProperty( AHUNumberParameter.AHUNumber, out int ahuNumberOfSpace ) ) return false ;
-      return ahuNumberOfSpace == ahuNumberOfAHU ;
+      return TTEUtil.IsValidAHUNumber(ahuNumberOfSpace) && ahuNumberOfSpace == ahuNumberOfAHU ;
     }
 
     private static (bool Success, string ErrorMessage) CreateMaintainersGroupedByBranchNumber( Document document, Connector pickedConnector, out Dictionary<int, List<Maintainer>> result )

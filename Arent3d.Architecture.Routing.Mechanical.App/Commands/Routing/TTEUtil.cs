@@ -83,6 +83,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       return branchNumber >= 0 ;
     }
+    
+    public static bool IsValidAHUNumber( int ahuNumber )
+    {
+      return ahuNumber != (int) AHUNumberType.Invalid ;
+    }
 
     public static int GetAHUNumberOfAHU( Connector rootConnector )
     {
