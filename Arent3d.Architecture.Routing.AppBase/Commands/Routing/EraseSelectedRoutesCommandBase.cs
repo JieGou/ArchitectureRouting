@@ -1,18 +1,19 @@
 using System ;
 using System.Collections.Generic ;
+using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class EraseSelectedRoutesCommandBase : RoutingCommandBase
+  public abstract class EraseSelectedRoutesCommandBase : RoutingCommandBase<IReadOnlyCollection<Route>>
   {
     protected abstract AddInType GetAddInType() ;
 
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override OperationResult<IReadOnlyCollection<Route>> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      return ( true, SelectRoutes( uiDocument ) ) ;
+      return new OperationResult<IReadOnlyCollection<Route>>( SelectRoutes( commandData.Application.ActiveUIDocument ) ) ;
     }
 
     private IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
@@ -24,10 +25,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new[] { pickInfo.Route } ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, IReadOnlyCollection<Route> routes )
     {
-      var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
-
       return GetSelectedRouteSegments( document, routes ) ;
     }
 

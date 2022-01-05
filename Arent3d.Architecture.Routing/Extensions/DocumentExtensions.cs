@@ -100,5 +100,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new DetailSymbolStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get rack notation data from snoop DB.
+    /// </summary>
+    public static RackNotationStorable GetRackNotationStorable( this Document document )
+    {
+      try {
+        return RackNotationStorableCache.Get( document ).FindOrCreate( RackNotationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new RackNotationStorable( document ) ;
+      }
+    }
   }
 }

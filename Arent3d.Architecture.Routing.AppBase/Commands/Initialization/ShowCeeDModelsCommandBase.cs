@@ -36,6 +36,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var level = uiDoc.ActiveView.GenLevel ;
           var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
           var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level ) ;
+          element.SetProperty( ConnectorFamilyParameter.CeeDCode, dlgCeeDModel.SelectedCeeDCode ) ;
+          if ( element is FamilyInstance familyInstance ) familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
 
           ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
           var noteWidth = .05 ;

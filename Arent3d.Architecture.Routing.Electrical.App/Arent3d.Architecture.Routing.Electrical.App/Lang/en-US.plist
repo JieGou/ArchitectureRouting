@@ -136,6 +136,9 @@
 
         <key>Electrical.App.Commands.Initialization.ShowCeeDDetailInformationCommand</key>
         <string>Pickup Display&#xA;Information</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowConduitInformationCommand</key>
+        <string>Create Detail Table</string>
         
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>Load&#xA;Save To DB</string>
@@ -148,6 +151,9 @@
 
         <key>Electrical.App.Commands.Initialization.CreateDetailSymbolCommand</key>
         <string>Create&#xA;Detail Symbol</string>
+
+        <key>Electrical.App.Commands.Initialization.ConfirmUnsetCommand</key>
+        <string>Confirm Unset</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

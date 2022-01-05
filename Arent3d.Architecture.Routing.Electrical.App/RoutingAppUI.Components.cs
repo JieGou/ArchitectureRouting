@@ -38,6 +38,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
           private static class ShowHeightSettingCommandButton { }
+          
+          [Button( typeof( ConfirmUnsetCommand ), OnlyInitialized = true )]
+          private static class ConfirmUnsetCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
@@ -48,6 +51,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button(typeof(LoadCsvFilesCommand), OnlyInitialized = true)]
           private static class LoadCsvFilesCommandButton { }
+
+          [Button( typeof( ShowConduitInformationCommand ), OnlyInitialized = true )]
+          private static class ShowConduitInformationCommandButton { }
 
           [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
           private static class ShowPickUpInformationCommandButton { }

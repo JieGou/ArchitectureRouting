@@ -8,6 +8,7 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Autodesk.Revit.ApplicationServices ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -37,10 +38,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+      UIApplication uiApp = commandData.Application ;
+      Application app = uiApp.Application ;
       try {
         var result = document.Transaction(
           "TransactionName.Commands.Rack.CreateLimitCableRack".GetAppStringByKeyOrDefault( "Create Limit Cable" ), _ =>
           {
+            var racks = new List<FamilyInstance>() ;
             var elements = document.CollectAllMultipliedRoutingElements( minNumberOfMultiplicity ) ;
             foreach ( var element in elements ) {
               var (mepCurve, subRoute) = element ;
@@ -48,13 +52,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var conduit = ( mepCurve as Conduit )! ;
                 var cableRackWidth = CalcCableRackMaxWidth( element, elements, document ) ;
 
-                CreateCableRackForConduit( uiDocument, conduit, cableRackWidth ) ;
+                CreateCableRackForConduit( uiDocument, conduit, cableRackWidth, racks ) ;
               }
             }
 
             foreach ( var elbow in elbowsToCreate ) {
-              CreateElbow( uiDocument, elbow.Key, elbow.Value ) ;
+              CreateElbow( uiDocument, elbow.Key, elbow.Value, racks ) ;
             }
+            
+            //insert notation for racks
+            NewRackCommandBase.CreateNotationForRack( document, app, racks ) ;
 
             return Result.Succeeded ;
           } ) ;
@@ -80,7 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     /// <param name="uiDocument"></param>
     /// <param name="routeName"></param>
-    private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit, double cableRackWidth )
+    private void CreateCableRackForConduit( UIDocument uiDocument, Conduit conduit, double cableRackWidth, List<FamilyInstance> racks )
     {
       if ( conduit != null ) {
         var document = uiDocument.Document ;
@@ -98,6 +105,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             transaction.RollBack() ;
             return ;
           }
+          
+          racks.Add( instance );
 
           if ( 1.0 != line.Direction.Z && -1.0 != line.Direction.Z ) {
             var elbows = conduit.GetConnectors().SelectMany( c => c.GetConnectedConnectors() ).OfEnd()
@@ -133,7 +142,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="uiDocument"></param>
     /// <param name="elementId"></param>
     /// <param name="connectors"></param>
-    private void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors )
+    private void CreateElbow( UIDocument uiDocument, ElementId elementId, List<Connector> connectors, List<FamilyInstance> racks )
     {
       var document = uiDocument.Document ;
       using var transaction = new SubTransaction( document ) ;
@@ -183,6 +192,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
 
+        racks.Add( instance );
+        
         transaction.Commit() ;
       }
       catch {

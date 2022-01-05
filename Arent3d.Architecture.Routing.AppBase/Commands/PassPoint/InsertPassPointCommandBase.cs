@@ -11,7 +11,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
 {
-  public abstract class InsertPassPointCommandBase : RoutingCommandBase
+  public abstract class InsertPassPointCommandBase : RoutingCommandBase<PointOnRoutePicker.PickInfo>
   {
     protected abstract AddInType GetAddInType() ;
 
@@ -19,16 +19,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PassPoint
     /// Collects from-to records to be auto-routed.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override OperationResult<PointOnRoutePicker.PickInfo> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, true, "Dialog.Commands.PassPoint.Insert.Pick".GetAppStringByKeyOrDefault( null ), GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
-      return ( true, pickInfo ) ;
+      var pickInfo = PointOnRoutePicker.PickRoute( commandData.Application.ActiveUIDocument, true, "Dialog.Commands.PassPoint.Insert.Pick".GetAppStringByKeyOrDefault( null ), GetAddInType(), PointOnRouteFilters.RepresentativeElement ) ;
+      return new OperationResult<PointOnRoutePicker.PickInfo>( pickInfo ) ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PointOnRoutePicker.PickInfo pickInfo )
     {
-      var pickInfo = state as PointOnRoutePicker.PickInfo ?? throw new InvalidOperationException() ;
-
       var elm = InsertPassPointElement( document, pickInfo ) ;
       var route = pickInfo.SubRoute.Route ;
       var routeRecords = GetRelatedBranchSegments( route ) ;

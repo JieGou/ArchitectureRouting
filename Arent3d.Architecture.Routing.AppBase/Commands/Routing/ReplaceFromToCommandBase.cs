@@ -13,28 +13,28 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class ReplaceFromToCommandBase : RoutingCommandBase
+  public abstract class ReplaceFromToCommandBase : RoutingCommandBase<ReplaceFromToCommandBase.PickState>
   {
-    private record PickState( Route Route, ConnectorPicker.IPickResult AnotherPickResult, bool AnotherPickIsFrom, IEndPoint OldEndPoint, ConnectorPicker.IPickResult NewPickResult ) ;
+    public record PickState( Route Route, ConnectorPicker.IPickResult AnotherPickResult, bool AnotherPickIsFrom, IEndPoint OldEndPoint, ConnectorPicker.IPickResult NewPickResult ) ;
 
     protected abstract AddInType GetAddInType() ;
     private bool UseConnectorDiameter() => ( AddInType.Electrical != GetAddInType() ) ;
 
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var routingExecutor = GetRoutingExecutor() ;
       var route = GetReplacingRoute( uiDocument ) ;
 
       var oldEndPoint = GetChangingEndPoint( uiDocument, route ) ;
       var (anotherPickResult, isFrom) = PickCommandUtil.PickResultFromAnother( route, oldEndPoint ) ;
       var newPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, !isFrom, "Dialog.Commands.Routing.ReplaceFromTo.SelectEndPoint".GetAppStringByKeyOrDefault( null ), anotherPickResult, GetAddInType() ) ; //Implement after
 
-      return ( true, new PickState( route, anotherPickResult, ( false == isFrom ), oldEndPoint, newPickResult ) ) ;
+      return new OperationResult<PickState>( new PickState( route, anotherPickResult, ( false == isFrom ), oldEndPoint, newPickResult ) ) ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var pickState = state as PickState ?? throw new InvalidOperationException() ;
-
       var (route, anotherPickResult, anotherPickIsFrom, oldEndPoint, newPickResult) = pickState ;
 
       IEndPoint newEndPoint ;
