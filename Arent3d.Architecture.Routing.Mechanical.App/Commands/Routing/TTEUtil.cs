@@ -78,5 +78,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return UnitUtils.ConvertToInternalUnits( designSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
 #endif
     }
+
+    public static bool IsValidBranchNumber( int branchNumber )
+    {
+      return branchNumber >= 0 ;
+    }
   }
 }
