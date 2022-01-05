@@ -52,13 +52,31 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
 #if REVIT2019 || REVIT2020
       return targetSpace == null
-        ? 0.0
+        ? null
         : UnitUtils.ConvertFromInternalUnits( targetSpace.DesignSupplyAirflow, Autodesk.Revit.DB.DisplayUnitType.DUT_CUBIC_METERS_PER_HOUR ) ;
 #else
       return targetSpace == null
-        ? 0.0
+        ? null
         : UnitUtils.ConvertFromInternalUnits( targetSpace.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
 #endif
-    } 
+    }
+
+    public static double ConvertDesignSupplyAirflowFromInternalUnits( double designSupplyAirflowInternalUnits )
+    {
+#if REVIT2019 || REVIT2020
+      return UnitUtils.ConvertFromInternalUnits( designSupplyAirflowInternalUnits, Autodesk.Revit.DB.DisplayUnitType.DUT_CUBIC_METERS_PER_HOUR ) ;
+#else
+      return UnitUtils.ConvertFromInternalUnits( designSupplyAirflowInternalUnits, UnitTypeId.CubicMetersPerHour ) ;
+#endif
+    }
+    
+    public static double ConvertDesignSupplyAirflowToInternalUnits( double designSupplyAirflow )
+    {
+#if REVIT2019 || REVIT2020
+      return UnitUtils.ConvertToInternalUnits( designSupplyAirflow, Autodesk.Revit.DB.DisplayUnitType.DUT_CUBIC_METERS_PER_HOUR ) ;
+#else
+      return UnitUtils.ConvertToInternalUnits( designSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
+#endif
+    }
   }
 }
