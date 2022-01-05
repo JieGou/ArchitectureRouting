@@ -57,6 +57,8 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_ConduitFitting,
       BuiltInCategory.OST_ConduitRun,
       BuiltInCategory.OST_ElectricalFixtures,
+      BuiltInCategory.OST_CableTray,
+      BuiltInCategory.OST_CableTrayFitting
     } ;
 
     public static readonly BuiltInCategory[] CableTrays =

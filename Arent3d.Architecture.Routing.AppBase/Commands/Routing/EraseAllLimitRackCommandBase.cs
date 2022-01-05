@@ -1,5 +1,9 @@
 ﻿using System ;
 using System.Collections.Generic ;
+using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -33,6 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               allLimitRack.Add( cableTrayFitting.Id ) ;
           }
 
+          RemoveRackNotation( document, allLimitRack ) ;
           document.Delete( allLimitRack ) ;
           return Result.Succeeded ;
         } ) ;
@@ -41,6 +46,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
+    }
+    
+    private static void RemoveRackNotation( Document document, List<ElementId> elementIds )
+    {
+      var rackNotationStorable = document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? document.GetRackNotationStorable() ;
+      if ( ! rackNotationStorable.RackNotationModelData.Any() ) return ;
+      var rackNotationModels = new List<RackNotationModel>() ;
+      List<string> rackIds = elementIds.Select( i => i.IntegerValue.ToString() ).ToList() ;
+      foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData.Where( d => rackIds.Contains( d.RackId ) ).ToList() ) {
+        // delete notation
+        var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.Id.IntegerValue.ToString() == rackNotationModel.NotationId ).Select( t => t.Id ).FirstOrDefault() ;
+        if ( notationId != null ) document.Delete( notationId ) ;
+        rackNotationModels.Add( rackNotationModel ) ;
+      }
+
+      if ( ! rackNotationModels.Any() ) return ;
+      foreach ( var detailSymbolModel in rackNotationModels ) {
+        rackNotationStorable.RackNotationModelData.Remove( detailSymbolModel ) ;
+      }
+
+      rackNotationStorable.Save() ;
     }
   }
 }

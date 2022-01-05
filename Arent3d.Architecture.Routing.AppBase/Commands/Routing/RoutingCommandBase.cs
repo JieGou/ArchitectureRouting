@@ -13,65 +13,66 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class RoutingCommandBase : IExternalCommand
+  public abstract class RoutingCommandBase<TUIResult> : ExternalCommandBase<TUIResult>
   {
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
+    protected override string GetTransactionName() => GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ) ;
+
+    protected override ExternalCommandTransactionType TransactionType => ExternalCommandTransactionType.TransactionGroup ;
+
+    protected override IDisposable? BeforeCommand( ExternalCommandData commandData, ElementSet elements )
     {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
+      SetRoutingExecutor( CreateRoutingExecutor( commandData.Application.ActiveUIDocument.Document, commandData.View ) ) ;
+      return base.BeforeCommand( commandData, elements ) ;
+    }
 
-      var executor = CreateRoutingExecutor( document, commandData.View ) ;
+    protected override void AfterCommand( IDisposable? commandSpanResource )
+    {
+      SetRoutingExecutor( null ) ;
+      base.AfterCommand( commandSpanResource ) ;
+    }
 
-      object? state ;
-      try {
-        bool success ;
-        ( success, state ) = OperateUI( uiDocument, executor ) ;
-        if ( false == success && state is string mes ) {
-          message = mes ;
-          return Result.Cancelled ;
-        }
-        else if ( false == success ) {
-          return Result.Cancelled ;
-        }
-      }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        return Result.Cancelled ;
-      }
+    private RoutingExecutor? _routingExecutor ;
+    private void SetRoutingExecutor( RoutingExecutor? routingExecutor ) => _routingExecutor = routingExecutor ;
+    protected RoutingExecutor GetRoutingExecutor() => _routingExecutor ?? throw new InvalidOperationException() ;
 
-      try {
-        var result = document.TransactionGroup( GetTransactionNameKey().GetAppStringByKeyOrDefault( "Routing" ), _ =>
-        {
-          var executionResult = GenerateRoutes( document, executor, state ) ;
-          if ( Result.Cancelled == executionResult.Result ) return Result.Cancelled ;
-          if ( Result.Failed == executionResult.Result ) return Result.Failed ;
+    protected sealed override ExecutionResult Execute( Document document, TransactionWrapper transaction, TUIResult result )
+    {
+      var executor = GetRoutingExecutor() ;
 
-          // Avoid Revit bugs about reducer insertion.
-          FixReducers( document, executor, executionResult.Value ) ;
+      var executionResult = GenerateRoutes( document, executor, result ) ;
+      if ( Result.Cancelled == executionResult.Result ) return ExecutionResult.Cancelled ;
+      if ( Result.Failed == executionResult.Result ) return ExecutionResult.Failed ;
 
-          return Result.Succeeded ;
-        } ) ;
+      // Avoid Revit bugs about reducer insertion.
+      FixReducers( document, executor, executionResult.Value ) ;
 
-        if ( Result.Succeeded == result ) {
-          if ( executor.HasDeletedElements ) {
-            CommandUtils.AlertDeletedElements() ;
-          }
+      return ExecutionResult.Succeeded ;
+    }
 
-          if ( executor.HasBadConnectors ) {
-            CommandUtils.AlertBadConnectors( executor.GetBadConnectorSet() ) ;
-          }
+    protected override void AfterTransaction( Document document, Result result, TUIResult uiResult )
+    {
+      var executor = GetRoutingExecutor() ;
+
+      if ( Result.Succeeded == result ) {
+        if ( executor.HasDeletedElements ) {
+          CommandUtils.AlertDeletedElements() ;
         }
 
-        return result ;
+        if ( executor.HasBadConnectors ) {
+          CommandUtils.AlertBadConnectors( executor.GetBadConnectorSet() ) ;
+        }
       }
-      catch ( Exception e ) {
-        CommandUtils.DebugAlertException( e ) ;
-        return Result.Failed ;
-      }
+    }
+
+    protected override string? OnException( Exception e, TUIResult? uiResult )
+    {
+      CommandUtils.DebugAlertException( e ) ;
+      return null ;
     }
 
     protected abstract RoutingExecutor CreateRoutingExecutor( Document document, View view ) ;
 
-    private OperationResult<IReadOnlyCollection<Route>> GenerateRoutes( Document document, RoutingExecutor executor, object? state )
+    private OperationResult<IReadOnlyCollection<Route>> GenerateRoutes( Document document, RoutingExecutor executor, TUIResult state )
     {
       return document.Transaction( "TransactionName.Commands.Routing.Common.Routing".GetAppStringByKeyOrDefault( "Routing" ), transaction =>
       {
@@ -165,18 +166,70 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected abstract string GetTransactionNameKey() ;
 
     /// <summary>
-    /// Collects UI states.
-    /// </summary>
-    /// <returns>Routing from-to records.</returns>
-    protected virtual (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor ) => ( true, null ) ;
-
-    /// <summary>
     /// Generate route segments to be auto-routed from UI state.
     /// </summary>
     /// <returns>Routing from-to records.</returns>
-    protected virtual IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, TUIResult state ) ;
+  }
+
+  public abstract class RoutingCommandBaseWithoutOperation : RoutingCommandBase<object?>
+  {
+    protected sealed override OperationResult<object?> OperateUI( ExternalCommandData commandData, ElementSet elements ) => new(Result.Succeeded) ;
+    protected sealed override OperationResult<object?> ReOperateUI( ExternalCommandData commandData, ElementSet elements, object? lastUiResult, ExecutionResultType lastExecutionResultType ) => new(Result.Succeeded) ;
+
+    protected sealed override IDisposable? BeforeTransaction( Document document, object? uiResult ) => BeforeTransaction( document ) ;
+    protected sealed override void AfterTransaction( Document document, Result result, object? uiResult ) => AfterTransaction( document, result ) ;
+
+    protected virtual IDisposable? BeforeTransaction( Document document ) => null ;
+
+    protected virtual void AfterTransaction( Document document, Result result )
     {
-      return Array.Empty<(string RouteName, RouteSegment Segment)>() ;
     }
+
+    protected sealed override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    {
+      return GetRouteSegments( document ) ;
+    }
+
+    protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document ) ;
+  }
+
+  public abstract class RoutingCommandBaseWithParam<TCommandParameter> : RoutingCommandBaseWithoutOperation, IExternalCommandWithParam<TCommandParameter> where TCommandParameter : class
+  {
+    private TCommandParameter? Parameter { get ; set ; }
+
+    protected sealed override IDisposable? BeforeCommand( ExternalCommandData commandData, ElementSet elements )
+    {
+      if ( false == this.PopCommandParameter( out var param ) ) return null ;
+
+      Parameter = param ;
+      return BeforeCommand( Parameter, commandData, elements ) ;
+    }
+
+    protected sealed override void AfterCommand( IDisposable? commandSpanResource )
+    {
+      var param = Parameter ;
+      Parameter = null ;
+
+      AfterCommand( param!, commandSpanResource ) ;
+    }
+
+    protected virtual IDisposable? BeforeCommand( TCommandParameter param, ExternalCommandData commandData, ElementSet elements ) => null ;
+    protected virtual void AfterCommand( TCommandParameter param, IDisposable? commandSpanResource )
+    {
+    }
+
+    protected sealed override IDisposable? BeforeTransaction( Document document ) => BeforeTransaction( Parameter!, document ) ;
+    protected sealed override void AfterTransaction( Document document, Result result ) => AfterTransaction( Parameter!, document, result ) ;
+
+    protected virtual IDisposable? BeforeTransaction( TCommandParameter param, Document document ) => null ;
+
+    protected virtual void AfterTransaction( TCommandParameter param, Document document, Result result )
+    {
+    }
+
+    protected sealed override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document ) => GetRouteSegments( Parameter!, document ) ;
+
+    protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( TCommandParameter param, Document document ) ;
   }
 }

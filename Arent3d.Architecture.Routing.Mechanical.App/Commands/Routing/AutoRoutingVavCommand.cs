@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Mechanical.App.Commands.Routing.AutoRoutingVavCommand", DefaultString = "Auto \nRouting VAVs" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class AutoRoutingVavCommand : RoutingCommandBase
+  public class AutoRoutingVavCommand : RoutingCommandBase<AutoRoutingVavCommand.SelectState>
   {
     private const int DefaultSubRouteIndex = 0 ;
     private const string ErrorMessageNoVav = "No VAV on the Root Connector level." ;
@@ -54,15 +54,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return systemType?.Name ?? curveType.Category.Name ;
     }
 
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override OperationResult<SelectState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      if ( null == GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( uiDocument.Document ) ) return ( false, "Round duct type whose preferred junction type is tee not found" ) ;
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      if ( null == GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( uiDocument.Document ) ) return OperationResult<SelectState>.FailWithMessage( "Round duct type whose preferred junction type is tee not found" ) ;
 
-      var (fromPickResult, parentVavs, childVavs, errorMessage) = SelectRootConnectorAndFindVavs( uiDocument, routingExecutor, GetAddInType() ) ;
-      if ( null != errorMessage ) return ( false, errorMessage ) ;
+      var (fromPickResult, parentVavs, childVavs, errorMessage) = SelectRootConnectorAndFindVavs( uiDocument, GetRoutingExecutor(), GetAddInType() ) ;
+      if ( null != errorMessage ) return OperationResult<SelectState>.FailWithMessage( errorMessage ) ;
       _rootLevel = uiDocument.Document.GuessLevel( fromPickResult.GetOrigin() ) ;
-      if ( fromPickResult.PickedConnector != null && MEPSystemClassificationInfo.From( fromPickResult.PickedConnector ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, parentVavs, childVavs, classificationInfo ) ) ;
-      return ( false, null ) ;
+      if ( fromPickResult.PickedConnector != null && MEPSystemClassificationInfo.From( fromPickResult.PickedConnector ) is { } classificationInfo ) return new OperationResult<SelectState>( new SelectState( fromPickResult.PickedConnector, parentVavs, childVavs, classificationInfo ) ) ;
+
+      return OperationResult<SelectState>.Cancelled ;
     }
 
     private static (ConnectorPicker.IPickResult fromPickResult, IReadOnlyList<FamilyInstance> parentVavs, Dictionary<int, List<FamilyInstance>> childVavs, string? ErrorMessage) SelectRootConnectorAndFindVavs( UIDocument uiDocument, RoutingExecutor routingExecutor, AddInType addInType )
@@ -153,6 +155,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       Dictionary<int, List<Element>> childSpacesGroupedByBranchNum = new() ;
       foreach ( var space in spaceBoxes ) {
         var branchNumber = space.GetSpaceBranchNumber() ;
+        if ( ! TTEUtil.IsValidBranchNumber( branchNumber ) ) continue ;
+        
         switch ( branchNumber ) {
           case (int) SpaceType.Invalid :
             continue ;
@@ -221,9 +225,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type.PreferredJunctionType == JunctionType.Tee && type is DuctType && type.Shape == ConnectorProfileType.Round ) ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, SelectState selectState )
     {
-      var selectState = state as SelectState ?? throw new InvalidOperationException() ;
       var (rootConnector, parentVavs, childVavs, classificationInfo) = selectState ;
       if ( rootConnector == null ) throw new InvalidOperationException() ;
       var systemType = document.GetAllElements<MEPSystemType>().Where( classificationInfo.IsCompatibleTo ).FirstOrDefault() ;
@@ -283,6 +286,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return lastIndex + 1 ;
     }
 
-    private record SelectState( Connector? RootConnector, IReadOnlyList<FamilyInstance> ParentVavs, Dictionary<int, List<FamilyInstance>> ChildVavs, MEPSystemClassificationInfo ClassificationInfo ) ;
+    public record SelectState( Connector? RootConnector, IReadOnlyList<FamilyInstance> ParentVavs, Dictionary<int, List<FamilyInstance>> ChildVavs, MEPSystemClassificationInfo ClassificationInfo ) ;
   }
 }

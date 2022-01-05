@@ -4,27 +4,26 @@ using System.IO ;
 using Arent3d.Utility ;
 using Arent3d.Revit.Csv ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class FileRoutingCommandBase : RoutingCommandBase
+  public abstract class FileRoutingCommandBase : RoutingCommandBase<IEnumerable<RouteRecord>>
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.RoutingFromFile" ;
 
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override OperationResult<IEnumerable<RouteRecord>> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       var csvFileName = OpenFromToCsv() ;
-      if ( null == csvFileName ) return ( false, null ) ;
+      if ( null == csvFileName ) return OperationResult<IEnumerable<RouteRecord>>.Cancelled ;
 
-      return ( true, ReadRouteRecordsFromFile( csvFileName ) ) ;
+      return new OperationResult<IEnumerable<RouteRecord>>( ReadRouteRecordsFromFile( csvFileName ) ) ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, IEnumerable<RouteRecord> fileRecords )
     {
-      var fileRecords = state as IEnumerable<RouteRecord> ?? throw new InvalidOperationException() ;
-
       return fileRecords.ToSegmentsWithName( document ).EnumerateAll() ;
     }
 
