@@ -136,9 +136,6 @@
 
         <key>Electrical.App.Commands.Initialization.ShowCeeDDetailInformationCommand</key>
         <string>拾い情報表示</string>
-
-        <key>Electrical.App.Commands.Initialization.ShowConduitInformationCommand</key>
-        <string>明細表作成</string>
          
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>読み込みdb保存</string>
