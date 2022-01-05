@@ -3,9 +3,9 @@ using System.Linq ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing
+namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public static class AfterRouteGenerator
+  public static class ElectricalCommandUtil
   {
     public static void SetConstructionItemForCable( Document document, IReadOnlyCollection<Route> routes )
     {

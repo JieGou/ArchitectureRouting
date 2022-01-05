@@ -293,7 +293,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
       if ( GetAddInType() == AddInType.Electrical )
-        AfterRouteGenerator.SetConstructionItemForCable( document, executeResultValue ) ;
+        ElectricalCommandUtil.SetConstructionItemForCable( document, executeResultValue ) ;
     }
   }
 }
