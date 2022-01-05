@@ -13,9 +13,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 {
   public class CreateCylindricalShaftCommandBase : IExternalCommand
   {
-    private double rotateAngle = Math.PI / 3 ;
-    private double lengthEndOne = 6000.0.MillimetersToRevitUnits() ;
-    private double lengthEndTwo = 6000.0.MillimetersToRevitUnits() ;
+    private const double rotateAngle = Math.PI / 3 ;
+    private double lengthEndOne = 6000 ;
+    private double lengthEndTwo = 6000 ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       UIApplication uiApp = commandData.Application ;
@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           // Set top level is highest level
           shaftOpening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).Set( highestLevel!.Id ) ;
 
-          if ( Math.Abs( lengthEndOne ) + Math.Abs( lengthEndTwo ) <=
+          if ( Math.Abs( lengthEndOne.MillimetersToRevitUnits() ) + Math.Abs( lengthEndTwo.MillimetersToRevitUnits() ) <=
                document.Application.ShortCurveTolerance ) {
             message =
               $"Direction symbol length must be greater than {document.Application.ShortCurveTolerance.RevitUnitsToMillimeters()}mm!" ;
@@ -94,12 +94,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           }
 
           var symbol = document.GetFamilySymbols( RoutingFamilyType.DirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException();
-          if ( null == symbol ) {
-            message =
-              $"Not found \"{NameOnRevitAttribute.ToDictionary<RoutingFamilyType>()[ RoutingFamilyType.DirectionCylindricalShaft ]}\" family symbol!" ;
-            return Result.Cancelled ;
-          }
-
           if ( ! symbol.IsActive ) symbol.Activate() ;
 
           if ( document.ActiveView.ViewType != ViewType.FloorPlan ) {
@@ -114,8 +108,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           ElementTransformUtils.RotateElement( document, instance.Id, axis, rotateAngle ) ;
 
           //Set parameters
-          instance.LookupParameter( "Length End One" ).Set( lengthEndOne ) ;
-          instance.LookupParameter( "Length End Two" ).Set( lengthEndTwo ) ;
+          instance.LookupParameter( "Length End One" ).Set( lengthEndOne.MillimetersToRevitUnits() ) ;
+          instance.LookupParameter( "Length End Two" ).Set( lengthEndTwo.MillimetersToRevitUnits() ) ;
 
           trans.Commit() ;
           
