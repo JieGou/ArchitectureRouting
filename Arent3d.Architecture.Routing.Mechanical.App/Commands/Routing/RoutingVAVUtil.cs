@@ -6,23 +6,37 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   public class RoutingVAVUtil
   {
-    public static int GetAHUNumberOfAHU( Connector rootConnector )
+    public static int GetAHUNumberOfAHU( Connector? rootConnector )
     {
+      const int limit = 30 ;
       var ahuNumberOfAHU = (int) AHUNumberType.Invalid ;
+
+      if ( rootConnector == null ) return ahuNumberOfAHU ;
+
+      // AHUのコネクタを選択するとき
       if ( rootConnector.Owner is FamilyInstance parentElement && parentElement.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) {
         parentElement.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
         return ahuNumberOfAHU ;
       }
 
-      var connectors = rootConnector.GetConnectedConnectors() ;
-      foreach ( var connector in connectors ) {
-        // Get all the connected elements
-        var connectedElements = connector.Owner.GetConnectors().SelectMany( s => s.GetConnectedConnectors() ).Where( s => s.IsConnected ).Select( s => s.Owner ) ;
-        // Get the AHU element
-        var ahuElement = connectedElements.OfType<FamilyInstance>().FirstOrDefault( f => f.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) ;
-        if ( ahuElement == null ) continue ;
-        ahuElement.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
-        break ;
+      var firstCandidates = rootConnector.GetConnectedConnectors().ToArray() ;
+      if ( firstCandidates.Length == 0 ) return ahuNumberOfAHU ;
+
+      var current = firstCandidates.First() ;
+
+      for ( var i = 0 ; i < limit ; ++i ) {
+        if ( current.Owner is FamilyInstance element && element.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) {
+          element.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
+          return ahuNumberOfAHU ;
+        }
+
+        var oppositeConnectors = current.Owner.GetConnectors().Where( connector => connector.Id != current.Id ).ToArray() ;
+        if ( oppositeConnectors.Length == 0 ) return ahuNumberOfAHU ; // 途切れているケース
+
+        var nextConnectors = oppositeConnectors.First().GetConnectedConnectors().ToArray() ;
+        if ( nextConnectors.Length == 0 ) return ahuNumberOfAHU ; // 途切れているケース
+
+        current = nextConnectors.First() ;
       }
 
       return ahuNumberOfAHU ;

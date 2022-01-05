@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
       ConnectorPicker.IPickResult iPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand.PickConnector", null, GetAddInType() ) ;
-      var ahuNumberOfAHU = RoutingVAVUtil.GetAHUNumberOfAHU( iPickResult.PickedConnector! ) ;
+      var ahuNumberOfAHU = RoutingVAVUtil.GetAHUNumberOfAHU( iPickResult.PickedConnector ) ;
       IList<Element> spaces = GetAllSpaces( uiDocument.Document ).Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) && ( ahuNumberOfAHU != (int) AHUNumberType.Invalid && space.GetSpaceAHUNumber() == ahuNumberOfAHU ) ).ToArray() ;
       
       foreach ( var space in spaces ) {
