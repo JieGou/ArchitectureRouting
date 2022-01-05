@@ -519,7 +519,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
-      PickRoutingCommandBase.SetConstructionItemForCable( document, executeResultValue ) ;
+      AfterRouteGenerator.SetConstructionItemForCable( document, executeResultValue ) ;
     }
   }
 }
