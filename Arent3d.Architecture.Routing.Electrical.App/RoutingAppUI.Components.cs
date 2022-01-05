@@ -52,6 +52,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button(typeof(LoadCsvFilesCommand), OnlyInitialized = true)]
           private static class LoadCsvFilesCommandButton { }
 
+          [Button( typeof( ShowConduitInformationCommand ), OnlyInitialized = true )]
+          private static class ShowConduitInformationCommandButton { }
+          
           [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
           private static class ShowPickUpInformationCommandButton { }
 
