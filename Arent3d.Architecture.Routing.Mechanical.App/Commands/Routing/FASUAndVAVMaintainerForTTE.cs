@@ -429,7 +429,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static bool HasValidBranchNumber( Element space )
     {
       if ( ! space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ) return false ;
-      return branchNumber >= 0 ;
+      return TTEUtil.IsValidBranchNumber( branchNumber ) ;
     }
     
     private static (bool Success, string ErrorMessage) CreateMaintainersGroupedByBranchNumber( Document document, out Dictionary<int, List<Maintainer>> result )
