@@ -426,12 +426,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return ( true, string.Empty ) ;
     }
 
+    private static bool HasValidBranchNumber( Element space )
+    {
+      if ( ! space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ) return false ;
+      return branchNumber >= 0 ;
+    }
+    
     private static (bool Success, string ErrorMessage) CreateMaintainersGroupedByBranchNumber( Document document, out Dictionary<int, List<Maintainer>> result )
     {
       ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
       FilteredElementCollector collector = new(document) ;
 
-      var targetSpaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) ).ToArray() ;
+      var targetSpaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( HasValidBranchNumber ).ToArray() ;
 
       result = new Dictionary<int, List<Maintainer>>() ;
 

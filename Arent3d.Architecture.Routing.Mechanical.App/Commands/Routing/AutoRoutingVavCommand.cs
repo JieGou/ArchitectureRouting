@@ -155,6 +155,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       Dictionary<int, List<Element>> childSpacesGroupedByBranchNum = new() ;
       foreach ( var space in spaceBoxes ) {
         var branchNumber = space.GetSpaceBranchNumber() ;
+        if ( branchNumber < 0 ) continue ; // 負の値が設定されている場合は無視
+        
         switch ( branchNumber ) {
           case (int) SpaceType.Invalid :
             continue ;
