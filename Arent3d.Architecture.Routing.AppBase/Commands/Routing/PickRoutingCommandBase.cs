@@ -289,5 +289,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return lastIndex + 1 ;
     }
+
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    {
+      if ( GetAddInType() == AddInType.Electrical )
+        ElectricalCommandUtil.SetConstructionItemForCable( document, executeResultValue ) ;
+    }
   }
 }

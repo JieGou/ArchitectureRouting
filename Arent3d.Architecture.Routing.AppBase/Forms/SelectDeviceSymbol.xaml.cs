@@ -17,6 +17,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       foreach ( var deviceSymbol in generalDisplayDeviceSymbolList.Split( Environment.NewLine.ToCharArray() ) )
         DeviceSymbolList.Add( new DeviceSymbolInfo( deviceSymbol ) ) ;
+      
+      // デフォルトで一番上の選択する
+      if ( DeviceSymbolList.Count > 0 ) DeviceSymbolList[ 0 ].IsSelected = true ;
     }
 
     public class DeviceSymbolInfo : INotifyPropertyChanged
