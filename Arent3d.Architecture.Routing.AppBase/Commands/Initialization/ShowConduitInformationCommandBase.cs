@@ -13,7 +13,6 @@ using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
-using NPOI.XSSF.UserModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -43,7 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           string pipingType = element.Name ;
           var existSymbolDetail =
             detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( x => element.Id.ToString() == x.ConduitId ) ;
-          string pipingNumber = "↑" ;
+          string pipingNumber = "1" ;
           var routeName = element.GetRouteName() ;
           if ( ! string.IsNullOrEmpty( routeName ) ) {
             var route = uiDoc.Document.CollectRoutes( AddInType.Electrical )
@@ -51,12 +50,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( route != null ) {
               var parentRouteName = route.GetParentBranches().ToList().LastOrDefault()?.RouteName ;
               var childBranches = route.GetChildBranches().ToList() ;
-              if ( (string.IsNullOrEmpty( parentRouteName ) && childBranches.Any()) || !conduitInformationModels.Any(x=>existSymbolDetail != null && x.DetailSymbol == existSymbolDetail.DetailSymbol ) ) {
-                pipingNumber = "1" ;
+              if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
+                pipingNumber = "↑" ;
               }
             }
           }
-
 
           if ( existSymbolDetail != null ) {
             var existSymbolRoute = element.GetRouteName() ?? string.Empty ;
@@ -98,11 +96,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                     }
                   }
                 }
+
                 conduitInformationModels.Add( conduitInformationModel ) ;
               }
             }
           }
         }
+
+        var sortedConduitModels = conduitInformationModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( y=>y.NumberOfPipes ).ToList();
+        conduitInformationModels = new ObservableCollection<ConduitInformationModel>( sortedConduitModels ) ;
       }
       catch {
         return Result.Cancelled ;
