@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   {
     private const string VAVDiameterParameterName = "ダクト径" ;
     private const string VAVAirflowName = "風量" ;
-    private const double DistanceBetweenFASUAndVAV = 0.25 ;
+    private const double DistanceBetweenFASUAndVAVMillimeter = 45.0 ;
 
     private Document _document = null! ;
     private Dictionary<RoutingFamilyType, FASUVAVInfo> _fasuTypeToInfoDictionary = new() ;
@@ -191,13 +191,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       UpdateVAVDiameter( vavInstance, airflow ) ;
       UpdateVAVAirflow( vavInstance, airflow ) ;
 
-      BoundingBoxXYZ fasuBox = fasuInstance.get_BoundingBox( _document.ActiveView ) ;
-      BoundingBoxXYZ vavBox = vavInstance.get_BoundingBox( _document.ActiveView ) ;
-
       var vavUpstreamConnectorNomralXYZ = info.VAVUpstreamConnectorNormal.ToXYZDirection() ;
-      var moveVAVNextToFASUVector = 0.5 * Vector3d.Dot( fasuBox.To3dRaw().Size + vavBox.To3dRaw().Size, info.VAVUpstreamConnectorNormal ) * vavUpstreamConnectorNomralXYZ ;
+      var fasuUpstreamConnectorPosition = fasuInstance.GetConnectors().First( connector => connector.Direction == FlowDirectionType.In ).Origin ;
+      var vavDownstreamConnectorPosition = vavInstance.GetConnectors().First( connector => connector.Direction == FlowDirectionType.Out ).Origin ;
 
-      ElementTransformUtils.MoveElement( _document, vavInstance.Id, moveVAVNextToFASUVector + DistanceBetweenFASUAndVAV * vavUpstreamConnectorNomralXYZ ) ;
+      var moveVAVNextToFASUVector = fasuUpstreamConnectorPosition - vavDownstreamConnectorPosition ;
+
+      ElementTransformUtils.MoveElement( _document, vavInstance.Id, moveVAVNextToFASUVector - DistanceBetweenFASUAndVAVMillimeter.MillimetersToRevitUnits() * vavUpstreamConnectorNomralXYZ ) ;
       ElementTransformUtils.RotateElements( _document, new List<ElementId>() { fasuInstance.Id, vavInstance.Id }, Line.CreateBound( fasuPosition2d, fasuPosition2d + XYZ.BasisZ ), rotation ) ;
 
       return ( fasuInstance, vavInstance ) ;

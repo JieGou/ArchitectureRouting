@@ -55,12 +55,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     
     private (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
-      IList<Element> spaces = GetAllSpaces( uiDocument.Document ).Where( space => space.HasParameter( BranchNumberParameter.BranchNumber ) ).ToArray() ;
-
       if ( ! RoundDuctTypeExists( uiDocument.Document ) ) return ( false, "There is no RoundDuct family in the document." ) ;
 
       ConnectorPicker.IPickResult iPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand.PickConnector", null, GetAddInType() ) ;
-      if ( iPickResult.PickedConnector != null && CreateFASUAndVAVAutomatically( uiDocument.Document, iPickResult.PickedConnector, spaces ) == Result.Succeeded ) {
+      if ( iPickResult.PickedConnector != null && CreateFASUAndVAVAutomatically( uiDocument.Document, iPickResult.PickedConnector ) == Result.Succeeded ) {
         TaskDialog.Show( CommandName, "FASUとVAVを配置しました。" ) ;
       }
 
@@ -71,7 +69,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector, IList<Element> spaces )
+    private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector )
     {
       var maintainer = new FASUAndVAVMaintainerForTTE() ;
       var (success, errorMessage) = maintainer.Setup( document, pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ) ;

@@ -31,6 +31,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         _topSegments.UpdatePassPointPosition( sizeCalculator, passPointOffsetMilliMeters ) ;
         mergeFinished = ! _topSegments.MergeSegmentsIfSmall( sizeCalculator ) ;
       }
+      
+      _topSegments.SetFromConnectorDiameterAsFirstSegmentDiameterForcibly();
     }
 
     public IEnumerable<(string routeName, RouteSegment)> Execute()
@@ -119,6 +121,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       public Vector3d GetPosition()
       {
         return _endPoint.RoutingStartPosition.To3dPoint() ;
+      }
+      
+      public double? GetDiameter()
+      {
+        return _endPoint.GetDiameter() ;
       }
     }
 
@@ -220,6 +227,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           : sizeCalculator.GetTeeHeaderLength( parentSegmentDiameter, childRouteDiameter.Value ) ;
       }
 
+      // TODO From側のElementの径が変更されるとルーティングの情報がおかしくなる不具合の暫定対応
+      public void SetFromConnectorDiameterAsSegmentDiameterForcibly()
+      {
+        if ( _fromPoint is FixedTerm ft && ft.GetDiameter() is { } diameter ) {
+          _diameter = diameter ;
+        } 
+      }
+      
       public bool IsSmallSegment( FittingSizeCalculator sizeCalculator )
       {
         // TODO 本来はレデューサとTEEサイズから計算. 現状ではおそらくルーティング側の問題でTEEがうまく入らないケースがあるので広めに確保しておく.
@@ -340,6 +355,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       private List<Segment> _segmentList ;
       private readonly bool _branchSideOfParentTee ;
 
+      // TODO From側のElementの径が変更されるとルーティングの情報がおかしくなる不具合の暫定対応B
+      public void SetFromConnectorDiameterAsFirstSegmentDiameterForcibly()
+      {
+        _segmentList.FirstOrDefault()?.SetFromConnectorDiameterAsSegmentDiameterForcibly() ;
+      }
+      
       public Segments( IReadOnlyDictionary<string, BranchPointInfo> branchNameToBranchPointInfo, Route route, bool branchSideOfParentTee )
       {
         _branchSideOfParentTee = branchSideOfParentTee ;
@@ -428,7 +449,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var reversedSegmentList = _segmentList.ToList() ;
         reversedSegmentList.Reverse() ;
         foreach ( var segment in reversedSegmentList ) {
-          airFlow += segment.CalcAirFlowAndSetDiameter( document, airFlow ) ;
+          airFlow = segment.CalcAirFlowAndSetDiameter( document, airFlow ) ;
         }
 
         return airFlow ;
