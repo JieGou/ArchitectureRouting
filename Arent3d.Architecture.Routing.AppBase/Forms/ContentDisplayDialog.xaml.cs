@@ -246,12 +246,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                       if ( pickUpModel != null )
                         pickUpModel.Quantity = ( int.Parse( pickUpModel.Quantity ) + 1 ).ToString() ;
                       else {
-                        pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction ) ;
+                        pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction, materialCode ) ;
                         pickUpModels.Add( pickUpModel ) ;
                       }
                     }
                     else {
-                      PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction ) ;
+                      PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction, materialCode ) ;
                       pickUpModels.Add( pickUpModel ) ;
                     }
                   }
@@ -422,11 +422,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var equipmentType = productType.GetFieldName() ;
       var pickUpModelsByNumber = _pickUpModels.Where( p => p.EquipmentType == equipmentType ).GroupBy( x => x.PickUpNumber, ( key, p ) => new { Number = key, PickUpModels = p.ToList() } ) ;
       foreach ( var pickUpModelByNumber in pickUpModelsByNumber ) {
-        var sumQuantity = pickUpModelByNumber.PickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
-        var pickUpModel = pickUpModelByNumber.PickUpModels.FirstOrDefault() ;
-        if ( pickUpModel == null ) continue ;
-        PickUpModel newPickUpModel = new PickUpModel( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction ) ;
-        pickUpModels.Add( newPickUpModel ) ;
+        var pickUpModelsByProductCode = pickUpModelByNumber.PickUpModels.GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
+        foreach ( var pickUpModelByProductCode in pickUpModelsByProductCode ) {
+          var sumQuantity = pickUpModelByProductCode.PickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
+          var pickUpModel = pickUpModelByProductCode.PickUpModels.FirstOrDefault() ;
+          if ( pickUpModel == null ) continue ;
+          PickUpModel newPickUpModel = new PickUpModel( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction, pickUpModel.ProductCode ) ;
+          pickUpModels.Add( newPickUpModel ) ;
+        }
       }
 
       return pickUpModels ;
