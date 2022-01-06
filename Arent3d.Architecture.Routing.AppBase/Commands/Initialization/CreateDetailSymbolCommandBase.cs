@@ -45,8 +45,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var conduit = doc.GetElement( element.ElementId ) ;
         var conduitHasSymbol = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( d => d.ConduitId == conduit.Id.IntegerValue.ToString() ) ;
 
-        var (symbols, angle) = CreateValueForCombobox( doc, detailSymbolStorable.DetailSymbolModelData, conduit ) ;
-        var detailSymbolSettingDialog = new DetailSymbolSettingDialog( symbols, angle ) ;
+        var (symbols, angle, defaultSymbol) = CreateValueForCombobox( doc, detailSymbolStorable.DetailSymbolModelData, conduit ) ;
+        var detailSymbolSettingDialog = new DetailSymbolSettingDialog( symbols, angle, defaultSymbol ) ;
         detailSymbolSettingDialog.ShowDialog() ;
         if ( ! ( detailSymbolSettingDialog.DialogResult ?? false ) ) return Result.Cancelled ;
 
@@ -415,12 +415,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       detailSymbolStorable.Save() ;
     }
 
-    private (List<string>, List<int>) CreateValueForCombobox( Document doc, List<DetailSymbolModel> detailSymbolModels, Element conduit )
+    private (List<string>, List<int>, string) CreateValueForCombobox( Document doc, List<DetailSymbolModel> detailSymbolModels, Element conduit )
     {
       List<string> symbols = new List<string>() ;
       for ( var letter = 'A' ; letter <= 'Z' ; letter++ ) {
         symbols.Add( letter.ToString() ) ;
       }
+
+      var usedSymbols = detailSymbolModels.Select( d => d.DetailSymbol ).Distinct().ToList() ;
+      var defaultSymbol = symbols.FirstOrDefault( s => ! usedSymbols.Contains( s ) ) ;
 
       List<int> angle = new List<int>() ;
       if ( conduit is Conduit ) {
@@ -445,7 +448,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      return ( symbols, angle ) ;
+      return ( symbols, angle, defaultSymbol ) ;
     }
 
     private List<string> GetAllConduitIdsOfRouteSamePosition( Document doc, Element conduit )

@@ -18,14 +18,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public int Offset ;
     public int BackGround ;
 
-    public DetailSymbolSettingDialog( List<string> symbols, List<int> angle )
+    public DetailSymbolSettingDialog( List<string> symbols, List<int> angle, string defaultSymbol )
     {
       InitializeComponent() ;
       LoadComboboxValue() ;
 
       CmbDetailSymbols.ItemsSource = symbols ;
-      CmbDetailSymbols.SelectedItem = symbols.First() ;
-      DetailSymbol = symbols.First() ;
+      CmbDetailSymbols.SelectedItem = defaultSymbol ;
+      DetailSymbol = defaultSymbol ;
 
       CmbAngle.ItemsSource = angle ;
       CmbAngle.SelectedItem = angle.FirstOrDefault() ;
