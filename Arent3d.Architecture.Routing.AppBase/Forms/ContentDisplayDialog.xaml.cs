@@ -169,6 +169,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       List<string> constructionItems = new List<string>() ;
 
       List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
+      foreach ( var connector in allConnector ) {
+        connector.TryGetProperty( RoutingFamilyLinkedParameter.ConstructionItem, out string? constructionItem ) ;
+        constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem! ) ;
+      }
+
       SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems ) ;
       var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       GetToConnectorsOfConduit( connectors, pickUpModels ) ;
@@ -184,7 +189,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var element = _document.GetElement( connector.Id ) ;
         var item = string.Empty ;
         var floor = _document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ;
-        var constructionItems = productType == ProductType.Conduit ? constructionItemList[ index ] : DefaultConstructionItem ;
+        var constructionItems = productType != ProductType.Cable ? constructionItemList[ index ] : DefaultConstructionItem ;
         var equipmentType = productType.GetFieldName() ;
         var productName = string.Empty ;
         var use = string.Empty ;
@@ -194,7 +199,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var specification = string.Empty ;
         var specification2 = string.Empty ;
         var size = string.Empty ;
-        var quantity = productType == ProductType.Connector ? string.Empty : quantities[ index ].ToString() ;
+        var quantity = productType == ProductType.Connector ? "1" : quantities[ index ].ToString() ;
         var tani = string.Empty ;
         var supplement = string.Empty ;
         var supplement2 = string.Empty ;
@@ -224,26 +229,53 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             if ( _hiroiSetMasterNormalModels.Any() && ! string.IsNullOrEmpty( ceeDModelNumber ) ) {
               var hiroiSetMasterNormalModel = _hiroiSetMasterNormalModels.FirstOrDefault( h => h.ParentPartModelNumber == ceeDModelNumber ) ;
               if ( hiroiSetMasterNormalModel != null ) {
-                specification = hiroiSetMasterNormalModel.Name1 ;
-                var materialCode1 = hiroiSetMasterNormalModel.MaterialCode1 ;
-                if ( _hiroiMasterModels.Any() && ! string.IsNullOrEmpty( materialCode1 ) ) {
-                  var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode1 ) ) ;
-                  if ( hiroiMasterModel != null ) {
-                    productName = hiroiMasterModel.Hinmei ;
-                    size = hiroiMasterModel.Size2 ;
-                    tani = hiroiMasterModel.Tani ;
-                    standard = hiroiMasterModel.Kikaku ;
+                var materialCodes = GetMaterialCodes( hiroiSetMasterNormalModel ) ;
+                if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
+                  foreach ( var ( materialCode, name) in materialCodes ) {
+                    specification = name ;
+                    var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode ) ) ;
+                    if ( hiroiMasterModel != null ) {
+                      productName = hiroiMasterModel.Hinmei ;
+                      size = hiroiMasterModel.Size2 ;
+                      tani = hiroiMasterModel.Tani ;
+                      standard = hiroiMasterModel.Kikaku ;
+                    }
+
+                    if ( productType == ProductType.Connector ) {
+                      var pickUpModel = pickUpModels.FirstOrDefault( p => p.Floor == floor && p.ConstructionItems == constructionItems && p.ProductName == productName && p.Construction == construction && p.ModelNumber == modelNumber && p.Specification == specification && p.Specification2 == specification2 && p.Size == size && p.Tani == tani ) ;
+                      if ( pickUpModel != null )
+                        pickUpModel.Quantity = ( int.Parse( pickUpModel.Quantity ) + 1 ).ToString() ;
+                      else {
+                        pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction ) ;
+                        pickUpModels.Add( pickUpModel ) ;
+                      }
+                    }
+                    else {
+                      PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction ) ;
+                      pickUpModels.Add( pickUpModel ) ;
+                    }
                   }
                 }
               }
             }
           }
         }
-
-        PickUpModel pickUpModel = new PickUpModel( item, floor, constructionItems, equipmentType, productName, use, usageName, construction, modelNumber, specification, specification2, size, quantity, tani, supplement, supplement2, group, layer, classification, standard, pickUpNumber, direction ) ;
-        pickUpModels.Add( pickUpModel ) ;
         index++ ;
       }
+    }
+
+    private Dictionary<string, string> GetMaterialCodes( HiroiSetMasterModel hiroiSetMasterNormalModel )
+    {
+      Dictionary<string, string> materialCodes = new Dictionary<string, string>() ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode1 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode1, hiroiSetMasterNormalModel.Name1 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode2 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode2, hiroiSetMasterNormalModel.Name2 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode3 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode3, hiroiSetMasterNormalModel.Name3 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode4 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode4, hiroiSetMasterNormalModel.Name4 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode5 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode5, hiroiSetMasterNormalModel.Name5 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode6 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode6, hiroiSetMasterNormalModel.Name6 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode7 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode7, hiroiSetMasterNormalModel.Name7 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode8 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode8, hiroiSetMasterNormalModel.Name8 ) ;
+      return materialCodes ;
     }
 
     private string GetCeeDSetCodeOfElement( Element element )
