@@ -358,7 +358,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       // TODO From側のElementの径が変更されるとルーティングの情報がおかしくなる不具合の暫定対応B
       public void SetFromConnectorDiameterAsFirstSegmentDiameterForcibly()
       {
-        _segmentList.First().SetFromConnectorDiameterAsSegmentDiameterForcibly() ;
+        _segmentList.FirstOrDefault()?.SetFromConnectorDiameterAsSegmentDiameterForcibly() ;
       }
       
       public Segments( IReadOnlyDictionary<string, BranchPointInfo> branchNameToBranchPointInfo, Route route, bool branchSideOfParentTee )
