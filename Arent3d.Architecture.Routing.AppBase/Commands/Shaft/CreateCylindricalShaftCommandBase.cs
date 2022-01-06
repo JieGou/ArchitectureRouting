@@ -4,7 +4,6 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.UI ;
-using Autodesk.Revit.UI.Selection ;
 using System ;
 using System.Linq ;
 using Arent3d.Revit ;
@@ -14,8 +13,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
   public class CreateCylindricalShaftCommandBase : IExternalCommand
   {
     private const double RotateAngle = Math.PI / 3 ;
-    private const double LengthEndOne = 6000 ;
-    private const double LengthEndTwo = 6000 ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -87,7 +84,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           // Set top level is highest level
           shaftOpening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).Set( highestLevel!.Id ) ;
 
-          if ( Math.Abs( LengthEndOne.MillimetersToRevitUnits() ) + Math.Abs( LengthEndTwo.MillimetersToRevitUnits() ) <= document.Application.ShortCurveTolerance ) {
+          var lengthOfDirectionCylindricalShaft = radius * 5 ;
+
+          if ( 2 * lengthOfDirectionCylindricalShaft <= document.Application.ShortCurveTolerance ) {
             message = $"Direction symbol length must be greater than {document.Application.ShortCurveTolerance.RevitUnitsToMillimeters()}mm!" ;
             return Result.Cancelled ;
           }
@@ -106,8 +105,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           ElementTransformUtils.RotateElement( document, instance.Id, axis, RotateAngle ) ;
 
           //Set parameters
-          instance.LookupParameter( "Length End One" ).Set( LengthEndOne.MillimetersToRevitUnits() ) ;
-          instance.LookupParameter( "Length End Two" ).Set( LengthEndTwo.MillimetersToRevitUnits() ) ;
+          instance.LookupParameter( "Length End One" ).Set( lengthOfDirectionCylindricalShaft ) ;
+          instance.LookupParameter( "Length End Two" ).Set( lengthOfDirectionCylindricalShaft ) ;
 
           trans.Commit() ;
         }
