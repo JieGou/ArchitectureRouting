@@ -46,6 +46,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       // Avoid Revit bugs about reducer insertion.
       FixReducers( document, executor, executionResult.Value ) ;
 
+      // execute after route command
+      AfterRouteGenerated( document, executionResult.Value ) ;
+
       return ExecutionResult.Succeeded ;
     }
 
@@ -170,6 +173,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// </summary>
     /// <returns>Routing from-to records.</returns>
     protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, TUIResult state ) ;
+
+    protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    {
+    }
   }
 
   public abstract class RoutingCommandBaseWithoutOperation : RoutingCommandBase<object?>
