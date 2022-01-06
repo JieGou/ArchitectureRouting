@@ -23,19 +23,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.PostCommands
     }
   }
 
-  public abstract class ApplySelectedFromToChangesCommandBase : RoutingCommandBase
+  public abstract class ApplySelectedFromToChangesCommandBase : RoutingCommandBaseWithParam<ApplySelectedFromToChangesCommandParameter>
   {
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( ApplySelectedFromToChangesCommandParameter args, Document document )
     {
-      if ( CommandParameterStorage.Pop<ApplySelectedFromToChangesCommandParameter>() is not { } arg ) return ( false, null ) ;
-
-      return ( true, arg ) ;
-    }
-
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
-    {
-      var args = state as ApplySelectedFromToChangesCommandParameter ?? throw new InvalidOperationException() ;
-
       var route = args.TargetRoute ;
       var subRoutes = args.TargetSubRoutes ;
       var newProperties = args.NewRouteProperties ;

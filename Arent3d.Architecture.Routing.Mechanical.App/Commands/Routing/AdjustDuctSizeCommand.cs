@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Mechanical.App.Commands.Routing.AdjustDuctSizeCommand", DefaultString = "Adjust\nDuctSize" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class AdjustDuctSizeCommand : RoutingCommandBase
+  public class AdjustDuctSizeCommand : RoutingCommandBase<IReadOnlyCollection<Route>>
   {
     protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.PickAndAdjustDuctSize" ;
 
@@ -24,9 +24,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override OperationResult<IReadOnlyCollection<Route>> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      return ( true, SelectRoutes( uiDocument ) ) ;
+      return new OperationResult<IReadOnlyCollection<Route>>( SelectRoutes( commandData.Application.ActiveUIDocument ) ) ;
     }
 
     private IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
@@ -38,12 +38,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return new[] { pickInfo.Route } ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, IReadOnlyCollection<Route> state )
     {
-      var routes = state as IReadOnlyCollection<Route> ?? throw new InvalidOperationException() ;
-      var topRoute = GetTopRoute( routes.First() ) ;
+      var topRoute = GetTopRoute( state.First() ) ;
       RouteGenerator.CorrectEnvelopes( document ) ;
-      return DuctSizeAdjusterForTTE.AdjustDuctSize( document, topRoute, 10.0 ).ToArray() ;
+
+      var adjuster = new DuctSizeAdjusterForTTE() ;
+      adjuster.Setup( document, topRoute, 10.0 ) ;
+      return adjuster.Execute().EnumerateAll() ;
     }
 
     private static Route GetTopRoute( Route route )
@@ -52,6 +54,5 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( ! targetRoutes.Any() ) return route ;
       return GetTopRoute( targetRoutes.First() ) ;
     }
-    
   }
 }

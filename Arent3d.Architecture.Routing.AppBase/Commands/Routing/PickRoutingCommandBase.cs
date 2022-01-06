@@ -8,13 +8,14 @@ using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class PickRoutingCommandBase : RoutingCommandBase
+  public abstract class PickRoutingCommandBase : RoutingCommandBase<PickRoutingCommandBase.PickState>
   {
     public record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
@@ -28,8 +29,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom ) ;
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var routingExecutor = GetRoutingExecutor() ;
       var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
       ConnectorPicker.IPickResult toPickResult ;
 
@@ -38,11 +41,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
-      if ( true != property?.DialogResult ) return ( false, null ) ;
+      if ( true != property?.DialogResult ) return OperationResult<PickState>.Cancelled ;
 
-      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return ( false, null ) ;
+      if ( GetMEPSystemClassificationInfo( fromPickResult, toPickResult, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<PickState>.Cancelled ;
 
-      return ( true, new PickState( fromPickResult, toPickResult, property, classificationInfo ) ) ;
+      return new OperationResult<PickState>( new PickState( fromPickResult, toPickResult, property, classificationInfo ) ) ;
     }
 
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult, MEPSystemType? systemType )
@@ -102,9 +105,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return sv ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var pickState = state as PickState ?? throw new InvalidOperationException() ;
       var (fromPickResult, toPickResult, routeProperty, classificationInfo) = pickState ;
       
       RouteGenerator.CorrectEnvelopes( document ) ;
@@ -288,6 +290,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
 
       return lastIndex + 1 ;
+    }
+
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    {
+      if ( GetAddInType() == AddInType.Electrical )
+        ElectricalCommandUtil.SetConstructionItemForCable( document, executeResultValue ) ;
     }
 
     private static void ChangeFromConnectorAndToConnectorColor( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )

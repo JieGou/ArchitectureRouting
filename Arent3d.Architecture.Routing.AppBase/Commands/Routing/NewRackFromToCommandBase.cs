@@ -6,6 +6,7 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Autodesk.Revit.ApplicationServices ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -22,6 +23,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
+      UIApplication uiApp = commandData.Application ;
+      Application app = uiApp.Application ;
       try {
         // 線クリックのui設定＿Setting UI of wire click
         var pickFrom = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route.", GetAddInType() ) ;
@@ -49,11 +52,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               return Result.Failed ;
             }
 
+            var racks = new List<FamilyInstance>() ;
             var allElementsInRoute = new List<Element>() ;
             foreach ( var connector in connectors ) {
               allElementsInRoute.Add( connector.Owner );
             }
-            NewRackCommandBase.CreateRackForConduit( uiDocument, allElementsInRoute );
+            NewRackCommandBase.CreateRackForConduit( uiDocument, app, allElementsInRoute, racks );
+            
+            // insert notation for racks
+            NewRackCommandBase.CreateNotationForRack( document, app, racks ) ;
 
             return Result.Succeeded ;
           } ) ;

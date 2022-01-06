@@ -23,8 +23,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
     {
       if ( UiApp is not { } uiApp ) return ;
 
-      CommandParameterStorage.Set( new ApplySelectedFromToChangesCommandParameter( route, subRoutes, properties ) ) ;
-      uiApp.PostCommand<ApplySelectedFromToChangesCommand>() ;
+      uiApp.PostCommand<ApplySelectedFromToChangesCommand, ApplySelectedFromToChangesCommandParameter>( new ApplySelectedFromToChangesCommandParameter( route, subRoutes, properties ) ) ;
     }
   }
 }
