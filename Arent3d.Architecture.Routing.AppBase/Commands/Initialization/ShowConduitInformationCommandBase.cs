@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           .Where( p => p is Conduit ) ;
         foreach ( var element in pickedObjects ) {
           string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
-          string constructionItem = element.LookupParameter( "Construction Item" ).AsValueString() ;
+          string constructionItem = element.LookupParameter( "Construction Item" ).AsString() ;
           string pipingType = element.Name ;
           var existSymbolDetails = detailSymbolStorable.DetailSymbolModelData.Where( x => element.Id.ToString() == x.ConduitId ).ToList() ;
           foreach ( var existSymbolDetail in existSymbolDetails ) {
