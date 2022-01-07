@@ -1,17 +1,19 @@
 ﻿using Autodesk.Revit.DB ;
-using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics;
-using Arent3d.Architecture.Routing.Extensions;
-using Arent3d.Architecture.Routing.Storable;
-using Autodesk.Revit.ApplicationServices;
-using Autodesk.Revit.UI;
-using Autodesk.Revit.UI.Selection;
-using System;
-using System.Linq;
+using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Autodesk.Revit.ApplicationServices ;
+using Autodesk.Revit.UI ;
+using System ;
+using System.Linq ;
+using Arent3d.Revit ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 {
   public class CreateCylindricalShaftCommandBase : IExternalCommand
   {
+    private const double RotateAngle = Math.PI / 3 ;
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       UIApplication uiApp = commandData.Application ;
@@ -47,7 +49,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
         // If second point is null. Return failed to end command
         if ( secondPoint == null || checkEx ) return Result.Failed ;
-        
+
         // Get height setting
         HeightSettingStorable heightSetting = document.GetHeightSettingStorable() ;
         var levels = heightSetting.Levels.OrderBy( x => x.Elevation ).ToList() ;
@@ -62,10 +64,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           // Create CurveArray for NewOpening method from list selected points
           CurveArray shaftProfile = app.Create.NewCurveArray() ;
           double radius = firstPoint.DistanceTo( secondPoint ) ;
-          double startAngle = 0;  
-          double endAngle = Math.PI * 2;
-          XYZ xAxis = new XYZ(1, 0, 0);  
-          XYZ yAxis = new XYZ(0, 1, 0);
+          double startAngle = 0 ;
+          const double endAngle = Math.PI * 2 ;
+          XYZ xAxis = new XYZ( 1, 0, 0 ) ;
+          XYZ yAxis = new XYZ( 0, 1, 0 ) ;
           if ( radius > 0.001 ) {
             Curve cylinderCurve = Arc.Create( firstPoint, radius, startAngle, endAngle, xAxis, yAxis ) ;
             shaftProfile.Append( cylinderCurve ) ;
@@ -81,6 +83,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           shaftOpening.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT ).Set( lowestLevel!.Id ) ;
           // Set top level is highest level
           shaftOpening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).Set( highestLevel!.Id ) ;
+
+          var lengthOfDirectionCylindricalShaft = radius * 5 ;
+
+          if ( 2 * lengthOfDirectionCylindricalShaft <= document.Application.ShortCurveTolerance ) {
+            message = $"Direction symbol length must be greater than {document.Application.ShortCurveTolerance.RevitUnitsToMillimeters()}mm!" ;
+            return Result.Cancelled ;
+          }
+
+          var symbol = document.GetFamilySymbols( RoutingFamilyType.DirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+          if ( ! symbol.IsActive ) symbol.Activate() ;
+
+          if ( document.ActiveView.ViewType != ViewType.FloorPlan ) {
+            message = "Only created in floor plan view!" ;
+            return Result.Cancelled ;
+          }
+
+          //Place symbol family
+          var instance = document.Create.NewFamilyInstance( firstPoint, symbol, document.ActiveView ) ;
+          var axis = Line.CreateBound( firstPoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( firstPoint ) ) ;
+          ElementTransformUtils.RotateElement( document, instance.Id, axis, RotateAngle ) ;
+
+          //Set parameters
+          instance.LookupParameter( "Length End One" ).Set( lengthOfDirectionCylindricalShaft ) ;
+          instance.LookupParameter( "Length End Two" ).Set( lengthOfDirectionCylindricalShaft ) ;
 
           trans.Commit() ;
         }
