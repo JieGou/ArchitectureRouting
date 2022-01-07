@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             index++ ;
           }
         }
-
+        CnsSettingModels.Insert( 0,new CnsSettingModel( 0,"未設定" ) );
         AddDefaultValue() ;
         CnsSettingStorable.CnsSettingData = CnsSettingModels ;
       }
