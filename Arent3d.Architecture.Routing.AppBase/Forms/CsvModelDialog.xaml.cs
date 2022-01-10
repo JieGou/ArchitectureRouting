@@ -377,7 +377,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               }
               break ;
             case "【CeeD】セットコード一覧表.xlsx" :
-              _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( path ) ;
+              OpenFileDialog openFileEquipmentSymbolsDialog = new OpenFileDialog { FileName = "Select 機器記号一覧表.xls file", Filter = "Csv files (*.xls)|*.xls", Multiselect = false } ;
+              string fileEquipmentSymbolsPath = string.Empty ;
+              if ( openFileEquipmentSymbolsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+                fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
+              }
+              _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( path, fileEquipmentSymbolsPath ) ;
               if(_ceeDModelData.Any()){
                 correctMessage.AppendLine( "\u2022 【CeeD】セットコード一覧表" ) ;
               }

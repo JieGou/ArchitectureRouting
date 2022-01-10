@@ -5,6 +5,7 @@ using System.IO ;
 using System.Linq ;
 using System.Text ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using NPOI.HSSF.UserModel ;
 using NPOI.SS.UserModel ;
 using NPOI.XSSF.UserModel ;
 
@@ -12,11 +13,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 {
   public static class ExcelToModelConverter
   {
-    public static List<CeedModel> GetAllCeeDModelNumber( string path )
+    public static List<CeedModel> GetAllCeeDModelNumber( string path, string path2 )
     {
       List<CeedModel> ceedModelData = new List<CeedModel>() ;
 
       try {
+        var equipmentSymbols = new List<EquipmentSymbol>() ;
+        if ( ! string.IsNullOrEmpty( path2 ) ) equipmentSymbols = GetAllEquipmentSymbols( path2 ) ;
         FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
         XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
         ISheet workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
@@ -72,23 +75,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             var symbolCell = workSheet.GetRow( j ).GetCell( 5 ) ;
             var symbol = GetCellValue( symbolCell ) ;
             if ( ! string.IsNullOrEmpty( symbol ) && ! symbol.Contains( "又は" ) ) floorPlanSymbol = symbol ;
-            
+
             var conditionCell = workSheet.GetRow( j ).GetCell( 8 ) ;
             var condition = GetCellValue( conditionCell ) ;
-            if ( ! string.IsNullOrEmpty( condition ) && condition.EndsWith( "の場合" ) ) conditions.Add( condition.Replace("の場合", "").Replace("・", "") ) ;
+            if ( ! string.IsNullOrEmpty( condition ) && condition.EndsWith( "の場合" ) ) conditions.Add( condition.Replace( "の場合", "" ).Replace( "・", "" ) ) ;
           }
 
-          var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
           if ( ! ceeDModelNumbers.Any() ) {
-            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName, string.Empty ) ;
-            ceedModelData.Add( ceeDModel ) ;
+            CreateCeeDModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, ceeDName, string.Empty ) ;
           }
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
               var condition = conditions.Count > k ? conditions[ k ] : string.Empty ;
-              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName, condition ) ;
-              ceedModelData.Add( ceeDModel ) ;
+              CreateCeeDModel( ceedModelData, equipmentSymbols, ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, ceeDName, condition ) ;
             }
           }
 
@@ -100,6 +100,60 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       }
 
       return ceedModelData ;
+    }
+
+    private static void CreateCeeDModel( List<CeedModel> ceeDModelData, List<EquipmentSymbol> equipmentSymbols, string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbols, List<string> modelNumbers, string floorPlanSymbol, string ceeDName, string condition )
+    {
+      var symbols = generalDisplayDeviceSymbols.Split( '\n' ) ;
+      foreach ( var symbol in symbols ) {
+        var generalDisplayDeviceSymbol = symbol.Normalize( NormalizationForm.FormKC ) ;
+        if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) || ! equipmentSymbols.Any() ) continue ;
+        var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol && modelNumbers.Contains( s.ModelNumber ) ).Select( s => s.ModelNumber ).Distinct().ToList() ;
+        if ( modelNumberList.Any() )
+          ceeDModelData.AddRange( from modelNumber in modelNumberList select new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, ceeDName, condition ) ) ;
+        else {
+          CeedModel ceeDModel = new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, ceeDName, condition ) ;
+          ceeDModelData.Add( ceeDModel ) ;
+        }
+      }
+    }
+
+    private static List<EquipmentSymbol> GetAllEquipmentSymbols( string path )
+    {
+      List<EquipmentSymbol> equipmentSymbols = new List<EquipmentSymbol>() ;
+      try {
+        FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
+        HSSFWorkbook wb = new HSSFWorkbook( fs ) ;
+        ISheet workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
+        const int startRow = 1 ;
+        var endRow = workSheet.LastRowNum ;
+        for ( var i = startRow ; i <= endRow ; i++ ) {
+          var record = workSheet.GetRow( i ).GetCell( 0 ) ;
+          if ( record == null || record.CellStyle.IsHidden ) continue ;
+          var symbol = GetCellValue( record ) ;
+          if ( string.IsNullOrEmpty( symbol ) ) continue ;
+          var modelNumberCell = workSheet.GetRow( i ).GetCell( 4 ) ;
+          var modelNumber = modelNumberCell == null ? string.Empty : GetCellValue( modelNumberCell ) ;
+          equipmentSymbols.Add( new EquipmentSymbol( symbol, modelNumber ) ) ;
+        }
+      }
+      catch ( Exception ) {
+        return new List<EquipmentSymbol>() ;
+      }
+
+      return equipmentSymbols ;
+    }
+
+    private class EquipmentSymbol
+    {
+      public readonly string Symbol ;
+      public readonly string ModelNumber ;
+
+      public EquipmentSymbol( string? symbol, string? modelNumber )
+      {
+        Symbol = symbol ?? string.Empty ;
+        ModelNumber = modelNumber ?? string.Empty ;
+      }
     }
 
     public static List<string> GetModelNumberToUse( string path )

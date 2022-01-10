@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public string SelectedDeviceSymbol ;
     public string SelectedCondition ;
     public string SelectedCeeDCode ;
+    public string SelectedModelNumber ;
 
     public CeeDModelDialog( Document document )
     {
@@ -38,6 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedDeviceSymbol = string.Empty ;
       SelectedCondition = string.Empty ;
       SelectedCeeDCode = string.Empty ;
+      SelectedModelNumber = string.Empty ;
 
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
@@ -53,12 +55,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
     {
       var selectedItem = (CeedModel) DtGrid.SelectedValue ;
-      var dlgSelectDeviceSymbol = new SelectDeviceSymbol( selectedItem.GeneralDisplayDeviceSymbol ) ;
-      dlgSelectDeviceSymbol.ShowDialog() ;
-      if ( dlgSelectDeviceSymbol.DialogResult == false ) return ;
-      SelectedDeviceSymbol = dlgSelectDeviceSymbol.GetSelectedDeviceSymbol() ;
+      SelectedDeviceSymbol = selectedItem.GeneralDisplayDeviceSymbol ;
       SelectedCondition = selectedItem.Condition ;
       SelectedCeeDCode = selectedItem.CeeDSetCode ;
+      SelectedModelNumber = selectedItem.ModelNumber ;
       if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) ) return ;
       DialogResult = true ;
       Close() ;
@@ -160,16 +160,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
-      OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx)|*.xlsx", Multiselect = false } ;
+      OpenFileDialog openFileDialog = new OpenFileDialog { FileName = "Select 【CeeD】セットコード一覧表.xlsx file", Filter = "Csv files (*.xlsx)|*.xlsx", Multiselect = false } ;
       string filePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
+      }
+      
+      OpenFileDialog openFileEquipmentSymbolsDialog = new OpenFileDialog { FileName = "Select 機器記号一覧表.xls file", Filter = "Csv files (*.xls)|*.xls", Multiselect = false } ;
+      string fileEquipmentSymbolsPath = string.Empty ;
+      if ( openFileEquipmentSymbolsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+        fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
       }
 
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
-        List<CeedModel> ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( filePath ) ;
+        List<CeedModel> ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( filePath, fileEquipmentSymbolsPath ) ;
         if ( ! ceeDModelData.Any() ) return ;
         ceeDStorable.CeedModelData = ceeDModelData ;
         ceeDStorable.CeedModelUsedData = new List<CeedModel>() ;
