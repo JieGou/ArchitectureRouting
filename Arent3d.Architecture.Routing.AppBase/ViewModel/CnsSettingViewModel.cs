@@ -86,12 +86,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var index = 1 ;
         var inputData = System.IO.File.ReadLines( filename ) ;
         foreach ( string line in inputData ) {
-          if ( ! string.IsNullOrWhiteSpace( line ) ) {
+          if ( ! string.IsNullOrWhiteSpace( line ) && !line.Equals( "未設定" ) ) {
             CnsSettingModels.Add( new CnsSettingModel( index, line.Trim() ) ) ;
             index++ ;
           }
         }
-
+        CnsSettingModels.Insert( 0,new CnsSettingModel( 0,"未設定" ) );
         AddDefaultValue() ;
         CnsSettingStorable.CnsSettingData = CnsSettingModels ;
       }
@@ -111,9 +111,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       // Process open file dialog box results
       if ( result == true ) {
         string createText = "" ;
+        int index = 1 ;
         foreach ( var item in CnsSettingModels ) {
-          if ( ! string.IsNullOrEmpty( item.CategoryName ) ) {
+          if ( ! string.IsNullOrEmpty( item.CategoryName ) && !item.CategoryName.Equals( "未設定" ) ) {
             createText += item.CategoryName.Trim() + Environment.NewLine + Environment.NewLine ;
+            index++ ;
           }
         }
         
