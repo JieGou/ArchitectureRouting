@@ -49,7 +49,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return AppCommandSettings.CreateRoutingExecutor( document, view ) ;
     }
 
-    private static string GetNameBase( Element? systemType, Element curveType )
+    public static string GetNameBase( Element? systemType, Element curveType )
     {
       return systemType?.Name ?? curveType.Category.Name ;
     }
@@ -144,7 +144,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return result ;
     }
 
-    private static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavPosition )
+    public static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavPosition )
     {
       return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
     }
@@ -212,7 +212,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
     }
 
-    private static IList<Element> GetAllSpaces( Document document )
+    public static IList<Element> GetAllSpaces( Document document )
     {
       ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
       FilteredElementCollector collector = new(document) ;
@@ -220,7 +220,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return spaces ;
     }
 
-    private static MEPCurveType? GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( Document document )
+    public static MEPCurveType? GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( Document document )
     {
       return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type.PreferredJunctionType == JunctionType.Tee && type is DuctType && type.Shape == ConnectorProfileType.Round ) ;
     }
@@ -276,7 +276,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return result ;
     }
 
-    private static int GetRouteNameIndex( RouteCache routes, string? targetName )
+    public static int GetRouteNameIndex( RouteCache routes, string? targetName )
     {
       var pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
       var regex = new Regex( pattern ) ;
