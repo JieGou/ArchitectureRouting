@@ -206,7 +206,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     }
 
     // Get the angle between two vectors
-    private static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
+    public static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
     {
       // return the angle (in radian)
       return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;

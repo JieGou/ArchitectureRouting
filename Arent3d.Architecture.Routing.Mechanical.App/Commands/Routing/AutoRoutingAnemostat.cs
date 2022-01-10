@@ -156,7 +156,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       {
         var aVector = a.Origin.To3dPoint().To2d() - fasu.Origin ;
         var bVector = b.Origin.To3dPoint().To2d() - fasu.Origin ;
-        return Vector2d.Dot( fasu.BasisZ, aVector ).CompareTo( Vector2d.Dot( fasu.BasisZ, bVector ) ) ;
+        var aAngle = AutoRoutingVavCommand.GetAngleBetweenVector( fasu.BasisZ, aVector ) ;
+        var bAngle = AutoRoutingVavCommand.GetAngleBetweenVector( fasu.BasisZ, bVector ) ;
+        return aAngle.CompareTo( bAngle ) ;
       }
 
       private IEnumerable<FamilyInstance> GetAnemostat( Document doc, Element? spaceContainFasu )
