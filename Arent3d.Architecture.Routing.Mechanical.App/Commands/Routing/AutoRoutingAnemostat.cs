@@ -13,8 +13,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   public class AutoRoutingAnemostat
   {
     private Document _document = null! ;
-    private Segments _listOfRightSegments = null! ;
-    private Segments _listOfLeftSegments = null! ;
+    private Segments? _listOfRightSegments = null ;
+    private Segments? _listOfLeftSegments = null ;
 
     private static MEPSystemClassificationInfo _classificationInfo = null! ;
     private static FixedHeight? _fromFixedHeight ;
@@ -51,10 +51,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     public IEnumerable<(string routeName, RouteSegment)> Execute()
     {
-      foreach ( var routeSegment in _listOfRightSegments.CreateRouteSegments( _document ) ) {
-        yield return routeSegment ;
+      if ( _listOfRightSegments != null ) {
+        foreach ( var routeSegment in _listOfRightSegments.CreateRouteSegments( _document ) ) {
+          yield return routeSegment ;
+        }
       }
 
+      if ( _listOfLeftSegments == null ) yield break ;
       foreach ( var routeSegment in _listOfLeftSegments.CreateRouteSegments( _document ) ) {
         yield return routeSegment ;
       }
@@ -84,7 +87,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       {
         RightFasuConnectors = new List<Connector>() ;
         LeftFasuConnectors = new List<Connector>() ;
-        var notInConnectors = fasu.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In ).ToList() ;
+        var notInConnectors = fasu.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In && ! connector.IsConnected ).ToList() ;
         InConnector = fasu.GetConnectors().FirstOrDefault( connector => connector.Direction == FlowDirectionType.In ) ;
         if ( InConnector != null && notInConnectors.Any() ) {
           Origin = InConnector.Origin.To3dPoint().To2d() ;
@@ -128,14 +131,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       public Side( Document doc, Fasu fasu, bool isRight )
       {
-        // Todo sort by angle
         SortedFasuConnectors = isRight ? fasu.RightFasuConnectors : fasu.LeftFasuConnectors ;
         SortedFasuConnectors.Sort( ( a, b ) => CompareAngle( fasu, a, b ) ) ;
 
         // Get anemostats
         var anemostats = GetAnemostat( doc, fasu.SpaceContainFasu ) ;
         foreach ( var anemostat in anemostats ) {
-          var anemoConnector = anemostat.GetConnectors().FirstOrDefault() ;
+          var anemoConnector = anemostat.GetConnectors().FirstOrDefault( connector => ! connector.IsConnected ) ;
+          if ( anemoConnector == null ) continue ;
           var anemoConnectorVector = anemoConnector.Origin.To3dPoint().To2d() - fasu.Origin ;
           if ( Vector2d.Dot( fasu.Normal, anemoConnectorVector ) < 0 && isRight ) {
             SortedAnemostatConnectors.Add( anemoConnector ) ;
