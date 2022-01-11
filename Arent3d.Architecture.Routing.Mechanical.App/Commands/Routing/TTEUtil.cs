@@ -1,3 +1,4 @@
+using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
@@ -89,45 +90,30 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return ahuNumber > 0 ;
     }
 
-    private class ConnectorWithDepth
-    {
-      public readonly Connector Connector ;
-      public readonly int Depth ;
-
-      public ConnectorWithDepth( Connector connector, int depth )
-      {
-        Connector = connector ;
-        Depth = depth ;
-      }
-    }
-
-    public static int GetAhuNumberByPickedConnector( Connector rootConnector )
+    public static int? GetAhuNumberByPickedConnector( Connector rootConnector )
     {
       var ahuNumber = 0 ;
       const int limit = 30 ;
-
-      var queue = new Queue<ConnectorWithDepth>() ;
       List<Element> visitedElement = new List<Element>() ;
-      queue.Enqueue( new ConnectorWithDepth( rootConnector, 0 ) ) ;
+      List<Connector> nextConnectors = new List<Connector>() { rootConnector } ;
 
-      while ( queue.Count != 0 ) {
-        var currentConnector = queue.Dequeue() ;
-        if ( visitedElement.Any( e => e.Id == currentConnector.Connector.Owner.Id ) ) continue ;
-        visitedElement.Add( currentConnector.Connector.Owner ) ;
-        currentConnector.Connector.Owner.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumber ) ;
-        if ( IsValidAhuNumber( ahuNumber ) ) return ahuNumber ;
-        var oppositeConnectors = currentConnector.Connector.Owner.GetConnectors().Where( connector => connector.Id != currentConnector.Connector.Id ).ToArray() ;
-        var depth = currentConnector.Depth + 1 ;
-        if ( oppositeConnectors.Length > 0 && depth >= limit ) break ;
-        foreach ( var oppositeConnector in oppositeConnectors ) {
-          var nextConnectors = oppositeConnector.GetConnectedConnectors().ToArray() ;
-          foreach ( var nextConnector in nextConnectors ) {
-            queue.Enqueue( new ConnectorWithDepth( nextConnector, depth ) ) ;
+      for ( var depth = 0 ; depth < limit ; depth++ ) {
+        var currentConnectors = nextConnectors.Select( c => c ).ToList() ;
+        nextConnectors.Clear() ;
+        foreach ( var currentConnector in currentConnectors ) {
+          if ( visitedElement.Any( e => e.Id == currentConnector.Owner.Id ) ) continue ;
+          visitedElement.Add( currentConnector.Owner ) ;
+          currentConnector.Owner.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumber ) ;
+          if ( IsValidAhuNumber( ahuNumber ) ) return ahuNumber ;
+          var oppositeConnectors = currentConnector.Owner.GetConnectors().Where( connector => connector.Id != currentConnector.Id ).ToArray() ;
+          foreach ( var oppositeConnector in oppositeConnectors ) {
+            var connectors = oppositeConnector.GetConnectedConnectors().ToArray() ;
+            nextConnectors.AddRange( connectors ) ;
           }
         }
       }
 
-      return IsValidAhuNumber( ahuNumber ) ? ahuNumber : -1 ;
+      return IsValidAhuNumber( ahuNumber ) ? ahuNumber : null ;
     }
   }
 }

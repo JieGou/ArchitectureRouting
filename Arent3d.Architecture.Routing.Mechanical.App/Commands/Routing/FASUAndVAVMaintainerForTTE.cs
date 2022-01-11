@@ -432,21 +432,22 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return TTEUtil.IsValidBranchNumber( branchNumber ) ;
     }
 
-    private static bool HasValidAhuNumber( Element space, int ahuNumber )
+    private static bool HasSpecifiedAhuNumber( Element space, int ahuNumber )
     {
       if ( ! space.TryGetProperty( AHUNumberParameter.AHUNumber, out int ahuNumberOfSpace ) ) return false ;
-      return TTEUtil.IsValidAhuNumber( ahuNumberOfSpace ) && ahuNumberOfSpace == ahuNumber ;
+      return ahuNumberOfSpace == ahuNumber ;
     }
 
     private static (bool Success, string ErrorMessage) CreateMaintainersGroupedByBranchNumber( Document document, Connector pickedConnector, out Dictionary<int, List<Maintainer>> result )
     {
+      result = new Dictionary<int, List<Maintainer>>() ;
       ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
       FilteredElementCollector collector = new(document) ;
 
       var ahuNumber = TTEUtil.GetAhuNumberByPickedConnector( pickedConnector ) ;
-      var targetSpaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( HasValidBranchNumber ).Where( space => HasValidAhuNumber( space, ahuNumber ) ).ToArray() ;
+      if ( ! ahuNumber.HasValue ) return ( false, "AHUNumber cannot be found from the picked connector." ) ;
 
-      result = new Dictionary<int, List<Maintainer>>() ;
+      var targetSpaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( HasValidBranchNumber ).Where( space => HasSpecifiedAhuNumber( space, ahuNumber.Value ) ).ToArray() ;
 
       foreach ( var space in targetSpaces ) {
         if ( space.get_BoundingBox( document.ActiveView ) == null ) return ( false, $"{space.Name} doesn't have bounding box." ) ;
