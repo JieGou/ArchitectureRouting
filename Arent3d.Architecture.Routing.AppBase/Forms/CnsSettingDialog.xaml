@@ -32,14 +32,14 @@
                     </DataGrid.Resources>
 
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="" IsReadOnly="True">
+                        <DataGridTextColumn Header="" IsReadOnly="True" CanUserSort="False">
                             <DataGridTextColumn.Binding>
                                 <Binding Path="Sequence" NotifyOnTargetUpdated="True"
                                          UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
                         <DataGridTextColumn Header="工事項目名称" Width="280"
-                                            EditingElementStyle="{StaticResource errorStyle}">
+                                            EditingElementStyle="{StaticResource errorStyle}" CanUserSort="False">
                             <DataGridTextColumn.Binding>
                                 <Binding Path="CategoryName" NotifyOnTargetUpdated="True"
                                          UpdateSourceTrigger="PropertyChanged" Mode="TwoWay">
