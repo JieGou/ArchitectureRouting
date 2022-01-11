@@ -16,6 +16,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       GeneralDisplayDeviceSymbol,
       ModelNumber,
       FloorPlanSymbol,
+      InstrumentationSymbol,
       Name,
       Condition
     }
@@ -29,6 +30,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.GeneralDisplayDeviceSymbol, customTypeValue.GeneralDisplayDeviceSymbol ) ;
       serializerObject.AddNonNull( SerializeField.ModelNumber, customTypeValue.ModelNumber ) ;
       serializerObject.AddNonNull( SerializeField.FloorPlanSymbol, customTypeValue.FloorPlanSymbol ) ;
+      serializerObject.AddNonNull( SerializeField.InstrumentationSymbol, customTypeValue.InstrumentationSymbol ) ;
       serializerObject.AddNonNull( SerializeField.Name, customTypeValue.Name ) ;
       serializerObject.AddNonNull( SerializeField.Condition, customTypeValue.Condition ) ;
 
@@ -44,10 +46,11 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var generalDisplayDeviceSymbol = deserializer.GetString( SerializeField.GeneralDisplayDeviceSymbol ) ;
       var modelNumber = deserializer.GetString( SerializeField.ModelNumber ) ;
       var floorPlanSymbol = deserializer.GetString( SerializeField.FloorPlanSymbol ) ;
+      var instrumentationSymbol = deserializer.GetString( SerializeField.InstrumentationSymbol ) ;
       var name = deserializer.GetString( SerializeField.Name ) ;
       var condition = deserializer.GetString( SerializeField.Condition ) ;
 
-      return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, name!, condition! ) ;
+      return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition! ) ;
     }
   }
 }

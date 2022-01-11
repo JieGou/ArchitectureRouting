@@ -3,10 +3,16 @@ using System.Collections.Generic ;
 using System.Globalization ;
 using System.IO ;
 using System.Linq ;
+using System.Runtime.InteropServices ;
 using System.Text ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Microsoft.Office.Interop.Excel ;
 using NPOI.SS.UserModel ;
 using NPOI.XSSF.UserModel ;
+using Application = Microsoft.Office.Interop.Excel.Application ;
+using Image = System.Drawing.Image ;
+using Clipboard = System.Windows.Forms.Clipboard ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 {
@@ -22,6 +28,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         ISheet workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
         const int startRow = 7 ;
         var endRow = workSheet.LastRowNum ;
+        XSSFDrawing drawing = (XSSFDrawing) workSheet.DrawingPatriarch ;
+        Dictionary<int, int> blocks = new Dictionary<int, int>() ;
+
+        // Get list block row in column C
+        for ( var i = startRow ; i <= endRow ; i++ ) {
+          var record = workSheet.GetRow( i ).GetCell( 3 ) ;
+          if ( record == null || record.CellStyle.IsHidden ) continue ;
+          var cellValue = GetCellValue( record ) ;
+          if ( string.IsNullOrEmpty( cellValue ) ) continue ;
+          var nextCellValue = GetCellValue( record ) ;
+          var firstIndexGroup = i ;
+          do {
+            i++ ;
+            if ( i > endRow ) break ;
+            cellValue = nextCellValue ;
+            record = workSheet.GetRow( i ).GetCell( 3 ) ;
+            if ( record == null ) break ;
+            nextCellValue = GetCellValue( record ) ;
+          } while ( ! ( string.IsNullOrEmpty( cellValue ) && ! string.IsNullOrEmpty( nextCellValue ) ) ) ;
+
+          var lastIndexGroup = i ;
+          blocks.Add( firstIndexGroup + 1, lastIndexGroup + 1 ) ;
+          i-- ;
+        }
+
+        var listFloorPlan = GetSymbolImages( path, blocks ) ;
+        
         for ( var i = startRow ; i <= endRow ; i++ ) {
           List<string> ceeDModelNumbers = new List<string>() ;
           List<string> ceeDSetCodes = new List<string>() ;
@@ -29,6 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           List<string> conditions = new List<string>() ;
           string generalDisplayDeviceSymbols = string.Empty ;
           string floorPlanSymbol = string.Empty ;
+          string instrumentationSymbol = string.Empty ;
           string ceeDName = string.Empty ;
 
           var record = workSheet.GetRow( i ).GetCell( 3 ) ;
@@ -71,7 +105,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
             var symbolCell = workSheet.GetRow( j ).GetCell( 5 ) ;
             var symbol = GetCellValue( symbolCell ) ;
-            if ( ! string.IsNullOrEmpty( symbol ) && ! symbol.Contains( "又は" ) ) floorPlanSymbol = symbol ;
+            if ( ! string.IsNullOrEmpty( symbol ) ) floorPlanSymbol = symbol ;
+
+            var keisosymbolCell = workSheet.GetRow( j ).GetCell( 6 ) ;
+            var keisosymbol = GetCellValue( keisosymbolCell ) ;
+            if ( ! string.IsNullOrEmpty( keisosymbol ) && ! keisosymbol.Contains( "又は" ) ) instrumentationSymbol = keisosymbol ;
             
             var conditionCell = workSheet.GetRow( j ).GetCell( 8 ) ;
             var condition = GetCellValue( conditionCell ) ;
@@ -80,14 +118,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
           var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
           if ( ! ceeDModelNumbers.Any() ) {
-            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName, string.Empty ) ;
+            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty ) ;
             ceedModelData.Add( ceeDModel ) ;
           }
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
+              var symbolBytes = listFloorPlan.Where( b => b.Postion == firstIndexGroup + 1).ToList().OrderBy(b=>b.MarginLeft) ;
+              var floorPlanImages = symbolBytes.Select( b => b.Image ).ToList() ;
               var condition = conditions.Count > k ? conditions[ k ] : string.Empty ;
-              CeedModel ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, ceeDName, condition ) ;
+              CeedModel ceeDModel ;
+              if ( floorPlanImages.Any() ) {
+                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition ) ;
+              }
+              else {
+                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition ) ;
+              }
               ceedModelData.Add( ceeDModel ) ;
             }
           }
@@ -167,5 +213,87 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
       return cellValue ;
     }
+    
+    private static List<SymbolImage> GetSymbolImages( string filePath, Dictionary<int, int> rowBlocks )
+    {
+      const string sheetName = "セットコード一覧表" ;
+      const string startCell = "F8" ;
+      const string selectColumn = "F" ;
+      var symbolImages = new List<SymbolImage>() ;
+      var excelApp = new Application
+      {
+        Visible = false,
+        ScreenUpdating = false,
+        DisplayStatusBar = false,
+        //Calculation = XlCalculation.xlCalculationManual,
+        EnableEvents = false
+      } ;
+
+      var excelWorkbook = excelApp.Workbooks.Open( filePath, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing, false, XlPlatform.xlWindows, Type.Missing, true, false, Type.Missing, Type.Missing, Type.Missing, Type.Missing ) ;
+      try {
+        if ( excelWorkbook != null ) {
+          var sheet = (Worksheet) excelWorkbook.Sheets[ sheetName ] ;
+          sheet.DisplayPageBreaks = false ;
+          var xlSheets = excelWorkbook.Sheets as Sheets ;
+          var newSheet = (Worksheet) xlSheets.Add( xlSheets[ 1 ], Type.Missing, Type.Missing, Type.Missing ) ;
+          var xlRange = sheet.UsedRange ;
+          var endRow = xlRange.Rows.Count ;
+
+          //Copy shapes to new sheet
+          var range1 = sheet.Range[ startCell, selectColumn + endRow ] ;
+          var range2 = newSheet.Range[ startCell, selectColumn + endRow ] ;
+          range2.ColumnWidth = range1.ColumnWidth ;
+          range1.Copy( range2 ) ;
+          
+          //convert shapes to image
+          if ( newSheet.Shapes.Count > 0 ) {
+            int rowNumber ;
+            Clipboard.Clear() ;
+            foreach ( Shape shape in newSheet.Shapes ) {
+              rowNumber = shape.TopLeftCell.Row ;
+              var marginLeft = shape.Left ;
+              var block = rowBlocks.LastOrDefault( c => c.Key <= rowNumber ) ;
+              shape.Copy() ; // sometime get error here
+              if ( ! Clipboard.ContainsImage() ) continue ;
+              var image = Clipboard.GetImage() ;
+              if ( image == null ) continue ;
+              // using ( var ms = new MemoryStream() ) {
+              //   ms.Position = 0 ;
+              //   image.Save( ms, ImageFormat.Png ) ;
+              //   var imgData = ms.ToArray() ;
+              // }
+              symbolImages.Add( new SymbolImage( block.Key, image, marginLeft) ) ;
+            }
+          }
+        }
+      }
+      catch ( Exception e ) {
+        MessageBox.Show( " Error: " + e) ;
+      }
+      finally {
+        excelWorkbook?.Close( false ) ;
+        if ( excelWorkbook != null ) Marshal.ReleaseComObject( excelWorkbook ) ;
+        excelApp.Quit() ;
+        Marshal.ReleaseComObject( excelApp ) ;
+      }
+      
+      return symbolImages ;
+    }
+  }
+  
+  public class SymbolImage
+  {
+    public SymbolImage( int postion, Image image, float marginLeft )
+    {
+      this.Postion = postion ;
+      // SymbolByte = symbolByte ;
+      Image = image ;
+      MarginLeft = marginLeft ;
+    }
+
+    public int Postion { get ; set ; }
+    // public byte[] SymbolByte { get ; set ; }
+    public Image Image { get ; set ; }
+    public float MarginLeft { get ; set ; } 
   }
 }
