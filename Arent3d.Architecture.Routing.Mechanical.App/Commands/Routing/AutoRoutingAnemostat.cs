@@ -37,8 +37,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var (rightAnemoConnectors, leftAnemoConnectors) = GetSortedConnectors( inConnector, anemoConnectors ) ;
 
       var segmentSetting = GetSegmentSetting( doc, inConnector ) ;
-      _listOfRightSegments = CreateRouteSegments( rightFasuConnectors, rightAnemoConnectors, segmentSetting ) ;
-      _listOfLeftSegments = CreateRouteSegments( leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
+      _listOfRightSegments = CreateRouteSegments( doc, rightFasuConnectors, rightAnemoConnectors, segmentSetting ) ;
+      _listOfLeftSegments = CreateRouteSegments( doc, leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
     }
 
     private static (List<Connector>, List<Connector>) GetSortedConnectors( IConnector inConnector, List<Connector> notInConnectors )
@@ -117,7 +117,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return new SegmentSetting( classificationInfo, fixedHeight, systemType, curveType, routeName ) ;
     }
 
-    private static IList<(string routeName, RouteSegment)> CreateRouteSegments( IReadOnlyList<Connector> fasuConnectors, IReadOnlyList<Connector> anemoConnectors, SegmentSetting? segmentSetting )
+    private static IList<(string routeName, RouteSegment)> CreateRouteSegments( Document doc, IReadOnlyList<Connector> fasuConnectors, IReadOnlyList<Connector> anemoConnectors, SegmentSetting? segmentSetting )
     {
       List<(string routeName, RouteSegment)> segmentList = new() ;
       if ( segmentSetting == null ) return segmentList ;
@@ -126,6 +126,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var fromPoint = new ConnectorEndPoint( fasuConnectors[ index ], null ) ;
         var toPoint = new ConnectorEndPoint( anemoConnectors[ index ], null ) ;
         segmentList.Add( ( segmentSetting.RouteName, new RouteSegment( segmentSetting.ClassificationInfo, segmentSetting.SystemType, segmentSetting.CurveType, fromPoint, toPoint, null, false, segmentSetting.FixedHeight, segmentSetting.FixedHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ) ) ;
+        // Auto create Duct System  
+        var connectors = new ConnectorSet() ;
+        connectors.Insert( anemoConnectors[ index ] ) ;
+        var system = doc.Create.NewMechanicalSystem( null, connectors, DuctSystemType.SupplyAir ) ;
       }
 
       return segmentList ;
