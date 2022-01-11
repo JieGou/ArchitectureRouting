@@ -69,7 +69,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return UnitUtils.ConvertFromInternalUnits( designSupplyAirflowInternalUnits, UnitTypeId.CubicMetersPerHour ) ;
 #endif
     }
-    
+
     public static double ConvertDesignSupplyAirflowToInternalUnits( double designSupplyAirflow )
     {
 #if REVIT2019 || REVIT2020
@@ -83,44 +83,51 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       return branchNumber >= 0 ;
     }
-    
-    public static bool IsValidAHUNumber( int ahuNumber )
+
+    public static bool IsValidAhuNumber( int ahuNumber )
     {
-      return ahuNumber != (int) AHUNumberType.Invalid ;
+      return ahuNumber > 0 ;
     }
 
-    public static int GetAHUNumberOfAHU( Connector rootConnector )
+    private class ConnectorWithDepth
     {
+      public readonly Connector Connector ;
+      public readonly int Depth ;
+
+      public ConnectorWithDepth( Connector connector, int depth )
+      {
+        Connector = connector ;
+        Depth = depth ;
+      }
+    }
+
+    public static int GetAhuNumberByPickedConnector( Connector rootConnector )
+    {
+      var ahuNumber = 0 ;
       const int limit = 30 ;
-      var ahuNumberOfAHU = (int) AHUNumberType.Invalid ;
 
-      // AHUのコネクタを選択するとき
-      if ( rootConnector.Owner is FamilyInstance parentElement && parentElement.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) {
-        parentElement.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
-        return ahuNumberOfAHU ;
-      }
+      var queue = new Queue<ConnectorWithDepth>() ;
+      List<Element> visitedElement = new List<Element>() ;
+      queue.Enqueue( new ConnectorWithDepth( rootConnector, 0 ) ) ;
 
-      var firstCandidates = rootConnector.GetConnectedConnectors().ToArray() ;
-      if ( firstCandidates.Length == 0 ) return ahuNumberOfAHU ;
-
-      var current = firstCandidates.First() ;
-
-      for ( var i = 0 ; i < limit ; ++i ) {
-        if ( current.Owner is FamilyInstance element && element.IsFamilyInstanceOf( RoutingFamilyType.AHU_2367 ) ) {
-          element.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumberOfAHU ) ;
-          return ahuNumberOfAHU ;
+      while ( queue.Count != 0 ) {
+        var currentConnector = queue.Dequeue() ;
+        if ( visitedElement.Any( e => e.Id == currentConnector.Connector.Owner.Id ) ) continue ;
+        visitedElement.Add( currentConnector.Connector.Owner ) ;
+        currentConnector.Connector.Owner.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumber ) ;
+        if ( IsValidAhuNumber( ahuNumber ) ) return ahuNumber ;
+        var oppositeConnectors = currentConnector.Connector.Owner.GetConnectors().Where( connector => connector.Id != currentConnector.Connector.Id ).ToArray() ;
+        var depth = currentConnector.Depth + 1 ;
+        if ( oppositeConnectors.Length > 0 && depth >= limit ) break ;
+        foreach ( var oppositeConnector in oppositeConnectors ) {
+          var nextConnectors = oppositeConnector.GetConnectedConnectors().ToArray() ;
+          foreach ( var nextConnector in nextConnectors ) {
+            queue.Enqueue( new ConnectorWithDepth( nextConnector, depth ) ) ;
+          }
         }
-
-        var oppositeConnectors = current.Owner.GetConnectors().Where( connector => connector.Id != current.Id ).ToArray() ;
-        if ( oppositeConnectors.Length == 0 ) return ahuNumberOfAHU ; // 途切れているケース
-
-        var nextConnectors = oppositeConnectors.First().GetConnectedConnectors().ToArray() ;
-        if ( nextConnectors.Length == 0 ) return ahuNumberOfAHU ; // 途切れているケース
-
-        current = nextConnectors.First() ;
       }
 
-      return ahuNumberOfAHU ;
+      return IsValidAhuNumber( ahuNumber ) ? ahuNumber : -1 ;
     }
   }
 }

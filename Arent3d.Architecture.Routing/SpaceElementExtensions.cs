@@ -8,17 +8,12 @@ namespace Arent3d.Architecture.Routing
     Invalid = -1,
     Parent = 0
   }
-  
-  public enum AHUNumberType
-  {
-    Invalid = -1
-  }
 
   public static class SpaceElementExtensions
   {
     public static int GetSpaceBranchNumber( this Element space )
     {
-      if ( ! space.HasParameter( BranchNumberParameter.BranchNumber ) ) return (int)SpaceType.Invalid ;
+      if ( ! space.HasParameter( BranchNumberParameter.BranchNumber ) ) return (int) SpaceType.Invalid ;
       return space.GetPropertyInt( BranchNumberParameter.BranchNumber ) ;
     }
   }
