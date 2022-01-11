@@ -14,7 +14,6 @@ using MathLib ;
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Text.RegularExpressions ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
@@ -198,13 +197,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var angle = TTEUtil.GetAngleBetweenVector( calculateDir, rootToVavVector ) ;
 
       return Math.Abs( Math.Cos( angle ) * rootToVavVector.magnitude ) ;
-    }
-
-    // Get the angle between two vectors
-    private static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
-    {
-      // return the angle (in radian)
-      return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
     }
 
     private static IList<Element> GetAllSpacesHasSpecifiedAhuNumber( Document document, int ahuNumber )
