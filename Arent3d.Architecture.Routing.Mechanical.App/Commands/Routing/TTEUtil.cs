@@ -1,5 +1,8 @@
+using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Text.RegularExpressions ;
+using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
@@ -36,7 +39,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return DiameterToAirFlow.Last().diameter ;
     }
 
-    private static IList<Element> GetAllSpaces( Document document )
+    public static IList<Element> GetAllSpaces( Document document )
     {
       ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
       FilteredElementCollector collector = new(document) ;
@@ -83,5 +86,32 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       return branchNumber >= 0 ;
     }
+
+    public static string GetNameBase( Element? systemType, Element curveType )
+    {
+      return systemType?.Name ?? curveType.Category.Name ;
+    }
+    
+    public static int GetRouteNameIndex( RouteCache routes, string? targetName )
+    {
+      var pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
+      var regex = new Regex( pattern ) ;
+
+      var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
+
+      return lastIndex + 1 ;
+    }   
+
+    public static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavPosition )
+    {
+      return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
+    } 
+
+    // Get the angle between two vectors
+    public static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
+    {
+      // return the angle (in radian)
+      return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
+    }    
   }
 }
