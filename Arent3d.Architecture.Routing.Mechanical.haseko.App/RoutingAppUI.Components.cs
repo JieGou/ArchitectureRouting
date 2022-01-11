@@ -70,15 +70,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
       //
       //   [Button( typeof( RackGuideCommand ), OnlyInitialized = true )]
       //   private static class RackGuidCommandButton { }
-      //   
-      //   [Button( typeof( CreateFASUAndVAVAutomaticallyCommand ), OnlyInitialized = true )]
-      //   private static class CreateFASUAndVAVAutomaticallyCommandButton { }
-      //
-      //   [Button( typeof( AutoRoutingVavCommand ), OnlyInitialized = true )]
-      //   private static class AutoRoutingVavCommandButton { }
-      //   
-      //   [Button( typeof( AdjustDuctSizeCommand ), OnlyInitialized = true )]
-      //   private static class AdjustDuctSizeCommandButton { }        
       // }
       //
       // [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Mechanical.haseko.App.Panels.Routing.Monitor" )]
@@ -91,7 +82,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
       // [Panel( "arent3d.architecture.rc.debug", TitleKey = "App.Panels.Rc.Debug" )]
       // private static class DebugPanel
       // {
-      //
       //   [Button( typeof( UninitializeCommand ), OnlyInitialized = true )]
       //   private static class UnInitializeCommandButton
       //   {

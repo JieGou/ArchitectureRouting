@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
           if ( panel.Source.Title == "Mechanical.haseko.App.Panels.Routing.Monitor".GetAppStringByKeyOrDefault("Monitor Selection") ) {
             selectionPanel = panel ;
             foreach ( var item in panel.Source.Items ) {
-              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.monitor%Arent3d.Architecture.Routing.Mechanical.App.commands.monitor_selection_command" ) {
+              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.monitor%Arent3d.Architecture.Routing.Mechanical.haseko.App.commands.monitor_selection_command" ) {
                 selectionButton = item ;
                 break ;
               }
