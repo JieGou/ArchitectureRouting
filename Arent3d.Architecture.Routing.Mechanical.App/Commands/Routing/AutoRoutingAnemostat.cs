@@ -43,27 +43,27 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static (List<Connector>, List<Connector>) GetSortedConnectors( IConnector inConnector, List<Connector> notInConnectors )
     {
-      var rightFasuConnectors = new List<Connector>() ;
-      var leftFasuConnectors = new List<Connector>() ;
+      var rightConnectors = new List<Connector>() ;
+      var leftConnectors = new List<Connector>() ;
       var inConnectorOrigin = inConnector.Origin.To3dPoint().To2d() ;
       var inConnectorDirection = inConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
       var inConnectorNormal = new Vector2d( -inConnectorDirection.y, inConnectorDirection.x ) ;
       foreach ( var notInConnector in notInConnectors ) {
-        // Vector from in connector to out connector
+        // Vector from in connector to out connector or from in connector to anemo connector
         var inOutVector = notInConnector.Origin.To3dPoint().To2d() - inConnectorOrigin ;
 
         // 二つ側にINコネクタの以外を分別
         if ( Vector2d.Dot( inConnectorNormal, inOutVector ) < 0 ) {
-          rightFasuConnectors.Add( notInConnector ) ;
+          rightConnectors.Add( notInConnector ) ;
         }
         else {
-          leftFasuConnectors.Add( notInConnector ) ;
+          leftConnectors.Add( notInConnector ) ;
         }
       }
 
-      rightFasuConnectors.Sort( ( a, b ) => CompareAngle( inConnectorOrigin, inConnectorDirection, a, b ) ) ;
-      leftFasuConnectors.Sort( ( a, b ) => CompareAngle( inConnectorOrigin, inConnectorDirection, a, b ) ) ;
-      return ( rightFasuConnectors, leftFasuConnectors ) ;
+      rightConnectors.Sort( ( a, b ) => CompareAngle( inConnectorOrigin, inConnectorDirection, a, b ) ) ;
+      leftConnectors.Sort( ( a, b ) => CompareAngle( inConnectorOrigin, inConnectorDirection, a, b ) ) ;
+      return ( rightConnectors, leftConnectors ) ;
     }
 
     private static int CompareAngle( Vector2d inConnectorOrigin, Vector2d inConnectorDirection, IConnector a, IConnector b )
