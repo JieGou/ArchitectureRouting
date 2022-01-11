@@ -105,9 +105,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           visitedElement.Add( currentConnector.Owner ) ;
           currentConnector.Owner.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumber ) ;
           if ( IsValidAhuNumber( ahuNumber ) ) return ahuNumber ;
-          var oppositeConnectors = currentConnector.Owner.GetConnectors().Where( connector => connector.Id != currentConnector.Id ).ToArray() ;
-          foreach ( var oppositeConnector in oppositeConnectors ) {
-            var connectors = oppositeConnector.GetConnectedConnectors().ToArray() ;
+          var otherConnectors = currentConnector.Owner.GetConnectors().Where( connector => connector.Id != currentConnector.Id ).ToArray() ;
+          foreach ( var otherConnector in otherConnectors ) {
+            var connectors = otherConnector.GetConnectedConnectors().ToArray() ;
             nextConnectors.AddRange( connectors ) ;
           }
         }
