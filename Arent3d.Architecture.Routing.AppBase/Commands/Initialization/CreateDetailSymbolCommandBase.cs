@@ -321,8 +321,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private string GetCeeDSetCodeOfElement( Element element )
     {
-      element.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCode ) ;
-      return ceeDSetCode ?? string.Empty ;
+      element.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCodeModel ) ;
+      if ( string.IsNullOrEmpty( ceeDSetCodeModel ) ) return string.Empty ;
+      var ceeDSetCode = ceeDSetCodeModel!.Split( '-' ).ToList() ;
+      var ceeDCode = ceeDSetCode.FirstOrDefault() ;
+      return ceeDCode ?? string.Empty ;
     }
 
     private Category GetLineStyle( Document doc )

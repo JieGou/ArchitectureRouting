@@ -209,9 +209,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var standard = string.Empty ;
         var pickUpNumber = productType == ProductType.Connector ? string.Empty : pickUpNumbers[ index ].ToString() ;
         var direction = productType == ProductType.Conduit ? directionZ[ index ] : string.Empty ;
-        var ceeDSetCode = GetCeeDSetCodeOfElement( element ) ;
-        if ( _ceeDModels.Any() && ! string.IsNullOrEmpty( ceeDSetCode ) ) {
-          var ceeDModel = _ceeDModels.FirstOrDefault( x => x.CeeDSetCode == ceeDSetCode ) ;
+        var ceeDCodeModel = GetCeeDSetCodeOfElement( element ) ;
+        if ( _ceeDModels.Any() && ceeDCodeModel.Any() ) {
+          var ceeDSetCode = ceeDCodeModel.First() ;
+          var symbol = ceeDCodeModel.Count > 1 ? ceeDCodeModel.ElementAt( 1 ) : string.Empty ;
+          modelNumber = ceeDCodeModel.Count > 2 ? ceeDCodeModel.ElementAt( 2 ) : string.Empty ;
+          var ceeDModels = _ceeDModels.Where( x => x.CeeDSetCode == ceeDSetCode && x.GeneralDisplayDeviceSymbol == symbol && x.ModelNumber == modelNumber ).ToList() ;
+          var ceeDModel = ceeDModels.FirstOrDefault() ;
           if ( ceeDModel != null ) {
             modelNumber = ceeDModel.ModelNumber ;
             specification2 = ceeDModel.CeeDSetCode ;
@@ -278,10 +282,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return materialCodes ;
     }
 
-    private string GetCeeDSetCodeOfElement( Element element )
+    private List<string> GetCeeDSetCodeOfElement( Element element )
     {
       element.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCode ) ;
-      return ceeDSetCode ?? string.Empty ;
+      return ! string.IsNullOrEmpty( ceeDSetCode ) ? ceeDSetCode!.Split( '-' ).ToList() : new List<string>() ;
     }
 
     private enum ConduitType
