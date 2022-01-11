@@ -2,7 +2,6 @@
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using System.Collections.Generic ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Revit ;
@@ -44,14 +43,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         return Result.Cancelled ;
       }
     }
-
-    private static IList<Element> GetAllSpaces( Document document )
-    {
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
-      FilteredElementCollector collector = new(document) ;
-      IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElements() ;
-      return spaces ;
-    }
     
     private (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
     {
@@ -72,7 +63,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static Result CreateFASUAndVAVAutomatically( Document document, Connector pickedConnector )
     {
       var maintainer = new FASUAndVAVMaintainerForTTE() ;
-      var (success, errorMessage) = maintainer.Setup( document, pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ) ;
+      var (success, errorMessage) = maintainer.Setup( document, pickedConnector ) ;
 
       if ( ! success ) {
         TaskDialog.Show( CommandName, errorMessage ) ;

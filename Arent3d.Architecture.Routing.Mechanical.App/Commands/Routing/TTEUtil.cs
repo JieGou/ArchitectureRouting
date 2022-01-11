@@ -1,3 +1,4 @@
+using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
@@ -69,7 +70,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return UnitUtils.ConvertFromInternalUnits( designSupplyAirflowInternalUnits, UnitTypeId.CubicMetersPerHour ) ;
 #endif
     }
-    
+
     public static double ConvertDesignSupplyAirflowToInternalUnits( double designSupplyAirflow )
     {
 #if REVIT2019 || REVIT2020
@@ -82,6 +83,37 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     public static bool IsValidBranchNumber( int branchNumber )
     {
       return branchNumber >= 0 ;
+    }
+
+    public static bool IsValidAhuNumber( int ahuNumber )
+    {
+      return ahuNumber > 0 ;
+    }
+
+    public static int? GetAhuNumberByPickedConnector( Connector rootConnector )
+    {
+      var ahuNumber = 0 ;
+      const int limit = 30 ;
+      List<Element> visitedElement = new List<Element>() ;
+      List<Connector> nextConnectors = new List<Connector>() { rootConnector } ;
+
+      for ( var depth = 0 ; depth < limit ; depth++ ) {
+        var currentConnectors = nextConnectors.Select( c => c ).ToList() ;
+        nextConnectors.Clear() ;
+        foreach ( var currentConnector in currentConnectors ) {
+          if ( visitedElement.Any( e => e.Id == currentConnector.Owner.Id ) ) continue ;
+          visitedElement.Add( currentConnector.Owner ) ;
+          currentConnector.Owner.TryGetProperty( AHUNumberParameter.AHUNumber, out ahuNumber ) ;
+          if ( IsValidAhuNumber( ahuNumber ) ) return ahuNumber ;
+          var otherConnectors = currentConnector.Owner.GetConnectors().Where( connector => connector.Id != currentConnector.Id ).ToArray() ;
+          foreach ( var otherConnector in otherConnectors ) {
+            var connectors = otherConnector.GetConnectedConnectors().ToArray() ;
+            nextConnectors.AddRange( connectors ) ;
+          }
+        }
+      }
+
+      return IsValidAhuNumber( ahuNumber ) ? ahuNumber : null ;
     }
   }
 }
