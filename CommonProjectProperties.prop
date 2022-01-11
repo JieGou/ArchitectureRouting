@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <CommonLibraryVersion>1.0.21.1214</CommonLibraryVersion>
+        <CommonLibraryVersion>1.0.22.107</CommonLibraryVersion>
         <AssemblyVersion>$(CommonLibraryVersion)</AssemblyVersion>
         <FileVersion>$(CommonLibraryVersion)</FileVersion>
         <Version>$(CommonLibraryVersion)</Version>
