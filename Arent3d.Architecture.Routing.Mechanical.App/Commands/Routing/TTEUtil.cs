@@ -1,4 +1,3 @@
-using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
@@ -114,6 +113,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return IsValidAhuNumber( ahuNumber ) ? ahuNumber : null ;
+    }
+
+    public static bool HasValidBranchNumber( Element space )
+    {
+      var branchNumber = space.GetSpaceBranchNumber() ;
+      return IsValidBranchNumber( branchNumber ) ;
+    }
+
+    public static bool HasSpecifiedAhuNumber( Element space, int ahuNumber )
+    {
+      if ( ! space.TryGetProperty( AHUNumberParameter.AHUNumber, out int ahuNumberOfSpace ) ) return false ;
+      return ahuNumberOfSpace == ahuNumber ;
     }
   }
 }
