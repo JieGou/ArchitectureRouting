@@ -12,9 +12,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   public class AutoRoutingAnemostat
   {
-    private Document _document = null! ;
-    private Segments? _listOfRightSegments = null ;
-    private Segments? _listOfLeftSegments = null ;
+    private Segments? _listOfRightSegments ;
+    private Segments? _listOfLeftSegments ;
 
     private static MEPSystemClassificationInfo _classificationInfo = null! ;
     private static FixedHeight? _fromFixedHeight ;
@@ -24,7 +23,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     public void Setup( Document document, Element elmFasu )
     {
-      _document = document ;
       var fasu = new Fasu( document, elmFasu ) ;
       if ( fasu.InConnector == null ) return ;
 
@@ -52,13 +50,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     public IEnumerable<(string routeName, RouteSegment)> Execute()
     {
       if ( _listOfRightSegments != null ) {
-        foreach ( var routeSegment in _listOfRightSegments.CreateRouteSegments( _document ) ) {
+        foreach ( var routeSegment in _listOfRightSegments.CreateRouteSegments() ) {
           yield return routeSegment ;
         }
       }
 
       if ( _listOfLeftSegments == null ) yield break ;
-      foreach ( var routeSegment in _listOfLeftSegments.CreateRouteSegments( _document ) ) {
+      foreach ( var routeSegment in _listOfLeftSegments.CreateRouteSegments() ) {
         yield return routeSegment ;
       }
     }
@@ -185,9 +183,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         _toPoint = toPoint ;
       }
 
-      public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments( Document document )
+      public (string routeName, RouteSegment) CreateRouteSegment()
       {
-        yield return ( _routeName, new RouteSegment( _classificationInfo, _systemType, _curveType, _fromPoint, _toPoint, null, false, _fromFixedHeight, _fromFixedHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ) ;
+        return ( _routeName, new RouteSegment( _classificationInfo, _systemType, _curveType, _fromPoint, _toPoint, null, false, _fromFixedHeight, _fromFixedHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ) ;
       }
     }
 
@@ -205,13 +203,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments( Document document )
+      public IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments()
       {
-        foreach ( var segment in _segmentList ) {
-          foreach ( var (routeName, routeSegment) in segment.CreateRouteSegments( document ) ) {
-            yield return ( routeName, routeSegment ) ;
-          }
-        }
+        return from segment in _segmentList select segment.CreateRouteSegment() ;
       }
     }
   }
