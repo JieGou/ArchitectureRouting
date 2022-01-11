@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Diagnostics.CodeAnalysis ;
 using System.Drawing ;
+using System.Drawing.Imaging ;
 using System.IO ;
 using System.Linq ;
 using System.Windows.Media.Imaging ;
@@ -49,6 +50,10 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Condition = condition ;
       FloorImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
       ListImages = GetImages( floorPlanImages ) ;
+
+      if ( ListImages != null && ListImages.Any() ) {
+        InstrumentationSymbol = ConvertBitmapToBase64(ListImages.First()) ;
+      }
     }
 
     private static BitmapImage? BitmapToImageSource( Bitmap? bitmap )
@@ -125,6 +130,29 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       }
 
       return new Bitmap( 1, 1 ) ;
+    }
+
+    private string ConvertBitmapToBase64( BitmapImage? bmp )
+    {
+      Bitmap bImage = BitmapImage2Bitmap( bmp ) ;
+      var ms = new MemoryStream();
+      bImage?.Save(ms, ImageFormat.Jpeg);
+      var byteImage = ms.ToArray();
+      var result = Convert.ToBase64String(byteImage) ;
+      return result ;
+    }
+    
+    private Bitmap BitmapImage2Bitmap(BitmapImage? bitmapImage)
+    {
+      using(MemoryStream outStream = new MemoryStream())
+      {
+        BitmapEncoder enc = new BmpBitmapEncoder();
+        if ( bitmapImage != null ) enc.Frames.Add( BitmapFrame.Create( bitmapImage ) ) ;
+        enc.Save(outStream); 
+        var bitmap = new System.Drawing.Bitmap(outStream);
+
+        return new Bitmap(bitmap);
+      }
     }
   }
 }

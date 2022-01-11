@@ -4,10 +4,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+        xmlns:valueConverters="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         Title="CeeD Models" Height="800" Width="900">
-    <Grid>
+  <Window.Resources>
+    <valueConverters:Base64ImageConverter x:Key="Base64ImageConverter"/>
+  </Window.Resources>
+  <Grid>
         <Grid.RowDefinitions>
       <RowDefinition Height="50"/>
       <RowDefinition Height="25"/>
@@ -72,7 +76,7 @@
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
                 <Grid>
-                  <Image Source="{Binding FloorImages}" Stretch="None" />
+                  <Image Source="{Binding FloorPlanSymbol, Converter={StaticResource Base64ImageConverter}}" Stretch="None" />
                   <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock.RenderTransform>
                       <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
