@@ -145,7 +145,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       foreach ( var space in spaceBoxes ) {
         var branchNumber = space.GetSpaceBranchNumber() ;
         if ( ! TTEUtil.IsValidBranchNumber( branchNumber ) ) continue ;
-        
+
         switch ( branchNumber ) {
           case (int) SpaceType.Invalid :
             continue ;

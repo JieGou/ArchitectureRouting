@@ -58,9 +58,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         ? null
         : UnitUtils.ConvertFromInternalUnits( targetSpace.DesignSupplyAirflow, Autodesk.Revit.DB.DisplayUnitType.DUT_CUBIC_METERS_PER_HOUR ) ;
 #else
-      return targetSpace == null
-        ? null
-        : UnitUtils.ConvertFromInternalUnits( targetSpace.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
+      return targetSpace == null ? null : UnitUtils.ConvertFromInternalUnits( targetSpace.DesignSupplyAirflow, UnitTypeId.CubicMetersPerHour ) ;
 #endif
     }
 
@@ -72,7 +70,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return UnitUtils.ConvertFromInternalUnits( designSupplyAirflowInternalUnits, UnitTypeId.CubicMetersPerHour ) ;
 #endif
     }
-    
+
     public static double ConvertDesignSupplyAirflowToInternalUnits( double designSupplyAirflow )
     {
 #if REVIT2019 || REVIT2020
@@ -91,7 +89,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       return systemType?.Name ?? curveType.Category.Name ;
     }
-    
+
     public static int GetRouteNameIndex( RouteCache routes, string? targetName )
     {
       var pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
@@ -100,18 +98,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
 
       return lastIndex + 1 ;
-    }   
+    }
 
     public static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavPosition )
     {
       return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
-    } 
+    }
 
     // Get the angle between two vectors
     public static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
     {
       // return the angle (in radian)
       return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
-    }    
+    }
   }
 }

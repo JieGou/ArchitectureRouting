@@ -66,8 +66,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       RouteGenerator.CorrectEnvelopes( document ) ;
-      var anemostatRouter = new AutoRoutingAnemostat() ;
-      anemostatRouter.Setup( document, fasu ) ;
+      var anemostatRouter = new AutoRoutingAnemostat( document, fasu ) ;
       return anemostatRouter.Execute().EnumerateAll() ;
     }
   }
