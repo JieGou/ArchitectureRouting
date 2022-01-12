@@ -78,6 +78,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Delete_Click( object sender, RoutedEventArgs e )
     {
+      var selectedItem = ( (CnsSettingModel) grdCategories.SelectedItem ) ;
+      if ( selectedItem.CategoryName == "未設定" ) return ;
       if ( CheckDuplicateName( e ) ) return ;
       if ( _cnsSettingViewModel.DeleteRowCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.DeleteRowCommand.Execute( grdCategories.SelectedIndex ) ;
