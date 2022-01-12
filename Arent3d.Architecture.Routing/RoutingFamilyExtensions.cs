@@ -129,6 +129,7 @@ namespace Arent3d.Architecture.Routing
     FASU_F8_150_300Phi,
 
     [NameOnRevit( "SA_VAV" )]
+    [FamilyVersion( 1 )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     TTE_VAV_140,
     
