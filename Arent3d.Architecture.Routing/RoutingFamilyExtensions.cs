@@ -131,6 +131,14 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "SA_VAV" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     TTE_VAV_140,
+    
+    [NameOnRevit( "Direction Cylindrical Shaft" )]
+    [FamilyCategory( BuiltInCategory.OST_DetailComponents)]
+    DirectionCylindricalShaft,
+
+    [NameOnRevit( "Arent Room" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Room,
   }
 
   public static class RoutingFamilyExtensions

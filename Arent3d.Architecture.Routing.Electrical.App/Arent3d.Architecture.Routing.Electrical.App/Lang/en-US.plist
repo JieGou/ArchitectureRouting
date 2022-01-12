@@ -155,6 +155,9 @@
         <key>Electrical.App.Commands.Initialization.ConfirmUnsetCommand</key>
         <string>Confirm Unset</string>
 
+        <key>Electrical.App.Commands.Routing.CreateRoomCommand</key>
+        <string>Create Room</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>

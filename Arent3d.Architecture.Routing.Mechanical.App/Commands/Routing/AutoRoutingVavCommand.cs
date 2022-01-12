@@ -31,6 +31,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string ErrorMessageNoParentVav = "No VAV on the space group 0" ;
     private const string ErrorMessageVavNoInConnector = "VAVの流れの方向[イン]が設定されていないため、処理に失敗しました。" ;
     private const string ErrorMessageVavNoOutConnector = "VAVの流れの方向[アウト]が設定されていないため、処理に失敗しました。" ;
+    private const string ErrorMessageAhuNumberCannotBeFound = "AHUNumber cannot be found from the picked connector.";
 
     private Level _rootLevel = null! ;
 
@@ -75,6 +76,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.AutoRouteVavs.PickRootConnector".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
       if ( fromPickResult.PickedConnector == null ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoRootConnector ) ;
 
+      // Get AHUNumber
+      var ahuNumber = TTEUtil.GetAhuNumberByPickedConnector( fromPickResult.PickedConnector! ) ;
+      if ( ! ahuNumber.HasValue ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageAhuNumberCannotBeFound ) ;
+
+      // Get all space has specified AHUNumber
+      var spaces = GetAllSpacesHasSpecifiedAhuNumber( doc, ahuNumber.Value ) ;
+      if ( ! spaces.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
+
       // Get all vav
       var vavs = doc.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
       var vavInstances = vavs as FamilyInstance[] ?? vavs.ToArray() ;
@@ -87,10 +96,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var vavOutConnectorExists = vavInstance.GetConnectors().Any( c => c.Direction == FlowDirectionType.Out ) ;
         if ( ! vavOutConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoOutConnector ) ;
       }
-
-      // Get all space
-      var spaces = GetAllSpaces( doc ) ;
-      if ( ! spaces.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get group space
       var (parentSpaces, childSpacesGroupedByBranchNum) = GetSortedSpaceGroups( spaces, fromPickResult.PickedConnector ) ;
@@ -212,11 +217,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
     }
 
-    private static IList<Element> GetAllSpaces( Document document )
+    private static IList<Element> GetAllSpacesHasSpecifiedAhuNumber( Document document, int ahuNumber )
     {
       ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
       FilteredElementCollector collector = new(document) ;
-      IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElements() ;
+      IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( TTEUtil.HasValidBranchNumber ).Where( space => TTEUtil.HasSpecifiedAhuNumber( space, ahuNumber ) ).ToList() ;
       return spaces ;
     }
 
