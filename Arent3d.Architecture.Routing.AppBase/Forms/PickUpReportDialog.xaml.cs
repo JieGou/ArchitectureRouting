@@ -280,8 +280,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
             rowStart += 3 ;
             foreach ( var code in codeList ) {
-              var conduitPickUpModels = _pickUpModels.Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.Floor == level && p.EquipmentType == ContentDisplayDialog.ProductType.Conduit.GetFieldName() ).ToList() ;
-              rowStart = AddConfirmationPickUpRow( conduitPickUpModels, sheet, rowStart, xssfCellStyles ) ;
+              var conduitPickUpModels = _pickUpModels.Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.Floor == level && p.EquipmentType == ContentDisplayDialog.ProductType.Conduit.GetFieldName() ).GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
+              foreach ( var conduitPickUpModel in conduitPickUpModels ) {
+                rowStart = AddConfirmationPickUpRow( conduitPickUpModel.PickUpModels, sheet, rowStart, xssfCellStyles ) ;
+              }
             }
 
             var lastRow = sheet.CreateRow( rowStart ) ;
@@ -329,8 +331,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
           rowStart = 4 ;
           foreach ( var code in codeList ) {
-            var conduitPickUpModels = _pickUpModels.Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.EquipmentType == ContentDisplayDialog.ProductType.Conduit.GetFieldName() ).ToList() ;
-            rowStart = AddSummaryPickUpRow( conduitPickUpModels, sheet, rowStart, levelColumns, index, xssfCellStyles ) ;
+            var conduitPickUpModels = _pickUpModels.Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.EquipmentType == ContentDisplayDialog.ProductType.Conduit.GetFieldName() ).GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
+            foreach ( var conduitPickUpModel in conduitPickUpModels ) {
+              rowStart = AddSummaryPickUpRow( conduitPickUpModel.PickUpModels, sheet, rowStart, levelColumns, index, xssfCellStyles ) ;
+            }
           }
 
           break ;

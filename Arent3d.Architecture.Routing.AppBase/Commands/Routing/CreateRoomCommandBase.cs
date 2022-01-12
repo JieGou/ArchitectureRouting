@@ -84,7 +84,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var symbol = document.GetFamilySymbols( RoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
         var instance = symbol.Instantiate( originPoint, level!, StructuralType.NonStructural ) ;
         // Set room's parameters
-        instance.LookupParameter( "Elevation from Level" ).Set( 0.0 ) ;
+        instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;
         instance.LookupParameter( "Lenght" ).Set( lenght ) ;
         instance.LookupParameter( "Width" ).Set( width ) ;
         instance.LookupParameter( "Height" ).Set( heightOfLevel ) ;

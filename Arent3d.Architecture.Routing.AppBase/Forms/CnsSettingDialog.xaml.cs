@@ -78,6 +78,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Delete_Click( object sender, RoutedEventArgs e )
     {
+      var selectedItem = ( (CnsSettingModel) grdCategories.SelectedItem ) ;
+      if ( selectedItem.CategoryName == "未設定" ) return ;
       if ( CheckDuplicateName( e ) ) return ;
       if ( _cnsSettingViewModel.DeleteRowCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.DeleteRowCommand.Execute( grdCategories.SelectedIndex ) ;
@@ -122,6 +124,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Close_Dialog() ;
       if ( _cnsSettingViewModel.SetConstructionItemForConduitsCommand.CanExecute( grdCategories.SelectedIndex ) )
         _cnsSettingViewModel.SetConstructionItemForConduitsCommand.Execute( grdCategories.SelectedIndex ) ;
+    }
+    
+    private void RacksApply_Click( object sender, RoutedEventArgs e )
+    {
+      if ( CheckDuplicateName( e ) ) return ;
+      Close_Dialog() ;
+      if ( _cnsSettingViewModel.SetConstructionItemForRacksCommand.CanExecute( grdCategories.SelectedIndex ) )
+        _cnsSettingViewModel.SetConstructionItemForRacksCommand.Execute( grdCategories.SelectedIndex ) ;
+    }
+    
+    private void AllElementsApply_Click( object sender, RoutedEventArgs e )
+    {
+      if ( CheckDuplicateName( e ) ) return ;
+      Close_Dialog() ;
+      if ( _cnsSettingViewModel.SetConstructionItemForAllCommand.CanExecute( grdCategories.SelectedIndex ) )
+        _cnsSettingViewModel.SetConstructionItemForAllCommand.Execute( grdCategories.SelectedIndex ) ;
     }
 
     private void Save_Click( object sender, RoutedEventArgs e )

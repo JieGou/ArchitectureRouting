@@ -44,11 +44,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ) ;
 
       SetConstructionItemForSymbolsCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
-        ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex ) ; }
+        ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex, CnsSettingStorable.UpdateItemType.Connector ) ; }
         // Execute()
       ) ;
       SetConstructionItemForConduitsCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
         ( seletectedIndex ) => { SetConstructionItemForConduit( cnsStorables, seletectedIndex ) ; } // Execute()
+      ) ;
+      SetConstructionItemForRacksCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
+        ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex, CnsSettingStorable.UpdateItemType.Rack ) ; } // Execute()
+      ) ;
+      SetConstructionItemForAllCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
+        ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex, CnsSettingStorable.UpdateItemType.All ) ; } // Execute()
       ) ;
     }
 
@@ -59,6 +65,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand SaveCommand { get ; set ; }
     public ICommand SetConstructionItemForSymbolsCommand { get ; set ; }
     public ICommand SetConstructionItemForConduitsCommand { get ; set ; }
+    public ICommand SetConstructionItemForRacksCommand { get ; set ; }
+    public ICommand SetConstructionItemForAllCommand { get ; set ; }
 
     private void ReadFile()
     {
@@ -78,12 +86,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var index = 1 ;
         var inputData = System.IO.File.ReadLines( filename ) ;
         foreach ( string line in inputData ) {
-          if ( ! string.IsNullOrWhiteSpace( line ) ) {
+          if ( ! string.IsNullOrWhiteSpace( line ) && !line.Equals( "未設定" ) ) {
             CnsSettingModels.Add( new CnsSettingModel( index, line.Trim() ) ) ;
             index++ ;
           }
         }
-
+        CnsSettingModels.Insert( 0,new CnsSettingModel( 0,"未設定" ) );
         AddDefaultValue() ;
         CnsSettingStorable.CnsSettingData = CnsSettingModels ;
       }
@@ -103,9 +111,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       // Process open file dialog box results
       if ( result == true ) {
         string createText = "" ;
+        int index = 1 ;
         foreach ( var item in CnsSettingModels ) {
-          if ( ! string.IsNullOrEmpty( item.CategoryName ) ) {
+          if ( ! string.IsNullOrEmpty( item.CategoryName ) && !item.CategoryName.Equals( "未設定" ) ) {
             createText += item.CategoryName.Trim() + Environment.NewLine + Environment.NewLine ;
+            index++ ;
           }
         }
         
@@ -140,7 +150,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
     
-    private void SetConstructionItemForSymbol( CnsSettingStorable cnsStorables, int seletectedIndex )
+    private void SetConstructionItemForSymbol( CnsSettingStorable cnsStorables, int seletectedIndex,  CnsSettingStorable.UpdateItemType UpdateType)
     {
       if ( seletectedIndex == -1 ) {
         ApplyToSymbolsText = "未設定" ;
@@ -148,7 +158,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       else {
         var item = CnsSettingModels.ElementAt( seletectedIndex ) ;
         ApplyToSymbolsText = item.CategoryName ;
-        cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Connector ;
+        cnsStorables.ElementType = UpdateType ;
         cnsStorables.CnsSettingData = CnsSettingModels ;
       }
     }

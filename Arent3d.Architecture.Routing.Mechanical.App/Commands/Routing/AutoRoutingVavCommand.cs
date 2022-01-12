@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Mechanical.App.Commands.Routing.AutoRoutingVavCommand", DefaultString = "Auto \nRouting VAVs" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class AutoRoutingVavCommand : RoutingCommandBase
+  public class AutoRoutingVavCommand : RoutingCommandBase<AutoRoutingVavCommand.SelectState>
   {
     private const int DefaultSubRouteIndex = 0 ;
     private const string ErrorMessageNoVav = "No VAV on the Root Connector level." ;
@@ -31,6 +31,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const string ErrorMessageNoParentVav = "No VAV on the space group 0" ;
     private const string ErrorMessageVavNoInConnector = "VAVの流れの方向[イン]が設定されていないため、処理に失敗しました。" ;
     private const string ErrorMessageVavNoOutConnector = "VAVの流れの方向[アウト]が設定されていないため、処理に失敗しました。" ;
+    private const string ErrorMessageAhuNumberCannotBeFound = "AHUNumber cannot be found from the picked connector.";
 
     private Level _rootLevel = null! ;
 
@@ -54,15 +55,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return systemType?.Name ?? curveType.Category.Name ;
     }
 
-    protected override (bool Result, object? State) OperateUI( UIDocument uiDocument, RoutingExecutor routingExecutor )
+    protected override OperationResult<SelectState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
-      if ( null == GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( uiDocument.Document ) ) return ( false, "Round duct type whose preferred junction type is tee not found" ) ;
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      if ( null == GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( uiDocument.Document ) ) return OperationResult<SelectState>.FailWithMessage( "Round duct type whose preferred junction type is tee not found" ) ;
 
-      var (fromPickResult, parentVavs, childVavs, errorMessage) = SelectRootConnectorAndFindVavs( uiDocument, routingExecutor, GetAddInType() ) ;
-      if ( null != errorMessage ) return ( false, errorMessage ) ;
+      var (fromPickResult, parentVavs, childVavs, errorMessage) = SelectRootConnectorAndFindVavs( uiDocument, GetRoutingExecutor(), GetAddInType() ) ;
+      if ( null != errorMessage ) return OperationResult<SelectState>.FailWithMessage( errorMessage ) ;
       _rootLevel = uiDocument.Document.GuessLevel( fromPickResult.GetOrigin() ) ;
-      if ( fromPickResult.PickedConnector != null && MEPSystemClassificationInfo.From( fromPickResult.PickedConnector ) is { } classificationInfo ) return ( true, new SelectState( fromPickResult.PickedConnector, parentVavs, childVavs, classificationInfo ) ) ;
-      return ( false, null ) ;
+      if ( fromPickResult.PickedConnector != null && MEPSystemClassificationInfo.From( fromPickResult.PickedConnector ) is { } classificationInfo ) return new OperationResult<SelectState>( new SelectState( fromPickResult.PickedConnector, parentVavs, childVavs, classificationInfo ) ) ;
+
+      return OperationResult<SelectState>.Cancelled ;
     }
 
     private static (ConnectorPicker.IPickResult fromPickResult, IReadOnlyList<FamilyInstance> parentVavs, Dictionary<int, List<FamilyInstance>> childVavs, string? ErrorMessage) SelectRootConnectorAndFindVavs( UIDocument uiDocument, RoutingExecutor routingExecutor, AddInType addInType )
@@ -72,6 +75,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       // Select Root Connector
       var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.AutoRouteVavs.PickRootConnector".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
       if ( fromPickResult.PickedConnector == null ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoRootConnector ) ;
+
+      // Get AHUNumber
+      var ahuNumber = TTEUtil.GetAhuNumberByPickedConnector( fromPickResult.PickedConnector! ) ;
+      if ( ! ahuNumber.HasValue ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageAhuNumberCannotBeFound ) ;
+
+      // Get all space has specified AHUNumber
+      var spaces = GetAllSpacesHasSpecifiedAhuNumber( doc, ahuNumber.Value ) ;
+      if ( ! spaces.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get all vav
       var vavs = doc.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
@@ -85,10 +96,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var vavOutConnectorExists = vavInstance.GetConnectors().Any( c => c.Direction == FlowDirectionType.Out ) ;
         if ( ! vavOutConnectorExists ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageVavNoOutConnector ) ;
       }
-
-      // Get all space
-      var spaces = GetAllSpaces( doc ) ;
-      if ( ! spaces.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get group space
       var (parentSpaces, childSpacesGroupedByBranchNum) = GetSortedSpaceGroups( spaces, fromPickResult.PickedConnector ) ;
@@ -153,6 +160,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       Dictionary<int, List<Element>> childSpacesGroupedByBranchNum = new() ;
       foreach ( var space in spaceBoxes ) {
         var branchNumber = space.GetSpaceBranchNumber() ;
+        if ( ! TTEUtil.IsValidBranchNumber( branchNumber ) ) continue ;
+        
         switch ( branchNumber ) {
           case (int) SpaceType.Invalid :
             continue ;
@@ -208,11 +217,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
     }
 
-    private static IList<Element> GetAllSpaces( Document document )
+    private static IList<Element> GetAllSpacesHasSpecifiedAhuNumber( Document document, int ahuNumber )
     {
       ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
       FilteredElementCollector collector = new(document) ;
-      IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElements() ;
+      IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( TTEUtil.HasValidBranchNumber ).Where( space => TTEUtil.HasSpecifiedAhuNumber( space, ahuNumber ) ).ToList() ;
       return spaces ;
     }
 
@@ -221,9 +230,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type.PreferredJunctionType == JunctionType.Tee && type is DuctType && type.Shape == ConnectorProfileType.Round ) ;
     }
 
-    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, object? state )
+    protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, SelectState selectState )
     {
-      var selectState = state as SelectState ?? throw new InvalidOperationException() ;
       var (rootConnector, parentVavs, childVavs, classificationInfo) = selectState ;
       if ( rootConnector == null ) throw new InvalidOperationException() ;
       var systemType = document.GetAllElements<MEPSystemType>().Where( classificationInfo.IsCompatibleTo ).FirstOrDefault() ;
@@ -283,6 +291,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return lastIndex + 1 ;
     }
 
-    private record SelectState( Connector? RootConnector, IReadOnlyList<FamilyInstance> ParentVavs, Dictionary<int, List<FamilyInstance>> ChildVavs, MEPSystemClassificationInfo ClassificationInfo ) ;
+    public record SelectState( Connector? RootConnector, IReadOnlyList<FamilyInstance> ParentVavs, Dictionary<int, List<FamilyInstance>> ChildVavs, MEPSystemClassificationInfo ClassificationInfo ) ;
   }
 }

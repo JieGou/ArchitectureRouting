@@ -96,41 +96,45 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
     CableTrayReducer,
 
-    [NameOnRevit( "FASU(F4-150 200Φ)" )]
+    [NameOnRevit( "SA_FASU(F4-150 200Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F4_150_200Phi,
     
-    [NameOnRevit( "FASU(F4-150 250Φ)" )]
+    [NameOnRevit( "SA_FASU(F4-150 250Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F4_150_250Phi,
     
-    [NameOnRevit( "FASU(F5-150 250Φ)" )]
+    [NameOnRevit( "SA_FASU(F5-150 250Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F5_150_250Phi,
     
-    [NameOnRevit( "FASU(F6-150 250Φ)" )]
+    [NameOnRevit( "SA_FASU(F6-150 250Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F6_150_250Phi,
     
-    [NameOnRevit( "FASU(F6-150 300Φ)" )]
+    [NameOnRevit( "SA_FASU(F6-150 300Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F6_150_300Phi,
     
-    [NameOnRevit( "FASU(F7-150 300Φ)" )]
+    [NameOnRevit( "SA_FASU(F7-150 300Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F7_150_300Phi,
     
-    [NameOnRevit( "FASU(F8-150 250Φ)" )]
+    [NameOnRevit( "SA_FASU(F8-150 250Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F8_150_250Phi,
     
-    [NameOnRevit( "FASU(F8-150 300Φ)" )]
+    [NameOnRevit( "SA_FASU(F8-150 300Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F8_150_300Phi,
 
-    [NameOnRevit( "140_VAV_変風量ユニット_丸ダクト用" )]
+    [NameOnRevit( "SA_VAV" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     TTE_VAV_140,
+    
+    [NameOnRevit( "Direction Cylindrical Shaft" )]
+    [FamilyCategory( BuiltInCategory.OST_DetailComponents)]
+    DirectionCylindricalShaft,
 
     [NameOnRevit( "Arent Room" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
