@@ -135,6 +135,10 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Direction Cylindrical Shaft" )]
     [FamilyCategory( BuiltInCategory.OST_DetailComponents)]
     DirectionCylindricalShaft,
+
+    [NameOnRevit( "Arent Room" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Room,
   }
 
   public static class RoutingFamilyExtensions
