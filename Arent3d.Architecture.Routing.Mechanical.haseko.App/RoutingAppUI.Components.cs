@@ -18,8 +18,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
         [Button( typeof( InitializeCommand ), InitializeButton = true )]
         private static class InitializeCommandButton { }
 
-        // [Button( typeof( ShowRoutingViewsCommand ), OnlyInitialized = true )]
-        // private static class ShowRoutingViewsCommandButton { }
+        [Button( typeof( ShowRoutingViewsCommand ), OnlyInitialized = true )]
+        private static class ShowRoutingViewsCommandButton { }
       }
 
       // [Panel("arent3d.architecture.routing.routing", TitleKey = "Mechanical.haseko.App.Panels.Routing.Routing" )]

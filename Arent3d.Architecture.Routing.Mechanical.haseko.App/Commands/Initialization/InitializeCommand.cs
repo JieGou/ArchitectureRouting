@@ -13,8 +13,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Initializa
   {
     protected override bool Setup( Document document )
     {
-      document.MakeBranchNumberParameter() ;
-      document.MakeAHUNumberParameter() ;
       return base.Setup( document ) ;
     }
   }
