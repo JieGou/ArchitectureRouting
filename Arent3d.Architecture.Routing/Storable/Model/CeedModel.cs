@@ -6,6 +6,7 @@ using System.Drawing.Imaging ;
 using System.IO ;
 using System.Linq ;
 using System.Windows.Media.Imaging ;
+using Color = System.Drawing.Color ;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
@@ -20,11 +21,14 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string InstrumentationSymbol { get ; set ; }
     public string Name { get ; set ; }
     public string Condition { get ; set ; }
+    public string Base64ImageString { get ; set ; }
+    public string Base64FloorImages { get ; set ; }
     public BitmapImage? InstrumentationImages { get ; set ; }
     public BitmapImage? FloorImages { get ; set ; }
     public List<BitmapImage?>? ListImages { get ; set ; }
 
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber,
+      string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64ImageString, string base64FloorImages )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
@@ -34,11 +38,23 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
       Condition = condition ;
+      Base64ImageString = base64ImageString ;
+      Base64FloorImages = base64FloorImages ;
       ListImages = null ;
       FloorImages = null ;
+      var tempFloorImage = new BitmapImage() ;
+      if ( FloorImages == null && ! string.IsNullOrEmpty( Base64FloorImages ) ) {
+        tempFloorImage = BitmapToImageSource( Base64StringToBitmap( Base64FloorImages ) ) ;
+      }
+      FloorImages = tempFloorImage ;
+      if ( ListImages != null || string.IsNullOrEmpty( Base64ImageString ) ) return ;
+      var listBimapImage = ( from image in Base64ImageString.Split( new string[] { "||" }, StringSplitOptions.None ) select Base64StringToBitmap( image ) into bmpFromString select BitmapToImageSource( bmpFromString ) ).ToList() ;
+      ListImages = listBimapImage ;
     }
 
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, string floorPlanSymbol, string instrumentationSymbol, string name, string condition )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber,
+      List<Image>? floorPlanImages, string floorPlanSymbol, string instrumentationSymbol, string name,
+      string condition, string base64ImageString )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
@@ -48,27 +64,34 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
       Condition = condition ;
+
       FloorImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
       ListImages = GetImages( floorPlanImages ) ;
-
-      if ( ListImages != null && ListImages.Any() ) {
-        InstrumentationSymbol = ConvertBitmapToBase64(ListImages.First()) ;
+      Base64ImageString = base64ImageString ;
+      string tempFloorString = string.Empty;
+      if ( FloorImages != null ) {
+        tempFloorString = ConvertBitmapToBase64( FloorImages ) ;
       }
+      Base64FloorImages = tempFloorString ;
+      if ( ListImages == null || ! ListImages.Any() ) return ;
+      var tempImage = ( from item in ListImages select ConvertBitmapToBase64( item ) ).ToList() ;
+      Base64ImageString = string.Join( "||",tempImage );
     }
 
     private static BitmapImage? BitmapToImageSource( Bitmap? bitmap )
     {
-      using ( MemoryStream memory = new MemoryStream() ) {
+      using ( var memory = new MemoryStream() ) {
         if ( bitmap != null ) bitmap.Save( memory, System.Drawing.Imaging.ImageFormat.Bmp ) ;
+       
         memory.Position = 0 ;
         BitmapImage? bitmapimage = new BitmapImage() ;
         bitmapimage.BeginInit() ;
         bitmapimage.StreamSource = memory ;
         bitmapimage.CacheOption = BitmapCacheOption.OnLoad ;
         bitmapimage.EndInit() ;
-
         return bitmapimage ;
       }
+      
     }
 
     private List<BitmapImage?>? GetImages( List<Image>? images )
@@ -109,14 +132,16 @@ namespace Arent3d.Architecture.Routing.Storable.Model
           // var centerPoint = ( maxImageHeight - minImageHeight ) / 2 ;
           var padding = 45 ;
           var imageWidth = images.Sum( item => item.Width ) + ( images.Count - 1 ) * padding ;
-          var finalImage = new Bitmap( imageWidth, maxImageHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ;
+          var finalImage =
+            new Bitmap( imageWidth, maxImageHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ;
           using ( Graphics g = Graphics.FromImage( finalImage ) ) {
             g.Clear( Color.White ) ;
             var offset = 0 ;
 
             for ( var i = 0 ; i < images.Count ; i++ ) {
               Image image = images[ i ] ;
-              g.DrawImage( image, new Rectangle( new Point( offset, 0 ), image.Size ), new Rectangle( new Point(), image.Size ), GraphicsUnit.Pixel ) ;
+              g.DrawImage( image, new Rectangle( new Point( offset, 0 ), image.Size ),
+                new Rectangle( new Point(), image.Size ), GraphicsUnit.Pixel ) ;
               offset += image.Width + padding ;
             }
           }
@@ -135,24 +160,36 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     private string ConvertBitmapToBase64( BitmapImage? bmp )
     {
       Bitmap bImage = BitmapImage2Bitmap( bmp ) ;
-      var ms = new MemoryStream();
-      bImage?.Save(ms, ImageFormat.Jpeg);
-      var byteImage = ms.ToArray();
-      var result = Convert.ToBase64String(byteImage) ;
+      var ms = new MemoryStream() ;
+      bImage?.Save( ms, ImageFormat.Jpeg ) ;
+      var byteImage = ms.ToArray() ;
+      var result = Convert.ToBase64String( byteImage ) ;
       return result ;
     }
-    
-    private Bitmap BitmapImage2Bitmap(BitmapImage? bitmapImage)
-    {
-      using(MemoryStream outStream = new MemoryStream())
-      {
-        BitmapEncoder enc = new BmpBitmapEncoder();
-        if ( bitmapImage != null ) enc.Frames.Add( BitmapFrame.Create( bitmapImage ) ) ;
-        enc.Save(outStream); 
-        var bitmap = new System.Drawing.Bitmap(outStream);
 
-        return new Bitmap(bitmap);
+    private Bitmap BitmapImage2Bitmap( BitmapImage? bitmapImage )
+    {
+      using ( MemoryStream outStream = new MemoryStream() ) {
+        BitmapEncoder enc = new BmpBitmapEncoder() ;
+        if ( bitmapImage != null ) enc.Frames.Add( BitmapFrame.Create( bitmapImage ) ) ;
+        enc.Save( outStream ) ;
+        var bitmap = new System.Drawing.Bitmap( outStream ) ;
+
+        return new Bitmap( bitmap ) ;
       }
+    }
+
+    private static Bitmap Base64StringToBitmap(string base64String)
+    {
+      Byte[] bitmapData = Convert.FromBase64String(FixBase64ForImage(base64String));
+      System.IO.MemoryStream streamBitmap = new System.IO.MemoryStream(bitmapData);
+      Bitmap bitImage = new Bitmap((Bitmap)Image.FromStream(streamBitmap));
+      return bitImage ;
+    }
+    public static string FixBase64ForImage(string image) { 
+      System.Text.StringBuilder sbText = new System.Text.StringBuilder(image,image.Length);
+      sbText.Replace("\r\n", String.Empty); sbText.Replace(" ", String.Empty); 
+      return sbText.ToString(); 
     }
   }
 }

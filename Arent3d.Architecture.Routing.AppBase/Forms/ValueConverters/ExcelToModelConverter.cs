@@ -118,7 +118,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
           var strModelNumbers = modelNumbers.Any() ? string.Join( "\n", modelNumbers ) : string.Empty ;
           if ( ! ceeDModelNumbers.Any() ) {
-            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty ) ;
+            CeedModel ceeDModel = new CeedModel( string.Empty, string.Empty, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty, string.Empty, string.Empty ) ;
             ceedModelData.Add( ceeDModel ) ;
           }
           else {
@@ -129,10 +129,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
               var condition = conditions.Count > k ? conditions[ k ] : string.Empty ;
               CeedModel ceeDModel ;
               if ( floorPlanImages.Any() ) {
-                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition ) ;
+                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) ;
               }
               else {
-                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition ) ;
+                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ;
               }
               ceedModelData.Add( ceeDModel ) ;
             }

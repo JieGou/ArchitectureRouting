@@ -18,7 +18,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       FloorPlanSymbol,
       InstrumentationSymbol,
       Name,
-      Condition
+      Condition,
+      Base64ImageString,
+      Base64FloorImages
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedModel customTypeValue )
@@ -33,6 +35,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.InstrumentationSymbol, customTypeValue.InstrumentationSymbol ) ;
       serializerObject.AddNonNull( SerializeField.Name, customTypeValue.Name ) ;
       serializerObject.AddNonNull( SerializeField.Condition, customTypeValue.Condition ) ;
+      serializerObject.AddNonNull( SerializeField.Base64ImageString, customTypeValue.Base64ImageString ) ;
+      serializerObject.AddNonNull( SerializeField.Base64ImageString, customTypeValue.Base64ImageString ) ;
+      serializerObject.AddNonNull( SerializeField.Base64FloorImages, customTypeValue.Base64FloorImages ) ;
 
       return serializerObject ;
     }
@@ -49,8 +54,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var instrumentationSymbol = deserializer.GetString( SerializeField.InstrumentationSymbol ) ;
       var name = deserializer.GetString( SerializeField.Name ) ;
       var condition = deserializer.GetString( SerializeField.Condition ) ;
+      var base64ImageString = deserializer.GetString( SerializeField.Base64ImageString ) ;
+      var base64FloorImages = deserializer.GetString( SerializeField.Base64FloorImages ) ;
 
-      return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition! ) ;
+      return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition!, base64ImageString!, base64FloorImages! ) ;
     }
   }
 }
