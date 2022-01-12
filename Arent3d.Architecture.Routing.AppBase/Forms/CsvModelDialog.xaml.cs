@@ -295,6 +295,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         "電線・ケーブル一覧.csv", 
         "【CeeD】セットコード一覧表.xlsx"
       } ;
+      string equipmentSymbolsFile = "機器記号一覧表.xls" ;
       StringBuilder correctMessage = new StringBuilder() ;
       StringBuilder errorMessage = new StringBuilder() ;
       string defaultCorrectMessage = "指定されたフォルダから以下のデータを正常にロードできました。" ;
@@ -377,17 +378,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               }
               break ;
             case "【CeeD】セットコード一覧表.xlsx" :
-              OpenFileDialog openFileEquipmentSymbolsDialog = new OpenFileDialog { FileName = "Select 機器記号一覧表.xls file", Filter = "Csv files (*.xls)|*.xls", Multiselect = false } ;
-              string fileEquipmentSymbolsPath = string.Empty ;
-              if ( openFileEquipmentSymbolsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
-                fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
-              }
-              _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( path, fileEquipmentSymbolsPath ) ;
-              if(_ceeDModelData.Any()){
+              var fileEquipmentSymbolsPath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile ) ;
+              _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( path, File.Exists( fileEquipmentSymbolsPath ) ? fileEquipmentSymbolsPath : string.Empty ) ;
+              if ( _ceeDModelData.Any() ) {
                 correctMessage.AppendLine( "\u2022 【CeeD】セットコード一覧表" ) ;
+                if ( File.Exists( fileEquipmentSymbolsPath ) )
+                  correctMessage.AppendLine( "\u2022 機器記号一覧表" ) ;
               }
               else {
                 errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+                errorMessage.AppendLine( $"\u2022 {equipmentSymbolsFile}" ) ;
               }
               break ;
           }

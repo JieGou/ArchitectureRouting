@@ -109,11 +109,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       var otherSymbolModelNumber = new List<string>() ;
       foreach ( var symbol in symbols ) {
         var generalDisplayDeviceSymbol = symbol.Normalize( NormalizationForm.FormKC ) ;
-        if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) || ! equipmentSymbols.Any() ) continue ;
-        var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol && modelNumbers.Contains( s.ModelNumber ) ).Select( s => s.ModelNumber ).Distinct().ToList() ;
-        if ( modelNumberList.Any() ) {
-          ceeDModelData.AddRange( from modelNumber in modelNumberList select new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, ceeDName, condition ) ) ;
-          otherSymbolModelNumber.AddRange( modelNumberList ) ;
+        if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) ) continue ;
+        if ( equipmentSymbols.Any() ) {
+          var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol && modelNumbers.Contains( s.ModelNumber ) ).Select( s => s.ModelNumber ).Distinct().ToList() ;
+          if ( modelNumberList.Any() ) {
+            ceeDModelData.AddRange( from modelNumber in modelNumberList select new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, ceeDName, condition ) ) ;
+            otherSymbolModelNumber.AddRange( modelNumberList ) ;
+          }
+          else {
+            symbolsNotHaveModelNumber.Add( symbol ) ;
+          }
         }
         else {
           symbolsNotHaveModelNumber.Add( symbol ) ;
@@ -124,14 +129,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       {
         foreach ( var symbol in symbolsNotHaveModelNumber ) {
           var generalDisplayDeviceSymbol = symbol.Normalize( NormalizationForm.FormKC ) ;
-          if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) || ! equipmentSymbols.Any() ) continue ;
+          if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) ) continue ;
           var symbolModelNumber = modelNumbers.Where( m => ! otherSymbolModelNumber.Contains( m ) ).ToList() ;
           if ( symbolModelNumber.Any() )
             ceeDModelData.AddRange( from modelNumber in symbolModelNumber select new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, ceeDName, condition ) ) ;
           else {
-            var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol ).Select( s => s.ModelNumber ).Distinct().ToList() ;
-            if ( modelNumberList.Any() ) {
-              ceeDModelData.AddRange( from modelNumber in modelNumberList select new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, ceeDName, condition ) ) ;
+            if ( equipmentSymbols.Any() ) {
+              var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol ).Select( s => s.ModelNumber ).Distinct().ToList() ;
+              if ( modelNumberList.Any() ) {
+                ceeDModelData.AddRange( from modelNumber in modelNumberList select new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, ceeDName, condition ) ) ;
+              }
+              else {
+                ceeDModelData.Add( new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, ceeDName, condition ) ) ;
+              }
             }
             else {
               ceeDModelData.Add( new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, ceeDName, condition ) ) ;
