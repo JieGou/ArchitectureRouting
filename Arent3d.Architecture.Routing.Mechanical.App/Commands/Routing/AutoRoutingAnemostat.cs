@@ -39,6 +39,70 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var segmentSetting = GetSegmentSetting( doc, inConnector ) ;
       _listOfRightSegments = CreateRouteSegments( doc, rightFasuConnectors, rightAnemoConnectors, segmentSetting ) ;
       _listOfLeftSegments = CreateRouteSegments( doc, leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
+
+      // Auto create Duct System  
+      AutoCreateDuctSystem( fasu, anemoConnectors ) ;
+    }
+
+    private static void AutoCreateDuctSystem( Element fasu, List<Connector> anemoConnectors )
+    {
+      var connectorSets = new ConnectorSet() ;
+      var mechanicalSystem = GetMechanicalSystem( fasu ) ;
+      foreach ( var anemoConnector in anemoConnectors ) {
+        if ( anemoConnector == null ) continue ;
+
+        // システムアネモにSystemTypeがセットされているかの確認
+        var anemoSystemType = GetMechanicalSystemType( anemoConnector.Owner ) ;
+
+        // システムアネモにSystemTypeがセットされた場合
+        if ( anemoSystemType != null ) continue ;
+
+        // システムアネモにSystemTypeがセットされていない場合
+        connectorSets.Insert( anemoConnector ) ;
+      }
+
+      if ( mechanicalSystem != null ) {
+        mechanicalSystem.Add( connectorSets ) ;
+      }
+      else {
+        var system = fasu.Document.Create.NewMechanicalSystem( null, connectorSets, DuctSystemType.SupplyAir ) ;
+      }
+    }
+
+    private static MechanicalSystem? GetMechanicalSystem( Element fasu )
+    {
+      var fasuSystemType = GetMechanicalSystemType( fasu ) ;
+      var mechanicalSystems = new FilteredElementCollector( fasu.Document ).OfCategory( BuiltInCategory.OST_DuctSystem ).OfType<MechanicalSystem>().ToList() ;
+      var supplyAirMechanicalSystem = mechanicalSystems.FirstOrDefault( mechanicalSystem => mechanicalSystem.SystemType == DuctSystemType.SupplyAir ) ;
+
+      // FASUにMechanicalSystem(ダクトシステム)が設定されていない場合
+      if ( fasuSystemType == null && supplyAirMechanicalSystem == null ) return null ;
+
+      // FASUにMechanicalSystem(ダクトシステム)が設定されていないですがsupplyAirMechanicalSystemがある場合
+      if ( fasuSystemType == null && supplyAirMechanicalSystem != null ) {
+        // Todo set system type for FASU failed (FASUはMechanical EquipmentやAir Terminalsじゃないからです)
+        // https://www.revitapidocs.com/2015/d9d6fd18-6cf3-d7d3-31a1-d7d7ef45cfa0.htm
+        var connectorSets = new ConnectorSet() ;
+        foreach ( var fasuConnector in fasu.GetConnectors() ) {
+          connectorSets.Insert( fasuConnector ) ;
+        }
+
+        supplyAirMechanicalSystem.Add( connectorSets ) ;
+        return supplyAirMechanicalSystem ;
+      }
+
+      // FASUにMechanicalSystem(ダクトシステム)が設定されている場合
+      var currentMechanicalSystem = mechanicalSystems.FirstOrDefault( mechanicalSystem => (int) mechanicalSystem.SystemType == (int) fasuSystemType!.SystemClassification ) ;
+      return currentMechanicalSystem ;
+    }
+
+    private static MechanicalSystemType? GetMechanicalSystemType( Element element )
+    {
+      var param = element.get_Parameter( BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM ) ;
+      var ductSystemTypeId = param.AsElementId() ;
+      var ductSystemTypes = new FilteredElementCollector( element.Document ).OfCategory( BuiltInCategory.OST_DuctSystem ).OfType<MechanicalSystemType>().ToList() ;
+      var ductSystemType = ductSystemTypes.FirstOrDefault( type => type.Id == ductSystemTypeId ) ;
+      return ductSystemType ;
     }
 
     private static (List<Connector>, List<Connector>) GetSortedConnectors( IConnector inConnector, List<Connector> notInConnectors )
@@ -46,7 +110,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var rightConnectors = new List<Connector>() ;
       var leftConnectors = new List<Connector>() ;
       var inConnectorOrigin = inConnector.Origin.To3dPoint().To2d() ;
-      var inConnectorDirection = inConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
+      var inConnectorDirection = inConnector.CoordinateSystem.BasisZ.To3dDirection().To2d() ;
       var inConnectorNormal = new Vector2d( -inConnectorDirection.y, inConnectorDirection.x ) ;
       foreach ( var notInConnector in notInConnectors ) {
         // Vector from in connector to out connector or from in connector to anemo connector
@@ -126,10 +190,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var fromPoint = new ConnectorEndPoint( fasuConnectors[ index ], null ) ;
         var toPoint = new ConnectorEndPoint( anemoConnectors[ index ], null ) ;
         segmentList.Add( ( segmentSetting.RouteName, new RouteSegment( segmentSetting.ClassificationInfo, segmentSetting.SystemType, segmentSetting.CurveType, fromPoint, toPoint, null, false, segmentSetting.FixedHeight, segmentSetting.FixedHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ) ) ;
-        // Auto create Duct System  
-        var connectors = new ConnectorSet() ;
-        connectors.Insert( anemoConnectors[ index ] ) ;
-        var system = doc.Create.NewMechanicalSystem( null, connectors, DuctSystemType.SupplyAir ) ;
       }
 
       return segmentList ;
@@ -137,7 +197,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     public IEnumerable<(string routeName, RouteSegment)> Execute()
     {
-      if ( _listOfRightSegments != null && _listOfRightSegments.Any() ) {
+      if ( _listOfRightSegments != null ) {
         foreach ( var routeSegment in _listOfRightSegments ) {
           yield return routeSegment ;
         }
