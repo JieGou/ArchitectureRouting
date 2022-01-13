@@ -55,6 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
         var listFloorPlan = GetSymbolImages( path, blocks ) ;
         
+        
         for ( var i = startRow ; i <= endRow ; i++ ) {
           List<string> ceeDModelNumbers = new List<string>() ;
           List<string> ceeDSetCodes = new List<string>() ;
@@ -124,7 +125,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
-              var symbolBytes = listFloorPlan.Where( b => b.Postion == firstIndexGroup + 1).ToList().OrderBy(b=>b.MarginLeft) ;
+              var symbolBytes = listFloorPlan.Where( b => b.Position == firstIndexGroup + 1).ToList().OrderBy(b=>b.MarginLeft) ;
               var floorPlanImages = symbolBytes.Select( b => b.Image ).ToList() ;
               var condition = conditions.Count > k ? conditions[ k ] : string.Empty ;
               CeedModel ceeDModel ;
@@ -150,7 +151,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
     public static List<string> GetModelNumberToUse( string path )
     {
-      List<string> modelNumbers = new List<string>() ;
+      var modelNumbers = new List<string>() ;
 
       try {
         var extension = Path.GetExtension( path ) ;
@@ -225,7 +226,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         Visible = false,
         ScreenUpdating = false,
         DisplayStatusBar = false,
-        //Calculation = XlCalculation.xlCalculationManual,
         EnableEvents = false
       } ;
 
@@ -253,15 +253,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
               rowNumber = shape.TopLeftCell.Row ;
               var marginLeft = shape.Left ;
               var block = rowBlocks.LastOrDefault( c => c.Key <= rowNumber ) ;
-              shape.Copy() ; // sometime get error here
+              shape.Copy() ;
               if ( ! Clipboard.ContainsImage() ) continue ;
               var image = Clipboard.GetImage() ;
               if ( image == null ) continue ;
-              // using ( var ms = new MemoryStream() ) {
-              //   ms.Position = 0 ;
-              //   image.Save( ms, ImageFormat.Png ) ;
-              //   var imgData = ms.ToArray() ;
-              // }
               symbolImages.Add( new SymbolImage( block.Key, image, marginLeft) ) ;
             }
           }
@@ -285,14 +280,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
   {
     public SymbolImage( int postion, Image image, float marginLeft )
     {
-      this.Postion = postion ;
-      // SymbolByte = symbolByte ;
+      this.Position = postion ;
       Image = image ;
       MarginLeft = marginLeft ;
     }
 
-    public int Postion { get ; set ; }
-    // public byte[] SymbolByte { get ; set ; }
+    public int Position { get ; set ; }
     public Image Image { get ; set ; }
     public float MarginLeft { get ; set ; } 
   }
