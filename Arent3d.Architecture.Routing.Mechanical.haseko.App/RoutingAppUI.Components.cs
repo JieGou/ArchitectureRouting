@@ -18,43 +18,43 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
         [Button( typeof( InitializeCommand ), InitializeButton = true )]
         private static class InitializeCommandButton { }
 
-        [Button( typeof( ShowRoutingViewsCommand ), OnlyInitialized = true )]
-        private static class ShowRoutingViewsCommandButton { }
+        // [Button( typeof( ShowRoutingViewsCommand ), OnlyInitialized = true )]
+        // private static class ShowRoutingViewsCommandButton { }
       }
 
-      // [Panel("arent3d.architecture.routing.routing", TitleKey = "Mechanical.haseko.App.Panels.Routing.Routing" )]
-      // private static class RoutingPanel
-      // {
-      //   [Button( typeof( PickRoutingCommand ), OnlyInitialized = true )]
-      //   private static class PickRoutingCommandButton { }
-      //   
-      //   [Button( typeof( SimplePickRoutingCommand ), OnlyInitialized = true )]
-      //   private static class SimplePickRoutingCommandButton { }
-      //
-      //   [Button( typeof( PickAndReRouteCommand ), OnlyInitialized = true )]
-      //   private static class PickAndReRouteCommandButton { }
-      //
-      //   [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
-      //   private static class AllReRouteCommandButton { }
-      //
-      //   [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]
-      //   private static class InsertPassPointCommandButton { }
-      //
-      //   [Button( typeof( EraseSelectedRoutesCommand ), OnlyInitialized = true )]
-      //   private static class EraseSelectedRoutesCommandButton { }
-      //
-      //   [Button( typeof( EraseAllRoutesCommand ), OnlyInitialized = true )]
-      //   private static class EraseAllRoutesCommandButton { }
-      //
-      //   [Button( typeof( ReplaceFromToCommand ), OnlyInitialized = true )]
-      //   private static class ReplaceFromToCommandButton { }
-      //
-      //   [Button( typeof( ShowFrom_ToWindowCommand ), OnlyInitialized = true )]
-      //   private static class ShowFrom_ToWindowCommandButton { }
-      //
-      //   [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
-      //   private static class ShowFromToTreeCommandButton { }
-      // }
+      [Panel("arent3d.architecture.routing.routing", TitleKey = "Mechanical.haseko.App.Panels.Routing.Routing" )]
+      private static class RoutingPanel
+      {
+        // [Button( typeof( PickRoutingCommand ), OnlyInitialized = true )]
+        // private static class PickRoutingCommandButton { }
+        
+        [Button( typeof( SimplePickRoutingCommand ), OnlyInitialized = true )]
+        private static class SimplePickRoutingCommandButton { }
+      
+        // [Button( typeof( PickAndReRouteCommand ), OnlyInitialized = true )]
+        // private static class PickAndReRouteCommandButton { }
+      
+        [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
+        private static class AllReRouteCommandButton { }
+      
+        // [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]
+        // private static class InsertPassPointCommandButton { }
+        //
+        // [Button( typeof( EraseSelectedRoutesCommand ), OnlyInitialized = true )]
+        // private static class EraseSelectedRoutesCommandButton { }
+        //
+        // [Button( typeof( EraseAllRoutesCommand ), OnlyInitialized = true )]
+        // private static class EraseAllRoutesCommandButton { }
+        //
+        // [Button( typeof( ReplaceFromToCommand ), OnlyInitialized = true )]
+        // private static class ReplaceFromToCommandButton { }
+        //
+        // [Button( typeof( ShowFrom_ToWindowCommand ), OnlyInitialized = true )]
+        // private static class ShowFrom_ToWindowCommandButton { }
+        //
+        // [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
+        // private static class ShowFromToTreeCommandButton { }
+      }
 
       // [Panel( "arent3d.architecture.routing.rack", TitleKey = "Mechanical.haseko.App.Panels.Routing.Racks" )]
       // private static class RackPanel
