@@ -228,7 +228,10 @@
         <string>自動VAVsルーティングの始点を選択してください。</string>
 
         <key>UiDocument.Selection.PickObject.Fasu</key>
-        <string>システムアネモ自動ルーティングのFASUを選択してください。</string>        
+        <string>システムアネモ自動ルーティングのFASUを選択してください。</string>
+
+        <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed</key>
+        <string>システムアネモ自動ルーティングは失敗しました！ システムアネモ自動ルーティングする前、FASUにダクトシステムを設定してください。</string>
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

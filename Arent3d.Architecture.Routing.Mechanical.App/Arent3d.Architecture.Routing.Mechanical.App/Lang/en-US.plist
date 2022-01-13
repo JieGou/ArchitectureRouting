@@ -236,6 +236,9 @@
         <key>UiDocument.Selection.PickObject.Fasu</key>
         <string>Pick the FASU of a auto route Anemostat.</string>
 
+        <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed</key>
+        <string>Auto routing anemostat failed! Please create Duct System for FASU before route.</string>        
+
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
         <string>Width</string>

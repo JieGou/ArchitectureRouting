@@ -154,5 +154,28 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       // return the angle (in radian)
       return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
     }
+
+
+    public static MechanicalSystem? GetMechanicalSystem( Element element )
+    {
+      var elementSystemType = GetMechanicalSystemType( element ) ;
+
+      // FASUにMechanicalSystem(ダクトシステム)が設定されていない場合
+      if ( elementSystemType == null ) return null ;
+
+      // FASUにMechanicalSystem(ダクトシステム)が設定されている場合
+      var mechanicalSystems = new FilteredElementCollector( element.Document ).OfCategory( BuiltInCategory.OST_DuctSystem ).OfType<MechanicalSystem>().ToList() ;
+      var mechanicalSystem = mechanicalSystems.FirstOrDefault( mechanicalSystem => (int) mechanicalSystem.SystemType == (int) elementSystemType.SystemClassification ) ;
+      return mechanicalSystem ;
+    }
+
+    public static MechanicalSystemType? GetMechanicalSystemType( Element element )
+    {
+      var param = element.get_Parameter( BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM ) ;
+      var ductSystemTypeId = param.AsElementId() ;
+      var ductSystemTypes = new FilteredElementCollector( element.Document ).OfCategory( BuiltInCategory.OST_DuctSystem ).OfType<MechanicalSystemType>().ToList() ;
+      var ductSystemType = ductSystemTypes.FirstOrDefault( type => type.Id == ductSystemTypeId ) ;
+      return ductSystemType ;
+    }
   }
 }

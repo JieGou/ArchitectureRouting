@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private readonly IList<(string routeName, RouteSegment)>? _listOfLeftSegments ;
     private int _routeIndex ;
 
-    public AutoRoutingAnemostat( Document doc, Element fasu )
+    public AutoRoutingAnemostat( Document doc, Element fasu, MechanicalSystem fasuMechanicalSystem )
     {
       var notInConnectors = fasu.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In && ! connector.IsConnected ).ToList() ;
       var inConnector = fasu.GetConnectors().FirstOrDefault( connector => connector.Direction == FlowDirectionType.In ) ;
@@ -41,19 +41,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       _listOfRightSegments = CreateRouteSegments( rightFasuConnectors, rightAnemoConnectors, segmentSetting ) ;
       _listOfLeftSegments = CreateRouteSegments( leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
 
-      // Auto create Duct System  
-      AutoCreateDuctSystem( fasu, anemoConnectors ) ;
+      // Auto set Duct System for Anemostats
+      AutoCreateDuctSystem( anemoConnectors, fasuMechanicalSystem ) ;
     }
 
-    private static void AutoCreateDuctSystem( Element fasu, List<Connector> anemoConnectors )
+    private static void AutoCreateDuctSystem( List<Connector> anemoConnectors, MechanicalSystem fasuMechanicalSystem )
     {
       var connectorSets = new ConnectorSet() ;
-      var mechanicalSystem = GetMechanicalSystem( fasu ) ;
       foreach ( var anemoConnector in anemoConnectors ) {
         if ( anemoConnector == null ) continue ;
 
         // システムアネモにSystemTypeがセットされているかの確認
-        var anemoSystemType = GetMechanicalSystemType( anemoConnector.Owner ) ;
+        var anemoSystemType = TTEUtil.GetMechanicalSystemType( anemoConnector.Owner ) ;
 
         // システムアネモにSystemTypeがセットされた場合
         if ( anemoSystemType != null ) continue ;
@@ -63,38 +62,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       // Todo FASUのIn以外のコネクタを新しいダクトシステムに追加。今は例外が発生します。原因としてFASUはMechanical EquipmentやAir Terminalsじゃないものからです。
-      // foreach ( var fsuConnector in fasu.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In ) ) {
-      //   connectorSets.Insert( fsuConnector ) ;
-      // }
-
-      if ( mechanicalSystem != null ) {
-        mechanicalSystem.Add( connectorSets ) ;
-      }
-      else {
-        var system = fasu.Document.Create.NewMechanicalSystem( null, connectorSets, DuctSystemType.SupplyAir ) ;
-      }
-    }
-
-    private static MechanicalSystem? GetMechanicalSystem( Element element )
-    {
-      var elementSystemType = GetMechanicalSystemType( element ) ;
-
-      // FASUにMechanicalSystem(ダクトシステム)が設定されていない場合
-      if ( elementSystemType == null ) return null ;
-
-      // FASUにMechanicalSystem(ダクトシステム)が設定されている場合
-      var mechanicalSystems = new FilteredElementCollector( element.Document ).OfCategory( BuiltInCategory.OST_DuctSystem ).OfType<MechanicalSystem>().ToList() ;
-      var mechanicalSystem = mechanicalSystems.FirstOrDefault( mechanicalSystem => (int) mechanicalSystem.SystemType == (int) elementSystemType.SystemClassification ) ;
-      return mechanicalSystem ;
-    }
-
-    private static MechanicalSystemType? GetMechanicalSystemType( Element element )
-    {
-      var param = element.get_Parameter( BuiltInParameter.RBS_DUCT_SYSTEM_TYPE_PARAM ) ;
-      var ductSystemTypeId = param.AsElementId() ;
-      var ductSystemTypes = new FilteredElementCollector( element.Document ).OfCategory( BuiltInCategory.OST_DuctSystem ).OfType<MechanicalSystemType>().ToList() ;
-      var ductSystemType = ductSystemTypes.FirstOrDefault( type => type.Id == ductSystemTypeId ) ;
-      return ductSystemType ;
+      fasuMechanicalSystem.Add( connectorSets ) ;
     }
 
     private static (List<Connector>, List<Connector>) GetSortedConnectors( IConnector inConnector, List<Connector> notInConnectors )
