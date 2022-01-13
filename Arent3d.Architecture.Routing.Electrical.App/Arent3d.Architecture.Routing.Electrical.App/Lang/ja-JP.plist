@@ -155,6 +155,9 @@
         <key>Electrical.App.Commands.Initialization.ConfirmUnsetCommand</key>
         <string>未設定確認</string>
 
+        <key>Electrical.App.Commands.Routing.CreateRoomCommand</key>
+        <string>部屋作成</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>

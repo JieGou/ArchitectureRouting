@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               {
                 if ( ! isConduitsHaveConstructionItem ) break ;
                 // pick conduits
-                var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit ) ;
+                var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit ) ;
                 var conduitList = selectedElements.ToList() ;
                 if ( ! conduitList.Any() ) {
                   message = "No Conduits are selected." ;
@@ -177,7 +177,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var listConduits = elementList.Where( x => x is Conduit ).ToList() ;
                 var listApplyElement = new List<Element>() ;
                 listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
-                listApplyElement.AddRange(  GetConduitRelated(document, listConduits) );
+                listApplyElement.AddRange(  GetConduitRelated(document, elementList) );
                 SetConstructionItemForElements( listApplyElement.ToList(), categoryName ) ;
 
                 transaction.Commit() ;
@@ -237,12 +237,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private List<Element> GetConduitRelated(Document doc, List<Element> conduits)
     {
       var result = new List<Element>() ;
-      var allConduits = doc.GetAllElements<Conduit>() ;
+      var allConduits = doc.GetAllElements<Element>().OfCategory(  BuiltInCategorySets.Conduits ) ;
       foreach ( var conduit in conduits ) {
+        bool hasStartElement = false ;
+        bool hasEndElement = false ;
+        string startTeminateId = string.Empty;
+        string endTeminateId = string.Empty;
         var conduitRouteName = conduit.GetRouteName() ;
-        if(!string.IsNullOrEmpty(conduitRouteName  ) ){
-          var relateConduits = allConduits.Where( x =>  x.GetRouteName()==conduitRouteName) ;
-          result.AddRange( relateConduits ); 
+        var startPoint = conduit.GetNearestEndPoints( true ) ;
+        var startPointKey = startPoint.FirstOrDefault()?.Key ;
+        if(startPointKey!=null)
+        {
+        startTeminateId = startPointKey.GetElementId().ToString() ;
+        }
+        var endPoint = conduit.GetNearestEndPoints(  false ) ;
+        var endPointKey = endPoint.FirstOrDefault()?.Key ;
+        if ( endPointKey != null ) {
+          endTeminateId = endPointKey!.GetElementId().ToString() ;
+        }
+
+        if ( ! string.IsNullOrEmpty( startTeminateId ) && !string.IsNullOrEmpty( endTeminateId ) ) {
+          var (startConnectorId, endConnectorId) =
+            GetFromConnectorIdAndToConnectorId( doc, startTeminateId, endTeminateId ) ;
+          hasStartElement = conduits.Any( c => c.Id.IntegerValue.ToString() == startConnectorId ) ;
+          hasEndElement = conduits.Any( c => c.Id.IntegerValue.ToString() == endConnectorId ) ;
+        }
+        if(!string.IsNullOrEmpty( conduitRouteName ) && hasStartElement && hasEndElement ){
+          var relateConduits = allConduits.Where( x =>  x.GetRouteName()==conduitRouteName).ToList() ;
+          bool isNotFull = relateConduits.Any( x => conduits.All( y => y.Id != x.Id ) ) ;
+          if(!isNotFull){
+            result.AddRange( relateConduits ); 
+          }
         }
       }
       return result ;
@@ -288,6 +313,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var conduit in elements ) {
         conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, categoryName ) ;
       }
+    }
+    
+    private static (string, string) GetFromConnectorIdAndToConnectorId( Document document, string fromElementId, string toElementId )
+    {
+      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+
+      if ( ! string.IsNullOrEmpty( fromElementId ) ) {
+        var fromConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
+        if ( fromConnector!.IsTerminatePoint() || fromConnector!.IsPassPoint() ) {
+          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorId, out string? fromConnectorId ) ;
+          if ( ! string.IsNullOrEmpty( fromConnectorId ) )
+            fromElementId = fromConnectorId! ;
+        }
+      }
+
+      if ( string.IsNullOrEmpty( toElementId ) ) return ( fromElementId, toElementId ) ;
+      {
+        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
+        if ( ! toConnector!.IsTerminatePoint() && ! toConnector!.IsPassPoint() ) return ( fromElementId, toElementId ) ;
+        toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? toConnectorId ) ;
+        if ( ! string.IsNullOrEmpty( toConnectorId ) )
+          toElementId = toConnectorId! ;
+      }
+
+      return ( fromElementId, toElementId ) ;
     }
   }
 }

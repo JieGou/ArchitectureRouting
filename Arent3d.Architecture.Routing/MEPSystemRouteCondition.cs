@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing
     IPipeSpec IRouteCondition.Spec => Spec ;
     public MEPSystemPipeSpec Spec { get ; }
     public ProcessConstraint ProcessConstraint { get ; }
+    public PipeRackConstraints RackConstraints { get ; } = new PipeRackConstraints() ;
     public string FluidPhase => DefaultFluidPhase ;
 
     public MEPSystemRouteCondition( MEPSystemPipeSpec pipeSpec, double diameter, AvoidType avoidType )
