@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private readonly IList<(string routeName, RouteSegment)>? _listOfLeftSegments ;
     private int _routeIndex ;
 
-    public AutoRoutingAnemostat( Document doc, Element fasu, MechanicalSystem fasuMechanicalSystem )
+    public AutoRoutingAnemostat( Document doc, FamilyInstance fasu, MechanicalSystem fasuMechanicalSystem )
     {
       var notInConnectors = fasu.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In && ! connector.IsConnected ).ToList() ;
       var inConnector = fasu.GetConnectors().FirstOrDefault( connector => connector.Direction == FlowDirectionType.In ) ;
@@ -42,22 +42,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       _listOfLeftSegments = CreateRouteSegments( leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
 
       // Auto set Duct System for Anemostats
-      AutoCreateDuctSystem( anemoConnectors, fasuMechanicalSystem ) ;
+      CreateDuctSystem( anemoConnectors, fasuMechanicalSystem ) ;
     }
 
-    private static void AutoCreateDuctSystem( List<Connector> anemoConnectors, MechanicalSystem fasuMechanicalSystem )
+    private static void CreateDuctSystem( List<Connector> anemoConnectors, MechanicalSystem fasuMechanicalSystem )
     {
       var connectorSets = new ConnectorSet() ;
       foreach ( var anemoConnector in anemoConnectors ) {
-        if ( anemoConnector == null ) continue ;
-
-        // システムアネモにSystemTypeがセットされているかの確認
-        var anemoSystemType = TTEUtil.GetMechanicalSystemType( anemoConnector.Owner ) ;
-
-        // システムアネモにSystemTypeがセットされた場合
-        if ( anemoSystemType != null ) continue ;
-
-        // システムアネモにSystemTypeがセットされていない場合
+        if ( anemoConnector == null || anemoConnector.MEPSystem is MechanicalSystem ) continue ;
         connectorSets.Insert( anemoConnector ) ;
       }
 
