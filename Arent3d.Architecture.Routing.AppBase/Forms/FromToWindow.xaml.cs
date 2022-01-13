@@ -8,15 +8,27 @@ using Arent3d.Revit.UI;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public abstract partial class FromToWindowBase : RevitDialog
+  public interface IFromToWindowBehaviour
   {
+    string Title { get ; }
+    void PostImportCommand( UIApplication application ) ;
+    void PostExportCommand( UIApplication application ) ;
+  }
+
+  public partial class FromToWindow : RevitDialog
+  {
+    private readonly IFromToWindowBehaviour _behaviour ;
     public ObservableCollection<FromToItems> FromToItemsList { get ; }
 
-    protected UIDocument UiDocument { get ; }
+    private UIDocument UiDocument { get ; }
 
-    protected FromToWindowBase( UIDocument uiDoc, ObservableCollection<FromToItems> fromToItemsList ) : base( uiDoc )
+    public FromToWindow( IFromToWindowBehaviour behaviour, UIDocument uiDoc, ObservableCollection<FromToItems> fromToItemsList ) : base( uiDoc )
     {
       InitializeComponent() ;
+
+      _behaviour = behaviour ;
+      Title = behaviour.Title ;
+
       FromToItemsList = fromToItemsList ;
       UiDocument = uiDoc;
     }
@@ -63,17 +75,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
-      OnImportButtonClick() ;
+      _behaviour.PostImportCommand( UiDocument.Application ) ;
     }
 
     private void Dialog2Buttons_OnRightOnClick( object sender, RoutedEventArgs e )
     {
-      OnExportButtonClick() ;
+      _behaviour.PostExportCommand( UiDocument.Application ) ;
     }
-
-    protected abstract void OnImportButtonClick() ;
-
-    protected abstract void OnExportButtonClick() ;
 
     private void Dialog3Buttons_OnOnOKClick( object sender, RoutedEventArgs e )
     {
