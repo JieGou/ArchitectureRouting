@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     }
 
     public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber,
-      List<Image>? floorPlanImages, string floorPlanSymbol, string instrumentationSymbol, string name,
+      List<Image>? floorPlanImages, List<Image>? instrucmentChartImages, string floorPlanSymbol, string instrumentationSymbol, string name,
       string condition, string base64ImageString )
     {
       CeeDModelNumber = ceeDModelNumber ;
@@ -66,7 +66,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Condition = condition ;
 
       FloorImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
-      ListImages = GetImages( floorPlanImages ) ;
+      ListImages = GetImages( instrucmentChartImages ) ;
       Base64ImageString = base64ImageString ;
       string tempFloorString = string.Empty;
       if ( FloorImages != null ) {

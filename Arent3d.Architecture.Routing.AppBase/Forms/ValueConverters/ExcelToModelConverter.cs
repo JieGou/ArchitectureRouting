@@ -54,8 +54,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         }
 
         var listFloorPlan = GetSymbolImages( path, blocks ) ;
-        
-        
+        var listInstrucmentChart = GetInstructionChartImages( path, blocks ) ;
+
         for ( var i = startRow ; i <= endRow ; i++ ) {
           List<string> ceeDModelNumbers = new List<string>() ;
           List<string> ceeDSetCodes = new List<string>() ;
@@ -127,10 +127,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
               var ceeDSetCode = ceeDSetCodes.Any() ? ceeDSetCodes[ k ] : string.Empty ;
               var symbolBytes = listFloorPlan.Where( b => b.Position == firstIndexGroup + 1).ToList().OrderBy(b=>b.MarginLeft) ;
               var floorPlanImages = symbolBytes.Select( b => b.Image ).ToList() ;
+               var symbolChartBytes = listInstrucmentChart.Where( b => b.Position == firstIndexGroup + 1).ToList().OrderBy(b=>b.MarginLeft) ;
+               var instrucmentChartImages = symbolChartBytes.Select( b => b.Image ).ToList() ;
               var condition = conditions.Count > k ? conditions[ k ] : string.Empty ;
               CeedModel ceeDModel ;
               if ( floorPlanImages.Any() ) {
-                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) ;
+                ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanImages,instrucmentChartImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) ;
               }
               else {
                 ceeDModel = new CeedModel( ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, strModelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ;
@@ -273,6 +275,55 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       }
       
       return symbolImages ;
+    }
+     private static List<SymbolImage> GetInstructionChartImages( string filePath, Dictionary<int, int> rowBlocks )
+    {
+      const string sheetName = "セットコード一覧表" ;
+      const string startCell = "G8" ;
+      const string selectColumn = "G" ;
+      var symbolImages = new List<SymbolImage>() ;
+      var excelApp = new Application
+      {
+        Visible = false,
+        ScreenUpdating = false,
+        DisplayStatusBar = false,
+        EnableEvents = false
+      } ;
+
+      var excelWorkbook = excelApp.Workbooks.Open( filePath, Type.Missing, false, Type.Missing, Type.Missing, Type.Missing, false, XlPlatform.xlWindows, Type.Missing, true, false, Type.Missing, Type.Missing, Type.Missing, Type.Missing ) ;
+    
+        if ( excelWorkbook != null ) {
+          var sheet = (Worksheet) excelWorkbook.Sheets[ sheetName ] ;
+          sheet.DisplayPageBreaks = false ;
+          var xlSheets = excelWorkbook.Sheets as Sheets ;
+          var newSheet = (Worksheet) xlSheets.Add( xlSheets[ 1 ], Type.Missing, Type.Missing, Type.Missing ) ;
+          var xlRange = sheet.UsedRange ;
+          var endRow = xlRange.Rows.Count ;
+
+          //Copy shapes to new sheet
+          var range1 = sheet.Range[ startCell, selectColumn + endRow ] ;
+          var range2 = newSheet.Range[ startCell, selectColumn + endRow ] ;
+          range2.ColumnWidth = range1.ColumnWidth ;
+          range1.Copy( range2 ) ;
+          
+          //convert shapes to image
+          if ( newSheet.Shapes.Count > 0 ) {
+            int rowNumber ;
+            Clipboard.Clear() ;
+            foreach ( Shape shape in newSheet.Shapes ) {
+              rowNumber = shape.TopLeftCell.Row ;
+              var marginLeft = shape.Left ;
+              var block = rowBlocks.LastOrDefault( c => c.Key <= rowNumber ) ;
+              shape.Copy() ;
+              if ( ! Clipboard.ContainsImage() ) continue ;
+              var image = Clipboard.GetImage() ;
+              if ( image == null ) continue ;
+              symbolImages.Add( new SymbolImage( block.Key, image, marginLeft) ) ;
+            }
+          }
+        }
+
+        return symbolImages ;
     }
   }
   
