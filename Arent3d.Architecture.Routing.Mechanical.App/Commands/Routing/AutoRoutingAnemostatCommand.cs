@@ -6,6 +6,7 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.UI.Selection ;
@@ -18,7 +19,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class AutoRoutingAnemostatCommand : RoutingCommandBase<AutoRoutingAnemostatCommand.PickState>
   {
-    public record PickState( Element Fasu, MechanicalSystem FasuMechanicalSytem ) ;
+    public record PickState( MechanicalSystem FasuMechanicalSytem, Connector InConnector, IList<Connector> NotInConnector, IList<Connector> AnemoConnectors ) ;
 
     protected override string GetTransactionNameKey()
     {
@@ -35,11 +36,24 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var fasu = SelectFasu( uiDocument ) ;
       var fasuMechanicalSystem = TTEUtil.GetMechanicalSystem( fasu ) ;
+
       if ( fasuMechanicalSystem == null ) {
         return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed".GetAppStringByKeyOrDefault( "Auto routing anemostat failed! Please create Duct System for FASU before route." ) ) ;
       }
 
-      return new OperationResult<PickState>( new PickState( fasu, fasuMechanicalSystem ) ) ;
+      // 全てFASUのInコネクタ以外を取得
+      var fasuNotInConnectors = fasu.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In && ! connector.IsConnected ).ToList() ;
+      var fasuInConnector = fasu.GetConnectors().FirstOrDefault( connector => connector.Direction == FlowDirectionType.In ) ;
+      if ( fasuInConnector == null || ! fasuNotInConnectors.Any() ) {
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.inconnector.notfound".GetAppStringByKeyOrDefault( "Auto routing anemostat failed! FASU hasn't got in connector or hasn't got other connector." ) ) ;
+      }
+
+      var anemoConnectors = TTEUtil.GetAllAnemoConnectors( uiDocument.Document, fasuInConnector ) ;
+      if ( anemoConnectors.Count > fasuNotInConnectors.Count ) {
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.connector.less.than".GetAppStringByKeyOrDefault( "Auto routing anemostat failed! Because FASU's connector is less than anemostat." ) ) ;
+      }
+
+      return new OperationResult<PickState>( new PickState( fasuMechanicalSystem, fasuInConnector, fasuNotInConnectors, anemoConnectors ) ) ;
     }
 
     private static Element SelectFasu( UIDocument uiDocument )
@@ -74,8 +88,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       RouteGenerator.CorrectEnvelopes( document ) ;
-      var (fasu, fasuMechanicalSytem) = pickState ;
-      var anemostatRouter = new AutoRoutingAnemostat( document, fasu, fasuMechanicalSytem ) ;
+      var (fasuMechanicalSytem, fasuInConnector, fasuNotInConnectors, anemoConnectors) = pickState ;
+      var anemostatRouter = new AutoRoutingAnemostat( document, fasuMechanicalSytem, fasuInConnector, fasuNotInConnectors, anemoConnectors ) ;
       return anemostatRouter.Execute().EnumerateAll() ;
     }
   }

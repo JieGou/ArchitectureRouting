@@ -177,5 +177,39 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var ductSystemType = ductSystemTypes.FirstOrDefault( type => type.Id == ductSystemTypeId ) ;
       return ductSystemType ;
     }
+
+    public static IEnumerable<FamilyInstance> GetAllAnemostatsInSpace( Document doc, Element? spaceContainFasu )
+    {
+      if ( spaceContainFasu == null ) yield break ;
+
+      // Todo get all anemostat in space but don't use familyName
+      var allAnemostats = doc.GetAllElements<FamilyInstance>().Where( anemostat => anemostat.Symbol.FamilyName == "システムアネモ" ) ;
+      var spaceBox = spaceContainFasu.get_BoundingBox( doc.ActiveView ) ;
+      foreach ( var anemostat in allAnemostats ) {
+        if ( IsInSpace( spaceBox, anemostat.GetConnectors().First().Origin ) ) yield return anemostat ;
+      }
+    }
+
+    public static List<Connector> GetAllAnemoConnectors( Document doc, Connector fasuConnector )
+    {
+      // 全てSpaceでのシステムアネモを取得
+      var spaces = GetAllSpaces( doc ) ;
+      var spaceContainFasu = GetSpaceFromConnector( doc, spaces, fasuConnector ) ;
+      var anemostats = GetAllAnemostatsInSpace( doc, spaceContainFasu ) ;
+
+      // 全てSpaceでのシステムアネモのコネクタを取得
+      var anemoConnectors = anemostats.Select( anemostat => anemostat.GetConnectors().FirstOrDefault( connector => ! connector.IsConnected ) ).Where( anemoConnector => anemoConnector != null ).ToList() ;
+      return anemoConnectors ;
+    }
+
+    public static Element? GetSpaceFromConnector( Document doc, IEnumerable<Element> spaces, IConnector connector )
+    {
+      foreach ( var space in spaces ) {
+        var spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
+        if ( IsInSpace( spaceBox, connector.Origin ) ) return space ;
+      }
+
+      return null ;
+    }    
   }
 }

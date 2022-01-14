@@ -16,36 +16,27 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private readonly IList<(string routeName, RouteSegment)>? _listOfRightSegments ;
     private readonly IList<(string routeName, RouteSegment)>? _listOfLeftSegments ;
+    private readonly IList<(string routeName, RouteSegment)>? _listOfRemainSegments ;
     private int _routeIndex ;
 
-    public AutoRoutingAnemostat( Document doc, Element fasu, MechanicalSystem fasuMechanicalSystem )
+    public AutoRoutingAnemostat( Document doc, MechanicalSystem fasuMechanicalSystem, Connector fasuInConnector, IList<Connector> fasuNotInConnectors, IList<Connector> anemoConnectors )
     {
-      var notInConnectors = fasu.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In && ! connector.IsConnected ).ToList() ;
-      var inConnector = fasu.GetConnectors().FirstOrDefault( connector => connector.Direction == FlowDirectionType.In ) ;
-      if ( inConnector == null || ! notInConnectors.Any() ) return ;
-
       // FASUのコネクタがRight, Left を区別すてソートする。
-      var (rightFasuConnectors, leftFasuConnectors) = GetSortedConnectors( inConnector, notInConnectors ) ;
-
-      var spaces = TTEUtil.GetAllSpaces( doc ) ;
-      var spaceContainFasu = GetSpace( doc, spaces, inConnector ) ;
-      var anemostats = GetAnemostat( doc, spaceContainFasu ) ;
-
-      // Get all anemostat connectors in the space
-      var anemoConnectors = anemostats.Select( anemostat => anemostat.GetConnectors().FirstOrDefault( connector => ! connector.IsConnected ) ).Where( anemoConnector => anemoConnector != null ).ToList() ;
+      var (rightFasuConnectors, leftFasuConnectors) = GetSortedConnectors( fasuInConnector, fasuNotInConnectors ) ;
 
       // システムアネモのコネクタがRight, Left を区別する
-      var (rightAnemoConnectors, leftAnemoConnectors) = GetSortedConnectors( inConnector, anemoConnectors ) ;
+      var (rightAnemoConnectors, leftAnemoConnectors) = GetSortedConnectors( fasuInConnector, anemoConnectors ) ;
 
-      var segmentSetting = GetSegmentSetting( doc, inConnector ) ;
+      var segmentSetting = GetSegmentSetting( doc, fasuInConnector ) ;
       _listOfRightSegments = CreateRouteSegments( rightFasuConnectors, rightAnemoConnectors, segmentSetting ) ;
       _listOfLeftSegments = CreateRouteSegments( leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
+      _listOfRemainSegments = CreateRemainRouteSegments( rightFasuConnectors, rightAnemoConnectors, leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
 
       // Auto set Duct System for Anemostats
       AutoCreateDuctSystem( anemoConnectors, fasuMechanicalSystem ) ;
     }
 
-    private static void AutoCreateDuctSystem( List<Connector> anemoConnectors, MechanicalSystem fasuMechanicalSystem )
+    private static void AutoCreateDuctSystem( IEnumerable<Connector> anemoConnectors, MechanicalSystem fasuMechanicalSystem )
     {
       var connectorSets = new ConnectorSet() ;
       foreach ( var anemoConnector in anemoConnectors ) {
@@ -65,7 +56,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       fasuMechanicalSystem.Add( connectorSets ) ;
     }
 
-    private static (List<Connector>, List<Connector>) GetSortedConnectors( IConnector inConnector, List<Connector> notInConnectors )
+    private static (List<Connector>, List<Connector>) GetSortedConnectors( IConnector inConnector, IEnumerable<Connector> notInConnectors )
     {
       var rightConnectors = new List<Connector>() ;
       var leftConnectors = new List<Connector>() ;
@@ -99,31 +90,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return aAngle.CompareTo( bAngle ) ;
     }
 
-    private static IEnumerable<FamilyInstance> GetAnemostat( Document doc, Element? spaceContainFasu )
-    {
-      if ( spaceContainFasu == null ) yield break ;
-
-      // Todo get anemostat don't use familyName
-      var anemostats = doc.GetAllElements<FamilyInstance>().Where( anemostat => anemostat.Symbol.FamilyName == "システムアネモ" ) ;
-      var spaceBox = spaceContainFasu.get_BoundingBox( doc.ActiveView ) ;
-      foreach ( var anemostat in anemostats ) {
-        if ( TTEUtil.IsInSpace( spaceBox, anemostat.GetConnectors().First().Origin ) ) yield return anemostat ;
-      }
-    }
-
     private static MEPCurveType? GetRoundDuctTypeWhosePreferred( Document document )
     {
       return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type is DuctType && type.Shape == ConnectorProfileType.Round ) ;
-    }
-
-    private static Element? GetSpace( Document doc, IEnumerable<Element> spaces, IConnector inConnector )
-    {
-      foreach ( var space in spaces ) {
-        var spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
-        if ( TTEUtil.IsInSpace( spaceBox, inConnector.Origin ) ) return space ;
-      }
-
-      return null ;
     }
 
     private SegmentSetting? GetSegmentSetting( Document doc, Connector inConnector )
@@ -156,6 +125,33 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return segmentList ;
     }
 
+    private IList<(string routeName, RouteSegment)> CreateRemainRouteSegments( IReadOnlyList<Connector> rightFasuConnectors, IReadOnlyList<Connector> rightAnemoConnectors, IReadOnlyList<Connector> leftFasuConnectors, IReadOnlyList<Connector> leftAnemoConnectors, SegmentSetting? segmentSetting )
+    {
+      List<(string routeName, RouteSegment)> segmentList = new() ;
+      if ( segmentSetting == null ) return segmentList ;
+
+      List<Connector> remainAnemoConnectors = new() ;
+      List<Connector> remainFasuConnectors = new() ;
+      if ( rightAnemoConnectors.Count > rightFasuConnectors.Count ) {
+        remainAnemoConnectors = rightAnemoConnectors.ToList().Skip( rightFasuConnectors.Count ).ToList() ;
+        remainFasuConnectors = leftFasuConnectors.ToList() ;
+      }
+
+      if ( leftAnemoConnectors.Count > leftFasuConnectors.Count ) {
+        remainAnemoConnectors = leftAnemoConnectors.ToList().Skip( leftFasuConnectors.Count ).ToList() ;
+        remainFasuConnectors = rightFasuConnectors.ToList() ;
+      }
+
+      for ( var index = 0 ; index < remainAnemoConnectors.Count ; index++ ) {
+        var fromPoint = new ConnectorEndPoint( remainFasuConnectors[ remainFasuConnectors.Count - index - 1 ], null ) ;
+        var toPoint = new ConnectorEndPoint( remainAnemoConnectors[ index ], null ) ;
+        var routeName = segmentSetting.NameBase + "_" + _routeIndex++ ;
+        segmentList.Add( ( routeName, new RouteSegment( segmentSetting.ClassificationInfo, segmentSetting.SystemType, segmentSetting.CurveType, fromPoint, toPoint, null, false, segmentSetting.FixedHeight, segmentSetting.FixedHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ) ) ;
+      }
+
+      return segmentList ;
+    }
+
     public IEnumerable<(string routeName, RouteSegment)> Execute()
     {
       if ( _listOfRightSegments != null ) {
@@ -164,8 +160,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      if ( _listOfLeftSegments == null ) yield break ;
-      foreach ( var routeSegment in _listOfLeftSegments ) {
+      if ( _listOfLeftSegments != null ) {
+        foreach ( var routeSegment in _listOfLeftSegments ) {
+          yield return routeSegment ;
+        }
+      }
+
+      if ( _listOfRemainSegments == null ) yield break ;
+      foreach ( var routeSegment in _listOfRemainSegments ) {
         yield return routeSegment ;
       }
     }
