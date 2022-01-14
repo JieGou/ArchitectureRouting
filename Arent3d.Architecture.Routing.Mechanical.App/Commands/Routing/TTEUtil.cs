@@ -148,6 +148,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
     }
 
+    public static int CompareAngle( Vector2d inConnectorOrigin, Vector2d inConnectorDirection, IConnector a, IConnector b )
+    {
+      var aVector = a.Origin.To3dPoint().To2d() - inConnectorOrigin ;
+      var bVector = b.Origin.To3dPoint().To2d() - inConnectorOrigin ;
+      var aAngle = GetAngleBetweenVector( inConnectorDirection, aVector ) ;
+      var bAngle = GetAngleBetweenVector( inConnectorDirection, bVector ) ;
+      return aAngle.CompareTo( bAngle ) ;
+    }
+
     // Get the angle between two vectors
     public static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
     {
@@ -155,7 +164,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
     }
 
-    public static IEnumerable<FamilyInstance> GetAllAnemostatsInSpace( Document doc, Element? spaceContainFasu )
+    private static IEnumerable<FamilyInstance> GetAllAnemostatsInSpace( Document doc, Element? spaceContainFasu )
     {
       if ( spaceContainFasu == null ) yield break ;
 
@@ -179,7 +188,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return anemoConnectors ;
     }
 
-    public static Element? GetSpaceFromConnector( Document doc, IEnumerable<Element> spaces, IConnector connector )
+    private static Element? GetSpaceFromConnector( Document doc, IEnumerable<Element> spaces, IConnector connector )
     {
       foreach ( var space in spaces ) {
         var spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
@@ -187,6 +196,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return null ;
-    }    
+    }   
+
+    public static MEPCurveType? GetRoundDuctTypeWhosePreferred( Document document )
+    {
+      return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type is DuctType && type.Shape == ConnectorProfileType.Round ) ;
+    }
+    
   }
 }

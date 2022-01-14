@@ -12,43 +12,54 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 {
   public class AutoRoutingAnemostat
   {
-    private record SegmentSetting( MEPSystemClassificationInfo ClassificationInfo, FixedHeight? FixedHeight, MEPSystemType? SystemType, MEPCurveType? CurveType, string NameBase ) ;
+    private record SegmentSetting( MEPSystemClassificationInfo ClassificationInfo, FixedHeight? FixedHeight, MEPSystemType? SystemType, MEPCurveType? CurveType, UniqueNameCreatorForRoute uniqueNameCreatorForRoute ) ;
 
-    private readonly IList<(string routeName, RouteSegment)>? _listOfRightSegments ;
-    private readonly IList<(string routeName, RouteSegment)>? _listOfLeftSegments ;
-    private readonly IList<(string routeName, RouteSegment)>? _listOfRemainSegments ;
-    private int _routeIndex ;
+    private readonly Document _document ;
+    private readonly MEPSystem _fasuMechanicalSystem ;
+    private readonly Connector _fasuInConnector ;
+    private readonly IList<Connector> _fasuNotInConnectors ;
+    private readonly IList<Connector> _anemoConnectors ;
 
-    public AutoRoutingAnemostat( Document doc, MechanicalSystem fasuMechanicalSystem, Connector fasuInConnector, IList<Connector> fasuNotInConnectors, IList<Connector> anemoConnectors )
+    public AutoRoutingAnemostat( Document document, MEPSystem fasuMechanicalSystem, Connector fasuInConnector, IList<Connector> fasuNotInConnectors, IList<Connector> anemoConnectors )
     {
-      // FASUのコネクタがRight, Left を区別すてソートする。
-      var (rightFasuConnectors, leftFasuConnectors) = GetSortedConnectors( fasuInConnector, fasuNotInConnectors ) ;
+      _document = document ;
+      _fasuMechanicalSystem = fasuMechanicalSystem ;
+      _fasuInConnector = fasuInConnector ;
+      _fasuNotInConnectors = fasuNotInConnectors ;
+      _anemoConnectors = anemoConnectors ;
+    }
 
-      // システムアネモのコネクタがRight, Left を区別する
-      var (rightAnemoConnectors, leftAnemoConnectors) = GetSortedConnectors( fasuInConnector, anemoConnectors ) ;
+    public IEnumerable<(string routeName, RouteSegment)> Execute()
+    {
+      // FASUのコネクタがRight, Left を区別してソートする。
+      var (rightFasuConnectors, leftFasuConnectors) = GetSortedConnectors( _fasuInConnector, _fasuNotInConnectors ) ;
 
-      var segmentSetting = GetSegmentSetting( doc, fasuInConnector ) ;
-      _listOfRightSegments = CreateRouteSegments( rightFasuConnectors, rightAnemoConnectors, segmentSetting ) ;
-      _listOfLeftSegments = CreateRouteSegments( leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
-      _listOfRemainSegments = CreateRemainRouteSegments( rightFasuConnectors, rightAnemoConnectors, leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
+      // システムアネモのコネクタがRight, Left を区別すてソートする。
+      var (rightAnemoConnectors, leftAnemoConnectors) = GetSortedConnectors( _fasuInConnector, _anemoConnectors ) ;
+
+      var segmentSetting = CreateSegmentSetting( _document, _fasuInConnector ) ;
+      if ( segmentSetting == null ) yield break ;
 
       // Auto set Duct System for Anemostats
-      CreateDuctSystem( anemoConnectors, fasuMechanicalSystem ) ;
-    }
+      AddConnectorsToMechanicalSystem( _anemoConnectors, _fasuMechanicalSystem ) ;
 
-    private static void CreateDuctSystem( IEnumerable<Connector> anemoConnectors, MechanicalSystem fasuMechanicalSystem )
-    {
-      var connectorSets = new ConnectorSet() ;
-      foreach ( var anemoConnector in anemoConnectors ) {
-        if ( anemoConnector == null || anemoConnector.MEPSystem is MechanicalSystem ) continue ;
-        connectorSets.Insert( anemoConnector ) ;
+      var listOfRightSegments = CreateRouteSegments( rightFasuConnectors, rightAnemoConnectors, segmentSetting ) ;
+      foreach ( var routeSegment in listOfRightSegments ) {
+        yield return routeSegment ;
       }
 
-      // Todo FASUのIn以外のコネクタを新しいダクトシステムに追加。今は例外が発生します。原因としてFASUはMechanical EquipmentやAir Terminalsじゃないものからです。
-      fasuMechanicalSystem.Add( connectorSets ) ;
+      var listOfLeftSegments = CreateRouteSegments( leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
+      foreach ( var routeSegment in listOfLeftSegments ) {
+        yield return routeSegment ;
+      }
+
+      var listOfRemainSegments = CreateRemainRouteSegments( rightFasuConnectors, rightAnemoConnectors, leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
+      foreach ( var routeSegment in listOfRemainSegments ) {
+        yield return routeSegment ;
+      }
     }
 
-    private static (List<Connector>, List<Connector>) GetSortedConnectors( IConnector inConnector, IEnumerable<Connector> notInConnectors )
+    private (List<Connector>, List<Connector>) GetSortedConnectors( IConnector inConnector, IEnumerable<Connector> notInConnectors )
     {
       var rightConnectors = new List<Connector>() ;
       var leftConnectors = new List<Connector>() ;
@@ -68,60 +79,45 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         }
       }
 
-      rightConnectors.Sort( ( a, b ) => CompareAngle( inConnectorOrigin, inConnectorNormal, a, b ) ) ;
-      leftConnectors.Sort( ( a, b ) => CompareAngle( inConnectorOrigin, inConnectorNormal, a, b ) ) ;
+      rightConnectors.Sort( ( a, b ) => TTEUtil.CompareAngle( inConnectorOrigin, inConnectorNormal, a, b ) ) ;
+      leftConnectors.Sort( ( a, b ) => TTEUtil.CompareAngle( inConnectorOrigin, inConnectorNormal, a, b ) ) ;
       return ( rightConnectors, leftConnectors ) ;
     }
 
-    private static int CompareAngle( Vector2d inConnectorOrigin, Vector2d inConnectorDirection, IConnector a, IConnector b )
-    {
-      var aVector = a.Origin.To3dPoint().To2d() - inConnectorOrigin ;
-      var bVector = b.Origin.To3dPoint().To2d() - inConnectorOrigin ;
-      var aAngle = TTEUtil.GetAngleBetweenVector( inConnectorDirection, aVector ) ;
-      var bAngle = TTEUtil.GetAngleBetweenVector( inConnectorDirection, bVector ) ;
-      return aAngle.CompareTo( bAngle ) ;
-    }
-
-    private static MEPCurveType? GetRoundDuctTypeWhosePreferred( Document document )
-    {
-      return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type is DuctType && type.Shape == ConnectorProfileType.Round ) ;
-    }
-
-    private SegmentSetting? GetSegmentSetting( Document doc, Connector inConnector )
+    private SegmentSetting? CreateSegmentSetting( Document doc, Connector inConnector )
     {
       var classificationInfo = MEPSystemClassificationInfo.From( inConnector ) ;
       if ( classificationInfo == null ) return null ;
       var systemType = doc.GetAllElements<MEPSystemType>().Where( classificationInfo.IsCompatibleTo ).FirstOrDefault() ;
-      var curveType = GetRoundDuctTypeWhosePreferred( doc ) ;
+      var curveType = TTEUtil.GetRoundDuctTypeWhosePreferred( doc ) ;
       if ( curveType == null ) return null ;
       var nameBase = TTEUtil.GetNameBase( systemType, curveType ) ;
-      var nextIndex = TTEUtil.GetRouteNameIndex( RouteCache.Get( doc ), nameBase ) ;
-      _routeIndex = nextIndex ;
+      var currentMaxRouteIndex = TTEUtil.GetRouteNameIndex( RouteCache.Get( doc ), nameBase ) ;
+      var uniqueNameCreatorForRoute = new UniqueNameCreatorForRoute( nameBase, currentMaxRouteIndex ) ;
       var fasuLevel = doc.GuessLevel( inConnector.Origin ) ;
       var fixedHeight = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, inConnector.Origin.Z - fasuLevel.Elevation ) ;
-      return new SegmentSetting( classificationInfo, fixedHeight, systemType, curveType, nameBase ) ;
+      return new SegmentSetting( classificationInfo, fixedHeight, systemType, curveType, uniqueNameCreatorForRoute ) ;
     }
 
-    private IList<(string routeName, RouteSegment)> CreateRouteSegments( IReadOnlyList<Connector> fasuConnectors, IReadOnlyList<Connector> anemoConnectors, SegmentSetting? segmentSetting )
+    private IEnumerable<(string routeName, RouteSegment)> CreateRouteSegments( IReadOnlyList<Connector> fasuConnectors, IReadOnlyList<Connector> anemoConnectors, SegmentSetting segmentSetting, bool isRemain = false )
     {
       List<(string routeName, RouteSegment)> segmentList = new() ;
-      if ( segmentSetting == null ) return segmentList ;
-      var segmentCount = Math.Min( fasuConnectors.Count, anemoConnectors.Count ) ;
+      var segmentCount = isRemain ? anemoConnectors.Count : Math.Min( fasuConnectors.Count, anemoConnectors.Count ) ;
       for ( var index = 0 ; index < segmentCount ; index++ ) {
-        var fromPoint = new ConnectorEndPoint( fasuConnectors[ index ], null ) ;
+        var fromConnectorIndex = isRemain ? fasuConnectors.Count - index - 1 : index ;
+        var fromPoint = new ConnectorEndPoint( fasuConnectors[ fromConnectorIndex ], null ) ;
         var toPoint = new ConnectorEndPoint( anemoConnectors[ index ], null ) ;
-        var routeName = segmentSetting.NameBase + "_" + _routeIndex++ ;
-        segmentList.Add( ( routeName, new RouteSegment( segmentSetting.ClassificationInfo, segmentSetting.SystemType, segmentSetting.CurveType, fromPoint, toPoint, null, false, segmentSetting.FixedHeight, segmentSetting.FixedHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ) ) ;
+        var routeName = segmentSetting.uniqueNameCreatorForRoute.CreateName() ;
+        var routeSegment = new RouteSegment( segmentSetting.ClassificationInfo, segmentSetting.SystemType, segmentSetting.CurveType, fromPoint, toPoint, null, false, segmentSetting.FixedHeight, segmentSetting.FixedHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ;
+        segmentList.Add( ( routeName, routeSegment ) ) ;
       }
 
       return segmentList ;
     }
 
-    private IList<(string routeName, RouteSegment)> CreateRemainRouteSegments( IReadOnlyList<Connector> rightFasuConnectors, IReadOnlyList<Connector> rightAnemoConnectors, IReadOnlyList<Connector> leftFasuConnectors, IReadOnlyList<Connector> leftAnemoConnectors, SegmentSetting? segmentSetting )
+    // FASU-システムアネモルーティング改良 片側のコネクタ数よりもシステムアネモが多いケース
+    private IEnumerable<(string routeName, RouteSegment)> CreateRemainRouteSegments( IReadOnlyCollection<Connector> rightFasuConnectors, IReadOnlyCollection<Connector> rightAnemoConnectors, IReadOnlyCollection<Connector> leftFasuConnectors, IReadOnlyCollection<Connector> leftAnemoConnectors, SegmentSetting segmentSetting )
     {
-      List<(string routeName, RouteSegment)> segmentList = new() ;
-      if ( segmentSetting == null ) return segmentList ;
-
       List<Connector> remainAnemoConnectors = new() ;
       List<Connector> remainFasuConnectors = new() ;
       if ( rightAnemoConnectors.Count > rightFasuConnectors.Count ) {
@@ -134,33 +130,35 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         remainFasuConnectors = rightFasuConnectors.ToList() ;
       }
 
-      for ( var index = 0 ; index < remainAnemoConnectors.Count ; index++ ) {
-        var fromPoint = new ConnectorEndPoint( remainFasuConnectors[ remainFasuConnectors.Count - index - 1 ], null ) ;
-        var toPoint = new ConnectorEndPoint( remainAnemoConnectors[ index ], null ) ;
-        var routeName = segmentSetting.NameBase + "_" + _routeIndex++ ;
-        segmentList.Add( ( routeName, new RouteSegment( segmentSetting.ClassificationInfo, segmentSetting.SystemType, segmentSetting.CurveType, fromPoint, toPoint, null, false, segmentSetting.FixedHeight, segmentSetting.FixedHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ) ) ;
-      }
-
-      return segmentList ;
+      return CreateRouteSegments( remainFasuConnectors, remainAnemoConnectors, segmentSetting, true ) ;
     }
 
-    public IEnumerable<(string routeName, RouteSegment)> Execute()
+    private void AddConnectorsToMechanicalSystem( IEnumerable<Connector> anemoConnectors, MEPSystem fasuMechanicalSystem )
     {
-      if ( _listOfRightSegments != null ) {
-        foreach ( var routeSegment in _listOfRightSegments ) {
-          yield return routeSegment ;
-        }
+      var connectorSets = new ConnectorSet() ;
+      foreach ( var anemoConnector in anemoConnectors ) {
+        if ( anemoConnector == null || anemoConnector.MEPSystem is MechanicalSystem ) continue ;
+        connectorSets.Insert( anemoConnector ) ;
       }
 
-      if ( _listOfLeftSegments != null ) {
-        foreach ( var routeSegment in _listOfLeftSegments ) {
-          yield return routeSegment ;
-        }
+      // Todo FASUのIn以外のコネクタを新しいダクトシステムに追加。今は例外が発生します。原因としてFASUはMechanical EquipmentやAir Terminalsじゃないものからです。
+      fasuMechanicalSystem.Add( connectorSets ) ;
+    }
+
+    private class UniqueNameCreatorForRoute
+    {
+      private readonly string _baseName ;
+      private int _routeIndex ;
+
+      public UniqueNameCreatorForRoute( string baseName, int startRouteIndex )
+      {
+        _routeIndex = startRouteIndex ;
+        _baseName = baseName ;
       }
 
-      if ( _listOfRemainSegments == null ) yield break ;
-      foreach ( var routeSegment in _listOfRemainSegments ) {
-        yield return routeSegment ;
+      public string CreateName()
+      {
+        return _baseName + "_" + _routeIndex++ ;
       }
     }
   }
