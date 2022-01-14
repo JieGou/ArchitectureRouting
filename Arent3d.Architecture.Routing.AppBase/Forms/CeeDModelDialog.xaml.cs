@@ -160,12 +160,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
-      OpenFileDialog openFileDialog = new OpenFileDialog { FileName = "Please select 【CeeD】セットコード一覧表.xlsx file", Filter = "Csv files (*.xlsx)|*.xlsx", Multiselect = false } ;
+      MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
+      OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
       string filePath = string.Empty ;
       string fileEquipmentSymbolsPath = string.Empty ;
       if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
-        OpenFileDialog openFileEquipmentSymbolsDialog = new OpenFileDialog { FileName = "Please select 機器記号一覧表.xls file", Filter = "Csv files (*.xls)|*.xls", Multiselect = false } ;
+        MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
+        OpenFileDialog openFileEquipmentSymbolsDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
         if ( openFileEquipmentSymbolsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
           fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
         }

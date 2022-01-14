@@ -20,9 +20,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       try {
         var equipmentSymbols = new List<EquipmentSymbol>() ;
         if ( ! string.IsNullOrEmpty( path2 ) ) equipmentSymbols = GetAllEquipmentSymbols( path2 ) ;
+        var extension = Path.GetExtension( path ) ;
         FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
-        XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
-        ISheet workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
+        ISheet? workSheet = null ;
+        switch ( string.IsNullOrEmpty( extension ) ) {
+          case false when extension == ".xls" :
+          {
+            HSSFWorkbook wb = new HSSFWorkbook( fs ) ;
+            workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
+            break ;
+          }
+          case false when extension == ".xlsx" :
+          {
+            XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
+            workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
+            break ;
+          }
+        }
+
+        if ( workSheet == null ) return ceedModelData ;
         const int startRow = 7 ;
         var endRow = workSheet.LastRowNum ;
         for ( var i = startRow ; i <= endRow ; i++ ) {
@@ -155,9 +171,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
     {
       List<EquipmentSymbol> equipmentSymbols = new List<EquipmentSymbol>() ;
       try {
+        var extension = Path.GetExtension( path ) ;
         FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
-        HSSFWorkbook wb = new HSSFWorkbook( fs ) ;
-        ISheet workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
+        ISheet? workSheet = null ;
+        switch ( string.IsNullOrEmpty( extension ) ) {
+          case false when extension == ".xls" :
+          {
+            HSSFWorkbook wb = new HSSFWorkbook( fs ) ;
+            workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
+            break ;
+          }
+          case false when extension == ".xlsx" :
+          {
+            XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
+            workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
+            break ;
+          }
+        }
+
+        if ( workSheet == null ) return equipmentSymbols ;
         const int startRow = 1 ;
         var endRow = workSheet.LastRowNum ;
         for ( var i = startRow ; i <= endRow ; i++ ) {
