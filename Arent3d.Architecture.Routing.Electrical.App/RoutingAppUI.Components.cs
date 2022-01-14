@@ -41,6 +41,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( ConfirmUnsetCommand ), OnlyInitialized = true )]
           private static class ConfirmUnsetCommandButton { }
+          
+          [Button( typeof( ConfirmNotConnectingCommand ), OnlyInitialized = true )]
+          private static class ConfirmNotConnectingCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]

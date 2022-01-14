@@ -23,6 +23,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
 
     public IEnumerable<ParameterProxy> GetListeningParameters() => throw new NotSupportedException() ;
 
+    public bool IsDocumentSpan => false ;
+    public bool IsOptional => false ;
+
     public void Execute( UpdaterData data )
     {
       var document = data.GetDocument() ;
