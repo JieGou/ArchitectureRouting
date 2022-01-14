@@ -34,9 +34,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
-      var fasu = SelectFasu( uiDocument ) ;
-      var fasuMechanicalSystem = TTEUtil.GetMechanicalSystem( fasu ) ;
-
+      var fasuFamilyInstance = SelectFasu( uiDocument ) ;
+      var fasuMechanicalSystem = fasuFamilyInstance.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In )?.MEPSystem as MechanicalSystem ;
       if ( fasuMechanicalSystem == null ) {
         return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed".GetAppStringByKeyOrDefault( "Auto routing anemostat failed! Please create Duct System for FASU before route." ) ) ;
       }
@@ -56,18 +55,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return new OperationResult<PickState>( new PickState( fasuMechanicalSystem, fasuInConnector, fasuNotInConnectors, anemoConnectors ) ) ;
     }
 
-    private static Element SelectFasu( UIDocument uiDocument )
+    private static FamilyInstance SelectFasu( UIDocument uiDocument )
     {
-      var doc = uiDocument.Document ;
-
       // Todo get fasu only
       var ductAccessoryFilter = new DuctAccessoryPickFilter() ;
 
       while ( true ) {
         var pickedObject = uiDocument.Selection.PickObject( ObjectType.Element, ductAccessoryFilter, "UiDocument.Selection.PickObject.Fasu".GetAppStringByKeyOrDefault( "Pick the FASU of a auto route Anemostat." ) ) ;
-        var element = doc.GetElement( pickedObject.ElementId ) ;
-        if ( null == element ) continue ;
-        return element ;
+        var element = uiDocument.Document.GetElement( pickedObject.ElementId ) ;
+        var fasuFamilyInstance = element as FamilyInstance ;
+        if ( null == fasuFamilyInstance ) continue ;
+        return fasuFamilyInstance ;
       }
     }
 

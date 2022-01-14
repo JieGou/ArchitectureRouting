@@ -33,22 +33,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       _listOfRemainSegments = CreateRemainRouteSegments( rightFasuConnectors, rightAnemoConnectors, leftFasuConnectors, leftAnemoConnectors, segmentSetting ) ;
 
       // Auto set Duct System for Anemostats
-      AutoCreateDuctSystem( anemoConnectors, fasuMechanicalSystem ) ;
+      CreateDuctSystem( anemoConnectors, fasuMechanicalSystem ) ;
     }
 
-    private static void AutoCreateDuctSystem( IEnumerable<Connector> anemoConnectors, MechanicalSystem fasuMechanicalSystem )
+    private static void CreateDuctSystem( IEnumerable<Connector> anemoConnectors, MechanicalSystem fasuMechanicalSystem )
     {
       var connectorSets = new ConnectorSet() ;
       foreach ( var anemoConnector in anemoConnectors ) {
-        if ( anemoConnector == null ) continue ;
-
-        // システムアネモにSystemTypeがセットされているかの確認
-        var anemoSystemType = TTEUtil.GetMechanicalSystemType( anemoConnector.Owner ) ;
-
-        // システムアネモにSystemTypeがセットされた場合
-        if ( anemoSystemType != null ) continue ;
-
-        // システムアネモにSystemTypeがセットされていない場合
+        if ( anemoConnector == null || anemoConnector.MEPSystem is MechanicalSystem ) continue ;
         connectorSets.Insert( anemoConnector ) ;
       }
 

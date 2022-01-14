@@ -9,8 +9,9 @@
     public string Code { get ; set ; }
     public string LineIds { get ; set ; }
     public bool IsParentSymbol { get ; set ; }
+    public int CountCableSamePosition { get ; set ; }
 
-    public DetailSymbolModel( string? detailSymbolId, string? detailSymbol, string? conduitId, string? routeName, string? code, string? lineIds, bool? isParentSymbol )
+    public DetailSymbolModel( string? detailSymbolId, string? detailSymbol, string? conduitId, string? routeName, string? code, string? lineIds, bool? isParentSymbol, int? countCableSamePosition )
     {
       DetailSymbolId = detailSymbolId ?? string.Empty ;
       DetailSymbol = detailSymbol ?? string.Empty ;
@@ -19,6 +20,7 @@
       Code = code ?? string.Empty ;
       LineIds = lineIds ?? string.Empty ;
       IsParentSymbol = isParentSymbol ?? true ;
+      CountCableSamePosition = countCableSamePosition ?? 1 ;
     }
   }
 }
