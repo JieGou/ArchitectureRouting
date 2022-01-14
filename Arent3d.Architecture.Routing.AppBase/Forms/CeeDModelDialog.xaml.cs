@@ -186,6 +186,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         }
       }
+      
+      try {
+        using Transaction t1 = new Transaction( _document, "Load connector's families" ) ;
+        t1.Start() ;
+        _document.MakeCertainAllConnectorFamilies() ;
+        t1.Commit() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      }
     }
 
     private void LoadData( CeedStorable ceeDStorable )

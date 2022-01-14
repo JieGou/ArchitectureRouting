@@ -384,6 +384,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               else {
                 errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
+              
+              try {
+                using Transaction t = new Transaction( _document, "Load connector's families" ) ;
+                t.Start() ;
+                _document.MakeCertainAllConnectorFamilies() ;
+                t.Commit() ;
+              }
+              catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+              }
               break ;
           }
         }
