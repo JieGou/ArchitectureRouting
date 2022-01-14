@@ -17,6 +17,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
     public ChangePriority ChangePriority { get ; }
     public DocumentUpdateListenType ListenType { get ; }
 
+    public bool IsDocumentSpan => false ;
+    public bool IsOptional => false ;
+
     public ElementFilter GetElementFilter()
     {
       //Please change this method to filter the target families

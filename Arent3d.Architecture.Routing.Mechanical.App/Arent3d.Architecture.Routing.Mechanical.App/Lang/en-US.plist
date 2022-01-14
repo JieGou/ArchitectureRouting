@@ -92,6 +92,9 @@
         <key>Mechanical.App.Commands.Routing.AdjustDuctSizeCommand</key>
         <string>Adjust&#xA;Duct Size</string>
 
+        <key>Mechanical.App.Commands.Routing.AutoRoutingAnemostatCommand</key>
+        <string>Auto Routing&#xA;Anemostat</string>        
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
@@ -151,7 +154,10 @@
         <string>Change Route Height</string>
 
         <key>TransactionName.Commands.Routing.AutoRoutingVav</key>
-        <string>Auto Routing VAVs</string>        
+        <string>Auto Routing VAVs</string>
+
+        <key>TransactionName.Commands.Routing.AutoRoutingAnemostat</key>
+        <string>Auto Routing Anemostat</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
@@ -209,7 +215,6 @@
         <key>Dialog.Forms.FromToTree.Rename</key>
         <string>Since the name is duplicated, please change it to another name.</string>
 
-
         <key>Dialog.Forms.FromToEditControl.ProcessConstraints.None</key>
         <string>Whichever</string>
         <key>Dialog.Forms.FromToEditControl.ProcessConstraints.NoPocket</key>
@@ -227,6 +232,12 @@
 
         <key>Dialog.Commands.Routing.AutoRouteVavs.PickRootConnector</key>
         <string>Pick the root point of a auto route VAVs.</string>
+
+        <key>UiDocument.Selection.PickObject.Fasu</key>
+        <string>Pick the FASU of a auto route Anemostat.</string>
+
+        <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed</key>
+        <string>Auto routing anemostat failed! Please create Duct System for FASU before route.</string>        
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
@@ -252,7 +263,6 @@
 
         <key>Revit.Property.Builtin.OffsetHeight</key>
         <string>Offset Height</string>
-
 
     </dict>
 </plist>

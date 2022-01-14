@@ -94,7 +94,9 @@ namespace Arent3d.Architecture.Routing
     public int Depth { get ; }
 
     public bool AllowHorizontalBranches => true ;
-    public bool IsDirect { get ; }
+    public bool IsDirect { get ; private set ; }
+    public void SetIsDirect( bool isDirect ) => IsDirect = isDirect ;
+    public bool IsRelatedWithDirectEndPoint { get ; set ; }
     public bool AllowThroughBatteryLimit => false ;
 
     /// <summary>
