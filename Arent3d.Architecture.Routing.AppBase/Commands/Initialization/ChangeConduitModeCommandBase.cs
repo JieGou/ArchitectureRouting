@@ -33,15 +33,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       UiDocument = commandData.Application.ActiveUIDocument ;
       Document document = UiDocument.Document ;
       MessageBox.Show( "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( "Please select a range." ), "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
-      var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit ) ;
-      var conduitList = selectedElements.ToList() ;
-      if ( ! conduitList.Any() ) {
-        message = "No Conduits are selected." ;
+      var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit).ToList() ;
+      var conduitList = selectedElements.Where( elem => BuiltInCategory.OST_Conduit == elem.GetBuiltInCategory() ||
+                                                        BuiltInCategory.OST_ConduitFitting ==
+                                                        elem.GetBuiltInCategory() ||
+                                                        BuiltInCategory.OST_ConduitRun == elem.GetBuiltInCategory() ||
+                                                        BuiltInCategory.OST_MechanicalEquipment ==
+                                                        elem.GetBuiltInCategory() ||
+                                                        BuiltInCategory.OST_ElectricalFixtures ==
+                                                        elem.GetBuiltInCategory() )
+        .Where( elem => elem is FamilyInstance or Conduit ).ToList() ;
+      var connectorList = selectedElements.Where( elem => BuiltInCategory.OST_ElectricalFixtures == elem.GetBuiltInCategory() )
+        .Where( elem => elem is FamilyInstance or TextNote ).ToList() ;
+      var rackList = selectedElements.Where( elem => BuiltInCategory.OST_CableTray == elem.GetBuiltInCategory() || 
+                                                        BuiltInCategory.OST_CableTrayFitting == elem.GetBuiltInCategory() )
+        .Where( elem => elem is FamilyInstance or CableTray ).ToList() ;
+      if ( ! conduitList.Any() && ! connectorList.Any() && ! rackList.Any() ) {
+        message = "No items are selected." ;
       }
       var listApplyConduit = GetConduitRelated(document, conduitList) ;
       using var transaction = new Transaction( document ) ;
-      transaction.Start( "Set conduits mode" ) ;
-      SetModeForConduit( listApplyConduit.ToList(), Mode ) ;
+      transaction.Start( "Set items mode" ) ;
+      SetModeForConduitOrRack( listApplyConduit, Mode ) ;
+      SetModeForConnector( connectorList, Mode, document ) ;
+      SetModeForConduitOrRack( rackList, Mode ) ;
       transaction.Commit() ;
       MessageBox.Show(
         string.IsNullOrEmpty( message )
@@ -52,10 +67,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return Result.Succeeded ;
     }
     
-    private static void SetModeForConduit( List<Element> elements, ElectricalMode mode )
+    private static void SetModeForConduitOrRack( List<Element> elements, ElectricalMode mode )
     {
       foreach ( var conduit in elements ) {
         conduit.SetProperty( RoutingFamilyLinkedParameter.Mode, mode.ToString() ) ;
+      }
+    }
+    
+    private static void SetModeForConnector( List<Element> elements, ElectricalMode mode, Document document )
+    {
+      foreach ( var connector in elements ) {
+        var parentGroup = document.GetElement( connector.GroupId ) as Group ;
+        if ( parentGroup != null ) {
+          // ungroup before set property
+          var attachedGroup = document.GetAllElements<Group>()
+            .Where( x => x.AttachedParentId == parentGroup.Id ) ;
+          // ungroup textNote before ungroup connector
+          foreach ( var group in attachedGroup ) {
+            @group.UngroupMembers() ;
+          }
+          parentGroup.UngroupMembers() ;
+        }
+      }
+      foreach ( var conduit in elements ) {
+        conduit.SetProperty( ConnectorFamilyParameter.Mode, mode.ToString() ) ;
       }
     }
   }
