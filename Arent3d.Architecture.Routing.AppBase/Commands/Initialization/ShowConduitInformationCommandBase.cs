@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Enums ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -24,8 +25,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var conduitsModelData = doc.GetCsvStorable().ConduitsModelData ;
       var hiroiSetMasterNormalModelData = doc.GetCsvStorable().HiroiSetMasterNormalModelData ;
+      var hiroiSetMasterEcoModelData = doc.GetCsvStorable().HiroiSetMasterEcoModelData ;
       var hiroiMasterModelData = doc.GetCsvStorable().HiroiMasterModelData ;
       var hiroiSetCdMasterNormalModelData = doc.GetCsvStorable().HiroiSetCdMasterNormalModelData ;
+      var hiroiSetCdMasterEcoModelData = doc.GetCsvStorable().HiroiSetCdMasterEcoModelData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       ObservableCollection<ConduitInformationModel> conduitInformationModels =
         new ObservableCollection<ConduitInformationModel>() ;
@@ -39,6 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         foreach ( var element in pickedObjects ) {
           string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
           string constructionItem = element.LookupParameter( "Construction Item" ).AsString() ;
+          string mode = element.LookupParameter( "Mode" ).AsString() ;
           string pipingType = element.Name ;
           var existSymbolDetails = detailSymbolStorable.DetailSymbolModelData.Where( x => element.Id.ToString() == x.ConduitId ).ToList() ;
           foreach ( var existSymbolDetail in existSymbolDetails ) {
@@ -70,10 +74,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                   if ( ceedModel != null ) {
                     conduitInformationModel.CeeDCode = ceedModel.CeeDSetCode ;
 
-                    var hiroiCdModel =
+                    var hiroiCdModel = !string.IsNullOrEmpty(mode) && mode.Equals( ElectricalMode.Eco.ToString() ) ?
+                      hiroiSetCdMasterEcoModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) :
                       hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
-                    var hiroiSetModels = hiroiSetMasterNormalModelData
-                      .Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) ;
+                    var hiroiSetModels = !string.IsNullOrEmpty(mode) && mode.Equals( ElectricalMode.Eco.ToString() ) ?
+                      hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) :
+                      hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) ;
                     conduitInformationModel.ConstructionClassification = hiroiCdModel?.ConstructionClassification ;
                     foreach ( var item in hiroiSetModels ) {
                       List<string> listMaterialCode = new List<string>() ;
