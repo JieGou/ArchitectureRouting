@@ -5,6 +5,7 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Enums ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -26,8 +27,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private PickUpStorable _pickUpStorable ;
     private readonly List<CeedModel> _ceeDModels ;
     private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModels ;
+    private readonly List<HiroiSetMasterModel> _hiroiSetMasterEcoModels ;
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
     private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterNormalModels ;
+    private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterEcoModels ;
     private Dictionary<int, string> _pickUpNumbers ;
     private int _pickUpNumber ;
 
@@ -37,8 +40,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _document = document ;
       _ceeDModels = new List<CeedModel>() ;
       _hiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
+      _hiroiSetMasterEcoModels = new List<HiroiSetMasterModel>() ;
       _hiroiMasterModels = new List<HiroiMasterModel>() ;
       _hiroiSetCdMasterNormalModels = new List<HiroiSetCdMasterModel>() ;
+      _hiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
       _pickUpNumbers = new Dictionary<int, string>() ;
       _pickUpNumber = 1 ;
 
@@ -48,8 +53,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var csvStorable = _document.GetAllStorables<CsvStorable>().FirstOrDefault() ;
       if ( csvStorable != null ) {
         _hiroiSetMasterNormalModels = csvStorable.HiroiSetMasterNormalModelData ;
+        _hiroiSetMasterEcoModels = csvStorable.HiroiSetMasterEcoModelData ;
         _hiroiMasterModels = csvStorable.HiroiMasterModelData ;
         _hiroiSetCdMasterNormalModels = csvStorable.HiroiSetCdMasterNormalModelData ;
+        _hiroiSetCdMasterEcoModels = csvStorable.HiroiSetCdMasterEcoModelData ;
       }
 
       _pickUpModels = GetPickUpData() ;
@@ -187,6 +194,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       foreach ( var connector in elements ) {
         if ( connector.LevelId == ElementId.InvalidElementId ) continue ;
         var element = _document.GetElement( connector.Id ) ;
+        string mode = element.LookupParameter( "Mode" ).AsString() ;
         var item = string.Empty ;
         var floor = _document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ;
         var constructionItems = productType != ProductType.Cable ? constructionItemList[ index ] : DefaultConstructionItem ;
@@ -218,18 +226,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             supplement = ceeDModel.Name ;
 
             var ceeDModelNumber = string.Empty ;
-            if ( _hiroiSetCdMasterNormalModels.Any() ) {
-              var hiroiSetCdMasterNormalModel = _hiroiSetCdMasterNormalModels.FirstOrDefault( h => h.SetCode == ceeDSetCode ) ;
-              if ( hiroiSetCdMasterNormalModel != null ) {
-                ceeDModelNumber = productType == ProductType.Connector ? hiroiSetCdMasterNormalModel.QuantityParentPartModelNumber : hiroiSetCdMasterNormalModel.LengthParentPartModelNumber ;
-                construction = productType == ProductType.Conduit ? hiroiSetCdMasterNormalModel.ConstructionClassification : string.Empty ;
+            var hiroiSetCdMasterModels = ! string.IsNullOrEmpty( mode ) && mode.Equals( ElectricalMode.Eco.ToString() )
+                                                                ? _hiroiSetCdMasterEcoModels
+                                                                : _hiroiSetCdMasterNormalModels ;
+            if ( hiroiSetCdMasterModels.Any() ) {
+              var hiroiSetCdMasterModel = hiroiSetCdMasterModels.FirstOrDefault( h => h.SetCode == ceeDSetCode ) ;
+              if ( hiroiSetCdMasterModel != null ) {
+                ceeDModelNumber = productType == ProductType.Connector ? hiroiSetCdMasterModel.QuantityParentPartModelNumber : hiroiSetCdMasterModel.LengthParentPartModelNumber ;
+                construction = productType == ProductType.Conduit ? hiroiSetCdMasterModel.ConstructionClassification : string.Empty ;
               }
             }
-
-            if ( _hiroiSetMasterNormalModels.Any() && ! string.IsNullOrEmpty( ceeDModelNumber ) ) {
-              var hiroiSetMasterNormalModel = _hiroiSetMasterNormalModels.FirstOrDefault( h => h.ParentPartModelNumber == ceeDModelNumber ) ;
-              if ( hiroiSetMasterNormalModel != null ) {
-                var materialCodes = GetMaterialCodes( hiroiSetMasterNormalModel ) ;
+            var hiroiSetMasterModels = ! string.IsNullOrEmpty( mode ) && mode.Equals( ElectricalMode.Eco.ToString() )
+                                                            ? _hiroiSetMasterEcoModels
+                                                            : _hiroiSetMasterNormalModels ;
+            if ( hiroiSetMasterModels.Any() && ! string.IsNullOrEmpty( ceeDModelNumber ) ) {
+              var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceeDModelNumber ) ;
+              if ( hiroiSetMasterModel != null ) {
+                var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
                   foreach ( var ( materialCode, name) in materialCodes ) {
                     specification = name ;

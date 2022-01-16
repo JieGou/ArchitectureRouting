@@ -52,12 +52,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         message = "No items are selected." ;
       }
       var listApplyConduit = GetConduitRelated(document, conduitList) ;
-      using var transaction = new Transaction( document ) ;
-      transaction.Start( "Set items mode" ) ;
-      SetModeForConduitOrRack( listApplyConduit, Mode ) ;
+      SetModeForConduitOrRack( listApplyConduit, Mode, document ) ;
       SetModeForConnector( connectorList, Mode, document ) ;
-      SetModeForConduitOrRack( rackList, Mode ) ;
-      transaction.Commit() ;
+      SetModeForConduitOrRack( rackList, Mode, document ) ;
       MessageBox.Show(
         string.IsNullOrEmpty( message )
           ? "Dialog.Electrical.SetElementProperty.Success".GetAppStringByKeyOrDefault( "Success" )
@@ -67,31 +64,52 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return Result.Succeeded ;
     }
     
-    private static void SetModeForConduitOrRack( List<Element> elements, ElectricalMode mode )
+    private static void SetModeForConduitOrRack( List<Element> elements, ElectricalMode mode, Document document )
     {
+      if ( elements.Count == 0 ) return ;
+      using var transaction = new Transaction( document ) ;
+      transaction.Start( "Set conduits/racks mode" ) ;
       foreach ( var conduit in elements ) {
         conduit.SetProperty( RoutingFamilyLinkedParameter.Mode, mode.ToString() ) ;
       }
+      transaction.Commit() ;
     }
     
     private static void SetModeForConnector( List<Element> elements, ElectricalMode mode, Document document )
     {
+      if ( elements.Count == 0 ) return ;
+      using var transaction = new Transaction( document ) ;
+      transaction.Start( "Set connector mode" ) ;
+      Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       foreach ( var connector in elements ) {
         var parentGroup = document.GetElement( connector.GroupId ) as Group ;
         if ( parentGroup != null ) {
           // ungroup before set property
           var attachedGroup = document.GetAllElements<Group>()
             .Where( x => x.AttachedParentId == parentGroup.Id ) ;
+          List<ElementId> listTextNoteIds = new List<ElementId>() ;
           // ungroup textNote before ungroup connector
           foreach ( var group in attachedGroup ) {
+            var ids = @group.GetMemberIds() ;
+            listTextNoteIds.AddRange( ids ) ;
             @group.UngroupMembers() ;
           }
+
+          connectorGroups.Add( connector.Id, listTextNoteIds ) ;
           parentGroup.UngroupMembers() ;
         }
+        connector.SetProperty( ConnectorFamilyParameter.Mode, mode.ToString() ) ;
       }
-      foreach ( var conduit in elements ) {
-        conduit.SetProperty( ConnectorFamilyParameter.Mode, mode.ToString() ) ;
+      transaction.Commit() ;
+      transaction.Start( "Set connector group" ) ;
+      foreach ( var item in connectorGroups ) {
+        // create group for updated connector (with new property) and related text note if any
+        List<ElementId> groupIds = new List<ElementId>() ;
+        groupIds.Add( item.Key ) ;
+        groupIds.AddRange( item.Value ) ;
+        document.Create.NewGroup( groupIds ) ;
       }
+      transaction.Commit() ;
     }
   }
 }
