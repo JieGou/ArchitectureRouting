@@ -237,7 +237,13 @@
         <string>Pick the FASU of a auto route Anemostat.</string>
 
         <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed</key>
-        <string>Auto routing anemostat failed! Please create Duct System for FASU before route.</string>        
+        <string>Auto routing anemostat failed!&#xA;Please create Duct System for FASU before route.</string>
+
+        <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.inconnector.notfound</key>
+        <string>Auto routing anemostat failed!&#xA;FASU hasn't got in connector or hasn't got other connector.</string>
+
+        <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.connector.less.than</key>
+        <string>Auto routing anemostat failed!&#xA;Because FASU's connector is less than anemostat.</string>        
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
