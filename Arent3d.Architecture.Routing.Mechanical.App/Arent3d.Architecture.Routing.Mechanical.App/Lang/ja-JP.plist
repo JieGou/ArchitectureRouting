@@ -239,6 +239,9 @@
         <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.connector.less.than</key>
         <string>システムアネモ自動ルーティングは失敗しました！&#xA;原因としてFASUのコネクタよりもシステモアネモの数が多いからです。</string>
 
+        <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.out.connector.connected</key>
+        <string>システムアネモ自動ルーティングは失敗しました！&#xA;原因としてFASUのOut側コネクタで接続済のものがあるんですから。</string>        
+
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
         <string>幅</string>
