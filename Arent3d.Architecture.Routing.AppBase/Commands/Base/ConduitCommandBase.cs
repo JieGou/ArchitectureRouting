@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Base
       return result ;
     }
     
-    private static (string, string) GetFromConnectorIdAndToConnectorId( Document document, string fromElementId, string toElementId )
+    private (string, string) GetFromConnectorIdAndToConnectorId( Document document, string fromElementId, string toElementId )
     {
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
 

@@ -1,25 +1,15 @@
-﻿using System ;
-using System.Collections.Generic ;
-using System.Collections.ObjectModel ;
+﻿using System.Collections.Generic ;
 using System.Linq ;
-using System.Threading ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Base ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.AppBase.Constants ;
 using Arent3d.Architecture.Routing.AppBase.Enums ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
-using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
-using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -27,29 +17,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     protected ElectricalMode Mode ;
     private UIDocument UiDocument { get ; set ; } = null! ;
+
+    #region ReadOnly Prop
+
+    private readonly List<BuiltInCategory> _conduitFilterCategory = new List<BuiltInCategory>()
+    {
+      BuiltInCategory.OST_Conduit,
+      BuiltInCategory.OST_ConduitFitting,
+      BuiltInCategory.OST_ConduitRun,
+      BuiltInCategory.OST_MechanicalEquipment,
+      BuiltInCategory.OST_ElectricalFixtures
+    } ;
     
+    private readonly List<BuiltInCategory> _rackFilterCategory = new List<BuiltInCategory>()
+    {
+      BuiltInCategory.OST_CableTray,
+      BuiltInCategory.OST_CableTrayFitting
+    } ;
+
+    #endregion
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       UiDocument = commandData.Application.ActiveUIDocument ;
       Document document = UiDocument.Document ;
-      MessageBox.Show( "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( "Please select a range." ), "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( "Message" ), MessageBoxButtons.OK ) ;
-      var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit).ToList() ;
-      var conduitList = selectedElements.Where( elem => BuiltInCategory.OST_Conduit == elem.GetBuiltInCategory() ||
-                                                        BuiltInCategory.OST_ConduitFitting ==
-                                                        elem.GetBuiltInCategory() ||
-                                                        BuiltInCategory.OST_ConduitRun == elem.GetBuiltInCategory() ||
-                                                        BuiltInCategory.OST_MechanicalEquipment ==
-                                                        elem.GetBuiltInCategory() ||
-                                                        BuiltInCategory.OST_ElectricalFixtures ==
-                                                        elem.GetBuiltInCategory() )
-        .Where( elem => elem is FamilyInstance or Conduit ).ToList() ;
-      var connectorList = selectedElements.Where( elem => BuiltInCategory.OST_ElectricalFixtures == elem.GetBuiltInCategory() )
-        .Where( elem => elem is FamilyInstance or TextNote ).ToList() ;
-      var rackList = selectedElements.Where( elem => BuiltInCategory.OST_CableTray == elem.GetBuiltInCategory() || 
-                                                        BuiltInCategory.OST_CableTrayFitting == elem.GetBuiltInCategory() )
-        .Where( elem => elem is FamilyInstance or CableTray ).ToList() ;
+      MessageBox.Show( MessageKeys.DialogKeys.ELECTRICAL_SELECT_ELEMENT_MESSAGE_KEY.GetAppStringByKeyOrDefault( MessageConstants.SELECT_RANGE_MESSAGE ), MessageKeys.DialogKeys.ELECTRICAL_SELECT_ELEMENT_TITLE_KEY.GetAppStringByKeyOrDefault( MessageConstants.DIALOG_MESSAGE_TITLE ), MessageBoxButtons.OK ) ;
+      var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit or CableTray).ToList() ;
+      var conduitList = selectedElements.Where( elem => _conduitFilterCategory.Contains( elem.GetBuiltInCategory() ) && elem is FamilyInstance or Conduit).ToList();
+      var connectorList = selectedElements.Where( elem => elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures && elem is FamilyInstance or TextNote).ToList() ;
+      var rackList = selectedElements.Where( elem =>  _rackFilterCategory.Contains(elem.GetBuiltInCategory()) && elem is FamilyInstance or CableTray ).ToList() ;
       if ( ! conduitList.Any() && ! connectorList.Any() && ! rackList.Any() ) {
-        message = "No items are selected." ;
+        message = MessageConstants.NO_ITEM_SELECTED_MESSAGE ;
       }
       var listApplyConduit = GetConduitRelated(document, conduitList) ;
       SetModeForConduitOrRack( listApplyConduit, Mode, document ) ;
@@ -57,13 +54,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       SetModeForConduitOrRack( rackList, Mode, document ) ;
       MessageBox.Show(
         string.IsNullOrEmpty( message )
-          ? "Dialog.Electrical.SetElementProperty.Success".GetAppStringByKeyOrDefault( "Success" )
+          ? MessageKeys.DialogKeys.ELECTRICAL_CHANGE_MODE_SUCCESS_KEY.GetAppStringByKeyOrDefault( MessageConstants.UPDATE_DATA_SUCCESS_MESSAGE )
           : message,
-        "Dialog.Electrical.SetElementProperty.Title".GetAppStringByKeyOrDefault( "Construction item addition result" ),
+        MessageKeys.DialogKeys.ELECTRICAL_CHANGE_MODE_TITLE_KEY.GetAppStringByKeyOrDefault( MessageConstants.ELECTRICAL_CHANGE_MODE_TITLE ),
         MessageBoxButtons.OK ) ;
       return Result.Succeeded ;
     }
-    
+
+    #region Private Method
+
     private static void SetModeForConduitOrRack( List<Element> elements, ElectricalMode mode, Document document )
     {
       if ( elements.Count == 0 ) return ;
@@ -104,12 +103,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       transaction.Start( "Set connector group" ) ;
       foreach ( var item in connectorGroups ) {
         // create group for updated connector (with new property) and related text note if any
-        List<ElementId> groupIds = new List<ElementId>() ;
-        groupIds.Add( item.Key ) ;
+        List<ElementId> groupIds = new List<ElementId> { item.Key } ;
         groupIds.AddRange( item.Value ) ;
         document.Create.NewGroup( groupIds ) ;
       }
       transaction.Commit() ;
     }
+
+    #endregion
   }
 }
