@@ -240,7 +240,7 @@
         <string>システムアネモ自動ルーティングは失敗しました！&#xA;FASUのコネクタよりもシステモアネモの数が多いです。</string>
 
         <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.out.connector.connected</key>
-        <string>システムアネモ自動ルーティングは失敗しました！&#xA;原因としてFASUのOut側コネクタで接続済のものがあるんですから。</string>        
+        <string>システムアネモ自動ルーティングは失敗しました！&#xA;FASUのOut側コネクタで接続済のものがあります。</string>        
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>
