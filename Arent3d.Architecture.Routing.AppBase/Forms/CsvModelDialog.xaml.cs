@@ -386,16 +386,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( path, File.Exists( fileEquipmentSymbolsPath ) ? fileEquipmentSymbolsPath : string.Empty ) ;
                 if ( _ceeDModelData.Any() ) {
                   isLoadedCeeDFile = true ;
-                  correctMessage.AppendLine( "\u2022 【CeeD】セットコード一覧表" ) ;
-                  var fileCeeDCodeName = $"\u2022 【CeeD】セットコード一覧表.xlsx" ;
-                  if ( errorMessage.ToString().Contains( fileCeeDCodeName ) )
-                    errorMessage.Remove( errorMessage.ToString().IndexOf( fileCeeDCodeName, StringComparison.Ordinal ), fileCeeDCodeName.Length ) ;
+                  var ceeDCodeFileName = "【CeeD】セットコード一覧表" ;
+                  correctMessage.AppendLine( "\u2022 " + ceeDCodeFileName ) ;
                   if ( File.Exists( fileEquipmentSymbolsPath ) ) {
-                    correctMessage.AppendLine( "\u2022 機器記号一覧表" ) ;
-                    var fileEquipmentSymbolsName = $"\u2022 {Path.GetFileName( fileEquipmentSymbolsPath )}" ;
-                    if ( errorMessage.ToString().Contains( fileEquipmentSymbolsName ) )
-                      errorMessage.Remove( errorMessage.ToString().IndexOf( fileEquipmentSymbolsName, StringComparison.Ordinal ), fileEquipmentSymbolsName.Length ) ;
+                    correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
                   }
+                  
+                  var fileNameError = errorMessage.ToString().Split( '\u2022' ).Where( f => ! f.Contains( ceeDCodeFileName ) && ! f.Contains( equipmentSymbolsFile ) ).ToList() ;
+                  errorMessage = new StringBuilder( string.Join( "\u2022", fileNameError ) ) ;
                 }
                 else {
                   isLoadedCeeDFile = false ;
