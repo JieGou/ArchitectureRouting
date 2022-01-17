@@ -231,13 +231,13 @@
         <string>システムアネモ自動ルーティングのFASUを選択してください。</string>
 
         <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed</key>
-        <string>システムアネモ自動ルーティングは失敗しました！&#xA;システムアネモ自動ルーティングする前、FASUにダクトシステムを設定してください。</string>
+        <string>システムアネモ自動ルーティングは失敗しました！&#xA;あらかじめFASUにダクトシステムを設定してください。</string>
 
         <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.inconnector.notfound</key>
-        <string>システムアネモ自動ルーティングは失敗しました！&#xA;原因としてFASUがInコネクタまたはInコネクタ以外が含まれていないからです。</string>
+        <string>システムアネモ自動ルーティングは失敗しました！&#xA;FASUには1つのIn方向コネクタ及び、1つ以上のIn以外の方向のコネクタが必要です。</string>
 
         <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.connector.less.than</key>
-        <string>システムアネモ自動ルーティングは失敗しました！&#xA;原因としてFASUのコネクタよりもシステモアネモの数が多いからです。</string>
+        <string>システムアネモ自動ルーティングは失敗しました！&#xA;FASUのコネクタよりもシステモアネモの数が多いです。</string>
 
         <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.out.connector.connected</key>
         <string>システムアネモ自動ルーティングは失敗しました！&#xA;原因としてFASUのOut側コネクタで接続済のものがあるんですから。</string>        

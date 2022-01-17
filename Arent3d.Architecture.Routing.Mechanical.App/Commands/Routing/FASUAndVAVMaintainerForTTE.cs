@@ -429,13 +429,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private static (bool Success, string ErrorMessage) CreateMaintainersGroupedByBranchNumber( Document document, Connector pickedConnector, out Dictionary<int, List<Maintainer>> result )
     {
       result = new Dictionary<int, List<Maintainer>>() ;
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
-      FilteredElementCollector collector = new(document) ;
 
       var ahuNumber = TTEUtil.GetAhuNumberByPickedConnector( pickedConnector ) ;
       if ( ! ahuNumber.HasValue ) return ( false, "AHUNumber cannot be found from the picked connector." ) ;
 
-      var targetSpaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( TTEUtil.HasValidBranchNumber ).Where( space => TTEUtil.HasSpecifiedAhuNumber( space, ahuNumber.Value ) ).ToArray() ;
+      var targetSpaces = TTEUtil.CollectTargetSpaces( document, ahuNumber.Value ).ToArray() ;
 
       foreach ( var space in targetSpaces ) {
         if ( space.get_BoundingBox( document.ActiveView ) == null ) return ( false, $"{space.Name} doesn't have bounding box." ) ;
