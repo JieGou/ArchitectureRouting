@@ -202,6 +202,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type is DuctType && type.Shape == ConnectorProfileType.Round ) ;
     }
+
+    /// <summary>
+    /// TTE用に設定されているSpaceを集める
+    /// </summary>
+    /// <param name="document"></param>
+    /// <param name="ahuNumber"></param>
+    /// <returns></returns>
+    public static IEnumerable<Space> CollectTargetSpaces( Document document, int ahuNumber )
+    {
+      ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
+      FilteredElementCollector collector = new(document) ;
+
+      return collector.WherePasses( filter ).WhereElementIsNotElementType().OfType<Space>()
+        .Where( space => space.Location != null ) // Viewから削除されているSpaceは除外
+        .Where( HasValidBranchNumber )
+        .Where( space => HasSpecifiedAhuNumber( space, ahuNumber ) ) ;
+    }
     
   }
 }
