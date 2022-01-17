@@ -5,7 +5,6 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Enums ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -194,7 +193,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       foreach ( var connector in elements ) {
         if ( connector.LevelId == ElementId.InvalidElementId ) continue ;
         var element = _document.GetElement( connector.Id ) ;
-        string mode = element.LookupParameter( "Mode" ).AsString() ;
+        string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
         var item = string.Empty ;
         var floor = _document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ;
         var constructionItems = productType != ProductType.Cable ? constructionItemList[ index ] : DefaultConstructionItem ;
@@ -226,7 +225,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             supplement = ceeDModel.Name ;
 
             var ceeDModelNumber = string.Empty ;
-            var hiroiSetCdMasterModels = ! string.IsNullOrEmpty( mode ) && mode.Equals( ElectricalMode.Eco.ToString() )
+            var hiroiSetCdMasterModels = !string.IsNullOrEmpty(isEcoMode) && bool.Parse( isEcoMode )
                                                                 ? _hiroiSetCdMasterEcoModels
                                                                 : _hiroiSetCdMasterNormalModels ;
             if ( hiroiSetCdMasterModels.Any() ) {
@@ -236,7 +235,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 construction = productType == ProductType.Conduit ? hiroiSetCdMasterModel.ConstructionClassification : string.Empty ;
               }
             }
-            var hiroiSetMasterModels = ! string.IsNullOrEmpty( mode ) && mode.Equals( ElectricalMode.Eco.ToString() )
+            var hiroiSetMasterModels = !string.IsNullOrEmpty(isEcoMode) && bool.Parse( isEcoMode )
                                                             ? _hiroiSetMasterEcoModels
                                                             : _hiroiSetMasterNormalModels ;
             if ( hiroiSetMasterModels.Any() && ! string.IsNullOrEmpty( ceeDModelNumber ) ) {

@@ -98,9 +98,9 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConstructionItems ) )]
     ConstructionItem,
     
-    [ParameterGuid( "302a0b15-ee8b-44a2-98b2-c5eb105a3579" ), NameOnRevit( "Mode" )]
+    [ParameterGuid( "302a0b15-ee8b-44a2-98b2-c5eb105a3579" ), NameOnRevit( "IsEcoMode" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Conduits ) )]
-    Mode
+    IsEcoMode
   }
 
   public enum ConnectorFamilyParameter
@@ -113,9 +113,9 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
     CeeDCode,
     
-    [ParameterGuid( "34e2229e-6c32-47ee-a01e-541ddc5a2854" ), NameOnRevit( "Mode" )]
+    [ParameterGuid( "34e2229e-6c32-47ee-a01e-541ddc5a2854" ), NameOnRevit( "IsEcoMode" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
-    Mode
+    IsEcoMode
   }
 
   public enum BranchNumberParameter
