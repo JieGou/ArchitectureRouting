@@ -60,8 +60,6 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_ElectricalFixtures
     } ;
     
-    
-    
     public static readonly BuiltInCategory[] ConstructionItems =
     {
       BuiltInCategory.OST_Conduit,

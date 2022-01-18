@@ -2,7 +2,6 @@
 using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Base ;
-using Arent3d.Architecture.Routing.AppBase.Constants ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -12,8 +11,14 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  public abstract class ChangeConduitModeCommandBase: ConduitCommandBase, IExternalCommand
+  public abstract class ChangeConduitModeCommandBase: ConduitUtil, IExternalCommand
   {
+    private static string SELECT_RANGE_MESSAGE = "Please select a range." ;
+    private static string DIALOG_MESSAGE_TITLE = "Message" ;
+    private static string NO_ITEM_SELECTED_MESSAGE = "No items are selected.";
+    private static string UPDATE_DATA_SUCCESS_MESSAGE = "Update data success.";
+    private static string ELECTRICAL_CHANGE_MODE_TITLE = "Change mode result";
+    
     protected bool IsEcoMode ;
     private UIDocument UiDocument { get ; set ; } = null! ;
     
@@ -21,30 +26,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       UiDocument = commandData.Application.ActiveUIDocument ;
       Document document = UiDocument.Document ;
-      MessageBox.Show( "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( MessageConstants.SELECT_RANGE_MESSAGE ), "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( MessageConstants.DIALOG_MESSAGE_TITLE ), MessageBoxButtons.OK ) ;
+      MessageBox.Show( "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( SELECT_RANGE_MESSAGE ), "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( DIALOG_MESSAGE_TITLE ), MessageBoxButtons.OK ) ;
       var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit or CableTray).ToList() ;
       var conduitList = selectedElements.Where( elem => BuiltInCategorySets.ConduitWithStartEnds.Contains( elem.GetBuiltInCategory() ) && elem is FamilyInstance or Conduit).ToList();
       var connectorList = selectedElements.Where( elem => elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures && elem is FamilyInstance or TextNote).ToList() ;
-      var rackList = selectedElements.Where( elem =>  BuiltInCategorySets.RackTypeElements.Contains(elem.GetBuiltInCategory()) && elem is FamilyInstance or CableTray ).ToList() ;
-      if ( ! conduitList.Any() && ! connectorList.Any() && ! rackList.Any() ) {
-        message = MessageConstants.NO_ITEM_SELECTED_MESSAGE ;
+      if( ! conduitList.Any() && ! connectorList.Any() )  {
+        message = NO_ITEM_SELECTED_MESSAGE ;
       }
       var listApplyConduit = GetConduitRelated(document, conduitList) ;
-      SetModeForConduitOrRack( listApplyConduit, IsEcoMode, document ) ;
+      SetModeForConduit( listApplyConduit, IsEcoMode, document ) ;
       SetModeForConnector( connectorList, IsEcoMode, document ) ;
-      SetModeForConduitOrRack( rackList, IsEcoMode, document ) ;
       MessageBox.Show(
         string.IsNullOrEmpty( message )
-          ? "Dialog.Electrical.ChangeMode.Success".GetAppStringByKeyOrDefault( MessageConstants.UPDATE_DATA_SUCCESS_MESSAGE )
+          ? "Dialog.Electrical.ChangeMode.Success".GetAppStringByKeyOrDefault( UPDATE_DATA_SUCCESS_MESSAGE )
           : message,
-        "Dialog.Electrical.ChangeMode.Title".GetAppStringByKeyOrDefault( MessageConstants.ELECTRICAL_CHANGE_MODE_TITLE ),
+        "Dialog.Electrical.ChangeMode.Title".GetAppStringByKeyOrDefault( ELECTRICAL_CHANGE_MODE_TITLE ),
         MessageBoxButtons.OK ) ;
       return Result.Succeeded ;
     }
 
     #region Private Method
 
-    private static void SetModeForConduitOrRack( List<Element> elements, bool isEcoMode, Document document )
+    private static void SetModeForConduit( List<Element> elements, bool isEcoMode, Document document )
     {
       if ( elements.Count == 0 ) return ;
       using var transaction = new Transaction( document ) ;

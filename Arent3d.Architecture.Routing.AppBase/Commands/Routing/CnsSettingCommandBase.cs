@@ -22,7 +22,7 @@ using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class CnsSettingCommandBase : ConduitCommandBase, IExternalCommand
+  public abstract class CnsSettingCommandBase : ConduitUtil, IExternalCommand
   {
     protected UIDocument UiDocument { get ; private set ; } = null! ;
 

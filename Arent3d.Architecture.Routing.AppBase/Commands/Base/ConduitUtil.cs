@@ -5,7 +5,7 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Base
 {
-  public abstract class ConduitCommandBase
+  public class ConduitUtil
   {
     protected List<Element> GetConduitRelated(Document doc, List<Element> conduits)
     {
