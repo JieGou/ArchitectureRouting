@@ -80,7 +80,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           connectorGroups.Add( connector.Id, listTextNoteIds ) ;
           parentGroup.UngroupMembers() ;
         }
-        connector.SetProperty( ConnectorFamilyParameter.IsEcoMode, isEcoMode.ToString() ) ;
+        connector.SetProperty( RoutingFamilyLinkedParameter.IsEcoMode, isEcoMode.ToString() ) ;
       }
       transaction.Commit() ;
       transaction.Start( "Set connector group" ) ;
