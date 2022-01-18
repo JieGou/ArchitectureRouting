@@ -237,7 +237,10 @@
         <string>システムアネモ自動ルーティングは失敗しました！&#xA;FASUには1つのIn方向コネクタ及び、1つ以上のIn以外の方向のコネクタが必要です。</string>
 
         <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.connector.less.than</key>
-        <string>システムアネモ自動ルーティングは失敗しました！&#xA;FASUのコネクタよりもシステモアネモの数が多いです。</string>
+        <string>システムアネモ自動ルーティングは失敗しました！&#xA;FASUのコネクタよりもシステムアネモの数が多いです。</string>
+
+        <key>UiDocument.Commands.Routing.AutoRouteAnemostat.Error.out.connector.connected</key>
+        <string>システムアネモ自動ルーティングは失敗しました！&#xA;FASUのOut側コネクタで接続済のものがあります。</string>        
 
         <!-- Parameter Names -->
         <key>Revit.Property.Builtin.Width</key>

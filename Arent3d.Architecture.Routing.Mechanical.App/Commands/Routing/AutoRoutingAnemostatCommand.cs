@@ -36,19 +36,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var fasuFamilyInstance = SelectFasu( uiDocument ) ;
       if ( fasuFamilyInstance.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In )?.MEPSystem is not MechanicalSystem fasuMechanicalSystem ) {
-        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed".GetAppStringByKeyOrDefault( "Auto routing anemostat failed! Please create Duct System for FASU before route." ) ) ;
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed".GetAppStringByKeyOrDefault( "Auto routing anemostat failed!\nPlease create Duct System for FASU before route." ) ) ;
       }
 
       // 全てFASUのInコネクタ以外を取得
-      var fasuNotInConnectors = fasuFamilyInstance.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In && ! connector.IsConnected ).ToList() ;
+      var fasuOutConnectedConnectors = fasuFamilyInstance.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In && connector.IsConnected ).ToList() ;
+      if ( fasuOutConnectedConnectors.Any() ) {
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.out.connector.connected".GetAppStringByKeyOrDefault( "Auto routing anemostat failed!\nThere are some FASU's out connectors which was connected." ) ) ;
+      }      
+      var fasuNotInConnectors = fasuFamilyInstance.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In ).ToList() ;
       var fasuInConnector = fasuFamilyInstance.GetConnectors().FirstOrDefault( connector => connector.Direction == FlowDirectionType.In ) ;
       if ( fasuInConnector == null || ! fasuNotInConnectors.Any() ) {
-        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.inconnector.notfound".GetAppStringByKeyOrDefault( "Auto routing anemostat failed! FASU hasn't got in connector or hasn't got other connector." ) ) ;
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.inconnector.notfound".GetAppStringByKeyOrDefault( "Auto routing anemostat failed!\nFASU hasn't got in connector or hasn't got other connector." ) ) ;
       }
 
       var anemoConnectors = TTEUtil.GetAllAnemoConnectors( uiDocument.Document, fasuInConnector ) ;
       if ( anemoConnectors.Count > fasuNotInConnectors.Count ) {
-        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.connector.less.than".GetAppStringByKeyOrDefault( "Auto routing anemostat failed! Because FASU's connector is less than anemostat." ) ) ;
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.connector.less.than".GetAppStringByKeyOrDefault( "Auto routing anemostat failed!\nBecause FASU's connector is less than anemostat." ) ) ;
       }
 
       return new OperationResult<PickState>( new PickState( fasuMechanicalSystem, fasuInConnector, fasuNotInConnectors, anemoConnectors ) ) ;
