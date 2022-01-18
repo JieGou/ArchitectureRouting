@@ -107,10 +107,10 @@
         <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>工事区分設定</string>
 
-        <key>Electrical.App.Commands.Routing.ChangeToEcoCommand</key>
+        <key>Electrical.App.Commands.Initialization.ChangeToEcoCommand</key>
         <string>エコへ切替</string>
 
-        <key>Electrical.App.Commands.Routing.ChangeToNormalCommand</key>
+        <key>Electrical.App.Commands.Initialization.ChangeToNormalCommand</key>
         <string>通常へ切替</string>
 
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
