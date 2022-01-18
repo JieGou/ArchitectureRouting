@@ -31,29 +31,29 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
         [Button( typeof( SimplePickRoutingCommand ), OnlyInitialized = true )]
         private static class SimplePickRoutingCommandButton { }
       
-        // [Button( typeof( PickAndReRouteCommand ), OnlyInitialized = true )]
-        // private static class PickAndReRouteCommandButton { }
+        [Button( typeof( PickAndReRouteCommand ), OnlyInitialized = true )]
+        private static class PickAndReRouteCommandButton { }
       
         [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
         private static class AllReRouteCommandButton { }
       
-        // [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]
-        // private static class InsertPassPointCommandButton { }
-        //
-        // [Button( typeof( EraseSelectedRoutesCommand ), OnlyInitialized = true )]
-        // private static class EraseSelectedRoutesCommandButton { }
-        //
-        // [Button( typeof( EraseAllRoutesCommand ), OnlyInitialized = true )]
-        // private static class EraseAllRoutesCommandButton { }
+        [Button( typeof( EraseSelectedRoutesCommand ), OnlyInitialized = true )]
+        private static class EraseSelectedRoutesCommandButton { }
+        
+        [Button( typeof( EraseAllRoutesCommand ), OnlyInitialized = true )]
+        private static class EraseAllRoutesCommandButton { }
         //
         // [Button( typeof( ReplaceFromToCommand ), OnlyInitialized = true )]
         // private static class ReplaceFromToCommandButton { }
         //
         // [Button( typeof( ShowFrom_ToWindowCommand ), OnlyInitialized = true )]
         // private static class ShowFrom_ToWindowCommandButton { }
-        //
-        // [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
-        // private static class ShowFromToTreeCommandButton { }
+        
+        [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]
+        private static class InsertPassPointCommandButton { }
+        
+        [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
+        private static class ShowFromToTreeCommandButton { }
       }
 
       // [Panel( "arent3d.architecture.routing.rack", TitleKey = "Mechanical.haseko.App.Panels.Routing.Racks" )]
