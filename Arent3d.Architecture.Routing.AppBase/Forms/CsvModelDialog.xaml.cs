@@ -383,16 +383,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       // load 【CeeD】セットコード一覧表 and 機器記号一覧表 files 
-      var ceeDCodeFilePathXlsx = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xlsx" ) ;
-      var ceeDCodeFilePathXls = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xls" ) ;
-      var equipmentSymbolsFilePathXlsx = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xlsx" ) ;
-      var equipmentSymbolsFilePathXls = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xls" ) ;
-      if ( File.Exists( ceeDCodeFilePathXlsx ) ) {
-        isLoadedCeeDFile = LoadCeeDCodeFile( correctMessage, errorMessage, ceeDCodeFile, equipmentSymbolsFile, ceeDCodeFilePathXlsx, equipmentSymbolsFilePathXlsx, equipmentSymbolsFilePathXls ) ;
+      var ceeDCodeXlsxFilePath = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xlsx" ) ;
+      var ceeDCodeXlsFilePath = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xls" ) ;
+      var equipmentSymbolsXlsxFilePath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xlsx" ) ;
+      var equipmentSymbolsXlsFilePath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xls" ) ;
+      if ( File.Exists( ceeDCodeXlsxFilePath ) ) {
+        isLoadedCeeDFile = LoadCeeDCodeFile( correctMessage, errorMessage, ceeDCodeFile, equipmentSymbolsFile, ceeDCodeXlsxFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath ) ;
       }
 
-      if ( File.Exists( ceeDCodeFilePathXls ) && ! isLoadedCeeDFile ) {
-        LoadCeeDCodeFile( correctMessage, errorMessage, ceeDCodeFile, equipmentSymbolsFile, ceeDCodeFilePathXls, equipmentSymbolsFilePathXlsx, equipmentSymbolsFilePathXls ) ;
+      if ( File.Exists( ceeDCodeXlsFilePath ) && ! isLoadedCeeDFile ) {
+        LoadCeeDCodeFile( correctMessage, errorMessage, ceeDCodeFile, equipmentSymbolsFile, ceeDCodeXlsFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath ) ;
       }
 
       string resultMessage = string.Empty ;
