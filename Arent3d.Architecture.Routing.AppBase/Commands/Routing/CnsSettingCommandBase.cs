@@ -4,7 +4,6 @@ using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Threading ;
 using System.Windows.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Base ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
@@ -22,7 +21,7 @@ using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class CnsSettingCommandBase : ConduitUtil, IExternalCommand
+  public abstract class CnsSettingCommandBase : IExternalCommand
   {
     protected UIDocument UiDocument { get ; private set ; } = null! ;
 
@@ -66,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                 // set value to "Construction Item" property
                 var categoryName = cnsStorables.CnsSettingData[ cnsStorables.SelectedIndex ].CategoryName ;
-                var listApplyConduit = GetConduitRelated(document, conduitList) ;
+                var listApplyConduit = ConduitUtil.GetConduitRelated(document, conduitList) ;
                 using var transaction = new Transaction( document ) ;
                 transaction.Start( "Set conduits property" ) ;
                 SetConstructionItemForElements( listApplyConduit.ToList(), categoryName ) ;
@@ -178,7 +177,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var listConduits = elementList.Where( x => x is Conduit ).ToList() ;
                 var listApplyElement = new List<Element>() ;
                 listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
-                listApplyElement.AddRange(  GetConduitRelated(document, elementList) );
+                listApplyElement.AddRange(  ConduitUtil.GetConduitRelated(document, elementList) );
                 SetConstructionItemForElements( listApplyElement.ToList(), categoryName ) ;
 
                 transaction.Commit() ;

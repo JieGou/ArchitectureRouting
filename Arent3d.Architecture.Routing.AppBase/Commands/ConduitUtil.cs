@@ -3,11 +3,11 @@ using System.Linq ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Commands.Base
+namespace Arent3d.Architecture.Routing.AppBase.Commands
 {
-  public class ConduitUtil
+  public static class ConduitUtil
   {
-    protected List<Element> GetConduitRelated(Document doc, List<Element> conduits)
+    public static List<Element> GetConduitRelated(Document doc, List<Element> conduits)
     {
       var result = new List<Element>() ;
       var allConduits = doc.GetAllElements<Element>().OfCategory(  BuiltInCategorySets.Conduits ) ;
@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Base
       return result ;
     }
     
-    private (string, string) GetFromConnectorIdAndToConnectorId( Document document, string fromElementId, string toElementId )
+    private static (string, string) GetFromConnectorIdAndToConnectorId( Document document, string fromElementId, string toElementId )
     {
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
 

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Commands.Base ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -11,7 +10,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  public abstract class ChangeConduitModeCommandBase: ConduitUtil, IExternalCommand
+  public abstract class ChangeConduitModeCommandBase: IExternalCommand
   {
     private static string SELECT_RANGE_MESSAGE = "Please select a range." ;
     private static string DIALOG_MESSAGE_TITLE = "Message" ;
@@ -33,7 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if( ! conduitList.Any() && ! connectorList.Any() )  {
         message = NO_ITEM_SELECTED_MESSAGE ;
       }
-      var listApplyConduit = GetConduitRelated(document, conduitList) ;
+      var listApplyConduit = ConduitUtil.GetConduitRelated(document, conduitList) ;
       SetModeForConduit( listApplyConduit, IsEcoMode, document ) ;
       SetModeForConnector( connectorList, IsEcoMode, document ) ;
       MessageBox.Show(
