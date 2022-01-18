@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class AutoRoutingAnemostatCommand : RoutingCommandBase<AutoRoutingAnemostatCommand.PickState>
   {
-    public record PickState( FamilyInstance FasuFamilyInstance, MechanicalSystem FasuMechanicalSytem ) ;
+    public record PickState( MechanicalSystem FasuMechanicalSystem, Connector InConnector, IList<Connector> NotInConnector, IList<Connector> AnemoConnectors ) ;
 
     protected override string GetTransactionNameKey()
     {
@@ -35,12 +35,27 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var fasuFamilyInstance = SelectFasu( uiDocument ) ;
-      var fasuMechanicalSystem = fasuFamilyInstance.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In )?.MEPSystem as MechanicalSystem ;
-      if ( fasuMechanicalSystem == null ) {
-        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed".GetAppStringByKeyOrDefault( "Auto routing anemostat failed! Please create Duct System for FASU before route." ) ) ;
+      if ( fasuFamilyInstance.GetConnectors().FirstOrDefault( c => c.Direction == FlowDirectionType.In )?.MEPSystem is not MechanicalSystem fasuMechanicalSystem ) {
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.Message.Route.Failed".GetAppStringByKeyOrDefault( "Auto routing anemostat failed!\nPlease create Duct System for FASU before route." ) ) ;
       }
 
-      return new OperationResult<PickState>( new PickState( fasuFamilyInstance, fasuMechanicalSystem ) ) ;
+      // 全てFASUのInコネクタ以外を取得
+      var fasuOutConnectedConnectors = fasuFamilyInstance.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In && connector.IsConnected ).ToList() ;
+      if ( fasuOutConnectedConnectors.Any() ) {
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.out.connector.connected".GetAppStringByKeyOrDefault( "Auto routing anemostat failed!\nThere are some FASU's out connectors which was connected." ) ) ;
+      }      
+      var fasuNotInConnectors = fasuFamilyInstance.GetConnectors().Where( connector => connector.Direction != FlowDirectionType.In ).ToList() ;
+      var fasuInConnector = fasuFamilyInstance.GetConnectors().FirstOrDefault( connector => connector.Direction == FlowDirectionType.In ) ;
+      if ( fasuInConnector == null || ! fasuNotInConnectors.Any() ) {
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.inconnector.notfound".GetAppStringByKeyOrDefault( "Auto routing anemostat failed!\nFASU hasn't got in connector or hasn't got other connector." ) ) ;
+      }
+
+      var anemoConnectors = TTEUtil.GetAllAnemoConnectors( uiDocument.Document, fasuInConnector ) ;
+      if ( anemoConnectors.Count > fasuNotInConnectors.Count ) {
+        return OperationResult<PickState>.FailWithMessage( "UiDocument.Commands.Routing.AutoRouteAnemostat.Error.connector.less.than".GetAppStringByKeyOrDefault( "Auto routing anemostat failed!\nBecause FASU's connector is less than anemostat." ) ) ;
+      }
+
+      return new OperationResult<PickState>( new PickState( fasuMechanicalSystem, fasuInConnector, fasuNotInConnectors, anemoConnectors ) ) ;
     }
 
     private static FamilyInstance SelectFasu( UIDocument uiDocument )
@@ -74,8 +89,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     {
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       RouteGenerator.CorrectEnvelopes( document ) ;
-      var (fasu, fasuMechanicalSytem) = pickState ;
-      var anemostatRouter = new AutoRoutingAnemostat( document, fasu, fasuMechanicalSytem ) ;
+      var (fasuMechanicalSystem, fasuInConnector, fasuNotInConnectors, anemoConnectors) = pickState ;
+      var anemostatRouter = new AutoRoutingAnemostat( document, fasuMechanicalSystem, fasuInConnector, fasuNotInConnectors, anemoConnectors ) ;
       return anemostatRouter.Execute().EnumerateAll() ;
     }
   }
