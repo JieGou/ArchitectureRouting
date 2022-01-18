@@ -447,14 +447,6 @@ namespace Arent3d.Architecture.Routing
       return document.CreateFamilyInstance( RoutingFamilyType.Shaft, position, StructuralType.NonStructural, true, level ) ;
     }
 
-    public static FamilyInstance AddCornPoint( this Document document, string routeName, XYZ position, Level? level )
-    {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.CornPoint, position, StructuralType.NonStructural, true, level ) ;
-      instance.SetProperty( RoutingParameter.RouteName, routeName ) ;
-
-      return instance ;
-    }
-
     #endregion
 
     #region Terminate Points

@@ -152,6 +152,7 @@ namespace Arent3d.Architecture.Routing
       document.UnloadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() ) ;
       document.UnloadAllParametersFromFile<ConnectorFamilyParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
       document.UnloadAllParametersFromFile<BranchNumberParameter>( AssetManager.GetSpaceSharedParameterPath() ) ;
+      document.UnloadAllParametersFromFile<AHUNumberParameter>( AssetManager.GetSpaceSharedParameterPath() );
     }
     
     public static void MakeAHUNumberParameter( this Document document )

@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.PostCommands ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.UI ;
@@ -15,9 +17,30 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   {
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
 
-    protected override FromToWindowBase CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindowBase.FromToItems> fromToItemsList )
+    protected override FromToWindow CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindow.FromToItems> fromToItemsList )
     {
-      return new Forms.FromToWindow( uiDocument, fromToItemsList ) ;
+      return new FromToWindow( FromToWindowBehaviour.Instance, uiDocument, fromToItemsList ) ;
+    }
+
+    private class FromToWindowBehaviour : IFromToWindowBehaviour
+    {
+      public static FromToWindowBehaviour Instance { get ; } = new FromToWindowBehaviour() ;
+
+      private FromToWindowBehaviour()
+      {
+      }
+
+      public string Title => "Dialog.Forms.FromToWindow.Title".GetAppStringByKeyOrDefault( "From-To Window" ) ;
+
+      public void PostImportCommand( UIApplication application )
+      {
+        application.PostCommand<FileRoutingCommand>() ;
+      }
+
+      public void PostExportCommand( UIApplication application )
+      {
+        application.PostCommand<ExportRoutingCommand>() ;
+      }
     }
   }
 }

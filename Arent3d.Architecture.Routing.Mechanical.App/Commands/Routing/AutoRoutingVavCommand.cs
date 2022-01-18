@@ -75,7 +75,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( ! ahuNumber.HasValue ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageAhuNumberCannotBeFound ) ;
 
       // Get all space has specified AHUNumber
-      var spaces = GetAllSpacesHasSpecifiedAhuNumber( doc, ahuNumber.Value ) ;
+      var spaces = TTEUtil.CollectTargetSpaces( doc, ahuNumber.Value ).ToList() ;
       if ( ! spaces.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get all vav
@@ -198,15 +198,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
       return Math.Abs( Math.Cos( angle ) * rootToVavVector.magnitude ) ;
     }
-
-    private static IList<Element> GetAllSpacesHasSpecifiedAhuNumber( Document document, int ahuNumber )
-    {
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
-      FilteredElementCollector collector = new(document) ;
-      IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( TTEUtil.HasValidBranchNumber ).Where( space => TTEUtil.HasSpecifiedAhuNumber( space, ahuNumber ) ).ToList() ;
-      return spaces ;
-    }
-
+    
     private static MEPCurveType? GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( Document document )
     {
       return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type.PreferredJunctionType == JunctionType.Tee && type is DuctType && type.Shape == ConnectorProfileType.Round ) ;

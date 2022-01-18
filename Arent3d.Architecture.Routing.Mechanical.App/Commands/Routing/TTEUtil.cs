@@ -148,11 +148,77 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
     }
 
+    public static int CompareAngle( Vector2d inConnectorOrigin, Vector2d inConnectorDirection, IConnector a, IConnector b )
+    {
+      var aVector = a.Origin.To3dPoint().To2d() - inConnectorOrigin ;
+      var bVector = b.Origin.To3dPoint().To2d() - inConnectorOrigin ;
+      var aAngle = GetAngleBetweenVector( inConnectorDirection, aVector ) ;
+      var bAngle = GetAngleBetweenVector( inConnectorDirection, bVector ) ;
+      return aAngle.CompareTo( bAngle ) ;
+    }
+
     // Get the angle between two vectors
     public static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
     {
       // return the angle (in radian)
       return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
     }
+
+    private static IEnumerable<FamilyInstance> GetAllAnemostatsInSpace( Document doc, Element? spaceContainFasu )
+    {
+      if ( spaceContainFasu == null ) yield break ;
+
+      // Todo get all anemostat in space but don't use familyName
+      var allAnemostats = doc.GetAllElements<FamilyInstance>().Where( anemostat => anemostat.Symbol.FamilyName == "システムアネモ" ) ;
+      var spaceBox = spaceContainFasu.get_BoundingBox( doc.ActiveView ) ;
+      foreach ( var anemostat in allAnemostats ) {
+        if ( IsInSpace( spaceBox, anemostat.GetConnectors().First().Origin ) ) yield return anemostat ;
+      }
+    }
+
+    public static List<Connector> GetAllAnemoConnectors( Document doc, Connector fasuConnector )
+    {
+      // 全てSpaceでのシステムアネモを取得
+      var spaces = GetAllSpaces( doc ) ;
+      var spaceContainFasu = GetSpaceFromConnector( doc, spaces, fasuConnector ) ;
+      var anemostats = GetAllAnemostatsInSpace( doc, spaceContainFasu ) ;
+
+      // 全てSpaceでのシステムアネモのコネクタを取得
+      var anemoConnectors = anemostats.Select( anemostat => anemostat.GetConnectors().FirstOrDefault( connector => ! connector.IsConnected ) ).Where( anemoConnector => anemoConnector != null ).ToList() ;
+      return anemoConnectors ;
+    }
+
+    private static Element? GetSpaceFromConnector( Document doc, IEnumerable<Element> spaces, IConnector connector )
+    {
+      foreach ( var space in spaces ) {
+        var spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
+        if ( IsInSpace( spaceBox, connector.Origin ) ) return space ;
+      }
+
+      return null ;
+    }   
+
+    public static MEPCurveType? GetRoundDuctTypeWhosePreferred( Document document )
+    {
+      return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type is DuctType && type.Shape == ConnectorProfileType.Round ) ;
+    }
+
+    /// <summary>
+    /// TTE用に設定されているSpaceを集める
+    /// </summary>
+    /// <param name="document"></param>
+    /// <param name="ahuNumber"></param>
+    /// <returns></returns>
+    public static IEnumerable<Space> CollectTargetSpaces( Document document, int ahuNumber )
+    {
+      ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
+      FilteredElementCollector collector = new(document) ;
+
+      return collector.WherePasses( filter ).WhereElementIsNotElementType().OfType<Space>()
+        .Where( space => space.Location != null ) // Viewから削除されているSpaceは除外
+        .Where( HasValidBranchNumber )
+        .Where( space => HasSpecifiedAhuNumber( space, ahuNumber ) ) ;
+    }
+    
   }
 }
