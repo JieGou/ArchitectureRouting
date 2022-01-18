@@ -292,11 +292,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         "hiroisetmaster_eco.csv",
         "hiroisetmaster_normal.csv", 
         "電線管一覧.csv", 
-        "電線・ケーブル一覧.csv", 
-        "【CeeD】セットコード一覧表.xlsx",
-        "【CeeD】セットコード一覧表.xls",
+        "電線・ケーブル一覧.csv"
       } ;
       bool isLoadedCeeDFile = false ;
+      var ceeDCodeFile = "【CeeD】セットコード一覧表" ;
       string equipmentSymbolsFile = "機器記号一覧表" ;
       StringBuilder correctMessage = new StringBuilder() ;
       StringBuilder errorMessage = new StringBuilder() ;
@@ -379,32 +378,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
               break ;
-            case "【CeeD】セットコード一覧表.xlsx" or "【CeeD】セットコード一覧表.xls" :
-              if ( ! isLoadedCeeDFile ) {
-                var fileEquipmentSymbolsPath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xls" ) ;
-                if ( ! File.Exists( fileEquipmentSymbolsPath ) ) fileEquipmentSymbolsPath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xlsx" ) ;
-                _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( path, File.Exists( fileEquipmentSymbolsPath ) ? fileEquipmentSymbolsPath : string.Empty ) ;
-                if ( _ceeDModelData.Any() ) {
-                  isLoadedCeeDFile = true ;
-                  var ceeDCodeFileName = "【CeeD】セットコード一覧表" ;
-                  correctMessage.AppendLine( "\u2022 " + ceeDCodeFileName ) ;
-                  if ( File.Exists( fileEquipmentSymbolsPath ) ) {
-                    correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
-                  }
-                  
-                  var fileNameError = errorMessage.ToString().Split( '\u2022' ).Where( f => ! f.Contains( ceeDCodeFileName ) && ! f.Contains( equipmentSymbolsFile ) ).ToList() ;
-                  errorMessage = new StringBuilder( string.Join( "\u2022", fileNameError ) ) ;
-                }
-                else {
-                  isLoadedCeeDFile = false ;
-                  errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
-                  if ( File.Exists( fileEquipmentSymbolsPath ) && ! errorMessage.ToString().Contains( $"\u2022 {Path.GetFileName( fileEquipmentSymbolsPath )}" ) )
-                    errorMessage.AppendLine( $"\u2022 {Path.GetFileName( fileEquipmentSymbolsPath )}" ) ;
-                }
-              }
-              break ;
           }
         }
+      }
+
+      // load 【CeeD】セットコード一覧表 and 機器記号一覧表 files 
+      var ceeDCodeFilePathXlsx = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xlsx" ) ;
+      var ceeDCodeFilePathXls = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xls" ) ;
+      var equipmentSymbolsFilePathXlsx = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xlsx" ) ;
+      var equipmentSymbolsFilePathXls = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xls" ) ;
+      if ( File.Exists( ceeDCodeFilePathXlsx ) ) {
+        isLoadedCeeDFile = LoadCeeDCodeFile( correctMessage, errorMessage, ceeDCodeFile, equipmentSymbolsFile, ceeDCodeFilePathXlsx, equipmentSymbolsFilePathXlsx, equipmentSymbolsFilePathXls ) ;
+      }
+
+      if ( File.Exists( ceeDCodeFilePathXls ) && ! isLoadedCeeDFile ) {
+        LoadCeeDCodeFile( correctMessage, errorMessage, ceeDCodeFile, equipmentSymbolsFile, ceeDCodeFilePathXls, equipmentSymbolsFilePathXlsx, equipmentSymbolsFilePathXls ) ;
       }
 
       string resultMessage = string.Empty ;
@@ -419,6 +407,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       MessageBox.Show(
         resultMessage,"Result Message" ) ;
+    }
+
+    private bool LoadCeeDCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceeDCodeFile, string equipmentSymbolsFile, string ceeDCodeFilePath, string equipmentSymbolsFilePathXlsx, string equipmentSymbolsFilePathXls )
+    {
+      if ( File.Exists( equipmentSymbolsFilePathXlsx ) ) {
+        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsFilePathXlsx ) ;
+        if ( _ceeDModelData.Any() ) {
+          correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
+          correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
+          return true ;
+        }
+      }
+
+      if ( File.Exists( equipmentSymbolsFilePathXls ) ) {
+        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsFilePathXls ) ;
+        if ( _ceeDModelData.Any() ) {
+          correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
+          correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
+          return true ;
+        }
+      }
+
+      _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, string.Empty ) ;
+      if ( _ceeDModelData.Any() ) {
+        correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
+        return true ;
+      }
+
+      errorMessage.AppendLine( $"\u2022 {Path.GetFileName( ceeDCodeFilePath )}" ) ;
+      if ( File.Exists( equipmentSymbolsFilePathXlsx ) )
+        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsFilePathXlsx )}" ) ;
+      if ( File.Exists( equipmentSymbolsFilePathXls ) )
+        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsFilePathXls )}" ) ;
+      return false ;
     }
   }
 }
