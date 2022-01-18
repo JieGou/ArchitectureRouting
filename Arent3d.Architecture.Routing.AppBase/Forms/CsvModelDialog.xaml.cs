@@ -409,10 +409,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         resultMessage,"Result Message" ) ;
     }
 
-    private bool LoadCeeDCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceeDCodeFile, string equipmentSymbolsFile, string ceeDCodeFilePath, string equipmentSymbolsFilePathXlsx, string equipmentSymbolsFilePathXls )
+    private bool LoadCeeDCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceeDCodeFile, string equipmentSymbolsFile, string ceeDCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath )
     {
-      if ( File.Exists( equipmentSymbolsFilePathXlsx ) ) {
-        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsFilePathXlsx ) ;
+      if ( File.Exists( equipmentSymbolsXlsxFilePath ) ) {
+        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
         if ( _ceeDModelData.Any() ) {
           correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
           correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
@@ -420,8 +420,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
 
-      if ( File.Exists( equipmentSymbolsFilePathXls ) ) {
-        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsFilePathXls ) ;
+      if ( File.Exists( equipmentSymbolsXlsFilePath ) ) {
+        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsXlsFilePath ) ;
         if ( _ceeDModelData.Any() ) {
           correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
           correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
@@ -436,10 +436,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       errorMessage.AppendLine( $"\u2022 {Path.GetFileName( ceeDCodeFilePath )}" ) ;
-      if ( File.Exists( equipmentSymbolsFilePathXlsx ) )
-        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsFilePathXlsx )}" ) ;
-      if ( File.Exists( equipmentSymbolsFilePathXls ) )
-        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsFilePathXls )}" ) ;
+
+      if ( File.Exists( equipmentSymbolsXlsxFilePath ) )
+        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsXlsxFilePath )}" ) ;
+      if ( File.Exists( equipmentSymbolsXlsFilePath ) )
+        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsXlsFilePath )}" ) ;
       return false ;
     }
   }
