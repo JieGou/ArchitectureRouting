@@ -78,11 +78,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                     foreach ( var item in hiroiSetModels ) {
                       List<string> listMaterialCode = new List<string>() ;
                       if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
-                        listMaterialCode.Add( item.MaterialCode1 ) ;
+                        listMaterialCode.Add( int.Parse( item.MaterialCode1 ).ToString() ) ;
                       }
 
                       if ( listMaterialCode.Any() ) {
-                        var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains(  x.Buzaicd  ) ) ;
+                        var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
                         foreach ( var master in masterModels ) {
                           var conduitModels = conduitsModelData
                             .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
