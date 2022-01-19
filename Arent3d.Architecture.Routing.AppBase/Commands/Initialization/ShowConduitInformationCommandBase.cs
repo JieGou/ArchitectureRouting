@@ -22,10 +22,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var uiDoc = commandData.Application.ActiveUIDocument ;
-      var conduitsModelData = doc.GetCsvStorable().ConduitsModelData ;
-      var hiroiSetMasterNormalModelData = doc.GetCsvStorable().HiroiSetMasterNormalModelData ;
-      var hiroiMasterModelData = doc.GetCsvStorable().HiroiMasterModelData ;
-      var hiroiSetCdMasterNormalModelData = doc.GetCsvStorable().HiroiSetCdMasterNormalModelData ;
+      var csvStorable = doc.GetCsvStorable() ;
+      var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData ;
+      var conduitsModelData = csvStorable.ConduitsModelData ;
+      var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
+      var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
+      var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       ObservableCollection<ConduitInformationModel> conduitInformationModels =
         new ObservableCollection<ConduitInformationModel>() ;
@@ -39,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         foreach ( var element in pickedObjects ) {
           string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
           string constructionItem = element.LookupParameter( "Construction Item" ).AsString() ;
-          string pipingType = element.Name ;
+          string pipingType = "E" ;
           var existSymbolDetails = detailSymbolStorable.DetailSymbolModelData.Where( x => element.Id.ToString() == x.ConduitId ).ToList() ;
           foreach ( var existSymbolDetail in existSymbolDetails ) {
             string pipingNumber = "1" ;
@@ -60,10 +62,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               var existSymbolRoute = element.GetRouteName() ?? string.Empty ;
               if ( ! string.IsNullOrEmpty( existSymbolRoute ) && ceedStorable != null ) {
                 if ( ! processedDetailSymbol.Contains( existSymbolRoute + "-" + existSymbolDetail.CountCableSamePosition ) ) {
+                  string pipingCrossSectionalArea = "↑" ;
                   var conduitInformationModel = new ConduitInformationModel( false, floor, string.Empty,
                     existSymbolDetail.DetailSymbol, string.Empty, string.Empty, string.Empty, "1", string.Empty,
                     string.Empty, string.Empty, pipingType, string.Empty, pipingNumber, string.Empty, string.Empty,
-                    constructionItem, constructionItem, "" ) ;
+                    constructionItem, constructionItem, "", pipingCrossSectionalArea ) ;
                   processedDetailSymbol.Add( existSymbolRoute + "-" + existSymbolDetail.CountCableSamePosition ) ;
                   var ceedModel =
                     ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
@@ -97,7 +100,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                     }
                   }
 
-                  conduitInformationModels.Add( conduitInformationModel ) ;
+                  if ( pipingNumber == "1" ) {
+                    pipingCrossSectionalArea = GetPipingCrossSectionalArea( ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData, detailSymbolStorable.DetailSymbolModelData, existSymbolDetail! ) ;
+                    Dictionary<string, int> pipingData = GetPipingData( conduitsModelData, pipingType, double.Parse( pipingCrossSectionalArea ) + 2000 ) ;
+                    foreach ( var pipingModel in pipingData ) {
+                      var parentConduitInformationModel = new ConduitInformationModel( false, floor, conduitInformationModel.CeeDCode, existSymbolDetail!.DetailSymbol, conduitInformationModel.WireType, conduitInformationModel.WireSize, conduitInformationModel.WireStrip, "1", string.Empty, string.Empty, string.Empty, pipingType, pipingModel.Key.Replace( "mm", string.Empty ), pipingModel.Value.ToString(), conduitInformationModel.ConstructionClassification, conduitInformationModel.Classification, constructionItem, constructionItem, "", pipingCrossSectionalArea ) ;
+                      conduitInformationModels.Add( parentConduitInformationModel ) ;
+                    }
+                  }
+                  else {
+                    conduitInformationModel.PipingSize = pipingCrossSectionalArea ;
+                    conduitInformationModels.Add( conduitInformationModel ) ;
+                  }
                 }
               }
             }
@@ -177,6 +191,65 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       return str ;
+    }
+
+    private string GetPipingCrossSectionalArea( CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailSymbolModel> allDetailSymbolModels, DetailSymbolModel parentDetailSymbolModel )
+    {
+      double pipingCrossSectionalArea = 0 ;
+      List<string> routeNames = new List<string>() ;
+      var detailSymbolModels = allDetailSymbolModels.Where( d => d.DetailSymbolId == parentDetailSymbolModel.DetailSymbolId && d.CountCableSamePosition == parentDetailSymbolModel.CountCableSamePosition ).ToList() ;
+      foreach ( var detailSymbolModel in detailSymbolModels ) {
+        if ( routeNames.Contains( detailSymbolModel.RouteName ) ) continue ;
+        routeNames.Add( detailSymbolModel.RouteName ) ;
+        var ceeDModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == detailSymbolModel.Code ) ;
+        if ( ceeDModel == null ) continue ;
+        {
+          var hiroiSetCdMasterNormalModel = hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceeDModel.CeeDSetCode ) ;
+          if ( hiroiSetCdMasterNormalModel == null ) continue ;
+          {
+            var hiroiSetMasterNormalModel = hiroiSetMasterNormalModelData.FirstOrDefault( x => x.ParentPartModelNumber == hiroiSetCdMasterNormalModel.LengthParentPartModelNumber ) ;
+            if ( hiroiSetMasterNormalModel == null ) continue ;
+            {
+              var materialCode = int.Parse( hiroiSetMasterNormalModel.MaterialCode1 ).ToString() ;
+              if ( string.IsNullOrEmpty( materialCode ) ) continue ;
+              var masterModels = hiroiMasterModelData.FirstOrDefault( x => int.Parse( x.Buzaicd ).ToString() == materialCode ) ;
+              if ( masterModels != null ) {
+                var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == masterModels.Type && w.DiameterOrNominal == masterModels.Size1 && ( ( w.NumberOfHeartsOrLogarithm == "0" && masterModels.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && masterModels.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
+                if ( wiresAndCablesModel != null )
+                  pipingCrossSectionalArea += double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+              }
+            }
+          }
+        }
+      }
+
+      pipingCrossSectionalArea /= 0.32 ;
+
+      return pipingCrossSectionalArea.ToString() ;
+    }
+
+    private Dictionary<string, int> GetPipingData( List<ConduitsModel> conduitsModelData, string pipingType, double pipingCrossSectionalArea )
+    {
+      Dictionary<string, int> pipingData = new Dictionary<string, int>() ;
+      var conduitsModels = conduitsModelData.Where( c => c.PipingType == pipingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+      double crossSectionalArea = 0 ;
+      while ( crossSectionalArea < pipingCrossSectionalArea ) {
+        var conduitType = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= pipingCrossSectionalArea - crossSectionalArea ) ;
+        if ( conduitType != null ) {
+          pipingData.Add( conduitType.Size.Replace( "mm", string.Empty ), 1 ) ;
+          break ;
+        }
+        else {
+          var size = conduitsModels.Last().Size ;
+          if ( ! pipingData.ContainsKey( size ) )
+            pipingData.Add( size, 1 ) ;
+          else
+            pipingData[ size ] = pipingData[ size ] + 1 ;
+          crossSectionalArea += double.Parse( conduitsModels.Last().InnerCrossSectionalArea ) ;
+        }
+      }
+
+      return pipingData ;
     }
   }
 }

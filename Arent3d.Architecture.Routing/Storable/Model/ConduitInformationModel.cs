@@ -23,8 +23,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string? ConstructionItems { get ; set ; }
     public string? PlumbingItems { get ; set ; }
     public string? Remark { get ; set ; }
-
-    public  int Quantity { get ; set ; }
+    public string? PipingCrossSectionalArea { get ; set ; }
 
     public ConduitInformationModel( 
       bool? calculationExclusion, 
@@ -45,7 +44,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? classification,
       string? constructionItems,
       string? plumbingItems,
-      string? remark)
+      string? remark,
+      string? pipingCrossSectionalArea)
     {
       CalculationExclusion = calculationExclusion ;
       Floor = floor ;
@@ -66,6 +66,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       ConstructionItems = constructionItems ;
       PlumbingItems = plumbingItems ;
       Remark = remark ;
+      PipingCrossSectionalArea = pipingCrossSectionalArea ;
     }
   }
 }
