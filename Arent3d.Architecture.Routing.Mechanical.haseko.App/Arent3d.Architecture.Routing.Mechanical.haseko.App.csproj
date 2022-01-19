@@ -81,6 +81,7 @@
         <Resource Include="resources\InsertBranchPoint.png" />
         <Resource Include="resources\InsertPassPoint.png" />
         <Resource Include="resources\MEP.ico" />
+        <Resource Include="resources\new_envelope.png" />
         <Resource Include="resources\PickFrom-To.png" />
         <Resource Include="resources\Plans.png" />
         <Resource Include="resources\ReplaceFromTo.png" />

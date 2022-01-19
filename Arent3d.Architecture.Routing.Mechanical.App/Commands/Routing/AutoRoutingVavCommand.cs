@@ -14,7 +14,6 @@ using MathLib ;
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Text.RegularExpressions ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
@@ -50,11 +49,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return AppCommandSettings.CreateRoutingExecutor( document, view ) ;
     }
 
-    private static string GetNameBase( Element? systemType, Element curveType )
-    {
-      return systemType?.Name ?? curveType.Category.Name ;
-    }
-
     protected override OperationResult<SelectState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -81,7 +75,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( ! ahuNumber.HasValue ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageAhuNumberCannotBeFound ) ;
 
       // Get all space has specified AHUNumber
-      var spaces = GetAllSpacesHasSpecifiedAhuNumber( doc, ahuNumber.Value ) ;
+      var spaces = TTEUtil.CollectTargetSpaces( doc, ahuNumber.Value ).ToList() ;
       if ( ! spaces.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get all vav
@@ -116,7 +110,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var spaceBox = space.get_BoundingBox( doc.ActiveView ) ;
       foreach ( var vavInstance in vavInstances ) {
         var vavPosition = vavInstance.Location as LocationPoint ;
-        if ( vavPosition == null || ! IsInSpace( spaceBox, vavPosition.Point ) ) continue ;
+        if ( vavPosition == null || ! TTEUtil.IsInSpace( spaceBox, vavPosition.Point ) ) continue ;
         return vavInstance ;
       }
 
@@ -135,7 +129,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         foreach ( var vavInstance in vavInstances ) {
           var vavPosition = vavInstance.Location as LocationPoint ;
           if ( vavPosition == null ) continue ;
-          if ( IsInSpace( spaceBox, vavPosition.Point ) ) {
+          if ( TTEUtil.IsInSpace( spaceBox, vavPosition.Point ) ) {
             if ( result.ContainsKey( branchNum ) )
               result[ branchNum ].Add( vavInstance ) ;
             else
@@ -149,11 +143,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return result ;
     }
 
-    private static bool IsInSpace( BoundingBoxXYZ spaceBox, XYZ vavPosition )
-    {
-      return spaceBox.ToBox3d().Contains( vavPosition.To3dPoint(), 0.0 ) ;
-    }
-
     private static (IReadOnlyList<Element> parentSpaces, Dictionary<int, List<Element>> childSpacesGroupedByBranchNum) GetSortedSpaceGroups( IEnumerable<Element> spaceBoxes, IConnector rootConnector )
     {
       List<Element> parentSpaces = new() ;
@@ -161,7 +150,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       foreach ( var space in spaceBoxes ) {
         var branchNumber = space.GetSpaceBranchNumber() ;
         if ( ! TTEUtil.IsValidBranchNumber( branchNumber ) ) continue ;
-        
+
         switch ( branchNumber ) {
           case (int) SpaceType.Invalid :
             continue ;
@@ -205,26 +194,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var rootConnectorBasisZ = rootConnector.CoordinateSystem.BasisZ.To3dPoint().To2d() ;
       var calculateDir = isRotate90 ? new Vector2d( -rootConnectorBasisZ.y, rootConnectorBasisZ.x ) : rootConnectorBasisZ ;
       var rootToVavVector = targetConnector - rootConnectorPos2d ;
-      var angle = GetAngleBetweenVector( calculateDir, rootToVavVector ) ;
+      var angle = TTEUtil.GetAngleBetweenVector( calculateDir, rootToVavVector ) ;
 
       return Math.Abs( Math.Cos( angle ) * rootToVavVector.magnitude ) ;
     }
-
-    // Get the angle between two vectors
-    private static double GetAngleBetweenVector( Vector2d rootVec, Vector2d otherVector )
-    {
-      // return the angle (in radian)
-      return Math.Acos( Vector2d.Dot( rootVec, otherVector ) / ( rootVec.magnitude * otherVector.magnitude ) ) ;
-    }
-
-    private static IList<Element> GetAllSpacesHasSpecifiedAhuNumber( Document document, int ahuNumber )
-    {
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
-      FilteredElementCollector collector = new(document) ;
-      IList<Element> spaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( TTEUtil.HasValidBranchNumber ).Where( space => TTEUtil.HasSpecifiedAhuNumber( space, ahuNumber ) ).ToList() ;
-      return spaces ;
-    }
-
+    
     private static MEPCurveType? GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( Document document )
     {
       return document.GetAllElements<MEPCurveType>().FirstOrDefault( type => type.PreferredJunctionType == JunctionType.Tee && type is DuctType && type.Shape == ConnectorProfileType.Round ) ;
@@ -236,8 +210,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( rootConnector == null ) throw new InvalidOperationException() ;
       var systemType = document.GetAllElements<MEPSystemType>().Where( classificationInfo.IsCompatibleTo ).FirstOrDefault() ;
       var curveType = GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( document )! ; // 取得できることはこれより前に確認済み.
-      var nameBase = GetNameBase( systemType, curveType ) ;
-      var nextIndex = GetRouteNameIndex( RouteCache.Get( document ), nameBase ) ;
+      var nameBase = TTEUtil.GetNameBase( systemType, curveType ) ;
+      var nextIndex = TTEUtil.GetRouteNameIndex( RouteCache.Get( document ), nameBase ) ;
       var routeName = nameBase + "_" + nextIndex ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
@@ -279,16 +253,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
 
       return result ;
-    }
-
-    private static int GetRouteNameIndex( RouteCache routes, string? targetName )
-    {
-      var pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
-      var regex = new Regex( pattern ) ;
-
-      var lastIndex = routes.Keys.Select( k => regex.Match( k ) ).Where( m => m.Success ).Select( m => int.Parse( m.Groups[ 1 ].Value ) ).Append( 0 ).Max() ;
-
-      return lastIndex + 1 ;
     }
 
     public record SelectState( Connector? RootConnector, IReadOnlyList<FamilyInstance> ParentVavs, Dictionary<int, List<FamilyInstance>> ChildVavs, MEPSystemClassificationInfo ClassificationInfo ) ;
