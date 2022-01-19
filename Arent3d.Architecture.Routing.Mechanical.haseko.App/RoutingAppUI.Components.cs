@@ -56,6 +56,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
       //   private static class ShowFromToTreeCommandButton { }
       // }
 
+      [Panel( "arent3d.architecture.routing.envelope", TitleKey = "Mechanical.haseko.App.Panels.Routing.Envelope" )]
+      private static class EnvelopPanel
+      {
+        [Button( typeof( NewEnvelopeCommand ), OnlyInitialized = true )]
+        private static class NewEnvelopeCommandButton
+        {
+        }
+      }
+      
       // [Panel( "arent3d.architecture.routing.rack", TitleKey = "Mechanical.haseko.App.Panels.Routing.Racks" )]
       // private static class RackPanel
       // {
