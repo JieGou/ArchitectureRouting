@@ -128,8 +128,6 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       try {
         if ( images != null ) {
           var maxImageHeight = images.OrderByDescending( c => c.Height ).Select( c => c.Height ).First() ;
-          //var minImageHeight = images.OrderBy( c => c.Height ).Select( c => c.Height ).First() ;
-          // var centerPoint = ( maxImageHeight - minImageHeight ) / 2 ;
           var padding = 45 ;
           var imageWidth = images.Sum( item => item.Width ) + ( images.Count - 1 ) * padding ;
           var finalImage =
@@ -157,17 +155,17 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       return new Bitmap( 1, 1 ) ;
     }
 
-    private string ConvertBitmapToBase64( BitmapImage? bmp )
+    private static string ConvertBitmapToBase64( BitmapImage? bmp )
     {
       Bitmap bImage = BitmapImage2Bitmap( bmp ) ;
       var ms = new MemoryStream() ;
-      bImage?.Save( ms, ImageFormat.Jpeg ) ;
+      bImage?.Save( ms, ImageFormat.Bmp ) ;
       var byteImage = ms.ToArray() ;
       var result = Convert.ToBase64String( byteImage ) ;
       return result ;
     }
 
-    private Bitmap BitmapImage2Bitmap( BitmapImage? bitmapImage )
+    private static Bitmap BitmapImage2Bitmap( BitmapImage? bitmapImage )
     {
       using ( MemoryStream outStream = new MemoryStream() ) {
         BitmapEncoder enc = new BmpBitmapEncoder() ;
@@ -186,7 +184,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Bitmap bitImage = new Bitmap((Bitmap)Image.FromStream(streamBitmap));
       return bitImage ;
     }
-    public static string FixBase64ForImage(string image) { 
+
+    private static string FixBase64ForImage(string image) { 
       System.Text.StringBuilder sbText = new System.Text.StringBuilder(image,image.Length);
       sbText.Replace("\r\n", String.Empty); sbText.Replace(" ", String.Empty); 
       return sbText.ToString(); 
