@@ -139,6 +139,9 @@
 
         <key>Electrical.App.Commands.Initialization.ShowConduitInformationCommand</key>
         <string>Create Detail Table</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
+        <string>Electrical Symbol Table</string>
         
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>Load&#xA;Save To DB</string>

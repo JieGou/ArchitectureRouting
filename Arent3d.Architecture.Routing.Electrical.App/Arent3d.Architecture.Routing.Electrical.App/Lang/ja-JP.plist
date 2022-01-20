@@ -139,6 +139,9 @@
 
         <key>Electrical.App.Commands.Initialization.ShowConduitInformationCommand</key>
         <string>明細表作成</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
+        <string>電気シンボル表</string>
          
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>読み込みdb保存</string>
