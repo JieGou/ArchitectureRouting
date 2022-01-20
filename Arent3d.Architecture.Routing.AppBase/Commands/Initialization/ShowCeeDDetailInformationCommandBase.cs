@@ -26,8 +26,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( groupId != null && groupId != ElementId.InvalidElementId ) {
               var connector = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).FirstOrDefault( e => e.GroupId == groupId || e.GroupId == textNote.GroupId ) ;
               if ( connector != null ) {
-                connector.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCode ) ;
-                pickedText = ceeDSetCode ?? string.Empty ;
+                connector.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCodeModel ) ;
+                if ( ! string.IsNullOrEmpty( ceeDSetCodeModel ) ) {
+                  var ceeDSetCode = ceeDSetCodeModel!.Split( '-' ).ToList() ;
+                  pickedText = ceeDSetCode.FirstOrDefault() ?? string.Empty ;
+                }
               }
             }
           }
