@@ -210,7 +210,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( false == this.PopCommandParameter( out var param ) ) return null ;
 
       Parameter = param ;
-      return BeforeCommand( Parameter, commandData, elements ) ;
+      return base.BeforeCommand( commandData, elements ) ;
     }
 
     protected sealed override void AfterCommand( IDisposable? commandSpanResource )
@@ -218,12 +218,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var param = Parameter ;
       Parameter = null ;
 
-      AfterCommand( param!, commandSpanResource ) ;
-    }
-
-    protected virtual IDisposable? BeforeCommand( TCommandParameter param, ExternalCommandData commandData, ElementSet elements ) => null ;
-    protected virtual void AfterCommand( TCommandParameter param, IDisposable? commandSpanResource )
-    {
+      base.AfterCommand( commandSpanResource ) ;
     }
 
     protected sealed override IDisposable? BeforeTransaction( Document document ) => BeforeTransaction( Parameter!, document ) ;
