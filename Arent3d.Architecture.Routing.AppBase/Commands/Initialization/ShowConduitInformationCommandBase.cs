@@ -83,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                     foreach ( var item in hiroiSetModels ) {
                       List<string> listMaterialCode = new List<string>() ;
                       if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
-                        listMaterialCode.Add( item.MaterialCode1 ) ;
+                        listMaterialCode.Add( int.Parse( item.MaterialCode1 ).ToString() ) ;
                       }
 
                       if ( listMaterialCode.Any() ) {

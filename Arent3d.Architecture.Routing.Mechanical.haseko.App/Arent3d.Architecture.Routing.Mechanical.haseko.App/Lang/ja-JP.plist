@@ -2,7 +2,7 @@
 <plist version="1.0">
   <dict>
     <key>Mechanical.haseko.App.Routing.TabName</key>
-    <string>設備ルートアシスト(長谷工)</string>
+    <string>設備ルートアシスト(H)</string>
     <key>Mechanical.haseko.App.Panels.Routing.Initialize</key>
     <string>Setup</string>
     <key>Mechanical.haseko.App.Panels.Routing.Routing</key>
