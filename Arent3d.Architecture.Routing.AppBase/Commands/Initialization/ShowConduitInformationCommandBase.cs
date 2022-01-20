@@ -200,6 +200,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private string GetPipingCrossSectionalArea( CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailSymbolModel> allDetailSymbolModels, DetailSymbolModel parentDetailSymbolModel )
     {
+      double percentage = 0.32 ;
       double pipingCrossSectionalArea = 0 ;
       List<string> routeNames = new List<string>() ;
       var detailSymbolModels = allDetailSymbolModels.Where( d => d.DetailSymbolId == parentDetailSymbolModel.DetailSymbolId && d.CountCableSamePosition == parentDetailSymbolModel.CountCableSamePosition ).ToList() ;
@@ -218,17 +219,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               var materialCode = int.Parse( hiroiSetMasterNormalModel.MaterialCode1 ).ToString() ;
               if ( string.IsNullOrEmpty( materialCode ) ) continue ;
               var masterModels = hiroiMasterModelData.FirstOrDefault( x => int.Parse( x.Buzaicd ).ToString() == materialCode ) ;
-              if ( masterModels != null ) {
-                var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == masterModels.Type && w.DiameterOrNominal == masterModels.Size1 && ( ( w.NumberOfHeartsOrLogarithm == "0" && masterModels.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && masterModels.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
-                if ( wiresAndCablesModel != null )
-                  pipingCrossSectionalArea += double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
-              }
+              if ( masterModels == null ) continue ;
+              var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == masterModels.Type && w.DiameterOrNominal == masterModels.Size1 && ( ( w.NumberOfHeartsOrLogarithm == "0" && masterModels.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && masterModels.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
+              if ( wiresAndCablesModel != null )
+                pipingCrossSectionalArea += double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
             }
           }
         }
       }
 
-      pipingCrossSectionalArea /= 0.32 ;
+      pipingCrossSectionalArea /= percentage ;
 
       return pipingCrossSectionalArea.ToString() ;
     }
