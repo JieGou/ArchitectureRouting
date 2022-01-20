@@ -7,45 +7,46 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
 {
   public static class ConduitUtil
   {
-    public static List<Element> GetConduitRelated(Document doc, List<Element> conduits)
+    public static List<Element> GetConduitRelated( Document doc, List<Element> conduits )
     {
       var result = new List<Element>() ;
-      var allConduits = doc.GetAllElements<Element>().OfCategory(  BuiltInCategorySets.Conduits ) ;
+      var allConduits = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ) ;
       foreach ( var conduit in conduits ) {
         bool hasStartElement = false ;
         bool hasEndElement = false ;
-        string startTeminateId = string.Empty;
-        string endTeminateId = string.Empty;
+        string startTerminateId = string.Empty ;
+        string endTerminateId = string.Empty ;
         var conduitRouteName = conduit.GetRouteName() ;
         var startPoint = conduit.GetNearestEndPoints( true ) ;
         var startPointKey = startPoint.FirstOrDefault()?.Key ;
-        if(startPointKey!=null)
-        {
-          startTeminateId = startPointKey.GetElementId().ToString() ;
-        }
-        var endPoint = conduit.GetNearestEndPoints(  false ) ;
-        var endPointKey = endPoint.FirstOrDefault()?.Key ;
-        if ( endPointKey != null ) {
-          endTeminateId = endPointKey!.GetElementId().ToString() ;
+        if ( startPointKey != null ) {
+          startTerminateId = startPointKey.GetElementId().ToString() ;
         }
 
-        if ( ! string.IsNullOrEmpty( startTeminateId ) && !string.IsNullOrEmpty( endTeminateId ) ) {
-          var (startConnectorId, endConnectorId) =
-            GetFromConnectorIdAndToConnectorId( doc, startTeminateId, endTeminateId ) ;
+        var endPoint = conduit.GetNearestEndPoints( false ) ;
+        var endPointKey = endPoint.FirstOrDefault()?.Key ;
+        if ( endPointKey != null ) {
+          endTerminateId = endPointKey!.GetElementId().ToString() ;
+        }
+
+        if ( ! string.IsNullOrEmpty( startTerminateId ) && ! string.IsNullOrEmpty( endTerminateId ) ) {
+          var (startConnectorId, endConnectorId) = GetFromConnectorIdAndToConnectorId( doc, startTerminateId, endTerminateId ) ;
           hasStartElement = conduits.Any( c => c.Id.IntegerValue.ToString() == startConnectorId ) ;
           hasEndElement = conduits.Any( c => c.Id.IntegerValue.ToString() == endConnectorId ) ;
         }
-        if(!string.IsNullOrEmpty( conduitRouteName ) && hasStartElement && hasEndElement ){
-          var relateConduits = allConduits.Where( x =>  x.GetRouteName()==conduitRouteName).ToList() ;
+
+        if ( ! string.IsNullOrEmpty( conduitRouteName ) && hasStartElement && hasEndElement ) {
+          var relateConduits = allConduits.Where( x => x.GetRouteName() == conduitRouteName ).ToList() ;
           bool isNotFull = relateConduits.Any( x => conduits.All( y => y.Id != x.Id ) ) ;
-          if(!isNotFull){
-            result.AddRange( relateConduits ); 
+          if ( ! isNotFull ) {
+            result.AddRange( relateConduits ) ;
           }
         }
       }
+
       return result ;
     }
-    
+
     private static (string, string) GetFromConnectorIdAndToConnectorId( Document document, string fromElementId, string toElementId )
     {
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
