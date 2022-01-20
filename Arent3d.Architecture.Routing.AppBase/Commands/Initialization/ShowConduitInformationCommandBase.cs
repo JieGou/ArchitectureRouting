@@ -66,7 +66,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                   var conduitInformationModel = new ConduitInformationModel( false, floor, string.Empty,
                     existSymbolDetail.DetailSymbol, string.Empty, string.Empty, string.Empty, "1", string.Empty,
                     string.Empty, string.Empty, pipingType, string.Empty, pipingNumber, string.Empty, string.Empty,
-                    constructionItem, constructionItem, "", pipingCrossSectionalArea ) ;
+                    constructionItem, constructionItem, "", pipingCrossSectionalArea, existSymbolDetail.CountCableSamePosition, true ) ;
                   processedDetailSymbol.Add( existSymbolRoute + "-" + existSymbolDetail.CountCableSamePosition ) ;
                   var ceedModel =
                     ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
@@ -102,13 +102,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
                   if ( pipingNumber == "1" ) {
                     pipingCrossSectionalArea = GetPipingCrossSectionalArea( ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData, detailSymbolStorable.DetailSymbolModelData, existSymbolDetail! ) ;
-                    Dictionary<string, int> pipingData = GetPipingData( conduitsModelData, pipingType, double.Parse( pipingCrossSectionalArea ) + 2000 ) ;
+                    Dictionary<string, int> pipingData = GetPipingData( conduitsModelData, pipingType, double.Parse( pipingCrossSectionalArea ) ) ;
                     foreach ( var pipingModel in pipingData ) {
-                      var parentConduitInformationModel = new ConduitInformationModel( false, floor, conduitInformationModel.CeeDCode, existSymbolDetail!.DetailSymbol, conduitInformationModel.WireType, conduitInformationModel.WireSize, conduitInformationModel.WireStrip, "1", string.Empty, string.Empty, string.Empty, pipingType, pipingModel.Key.Replace( "mm", string.Empty ), pipingModel.Value.ToString(), conduitInformationModel.ConstructionClassification, conduitInformationModel.Classification, constructionItem, constructionItem, "", pipingCrossSectionalArea ) ;
+                      var parentConduitInformationModel = new ConduitInformationModel( false, floor, conduitInformationModel.CeeDCode, existSymbolDetail!.DetailSymbol, conduitInformationModel.WireType, conduitInformationModel.WireSize, conduitInformationModel.WireStrip, "1", string.Empty, string.Empty, string.Empty, pipingType, pipingModel.Key.Replace( "mm", string.Empty ), pipingModel.Value.ToString(), conduitInformationModel.ConstructionClassification, conduitInformationModel.Classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, conduitInformationModel.CountCableSamePosition, false ) ;
                       conduitInformationModels.Add( parentConduitInformationModel ) ;
                     }
                   }
                   else {
+                    conduitInformationModel.PipingType = pipingCrossSectionalArea ;
                     conduitInformationModel.PipingSize = pipingCrossSectionalArea ;
                     conduitInformationModels.Add( conduitInformationModel ) ;
                   }
@@ -118,15 +119,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
         }
 
-        var sortedConduitModels = conduitInformationModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( y=>y.NumberOfPipes ).ToList();
+        var sortedConduitModels = conduitInformationModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( y=>y.CountCableSamePosition ).ThenByDescending( y=>y.PipingSize ).ToList();
         conduitInformationModels = new ObservableCollection<ConduitInformationModel>( sortedConduitModels ) ;
       }
       catch {
         return Result.Cancelled ;
       }
 
-      ConduitInformationViewModel viewModel = new ConduitInformationViewModel( conduitInformationModels ) ;
-      var dialog = new ConduitInformationDialog( viewModel ) ;
+      var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
+      List<ConduitType> conduitTypes = ( from conduitTypeName in conduitTypeNames select new ConduitType( conduitTypeName, conduitTypeName ) ).ToList() ;
+      conduitTypes.Add( new ConduitType( "↑", "↑" ) ) ;
+
+      ConduitInformationViewModel viewModel = new ConduitInformationViewModel( conduitInformationModels, conduitTypes ) ;
+      var dialog = new ConduitInformationDialog( viewModel, conduitsModelData ) ;
       dialog.ShowDialog() ;
 
       if ( dialog.DialogResult ?? false ) {
@@ -228,7 +233,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return pipingCrossSectionalArea.ToString() ;
     }
 
-    private Dictionary<string, int> GetPipingData( List<ConduitsModel> conduitsModelData, string pipingType, double pipingCrossSectionalArea )
+    public static Dictionary<string, int> GetPipingData( List<ConduitsModel> conduitsModelData, string pipingType, double pipingCrossSectionalArea )
     {
       Dictionary<string, int> pipingData = new Dictionary<string, int>() ;
       var conduitsModels = conduitsModelData.Where( c => c.PipingType == pipingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
@@ -236,7 +241,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       while ( crossSectionalArea < pipingCrossSectionalArea ) {
         var conduitType = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= pipingCrossSectionalArea - crossSectionalArea ) ;
         if ( conduitType != null ) {
-          pipingData.Add( conduitType.Size.Replace( "mm", string.Empty ), 1 ) ;
+          if ( ! pipingData.ContainsKey( conduitType.Size ) )
+            pipingData.Add( conduitType.Size, 1 ) ;
+          else
+            pipingData[ conduitType.Size ] = pipingData[ conduitType.Size ] + 1 ;
           break ;
         }
         else {
@@ -250,6 +258,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       return pipingData ;
+    }
+
+    public class ConduitType
+    {
+      public string Type { get ; set ; }
+      public string Name { get ; set ; }
+      
+      public ConduitType( string type, string name )
+      {
+        Type = type ;
+        Name = name ;
+      }
     }
   }
 }

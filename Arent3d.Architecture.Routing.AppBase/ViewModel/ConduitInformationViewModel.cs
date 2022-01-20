@@ -1,7 +1,9 @@
 ﻿using System ;
+using System.Collections.Generic ;
 using System.Collections.ObjectModel;
 using System.IO ;
 using System.Windows.Input ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Storable.Model;
 
@@ -16,8 +18,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         public ICommand SaveConduitInformationCommand { get; set; }
 
         public ICommand SaveAndCreateConduitInformationCommand { get; set; }
+        
+        public List<ShowConduitInformationCommandBase.ConduitType> ConduitTypes { get ; set ; }
 
-        public ConduitInformationViewModel(ObservableCollection<ConduitInformationModel> conduitInformationModels)
+        public ConduitInformationViewModel(ObservableCollection<ConduitInformationModel> conduitInformationModels, List<ShowConduitInformationCommandBase.ConduitType> conduitTypes)
         {
             ConduitInformationModels = conduitInformationModels;
             IsCreateSchedule = false ;
@@ -31,6 +35,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                 (p) => true, // CanExecute()
                 (p) => {SaveAndCreateConduitInformation(); } // Execute()
             );
+
+            ConduitTypes = conduitTypes ;
         }
 
         private void SaveConduitInformation()

@@ -24,6 +24,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string? PlumbingItems { get ; set ; }
     public string? Remark { get ; set ; }
     public string? PipingCrossSectionalArea { get ; set ; }
+    public int CountCableSamePosition { get ; set ; }
+    public bool IsReadOnly { get ; set ; }
 
     public ConduitInformationModel( 
       bool? calculationExclusion, 
@@ -45,7 +47,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? constructionItems,
       string? plumbingItems,
       string? remark,
-      string? pipingCrossSectionalArea)
+      string? pipingCrossSectionalArea,
+      int countCableSamePosition,
+      bool isReadOnly)
     {
       CalculationExclusion = calculationExclusion ;
       Floor = floor ;
@@ -67,6 +71,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       PlumbingItems = plumbingItems ;
       Remark = remark ;
       PipingCrossSectionalArea = pipingCrossSectionalArea ;
+      CountCableSamePosition = countCableSamePosition ;
+      IsReadOnly = isReadOnly ;
     }
   }
 }
