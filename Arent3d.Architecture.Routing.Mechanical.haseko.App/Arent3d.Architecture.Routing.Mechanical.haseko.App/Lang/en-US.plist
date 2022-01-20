@@ -2,7 +2,7 @@
 <plist version="1.0">
   <dict>
     <key>Mechanical.haseko.App.Routing.TabName</key>
-    <string>Mechanical Routing Assist (Haseko)</string>
+    <string>Mechanical Routing Assist(H)</string>
     <key>Mechanical.haseko.App.Panels.Routing.Initialize</key>
     <string>Setup</string>
     <key>Mechanical.haseko.App.Panels.Routing.Routing</key>
