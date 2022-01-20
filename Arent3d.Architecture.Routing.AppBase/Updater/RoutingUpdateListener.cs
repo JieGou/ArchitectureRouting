@@ -19,15 +19,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
 
     public bool IsDocumentSpan => false ;
     public bool IsOptional => false ;
+    public bool CanListen( Document document ) => true ;
 
-    public ElementFilter GetElementFilter()
+    public ElementFilter GetElementFilter( Document? document )
     {
       //Please change this method to filter the target families
       ElementFilter filter = new ElementCategoryFilter( BuiltInCategory.OST_MechanicalEquipment ) ;
       return filter ;
     }
 
-    public IEnumerable<ParameterProxy> GetListeningParameters() => throw new NotSupportedException() ;
+    public IEnumerable<ParameterProxy> GetListeningParameters( Document? document ) => throw new NotSupportedException() ;
 
     public RoutingUpdateListener( IUIApplicationHolder holder )
     {
