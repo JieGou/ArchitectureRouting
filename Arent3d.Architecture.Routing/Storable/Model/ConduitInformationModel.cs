@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string? Remark { get ; set ; }
     public string? PipingCrossSectionalArea { get ; set ; }
     public int CountCableSamePosition { get ; set ; }
+    public string? RouteName { get ; set ; }
     public bool IsReadOnly { get ; set ; }
 
     public ConduitInformationModel( 
@@ -49,6 +50,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? remark,
       string? pipingCrossSectionalArea,
       int countCableSamePosition,
+      string? routeName,
       bool isReadOnly)
     {
       CalculationExclusion = calculationExclusion ;
@@ -72,6 +74,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Remark = remark ;
       PipingCrossSectionalArea = pipingCrossSectionalArea ;
       CountCableSamePosition = countCableSamePosition ;
+      RouteName = routeName ;
       IsReadOnly = isReadOnly ;
     }
   }

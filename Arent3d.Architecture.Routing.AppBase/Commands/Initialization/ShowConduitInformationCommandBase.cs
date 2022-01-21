@@ -10,6 +10,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
@@ -33,6 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         new ObservableCollection<ConduitInformationModel>() ;
       var detailSymbolStorable =
         doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
+      CnsSettingStorable cnsStorable = doc.GetCnsSettingStorable() ;
       var processedDetailSymbol = new List<string>() ;
       try {
         var pickedObjects = uiDoc.Selection
@@ -66,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                   var conduitInformationModel = new ConduitInformationModel( false, floor, string.Empty,
                     existSymbolDetail.DetailSymbol, string.Empty, string.Empty, string.Empty, "1", string.Empty,
                     string.Empty, string.Empty, pipingType, string.Empty, pipingNumber, string.Empty, string.Empty,
-                    constructionItem, constructionItem, "", pipingCrossSectionalArea, existSymbolDetail.CountCableSamePosition, true ) ;
+                    constructionItem, constructionItem, "", pipingCrossSectionalArea, existSymbolDetail.CountCableSamePosition, existSymbolRoute, true ) ;
                   processedDetailSymbol.Add( existSymbolRoute + "-" + existSymbolDetail.CountCableSamePosition ) ;
                   var ceedModel =
                     ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
@@ -104,7 +106,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                     pipingCrossSectionalArea = GetPipingCrossSectionalArea( ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData, detailSymbolStorable.DetailSymbolModelData, existSymbolDetail! ) ;
                     Dictionary<string, int> pipingData = GetPipingData( conduitsModelData, pipingType, double.Parse( pipingCrossSectionalArea ) ) ;
                     foreach ( var pipingModel in pipingData ) {
-                      var parentConduitInformationModel = new ConduitInformationModel( false, floor, conduitInformationModel.CeeDCode, existSymbolDetail!.DetailSymbol, conduitInformationModel.WireType, conduitInformationModel.WireSize, conduitInformationModel.WireStrip, "1", string.Empty, string.Empty, string.Empty, pipingType, pipingModel.Key.Replace( "mm", string.Empty ), pipingModel.Value.ToString(), conduitInformationModel.ConstructionClassification, conduitInformationModel.Classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, conduitInformationModel.CountCableSamePosition, false ) ;
+                      var parentConduitInformationModel = new ConduitInformationModel( false, floor, conduitInformationModel.CeeDCode, existSymbolDetail!.DetailSymbol, conduitInformationModel.WireType, conduitInformationModel.WireSize, conduitInformationModel.WireStrip, "1", string.Empty, string.Empty, string.Empty, pipingType, pipingModel.Key.Replace( "mm", string.Empty ), pipingModel.Value.ToString(), conduitInformationModel.ConstructionClassification, conduitInformationModel.Classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, conduitInformationModel.CountCableSamePosition, existSymbolRoute, false ) ;
                       conduitInformationModels.Add( parentConduitInformationModel ) ;
                     }
                   }
@@ -127,14 +129,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
-      List<ConduitType> conduitTypes = ( from conduitTypeName in conduitTypeNames select new ConduitType( conduitTypeName, conduitTypeName ) ).ToList() ;
-      conduitTypes.Add( new ConduitType( "↑", "↑" ) ) ;
+      List<ComboboxItemType> conduitTypes = ( from conduitTypeName in conduitTypeNames select new ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
+      conduitTypes.Add( new ComboboxItemType( "↑", "↑" ) ) ;
 
-      ConduitInformationViewModel viewModel = new ConduitInformationViewModel( conduitInformationModels, conduitTypes ) ;
+      var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
+      List<ComboboxItemType> constructionItems = ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() ;
+
+      ConduitInformationViewModel viewModel = new ConduitInformationViewModel( conduitInformationModels, conduitTypes, constructionItems ) ;
       var dialog = new ConduitInformationDialog( viewModel, conduitsModelData ) ;
       dialog.ShowDialog() ;
 
       if ( dialog.DialogResult ?? false ) {
+        if ( dialog.RoutesChangedConstructionItem.Any() ) {
+          var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, dialog.RoutesChangedConstructionItem ) ;
+          if ( connectorGroups.Any() ) {
+            using Transaction transaction = new Transaction( doc, "Group connector" ) ;
+            transaction.Start() ;
+            foreach ( var (connectorId, textNoteIds) in connectorGroups ) {
+              // create group for updated connector (with new property) and related text note if any
+              List<ElementId> groupIds = new List<ElementId> { connectorId } ;
+              groupIds.AddRange( textNoteIds ) ;
+              doc.Create.NewGroup( groupIds ) ;
+            }
+
+            transaction.Commit() ;
+          }
+        }
+
         return doc.Transaction(
           "TransactionName.Commands.Routing.ConduitInformation".GetAppStringByKeyOrDefault( "Set conduit information" ),
           _ =>
@@ -260,12 +281,64 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return pipingData ;
     }
 
-    public class ConduitType
+    private Dictionary<ElementId, List<ElementId>> UpdateConnectorAndConduitConstructionItem( Document document, Dictionary<string, string> routesChangedConstructionItem )
+    {
+      Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
+      List<Element> allConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).ToList() ;
+      using Transaction transaction = new Transaction( document, "Group connector" ) ;
+      transaction.Start() ;
+      foreach ( var (routeName, constructionItem) in routesChangedConstructionItem ) {
+        var elements = GetToConnectorAndConduitOfRoute( document, allConnector, routeName ) ;
+        foreach ( var element in elements ) {
+          var parentGroup = document.GetElement( element.GroupId ) as Group ;
+          if ( parentGroup != null ) {
+            // ungroup before set property
+            var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
+            List<ElementId> listTextNoteIds = new List<ElementId>() ;
+            // ungroup textNote before ungroup connector
+            foreach ( var group in attachedGroup ) {
+              var ids = @group.GetMemberIds() ;
+              listTextNoteIds.AddRange( ids ) ;
+              @group.UngroupMembers() ;
+            }
+
+            connectorGroups.Add( element.Id, listTextNoteIds ) ;
+            parentGroup.UngroupMembers() ;
+          }
+
+          element.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, constructionItem ) ;
+        }
+      }
+
+      transaction.Commit() ;
+
+      return connectorGroups ;
+    }
+
+    private List<Element> GetToConnectorAndConduitOfRoute( Document document, IReadOnlyCollection<Element> allConnectors, string routeName )
+    {
+      var conduitsAndConnectorOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      foreach ( var conduit in conduitsAndConnectorOfRoute ) {
+        var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
+        if ( ! toEndPoint.Any() ) continue ;
+        var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
+        var toElementId = toEndPointKey!.GetElementId() ;
+        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
+        if ( toConnector == null || toConnector!.IsTerminatePoint() || toConnector!.IsPassPoint() ) continue ;
+        conduitsAndConnectorOfRoute.Add( toConnector ) ;
+        return conduitsAndConnectorOfRoute ;
+      }
+
+      return conduitsAndConnectorOfRoute ;
+    }
+
+    public class ComboboxItemType
     {
       public string Type { get ; set ; }
       public string Name { get ; set ; }
-      
-      public ConduitType( string type, string name )
+
+      public ComboboxItemType( string type, string name )
       {
         Type = type ;
         Name = name ;

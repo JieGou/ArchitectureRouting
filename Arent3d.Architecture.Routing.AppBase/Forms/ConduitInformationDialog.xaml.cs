@@ -14,6 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly ConduitInformationViewModel _conduitInformationViewModel ;
+    public readonly Dictionary<string, string> RoutesChangedConstructionItem ;
 
     public ConduitInformationDialog( ConduitInformationViewModel viewModel, List<ConduitsModel> conduitsModelData )
     {
@@ -21,6 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DataContext = viewModel ;
       _conduitInformationViewModel = viewModel ;
       _conduitsModelData = conduitsModelData ;
+      RoutesChangedConstructionItem = new Dictionary<string, string>() ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
@@ -31,6 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void BtnCompleted_OnClick( object sender, RoutedEventArgs e )
     {
+      DialogResult = true ;
       this.Close() ;
     }
 
@@ -48,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         List<ConduitInformationModel> newConduitInformationModels = new List<ConduitInformationModel>() ;
         foreach ( var (pipingSize, numberOfPipes) in pipingData ) {
-          var parentConduitInformationModel = new ConduitInformationModel( conduitInformationModel.CalculationExclusion, conduitInformationModel.Floor, conduitInformationModel.CeeDCode, conduitInformationModel.DetailSymbol, conduitInformationModel.WireType, conduitInformationModel.WireSize, conduitInformationModel.WireStrip, conduitInformationModel.WireBook, conduitInformationModel.EarthType, conduitInformationModel.EarthSize, conduitInformationModel.NumberOfGrounds, pipingType!.ToString(), pipingSize.Replace( "mm", string.Empty ), numberOfPipes.ToString(), conduitInformationModel.ConstructionClassification, conduitInformationModel.Classification, conduitInformationModel.ConstructionItems, conduitInformationModel.ConstructionItems, conduitInformationModel.Remark, conduitInformationModel.PipingCrossSectionalArea, conduitInformationModel.CountCableSamePosition, false ) ;
+          var parentConduitInformationModel = new ConduitInformationModel( conduitInformationModel.CalculationExclusion, conduitInformationModel.Floor, conduitInformationModel.CeeDCode, conduitInformationModel.DetailSymbol, conduitInformationModel.WireType, conduitInformationModel.WireSize, conduitInformationModel.WireStrip, conduitInformationModel.WireBook, conduitInformationModel.EarthType, conduitInformationModel.EarthSize, conduitInformationModel.NumberOfGrounds, pipingType!.ToString(), pipingSize.Replace( "mm", string.Empty ), numberOfPipes.ToString(), conduitInformationModel.ConstructionClassification, conduitInformationModel.Classification, conduitInformationModel.ConstructionItems, conduitInformationModel.ConstructionItems, conduitInformationModel.Remark, conduitInformationModel.PipingCrossSectionalArea, conduitInformationModel.CountCableSamePosition, conduitInformationModel.RouteName, false ) ;
           newConduitInformationModels.Add( parentConduitInformationModel ) ;
         }
 
@@ -66,6 +69,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         this.DataContext = _conduitInformationViewModel ;
         DtGrid.ItemsSource = _conduitInformationViewModel.ConduitInformationModels ;
       }
+    }
+
+    private void ConstructionItemSelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      if ( sender is not ComboBox comboBox ) return ;
+      var constructionItem = comboBox.SelectedValue ;
+      if ( constructionItem == null ) return ;
+      if ( DtGrid.SelectedItem is not ConduitInformationModel conduitInformationModel || conduitInformationModel.ConstructionItems == constructionItem!.ToString() ) return ;
+      var conduitInformationModelsSameRoute = _conduitInformationViewModel.ConduitInformationModels.Where( c => c.RouteName == conduitInformationModel.RouteName ).ToList() ;
+      foreach ( var conduitInformationModelSameRoute in conduitInformationModelsSameRoute ) {
+        var newConduitInformationModel = new ConduitInformationModel( conduitInformationModelSameRoute.CalculationExclusion, conduitInformationModelSameRoute.Floor, conduitInformationModelSameRoute.CeeDCode, conduitInformationModelSameRoute.DetailSymbol, conduitInformationModelSameRoute.WireType, conduitInformationModelSameRoute.WireSize, conduitInformationModelSameRoute.WireStrip, conduitInformationModelSameRoute.WireBook, conduitInformationModelSameRoute.EarthType, conduitInformationModelSameRoute.EarthSize, conduitInformationModelSameRoute.NumberOfGrounds, conduitInformationModelSameRoute.PipingType, conduitInformationModelSameRoute.PipingSize, conduitInformationModelSameRoute.NumberOfPipes, conduitInformationModelSameRoute.ConstructionClassification, conduitInformationModelSameRoute.Classification, constructionItem!.ToString(), constructionItem!.ToString(), conduitInformationModelSameRoute.Remark, conduitInformationModelSameRoute.PipingCrossSectionalArea,
+          conduitInformationModelSameRoute.CountCableSamePosition, conduitInformationModelSameRoute.RouteName, conduitInformationModelSameRoute.IsReadOnly ) ;
+        _conduitInformationViewModel.ConduitInformationModels.Add( newConduitInformationModel ) ;
+      }
+
+      if ( ! RoutesChangedConstructionItem.ContainsKey( conduitInformationModel.RouteName! ) ) {
+        RoutesChangedConstructionItem.Add( conduitInformationModel.RouteName!, constructionItem!.ToString() ) ;
+      }
+      else {
+        RoutesChangedConstructionItem[ conduitInformationModel.RouteName! ] = constructionItem!.ToString() ;
+      }
+
+      foreach ( var conduitInformationModelSameRoute in conduitInformationModelsSameRoute ) {
+        _conduitInformationViewModel.ConduitInformationModels.Remove( conduitInformationModelSameRoute ) ;
+      }
+
+      var newConduitInformationModels = _conduitInformationViewModel.ConduitInformationModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( y => y.CountCableSamePosition ).ThenByDescending( y => y.PipingSize ).ToList() ;
+      _conduitInformationViewModel.ConduitInformationModels = new ObservableCollection<ConduitInformationModel>( newConduitInformationModels ) ;
+      this.DataContext = _conduitInformationViewModel ;
+      DtGrid.ItemsSource = _conduitInformationViewModel.ConduitInformationModels ;
     }
   }
 }
