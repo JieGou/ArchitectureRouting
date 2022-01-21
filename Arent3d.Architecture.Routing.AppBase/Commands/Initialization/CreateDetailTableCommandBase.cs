@@ -17,7 +17,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  public abstract class ShowConduitInformationCommandBase : IExternalCommand
+  public abstract class CreateDetailTableCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {

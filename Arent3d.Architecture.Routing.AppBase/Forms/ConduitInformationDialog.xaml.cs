@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         comboBox.SelectedValue = conduitInformationModel.PipingType ;
       }
       else {
-        Dictionary<string, int> pipingData = ShowConduitInformationCommandBase.GetPipingData( _conduitsModelData, pipingType!.ToString(), double.Parse( conduitInformationModel.PipingCrossSectionalArea! ) ) ;
+        Dictionary<string, int> pipingData = CreateDetailTableCommandBase.GetPipingData( _conduitsModelData, pipingType!.ToString(), double.Parse( conduitInformationModel.PipingCrossSectionalArea! ) ) ;
 
         List<ConduitInformationModel> newConduitInformationModels = new List<ConduitInformationModel>() ;
         foreach ( var (pipingSize, numberOfPipes) in pipingData ) {

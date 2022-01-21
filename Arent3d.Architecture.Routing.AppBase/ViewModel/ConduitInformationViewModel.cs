@@ -19,11 +19,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         public ICommand SaveAndCreateConduitInformationCommand { get; set; }
         
-        public List<ShowConduitInformationCommandBase.ComboboxItemType> ConduitTypes { get ; set ; }
+        public List<CreateDetailTableCommandBase.ComboboxItemType> ConduitTypes { get ; set ; }
 
-        public List<ShowConduitInformationCommandBase.ComboboxItemType> ConstructionItems { get ; set ; }
+        public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionItems { get ; set ; }
         
-        public ConduitInformationViewModel(ObservableCollection<ConduitInformationModel> conduitInformationModels, List<ShowConduitInformationCommandBase.ComboboxItemType> conduitTypes, List<ShowConduitInformationCommandBase.ComboboxItemType> constructionItems )
+        public ConduitInformationViewModel(ObservableCollection<ConduitInformationModel> conduitInformationModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems )
         {
             ConduitInformationModels = conduitInformationModels;
             IsCreateSchedule = false ;
