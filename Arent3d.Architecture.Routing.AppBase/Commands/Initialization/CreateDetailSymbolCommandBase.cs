@@ -135,19 +135,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private List<string> GetRouteNameSamePosition( Document doc, string representativeRouteName, Element pickConduit )
     {
       List<string> routeNames = new List<string>() ;
-      if ( pickConduit is not Conduit ) return routeNames ;
-      var conduits = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRepresentativeRouteName() == representativeRouteName ).ToList() ;
-      var location = ( pickConduit.Location as LocationCurve ) ! ;
-      var line = ( location.Curve as Line ) ! ;
-      var origin = line.Origin ;
-      var direction = line.Direction ;
-      foreach ( var conduit in conduits ) {
-        var anotherLocation = ( conduit.Location as LocationCurve ) ! ;
-        var anotherLine = ( anotherLocation.Curve as Line ) ! ;
-        var anotherOrigin = anotherLine.Origin ;
-        var anotherDirection = anotherLine.Direction ;
-        if ( anotherOrigin.DistanceTo( origin ) == 0 && anotherDirection.DistanceTo( direction ) == 0 && ! routeNames.Contains( conduit.GetRouteName()! ) )
-          routeNames.Add( conduit.GetRouteName()! ) ;
+      if ( pickConduit is Conduit ) {
+        var conduits = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRepresentativeRouteName() == representativeRouteName ).ToList() ;
+        var location = ( pickConduit.Location as LocationCurve ) ! ;
+        var line = ( location.Curve as Line ) ! ;
+        var origin = line.Origin ;
+        var direction = line.Direction ;
+        foreach ( var conduit in conduits ) {
+          var anotherLocation = ( conduit.Location as LocationCurve ) ! ;
+          var anotherLine = ( anotherLocation.Curve as Line ) ! ;
+          var anotherOrigin = anotherLine.Origin ;
+          var anotherDirection = anotherLine.Direction ;
+          if ( anotherOrigin.DistanceTo( origin ) == 0 && anotherDirection.DistanceTo( direction ) == 0 && ! routeNames.Contains( conduit.GetRouteName()! ) )
+            routeNames.Add( conduit.GetRouteName()! ) ;
+        }
+      }
+      else {
+        var routeNamesSamePosition = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).Where( c => c.GetRepresentativeRouteName() == representativeRouteName ).Select( c => c.GetRouteName() ).Distinct().ToList() ;
+        var conduitFittingsOfRoutes = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ConduitFitting ).Where( c => routeNamesSamePosition.Contains( c.GetRouteName() ) ).ToList() ;
+        var pickConduitFitting = doc.GetElementById<FamilyInstance>( pickConduit.Id )! ;
+        var location = ( pickConduitFitting.Location as LocationPoint )! ;
+        var origin = location.Point ;
+        var direction = pickConduitFitting.FacingOrientation ;
+        foreach ( var conduitFitting in conduitFittingsOfRoutes ) {
+          var anotherConduitFitting = doc.GetElementById<FamilyInstance>( conduitFitting.Id )! ;
+          var anotherLocation = ( anotherConduitFitting.Location as LocationPoint )! ;
+          var anotherOrigin = anotherLocation.Point ;
+          var anotherDirection = anotherConduitFitting.FacingOrientation ;
+          if ( anotherOrigin.DistanceTo( origin ) == 0 && anotherDirection.DistanceTo( direction ) == 0 && ! routeNames.Contains( conduitFitting.GetRouteName()! ) )
+            routeNames.Add( conduitFitting.GetRouteName()! ) ;
+        }
       }
 
       return routeNames ;
@@ -182,6 +199,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
+    private string? GetRepresentativeRouteName( Document document, Element conduit, string routeName )
+    {
+      var representativeRouteName = string.Empty ;
+      if ( conduit is Conduit ) {
+        representativeRouteName = conduit.GetRepresentativeRouteName() ;
+      }
+      else {
+        var conduitOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).FirstOrDefault( c => c.GetRouteName() == routeName && c.GetRepresentativeRouteName() != routeName ) ;
+        if ( conduitOfRoute != null )
+          representativeRouteName = conduitOfRoute.GetRepresentativeRouteName() ;
+      }
+
+      return representativeRouteName ;
+    }
+
     private void SaveDetailSymbol( Document doc, DetailSymbolStorable detailSymbolStorable, Element conduit, TextNote detailSymbol, DetailSymbolSettingDialog detailSymbolSettingDialog, string lineIds, bool isParentSymbol )
     {
       try {
@@ -190,7 +222,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         List<Element> allConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
         List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.Id != conduit.Id ).ToList() ;
         var routeName = conduit.GetRouteName() ;
-        var representativeRouteName = conduit.GetRepresentativeRouteName() ;
+        var representativeRouteName = GetRepresentativeRouteName( doc, conduit, routeName! ) ;
         var code = GetCodeOfRouteToConnector( doc, allConnector, routeName! ) ;
 
         var routeNameSamePosition = GetRouteNameSamePosition( doc, representativeRouteName!, conduit ) ;
@@ -375,8 +407,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private List<string> GetAllConduitIdsOfRouteSamePosition( Document doc, Element conduit )
     {
-      var representativeRouteName = conduit.GetRepresentativeRouteName() ?? string.Empty ;
       var routeName = conduit.GetRouteName() ?? string.Empty ;
+      var representativeRouteName = GetRepresentativeRouteName( doc, conduit, routeName ) ?? string.Empty ;
       List<Element> allConduit = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
       var routeNames = GetRouteNameSamePosition( doc, representativeRouteName, conduit ) ;
       List<string> conduitIdsSamePosition = representativeRouteName != routeName ? allConduit.Where( c => routeNames.Contains( c.GetRouteName()! ) ).Select( c => c.Id.IntegerValue.ToString() ).ToList() : new List<string>() ;
