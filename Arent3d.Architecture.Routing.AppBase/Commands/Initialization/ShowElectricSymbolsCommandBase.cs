@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
@@ -121,14 +122,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         _ =>
         {
           ConduitInformationViewModel viewModel = new ConduitInformationViewModel( conduitInformationModels ) ;
-          TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable(viewModel, level.Name), opts ) ;
+          TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( viewModel, level.Name ),
+            opts ) ;
           return Result.Succeeded ;
         } ) ;
     }
 
     private string GenerateTextTable( ConduitInformationViewModel viewModel, string level )
     {
-      var line = GenerateString( '＿', 45 ) ;
+      var line = GenerateString( '━', 45,string.Empty ) ;
       var result = string.Empty ;
       var conduitInformationModels = viewModel.ConduitInformationModels ;
       var maxWireType = conduitInformationModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
@@ -138,34 +140,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         .ToDictionary( g => g.Key, g => g.ToList() ) ;
       result += $"　機器凡例" ;
       foreach ( var group in conduitInformationDictionary ) {
-        result += $"\r{line}\r　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　配　　管" ;
-        result += $"\r　シンボル　　　記号　　　　　　　　　　　　　配　様　　　　　　　　　　　　　　　＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿" ;
-        result += $"\r\t\t\t\t\t\t\t\t\t（屋内）\t\t\t（屋外）" ;
+        result += $"\r{line}\r{GenerateString( '　',40,String.Empty )}{GenerateString( '　',28,"配　　管" )}" ;
+        result += $"\r{GenerateString( '　',6,"シンボル" )}{GenerateString( '　',6,"記号" )}{GenerateString( '　',28,"配　様" )}{GenerateString( '━',16,string.Empty )}" ;
+        result += $"\r{GenerateString( '　',40,String.Empty )}{GenerateString( '　',16,"（屋内）" )}{GenerateString( '　',10,"（屋外）" )}" ;
         result = @group.Value.Aggregate( result,
           ( current, item ) => current +
-                               $"\r{line}\r∅\tJBOX()\t{AddFullString( item.WireType + item.WireSize, maxWireType )}\t\t－{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}X1\t\t{AddFullString( CheckEmptyString( item.PipingType + item.PipingSize, maxPipingType ), maxPipingType )}" ) ;
+                               $"\r{line}\r{GenerateString( '　',8,"∅" )}{GenerateString( '　',10,"JBOX()" )}{GenerateString( '　',14,item.WireType + item.WireSize )} {GenerateString('　',16, "－"+(item.WireStrip ?? string.Empty, maxWireStrip )+"X1")}{GenerateString( '　',16,item.PipingType + item.PipingSize)}" ) ;
       }
 
       result += $"\r{line}" ;
       return result ;
     }
 
-    private string CheckEmptyString( string str, int lenght )
+    private string GenerateString( char chr, int lenght, string middle )
     {
-      return ! string.IsNullOrEmpty( str ) ? $"({str})" : new string( '　', lenght ) ;
-    }
-
-    private string GenerateString( char chr, int lenght )
-    {
-      return new string( chr, lenght ) ;
-    }
-    private string AddFullString( string str, int length )
-    {
-      if ( str.Length < length ) {
-        str += new string( '　', length - str.Length ) ;
-      }
-
-      return str ;
+      int partOfLength = ( lenght - middle.Length ) / 2 ;
+      string partOfStr = new string( chr, partOfLength ) ;
+      return partOfStr + middle + partOfStr ;
     }
   }
 }
