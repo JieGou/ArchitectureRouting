@@ -113,7 +113,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
 
       ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-      var noteWidth = 0.4 ;
+      var noteWidth = 0.6 ;
       TextNoteOptions opts = new(defaultTextTypeId) ;
       var txtPosition = new XYZ( originX, originY, heightOfConnector ) ;
       return doc.Transaction(
@@ -128,7 +128,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private string GenerateTextTable( ConduitInformationViewModel viewModel, string level )
     {
-      var line = new string( '＿', 32 ) ;
+      var line = GenerateString( '＿', 45 ) ;
       var result = string.Empty ;
       var conduitInformationModels = viewModel.ConduitInformationModels ;
       var maxWireType = conduitInformationModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
@@ -136,10 +136,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var maxPipingType = conduitInformationModels.Max( x => ( x.PipingType + x.PipingSize ).Length ) ;
       var conduitInformationDictionary = conduitInformationModels.GroupBy( x => x.DetailSymbol )
         .ToDictionary( g => g.Key, g => g.ToList() ) ;
-      result += $"{line}\r機器凡例" ;
+      result += $"　機器凡例" ;
       foreach ( var group in conduitInformationDictionary ) {
-        result += $"\r{line}\rシンボル\t記号\t\t\t配様\t\t\t　　　　配管" ;
-        result += $"\r{line}\r\t\t\t\t\t\t\t（屋内）\t（屋外）" ;
+        result += $"\r{line}\r　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　配　　管" ;
+        result += $"\r　シンボル　　　記号　　　　　　　　　　　　　配　様　　　　　　　　　　　　　　　＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿" ;
+        result += $"\r\t\t\t\t\t\t\t\t\t（屋内）\t\t\t（屋外）" ;
         result = @group.Value.Aggregate( result,
           ( current, item ) => current +
                                $"\r{line}\r∅\tJBOX()\t{AddFullString( item.WireType + item.WireSize, maxWireType )}\t\t－{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}X1\t\t{AddFullString( CheckEmptyString( item.PipingType + item.PipingSize, maxPipingType ), maxPipingType )}" ) ;
@@ -154,6 +155,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ! string.IsNullOrEmpty( str ) ? $"({str})" : new string( '　', lenght ) ;
     }
 
+    private string GenerateString( char chr, int lenght )
+    {
+      return new string( chr, lenght ) ;
+    }
     private string AddFullString( string str, int length )
     {
       if ( str.Length < length ) {
