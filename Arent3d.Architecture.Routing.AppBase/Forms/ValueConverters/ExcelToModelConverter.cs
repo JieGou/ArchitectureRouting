@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       List<CeedModel> ceedModelData = new List<CeedModel>() ;
 
       try {
-        FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
+        using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
         XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
         ISheet workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
         const int startRow = 7 ;
@@ -160,7 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         switch ( string.IsNullOrEmpty( extension ) ) {
           case false when extension == ".xlsx" :
           {
-            FileStream fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
+            using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
             XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
             ISheet workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
             var endRow = workSheet.LastRowNum ;
