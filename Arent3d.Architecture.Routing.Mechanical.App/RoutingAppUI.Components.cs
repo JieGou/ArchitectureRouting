@@ -54,7 +54,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         private static class AutoRoutingVavCommandButton { }
         
         [Button( typeof( AdjustDuctSizeCommand ), OnlyInitialized = true )]
-        private static class AdjustDuctSizeCommandButton { }        
+        private static class AdjustDuctSizeCommandButton { }
+        
+        [Button( typeof( AutoRoutingAnemostatCommand ), OnlyInitialized = true )]
+        private static class AutoRoutingAnemostatCommandButton { }    
       }      
     }
 #else
@@ -127,7 +130,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App
         private static class AutoRoutingVavCommandButton { }
         
         [Button( typeof( AdjustDuctSizeCommand ), OnlyInitialized = true )]
-        private static class AdjustDuctSizeCommandButton { }        
+        private static class AdjustDuctSizeCommandButton { }     
+        
+        [Button( typeof( AutoRoutingAnemostatCommand ), OnlyInitialized = true )]
+        private static class AutoRoutingAnemostatCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Mechanical.App.Panels.Routing.Monitor" )]

@@ -28,10 +28,6 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
     TerminatePoint,
 
-    [NameOnRevit( "Routing Corn Point" )]
-    [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
-    CornPoint,
-
     [NameOnRevit( "Routing Connector Point" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     ConnectorPoint,
@@ -92,10 +88,6 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_CableTrayFitting )]
     CableTrayFitting,
 
-    [NameOnRevit("Cable Tray Reducer")]
-    [FamilyCategory(BuiltInCategory.OST_CableTrayFitting)]
-    CableTrayReducer,
-
     [NameOnRevit( "SA_FASU(F4-150 200Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     FASU_F4_150_200Phi,
@@ -129,19 +121,24 @@ namespace Arent3d.Architecture.Routing
     FASU_F8_150_300Phi,
 
     [NameOnRevit( "SA_VAV" )]
+    [FamilyVersion( 1 )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
     TTE_VAV_140,
     
     [NameOnRevit( "Direction Cylindrical Shaft" )]
     [FamilyCategory( BuiltInCategory.OST_DetailComponents)]
     DirectionCylindricalShaft,
+
+    [NameOnRevit( "Arent Room" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Room,
   }
 
   public static class RoutingFamilyExtensions
   {
     public static bool AllRoutingFamiliesAreLoaded( this Document document ) => document.AllFamiliesAreLoaded<RoutingFamilyType>() ;
 
-    public static void MakeCertainAllRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<RoutingFamilyType>( AssetManager.GetFamilyPath ) ;
+    public static void MakeCertainAllRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<RoutingFamilyType>( AssetManager.GetFamilyPath, true ) ;
     public static void EraseAllRoutingFamilies( this Document document ) => document.UnloadAllFamilies<RoutingFamilyType>() ;
 
     public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, string levelName, StructuralType structuralType )

@@ -292,9 +292,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         "hiroisetmaster_eco.csv",
         "hiroisetmaster_normal.csv", 
         "電線管一覧.csv", 
-        "電線・ケーブル一覧.csv", 
-        "【CeeD】セットコード一覧表.xlsx"
+        "電線・ケーブル一覧.csv"
       } ;
+      bool isLoadedCeeDFile = false ;
+      var ceeDCodeFile = "【CeeD】セットコード一覧表" ;
+      string equipmentSymbolsFile = "機器記号一覧表" ;
       StringBuilder correctMessage = new StringBuilder() ;
       StringBuilder errorMessage = new StringBuilder() ;
       string defaultCorrectMessage = "指定されたフォルダから以下のデータを正常にロードできました。" ;
@@ -376,17 +378,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
               }
               break ;
-            case "【CeeD】セットコード一覧表.xlsx" :
-              _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( path ) ;
-              if(_ceeDModelData.Any()){
-                correctMessage.AppendLine( "\u2022 【CeeD】セットコード一覧表" ) ;
-              }
-              else {
-                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
-              }
-              break ;
           }
         }
+      }
+
+      // load 【CeeD】セットコード一覧表 and 機器記号一覧表 files 
+      var ceeDCodeXlsxFilePath = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xlsx" ) ;
+      var ceeDCodeXlsFilePath = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xls" ) ;
+      var equipmentSymbolsXlsxFilePath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xlsx" ) ;
+      var equipmentSymbolsXlsFilePath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xls" ) ;
+      if ( File.Exists( ceeDCodeXlsxFilePath ) ) {
+        isLoadedCeeDFile = LoadCeeDCodeFile( correctMessage, errorMessage, ceeDCodeFile, equipmentSymbolsFile, ceeDCodeXlsxFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath ) ;
+      }
+
+      if ( File.Exists( ceeDCodeXlsFilePath ) && ! isLoadedCeeDFile ) {
+        LoadCeeDCodeFile( correctMessage, errorMessage, ceeDCodeFile, equipmentSymbolsFile, ceeDCodeXlsFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath ) ;
       }
 
       string resultMessage = string.Empty ;
@@ -401,6 +407,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       MessageBox.Show(
         resultMessage,"Result Message" ) ;
+    }
+
+    private bool LoadCeeDCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceeDCodeFile, string equipmentSymbolsFile, string ceeDCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath )
+    {
+      if ( File.Exists( equipmentSymbolsXlsxFilePath ) ) {
+        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
+        if ( _ceeDModelData.Any() ) {
+          correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
+          correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
+          return true ;
+        }
+      }
+
+      if ( File.Exists( equipmentSymbolsXlsFilePath ) ) {
+        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsXlsFilePath ) ;
+        if ( _ceeDModelData.Any() ) {
+          correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
+          correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
+          return true ;
+        }
+      }
+
+      _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, string.Empty ) ;
+      if ( _ceeDModelData.Any() ) {
+        correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
+        return true ;
+      }
+
+      errorMessage.AppendLine( $"\u2022 {Path.GetFileName( ceeDCodeFilePath )}" ) ;
+
+      if ( File.Exists( equipmentSymbolsXlsxFilePath ) )
+        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsXlsxFilePath )}" ) ;
+      if ( File.Exists( equipmentSymbolsXlsFilePath ) )
+        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsXlsFilePath )}" ) ;
+      return false ;
     }
   }
 }

@@ -36,7 +36,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var level = uiDoc.ActiveView.GenLevel ;
           var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
           var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level ) ;
-          element.SetProperty( ConnectorFamilyParameter.CeeDCode, dlgCeeDModel.SelectedCeeDCode ) ;
+          var ceeDCode = dlgCeeDModel.SelectedCeeDCode + "-" + dlgCeeDModel.SelectedDeviceSymbol + "-" + dlgCeeDModel.SelectedModelNumber ;
+          element.SetProperty( ConnectorFamilyParameter.CeeDCode, ceeDCode ) ;
           if ( element is FamilyInstance familyInstance ) familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
 
           ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;

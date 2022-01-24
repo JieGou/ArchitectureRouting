@@ -368,7 +368,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var multipleInstanceSpace = new List<Element>() ;
 
       foreach ( var familyInstance in targetInstances ) {
-        var locationPoint = (LocationPoint)familyInstance.Location ;
+        var locationPoint = (LocationPoint) familyInstance.Location ;
         var space = GetSpaceWhichContainsPosition( spaceBoxPairs, locationPoint.Point.To3dPoint() ) ;
 
         if ( space == null ) continue ;
@@ -426,20 +426,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return ( true, string.Empty ) ;
     }
 
-    private static bool HasValidBranchNumber( Element space )
+    private static (bool Success, string ErrorMessage) CreateMaintainersGroupedByBranchNumber( Document document, Connector pickedConnector, out Dictionary<int, List<Maintainer>> result )
     {
-      if ( ! space.TryGetProperty( BranchNumberParameter.BranchNumber, out int branchNumber ) ) return false ;
-      return TTEUtil.IsValidBranchNumber( branchNumber ) ;
-    }
-    
-    private static (bool Success, string ErrorMessage) CreateMaintainersGroupedByBranchNumber( Document document, out Dictionary<int, List<Maintainer>> result )
-    {
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_MEPSpaces) ;
-      FilteredElementCollector collector = new(document) ;
-
-      var targetSpaces = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( HasValidBranchNumber ).ToArray() ;
-
       result = new Dictionary<int, List<Maintainer>>() ;
+
+      var ahuNumber = TTEUtil.GetAhuNumberByPickedConnector( pickedConnector ) ;
+      if ( ! ahuNumber.HasValue ) return ( false, "AHUNumber cannot be found from the picked connector." ) ;
+
+      var targetSpaces = TTEUtil.CollectTargetSpaces( document, ahuNumber.Value ).ToArray() ;
 
       foreach ( var space in targetSpaces ) {
         if ( space.get_BoundingBox( document.ActiveView ) == null ) return ( false, $"{space.Name} doesn't have bounding box." ) ;
@@ -482,18 +476,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       return new NonCollinearGroup( maintainers ) ;
     }
 
-    public (bool Success, string ErrorMessage) Setup( Document document, Vector3d rootConnectorNormal )
+    public (bool Success, string ErrorMessage) Setup( Document document, Connector pickedConnector )
     {
       _creator = new FASUAndVAVCreatorForTTE() ;
       var (success, errorMessage) = _creator.Setup( document ) ;
       if ( ! success ) return ( false, errorMessage ) ;
 
-      ( success, errorMessage ) = CreateMaintainersGroupedByBranchNumber( document, out var branchNumberToGroup ) ;
+      ( success, errorMessage ) = CreateMaintainersGroupedByBranchNumber( document, pickedConnector, out var branchNumberToGroup ) ;
       if ( ! success ) return ( false, errorMessage ) ;
 
-      _groups = branchNumberToGroup.Select( branchNumSpacePair => CreateMaintainerGroup( rootConnectorNormal, branchNumSpacePair.Key, branchNumSpacePair.Value ) ).ToArray() ;
+      _groups = branchNumberToGroup.Select( branchNumSpacePair => CreateMaintainerGroup( pickedConnector.CoordinateSystem.BasisZ.To3dDirection(), branchNumSpacePair.Key, branchNumSpacePair.Value ) ).ToArray() ;
       foreach ( var maintainerGroup in _groups ) {
-        maintainerGroup.DecideTemporaryRotation( rootConnectorNormal ) ;
+        maintainerGroup.DecideTemporaryRotation( pickedConnector.CoordinateSystem.BasisZ.To3dDirection() ) ;
       }
 
       return ( true, "" ) ;

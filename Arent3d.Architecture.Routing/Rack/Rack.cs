@@ -96,6 +96,8 @@ namespace Arent3d.Architecture.Routing.Rack
         _layerProperty = layerProperty ;
       }
 
+      public IPipingProperty? GetIntersection( IPipingProperty other ) => null ;
+
       public RangeD Range
       {
         get

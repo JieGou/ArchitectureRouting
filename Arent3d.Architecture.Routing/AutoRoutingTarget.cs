@@ -221,6 +221,7 @@ namespace Arent3d.Architecture.Routing
       public bool IsRoutingOnPipeRacks { get ; }
       public bool IsCrossingPipeRacks => false ;
       public bool IsRouteMergeEnabled => true ;
+      public bool ToRecalculateDirectFlags { get ; set ; }
       public LineType Type => _subRoute.Route.ServiceType ;
       public int Priority { get ; }
       public LoopType LoopType => LoopType.Non ;
