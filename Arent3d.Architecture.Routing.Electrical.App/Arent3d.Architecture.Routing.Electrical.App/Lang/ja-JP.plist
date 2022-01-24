@@ -5,7 +5,7 @@
         <!-- Application UI Strings -->
         <key>Electrical.App.Routing.TabName</key>
         <string>電気ルートアシスト</string>
-        
+
         <key>Electrical.App.Panels.Routing.Initialize</key>
         <string>Setup</string>
         <key>Electrical.App.Panels.Routing.Initialize.Initialize</key>
@@ -14,17 +14,17 @@
         <string>拾い</string>
         <key>Electrical.App.Panels.Routing.Initialize.Panels</key>
         <string>パネル</string>
-        
+
         <key>Electrical.App.Panels.Routing.Routing</key>
         <string>From-To</string>
         <key>Electrical.App.Panels.Routing.Routing.Routing</key>
         <string>ルーティング</string>
         <key>Electrical.App.Panels.Routing.Routing.Erase</key>
         <string>削除</string>
-        
+
         <key>Electrical.App.Panels.Routing.PassPoints</key>
         <string>通過点</string>
-        
+
         <key>Electrical.App.Panels.Routing.Racks</key>
         <string>PS</string>
 
@@ -33,10 +33,10 @@
 
         <key>Electrical.App.Panels.Routing.Shafts</key>
         <string>シャフト</string>
-      
+
         <key>Electrical.App.Panels.Routing.Monitor</key>
         <string>Monitor Selection</string>
-        
+
         <key>Electrical.App.Panels.Routing.Connectors</key>
         <string>Connectors</string>
 
@@ -55,16 +55,16 @@
 
         <key>Electrical.App.Commands.Initialization.ShowRoutingViewsCommand</key>
         <string>Plans</string>
-          
+
         <key>Electrical.App.Commands.PassPoint.InsertPassPointCommand</key>
         <string>Insert&#xA;Pass Point</string>
 
         <key>Electrical.App.Commands.Rack.EraseAllRacksCommand</key>
         <string>Delete&#xA;All PS</string>
-          
+
         <key>Electrical.App.Commands.Rack.ExportRacksCommand</key>
         <string>Export&#xA;PS</string>
-        
+
         <key>Electrical.App.Commands.Rack.ImportRacksCommand</key>
         <string>Import&#xA;PS</string>
 
@@ -79,7 +79,7 @@
 
         <key>Electrical.App.Commands.Routing.ExportRoutingCommand</key>
         <string>Export&#xA;From-To</string>
-        
+
         <key>Electrical.App.Commands.Routing.FileRoutingCommand</key>
         <string>Import&#xA;From-To</string>
 
@@ -106,9 +106,15 @@
 
         <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>工事区分設定</string>
-        
-		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
-		<string>Height Setting</string>
+
+        <key>Electrical.App.Commands.Initialization.ChangeToEcoCommand</key>
+        <string>エコへ切替</string>
+
+        <key>Electrical.App.Commands.Initialization.ChangeToNormalCommand</key>
+        <string>通常へ切替</string>
+
+        <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
+        <string>Height Setting</string>
 
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>ラックを作成する&#xA;すべてのコンジット用</string>
@@ -117,7 +123,7 @@
         <string>Create Rack&#xA;From-To</string>
 
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
-        <string>コネクターを追加する&#xA;( 両方 )</string>        
+        <string>コネクターを追加する&#xA;( 両方 )</string>
 
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>円柱シャフト作成</string>
@@ -139,7 +145,7 @@
 
         <key>Electrical.App.Commands.Initialization.ShowConduitInformationCommand</key>
         <string>明細表作成</string>
-         
+
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>読み込みdb保存</string>
 
@@ -223,7 +229,7 @@
 
         <key>TransactionName.Commands.Rack.NewRackFromTo</key>
         <string>Create Cable Rack From-To</string>
-        
+
         <key>TransactionName.Commands.Routing.OffsetSetting</key>
         <string>オフセット設定</string>
 

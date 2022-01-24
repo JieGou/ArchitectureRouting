@@ -96,7 +96,11 @@ namespace Arent3d.Architecture.Routing
 
     [ParameterGuid( "f054f110-68e7-4bce-9d17-688557d410da" ), NameOnRevit( "Construction Item" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConstructionItems ) )]
-    ConstructionItem
+    ConstructionItem,
+    
+    [ParameterGuid( "302a0b15-ee8b-44a2-98b2-c5eb105a3579" ), NameOnRevit( "IsEcoMode" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConnectorsAndConduits ) )]
+    IsEcoMode
   }
 
   public enum ConnectorFamilyParameter
@@ -107,7 +111,7 @@ namespace Arent3d.Architecture.Routing
             
     [ParameterGuid( "f71cbd72-3fe4-47cb-b777-36d6511d42ed" ), NameOnRevit( "CeeD Code" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
-    CeeDCode,
+    CeeDCode
   }
 
   public enum BranchNumberParameter

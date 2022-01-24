@@ -117,6 +117,11 @@ namespace Arent3d.Architecture.Routing
     {
       BuiltInCategory.OST_ElectricalFixtures,
     } ;
+    
+    public static readonly BuiltInCategory[] ConnectorsAndConduits = CombineArrays(
+      Connectors,
+      Conduits
+    ) ;
 
     public static readonly BuiltInCategory[] Fittings =
     {
