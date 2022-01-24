@@ -221,9 +221,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       AfterCommand( param!, commandSpanResource ) ;
     }
 
-    protected virtual IDisposable? BeforeCommand( TCommandParameter param, ExternalCommandData commandData, ElementSet elements ) => null ;
+    protected virtual IDisposable? BeforeCommand( TCommandParameter param, ExternalCommandData commandData, ElementSet elements )
+    {
+      return base.BeforeCommand( commandData, elements ) ;
+    }
     protected virtual void AfterCommand( TCommandParameter param, IDisposable? commandSpanResource )
     {
+      base.AfterCommand( commandSpanResource ) ;
     }
 
     protected sealed override IDisposable? BeforeTransaction( Document document ) => BeforeTransaction( Parameter!, document ) ;

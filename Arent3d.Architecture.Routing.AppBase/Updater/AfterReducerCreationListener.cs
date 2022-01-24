@@ -16,15 +16,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
     public ChangePriority ChangePriority => ChangePriority.MEPSystems ;
     public DocumentUpdateListenType ListenType => DocumentUpdateListenType.Addition ;
 
-    public ElementFilter GetElementFilter()
+    public ElementFilter GetElementFilter( Document? document )
     {
       return new ElementMulticategoryFilter( BuiltInCategorySets.Fittings ) ;
     }
 
-    public IEnumerable<ParameterProxy> GetListeningParameters() => throw new NotSupportedException() ;
+    public IEnumerable<ParameterProxy> GetListeningParameters( Document? document ) => throw new NotSupportedException() ;
 
     public bool IsDocumentSpan => false ;
     public bool IsOptional => false ;
+    public bool CanListen( Document document ) => true ;
 
     public void Execute( UpdaterData data )
     {
