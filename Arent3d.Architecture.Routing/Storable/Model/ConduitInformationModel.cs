@@ -8,6 +8,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string? Floor { get ; set ; }
     public string? CeeDCode { get ; set ; }
     public string? DetailSymbol { get ; set ; }
+    public string? DetailSymbolId { get ; set ; }
     public string? WireType { get ; set ; }
     public string? WireSize { get ; set ; }
     public string? WireStrip { get ; set ; }
@@ -23,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string? ConstructionItems { get ; set ; }
     public string? PlumbingItems { get ; set ; }
     public string? Remark { get ; set ; }
-    public string? PipingCrossSectionalArea { get ; set ; }
+    public double PipingCrossSectionalArea { get ; set ; }
     public int CountCableSamePosition { get ; set ; }
     public string? RouteName { get ; set ; }
     public bool IsReadOnly { get ; set ; }
@@ -33,6 +34,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? floor, 
       string? ceeDCode,
       string? detailSymbol,
+      string? detailSymbolId,
       string? wireType, 
       string? wireSize, 
       string? wireStrip, 
@@ -48,7 +50,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? constructionItems,
       string? plumbingItems,
       string? remark,
-      string? pipingCrossSectionalArea,
+      double pipingCrossSectionalArea,
       int countCableSamePosition,
       string? routeName,
       bool isReadOnly)
@@ -57,6 +59,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Floor = floor ;
       CeeDCode = ceeDCode ;
       DetailSymbol = detailSymbol ;
+      DetailSymbolId = detailSymbolId ;
       WireType = wireType ;
       WireSize = wireSize ;
       WireStrip = wireStrip ;
