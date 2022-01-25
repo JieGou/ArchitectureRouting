@@ -27,6 +27,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public double PlumbingCrossSectionalArea { get ; set ; }
     public int CountCableSamePosition { get ; set ; }
     public string? RouteName { get ; set ; }
+    public string? IsEcoMode { get ; set ; }
+    public bool IsParentRoute { get ; set ; }
     public bool IsReadOnly { get ; set ; }
 
     public DetailTableModel( 
@@ -53,6 +55,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       double plumbingCrossSectionalArea,
       int countCableSamePosition,
       string? routeName,
+      string? isEcoMode,
+      bool isParentRoute,
       bool isReadOnly)
     {
       CalculationExclusion = calculationExclusion ;
@@ -78,6 +82,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       PlumbingCrossSectionalArea = plumbingCrossSectionalArea ;
       CountCableSamePosition = countCableSamePosition ;
       RouteName = routeName ;
+      IsEcoMode = isEcoMode ;
+      IsParentRoute = isParentRoute ;
       IsReadOnly = isReadOnly ;
     }
   }

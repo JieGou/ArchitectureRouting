@@ -42,7 +42,7 @@
             <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" Margin="20"  ItemsSource="{Binding ConduitInformationModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False">
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
                     <Setter Property="Padding" Value="-2" />
@@ -150,7 +150,7 @@
                         Margin="5,5,5,5"
                         HorizontalAlignment="Right"
                         DockPanel.Dock="Right"
-                        Command="{Binding SaveConduitInformationCommand}"
+                        Command="{Binding SaveDetailTableCommand}"
                         Click="BtnSave_OnClick"
                         Height="27"
                         Width="110" />
@@ -159,7 +159,7 @@
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
                     DockPanel.Dock="Right"
-                    Command="{Binding SaveAndCreateConduitInformationCommand}"
+                    Command="{Binding SaveAndCreateDetailTableCommand}"
                     Click="BtnSave_OnClick"
                     Height="27"
                     Width="110" />

@@ -11,38 +11,38 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
     public class DetailTableViewModel : ViewModelBase
     {
-        public ObservableCollection<DetailTableModel> ConduitInformationModels { get; set; }
+        public ObservableCollection<DetailTableModel> DetailTableModels { get; set; }
 
         public  bool IsCreateSchedule { get; set; }
 
-        public ICommand SaveConduitInformationCommand { get; set; }
+        public ICommand SaveDetailTableCommand { get; set; }
 
-        public ICommand SaveAndCreateConduitInformationCommand { get; set; }
+        public ICommand SaveAndCreateDetailTableCommand { get; set; }
         
         public List<CreateDetailTableCommandBase.ComboboxItemType> ConduitTypes { get ; set ; }
 
         public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionItems { get ; set ; }
         
-        public DetailTableViewModel(ObservableCollection<DetailTableModel> conduitInformationModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems )
+        public DetailTableViewModel(ObservableCollection<DetailTableModel> detailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems )
         {
-            ConduitInformationModels = conduitInformationModels;
+            DetailTableModels = detailTableModels;
             IsCreateSchedule = false ;
 
-            SaveConduitInformationCommand = new RelayCommand<object>(
+            SaveDetailTableCommand = new RelayCommand<object>(
                 (p) => true, // CanExecute()
-                (p) => { SaveConduitInformation(); } // Execute()
+                (p) => { SaveDetailTable(); } // Execute()
             );
 
-            SaveAndCreateConduitInformationCommand = new RelayCommand<object>(
+            SaveAndCreateDetailTableCommand = new RelayCommand<object>(
                 (p) => true, // CanExecute()
-                (p) => {SaveAndCreateConduitInformation(); } // Execute()
+                (p) => {SaveAndCreateDetailTable(); } // Execute()
             );
 
             ConduitTypes = conduitTypes ;
             ConstructionItems = constructionItems ;
         }
 
-        private void SaveConduitInformation()
+        private void SaveDetailTable()
         {
             // Configure open file dialog box
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
@@ -57,7 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             if (result == true)
             {
                 string createText = "";
-                foreach (var item in ConduitInformationModels) {
+                foreach (var item in DetailTableModels) {
                     string line = String.Join( ",", new string?[]{item.Floor,item.Remark,item.ConstructionClassification,item.ConstructionItems,item.DetailSymbol,item.EarthSize,item.EarthType,item.PlumbingSize,item.PlumbingType,item.PlumbingItems,item.WireBook,item.WireSize,item.WireStrip,item.WireType,item.NumberOfGrounds,item.NumberOfPlumbing}) ;
                     createText += line.Trim() + Environment.NewLine ;
                 }
@@ -69,9 +69,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
         }
 
-        private void SaveAndCreateConduitInformation()
+        private void SaveAndCreateDetailTable()
         {
-            SaveConduitInformation() ;
+            SaveDetailTable() ;
             IsCreateSchedule = true ;
         }
     }

@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      const string defaultChildPipingType = "↑" ;
+      const string defaultChildPlumbingType = "↑" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var csvStorable = doc.GetCsvStorable() ;
@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
       var hiroiSetCdMasterEcoModelData = doc.GetCsvStorable().HiroiSetCdMasterEcoModelData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      ObservableCollection<DetailTableModel> conduitInformationModels = new ObservableCollection<DetailTableModel>() ;
+      ObservableCollection<DetailTableModel> detailTableModels = new ObservableCollection<DetailTableModel>() ;
       var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
       CnsSettingStorable cnsStorable = doc.GetCnsSettingStorable() ;
       try {
@@ -46,17 +46,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var parentRouteName = firstDetailSymbolModelByDetailSymbolId!.CountCableSamePosition == 1 ? firstDetailSymbolModelByDetailSymbolId.RouteName : GetParentRouteName( doc, routeNames ) ;
           if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
             var parentDetailSymbolModel = detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == parentRouteName ) ;
-            AddConduitInformationModel( doc, ceedStorable!, detailSymbolStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, conduitInformationModels, pickedObjects, parentDetailSymbolModel!, true ) ;
+            AddDetailSymbolModel( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, conduitsModelData, detailTableModels, pickedObjects, parentDetailSymbolModel!, true ) ;
             routeNames = routeNames.Where( n => n != parentRouteName ).OrderByDescending( n => n ).ToList() ;
           }
 
           foreach ( var childDetailSymbolModel in from routeName in routeNames select detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == routeName ) ) {
-            AddConduitInformationModel( doc, ceedStorable!, detailSymbolStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, conduitInformationModels, pickedObjects, childDetailSymbolModel, false ) ;
+            AddDetailSymbolModel( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, conduitsModelData, detailTableModels, pickedObjects, childDetailSymbolModel, false ) ;
           }
         }
 
-        var sortConduitInformationModels = conduitInformationModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.CountCableSamePosition ).ThenByDescending( x => x.PlumbingSize ).GroupBy( x => x.DetailSymbolId ).SelectMany( x => x ).ToList() ;
-        conduitInformationModels = new ObservableCollection<DetailTableModel>( sortConduitInformationModels ) ;
+        var newDetailTableModels = SetPlumbingData( ceedStorable!, detailSymbolStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, conduitsModelData, wiresAndCablesModelData, detailTableModels ) ;
+        detailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
       }
       catch {
         return Result.Cancelled ;
@@ -64,12 +64,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
       List<ComboboxItemType> conduitTypes = ( from conduitTypeName in conduitTypeNames select new ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
-      conduitTypes.Add( new ComboboxItemType( defaultChildPipingType, defaultChildPipingType ) ) ;
+      conduitTypes.Add( new ComboboxItemType( defaultChildPlumbingType, defaultChildPlumbingType ) ) ;
 
       var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
       List<ComboboxItemType> constructionItems = ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() ;
 
-      DetailTableViewModel viewModel = new DetailTableViewModel( conduitInformationModels, conduitTypes, constructionItems ) ;
+      DetailTableViewModel viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems ) ;
       var dialog = new DetailTableDialog( viewModel, conduitsModelData ) ;
       dialog.ShowDialog() ;
 
@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         return doc.Transaction(
-          "TransactionName.Commands.Routing.ConduitInformation".GetAppStringByKeyOrDefault( "Set conduit information" ),
+          "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ),
           _ =>
           {
             if ( viewModel.IsCreateSchedule ) {
@@ -121,18 +121,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       string line = new string( '＿', 32 ) ;
       string result = string.Empty ;
-      var conduitInformationModels = viewModel.ConduitInformationModels ;
-      var maxWireType = conduitInformationModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
-      var maxWireStrip = conduitInformationModels.Max( x => x.WireStrip?.Length ) ?? 0 ;
-      var maxPipingType = conduitInformationModels.Max( x => ( x.PlumbingType + x.PlumbingSize ).Length ) ;
-      var conduitInformationDictionary = conduitInformationModels.GroupBy( x => x.DetailSymbol )
+      var detailTableModels = viewModel.DetailTableModels ;
+      var maxWireType = detailTableModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
+      var maxWireStrip = detailTableModels.Max( x => x.WireStrip?.Length ) ?? 0 ;
+      var maxPlumbingType = detailTableModels.Max( x => ( x.PlumbingType + x.PlumbingSize ).Length ) ;
+      var detailTableDictionary = detailTableModels.GroupBy( x => x.DetailSymbol )
         .ToDictionary( g => g.Key, g => g.ToList() ) ;
       result += $"{line}\r{level}階平面图" ;
-      foreach ( var group in conduitInformationDictionary ) {
+      foreach ( var group in detailTableDictionary ) {
         result += $"\r{line}\r{group.Key}" ;
         result = @group.Value.Aggregate( result,
           ( current, item ) => current +
-                               $"\r{line}\r{AddFullString( item.WireType + item.WireSize, maxWireType )}\t-{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}\tX1\t{AddFullString( CheckEmptyString( item.PlumbingType + item.PlumbingSize, maxPipingType ), maxPipingType )}\t{item.Remark}" ) ;
+                               $"\r{line}\r{AddFullString( item.WireType + item.WireSize, maxWireType )}\t-{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}\tX1\t{AddFullString( CheckEmptyString( item.PlumbingType + item.PlumbingSize, maxPlumbingType ), maxPlumbingType )}\t{item.Remark}" ) ;
       }
 
       result += $"\r{line}" ;
@@ -153,12 +153,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return str ;
     }
 
-    private double GetPipingCrossSectionalArea( CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailSymbolModel> allDetailSymbolModels, DetailSymbolModel parentDetailSymbolModel, string isEcoMode )
+    private double GetPlumbingCrossSectionalArea( CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailSymbolModel> allDetailSymbolModels, string detailSymbolId, int countCableSamePosition, string isEcoMode )
     {
       double percentage = 0.32 ;
-      double pipingCrossSectionalArea = 0 ;
+      double plumbingCrossSectionalArea = 0 ;
       List<string> routeNames = new List<string>() ;
-      var detailSymbolModels = allDetailSymbolModels.Where( d => d.DetailSymbolId == parentDetailSymbolModel.DetailSymbolId && d.CountCableSamePosition == parentDetailSymbolModel.CountCableSamePosition ).ToList() ;
+      var detailSymbolModels = allDetailSymbolModels.Where( d => d.DetailSymbolId == detailSymbolId && d.CountCableSamePosition == countCableSamePosition ).ToList() ;
       foreach ( var detailSymbolModel in detailSymbolModels ) {
         if ( routeNames.Contains( detailSymbolModel.RouteName ) ) continue ;
         routeNames.Add( detailSymbolModel.RouteName ) ;
@@ -177,42 +177,71 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               if ( masterModels == null ) continue ;
               var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == masterModels.Type && w.DiameterOrNominal == masterModels.Size1 && ( ( w.NumberOfHeartsOrLogarithm == "0" && masterModels.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && masterModels.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
               if ( wiresAndCablesModel != null )
-                pipingCrossSectionalArea += double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+                plumbingCrossSectionalArea += double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
             }
           }
         }
       }
 
-      pipingCrossSectionalArea /= percentage ;
+      plumbingCrossSectionalArea /= percentage ;
 
-      return pipingCrossSectionalArea ;
+      return plumbingCrossSectionalArea ;
     }
 
-    public static Dictionary<string, int> GetPipingData( List<ConduitsModel> conduitsModelData, string pipingType, double pipingCrossSectionalArea )
+    public static Dictionary<string, int> GetPlumbingData( List<ConduitsModel> conduitsModelData, string plumbingType, double plumbingCrossSectionalArea )
     {
-      Dictionary<string, int> pipingData = new Dictionary<string, int>() ;
-      var conduitsModels = conduitsModelData.Where( c => c.PipingType == pipingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+      Dictionary<string, int> plumbingData = new Dictionary<string, int>() ;
+      var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
       double crossSectionalArea = 0 ;
-      while ( crossSectionalArea < pipingCrossSectionalArea ) {
-        var conduitType = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= pipingCrossSectionalArea - crossSectionalArea ) ;
+      while ( crossSectionalArea < plumbingCrossSectionalArea ) {
+        var conduitType = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= plumbingCrossSectionalArea - crossSectionalArea ) ;
         if ( conduitType != null ) {
-          if ( ! pipingData.ContainsKey( conduitType.Size ) )
-            pipingData.Add( conduitType.Size, 1 ) ;
+          if ( ! plumbingData.ContainsKey( conduitType.Size ) )
+            plumbingData.Add( conduitType.Size, 1 ) ;
           else
-            pipingData[ conduitType.Size ] = pipingData[ conduitType.Size ] + 1 ;
+            plumbingData[ conduitType.Size ] = plumbingData[ conduitType.Size ] + 1 ;
           break ;
         }
         else {
           var size = conduitsModels.Last().Size ;
-          if ( ! pipingData.ContainsKey( size ) )
-            pipingData.Add( size, 1 ) ;
+          if ( ! plumbingData.ContainsKey( size ) )
+            plumbingData.Add( size, 1 ) ;
           else
-            pipingData[ size ] = pipingData[ size ] + 1 ;
+            plumbingData[ size ] = plumbingData[ size ] + 1 ;
           crossSectionalArea += double.Parse( conduitsModels.Last().InnerCrossSectionalArea ) ;
         }
       }
 
-      return pipingData ;
+      return plumbingData ;
+    }
+
+    private List<DetailTableModel> SetPlumbingData( CeedStorable ceedStorable, DetailSymbolStorable detailSymbolStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, ObservableCollection<DetailTableModel> detailTableModels )
+    {
+      const string defaultParentPlumbingType = "E" ;
+      const string defaultChildPlumbingType = "↑" ;
+      List<DetailTableModel> newDetailTableModels = new List<DetailTableModel>() ;
+      foreach ( var detailTableModel in detailTableModels ) {
+        if ( detailTableModel.IsParentRoute ) {
+          var plumbingCrossSectionalArea = GetPlumbingCrossSectionalArea( ceedStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, detailSymbolStorable.DetailSymbolModelData, detailTableModel.DetailSymbolId!, detailTableModel.CountCableSamePosition, detailTableModel.IsEcoMode! ) ;
+          if ( plumbingCrossSectionalArea != 0 ) {
+            Dictionary<string, int> plumbingData = GetPlumbingData( conduitsModelData, defaultParentPlumbingType, plumbingCrossSectionalArea ) ;
+            foreach ( var (plumbingType, numberOfPlumbing) in plumbingData ) {
+              var parentDetailSymbolModel = new DetailTableModel( detailTableModel.CalculationExclusion, detailTableModel.Floor, detailTableModel.CeeDCode, detailTableModel.DetailSymbol, detailTableModel.DetailSymbolId, detailTableModel.WireType, detailTableModel.WireSize, detailTableModel.WireStrip, detailTableModel.WireBook, detailTableModel.EarthType, detailTableModel.EarthSize, detailTableModel.NumberOfGrounds, defaultParentPlumbingType, plumbingType.Replace( "mm", string.Empty ), numberOfPlumbing.ToString(), detailTableModel.ConstructionClassification, detailTableModel.Classification, detailTableModel.ConstructionItems, detailTableModel.PlumbingItems, detailTableModel.Remark, plumbingCrossSectionalArea, detailTableModel.CountCableSamePosition, detailTableModel.RouteName, detailTableModel.IsEcoMode, detailTableModel.IsParentRoute, detailTableModel.IsReadOnly ) ;
+              newDetailTableModels.Add( parentDetailSymbolModel ) ;
+            }
+          }
+          else {
+            var parentDetailSymbolModel = new DetailTableModel( detailTableModel.CalculationExclusion, detailTableModel.Floor, detailTableModel.CeeDCode, detailTableModel.DetailSymbol, detailTableModel.DetailSymbolId, detailTableModel.WireType, detailTableModel.WireSize, detailTableModel.WireStrip, detailTableModel.WireBook, detailTableModel.EarthType, detailTableModel.EarthSize, detailTableModel.NumberOfGrounds, string.Empty, string.Empty, string.Empty, detailTableModel.ConstructionClassification, detailTableModel.Classification, detailTableModel.ConstructionItems, detailTableModel.PlumbingItems, detailTableModel.Remark, plumbingCrossSectionalArea, detailTableModel.CountCableSamePosition, detailTableModel.RouteName, detailTableModel.IsEcoMode, detailTableModel.IsParentRoute, true ) ;
+            newDetailTableModels.Add( parentDetailSymbolModel ) ;
+          }
+        }
+        else {
+          var childDetailSymbolModel = new DetailTableModel( detailTableModel.CalculationExclusion, detailTableModel.Floor, detailTableModel.CeeDCode, detailTableModel.DetailSymbol, detailTableModel.DetailSymbolId, detailTableModel.WireType, detailTableModel.WireSize, detailTableModel.WireStrip, detailTableModel.WireBook, detailTableModel.EarthType, detailTableModel.EarthSize, detailTableModel.NumberOfGrounds, defaultChildPlumbingType, defaultChildPlumbingType, defaultChildPlumbingType, detailTableModel.ConstructionClassification, detailTableModel.Classification, detailTableModel.ConstructionItems, detailTableModel.PlumbingItems, detailTableModel.Remark, 0, detailTableModel.CountCableSamePosition, detailTableModel.RouteName, detailTableModel.IsEcoMode, detailTableModel.IsParentRoute, detailTableModel.IsReadOnly ) ;
+          newDetailTableModels.Add( childDetailSymbolModel ) ;
+        }
+      }
+
+      return newDetailTableModels ;
     }
 
     private Dictionary<ElementId, List<ElementId>> UpdateConnectorAndConduitConstructionItem( Document document, Dictionary<string, string> routesChangedConstructionItem )
@@ -281,17 +310,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return string.Empty ;
     }
 
-    private void AddConduitInformationModel( Document doc, CeedStorable ceedStorable, DetailSymbolStorable detailSymbolStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<ConduitsModel> conduitsModelData, ICollection<DetailTableModel> conduitInformationModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute )
+    private void AddDetailSymbolModel( Document doc, CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<ConduitsModel> conduitsModelData, ICollection<DetailTableModel> detailTableModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute )
     {
-      const string defaultParentPipingType = "E" ;
-      const string defaultChildPipingType = "↑" ;
       var ceeDCode = string.Empty ;
       var constructionClassification = string.Empty ;
       var classification = string.Empty ;
       var wireType = string.Empty ;
       var wireSize = string.Empty ;
       var wireStrip = string.Empty ;
-      double pipingCrossSectionalArea = 0 ;
+      double plumbingCrossSectionalArea = 0 ;
       var element = pickedObjects.FirstOrDefault( p => p.Id.IntegerValue.ToString() == detailSymbolModel.ConduitId ) ;
       string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
       string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ;
@@ -321,24 +348,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      if ( isParentRoute ) {
-        pipingCrossSectionalArea = GetPipingCrossSectionalArea( ceedStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, detailSymbolStorable.DetailSymbolModelData, detailSymbolModel, isEcoMode ) ;
-        if ( pipingCrossSectionalArea != 0 ) {
-          Dictionary<string, int> pipingData = GetPipingData( conduitsModelData, defaultParentPipingType, pipingCrossSectionalArea ) ;
-          foreach ( var pipingModel in pipingData ) {
-            var parentConduitInformationModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, defaultParentPipingType, pipingModel.Key.Replace( "mm", string.Empty ), pipingModel.Value.ToString(), constructionClassification, classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, false ) ;
-            conduitInformationModels.Add( parentConduitInformationModel ) ;
-          }
-        }
-        else {
-          var parentConduitInformationModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, constructionClassification, classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, true ) ;
-          conduitInformationModels.Add( parentConduitInformationModel ) ;
-        }
-      }
-      else {
-        var conduitInformationModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, defaultChildPipingType, defaultChildPipingType, defaultChildPipingType, constructionClassification, classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, true ) ;
-        conduitInformationModels.Add( conduitInformationModel ) ;
-      }
+      var detailTableModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, constructionClassification, classification, constructionItem, constructionItem, "", plumbingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute ) ;
+      detailTableModels.Add( detailTableModel ) ;
     }
 
     public class ComboboxItemType
