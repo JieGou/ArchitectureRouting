@@ -25,57 +25,58 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var conduitsModelData = doc.GetCsvStorable().ConduitsModelData ;
       var hiroiSetMasterNormalModelData = doc.GetCsvStorable().HiroiSetMasterNormalModelData ;
       var hiroiMasterModelData = doc.GetCsvStorable().HiroiMasterModelData ;
-      var hiroiSetCdMasterNormalModelData = doc.GetCsvStorable().HiroiSetCdMasterNormalModelData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       var pickedObjects = uiDoc.Selection
         .PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
         .Where( p => p is Conduit ) ;
-      ObservableCollection<ConduitInformationModel> conduitInformationModels =
-        new ObservableCollection<ConduitInformationModel>() ;
+      var electricalSymbolModels = new ObservableCollection<ElectricalSymbolModel>() ;
       var detailSymbolStorable =
         doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
       var processedDetailSymbol = new List<string>() ;
       foreach ( var element in pickedObjects ) {
-        string floor = doc.GetElementById<Level>( element.GetLevelId() )?.Name ?? string.Empty ;
-        string constructionItem = element.LookupParameter( "Construction Item" ).AsString() ;
         string pipingType = element.Name ;
         var existSymbolDetails = detailSymbolStorable.DetailSymbolModelData
           .Where( x => element.Id.ToString() == x.ConduitId ).ToList() ;
         foreach ( var existSymbolDetail in existSymbolDetails ) {
-          string pipingNumber = "1" ;
-          var routeName = element.GetRouteName() ;
-          if ( ! string.IsNullOrEmpty( routeName ) ) {
-            var route = uiDoc.Document.CollectRoutes( AddInType.Electrical )
-              .FirstOrDefault( x => x.RouteName == routeName ) ;
-            if ( route != null && existSymbolDetail.CountCableSamePosition != 1 ) {
-              var parentRouteName = route.GetParentBranches().ToList().LastOrDefault()?.RouteName ;
-              var childBranches = route.GetChildBranches().ToList() ;
-              if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
-                pipingNumber = "↑" ;
-              }
-            }
-          }
-
           if ( existSymbolDetail != null ) {
             var existSymbolRoute = element.GetRouteName() ?? string.Empty ;
             if ( ! string.IsNullOrEmpty( existSymbolRoute ) && ceedStorable != null ) {
               if ( ! processedDetailSymbol.Contains( existSymbolRoute + "-" +
                                                      existSymbolDetail.CountCableSamePosition ) ) {
-                var conduitInformationModel = new ConduitInformationModel( false, floor, string.Empty,
-                  existSymbolDetail.DetailSymbol, string.Empty, string.Empty, string.Empty, "1", string.Empty,
-                  string.Empty, string.Empty, pipingType, string.Empty, pipingNumber, string.Empty, string.Empty,
-                  constructionItem, constructionItem, "" ) ;
+                string startTeminateId = string.Empty ;
+                string endTeminateId = string.Empty ;
+                var startPoint = element.GetNearestEndPoints( true ) ;
+                var startPointKey = startPoint.FirstOrDefault()?.Key ;
+                if ( startPointKey != null ) {
+                  startTeminateId = startPointKey.GetElementId() ;
+                }
+
+                var endPoint = element.GetNearestEndPoints( false ) ;
+                var endPointKey = endPoint.FirstOrDefault()?.Key ;
+                if ( endPointKey != null ) {
+                  endTeminateId = endPointKey!.GetElementId() ;
+                }
+
+                var (startCeeDSymbol, endCeeDSymbol) =
+                  GetFromConnectorAndToConnectorCeeDCode( doc, startTeminateId, endTeminateId ) ;
+                var startCeeDModel =
+                  ceedStorable.CeedModelData.FirstOrDefault( x =>
+                    x.CeeDSetCode.Equals( startCeeDSymbol.Trim( '\r' ) ) ) ;
+                var endCeeDModel =
+                  ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode.Equals( endCeeDSymbol.Trim( '\r' ) ) ) ;
+                var startElectricalSymbolModel = new ElectricalSymbolModel(
+                  startCeeDModel?.FloorPlanSymbol ?? string.Empty,
+                  startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, string.Empty, string.Empty, string.Empty,
+                  pipingType, string.Empty ) ;
+                var endElectricalSymbolModel = new ElectricalSymbolModel( endCeeDModel?.FloorPlanSymbol ?? string.Empty,
+                  endCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, string.Empty, string.Empty, string.Empty,
+                  pipingType, string.Empty ) ;
                 processedDetailSymbol.Add( existSymbolRoute + "-" + existSymbolDetail.CountCableSamePosition ) ;
                 var ceedModel =
                   ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == existSymbolDetail.Code ) ;
                 if ( ceedModel != null ) {
-                  conduitInformationModel.CeeDCode = ceedModel.CeeDSetCode ;
-
-                  var hiroiCdModel =
-                    hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
                   var hiroiSetModels = hiroiSetMasterNormalModelData
                     .Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) ;
-                  conduitInformationModel.ConstructionClassification = hiroiCdModel?.ConstructionClassification ;
                   foreach ( var item in hiroiSetModels ) {
                     List<string> listMaterialCode = new List<string>() ;
                     if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
@@ -86,66 +87,58 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                       var masterModels = hiroiMasterModelData.Where( x =>
                         listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
                       foreach ( var master in masterModels ) {
-                        var conduitModels = conduitsModelData
-                          .Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
-                        conduitInformationModel.Classification = conduitModels.FirstOrDefault()?.Classification ?? "" ;
                         if ( existSymbolDetail != null ) {
-                          conduitInformationModel.WireType = master.Type ;
-                          conduitInformationModel.WireSize = master.Size1 ;
-                          conduitInformationModel.WireStrip = master.Size2 ;
+                          startElectricalSymbolModel.WireType = master.Type ;
+                          startElectricalSymbolModel.WireSize = master.Size1 ;
+                          startElectricalSymbolModel.WireStrip = master.Size2 ;
+                          endElectricalSymbolModel.WireType = master.Type ;
+                          endElectricalSymbolModel.WireSize = master.Size1 ;
+                          endElectricalSymbolModel.WireStrip = master.Size2 ;
                         }
                       }
                     }
                   }
                 }
 
-                conduitInformationModels.Add( conduitInformationModel ) ;
+                electricalSymbolModels.Add( startElectricalSymbolModel ) ;
+                electricalSymbolModels.Add( endElectricalSymbolModel ) ;
               }
             }
           }
         }
       }
 
-      var sortedConduitModels = conduitInformationModels.OrderBy( x => x.DetailSymbol )
-        .ThenByDescending( y => y.NumberOfPipes ).ToList() ;
-      conduitInformationModels = new ObservableCollection<ConduitInformationModel>( sortedConduitModels ) ;
       var (originX, originY, originZ) = uiDoc.Selection.PickPoint() ;
       var level = uiDoc.ActiveView.GenLevel ;
       var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
 
       ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-      var noteWidth = 0.6 ;
+      var noteWidth = 0.54 ;
       TextNoteOptions opts = new(defaultTextTypeId) ;
       var txtPosition = new XYZ( originX, originY, heightOfConnector ) ;
       return doc.Transaction(
-        "TransactionName.Commands.Routing.ConduitInformation".GetAppStringByKeyOrDefault( "Set conduit information" ),
-        _ =>
+        "TransactionName.Commands.Routing.ConduitInformation".GetAppStringByKeyOrDefault(
+          "Create electrical symbol schedules" ), _ =>
         {
-          ConduitInformationViewModel viewModel = new ConduitInformationViewModel( conduitInformationModels ) ;
-          TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( viewModel, level.Name ),
+          TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( electricalSymbolModels ),
             opts ) ;
           return Result.Succeeded ;
         } ) ;
     }
 
-    private string GenerateTextTable( ConduitInformationViewModel viewModel, string level )
+    private string GenerateTextTable( ObservableCollection<ElectricalSymbolModel> electricalSymbolModels )
     {
-      var line = GenerateString( '━', 45,string.Empty ) ;
+      var line = GenerateString( '━', 45, string.Empty ) ;
       var result = string.Empty ;
-      var conduitInformationModels = viewModel.ConduitInformationModels ;
-      var maxWireType = conduitInformationModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
-      var maxWireStrip = conduitInformationModels.Max( x => x.WireStrip?.Length ) ?? 0 ;
-      var maxPipingType = conduitInformationModels.Max( x => ( x.PipingType + x.PipingSize ).Length ) ;
-      var conduitInformationDictionary = conduitInformationModels.GroupBy( x => x.DetailSymbol )
-        .ToDictionary( g => g.Key, g => g.ToList() ) ;
-      result += $"　機器凡例" ;
-      foreach ( var group in conduitInformationDictionary ) {
-        result += $"\r{line}\r{GenerateString( '　',40,String.Empty )}{GenerateString( '　',28,"配　　管" )}" ;
-        result += $"\r{GenerateString( '　',6,"シンボル" )}{GenerateString( '　',6,"記号" )}{GenerateString( '　',28,"配　様" )}{GenerateString( '━',16,string.Empty )}" ;
-        result += $"\r{GenerateString( '　',40,String.Empty )}{GenerateString( '　',16,"（屋内）" )}{GenerateString( '　',10,"（屋外）" )}" ;
-        result = @group.Value.Aggregate( result,
-          ( current, item ) => current +
-                               $"\r{line}\r{GenerateString( '　',8,"∅" )}{GenerateString( '　',10,"JBOX()" )}{GenerateString( '　',14,item.WireType + item.WireSize )} {GenerateString('　',16, "－"+(item.WireStrip ?? string.Empty, maxWireStrip )+"X1")}{GenerateString( '　',16,item.PipingType + item.PipingSize)}" ) ;
+      result += "　機器凡例" ;
+      result += $"\r{line}\r{GenerateString( '　', 40, String.Empty )}{GenerateString( '　', 28, "配　　管" )}" ;
+      result +=
+        $"\r{GenerateString( '　', 6, "シンボル" )}{GenerateString( '　', 6, "記号" )}{GenerateString( '　', 28, "配　線" )}{GenerateString( '━', 16, string.Empty )}" ;
+      result +=
+        $"\r{GenerateString( '　', 40, String.Empty )}{GenerateString( '　', 16, "（屋内）" )}{GenerateString( '　', 10, "（屋外）" )}" ;
+      foreach ( var item in electricalSymbolModels ) {
+        result +=
+          $"\r{line}\r{GenerateString( '　', 6, item.FloorPlanSymbol )}{GenerateString( '　', 8, item.GeneralDisplayDeviceSymbol )}{GenerateString( '　', 14, item.WireType + item.WireSize )} {GenerateString( '　', 14, "－" + item.WireStrip + " x 1" )}{GenerateString( '　', 16, item.PipingType + item.PipingSize )}" ;
       }
 
       result += $"\r{line}" ;
@@ -154,9 +147,66 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private string GenerateString( char chr, int lenght, string middle )
     {
-      int partOfLength = ( lenght - middle.Length ) / 2 ;
-      string partOfStr = new string( chr, partOfLength ) ;
+      if ( middle.Length % 2 != 0 ) {
+        middle += "　" ;
+      }
+
+      int lesslength = 0 ;
+      if ( middle.Contains( '.' ) ) {
+        lesslength = 2 ;
+        
+      }
+      var partOfLength = ( lenght - middle.Length + lesslength) / 2 ;
+      var partOfStr = new string( chr, partOfLength ) ;
       return partOfStr + middle + partOfStr ;
+    }
+
+    private static (string, string) GetFromConnectorAndToConnectorCeeDCode( Document document, string fromElementId,
+      string toElementId )
+    {
+      var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+
+      if ( ! string.IsNullOrEmpty( fromElementId ) ) {
+        var fromConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
+        if ( fromConnector!.IsTerminatePoint() || fromConnector!.IsPassPoint() ) {
+          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorId, out string? fromConnectorId ) ;
+          if ( ! string.IsNullOrEmpty( fromConnectorId ) )
+            fromElementId = fromConnectorId! ;
+        }
+      }
+
+      if ( string.IsNullOrEmpty( toElementId ) ) return ( fromElementId, toElementId ) ;
+      {
+        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
+        if ( ! toConnector!.IsTerminatePoint() && ! toConnector!.IsPassPoint() ) return ( fromElementId, toElementId ) ;
+        toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? toConnectorId ) ;
+        if ( ! string.IsNullOrEmpty( toConnectorId ) )
+          toElementId = toConnectorId! ;
+      }
+      string fromText = GetTextFromGroup( document, fromElementId ) ;
+      string toText = GetTextFromGroup( document, toElementId ) ;
+      return ( fromText, toText ) ;
+    }
+
+    private static string GetTextFromGroup( Document document, string elementId )
+    {
+      string result = string.Empty ;
+      var parentGroup = document.GetAllElements<Group>()
+        .FirstOrDefault( x => x.GetMemberIds().Any( y => y.ToString().Equals( elementId ) ) ) ;
+      if ( parentGroup != null ) {
+        // ungroup before set property
+        var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
+        var enumerable = attachedGroup as Group[] ?? attachedGroup.ToArray() ;
+        if ( enumerable.Any() ) {
+          var textNoteId = enumerable.FirstOrDefault()?.GetMemberIds().FirstOrDefault() ;
+          var textNote = document.GetAllElements<TextNote>().FirstOrDefault( x => x.Id == textNoteId ) ;
+          if ( textNote != null ) {
+            result = textNote.Text ;
+          }
+        }
+      }
+
+      return result ;
     }
   }
 }
