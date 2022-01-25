@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.Close() ;
     }
 
-    private void ConduitTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
+    private void PlumpingTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
       var plumbingType = comboBox.SelectedValue ;
@@ -50,22 +50,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       else {
         Dictionary<string, int> plumbingData = CreateDetailTableCommandBase.GetPlumbingData( _conduitsModelData, plumbingType!.ToString(), detailTableModel.PlumbingCrossSectionalArea ) ;
 
-        List<DetailTableModel> newDetailTableModels = new List<DetailTableModel>() ;
+        List<DetailTableModel> detailTableModels = _detailTableViewModel.DetailTableModels.Where( c => c.DetailSymbolId == detailTableModel.DetailSymbolId && c.CeeDCode == detailTableModel.CeeDCode ).ToList() ;
+
+        List<DetailTableModel> newDetailTableModels = detailTableModels.Select( x => x ).ToList() ;
+        
+        var index = 0 ;
         foreach ( var (plumbingSize, numberOfPlumbing) in plumbingData ) {
-          var parentDetailTableModel = new DetailTableModel( detailTableModel.CalculationExclusion, detailTableModel.Floor, detailTableModel.CeeDCode, detailTableModel.DetailSymbol, detailTableModel.DetailSymbolId, detailTableModel.WireType, detailTableModel.WireSize, detailTableModel.WireStrip, detailTableModel.WireBook, detailTableModel.EarthType, detailTableModel.EarthSize, detailTableModel.NumberOfGrounds, plumbingType!.ToString(), plumbingSize.Replace( "mm", string.Empty ), numberOfPlumbing.ToString(), detailTableModel.ConstructionClassification, detailTableModel.Classification, detailTableModel.ConstructionItems, detailTableModel.ConstructionItems, detailTableModel.Remark, detailTableModel.PlumbingCrossSectionalArea, detailTableModel.CountCableSamePosition, detailTableModel.RouteName, detailTableModel.IsEcoMode, detailTableModel.IsParentRoute, detailTableModel.IsReadOnly ) ;
-          newDetailTableModels.Add( parentDetailTableModel ) ;
+          newDetailTableModels[index].PlumbingType = plumbingType!.ToString() ;
+          newDetailTableModels[index].PlumbingSize = plumbingSize.Replace("mm",string.Empty) ;
+          newDetailTableModels[index].NumberOfPlumbing = numberOfPlumbing.ToString() ;
+          index++ ;
         }
 
-        List<DetailTableModel> oldDetailTableModels = _detailTableViewModel.DetailTableModels.Where( c => c.DetailSymbol == detailTableModel.DetailSymbol && c.CeeDCode == detailTableModel.CeeDCode && Math.Abs( c.PlumbingCrossSectionalArea - detailTableModel.PlumbingCrossSectionalArea ) == 0 ).ToList() ;
-        foreach ( var oldDetailTableModel in oldDetailTableModels ) {
+        const string defaultChildPlumbingType = "↑" ;
+        for ( var i = index ; i < newDetailTableModels.Count ; i++ ) {
+          newDetailTableModels[ i ].PlumbingType = defaultChildPlumbingType ;
+          newDetailTableModels[ i ].PlumbingSize = defaultChildPlumbingType ;
+          newDetailTableModels[ i ].NumberOfPlumbing = defaultChildPlumbingType ;
+        }
+
+
+        foreach ( var oldDetailTableModel in detailTableModels ) {
           _detailTableViewModel.DetailTableModels.Remove( oldDetailTableModel ) ;
         }
-
+        
         foreach ( var newDetailSymbolModel in newDetailTableModels ) {
           _detailTableViewModel.DetailTableModels.Add( newDetailSymbolModel ) ;
         }
-
-        newDetailTableModels = _detailTableViewModel.DetailTableModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.PlumbingSize ).ThenByDescending( x => x.NumberOfPlumbing ).GroupBy( x => x.DetailSymbolId ).SelectMany( x => x ).ToList() ;
+        newDetailTableModels = _detailTableViewModel.DetailTableModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.IsParentRoute ).GroupBy( x => x.DetailSymbolId ).SelectMany( x => x ).ToList() ;
         _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
         this.DataContext = _detailTableViewModel ;
         DtGrid.ItemsSource = _detailTableViewModel.DetailTableModels ;
