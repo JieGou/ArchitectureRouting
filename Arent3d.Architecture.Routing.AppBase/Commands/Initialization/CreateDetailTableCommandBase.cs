@@ -28,8 +28,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData ;
       var conduitsModelData = csvStorable.ConduitsModelData ;
       var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
+      var hiroiSetMasterEcoModelData = doc.GetCsvStorable().HiroiSetMasterEcoModelData ;
       var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
       var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
+      var hiroiSetCdMasterEcoModelData = doc.GetCsvStorable().HiroiSetCdMasterEcoModelData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       ObservableCollection<DetailTableModel> conduitInformationModels = new ObservableCollection<DetailTableModel>() ;
       var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
@@ -44,12 +46,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var parentRouteName = firstDetailSymbolModelByDetailSymbolId!.CountCableSamePosition == 1 ? firstDetailSymbolModelByDetailSymbolId.RouteName : GetParentRouteName( doc, routeNames ) ;
           if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
             var parentDetailSymbolModel = detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == parentRouteName ) ;
-            AddConduitInformationModel( doc, ceedStorable!, detailSymbolStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, conduitInformationModels, pickedObjects, parentDetailSymbolModel!, true ) ;
+            AddConduitInformationModel( doc, ceedStorable!, detailSymbolStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, conduitInformationModels, pickedObjects, parentDetailSymbolModel!, true ) ;
             routeNames = routeNames.Where( n => n != parentRouteName ).OrderByDescending( n => n ).ToList() ;
           }
 
           foreach ( var childDetailSymbolModel in from routeName in routeNames select detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == routeName ) ) {
-            AddConduitInformationModel( doc, ceedStorable!, detailSymbolStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, conduitInformationModels, pickedObjects, childDetailSymbolModel, false ) ;
+            AddConduitInformationModel( doc, ceedStorable!, detailSymbolStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, conduitInformationModels, pickedObjects, childDetailSymbolModel, false ) ;
           }
         }
 
@@ -151,7 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return str ;
     }
 
-    private double GetPipingCrossSectionalArea( CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailSymbolModel> allDetailSymbolModels, DetailSymbolModel parentDetailSymbolModel )
+    private double GetPipingCrossSectionalArea( CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailSymbolModel> allDetailSymbolModels, DetailSymbolModel parentDetailSymbolModel, string isEcoMode )
     {
       double percentage = 0.32 ;
       double pipingCrossSectionalArea = 0 ;
@@ -163,13 +165,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var ceeDModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == detailSymbolModel.Code ) ;
         if ( ceeDModel == null ) continue ;
         {
-          var hiroiSetCdMasterNormalModel = hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceeDModel.CeeDSetCode ) ;
-          if ( hiroiSetCdMasterNormalModel == null ) continue ;
+          var hiroiSetCdMasterModel = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetCdMasterEcoModelData.FirstOrDefault( x => x.SetCode == ceeDModel.CeeDSetCode ) : hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceeDModel.CeeDSetCode ) ;
+          if ( hiroiSetCdMasterModel == null ) continue ;
           {
-            var hiroiSetMasterNormalModel = hiroiSetMasterNormalModelData.FirstOrDefault( x => x.ParentPartModelNumber == hiroiSetCdMasterNormalModel.LengthParentPartModelNumber ) ;
-            if ( hiroiSetMasterNormalModel == null ) continue ;
+            var hiroiSetMasterModel = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetMasterEcoModelData.FirstOrDefault( x => x.ParentPartModelNumber == hiroiSetCdMasterModel.LengthParentPartModelNumber ) : hiroiSetMasterNormalModelData.FirstOrDefault( x => x.ParentPartModelNumber == hiroiSetCdMasterModel.LengthParentPartModelNumber ) ;
+            if ( hiroiSetMasterModel == null ) continue ;
             {
-              var materialCode = int.Parse( hiroiSetMasterNormalModel.MaterialCode1 ).ToString() ;
+              var materialCode = int.Parse( hiroiSetMasterModel.MaterialCode1 ).ToString() ;
               if ( string.IsNullOrEmpty( materialCode ) ) continue ;
               var masterModels = hiroiMasterModelData.FirstOrDefault( x => int.Parse( x.Buzaicd ).ToString() == materialCode ) ;
               if ( masterModels == null ) continue ;
@@ -279,7 +281,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return string.Empty ;
     }
 
-    private void AddConduitInformationModel( Document doc, CeedStorable ceedStorable, DetailSymbolStorable detailSymbolStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<ConduitsModel> conduitsModelData, ICollection<DetailTableModel> conduitInformationModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute )
+    private void AddConduitInformationModel( Document doc, CeedStorable ceedStorable, DetailSymbolStorable detailSymbolStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<ConduitsModel> conduitsModelData, ICollection<DetailTableModel> conduitInformationModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute )
     {
       const string defaultParentPipingType = "E" ;
       const string defaultChildPipingType = "↑" ;
@@ -290,15 +292,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var wireSize = string.Empty ;
       var wireStrip = string.Empty ;
       double pipingCrossSectionalArea = 0 ;
-      var parentElement = pickedObjects.FirstOrDefault( p => p.Id.IntegerValue.ToString() == detailSymbolModel.ConduitId ) ;
-      string floor = doc.GetElementById<Level>( parentElement!.GetLevelId() )?.Name ?? string.Empty ;
-      string constructionItem = parentElement!.LookupParameter( "Construction Item" ).AsString() ;
+      var element = pickedObjects.FirstOrDefault( p => p.Id.IntegerValue.ToString() == detailSymbolModel.ConduitId ) ;
+      string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
+      string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ;
+      string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
 
       var ceedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode == detailSymbolModel.Code ) ;
       if ( ceedModel != null && ! string.IsNullOrEmpty( ceedModel.CeeDSetCode ) && ! string.IsNullOrEmpty( ceedModel.CeeDModelNumber ) ) {
         ceeDCode = ceedModel.CeeDSetCode ;
-        var hiroiCdModel = hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
-        var hiroiSetModels = hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) ;
+        var hiroiCdModel = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetCdMasterEcoModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) : hiroiSetCdMasterNormalModelData.FirstOrDefault( x => x.SetCode == ceedModel.CeeDSetCode ) ;
+        var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ).Skip( 1 ) ;
         constructionClassification = hiroiCdModel?.ConstructionClassification ;
         foreach ( var item in hiroiSetModels ) {
           List<string> listMaterialCode = new List<string>() ;
@@ -319,7 +322,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       if ( isParentRoute ) {
-        pipingCrossSectionalArea = GetPipingCrossSectionalArea( ceedStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, wiresAndCablesModelData, detailSymbolStorable.DetailSymbolModelData, detailSymbolModel ) ;
+        pipingCrossSectionalArea = GetPipingCrossSectionalArea( ceedStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, detailSymbolStorable.DetailSymbolModelData, detailSymbolModel, isEcoMode ) ;
         if ( pipingCrossSectionalArea != 0 ) {
           Dictionary<string, int> pipingData = GetPipingData( conduitsModelData, defaultParentPipingType, pipingCrossSectionalArea ) ;
           foreach ( var pipingModel in pipingData ) {
