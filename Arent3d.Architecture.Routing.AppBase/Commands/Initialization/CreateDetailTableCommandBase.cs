@@ -21,6 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
+      const string defaultChildPlumbingSymbol = "↑" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var csvStorable = doc.GetCsvStorable() ;
@@ -62,6 +63,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
       List<ComboboxItemType> conduitTypes = ( from conduitTypeName in conduitTypeNames select new ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
+      conduitTypes.Add( new ComboboxItemType( defaultChildPlumbingSymbol, defaultChildPlumbingSymbol ) ) ;
 
       var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
       List<ComboboxItemType> constructionItems = ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() ;
