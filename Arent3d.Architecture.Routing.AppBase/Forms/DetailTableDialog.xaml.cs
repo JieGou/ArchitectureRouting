@@ -55,6 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         List<DetailTableModel> newDetailTableModels = detailTableModels.Select( x => x ).ToList() ;
         
         var index = 0 ;
+        if ( plumbingData.Count >= newDetailTableModels.Count ) return ; // 配管数 < 電線数　のケースを想定していない
         foreach ( var (plumbingSize, numberOfPlumbing) in plumbingData ) {
           newDetailTableModels[index].PlumbingType = plumbingType!.ToString() ;
           newDetailTableModels[index].PlumbingSize = plumbingSize.Replace("mm",string.Empty) ;
