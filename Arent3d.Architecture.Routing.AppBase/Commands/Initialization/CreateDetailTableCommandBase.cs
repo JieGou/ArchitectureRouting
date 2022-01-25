@@ -215,7 +215,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void SetPlumbingData( CeedStorable ceedStorable, DetailSymbolStorable detailSymbolStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, ref ObservableCollection<DetailTableModel> detailTableModels )
     {
       const string defaultParentPlumbingType = "E" ;
-      const string defaultChildPlumbingType = "↑" ;
+      const string defaultChildPlumbingSymbol = "↑" ;
       Dictionary<string?, List<DetailTableModel>> detailTableModelsByDetailSymbol = new  Dictionary<string?, List<DetailTableModel>>();
       foreach ( var detailTableModel in detailTableModels ) {
         if ( !detailTableModelsByDetailSymbol.ContainsKey( detailTableModel.DetailSymbolId ) ) {
@@ -234,7 +234,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var index = 0 ;
         if ( plumbingCrossSectionalArea != 0 ) {
           Dictionary<string, int> plumbingData = GetPlumbingData( conduitsModelData, defaultParentPlumbingType, plumbingCrossSectionalArea ) ;
-          if ( plumbingData.Count >= detailTableModelsByDetailSymbolId.Count ) break ; // 配管数 < 電線数　のケースを想定していない
+          if ( plumbingData.Count > detailTableModelsByDetailSymbolId.Count ) break ; // 配管数 < 電線数　のケースを想定していない
           foreach ( var (plumbingSize, numberOfPlumbing) in plumbingData ) {
             detailTableModelsByDetailSymbolId.ElementAt( index ).PlumbingType = defaultParentPlumbingType ;
             detailTableModelsByDetailSymbolId.ElementAt( index ).PlumbingSize = plumbingSize.Replace("mm","") ;
@@ -244,9 +244,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
 
           for ( var i = index ; i < detailTableModelsByDetailSymbolId.Count ; i++ ) {
-            detailTableModelsByDetailSymbolId.ElementAt( i ).PlumbingType = defaultChildPlumbingType ;
-            detailTableModelsByDetailSymbolId.ElementAt( i ).PlumbingSize = defaultChildPlumbingType ;
-            detailTableModelsByDetailSymbolId.ElementAt( i ).NumberOfPlumbing = defaultChildPlumbingType;
+            detailTableModelsByDetailSymbolId.ElementAt( i ).PlumbingType = defaultChildPlumbingSymbol ;
+            detailTableModelsByDetailSymbolId.ElementAt( i ).PlumbingSize = defaultChildPlumbingSymbol ;
+            detailTableModelsByDetailSymbolId.ElementAt( i ).NumberOfPlumbing = defaultChildPlumbingSymbol;
             detailTableModelsByDetailSymbolId.ElementAt( i ).PlumbingCrossSectionalArea = plumbingCrossSectionalArea ;
           }
         }
