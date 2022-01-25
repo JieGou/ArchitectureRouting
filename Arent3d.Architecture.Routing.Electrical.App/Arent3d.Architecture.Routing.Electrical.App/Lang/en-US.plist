@@ -30,10 +30,10 @@
 
         <key>Electrical.App.Panels.Routing.Envelope</key>
         <string>Envelope</string>
-        
+
         <key>Electrical.App.Panels.Routing.Shafts</key>
         <string>Shaft</string>
-      
+
         <key>Electrical.App.Panels.Routing.Monitor</key>
         <string>Monitor Selection</string>
 
@@ -107,14 +107,20 @@
         <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>CNS Setting</string>
 
+        <key>Electrical.App.Commands.Initialization.ChangeToEcoCommand</key>
+        <string>Change to&#xA;Eco</string>
+
+        <key>Electrical.App.Commands.Initialization.ChangeToNormalCommand</key>
+        <string>Change to&#xA;Normal</string>
+
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>Create Rack&#xA;For All</string>
 
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
 
-		<key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
-		<string>Height Setting</string>
+        <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
+        <string>Height Setting</string>
 
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
         <string>New Connector&#xA;(Both Sides)</string>
@@ -123,7 +129,7 @@
         <string>Create&#xA;Cylindrical Shaft</string>
 
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
-        <string>Selection Range&#xA;Route</string>        
+        <string>Selection Range&#xA;Route</string>
 
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>Create 3D&#xA;Floor Views</string>
@@ -142,7 +148,7 @@
 
         <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
         <string>Electrical Symbol Table</string>
-        
+
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>Load&#xA;Save To DB</string>
 
@@ -160,6 +166,9 @@
 
         <key>Electrical.App.Commands.Routing.CreateRoomCommand</key>
         <string>Create Room</string>
+
+        <key>Electrical.App.Commands.Routing.RoomPickRoutingCommand</key>
+        <string>Room Wiring</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -228,10 +237,10 @@
         <string>Create Cable Rack From-To</string>
 
         <key>TransactionName.Commands.Routing.SelectionRangeRoute</key>
-        <string>Selection Range Route</string>        
+        <string>Selection Range Route</string>
 
         <key>TransactionName.Commands.Routing.OffsetSetting</key>
-        <string>Offset Setting</string>        
+        <string>Offset Setting</string>
 
         <!-- Dialogs -->
         <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
@@ -277,7 +286,7 @@
 
         <key>Dialog.Commands.Routing.Dialog.Title.Error</key>
         <string>Routing Error</string>
-        
+
         <key>Dialog.Commands.Routing.Common.Body.Error.ExceptionOccured</key>
         <string>An unhandled exception occured.</string>
         <key>Dialog.Commands.Routing.Common.Body.Error.DeletedSomeFailedElements</key>
@@ -286,7 +295,9 @@
         <string>Some fitting elements could not be inserted on the following connectors:&#xA;&#xA;{0}</string>
 
         <key>Dialog.Forms.SelectedFromToBase.ChangeFromTo</key>
-        <string>Do you want to change the From-To information?&#xA;If you change it, it will be automatically re-routed.</string>
+        <string>Do you want to change the From-To information?&#xA;If you change it, it will be automatically
+            re-routed.
+        </string>
 
         <key>Dialog.Forms.FromToTree.Rename</key>
         <string>Since the name is duplicated, please change it to another name.</string>
