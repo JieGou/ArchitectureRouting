@@ -2,7 +2,7 @@
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
-  public class ConduitInformationModel
+  public class DetailTableModel
   {
     public bool? CalculationExclusion { get ; set ; }
     public string? Floor { get ; set ; }
@@ -16,20 +16,20 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string? EarthType { get ; set ; }
     public string? EarthSize { get ; set ; }
     public string? NumberOfGrounds { get ; set ; }
-    public string? PipingType { get ; set ; }
-    public string? PipingSize { get ; set ; }
-    public string? NumberOfPipes { get ; set ; }
+    public string? PlumbingType { get ; set ; }
+    public string? PlumbingSize { get ; set ; }
+    public string? NumberOfPlumbing { get ; set ; }
     public string? ConstructionClassification { get ; set ; }
     public string? Classification { get ; set ; }
     public string? ConstructionItems { get ; set ; }
     public string? PlumbingItems { get ; set ; }
     public string? Remark { get ; set ; }
-    public double PipingCrossSectionalArea { get ; set ; }
+    public double PlumbingCrossSectionalArea { get ; set ; }
     public int CountCableSamePosition { get ; set ; }
     public string? RouteName { get ; set ; }
     public bool IsReadOnly { get ; set ; }
 
-    public ConduitInformationModel( 
+    public DetailTableModel( 
       bool? calculationExclusion, 
       string? floor, 
       string? ceeDCode,
@@ -42,15 +42,15 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? earthType,
       string? earthSize,
       string? numberOfGrounds,
-      string? pipingType,
-      string? pipingSize,
-      string? numberOfPipes,
+      string? plumbingType,
+      string? plumbingSize,
+      string? numberOfPlumbing,
       string? constructionClassification,
       string? classification,
       string? constructionItems,
       string? plumbingItems,
       string? remark,
-      double pipingCrossSectionalArea,
+      double plumbingCrossSectionalArea,
       int countCableSamePosition,
       string? routeName,
       bool isReadOnly)
@@ -67,15 +67,15 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       EarthType = earthType ;
       EarthSize = earthSize ;
       NumberOfGrounds = numberOfGrounds ;
-      PipingType = pipingType ;
-      PipingSize = pipingSize ;
-      NumberOfPipes = numberOfPipes ;
+      PlumbingType = plumbingType ;
+      PlumbingSize = plumbingSize ;
+      NumberOfPlumbing = numberOfPlumbing ;
       ConstructionClassification = constructionClassification ;
       Classification = classification ;
       ConstructionItems = constructionItems ;
       PlumbingItems = plumbingItems ;
       Remark = remark ;
-      PipingCrossSectionalArea = pipingCrossSectionalArea ;
+      PlumbingCrossSectionalArea = plumbingCrossSectionalArea ;
       CountCableSamePosition = countCableSamePosition ;
       RouteName = routeName ;
       IsReadOnly = isReadOnly ;

@@ -9,9 +9,9 @@ using Arent3d.Architecture.Routing.Storable.Model;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
-    public class ConduitInformationViewModel : ViewModelBase
+    public class DetailTableViewModel : ViewModelBase
     {
-        public ObservableCollection<ConduitInformationModel> ConduitInformationModels { get; set; }
+        public ObservableCollection<DetailTableModel> ConduitInformationModels { get; set; }
 
         public  bool IsCreateSchedule { get; set; }
 
@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionItems { get ; set ; }
         
-        public ConduitInformationViewModel(ObservableCollection<ConduitInformationModel> conduitInformationModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems )
+        public DetailTableViewModel(ObservableCollection<DetailTableModel> conduitInformationModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems )
         {
             ConduitInformationModels = conduitInformationModels;
             IsCreateSchedule = false ;
@@ -58,7 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             {
                 string createText = "";
                 foreach (var item in ConduitInformationModels) {
-                    string line = String.Join( ",", new string?[]{item.Floor,item.Remark,item.ConstructionClassification,item.ConstructionItems,item.DetailSymbol,item.EarthSize,item.EarthType,item.PipingSize,item.PipingType,item.PlumbingItems,item.WireBook,item.WireSize,item.WireStrip,item.WireType,item.NumberOfGrounds,item.NumberOfPipes}) ;
+                    string line = String.Join( ",", new string?[]{item.Floor,item.Remark,item.ConstructionClassification,item.ConstructionItems,item.DetailSymbol,item.EarthSize,item.EarthType,item.PlumbingSize,item.PlumbingType,item.PlumbingItems,item.WireBook,item.WireSize,item.WireStrip,item.WireType,item.NumberOfGrounds,item.NumberOfPlumbing}) ;
                     createText += line.Trim() + Environment.NewLine ;
                 }
 

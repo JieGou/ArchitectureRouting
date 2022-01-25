@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
       var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      ObservableCollection<ConduitInformationModel> conduitInformationModels = new ObservableCollection<ConduitInformationModel>() ;
+      ObservableCollection<DetailTableModel> conduitInformationModels = new ObservableCollection<DetailTableModel>() ;
       var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
       CnsSettingStorable cnsStorable = doc.GetCnsSettingStorable() ;
       try {
@@ -53,8 +53,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
         }
 
-        var sortConduitInformationModels = conduitInformationModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.CountCableSamePosition ).ThenByDescending( x => x.PipingSize ).GroupBy( x => x.DetailSymbolId ).SelectMany( x => x ).ToList() ;
-        conduitInformationModels = new ObservableCollection<ConduitInformationModel>( sortConduitInformationModels ) ;
+        var sortConduitInformationModels = conduitInformationModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.CountCableSamePosition ).ThenByDescending( x => x.PlumbingSize ).GroupBy( x => x.DetailSymbolId ).SelectMany( x => x ).ToList() ;
+        conduitInformationModels = new ObservableCollection<DetailTableModel>( sortConduitInformationModels ) ;
       }
       catch {
         return Result.Cancelled ;
@@ -67,8 +67,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
       List<ComboboxItemType> constructionItems = ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() ;
 
-      ConduitInformationViewModel viewModel = new ConduitInformationViewModel( conduitInformationModels, conduitTypes, constructionItems ) ;
-      var dialog = new ConduitInformationDialog( viewModel, conduitsModelData ) ;
+      DetailTableViewModel viewModel = new DetailTableViewModel( conduitInformationModels, conduitTypes, constructionItems ) ;
+      var dialog = new DetailTableDialog( viewModel, conduitsModelData ) ;
       dialog.ShowDialog() ;
 
       if ( dialog.DialogResult ?? false ) {
@@ -115,14 +115,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private string GenerateTextTable( ConduitInformationViewModel viewModel, string level )
+    private string GenerateTextTable( DetailTableViewModel viewModel, string level )
     {
       string line = new string( '＿', 32 ) ;
       string result = string.Empty ;
       var conduitInformationModels = viewModel.ConduitInformationModels ;
       var maxWireType = conduitInformationModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
       var maxWireStrip = conduitInformationModels.Max( x => x.WireStrip?.Length ) ?? 0 ;
-      var maxPipingType = conduitInformationModels.Max( x => ( x.PipingType + x.PipingSize ).Length ) ;
+      var maxPipingType = conduitInformationModels.Max( x => ( x.PlumbingType + x.PlumbingSize ).Length ) ;
       var conduitInformationDictionary = conduitInformationModels.GroupBy( x => x.DetailSymbol )
         .ToDictionary( g => g.Key, g => g.ToList() ) ;
       result += $"{line}\r{level}階平面图" ;
@@ -130,7 +130,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         result += $"\r{line}\r{group.Key}" ;
         result = @group.Value.Aggregate( result,
           ( current, item ) => current +
-                               $"\r{line}\r{AddFullString( item.WireType + item.WireSize, maxWireType )}\t-{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}\tX1\t{AddFullString( CheckEmptyString( item.PipingType + item.PipingSize, maxPipingType ), maxPipingType )}\t{item.Remark}" ) ;
+                               $"\r{line}\r{AddFullString( item.WireType + item.WireSize, maxWireType )}\t-{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}\tX1\t{AddFullString( CheckEmptyString( item.PlumbingType + item.PlumbingSize, maxPipingType ), maxPipingType )}\t{item.Remark}" ) ;
       }
 
       result += $"\r{line}" ;
@@ -279,7 +279,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return string.Empty ;
     }
 
-    private void AddConduitInformationModel( Document doc, CeedStorable ceedStorable, DetailSymbolStorable detailSymbolStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<ConduitsModel> conduitsModelData, ICollection<ConduitInformationModel> conduitInformationModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute )
+    private void AddConduitInformationModel( Document doc, CeedStorable ceedStorable, DetailSymbolStorable detailSymbolStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<ConduitsModel> conduitsModelData, ICollection<DetailTableModel> conduitInformationModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute )
     {
       const string defaultParentPipingType = "E" ;
       const string defaultChildPipingType = "↑" ;
@@ -323,17 +323,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( pipingCrossSectionalArea != 0 ) {
           Dictionary<string, int> pipingData = GetPipingData( conduitsModelData, defaultParentPipingType, pipingCrossSectionalArea ) ;
           foreach ( var pipingModel in pipingData ) {
-            var parentConduitInformationModel = new ConduitInformationModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, defaultParentPipingType, pipingModel.Key.Replace( "mm", string.Empty ), pipingModel.Value.ToString(), constructionClassification, classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, false ) ;
+            var parentConduitInformationModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, defaultParentPipingType, pipingModel.Key.Replace( "mm", string.Empty ), pipingModel.Value.ToString(), constructionClassification, classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, false ) ;
             conduitInformationModels.Add( parentConduitInformationModel ) ;
           }
         }
         else {
-          var parentConduitInformationModel = new ConduitInformationModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, constructionClassification, classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, true ) ;
+          var parentConduitInformationModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, constructionClassification, classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, true ) ;
           conduitInformationModels.Add( parentConduitInformationModel ) ;
         }
       }
       else {
-        var conduitInformationModel = new ConduitInformationModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, defaultChildPipingType, defaultChildPipingType, defaultChildPipingType, constructionClassification, classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, true ) ;
+        var conduitInformationModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, defaultChildPipingType, defaultChildPipingType, defaultChildPipingType, constructionClassification, classification, constructionItem, constructionItem, "", pipingCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, true ) ;
         conduitInformationModels.Add( conduitInformationModel ) ;
       }
     }
