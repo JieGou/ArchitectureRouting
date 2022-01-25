@@ -114,7 +114,7 @@
                       </DataTemplate>
                     </ListView.ItemTemplate>
                   </ListView>
-                  <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding InstrumentationSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock.RenderTransform>
                       <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
                     </TextBlock.RenderTransform>
