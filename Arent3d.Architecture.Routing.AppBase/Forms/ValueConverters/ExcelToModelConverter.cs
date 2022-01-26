@@ -73,10 +73,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         }
 
         var listFloorPlan = GetSymbolImages( path, blocks, "F8", "F" ) ;
-        #region Load Instrument Image
-        //var listInstrumentChart = GetSymbolImages( path, blocks, "G8", "G" ) ;
-        #endregion
 
+        #region Load Instrument Image (Comment out)
+
+        //var listInstrumentChart = GetSymbolImages( path, blocks, "G8", "G" ) ;
+
+        #endregion
 
         for ( var i = startRow ; i <= endRow ; i++ ) {
           List<string> ceeDModelNumbers = new List<string>() ;
@@ -142,10 +144,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var symbolBytes = listFloorPlan.Where( b => b.Position == firstIndexGroup + 1 ).ToList().OrderBy( b => b.MarginLeft ) ;
           var floorPlanImages = symbolBytes.Select( b => b.Image ).ToList() ;
           var instrumentChartImages = new List<Image>() ;
-          #region Load Instrument Image
+
+          #region Load Instrument Image (Comment out)
+
           //var symbolChartBytes = listInstrumentChart.Where( b => b.Position == firstIndexGroup + 1).ToList().OrderBy(b=>b.MarginLeft) ;
           //var instrumentChartImages = symbolChartBytes.Select( b => b.Image ).ToList() ;
+
           #endregion
+
           if ( ! ceeDModelNumbers.Any() ) {
             CreateCeeDModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty, floorPlanImages, instrumentChartImages ) ;
           }
@@ -428,6 +434,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
     public int Position { get ; set ; }
     public Image Image { get ; set ; }
-    public float MarginLeft { get ; set ; } 
+    public float MarginLeft { get ; set ; }
   }
 }
