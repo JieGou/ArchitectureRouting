@@ -53,10 +53,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var instrumentationSymbol = deserializer.GetString( SerializeField.InstrumentationSymbol ) ;
       var name = deserializer.GetString( SerializeField.Name ) ;
       var condition = deserializer.GetString( SerializeField.Condition ) ;
-      var base64ImageString = deserializer.GetString( SerializeField.Base64InstrumentationImageString ) ;
-      var base64FloorImages = deserializer.GetString( SerializeField.Base64FloorPlanImages ) ;
+      var base64InstrumentationImageString = deserializer.GetString( SerializeField.Base64InstrumentationImageString ) ;
+      var base64FloorPlanImages = deserializer.GetString( SerializeField.Base64FloorPlanImages ) ;
 
-      return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition!, base64ImageString!, base64FloorImages! ) ;
+      return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition!, base64InstrumentationImageString!, base64FloorPlanImages! ) ;
     }
   }
 }

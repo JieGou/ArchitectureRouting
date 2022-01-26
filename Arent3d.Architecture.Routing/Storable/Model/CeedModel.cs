@@ -40,12 +40,12 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Base64FloorPlanImages = base64FloorPlanImages ;
       InstrumentationImages = null ;
       FloorPlanImages = null ;
-      var tempFloorImage = new BitmapImage() ;
+      var temporaryFloorPlanImage = new BitmapImage() ;
       if ( FloorPlanImages == null && ! string.IsNullOrEmpty( Base64FloorPlanImages ) ) {
-        tempFloorImage = BitmapToImageSource( Base64StringToBitmap( Base64FloorPlanImages ) ) ;
+        temporaryFloorPlanImage = BitmapToImageSource( Base64StringToBitmap( Base64FloorPlanImages ) ) ;
       }
 
-      FloorPlanImages = tempFloorImage ;
+      FloorPlanImages = temporaryFloorPlanImage ;
       if ( InstrumentationImages != null || string.IsNullOrEmpty( Base64InstrumentationImageString ) ) return ;
       var listBimapImage = ( from image in Base64InstrumentationImageString.Split( new string[] { "||" }, StringSplitOptions.None ) select Base64StringToBitmap( image ) into bmpFromString select BitmapToImageSource( bmpFromString ) ).ToList() ;
       InstrumentationImages = listBimapImage ;
@@ -65,12 +65,12 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       FloorPlanImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
       InstrumentationImages = GetImages( instrumentationImages ) ;
       Base64InstrumentationImageString = base64InstrumentationImageString ;
-      string tempFloorString = string.Empty ;
+      string tempFloorPlanString = string.Empty ;
       if ( FloorPlanImages != null ) {
-        tempFloorString = ConvertBitmapToBase64( FloorPlanImages ) ;
+        tempFloorPlanString = ConvertBitmapToBase64( FloorPlanImages ) ;
       }
 
-      Base64FloorPlanImages = tempFloorString ;
+      Base64FloorPlanImages = tempFloorPlanString ;
       if ( InstrumentationImages == null || ! InstrumentationImages.Any() ) return ;
       var tempImage = ( from item in InstrumentationImages select ConvertBitmapToBase64( item ) ).ToList() ;
       Base64InstrumentationImageString = string.Join( "||", tempImage ) ;
@@ -152,7 +152,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     private static string ConvertBitmapToBase64( BitmapImage? bmp )
     {
-      Bitmap bImage = BitmapImage2Bitmap( bmp ) ;
+      Bitmap bImage = BitmapImageBitmap( bmp ) ;
       var ms = new MemoryStream() ;
       bImage?.Save( ms, ImageFormat.Bmp ) ;
       var byteImage = ms.ToArray() ;
@@ -160,7 +160,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       return result ;
     }
 
-    private static Bitmap BitmapImage2Bitmap( BitmapImage? bitmapImage )
+    private static Bitmap BitmapImageBitmap( BitmapImage? bitmapImage )
     {
       using ( MemoryStream outStream = new MemoryStream() ) {
         BitmapEncoder enc = new BmpBitmapEncoder() ;

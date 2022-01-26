@@ -67,7 +67,7 @@
 
           <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="140" />
 
-          <DataGridTemplateColumn Header="平面図" x:Name="FloorImage" Width="SizeToHeader" MinWidth="100">
+          <DataGridTemplateColumn Header="平面図" x:Name="FloorPlanImage" Width="SizeToHeader" MinWidth="100">
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
                 <Grid>
@@ -82,7 +82,7 @@
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
 
-          <DataGridTemplateColumn Header="計装図" x:Name="Image2" Width="SizeToHeader" MinWidth="100">
+          <DataGridTemplateColumn Header="計装図" x:Name="InstrumentationImage" Width="SizeToHeader" MinWidth="100">
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
                 <Grid>
