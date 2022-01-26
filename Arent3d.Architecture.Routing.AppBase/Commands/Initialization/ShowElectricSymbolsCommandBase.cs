@@ -61,9 +61,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                   GetFromConnectorAndToConnectorCeeDCode( doc, startTeminateId, endTeminateId ) ;
                 var startCeeDModel =
                   ceedStorable.CeedModelData.FirstOrDefault( x =>
-                    x.CeeDSetCode.Equals( startCeeDSymbol.Trim( '\r' ) ) ) ;
+                    x.Condition.Equals( startCeeDSymbol.Trim( '\r' ) ) ) ;
                 var endCeeDModel =
-                  ceedStorable.CeedModelData.FirstOrDefault( x => x.CeeDSetCode.Equals( endCeeDSymbol.Trim( '\r' ) ) ) ;
+                  ceedStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( endCeeDSymbol.Trim( '\r' ) ) ) ;
                 var startElectricalSymbolModel = new ElectricalSymbolModel(
                   startCeeDModel?.FloorPlanSymbol ?? string.Empty,
                   startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, string.Empty, string.Empty, string.Empty,
@@ -157,6 +157,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         
       }
       var partOfLength = ( lenght - middle.Length + lesslength) / 2 ;
+      if ( partOfLength < 0 ) {
+        partOfLength = 0 ;
+      }
       var partOfStr = new string( chr, partOfLength ) ;
       return partOfStr + middle + partOfStr ;
     }
@@ -178,10 +181,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( string.IsNullOrEmpty( toElementId ) ) return ( fromElementId, toElementId ) ;
       {
         var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
-        if ( ! toConnector!.IsTerminatePoint() && ! toConnector!.IsPassPoint() ) return ( fromElementId, toElementId ) ;
-        toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? toConnectorId ) ;
-        if ( ! string.IsNullOrEmpty( toConnectorId ) )
-          toElementId = toConnectorId! ;
+        if (  toConnector!.IsTerminatePoint() ||  toConnector!.IsPassPoint() ) {
+          toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? toConnectorId ) ;
+          if ( ! string.IsNullOrEmpty( toConnectorId ) )
+            toElementId = toConnectorId! ;
+        }
       }
       string fromText = GetTextFromGroup( document, fromElementId ) ;
       string toText = GetTextFromGroup( document, toElementId ) ;
@@ -198,7 +202,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
         var enumerable = attachedGroup as Group[] ?? attachedGroup.ToArray() ;
         if ( enumerable.Any() ) {
-          var textNoteId = enumerable.FirstOrDefault()?.GetMemberIds().FirstOrDefault() ;
+          var textNoteId = enumerable.FirstOrDefault()?.GetMemberIds().Skip( 1 ).FirstOrDefault() ;
           var textNote = document.GetAllElements<TextNote>().FirstOrDefault( x => x.Id == textNoteId ) ;
           if ( textNote != null ) {
             result = textNote.Text ;
