@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic ;
+using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
@@ -12,6 +12,8 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using MessageBox = System.Windows.MessageBox ;
+using Style = System.Windows.Style ;
+using Window = System.Windows.Window ;
 using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -172,7 +174,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
         }
       }
-
       if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
@@ -206,13 +207,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void LoadData( CeedStorable ceeDStorable )
     {
-      var ceeDModelData = ceeDStorable.CeedModelUsedData.Any() ? ceeDStorable.CeedModelUsedData : ceeDStorable.CeedModelData ;
-      if ( ! ceeDModelData.Any() ) return ;
-      var viewModelUsed = new ViewModel.CeedViewModel( ceeDStorable, ceeDModelData ) ;
-      LoadData( viewModelUsed ) ;
-      _usingCeeDModel = viewModelUsed ;
-      _allCeeDModels = ceeDStorable.CeedModelUsedData.Any() ? new ViewModel.CeedViewModel( ceeDStorable, ceeDStorable.CeedModelData ) : viewModelUsed ;
-      CbShowOnlyUsingCode.Visibility = ceeDStorable.CeedModelUsedData.Any() ? Visibility.Visible : Visibility.Hidden ;
+      var viewModel = new ViewModel.CeedViewModel( ceeDStorable ) ;
+      this.DataContext = viewModel ;
+      _allCeeDModels = viewModel ;
+      CmbCeeDModelNumbers.ItemsSource = viewModel.CeeDModelNumbers ;
+      CmbModelNumbers.ItemsSource = viewModel.ModelNumbers ;
     }
 
     private void ShowOnlyUsingCode_Checked( object sender, RoutedEventArgs e )
