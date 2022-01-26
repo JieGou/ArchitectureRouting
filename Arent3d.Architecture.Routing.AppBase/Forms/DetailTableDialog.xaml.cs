@@ -40,6 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void PlumpingTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
+      const string defaultChildPlumbingSymbol = "↑" ;
       if ( sender is not ComboBox comboBox ) return ;
       var plumbingType = comboBox.SelectedValue ;
       if ( plumbingType == null ) return ;
@@ -54,30 +55,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         List<DetailTableModel> newDetailTableModels = detailTableModels.Select( x => x ).ToList() ;
         
-        var index = 0 ;
         if ( plumbingData.Count > newDetailTableModels.Count ) return ; // 配管数 < 電線数　のケースを想定していない
-        foreach ( var (plumbingSize, numberOfPlumbing) in plumbingData ) {
-          newDetailTableModels[index].PlumbingType = plumbingType!.ToString() ;
-          newDetailTableModels[index].PlumbingSize = plumbingSize.Replace("mm",string.Empty) ;
-          newDetailTableModels[index].NumberOfPlumbing = numberOfPlumbing.ToString() ;
-          index++ ;
+        List<int> indexOfUpdatedLines = new List<int>() ;
+        
+        var (firstPlumbingSize, firstNumberOfPlumbing) = plumbingData.First() ;
+        newDetailTableModels.ElementAt( 0 ).PlumbingType = plumbingType!.ToString() ; ;
+        newDetailTableModels.ElementAt( 0 ).PlumbingSize = firstPlumbingSize.Replace("mm","") ;
+        newDetailTableModels.ElementAt( 0 ).NumberOfPlumbing = firstNumberOfPlumbing.ToString() ;
+        indexOfUpdatedLines.Add(0);
+        
+        var detailTableLineLength = newDetailTableModels.Count ;
+        for ( int index = 1 ; index < plumbingData.Count ; index++ ) {
+          var updateLineIndex = detailTableLineLength - index ;
+          var (plumbingSize, numberOfPlumbing) = plumbingData.ElementAt( index ) ;
+          newDetailTableModels[updateLineIndex].PlumbingType = plumbingType!.ToString() + defaultChildPlumbingSymbol ;
+          newDetailTableModels[ updateLineIndex ].PlumbingSize = plumbingSize.Replace( "mm", string.Empty ) ;
+          newDetailTableModels[ updateLineIndex ].NumberOfPlumbing = numberOfPlumbing.ToString() ;
+          indexOfUpdatedLines.Add( updateLineIndex ) ;
         }
 
-        const string defaultChildPlumbingSymbol = "↑" ;
-        for ( var i = index ; i < newDetailTableModels.Count ; i++ ) {
-          newDetailTableModels[ i ].PlumbingType = defaultChildPlumbingSymbol ;
-          newDetailTableModels[ i ].PlumbingSize = defaultChildPlumbingSymbol ;
-          newDetailTableModels[ i ].NumberOfPlumbing = defaultChildPlumbingSymbol ;
+        var allIndex = Enumerable.Range( 0, detailTableLineLength ).ToList() ;
+        var indexOfChildLines = allIndex.Except( indexOfUpdatedLines ).ToList() ;
+        foreach ( var index in indexOfChildLines ) {
+          newDetailTableModels.ElementAt( index ).PlumbingType = defaultChildPlumbingSymbol ;
+          newDetailTableModels.ElementAt( index ).PlumbingSize = defaultChildPlumbingSymbol ;
+          newDetailTableModels.ElementAt( index ).NumberOfPlumbing = defaultChildPlumbingSymbol ;
         }
-
 
         foreach ( var oldDetailTableModel in detailTableModels ) {
           _detailTableViewModel.DetailTableModels.Remove( oldDetailTableModel ) ;
         }
-        
+
         foreach ( var newDetailSymbolModel in newDetailTableModels ) {
           _detailTableViewModel.DetailTableModels.Add( newDetailSymbolModel ) ;
         }
+
         newDetailTableModels = _detailTableViewModel.DetailTableModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.IsParentRoute ).GroupBy( x => x.DetailSymbolId ).SelectMany( x => x ).ToList() ;
         _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
         this.DataContext = _detailTableViewModel ;

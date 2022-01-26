@@ -233,23 +233,39 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         List<DetailTableModel> detailTableModelsByDetailSymbolId = detailTableModelsByDetailSymbol[ detailSymbolId ]! ;
         var parentDetailTableModel = detailTableModelsByDetailSymbolId.First() ;
         var plumbingCrossSectionalArea = GetPlumbingCrossSectionalArea( ceedStorable, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData,  detailSymbolStorable.DetailSymbolModelData, parentDetailTableModel.DetailSymbolId!, parentDetailTableModel.CountCableSamePosition, parentDetailTableModel.IsEcoMode! ) ;
-        var index = 0 ;
         if ( plumbingCrossSectionalArea != 0 ) {
           Dictionary<string, int> plumbingData = GetPlumbingData( conduitsModelData, defaultParentPlumbingType, plumbingCrossSectionalArea ) ;
           if ( plumbingData.Count > detailTableModelsByDetailSymbolId.Count ) break ; // 配管数 < 電線数　のケースを想定していない
-          foreach ( var (plumbingSize, numberOfPlumbing) in plumbingData ) {
-            detailTableModelsByDetailSymbolId.ElementAt( index ).PlumbingType = defaultParentPlumbingType ;
-            detailTableModelsByDetailSymbolId.ElementAt( index ).PlumbingSize = plumbingSize.Replace("mm","") ;
-            detailTableModelsByDetailSymbolId.ElementAt( index ).NumberOfPlumbing = numberOfPlumbing.ToString() ;
-            detailTableModelsByDetailSymbolId.ElementAt( index ).PlumbingCrossSectionalArea = plumbingCrossSectionalArea ;
-            index++ ;
+          List<int> indexOfUpdatedLines = new List<int>() ;
+          
+          var (firstPlumbingSize, firstNumberOfPlumbing) = plumbingData.First() ;
+          detailTableModelsByDetailSymbolId.ElementAt( 0 ).PlumbingType = defaultParentPlumbingType ;
+          detailTableModelsByDetailSymbolId.ElementAt( 0 ).PlumbingSize = firstPlumbingSize.Replace("mm","") ;
+          detailTableModelsByDetailSymbolId.ElementAt( 0 ).NumberOfPlumbing = firstNumberOfPlumbing.ToString() ;
+          indexOfUpdatedLines.Add(0);
+
+          var detailTableLineLength = detailTableModelsByDetailSymbolId.Count ;
+          for ( int i = 1 ; i < plumbingData.Count ; i++ ) {
+            var updateLineIndex = detailTableLineLength - i ;
+            var (plumbingSize, numberOfPlumbing) = plumbingData.ElementAt( i ) ;
+            detailTableModelsByDetailSymbolId.ElementAt( updateLineIndex ).PlumbingType = defaultParentPlumbingType + defaultChildPlumbingSymbol ;
+            detailTableModelsByDetailSymbolId.ElementAt( updateLineIndex ).PlumbingSize = plumbingSize.Replace("mm","") ;
+            detailTableModelsByDetailSymbolId.ElementAt( updateLineIndex ).NumberOfPlumbing = numberOfPlumbing.ToString() ;
+            indexOfUpdatedLines.Add( updateLineIndex ) ;
           }
 
-          for ( var i = index ; i < detailTableModelsByDetailSymbolId.Count ; i++ ) {
-            detailTableModelsByDetailSymbolId.ElementAt( i ).PlumbingType = defaultChildPlumbingSymbol ;
-            detailTableModelsByDetailSymbolId.ElementAt( i ).PlumbingSize = defaultChildPlumbingSymbol ;
-            detailTableModelsByDetailSymbolId.ElementAt( i ).NumberOfPlumbing = defaultChildPlumbingSymbol;
-            detailTableModelsByDetailSymbolId.ElementAt( i ).PlumbingCrossSectionalArea = plumbingCrossSectionalArea ;
+          var allIndex = Enumerable.Range( 0, detailTableLineLength ).ToList() ;
+          var indexOfChildLines = allIndex.Except( indexOfUpdatedLines ).ToList() ;
+          foreach(var index in indexOfChildLines){
+            detailTableModelsByDetailSymbolId.ElementAt( index ).PlumbingType = defaultChildPlumbingSymbol ;
+            detailTableModelsByDetailSymbolId.ElementAt( index ).PlumbingSize = defaultChildPlumbingSymbol ;
+            detailTableModelsByDetailSymbolId.ElementAt( index ).NumberOfPlumbing = defaultChildPlumbingSymbol;
+            detailTableModelsByDetailSymbolId.ElementAt( index ).PlumbingCrossSectionalArea = plumbingCrossSectionalArea ;
+          }
+
+          // 電線に断面積情報を付与する
+          foreach ( var line in detailTableModelsByDetailSymbolId ) {
+            line.PlumbingCrossSectionalArea = plumbingCrossSectionalArea ;
           }
         }
       }
