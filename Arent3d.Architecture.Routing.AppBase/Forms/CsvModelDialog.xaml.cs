@@ -244,6 +244,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
 
         reader.Close() ;
+        reader.Dispose() ;
         if ( ! checkFile ) {
           if (showMessageFlag ) {
             MessageBox.Show( "Incorrect file format.", "Error Message" ) ;

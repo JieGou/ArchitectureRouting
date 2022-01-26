@@ -24,11 +24,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       const string defaultSymbol = "Dummy" ;
       List<CeedModel> ceedModelData = new List<CeedModel>() ;
 
+      var equipmentSymbols = new List<EquipmentSymbol>() ;
+      if ( ! string.IsNullOrEmpty( path2 ) ) equipmentSymbols = GetAllEquipmentSymbols( path2 ) ;
+      var extension = Path.GetExtension( path ) ;
+      using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
       try {
-        var equipmentSymbols = new List<EquipmentSymbol>() ;
-        if ( ! string.IsNullOrEmpty( path2 ) ) equipmentSymbols = GetAllEquipmentSymbols( path2 ) ;
-        var extension = Path.GetExtension( path ) ;
-        using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
         ISheet? workSheet = null ;
         switch ( string.IsNullOrEmpty( extension ) ) {
           case false when extension == ".xls" :
@@ -176,11 +176,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
           i-- ;
         }
-
-        fs.Close() ;
       }
       catch ( Exception ) {
         return new List<CeedModel>() ;
+      }
+      finally {
+        fs.Close() ;
+        fs.Dispose() ;
       }
 
       return ceedModelData ;
@@ -238,9 +240,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
     private static List<EquipmentSymbol> GetAllEquipmentSymbols( string path )
     {
       List<EquipmentSymbol> equipmentSymbols = new List<EquipmentSymbol>() ;
+      var extension = Path.GetExtension( path ) ;
+      using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
       try {
-        var extension = Path.GetExtension( path ) ;
-        using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
         ISheet? workSheet = null ;
         switch ( string.IsNullOrEmpty( extension ) ) {
           case false when extension == ".xls" :
@@ -269,11 +271,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var modelNumber = modelNumberCell == null ? string.Empty : GetCellValue( modelNumberCell ) ;
           equipmentSymbols.Add( new EquipmentSymbol( symbol, modelNumber ) ) ;
         }
-
-        fs.Close() ;
       }
       catch ( Exception ) {
         return new List<EquipmentSymbol>() ;
+      }
+      finally {
+        fs.Close() ;
+        fs.Dispose() ;
       }
 
       return equipmentSymbols ;
@@ -317,6 +321,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
               }
             }
 
+            fs.Close() ;
+            fs.Dispose() ;
             break ;
           }
           case false when extension == ".csv" :
@@ -331,6 +337,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
                 modelNumbers.Add( modelNumber ) ;
             }
 
+            reader.Close() ;
+            reader.Dispose() ;
             break ;
           }
         }
