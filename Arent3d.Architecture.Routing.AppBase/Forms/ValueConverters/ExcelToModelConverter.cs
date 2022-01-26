@@ -176,6 +176,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
           i-- ;
         }
+
+        SetConnectorFamilyType( ceedModelData ) ;
       }
       catch ( Exception ) {
         return new List<CeedModel>() ;
@@ -199,7 +201,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         if ( equipmentSymbols.Any() ) {
           var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol && modelNumbers.Contains( s.ModelNumber ) ).Select( s => s.ModelNumber ).Distinct().ToList() ;
           if ( modelNumberList.Any() ) {
-            ceeDModelData.AddRange( from modelNumber in modelNumberList select isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+            ceeDModelData.AddRange( from modelNumber in modelNumberList select isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty, string.Empty ) ) ;
             otherSymbolModelNumber.AddRange( modelNumberList ) ;
           }
           else {
@@ -218,21 +220,58 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) ) continue ;
           var symbolModelNumber = modelNumbers.Where( m => ! otherSymbolModelNumber.Contains( m ) ).ToList() ;
           if ( symbolModelNumber.Any() )
-            ceeDModelData.AddRange( from modelNumber in symbolModelNumber select isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+            ceeDModelData.AddRange( from modelNumber in symbolModelNumber select isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty, string.Empty ) ) ;
           else {
             if ( equipmentSymbols.Any() ) {
               var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol ).Select( s => s.ModelNumber ).Distinct().ToList() ;
               if ( modelNumberList.Any() ) {
-                ceeDModelData.AddRange( from modelNumber in modelNumberList select isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+                ceeDModelData.AddRange( from modelNumber in modelNumberList select isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty, string.Empty ) ) ;
               }
               else {
-                ceeDModelData.Add( isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+                ceeDModelData.Add( isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty, string.Empty ) ) ;
               }
             }
             else {
-              ceeDModelData.Add( isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+              ceeDModelData.Add( isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty, string.Empty ) ) ;
             }
           }
+        }
+      }
+    }
+
+    private static void SetConnectorFamilyType( List<CeedModel> ceeDModelData )
+    {
+      var familyType = new Dictionary<string, string>() ;
+      var countFamilyType = 1 ;
+      const string defaultFamilyTypeName = "FamilyType" ;
+      foreach ( var ceedModel in ceeDModelData ) {
+        if ( ! string.IsNullOrEmpty( ceedModel.Base64FloorPlanImages ) && ( string.IsNullOrEmpty( ceedModel.FloorPlanSymbol ) || ceedModel.FloorPlanSymbol == "又は" ) ) {
+          if ( familyType.ContainsKey( ceedModel.Base64FloorPlanImages ) ) {
+            ceedModel.FamilyTypeName = familyType[ ceedModel.Base64FloorPlanImages ] ;
+            //ceedModel.Condition = familyType[ ceedModel.Base64FloorPlanImages ] ;
+          }
+          else {
+            familyType.Add( ceedModel.Base64FloorPlanImages, defaultFamilyTypeName + countFamilyType ) ;
+            ceedModel.FamilyTypeName = defaultFamilyTypeName + countFamilyType ;
+            //ceedModel.Condition = defaultFamilyTypeName + countFamilyType ;
+            countFamilyType++ ;
+          }
+        }
+        else if ( ! string.IsNullOrEmpty( ceedModel.FloorPlanSymbol ) ) {
+          if ( familyType.ContainsKey( ceedModel.FloorPlanSymbol ) ) {
+            ceedModel.FamilyTypeName = familyType[ ceedModel.FloorPlanSymbol ] ;
+            //ceedModel.Condition = familyType[ ceedModel.FloorPlanSymbol ] ;
+          }
+          else {
+            familyType.Add( ceedModel.FloorPlanSymbol, defaultFamilyTypeName + countFamilyType ) ;
+            ceedModel.FamilyTypeName = defaultFamilyTypeName + countFamilyType ;
+            //ceedModel.Condition = defaultFamilyTypeName + countFamilyType ;
+            countFamilyType++ ;
+          }
+        }
+        else {
+          ceedModel.FamilyTypeName = string.Empty ;
+          //ceedModel.Condition = string.Empty ;
         }
       }
     }
