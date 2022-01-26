@@ -21,14 +21,12 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string InstrumentationSymbol { get ; set ; }
     public string Name { get ; set ; }
     public string Condition { get ; set ; }
-    public string Base64ImageString { get ; set ; }
-    public string Base64FloorImages { get ; set ; }
-    public BitmapImage? InstrumentationImages { get ; set ; }
-    public BitmapImage? FloorImages { get ; set ; }
-    public List<BitmapImage?>? ListImages { get ; set ; }
+    public string Base64InstrumentationImageString { get ; set ; }
+    public string Base64FloorPlanImages { get ; set ; }
+    public BitmapImage? FloorPlanImages { get ; set ; }
+    public List<BitmapImage?>? InstrumentationImages { get ; set ; }
 
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber,
-      string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64ImageString, string base64FloorImages )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string base64FloorPlanImages )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
@@ -38,23 +36,22 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
       Condition = condition ;
-      Base64ImageString = base64ImageString ;
-      Base64FloorImages = base64FloorImages ;
-      ListImages = null ;
-      FloorImages = null ;
+      Base64InstrumentationImageString = base64InstrumentationImageString ;
+      Base64FloorPlanImages = base64FloorPlanImages ;
+      InstrumentationImages = null ;
+      FloorPlanImages = null ;
       var tempFloorImage = new BitmapImage() ;
-      if ( FloorImages == null && ! string.IsNullOrEmpty( Base64FloorImages ) ) {
-        tempFloorImage = BitmapToImageSource( Base64StringToBitmap( Base64FloorImages ) ) ;
+      if ( FloorPlanImages == null && ! string.IsNullOrEmpty( Base64FloorPlanImages ) ) {
+        tempFloorImage = BitmapToImageSource( Base64StringToBitmap( Base64FloorPlanImages ) ) ;
       }
-      FloorImages = tempFloorImage ;
-      if ( ListImages != null || string.IsNullOrEmpty( Base64ImageString ) ) return ;
-      var listBimapImage = ( from image in Base64ImageString.Split( new string[] { "||" }, StringSplitOptions.None ) select Base64StringToBitmap( image ) into bmpFromString select BitmapToImageSource( bmpFromString ) ).ToList() ;
-      ListImages = listBimapImage ;
+
+      FloorPlanImages = tempFloorImage ;
+      if ( InstrumentationImages != null || string.IsNullOrEmpty( Base64InstrumentationImageString ) ) return ;
+      var listBimapImage = ( from image in Base64InstrumentationImageString.Split( new string[] { "||" }, StringSplitOptions.None ) select Base64StringToBitmap( image ) into bmpFromString select BitmapToImageSource( bmpFromString ) ).ToList() ;
+      InstrumentationImages = listBimapImage ;
     }
 
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber,
-      List<Image>? floorPlanImages, List<Image>? instrucmentChartImages, string floorPlanSymbol, string instrumentationSymbol, string name,
-      string condition, string base64ImageString )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, List<Image>? instrumentationImages, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
@@ -65,24 +62,25 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Name = name ;
       Condition = condition ;
 
-      FloorImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
-      ListImages = GetImages( instrucmentChartImages ) ;
-      Base64ImageString = base64ImageString ;
-      string tempFloorString = string.Empty;
-      if ( FloorImages != null ) {
-        tempFloorString = ConvertBitmapToBase64( FloorImages ) ;
+      FloorPlanImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
+      InstrumentationImages = GetImages( instrumentationImages ) ;
+      Base64InstrumentationImageString = base64InstrumentationImageString ;
+      string tempFloorString = string.Empty ;
+      if ( FloorPlanImages != null ) {
+        tempFloorString = ConvertBitmapToBase64( FloorPlanImages ) ;
       }
-      Base64FloorImages = tempFloorString ;
-      if ( ListImages == null || ! ListImages.Any() ) return ;
-      var tempImage = ( from item in ListImages select ConvertBitmapToBase64( item ) ).ToList() ;
-      Base64ImageString = string.Join( "||",tempImage );
+
+      Base64FloorPlanImages = tempFloorString ;
+      if ( InstrumentationImages == null || ! InstrumentationImages.Any() ) return ;
+      var tempImage = ( from item in InstrumentationImages select ConvertBitmapToBase64( item ) ).ToList() ;
+      Base64InstrumentationImageString = string.Join( "||", tempImage ) ;
     }
 
     private static BitmapImage? BitmapToImageSource( Bitmap? bitmap )
     {
       using ( var memory = new MemoryStream() ) {
         if ( bitmap != null ) bitmap.Save( memory, System.Drawing.Imaging.ImageFormat.Bmp ) ;
-       
+
         memory.Position = 0 ;
         BitmapImage? bitmapimage = new BitmapImage() ;
         bitmapimage.BeginInit() ;
@@ -91,7 +89,6 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         bitmapimage.EndInit() ;
         return bitmapimage ;
       }
-      
     }
 
     private List<BitmapImage?>? GetImages( List<Image>? images )
@@ -130,16 +127,14 @@ namespace Arent3d.Architecture.Routing.Storable.Model
           var maxImageHeight = images.OrderByDescending( c => c.Height ).Select( c => c.Height ).First() ;
           var padding = 45 ;
           var imageWidth = images.Sum( item => item.Width ) + ( images.Count - 1 ) * padding ;
-          var finalImage =
-            new Bitmap( imageWidth, maxImageHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ;
+          var finalImage = new Bitmap( imageWidth, maxImageHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb ) ;
           using ( Graphics g = Graphics.FromImage( finalImage ) ) {
             g.Clear( Color.White ) ;
             var offset = 0 ;
 
             for ( var i = 0 ; i < images.Count ; i++ ) {
               Image image = images[ i ] ;
-              g.DrawImage( image, new Rectangle( new Point( offset, 0 ), image.Size ),
-                new Rectangle( new Point(), image.Size ), GraphicsUnit.Pixel ) ;
+              g.DrawImage( image, new Rectangle( new Point( offset, 0 ), image.Size ), new Rectangle( new Point(), image.Size ), GraphicsUnit.Pixel ) ;
               offset += image.Width + padding ;
             }
           }
@@ -177,18 +172,20 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       }
     }
 
-    private static Bitmap Base64StringToBitmap(string base64String)
+    private static Bitmap Base64StringToBitmap( string base64String )
     {
-      Byte[] bitmapData = Convert.FromBase64String(FixBase64ForImage(base64String));
-      System.IO.MemoryStream streamBitmap = new System.IO.MemoryStream(bitmapData);
-      Bitmap bitImage = new Bitmap((Bitmap)Image.FromStream(streamBitmap));
+      Byte[] bitmapData = Convert.FromBase64String( FixBase64ForImage( base64String ) ) ;
+      System.IO.MemoryStream streamBitmap = new System.IO.MemoryStream( bitmapData ) ;
+      Bitmap bitImage = new Bitmap( (Bitmap) Image.FromStream( streamBitmap ) ) ;
       return bitImage ;
     }
 
-    private static string FixBase64ForImage(string image) { 
-      System.Text.StringBuilder sbText = new System.Text.StringBuilder(image,image.Length);
-      sbText.Replace("\r\n", String.Empty); sbText.Replace(" ", String.Empty); 
-      return sbText.ToString(); 
+    private static string FixBase64ForImage( string image )
+    {
+      System.Text.StringBuilder sbText = new System.Text.StringBuilder( image, image.Length ) ;
+      sbText.Replace( "\r\n", String.Empty ) ;
+      sbText.Replace( " ", String.Empty ) ;
+      return sbText.ToString() ;
     }
   }
 }

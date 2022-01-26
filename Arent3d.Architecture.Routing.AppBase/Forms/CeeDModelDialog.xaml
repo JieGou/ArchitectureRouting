@@ -41,7 +41,7 @@
               HorizontalAlignment="Right"
               Width="100" />
       
-      <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="True" Content="使用するものだけ表示" Width="200" HorizontalAlignment="Left" Margin="15, 0, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden"/>
+      <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="False" Content="使用するものだけ表示" Width="200" HorizontalAlignment="Left" Margin="15, 0, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden"/>
       
       <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
         <DataGrid.Resources>
@@ -71,7 +71,7 @@
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
                 <Grid>
-                  <Image Source="{Binding FloorImages}" Stretch="None" />
+                  <Image Source="{Binding FloorPlanImages}" Stretch="None" />
                   <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock.RenderTransform>
                       <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
@@ -86,7 +86,7 @@
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
                 <Grid>
-                  <ListView Name="lvDataBinding" ItemsSource="{Binding ListImages}"
+                  <ListView Name="lvDataBinding" ItemsSource="{Binding InstrumentationImages}"
                             HorizontalAlignment="Center" VerticalAlignment="Center"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                             BorderThickness="0">

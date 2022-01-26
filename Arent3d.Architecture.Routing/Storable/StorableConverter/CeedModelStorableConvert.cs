@@ -19,8 +19,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       InstrumentationSymbol,
       Name,
       Condition,
-      Base64ImageString,
-      Base64FloorImages
+      Base64InstrumentationImageString,
+      Base64FloorPlanImages
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedModel customTypeValue )
@@ -35,9 +35,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.InstrumentationSymbol, customTypeValue.InstrumentationSymbol ) ;
       serializerObject.AddNonNull( SerializeField.Name, customTypeValue.Name ) ;
       serializerObject.AddNonNull( SerializeField.Condition, customTypeValue.Condition ) ;
-      serializerObject.AddNonNull( SerializeField.Base64ImageString, customTypeValue.Base64ImageString ) ;
-      serializerObject.AddNonNull( SerializeField.Base64ImageString, customTypeValue.Base64ImageString ) ;
-      serializerObject.AddNonNull( SerializeField.Base64FloorImages, customTypeValue.Base64FloorImages ) ;
+      serializerObject.AddNonNull( SerializeField.Base64InstrumentationImageString, customTypeValue.Base64InstrumentationImageString ) ;
+      serializerObject.AddNonNull( SerializeField.Base64FloorPlanImages, customTypeValue.Base64FloorPlanImages ) ;
 
       return serializerObject ;
     }
@@ -54,8 +53,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var instrumentationSymbol = deserializer.GetString( SerializeField.InstrumentationSymbol ) ;
       var name = deserializer.GetString( SerializeField.Name ) ;
       var condition = deserializer.GetString( SerializeField.Condition ) ;
-      var base64ImageString = deserializer.GetString( SerializeField.Base64ImageString ) ;
-      var base64FloorImages = deserializer.GetString( SerializeField.Base64FloorImages ) ;
+      var base64ImageString = deserializer.GetString( SerializeField.Base64InstrumentationImageString ) ;
+      var base64FloorImages = deserializer.GetString( SerializeField.Base64FloorPlanImages ) ;
 
       return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition!, base64ImageString!, base64FloorImages! ) ;
     }
