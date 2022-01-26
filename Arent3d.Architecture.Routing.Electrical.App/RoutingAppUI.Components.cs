@@ -44,6 +44,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( ConfirmNotConnectingCommand ), OnlyInitialized = true )]
           private static class ConfirmNotConnectingCommandButton { }
+          
+          [Button( typeof( ChangeToEcoCommand ), OnlyInitialized = true )]
+          private static class ChangeToEcoCommandButton { }
+          
+          [Button( typeof( ChangeToNormalCommand ), OnlyInitialized = true )]
+          private static class ChangeToNormalCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
@@ -96,6 +102,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
           private static class AllReRouteCommandButton { }
+          
+          [Button( typeof( RoomPickRoutingCommand ), OnlyInitialized = true )]
+          private static class RoomPickRoutingCommandButton { }
         }
 
         [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
