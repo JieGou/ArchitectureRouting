@@ -27,68 +27,71 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       dlgCeeDModel.ShowDialog() ;
       if ( ! ( dlgCeeDModel.DialogResult ?? false ) ) return Result.Cancelled ;
-      if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedDeviceSymbol ) ) {
-        return doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
-        {
-          var uiDoc = commandData.Application.ActiveUIDocument ;
+      ICollection<ElementId> groupIds = new List<ElementId>() ;
+      if ( string.IsNullOrEmpty( dlgCeeDModel.SelectedDeviceSymbol ) ) return Result.Cancelled ;
+      var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
+      {
+        var uiDoc = commandData.Application.ActiveUIDocument ;
 
-          var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
-          var level = uiDoc.ActiveView.GenLevel ;
-          var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-          var connectorOneSideFamilyType = GetConnectorFamilyType( doc, dlgCeeDModel.SelectedFamilyType ) ;
-          var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, connectorOneSideFamilyType ) ;
-          var ceeDCode = dlgCeeDModel.SelectedCeeDCode + "-" + dlgCeeDModel.SelectedDeviceSymbol + "-" + dlgCeeDModel.SelectedModelNumber ;
-          element.SetProperty( ConnectorFamilyParameter.CeeDCode, ceeDCode ) ;
-          if ( element is FamilyInstance familyInstance ) familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
+        var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        var level = uiDoc.ActiveView.GenLevel ;
+        var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+        var connectorOneSideFamilyType = GetConnectorFamilyType( doc, dlgCeeDModel.SelectedFamilyType ) ;
+        var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, connectorOneSideFamilyType ) ;
+        var ceeDCode = dlgCeeDModel.SelectedCeeDCode + "-" + dlgCeeDModel.SelectedDeviceSymbol + "-" + dlgCeeDModel.SelectedModelNumber ;
+        element.SetProperty( ConnectorFamilyParameter.CeeDCode, ceeDCode ) ;
+        if ( element is FamilyInstance familyInstance ) familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
 
-          ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-          var noteWidth = .05 ;
+        ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+        var noteWidth = .05 ;
 
-          // make sure note width works for the text type
-          var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
-          var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
-          if ( noteWidth < minWidth ) {
-            noteWidth = minWidth ;
-          }
-          else if ( noteWidth > maxWidth ) {
-            noteWidth = maxWidth ;
-          }
+        // make sure note width works for the text type
+        var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
+        var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
+        if ( noteWidth < minWidth ) {
+          noteWidth = minWidth ;
+        }
+        else if ( noteWidth > maxWidth ) {
+          noteWidth = maxWidth ;
+        }
 
-          TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
+        TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-          var txtPosition = new XYZ( originX - 2, originY + 3, heightOfConnector ) ;
-          var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeeDModel.SelectedDeviceSymbol, opts ) ;
+        var txtPosition = new XYZ( originX - 2, originY + 3, heightOfConnector ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeeDModel.SelectedDeviceSymbol, opts ) ;
 
-          // create group of selected element and new text note
-          ICollection<ElementId> groupIds = new List<ElementId>() ;
-          groupIds.Add( element.Id ) ;
-          groupIds.Add( textNote.Id ) ;
-          if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedCondition ) ) {
-            if ( dlgCeeDModel.SelectedCondition.Length > 6 ) noteWidth += ( dlgCeeDModel.SelectedCondition.Length - 6 ) * 0.007 ;
-            var txtConditionPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
-            var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeeDModel.SelectedCondition, opts ) ;
+        // create group of selected element and new text note
+        groupIds.Add( element.Id ) ;
+        groupIds.Add( textNote.Id ) ;
+        if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedCondition ) ) {
+          if ( dlgCeeDModel.SelectedCondition.Length > 6 ) noteWidth += ( dlgCeeDModel.SelectedCondition.Length - 6 ) * 0.007 ;
+          var txtConditionPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
+          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeeDModel.SelectedCondition, opts ) ;
 
-            var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
-            if ( textNoteType == null ) {
-              Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
-              textNoteType = ( ele as TextNoteType )! ;
-              TextElementType textType = conditionTextNote.Symbol ;
-              const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
-              Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
-              textSize.Set( .005 ) ;
-            }
-
-            conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
-            groupIds.Add( conditionTextNote.Id ) ;
+          var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
+          if ( textNoteType == null ) {
+            Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
+            textNoteType = ( ele as TextNoteType )! ;
+            TextElementType textType = conditionTextNote.Symbol ;
+            const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
+            Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
+            textSize.Set( .005 ) ;
           }
 
-          doc.Create.NewGroup( groupIds ) ;
+          conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
+          groupIds.Add( conditionTextNote.Id ) ;
+        }
 
-          return Result.Succeeded ;
-        } ) ;
-      }
+        return Result.Succeeded ;
+      } ) ;
 
-      return Result.Succeeded ;
+      if ( ! groupIds.Any() ) return result ;
+      using Transaction t = new Transaction( doc, "Create connector group." ) ;
+      t.Start() ;
+      doc.Create.NewGroup( groupIds ) ;
+      t.Commit() ;
+
+      return result ;
     }
 
     private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, ConnectorOneSideFamilyType connectorOneSideFamilyType )
