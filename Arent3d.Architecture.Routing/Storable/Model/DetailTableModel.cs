@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string? ConstructionItems { get ; set ; }
     public string? PlumbingItems { get ; set ; }
     public string? Remark { get ; set ; }
-    public double PlumbingCrossSectionalArea { get ; set ; }
+    public double WireCrossSectionalArea { get ; set ; }
     public int CountCableSamePosition { get ; set ; }
     public string? RouteName { get ; set ; }
     public string? IsEcoMode { get ; set ; }
@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? constructionItems,
       string? plumbingItems,
       string? remark,
-      double plumbingCrossSectionalArea,
+      double wireCrossSectionalArea,
       int countCableSamePosition,
       string? routeName,
       string? isEcoMode,
@@ -79,7 +79,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       ConstructionItems = constructionItems ;
       PlumbingItems = plumbingItems ;
       Remark = remark ;
-      PlumbingCrossSectionalArea = plumbingCrossSectionalArea ;
+      WireCrossSectionalArea = wireCrossSectionalArea ;
       CountCableSamePosition = countCableSamePosition ;
       RouteName = routeName ;
       IsEcoMode = isEcoMode ;
