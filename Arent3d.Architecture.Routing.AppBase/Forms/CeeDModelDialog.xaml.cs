@@ -180,7 +180,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
-        List<CeedModel> ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( filePath, fileEquipmentSymbolsPath ) ;
+        ConnectorFamilyTypeStorable connectorFamilyTypeStorable = _document.GetConnectorFamilyTypeStorable() ;
+        List<CeedModel> ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( filePath, fileEquipmentSymbolsPath, connectorFamilyTypeStorable.ConnectorFamilyTypeModelData ) ;
         if ( ! ceeDModelData.Any() ) return ;
         ceeDStorable.CeedModelData = ceeDModelData ;
         ceeDStorable.CeedModelUsedData = new List<CeedModel>() ;
@@ -192,6 +193,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           using Transaction t = new Transaction( _document, "Save data" ) ;
           t.Start() ;
           ceeDStorable.Save() ;
+          t.Commit() ;
+        }
+        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        }
+
+        ExcelToModelConverter.SetConnectorFamilyTypeName( connectorFamilyTypeStorable.ConnectorFamilyTypeModelData ) ;
+        try {
+          using Transaction t = new Transaction( _document, "Save connector family type data" ) ;
+          t.Start() ;
+          connectorFamilyTypeStorable.Save() ;
           t.Commit() ;
         }
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {

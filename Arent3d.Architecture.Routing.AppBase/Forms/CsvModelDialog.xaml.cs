@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private List<HiroiSetCdMasterModel> _allHiroiSetCdMasterEcoModels ;
     private List<HiroiMasterModel> _allHiroiMasterModels ;
     private List<CeedModel> _ceeDModelData ;
+    private List<ConnectorFamilyTypeModel> _connectorFamilyTypeModels ;
 
     public CsvModelDialog( Document document )
     {
@@ -39,6 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _allHiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
       _allHiroiMasterModels = new List<HiroiMasterModel>() ;
       _ceeDModelData = new List<CeedModel>() ;
+      _connectorFamilyTypeModels = _document.GetConnectorFamilyTypeStorable().ConnectorFamilyTypeModelData ;
     }
 
     private void Button_Save( object sender, RoutedEventArgs e )
@@ -79,6 +81,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             using Transaction t = new Transaction( _document, "Save CeeD data" ) ;
             t.Start() ;
             ceeDStorable.Save() ;
+            t.Commit() ;
+          }
+          catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+          }
+        }
+      }
+      ConnectorFamilyTypeStorable connectorFamilyTypeStorable = _document.GetConnectorFamilyTypeStorable() ;
+      {
+        if ( _connectorFamilyTypeModels.Any() ) {
+          ExcelToModelConverter.SetConnectorFamilyTypeName( _connectorFamilyTypeModels ) ;
+          connectorFamilyTypeStorable.ConnectorFamilyTypeModelData = _connectorFamilyTypeModels ;
+          try {
+            using Transaction t = new Transaction( _document, "Save connector family type data" ) ;
+            t.Start() ;
+            connectorFamilyTypeStorable.Save() ;
             t.Commit() ;
           }
           catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -424,7 +441,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private bool LoadCeeDCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceeDCodeFile, string equipmentSymbolsFile, string ceeDCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath )
     {
       if ( File.Exists( equipmentSymbolsXlsxFilePath ) ) {
-        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
+        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsXlsxFilePath, _connectorFamilyTypeModels ) ;
         if ( _ceeDModelData.Any() ) {
           correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
           correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
@@ -433,7 +450,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       if ( File.Exists( equipmentSymbolsXlsFilePath ) ) {
-        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsXlsFilePath ) ;
+        _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, equipmentSymbolsXlsFilePath, _connectorFamilyTypeModels ) ;
         if ( _ceeDModelData.Any() ) {
           correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
           correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
@@ -441,7 +458,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
 
-      _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, string.Empty ) ;
+      _ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( ceeDCodeFilePath, string.Empty, _connectorFamilyTypeModels ) ;
       if ( _ceeDModelData.Any() ) {
         correctMessage.AppendLine( "\u2022 " + ceeDCodeFile ) ;
         return true ;
