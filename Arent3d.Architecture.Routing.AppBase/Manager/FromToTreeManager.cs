@@ -83,8 +83,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( fromToTreeUiManager.Dockable == null ) {
           fromToTreeUiManager.Dockable = UiApp.GetDockablePane( fromToTreeUiManager.DpId ) ;
         }
-
-        fromToTreeUiManager.ShowDockablePane() ;
       }
     }
 

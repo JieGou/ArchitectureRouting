@@ -28,11 +28,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       uiControlledApplication.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>( UIControlledApplication_DockableVisibilityChanged ) ;
     }
 
-    public void ShowDockablePane()
-    {
-      Dockable?.Show() ;
-    }
-
     private void InitializeDockablePane( FromToItemsUiBase fromToItemsUi )
     {
       // register dockable pane
