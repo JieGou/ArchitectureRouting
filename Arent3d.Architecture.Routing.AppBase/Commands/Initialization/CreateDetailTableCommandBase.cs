@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      string defaultParentPlumbingType = "CD" ;
+      const string defaultParentPlumbingType = "E" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var csvStorable = doc.GetCsvStorable() ;
