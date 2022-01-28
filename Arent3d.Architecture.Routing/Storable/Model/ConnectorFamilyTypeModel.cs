@@ -3,14 +3,12 @@
   public class ConnectorFamilyTypeModel
   {
     public string Base64Images { get ; set ; }
-    public string FloorPlanType { get ; set ; }
-    public string ConnectorFamilyTypeName { get ; set ; }
+    public string ConnectorFamilyType { get ; set ; }
 
-    public ConnectorFamilyTypeModel( string? base64Images, string? floorPlanType, string? connectorFamilyTypeName )
+    public ConnectorFamilyTypeModel( string? base64Images, string? connectorFamilyType )
     {
       Base64Images = base64Images ?? string.Empty ;
-      FloorPlanType = floorPlanType ?? string.Empty ;
-      ConnectorFamilyTypeName = connectorFamilyTypeName ?? string.Empty ;
+      ConnectorFamilyType = connectorFamilyType ?? string.Empty ;
     }
   }
 }

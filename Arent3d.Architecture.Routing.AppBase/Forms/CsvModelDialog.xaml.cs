@@ -90,7 +90,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ConnectorFamilyTypeStorable connectorFamilyTypeStorable = _document.GetConnectorFamilyTypeStorable() ;
       {
         if ( _connectorFamilyTypeModels.Any() ) {
-          ExcelToModelConverter.SetConnectorFamilyTypeName( _connectorFamilyTypeModels ) ;
           connectorFamilyTypeStorable.ConnectorFamilyTypeModelData = _connectorFamilyTypeModels ;
           try {
             using Transaction t = new Transaction( _document, "Save connector family type data" ) ;
@@ -315,6 +314,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       bool isLoadedCeeDFile = false ;
       var ceeDCodeFile = "【CeeD】セットコード一覧表" ;
       string equipmentSymbolsFile = "機器記号一覧表" ;
+      string connectorFamilyTypeFile = "ConnectorFamilyType" ;
       StringBuilder correctMessage = new StringBuilder() ;
       StringBuilder errorMessage = new StringBuilder() ;
       string defaultCorrectMessage = "指定されたフォルダから以下のデータを正常にロードできました。" ;
@@ -400,7 +400,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
 
-      // load 【CeeD】セットコード一覧表 and 機器記号一覧表 files 
+      // load ConnectorFamilyType file
+      var connectorFamilyTypeXlsxFilePath = Path.Combine( dialog.SelectedPath, connectorFamilyTypeFile + ".xlsx" ) ;
+      var connectorFamilyTypeXlsFilePath = Path.Combine( dialog.SelectedPath, connectorFamilyTypeFile + ".xls" ) ;
+      if ( File.Exists( connectorFamilyTypeXlsxFilePath ) ) {
+        _connectorFamilyTypeModels = ExcelToModelConverter.GetConnectorFamilyType( connectorFamilyTypeXlsxFilePath ) ;
+        if ( _connectorFamilyTypeModels.Any() ) {
+          correctMessage.AppendLine( "\u2022 " + connectorFamilyTypeFile ) ;
+        }
+      }
+      else if ( File.Exists( connectorFamilyTypeXlsFilePath ) ) {
+        _connectorFamilyTypeModels = ExcelToModelConverter.GetConnectorFamilyType( connectorFamilyTypeXlsFilePath ) ;
+        if ( _connectorFamilyTypeModels.Any() ) {
+          correctMessage.AppendLine( "\u2022 " + connectorFamilyTypeFile ) ;
+        }
+        else {
+          if ( File.Exists( connectorFamilyTypeXlsxFilePath ) )
+            errorMessage.AppendLine( $"\u2022 {Path.GetFileName( connectorFamilyTypeXlsxFilePath )}" ) ;
+          if ( File.Exists( connectorFamilyTypeXlsFilePath ) )
+            errorMessage.AppendLine( $"\u2022 {Path.GetFileName( connectorFamilyTypeXlsFilePath )}" ) ;
+        }
+      }
+      
+      // load 【CeeD】セットコード一覧表 and 機器記号一覧表 files
       var ceeDCodeXlsxFilePath = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xlsx" ) ;
       var ceeDCodeXlsFilePath = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xls" ) ;
       var equipmentSymbolsXlsxFilePath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xlsx" ) ;

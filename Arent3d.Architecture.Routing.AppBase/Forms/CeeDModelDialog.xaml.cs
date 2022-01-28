@@ -169,19 +169,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
       string filePath = string.Empty ;
       string fileEquipmentSymbolsPath = string.Empty ;
+      string connectorFamilyTypeFilePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
         MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
         OpenFileDialog openFileEquipmentSymbolsDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
         if ( openFileEquipmentSymbolsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
           fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
+          MessageBox.Show( "Please select ConnectorFamilyType file.", "Message" ) ;
+          OpenFileDialog openConnectorFamilyTypeFileDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
+          if ( openConnectorFamilyTypeFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+            connectorFamilyTypeFilePath = openConnectorFamilyTypeFileDialog.FileName ;
+          }
         }
       }
-      if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
+
+      if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) || string.IsNullOrEmpty( connectorFamilyTypeFilePath ) ) return ;
+      List<ConnectorFamilyTypeModel> connectorFamilyTypeModels = ExcelToModelConverter.GetConnectorFamilyType( connectorFamilyTypeFilePath ) ;
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
-        ConnectorFamilyTypeStorable connectorFamilyTypeStorable = _document.GetConnectorFamilyTypeStorable() ;
-        List<CeedModel> ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( filePath, fileEquipmentSymbolsPath, connectorFamilyTypeStorable.ConnectorFamilyTypeModelData ) ;
+        List<CeedModel> ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( filePath, fileEquipmentSymbolsPath, connectorFamilyTypeModels ) ;
         if ( ! ceeDModelData.Any() ) return ;
         ceeDStorable.CeedModelData = ceeDModelData ;
         ceeDStorable.CeedModelUsedData = new List<CeedModel>() ;
@@ -198,14 +205,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         }
 
-        ExcelToModelConverter.SetConnectorFamilyTypeName( connectorFamilyTypeStorable.ConnectorFamilyTypeModelData ) ;
-        try {
-          using Transaction t = new Transaction( _document, "Save connector family type data" ) ;
-          t.Start() ;
-          connectorFamilyTypeStorable.Save() ;
-          t.Commit() ;
-        }
-        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        ConnectorFamilyTypeStorable connectorFamilyTypeStorable = _document.GetConnectorFamilyTypeStorable() ;
+        {
+          if ( connectorFamilyTypeModels.Any() ) {
+            connectorFamilyTypeStorable.ConnectorFamilyTypeModelData = connectorFamilyTypeModels ;
+            try {
+              using Transaction t = new Transaction( _document, "Save connector family type data" ) ;
+              t.Start() ;
+              connectorFamilyTypeStorable.Save() ;
+              t.Commit() ;
+            }
+            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+            }
+          }
         }
       }
       

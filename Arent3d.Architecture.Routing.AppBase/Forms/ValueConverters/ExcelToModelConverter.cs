@@ -214,7 +214,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol && modelNumbers.Contains( s.ModelNumber ) ).Select( s => s.ModelNumber ).Distinct().ToList() ;
           if ( modelNumberList.Any() ) {
             foreach ( var modelNumber in modelNumberList ) {
-              AddCeedModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+              AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
 
             otherSymbolModelNumber.AddRange( modelNumberList ) ;
@@ -236,29 +236,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           var symbolModelNumber = modelNumbers.Where( m => ! otherSymbolModelNumber.Contains( m ) ).ToList() ;
           if ( symbolModelNumber.Any() )
             foreach ( var modelNumber in symbolModelNumber ) {
-              AddCeedModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+              AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
           else {
             if ( equipmentSymbols.Any() ) {
               var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol ).Select( s => s.ModelNumber ).Distinct().ToList() ;
               if ( modelNumberList.Any() ) {
                 foreach ( var modelNumber in modelNumberList ) {
-                  AddCeedModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+                  AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
                 }
               }
               else {
-                AddCeedModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+                AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
               }
             }
             else {
-              AddCeedModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+              AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
           }
         }
       }
     }
 
-    private static void AddCeedModel( ICollection<CeedModel> ceeDModelData, string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string ceeDName, string condition, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages, bool isDummySymbol )
+    private static void AddCeeDModel( ICollection<CeedModel> ceeDModelData, string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string ceeDName, string condition, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages, bool isDummySymbol )
     {
       if ( isFloorPlanImages )
         ceeDModelData.Add( new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
@@ -270,199 +270,70 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
     private static void SetFloorPlanType( IEnumerable<CeedModel> ceeDModelData, ICollection<ConnectorFamilyTypeModel> connectorFamilyTypeModels )
     {
-      var familyType = connectorFamilyTypeModels.Select( c => c.Base64Images ).ToList() ;
-      foreach ( var ceedModel in ceeDModelData ) {
-        if ( ! string.IsNullOrEmpty( ceedModel.Base64FloorPlanImages ) ) {
-          SetConnectorFamilyTypeModel( ceedModel, connectorFamilyTypeModels, familyType, ceedModel.Base64FloorPlanImages ) ;
+      string defaultFloorPlanType = ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() ;
+      foreach ( var ceeDModel in ceeDModelData ) {
+        if ( ! string.IsNullOrEmpty( ceeDModel.Base64FloorPlanImages ) ) {
+          var connectorFamilyTypeModel = connectorFamilyTypeModels.FirstOrDefault( c => c.Base64Images == ceeDModel.Base64FloorPlanImages ) ;
+          ceeDModel.FloorPlanType = connectorFamilyTypeModel == null ? defaultFloorPlanType : connectorFamilyTypeModel.ConnectorFamilyType ;
         }
-        else if ( ! string.IsNullOrEmpty( ceedModel.FloorPlanSymbol ) ) {
-          SetConnectorFamilyTypeModel( ceedModel, connectorFamilyTypeModels, familyType, ceedModel.FloorPlanSymbol ) ;
+        else if ( ! string.IsNullOrEmpty( ceeDModel.FloorPlanSymbol ) ) {
+          var connectorFamilyTypeModel = connectorFamilyTypeModels.FirstOrDefault( c => c.Base64Images == ceeDModel.FloorPlanSymbol ) ;
+          ceeDModel.FloorPlanType = connectorFamilyTypeModel == null ? defaultFloorPlanType : connectorFamilyTypeModel.ConnectorFamilyType ;
         }
         else {
-          ceedModel.FloorPlanType = string.Empty ;
+          ceeDModel.FloorPlanType = defaultFloorPlanType ;
         }
       }
     }
 
-    private static void SetConnectorFamilyTypeModel( CeedModel ceedModel, ICollection<ConnectorFamilyTypeModel> connectorFamilyTypeModels, ICollection<string> familyType, string floorPlanSymbol )
+    public static List<ConnectorFamilyTypeModel> GetConnectorFamilyType( string path )
     {
-      const string defaultFloorPlanType = "FloorPlanType" ;
-      if ( familyType.Contains( floorPlanSymbol ) ) {
-        var connectorFamilyType = connectorFamilyTypeModels.FirstOrDefault( c => c.Base64Images == floorPlanSymbol ) ;
-        if ( connectorFamilyType == null ) {
-          ceedModel.FloorPlanType = defaultFloorPlanType + ( connectorFamilyTypeModels.Count + 1 ) ;
-          connectorFamilyTypeModels.Add( new ConnectorFamilyTypeModel( floorPlanSymbol, ceedModel.FloorPlanType, string.Empty ) ) ;
+      List<ConnectorFamilyTypeModel> connectorFamilyTypeModels = new List<ConnectorFamilyTypeModel>() ;
+      var extension = Path.GetExtension( path ) ;
+      using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
+      try {
+        ISheet? workSheet = null ;
+        switch ( string.IsNullOrEmpty( extension ) ) {
+          case false when extension == ".xls" :
+          {
+            HSSFWorkbook wb = new HSSFWorkbook( fs ) ;
+            workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
+            break ;
+          }
+          case false when extension == ".xlsx" :
+          {
+            XSSFWorkbook wb = new XSSFWorkbook( fs ) ;
+            workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
+            break ;
+          }
         }
-        else {
-          ceedModel.FloorPlanType = connectorFamilyType.FloorPlanType ;
-        }
-      }
-      else {
-        familyType.Add( floorPlanSymbol ) ;
-        ceedModel.FloorPlanType = defaultFloorPlanType + ( connectorFamilyTypeModels.Count + 1 ) ;
-        connectorFamilyTypeModels.Add( new ConnectorFamilyTypeModel( floorPlanSymbol, ceedModel.FloorPlanType, string.Empty ) ) ;
-      }
-    }
 
-    public static void SetConnectorFamilyTypeName( IEnumerable<ConnectorFamilyTypeModel> connectorFamilyTypeModels )
-    {
-      foreach ( var connectorFamilyTypeModel in connectorFamilyTypeModels ) {
-        if ( ! string.IsNullOrEmpty( connectorFamilyTypeModel.ConnectorFamilyTypeName ) ) continue ;
-        var floorPlanType = connectorFamilyTypeModel.FloorPlanType ;
-        switch ( floorPlanType ) {
-          case "FloorPlanType1" :
-          case "FloorPlanType2" :
-          case "FloorPlanType3" :
-          case "FloorPlanType4" :
-          case "FloorPlanType83" :
-          case "FloorPlanType97" :
-          case "FloorPlanType98" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() ;
-            break ;
-          case "FloorPlanType7" :
-          case "FloorPlanType8" :
-          case "FloorPlanType9" :
-          case "FloorPlanType10" :
-          case "FloorPlanType29" :
-          case "FloorPlanType31" :
-          case "FloorPlanType32" :
-          case "FloorPlanType35" :
-          case "FloorPlanType36" :
-          case "FloorPlanType37" :
-          case "FloorPlanType38" :
-          case "FloorPlanType39" :
-          case "FloorPlanType40" :
-          case "FloorPlanType41" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide2.GetFieldName() ;
-            break ;
-          case "FloorPlanType11" :
-          case "FloorPlanType12" :
-          case "FloorPlanType13" :
-          case "FloorPlanType33" :
-          case "FloorPlanType34" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide5.GetFieldName() ;
-            break ;
-          case "FloorPlanType14" :
-          case "FloorPlanType15" :
-          case "FloorPlanType16" :
-          case "FloorPlanType17" :
-          case "FloorPlanType22" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide6.GetFieldName() ;
-            break ;
-          case "FloorPlanType18" :
-          case "FloorPlanType19" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide7.GetFieldName() ;
-            break ;
-          case "FloorPlanType20" :
-          case "FloorPlanType21" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide8.GetFieldName() ;
-            break ;
-          case "FloorPlanType23" :
-          case "FloorPlanType25" :
-          case "FloorPlanType26" :
-          case "FloorPlanType30" :
-          case "FloorPlanType42" :
-          case "FloorPlanType43" :
-          case "FloorPlanType44" :
-          case "FloorPlanType45" :
-          case "FloorPlanType46" :
-          case "FloorPlanType47" :
-          case "FloorPlanType48" :
-          case "FloorPlanType49" :
-          case "FloorPlanType50" :
-          case "FloorPlanType51" :
-          case "FloorPlanType52" :
-          case "FloorPlanType53" :
-          case "FloorPlanType54" :
-          case "FloorPlanType55" :
-          case "FloorPlanType56" :
-          case "FloorPlanType57" :
-          case "FloorPlanType58" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide9.GetFieldName() ;
-            break ;
-          case "FloorPlanType27" :
-          case "FloorPlanType59" :
-          case "FloorPlanType60" :
-          case "FloorPlanType61" :
-          case "FloorPlanType62" :
-          case "FloorPlanType63" :
-          case "FloorPlanType64" :
-          case "FloorPlanType65" :
-          case "FloorPlanType66" :
-          case "FloorPlanType67" :
-          case "FloorPlanType68" :
-          case "FloorPlanType69" :
-          case "FloorPlanType78" : 
-          case "FloorPlanType99" :
-          case "FloorPlanType100" :
-          case "FloorPlanType101" :
-          case "FloorPlanType102" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide10.GetFieldName() ;
-            break ;
-          case "FloorPlanType90" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide11.GetFieldName() ;
-            break ;
-          case "FloorPlanType70" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide19.GetFieldName() ;
-            break ;
-          case "FloorPlanType71" :
-          case "FloorPlanType72" :
-          case "FloorPlanType73" :
-          case "FloorPlanType74" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide20.GetFieldName() ;
-            break ;
-          case "FloorPlanType75" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide21.GetFieldName() ;
-            break ;
-          case "FloorPlanType76" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide22.GetFieldName() ;
-            break ;
-          case "FloorPlanType77" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide23.GetFieldName() ;
-            break ;
-          case "FloorPlanType79" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide24.GetFieldName() ;
-            break ;
-          case "FloorPlanType80" :
-          case "FloorPlanType82" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide25.GetFieldName() ;
-            break ;
-          case "FloorPlanType81" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide26.GetFieldName() ;
-            break ;
-          case "FloorPlanType84" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide27.GetFieldName() ;
-            break ;
-          case "FloorPlanType87" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide28.GetFieldName() ;
-            break ;
-          case "FloorPlanType85" :
-          case "FloorPlanType86" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide29.GetFieldName() ;
-            break ;
-          case "FloorPlanType88" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide30.GetFieldName() ;
-            break ;
-          case "FloorPlanType89" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide31.GetFieldName() ;
-            break ;
-          case "FloorPlanType91" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide32.GetFieldName() ;
-            break ;
-          case "FloorPlanType92" :
-          case "FloorPlanType93" :
-          case "FloorPlanType94" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide33.GetFieldName() ;
-            break ;
-          case "FloorPlanType95" :
-          case "FloorPlanType96" :
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide34.GetFieldName() ;
-            break ;
-          default:
-            connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() ;
-            break;
+        if ( workSheet == null ) return connectorFamilyTypeModels ;
+        const int startRow = 1 ;
+        var endRow = workSheet.LastRowNum ;
+        for ( var i = startRow ; i <= endRow ; i++ ) {
+          var record = workSheet.GetRow( i ).GetCell( 0 ) ;
+          if ( record == null || record.CellStyle.IsHidden ) continue ;
+          var symbol = GetCellValue( record ) ;
+          if ( string.IsNullOrEmpty( symbol ) ) continue ;
+          var base64ImagesCell = workSheet.GetRow( i ).GetCell( 0 ) ;
+          var base64Images = base64ImagesCell == null ? string.Empty : GetCellValue( base64ImagesCell ).Trim() ;
+          var base64ImagesCell2 = workSheet.GetRow( i ).GetCell( 1 ) ;
+          base64Images = base64ImagesCell2 == null ? base64Images : base64Images + GetCellValue( base64ImagesCell2 ).Trim() ;
+          var connectorFamilyTypeCell = workSheet.GetRow( i ).GetCell( 2 ) ;
+          var connectorFamilyType = connectorFamilyTypeCell == null ? string.Empty : GetCellValue( connectorFamilyTypeCell ).Trim() ;
+          connectorFamilyTypeModels.Add( new ConnectorFamilyTypeModel( base64Images, connectorFamilyType ) ) ;
         }
       }
+      catch ( Exception ) {
+        return new List<ConnectorFamilyTypeModel>() ;
+      }
+      finally {
+        fs.Close() ;
+        fs.Dispose() ;
+      }
+
+      return connectorFamilyTypeModels ;
     }
 
     private static List<EquipmentSymbol> GetAllEquipmentSymbols( string path )
