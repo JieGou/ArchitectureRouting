@@ -48,6 +48,9 @@
     <Reference Include="CsvHelper">
       <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\CsvHelper.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+      <HintPath>C:\Windows\assembly\GAC_MSIL\Microsoft.Office.Interop.Excel\15.0.0.0__71e9bce111e9429c\Microsoft.Office.Interop.Excel.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="RevitAPI">
@@ -80,6 +83,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1000" />
+    <PackageReference Include="MicrosoftOfficeCore" Version="15.0.0" />
     <PackageReference Include="NPOI" Version="2.5.5" />
     <PackageReference Include="NumericUpDown" Version="3.0.2" />
   </ItemGroup>

@@ -2,10 +2,8 @@
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Autodesk.Revit.Attributes ;
-using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 
@@ -34,7 +32,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       if ( fromToManager.FromToTreeUiManager is { } fromToTreeUiManager && fromToManager.UiApp.ActiveUIDocument != null ) {
         fromToTreeUiManager.FromToTreeView.CustomInitiator( uiApplication, AddInType.Electrical ) ;
         fromToTreeUiManager.Dockable = uiApplication.GetDockablePane( fromToTreeUiManager.DpId ) ;
-        fromToTreeUiManager.ShowDockablePane() ;
       }
 
       return Result.Succeeded ;

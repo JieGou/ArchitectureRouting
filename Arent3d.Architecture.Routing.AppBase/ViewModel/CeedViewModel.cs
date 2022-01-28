@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void AddModelNumber( List<CeedModel> ceedModels )
     {
       foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeeDModelNumber ) ) ) {
-        CeeDModelNumbers.Add( ceedModel.CeeDModelNumber ) ;
+        if ( ! CeeDModelNumbers.Contains( ceedModel.CeeDModelNumber ) ) CeeDModelNumbers.Add( ceedModel.CeeDModelNumber ) ;
       }
       foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.ModelNumber ) ) ) {
         var modelNumbers = ceedModel.ModelNumber.Split( '\n' ) ;

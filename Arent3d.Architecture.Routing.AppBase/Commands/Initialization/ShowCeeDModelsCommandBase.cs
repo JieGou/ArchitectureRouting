@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
           else if ( noteWidth > maxWidth ) {
             noteWidth = maxWidth ;
-          }
+          } 
 
           TextNoteOptions opts = new(defaultTextTypeId) ;
           opts.HorizontalAlignment = HorizontalTextAlignment.Left ;
