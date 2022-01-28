@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
+using System.Reflection ;
 using System.Text ;
 using System.Windows ;
 using System.Windows.Forms ;
@@ -401,27 +402,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       // load ConnectorFamilyType file
-      var connectorFamilyTypeXlsxFilePath = Path.Combine( dialog.SelectedPath, connectorFamilyTypeFile + ".xlsx" ) ;
-      var connectorFamilyTypeXlsFilePath = Path.Combine( dialog.SelectedPath, connectorFamilyTypeFile + ".xls" ) ;
-      if ( File.Exists( connectorFamilyTypeXlsxFilePath ) ) {
-        _connectorFamilyTypeModels = ExcelToModelConverter.GetConnectorFamilyType( connectorFamilyTypeXlsxFilePath ) ;
-        if ( _connectorFamilyTypeModels.Any() ) {
-          correctMessage.AppendLine( "\u2022 " + connectorFamilyTypeFile ) ;
-        }
-      }
-      else if ( File.Exists( connectorFamilyTypeXlsFilePath ) ) {
-        _connectorFamilyTypeModels = ExcelToModelConverter.GetConnectorFamilyType( connectorFamilyTypeXlsFilePath ) ;
+      string directory = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location ) ! ;
+      var resourcesPath = Path.Combine( directory.Substring( 0, directory.IndexOf( "bin", StringComparison.Ordinal ) ), "resources" ) ;
+      string connectorFamilyTypeFilePath = Path.Combine( resourcesPath, "csv", connectorFamilyTypeFile + ".xlsx" ) ;
+      if ( File.Exists( connectorFamilyTypeFilePath ) ) {
+        _connectorFamilyTypeModels = ExcelToModelConverter.GetConnectorFamilyType( connectorFamilyTypeFilePath ) ;
         if ( _connectorFamilyTypeModels.Any() ) {
           correctMessage.AppendLine( "\u2022 " + connectorFamilyTypeFile ) ;
         }
         else {
-          if ( File.Exists( connectorFamilyTypeXlsxFilePath ) )
-            errorMessage.AppendLine( $"\u2022 {Path.GetFileName( connectorFamilyTypeXlsxFilePath )}" ) ;
-          if ( File.Exists( connectorFamilyTypeXlsFilePath ) )
-            errorMessage.AppendLine( $"\u2022 {Path.GetFileName( connectorFamilyTypeXlsFilePath )}" ) ;
+          errorMessage.AppendLine( $"\u2022 {Path.GetFileName( connectorFamilyTypeFilePath )}" ) ;
         }
       }
-      
+
       // load 【CeeD】セットコード一覧表 and 機器記号一覧表 files
       var ceeDCodeXlsxFilePath = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xlsx" ) ;
       var ceeDCodeXlsFilePath = Path.Combine( dialog.SelectedPath, ceeDCodeFile + ".xls" ) ;

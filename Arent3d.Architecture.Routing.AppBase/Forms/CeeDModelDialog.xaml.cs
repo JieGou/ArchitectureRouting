@@ -1,5 +1,8 @@
+using System ;
 using System.Collections.Generic ;
+using System.IO ;
 using System.Linq ;
+using System.Reflection ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
@@ -169,20 +172,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
       string filePath = string.Empty ;
       string fileEquipmentSymbolsPath = string.Empty ;
-      string connectorFamilyTypeFilePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
         filePath = openFileDialog.FileName ;
         MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
         OpenFileDialog openFileEquipmentSymbolsDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
         if ( openFileEquipmentSymbolsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
           fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
-          MessageBox.Show( "Please select ConnectorFamilyType file.", "Message" ) ;
-          OpenFileDialog openConnectorFamilyTypeFileDialog = new OpenFileDialog { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
-          if ( openConnectorFamilyTypeFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
-            connectorFamilyTypeFilePath = openConnectorFamilyTypeFileDialog.FileName ;
-          }
         }
       }
+
+      string directory = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location ) ! ;
+      var resourcesPath = Path.Combine( directory.Substring( 0, directory.IndexOf( "bin", StringComparison.Ordinal ) ), "resources" ) ;
+      string connectorFamilyTypeFilePath = Path.Combine( resourcesPath, "csv", "ConnectorFamilyType.xlsx" ) ;
 
       if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) || string.IsNullOrEmpty( connectorFamilyTypeFilePath ) ) return ;
       List<ConnectorFamilyTypeModel> connectorFamilyTypeModels = ExcelToModelConverter.GetConnectorFamilyType( connectorFamilyTypeFilePath ) ;

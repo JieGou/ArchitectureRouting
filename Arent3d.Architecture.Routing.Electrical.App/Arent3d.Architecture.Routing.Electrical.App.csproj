@@ -95,6 +95,11 @@
         </Compile>
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="resources\csv\ConnectorFamilyType.xlsx" />
+      <Resource Include="resources\csv\ConnectorFamilyType.xlsx" />
+    </ItemGroup>
+
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <!--
             <Exec Command="&quot;$(SolutionDir)lib\tools\ILMerge.exe&quot; /lib:&quot;$(RevitPath.TrimEnd('\'))&quot; /internalize:$(SolutionDir)nointernalize.txt /out:$(TargetPath) /wildcards &quot;$(TargetDir)*.dll&quot;"/>
