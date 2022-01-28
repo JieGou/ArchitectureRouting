@@ -1,4 +1,4 @@
-﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.ConduitInformationDialog"
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.DetailTableDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -42,7 +42,7 @@
             <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" Margin="20"  ItemsSource="{Binding ConduitInformationModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" RowHeight="25" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False">
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
                     <Setter Property="Padding" Value="-2" />
@@ -67,12 +67,64 @@
                 <DataGridTextColumn Header="アース種類" Width="15" Binding="{Binding EarthType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="アースサイズ" Width="15" Binding="{Binding EarthSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="アース本数" Width="15" Binding="{Binding NumberOfGrounds, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管種類" Width="45" Binding="{Binding PipingType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管サイズ" Width="45" Binding="{Binding PipingSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="配管本数" Width="45" Binding="{Binding NumberOfPipes, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridComboBoxColumn Header="配管種類" Width="45"
+                                        SelectedValueBinding="{Binding PlumbingType}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnly}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConduitTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding PlumbingType, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnly}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConduitTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="PlumpingTypeSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>    
+                <DataGridTextColumn Header="配管サイズ" Width="45" Binding="{Binding PlumbingSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="配管本数" Width="45" Binding="{Binding NumberOfPlumbing, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="施工区分" Width="45" Binding="{Binding ConstructionClassification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="信号種別" Width="70" Binding="{Binding Classification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="工事項目" Width="90" Binding="{Binding ConstructionItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridComboBoxColumn Header="工事項目" Width="90"
+                                        SelectedValueBinding="{Binding ConstructionItems}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="ConstructionItemSelectionChanged" />
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
                 <DataGridTextColumn Header="配管工事項目" Width="90" Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" />
             </DataGrid.Columns>
@@ -106,7 +158,7 @@
                         Margin="5,5,5,5"
                         HorizontalAlignment="Right"
                         DockPanel.Dock="Right"
-                        Command="{Binding SaveConduitInformationCommand}"
+                        Command="{Binding SaveDetailTableCommand}"
                         Click="BtnSave_OnClick"
                         Height="27"
                         Width="110" />
@@ -115,7 +167,7 @@
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
                     DockPanel.Dock="Right"
-                    Command="{Binding SaveAndCreateConduitInformationCommand}"
+                    Command="{Binding SaveAndCreateDetailTableCommand}"
                     Click="BtnSave_OnClick"
                     Height="27"
                     Width="110" />

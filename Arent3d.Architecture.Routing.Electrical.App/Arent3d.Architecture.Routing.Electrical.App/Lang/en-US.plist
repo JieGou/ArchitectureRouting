@@ -143,7 +143,7 @@
         <key>Electrical.App.Commands.Initialization.ShowCeeDDetailInformationCommand</key>
         <string>Pickup Display&#xA;Information</string>
 
-        <key>Electrical.App.Commands.Initialization.ShowConduitInformationCommand</key>
+        <key>Electrical.App.Commands.Initialization.CreateDetailTableCommand</key>
         <string>Create Detail Table</string>
 
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
