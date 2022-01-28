@@ -11,7 +11,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     private enum SerializeField
     {
       Base64Images,
-      FamilyTypeName,
+      FloorPlanType,
       ConnectorFamilyTypeName
     }
 
@@ -20,10 +20,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
       var base64Images = deserializer.GetString( SerializeField.Base64Images ) ;
-      var familyTypeName = deserializer.GetString( SerializeField.FamilyTypeName ) ;
+      var floorPlanType = deserializer.GetString( SerializeField.FloorPlanType ) ;
       var connectorFamilyTypeName = deserializer.GetString( SerializeField.ConnectorFamilyTypeName ) ;
 
-      return new ConnectorFamilyTypeModel( base64Images, familyTypeName, connectorFamilyTypeName ) ;
+      return new ConnectorFamilyTypeModel( base64Images, floorPlanType, connectorFamilyTypeName ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, ConnectorFamilyTypeModel customTypeValue )
@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var serializerObject = new SerializerObject<SerializeField>() ;
 
       serializerObject.AddNonNull( SerializeField.Base64Images, customTypeValue.Base64Images ) ;
-      serializerObject.AddNonNull( SerializeField.FamilyTypeName, customTypeValue.FamilyTypeName ) ;
+      serializerObject.AddNonNull( SerializeField.FloorPlanType, customTypeValue.FloorPlanType ) ;
       serializerObject.AddNonNull( SerializeField.ConnectorFamilyTypeName, customTypeValue.ConnectorFamilyTypeName ) ;
 
       return serializerObject ;

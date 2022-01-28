@@ -21,13 +21,13 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string InstrumentationSymbol { get ; set ; }
     public string Name { get ; set ; }
     public string Condition { get ; set ; }
-    public string FamilyTypeName { get ; set ; }
+    public string FloorPlanType { get ; set ; }
     public string Base64InstrumentationImageString { get ; set ; }
     public string Base64FloorPlanImages { get ; set ; }
     public BitmapImage? FloorPlanImages { get ; set ; }
     public List<BitmapImage?>? InstrumentationImages { get ; set ; }
 
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string base64FloorPlanImages, string familyTypeName )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType )
     {
       const string dummySymbol = "Dummy" ;
       CeeDModelNumber = ceeDModelNumber ;
@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
       Condition = condition ;
-      FamilyTypeName = familyTypeName ;
+      FloorPlanType = floorPlanType ;
       Base64InstrumentationImageString = base64InstrumentationImageString ;
       Base64FloorPlanImages = base64FloorPlanImages ;
       InstrumentationImages = null ;
@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       InstrumentationImages = listBimapImage ;
     }
 
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, List<Image>? instrumentationImages, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string familyTypeName )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, List<Image>? instrumentationImages, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string floorPlanType )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
@@ -66,7 +66,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
       Condition = condition ;
-      FamilyTypeName = familyTypeName ;
+      FloorPlanType = floorPlanType ;
       FloorPlanImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
       InstrumentationImages = GetImages( instrumentationImages ) ;
       Base64InstrumentationImageString = base64InstrumentationImageString ;
@@ -81,7 +81,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Base64InstrumentationImageString = string.Join( "||", tempImage ) ;
     }
     
-    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, List<Image>? instrumentationImages, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string familyTypeName )
+    public CeedModel( string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, List<Image>? floorPlanImages, List<Image>? instrumentationImages, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string floorPlanType )
     {
       CeeDModelNumber = ceeDModelNumber ;
       CeeDSetCode = ceeDSetCode ;
@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       InstrumentationSymbol = instrumentationSymbol ;
       Name = name ;
       Condition = condition ;
-      FamilyTypeName = familyTypeName ;
+      FloorPlanType = floorPlanType ;
       FloorPlanImages = BitmapToImageSource( GetImage( floorPlanImages ) ) ;
       InstrumentationImages = GetImages( instrumentationImages ) ;
       Base64InstrumentationImageString = string.Empty ;

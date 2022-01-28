@@ -189,7 +189,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           i-- ;
         }
 
-        SetFamilyTypeName( ceedModelData, connectorFamilyTypeModels ) ;
+        SetFloorPlanType( ceedModelData, connectorFamilyTypeModels ) ;
       }
       catch ( Exception ) {
         return new List<CeedModel>() ;
@@ -268,7 +268,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         ceeDModelData.Add( new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty, string.Empty ) ) ;
     }
 
-    private static void SetFamilyTypeName( IEnumerable<CeedModel> ceeDModelData, ICollection<ConnectorFamilyTypeModel> connectorFamilyTypeModels )
+    private static void SetFloorPlanType( IEnumerable<CeedModel> ceeDModelData, ICollection<ConnectorFamilyTypeModel> connectorFamilyTypeModels )
     {
       var familyType = connectorFamilyTypeModels.Select( c => c.Base64Images ).ToList() ;
       foreach ( var ceedModel in ceeDModelData ) {
@@ -279,28 +279,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           SetConnectorFamilyTypeModel( ceedModel, connectorFamilyTypeModels, familyType, ceedModel.FloorPlanSymbol ) ;
         }
         else {
-          ceedModel.FamilyTypeName = string.Empty ;
+          ceedModel.FloorPlanType = string.Empty ;
         }
       }
     }
 
     private static void SetConnectorFamilyTypeModel( CeedModel ceedModel, ICollection<ConnectorFamilyTypeModel> connectorFamilyTypeModels, ICollection<string> familyType, string floorPlanSymbol )
     {
-      const string defaultFamilyTypeName = "FamilyType" ;
+      const string defaultFloorPlanType = "FloorPlanType" ;
       if ( familyType.Contains( floorPlanSymbol ) ) {
         var connectorFamilyType = connectorFamilyTypeModels.FirstOrDefault( c => c.Base64Images == floorPlanSymbol ) ;
         if ( connectorFamilyType == null ) {
-          ceedModel.FamilyTypeName = defaultFamilyTypeName + ( connectorFamilyTypeModels.Count + 1 ) ;
-          connectorFamilyTypeModels.Add( new ConnectorFamilyTypeModel( floorPlanSymbol, ceedModel.FamilyTypeName, string.Empty ) ) ;
+          ceedModel.FloorPlanType = defaultFloorPlanType + ( connectorFamilyTypeModels.Count + 1 ) ;
+          connectorFamilyTypeModels.Add( new ConnectorFamilyTypeModel( floorPlanSymbol, ceedModel.FloorPlanType, string.Empty ) ) ;
         }
         else {
-          ceedModel.FamilyTypeName = connectorFamilyType.FamilyTypeName ;
+          ceedModel.FloorPlanType = connectorFamilyType.FloorPlanType ;
         }
       }
       else {
         familyType.Add( floorPlanSymbol ) ;
-        ceedModel.FamilyTypeName = defaultFamilyTypeName + ( connectorFamilyTypeModels.Count + 1 ) ;
-        connectorFamilyTypeModels.Add( new ConnectorFamilyTypeModel( floorPlanSymbol, ceedModel.FamilyTypeName, string.Empty ) ) ;
+        ceedModel.FloorPlanType = defaultFloorPlanType + ( connectorFamilyTypeModels.Count + 1 ) ;
+        connectorFamilyTypeModels.Add( new ConnectorFamilyTypeModel( floorPlanSymbol, ceedModel.FloorPlanType, string.Empty ) ) ;
       }
     }
 
@@ -308,154 +308,154 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
     {
       foreach ( var connectorFamilyTypeModel in connectorFamilyTypeModels ) {
         if ( ! string.IsNullOrEmpty( connectorFamilyTypeModel.ConnectorFamilyTypeName ) ) continue ;
-        var familyTypeName = connectorFamilyTypeModel.FamilyTypeName ;
-        switch ( familyTypeName ) {
-          case "FamilyType1" :
-          case "FamilyType2" :
-          case "FamilyType3" :
-          case "FamilyType4" :
-          case "FamilyType83" :
-          case "FamilyType97" :
-          case "FamilyType98" :
+        var floorPlanType = connectorFamilyTypeModel.FloorPlanType ;
+        switch ( floorPlanType ) {
+          case "FloorPlanType1" :
+          case "FloorPlanType2" :
+          case "FloorPlanType3" :
+          case "FloorPlanType4" :
+          case "FloorPlanType83" :
+          case "FloorPlanType97" :
+          case "FloorPlanType98" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() ;
             break ;
-          case "FamilyType7" :
-          case "FamilyType8" :
-          case "FamilyType9" :
-          case "FamilyType10" :
-          case "FamilyType29" :
-          case "FamilyType31" :
-          case "FamilyType32" :
-          case "FamilyType35" :
-          case "FamilyType36" :
-          case "FamilyType37" :
-          case "FamilyType38" :
-          case "FamilyType39" :
-          case "FamilyType40" :
-          case "FamilyType41" :
+          case "FloorPlanType7" :
+          case "FloorPlanType8" :
+          case "FloorPlanType9" :
+          case "FloorPlanType10" :
+          case "FloorPlanType29" :
+          case "FloorPlanType31" :
+          case "FloorPlanType32" :
+          case "FloorPlanType35" :
+          case "FloorPlanType36" :
+          case "FloorPlanType37" :
+          case "FloorPlanType38" :
+          case "FloorPlanType39" :
+          case "FloorPlanType40" :
+          case "FloorPlanType41" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide2.GetFieldName() ;
             break ;
-          case "FamilyType11" :
-          case "FamilyType12" :
-          case "FamilyType13" :
-          case "FamilyType33" :
-          case "FamilyType34" :
+          case "FloorPlanType11" :
+          case "FloorPlanType12" :
+          case "FloorPlanType13" :
+          case "FloorPlanType33" :
+          case "FloorPlanType34" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide5.GetFieldName() ;
             break ;
-          case "FamilyType14" :
-          case "FamilyType15" :
-          case "FamilyType16" :
-          case "FamilyType17" :
-          case "FamilyType22" :
+          case "FloorPlanType14" :
+          case "FloorPlanType15" :
+          case "FloorPlanType16" :
+          case "FloorPlanType17" :
+          case "FloorPlanType22" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide6.GetFieldName() ;
             break ;
-          case "FamilyType18" :
-          case "FamilyType19" :
+          case "FloorPlanType18" :
+          case "FloorPlanType19" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide7.GetFieldName() ;
             break ;
-          case "FamilyType20" :
-          case "FamilyType21" :
+          case "FloorPlanType20" :
+          case "FloorPlanType21" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide8.GetFieldName() ;
             break ;
-          case "FamilyType23" :
-          case "FamilyType25" :
-          case "FamilyType26" :
-          case "FamilyType30" :
-          case "FamilyType42" :
-          case "FamilyType43" :
-          case "FamilyType44" :
-          case "FamilyType45" :
-          case "FamilyType46" :
-          case "FamilyType47" :
-          case "FamilyType48" :
-          case "FamilyType49" :
-          case "FamilyType50" :
-          case "FamilyType51" :
-          case "FamilyType52" :
-          case "FamilyType53" :
-          case "FamilyType54" :
-          case "FamilyType55" :
-          case "FamilyType56" :
-          case "FamilyType57" :
-          case "FamilyType58" :
+          case "FloorPlanType23" :
+          case "FloorPlanType25" :
+          case "FloorPlanType26" :
+          case "FloorPlanType30" :
+          case "FloorPlanType42" :
+          case "FloorPlanType43" :
+          case "FloorPlanType44" :
+          case "FloorPlanType45" :
+          case "FloorPlanType46" :
+          case "FloorPlanType47" :
+          case "FloorPlanType48" :
+          case "FloorPlanType49" :
+          case "FloorPlanType50" :
+          case "FloorPlanType51" :
+          case "FloorPlanType52" :
+          case "FloorPlanType53" :
+          case "FloorPlanType54" :
+          case "FloorPlanType55" :
+          case "FloorPlanType56" :
+          case "FloorPlanType57" :
+          case "FloorPlanType58" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide9.GetFieldName() ;
             break ;
-          case "FamilyType27" :
-          case "FamilyType59" :
-          case "FamilyType60" :
-          case "FamilyType61" :
-          case "FamilyType62" :
-          case "FamilyType63" :
-          case "FamilyType64" :
-          case "FamilyType65" :
-          case "FamilyType66" :
-          case "FamilyType67" :
-          case "FamilyType68" :
-          case "FamilyType69" :
-          case "FamilyType78" : 
-          case "FamilyType99" :
-          case "FamilyType100" :
-          case "FamilyType101" :
-          case "FamilyType102" :
+          case "FloorPlanType27" :
+          case "FloorPlanType59" :
+          case "FloorPlanType60" :
+          case "FloorPlanType61" :
+          case "FloorPlanType62" :
+          case "FloorPlanType63" :
+          case "FloorPlanType64" :
+          case "FloorPlanType65" :
+          case "FloorPlanType66" :
+          case "FloorPlanType67" :
+          case "FloorPlanType68" :
+          case "FloorPlanType69" :
+          case "FloorPlanType78" : 
+          case "FloorPlanType99" :
+          case "FloorPlanType100" :
+          case "FloorPlanType101" :
+          case "FloorPlanType102" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide10.GetFieldName() ;
             break ;
-          case "FamilyType90" :
+          case "FloorPlanType90" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide11.GetFieldName() ;
             break ;
-          case "FamilyType70" :
+          case "FloorPlanType70" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide19.GetFieldName() ;
             break ;
-          case "FamilyType71" :
-          case "FamilyType72" :
-          case "FamilyType73" :
-          case "FamilyType74" :
+          case "FloorPlanType71" :
+          case "FloorPlanType72" :
+          case "FloorPlanType73" :
+          case "FloorPlanType74" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide20.GetFieldName() ;
             break ;
-          case "FamilyType75" :
+          case "FloorPlanType75" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide21.GetFieldName() ;
             break ;
-          case "FamilyType76" :
+          case "FloorPlanType76" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide22.GetFieldName() ;
             break ;
-          case "FamilyType77" :
+          case "FloorPlanType77" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide23.GetFieldName() ;
             break ;
-          case "FamilyType79" :
+          case "FloorPlanType79" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide24.GetFieldName() ;
             break ;
-          case "FamilyType80" :
-          case "FamilyType82" :
+          case "FloorPlanType80" :
+          case "FloorPlanType82" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide25.GetFieldName() ;
             break ;
-          case "FamilyType81" :
+          case "FloorPlanType81" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide26.GetFieldName() ;
             break ;
-          case "FamilyType84" :
+          case "FloorPlanType84" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide27.GetFieldName() ;
             break ;
-          case "FamilyType87" :
+          case "FloorPlanType87" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide28.GetFieldName() ;
             break ;
-          case "FamilyType85" :
-          case "FamilyType86" :
+          case "FloorPlanType85" :
+          case "FloorPlanType86" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide29.GetFieldName() ;
             break ;
-          case "FamilyType88" :
+          case "FloorPlanType88" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide30.GetFieldName() ;
             break ;
-          case "FamilyType89" :
+          case "FloorPlanType89" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide31.GetFieldName() ;
             break ;
-          case "FamilyType91" :
+          case "FloorPlanType91" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide32.GetFieldName() ;
             break ;
-          case "FamilyType92" :
-          case "FamilyType93" :
-          case "FamilyType94" :
+          case "FloorPlanType92" :
+          case "FloorPlanType93" :
+          case "FloorPlanType94" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide33.GetFieldName() ;
             break ;
-          case "FamilyType95" :
-          case "FamilyType96" :
+          case "FloorPlanType95" :
+          case "FloorPlanType96" :
             connectorFamilyTypeModel.ConnectorFamilyTypeName = ConnectorOneSideFamilyType.ConnectorOneSide34.GetFieldName() ;
             break ;
           default:

@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       dlgCeeDModel.ShowDialog() ;
       if ( ! ( dlgCeeDModel.DialogResult ?? false ) ) return Result.Cancelled ;
       ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( dlgCeeDModel.SelectedDeviceSymbol ) ) return Result.Cancelled ;
+      if ( string.IsNullOrEmpty( dlgCeeDModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
         var uiDoc = commandData.Application.ActiveUIDocument ;
@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        var connectorOneSideFamilyType = GetConnectorFamilyType( doc, dlgCeeDModel.SelectedFamilyType ) ;
+        var connectorOneSideFamilyType = GetConnectorFamilyType( doc, dlgCeeDModel.SelectedFloorPlanType ) ;
         var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, connectorOneSideFamilyType ) ;
         var ceeDCode = dlgCeeDModel.SelectedCeeDCode + "-" + dlgCeeDModel.SelectedDeviceSymbol + "-" + dlgCeeDModel.SelectedModelNumber ;
         element.SetProperty( ConnectorFamilyParameter.CeeDCode, ceeDCode ) ;
@@ -100,11 +100,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
     }
 
-    private ConnectorOneSideFamilyType GetConnectorFamilyType( Document doc, string familyTypeName )
+    private ConnectorOneSideFamilyType GetConnectorFamilyType( Document doc, string floorPlanType )
     {
       var connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide1 ;
       var connectorFamilyTypeStorable = doc.GetConnectorFamilyTypeStorable() ;
-      var connectorFamilyTypeName = connectorFamilyTypeStorable.ConnectorFamilyTypeModelData.FirstOrDefault( c => c.FamilyTypeName == familyTypeName )!.ConnectorFamilyTypeName ;
+      var connectorFamilyTypeName = connectorFamilyTypeStorable.ConnectorFamilyTypeModelData.FirstOrDefault( c => c.FloorPlanType == floorPlanType )!.ConnectorFamilyTypeName ;
       if ( string.IsNullOrEmpty( connectorFamilyTypeName ) ) return connectorOneSideFamilyType ;
       if ( connectorFamilyTypeName == ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() )
         connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide1 ;
