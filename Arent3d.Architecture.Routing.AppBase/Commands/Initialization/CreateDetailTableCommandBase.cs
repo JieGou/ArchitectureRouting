@@ -168,45 +168,47 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const double percentage = 0.32 ;
       const string defaultChildPlumbingSymbol = "↑" ;
 
-      var parentDetailTableModel = detailTableModelsByDetailSymbolId.First() ;
-      var plumbingCount = 0 ;
       var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
       var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
-      double currentPlumbingCrossSectionalArea = 0.0 ;
+      var detailTableModelsByClassification = detailTableModelsByDetailSymbolId.GroupBy( d => d.Classification ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      foreach ( var (_, detailTableModelByClassification) in detailTableModelsByClassification ) {
+        var parentDetailTableModel = detailTableModelByClassification.First() ;
+        var plumbingCount = 0 ;
+        var currentPlumbingCrossSectionalArea = 0.0 ;
+        foreach ( var currentDetailTableModel in detailTableModelByClassification ) {
+          currentPlumbingCrossSectionalArea += currentDetailTableModel.WireCrossSectionalArea / percentage ;
 
-      foreach ( var currentDetailTableModel in detailTableModelsByDetailSymbolId ) {
-        currentPlumbingCrossSectionalArea += currentDetailTableModel.WireCrossSectionalArea / percentage ;
-
-        if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
-          var plumbing = conduitsModels.Last() ;
-          parentDetailTableModel.PlumbingType = parentDetailTableModel == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
-          parentDetailTableModel.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
-          plumbingCount++ ;
-          parentDetailTableModel = currentDetailTableModel ;
-          currentPlumbingCrossSectionalArea = currentDetailTableModel.WireCrossSectionalArea ;
-          if ( currentDetailTableModel != detailTableModelsByDetailSymbolId.Last() ) continue ;
-          plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableModel.WireCrossSectionalArea ) ;
-          currentDetailTableModel.PlumbingType = currentDetailTableModel == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
-          currentDetailTableModel.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-          plumbingCount++ ;
-        }
-        else {
-          if ( currentDetailTableModel == detailTableModelsByDetailSymbolId.Last() ) {
-            var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
+          if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
+            var plumbing = conduitsModels.Last() ;
             parentDetailTableModel.PlumbingType = parentDetailTableModel == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
-            parentDetailTableModel.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+            parentDetailTableModel.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
+            plumbingCount++ ;
+            parentDetailTableModel = currentDetailTableModel ;
+            currentPlumbingCrossSectionalArea = currentDetailTableModel.WireCrossSectionalArea ;
+            if ( currentDetailTableModel != detailTableModelsByDetailSymbolId.Last() ) continue ;
+            plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableModel.WireCrossSectionalArea ) ;
+            currentDetailTableModel.PlumbingType = currentDetailTableModel == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
+            currentDetailTableModel.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
             plumbingCount++ ;
           }
+          else {
+            if ( currentDetailTableModel == detailTableModelsByDetailSymbolId.Last() ) {
+              var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
+              parentDetailTableModel.PlumbingType = parentDetailTableModel == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
+              parentDetailTableModel.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+              plumbingCount++ ;
+            }
 
-          if ( currentDetailTableModel == detailTableModelsByDetailSymbolId.First() ) continue ;
-          currentDetailTableModel.PlumbingType = defaultChildPlumbingSymbol ;
-          currentDetailTableModel.PlumbingSize = defaultChildPlumbingSymbol ;
-          currentDetailTableModel.NumberOfPlumbing = defaultChildPlumbingSymbol ;
+            if ( currentDetailTableModel == detailTableModelsByDetailSymbolId.First() ) continue ;
+            currentDetailTableModel.PlumbingType = defaultChildPlumbingSymbol ;
+            currentDetailTableModel.PlumbingSize = defaultChildPlumbingSymbol ;
+            currentDetailTableModel.NumberOfPlumbing = defaultChildPlumbingSymbol ;
+          }
         }
-      }
 
-      foreach ( var detailTableModel in detailTableModelsByDetailSymbolId.Where( d => d.PlumbingSize != defaultChildPlumbingSymbol ).ToList() ) {
-        detailTableModel.NumberOfPlumbing = plumbingCount.ToString() ;
+        foreach ( var detailTableModel in detailTableModelByClassification.Where( d => d.PlumbingSize != defaultChildPlumbingSymbol ).ToList() ) {
+          detailTableModel.NumberOfPlumbing = plumbingCount.ToString() ;
+        }
       }
     }
 
