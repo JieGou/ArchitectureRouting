@@ -108,6 +108,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           instance.LookupParameter( "Length End One" ).Set( lengthOfDirectionCylindricalShaft ) ;
           instance.LookupParameter( "Length End Two" ).Set( lengthOfDirectionCylindricalShaft ) ;
 
+          //Create green circle on the outer shape of the shaft
+          var subCategory = GetLineStyle( document ) ;
+          var allFloorPlanView = document.GetAllElements<ViewPlan>().Where( v => v.GenLevel != null ).ToList() ;
+          foreach ( var viewPlan in allFloorPlanView ) {
+            var heightCircle = viewPlan.GenLevel.Elevation ;
+            var circleCurve = Arc.Create( new XYZ( firstPoint.X, firstPoint.Y, heightCircle ), radius, startAngle, endAngle, xAxis, yAxis ) ;
+            var greenCircle = document.Create.NewDetailCurve( viewPlan, circleCurve ) ;
+            greenCircle.LineStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+          }
+
           trans.Commit() ;
         }
 
@@ -120,6 +130,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         message = e.Message ;
         return Result.Failed ;
       }
+    }
+
+    private Category GetLineStyle( Document doc )
+    {
+      const string subCategoryName = "SubCategoryForCylindricalShaft" ;
+      var categories = doc.Settings.Categories ;
+      Category category = doc.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
+      Category subCategory ;
+      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
+        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
+        var newColor = new Color( 0, 250, 0 ) ;
+        subCategory.LineColor = newColor ;
+        subCategory.SetLineWeight( 16, GraphicsStyleType.Projection ) ;
+      }
+      else
+        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+
+      return subCategory ;
     }
   }
 }
