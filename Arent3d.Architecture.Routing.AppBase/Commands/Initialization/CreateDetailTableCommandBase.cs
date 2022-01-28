@@ -305,13 +305,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( ! listMaterialCode.Any() ) continue ;
           var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
           foreach ( var master in masterModels ) {
-            var conduitModels = conduitsModelData.Where( x => x.PipingType == master.Type && x.Size == master.Size1 ).ToList() ;
-            classification = conduitModels.FirstOrDefault()?.Classification ?? string.Empty ;
             wireType = master.Type ;
             wireSize = master.Size1 ;
             wireStrip = master.Size2 ;
             var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && wireStrip == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && wireStrip == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
-            if ( wiresAndCablesModel != null ) wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+            if ( wiresAndCablesModel == null ) continue ;
+            classification = wiresAndCablesModel.Classification ;
+            wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
           }
         }
       }
