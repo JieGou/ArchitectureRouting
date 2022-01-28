@@ -142,7 +142,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         subCategory = categories.NewSubcategory( category, subCategoryName ) ;
         var newColor = new Color( 0, 250, 0 ) ;
         subCategory.LineColor = newColor ;
-        subCategory.SetLineWeight( 16, GraphicsStyleType.Projection ) ;
+        subCategory.SetLineWeight( 7, GraphicsStyleType.Projection ) ;
       }
       else
         subCategory = category.SubCategories.get_Item( subCategoryName ) ;
