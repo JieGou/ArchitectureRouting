@@ -170,7 +170,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
       var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
-      var detailTableModelsByClassification = detailTableModelsByDetailSymbolId.GroupBy( d => d.Classification ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      var detailTableModelsByClassification = detailTableModelsByDetailSymbolId.GroupBy( d => d.SignalType ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var (_, detailTableModelByClassification) in detailTableModelsByClassification ) {
         var parentDetailTableModel = detailTableModelByClassification.First() ;
         var plumbingCount = 0 ;
@@ -282,7 +282,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var ceeDCode = string.Empty ;
       var constructionClassification = string.Empty ;
-      var classification = string.Empty ;
+      var signalType = string.Empty ;
       var wireType = string.Empty ;
       var wireSize = string.Empty ;
       var wireStrip = string.Empty ;
@@ -312,13 +312,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             wireStrip = master.Size2 ;
             var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && wireStrip == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && wireStrip == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
             if ( wiresAndCablesModel == null ) continue ;
-            classification = wiresAndCablesModel.Classification ;
+            signalType = wiresAndCablesModel.Classification ;
             wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
           }
         }
       }
 
-      var detailTableModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, constructionClassification, classification, constructionItem, constructionItem, "", wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute ) ;
+      var detailTableModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, constructionClassification, signalType, constructionItem, constructionItem, "", wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute ) ;
       detailTableModels.Add( detailTableModel ) ;
     }
 

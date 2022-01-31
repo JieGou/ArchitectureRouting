@@ -108,7 +108,7 @@
                 <DataGridTextColumn Header="配管サイズ" Width="45" Binding="{Binding PlumbingSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="配管本数" Width="45" Binding="{Binding NumberOfPlumbing, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="施工区分" Width="45" Binding="{Binding ConstructionClassification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="信号種別" Width="70" Binding="{Binding Classification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="信号種別" Width="70" Binding="{Binding SignalType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridComboBoxColumn Header="工事項目" Width="90"
                                         SelectedValueBinding="{Binding ConstructionItems}"
                                         DisplayMemberPath="Type"

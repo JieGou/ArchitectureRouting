@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string? PlumbingSize { get ; set ; }
     public string? NumberOfPlumbing { get ; set ; }
     public string? ConstructionClassification { get ; set ; }
-    public string? Classification { get ; set ; }
+    public string? SignalType { get ; set ; }
     public string? ConstructionItems { get ; set ; }
     public string? PlumbingItems { get ; set ; }
     public string? Remark { get ; set ; }
@@ -48,7 +48,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? plumbingSize,
       string? numberOfPlumbing,
       string? constructionClassification,
-      string? classification,
+      string? signalType,
       string? constructionItems,
       string? plumbingItems,
       string? remark,
@@ -75,7 +75,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       PlumbingSize = plumbingSize ;
       NumberOfPlumbing = numberOfPlumbing ;
       ConstructionClassification = constructionClassification ;
-      Classification = classification ;
+      SignalType = signalType ;
       ConstructionItems = constructionItems ;
       PlumbingItems = plumbingItems ;
       Remark = remark ;
