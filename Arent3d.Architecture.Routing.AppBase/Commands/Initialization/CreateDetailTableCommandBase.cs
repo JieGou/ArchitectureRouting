@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
         }
 
-        detailTableModels = new ObservableCollection<DetailTableModel>( detailTableModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.SignalType ).ThenByDescending( x => x.IsParentRoute ).ToList() ) ;
+        SortDetailTableModel( ref detailTableModels ) ;
         SetPlumbingData( conduitsModelData, ref detailTableModels, defaultParentPlumbingType ) ;
       }
       catch {
@@ -145,21 +145,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return str ;
     }
 
-    private static void SetPlumbingData( List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType )
+    private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels )
     {
-      Dictionary<string?, List<DetailTableModel>> detailTableModelsByDetailSymbol = new Dictionary<string?, List<DetailTableModel>>() ;
-      foreach ( var detailTableModel in detailTableModels ) {
-        if ( ! detailTableModelsByDetailSymbol.ContainsKey( detailTableModel.DetailSymbolId ) ) {
-          detailTableModelsByDetailSymbol.Add( detailTableModel.DetailSymbolId, new List<DetailTableModel>() { detailTableModel } ) ;
-        }
-        else {
-          detailTableModelsByDetailSymbol.TryGetValue( detailTableModel.DetailSymbolId, out List<DetailTableModel> value ) ;
-          value.Add( detailTableModel ) ;
+      var detailTableModelsByDetailSymbol = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      List<DetailTableModel> sortedDetailTableModelsList = new() ;
+      foreach ( var detailSymbolId in detailTableModelsByDetailSymbol.Keys ) {
+        List<DetailTableModel> detailTableModelsByDetailSymbolId = detailTableModelsByDetailSymbol[ detailSymbolId ]!.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.SignalType ).ToList() ;
+        var detailTableModelsBySignalType = detailTableModelsByDetailSymbolId.GroupBy( d => d.SignalType ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).Select( g => g.ToList() ).ToList() ;
+        foreach ( var item in detailTableModelsBySignalType ) {
+          sortedDetailTableModelsList.AddRange( item ) ;
         }
       }
 
+      detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
+    }
+
+    private static void SetPlumbingData( List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType )
+    {
+      var detailTableModelsByDetailSymbol = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var detailSymbolId in detailTableModelsByDetailSymbol.Keys ) {
-        List<DetailTableModel> detailTableModelsByDetailSymbolId = detailTableModelsByDetailSymbol[ detailSymbolId ]!.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.SignalType ).ThenByDescending( x => x.IsParentRoute ).ToList() ;
+        List<DetailTableModel> detailTableModelsByDetailSymbolId = detailTableModelsByDetailSymbol[ detailSymbolId ]! ;
         SetPlumbingDataForOneSymbol( conduitsModelData, ref detailTableModelsByDetailSymbolId, plumbingType ) ;
       }
     }
