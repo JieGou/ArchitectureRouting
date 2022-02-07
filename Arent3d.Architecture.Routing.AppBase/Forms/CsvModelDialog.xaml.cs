@@ -4,6 +4,7 @@ using System.IO ;
 using System.Linq ;
 using System.Reflection ;
 using System.Text ;
+using System.Threading ;
 using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
@@ -12,6 +13,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
 using MessageBox = System.Windows.MessageBox ;
+using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -44,47 +46,56 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_Save( object sender, RoutedEventArgs e )
     {
-      CsvStorable csvStorable = _document.GetCsvStorable() ;
-      {
-        if ( _allWiresAndCablesModels.Any() )
-          csvStorable.WiresAndCablesModelData = _allWiresAndCablesModels ;
-        if ( _allConduitModels.Any() )
-          csvStorable.ConduitsModelData = _allConduitModels ;
-        if ( _allHiroiSetMasterNormalModels.Any() )
-          csvStorable.HiroiSetMasterNormalModelData = _allHiroiSetMasterNormalModels ;
-        if ( _allHiroiSetMasterEcoModels.Any() )
-          csvStorable.HiroiSetMasterEcoModelData = _allHiroiSetMasterEcoModels ;
-        if ( _allHiroiSetCdMasterNormalModels.Any() )
-          csvStorable.HiroiSetCdMasterNormalModelData = _allHiroiSetCdMasterNormalModels ;
-        if ( _allHiroiSetCdMasterEcoModels.Any() )
-          csvStorable.HiroiSetCdMasterEcoModelData = _allHiroiSetCdMasterEcoModels ;
-        if ( _allHiroiMasterModels.Any() )
-          csvStorable.HiroiMasterModelData = _allHiroiMasterModels ;
+      using var progress = ProgressBar.ShowWithNewThread( new CancellationTokenSource() ) ;
+      progress.Message = "Saving data..." ;
+      using ( var progressData = progress?.Reserve( 0.5 ) ) {
+        CsvStorable csvStorable = _document.GetCsvStorable() ;
+        {
+          if ( _allWiresAndCablesModels.Any() )
+            csvStorable.WiresAndCablesModelData = _allWiresAndCablesModels ;
+          if ( _allConduitModels.Any() )
+            csvStorable.ConduitsModelData = _allConduitModels ;
+          if ( _allHiroiSetMasterNormalModels.Any() )
+            csvStorable.HiroiSetMasterNormalModelData = _allHiroiSetMasterNormalModels ;
+          if ( _allHiroiSetMasterEcoModels.Any() )
+            csvStorable.HiroiSetMasterEcoModelData = _allHiroiSetMasterEcoModels ;
+          if ( _allHiroiSetCdMasterNormalModels.Any() )
+            csvStorable.HiroiSetCdMasterNormalModelData = _allHiroiSetCdMasterNormalModels ;
+          if ( _allHiroiSetCdMasterEcoModels.Any() )
+            csvStorable.HiroiSetCdMasterEcoModelData = _allHiroiSetCdMasterEcoModels ;
+          if ( _allHiroiMasterModels.Any() )
+            csvStorable.HiroiMasterModelData = _allHiroiMasterModels ;
 
-        try {
-          using Transaction t = new Transaction( _document, "Save data" ) ;
-          t.Start() ;
-          csvStorable.Save() ;
-          t.Commit() ;
-        }
-        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-          MessageBox.Show( "Save CSV Files Failed.", "Error Message" ) ;
-          DialogResult = false ;
-        }
-      }
-      CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
-      {
-        if ( _ceeDModelData.Any() ) {
-          ceeDStorable.CeedModelData = _ceeDModelData ;
           try {
-            using Transaction t = new Transaction( _document, "Save CeeD data" ) ;
+            using Transaction t = new Transaction( _document, "Save data" ) ;
             t.Start() ;
-            ceeDStorable.Save() ;
+            csvStorable.Save() ;
             t.Commit() ;
           }
           catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+            MessageBox.Show( "Save CSV Files Failed.", "Error Message" ) ;
+            DialogResult = false ;
           }
         }
+        progressData?.ThrowIfCanceled() ;
+      }
+
+      using ( var progressData = progress?.Reserve( 0.9 ) ) {
+        CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
+        {
+          if ( _ceeDModelData.Any() ) {
+            ceeDStorable.CeedModelData = _ceeDModelData ;
+            try {
+              using Transaction t = new Transaction( _document, "Save CeeD data" ) ;
+              t.Start() ;
+              ceeDStorable.Save() ;
+              t.Commit() ;
+            }
+            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+            }
+          }
+        }
+        progressData?.ThrowIfCanceled() ;
       }
 
       DialogResult = true ;
