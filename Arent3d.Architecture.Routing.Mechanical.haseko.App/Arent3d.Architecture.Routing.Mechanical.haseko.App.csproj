@@ -86,6 +86,7 @@
         <Resource Include="resources\Plans.png" />
         <Resource Include="resources\ReplaceFromTo.png" />
         <Resource Include="resources\RerouteAll.png" />
+        <Resource Include="resources\room_boxes.png" />
     </ItemGroup>
 
     <ItemGroup>
