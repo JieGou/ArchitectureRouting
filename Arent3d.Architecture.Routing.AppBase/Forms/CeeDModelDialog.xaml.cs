@@ -181,15 +181,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
 
-      string directory = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location ) ! ;
-      var resourcesPath = Path.Combine( directory.Substring( 0, directory.IndexOf( "bin", StringComparison.Ordinal ) ), "resources" ) ;
-      string connectorFamilyTypeFilePath = Path.Combine( resourcesPath, "csv", "ConnectorFamilyType.xlsx" ) ;
-
-      if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) || string.IsNullOrEmpty( connectorFamilyTypeFilePath ) ) return ;
-      List<ConnectorFamilyTypeModel> connectorFamilyTypeModels = ExcelToModelConverter.GetConnectorFamilyType( connectorFamilyTypeFilePath ) ;
+      if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
-        List<CeedModel> ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( filePath, fileEquipmentSymbolsPath, connectorFamilyTypeModels ) ;
+        List<CeedModel> ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( filePath, fileEquipmentSymbolsPath ) ;
         if ( ! ceeDModelData.Any() ) return ;
         ceeDStorable.CeedModelData = ceeDModelData ;
         ceeDStorable.CeedModelUsedData = new List<CeedModel>() ;
@@ -204,21 +199,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           t.Commit() ;
         }
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        }
-
-        ConnectorFamilyTypeStorable connectorFamilyTypeStorable = _document.GetConnectorFamilyTypeStorable() ;
-        {
-          if ( connectorFamilyTypeModels.Any() ) {
-            connectorFamilyTypeStorable.ConnectorFamilyTypeModelData = connectorFamilyTypeModels ;
-            try {
-              using Transaction t = new Transaction( _document, "Save connector family type data" ) ;
-              t.Start() ;
-              connectorFamilyTypeStorable.Save() ;
-              t.Commit() ;
-            }
-            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-            }
-          }
         }
       }
       

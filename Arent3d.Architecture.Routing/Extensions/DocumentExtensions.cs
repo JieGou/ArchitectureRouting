@@ -100,7 +100,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new DetailSymbolStorable( document ) ;
       }
     }
-    
+
     /// <summary>
     /// Get rack notation data from snoop DB.
     /// </summary>
@@ -111,19 +111,6 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new RackNotationStorable( document ) ;
-      }
-    }
-
-    /// <summary>
-    /// Get connector family type data from snoop DB.
-    /// </summary>
-    public static ConnectorFamilyTypeStorable GetConnectorFamilyTypeStorable( this Document document )
-    {
-      try {
-        return ConnectorFamilyTypeStorableCache.Get( document ).FindOrCreate( ConnectorFamilyTypeStorable.StorableName ) ;
-      }
-      catch ( InvalidOperationException ) {
-        return new ConnectorFamilyTypeStorable( document ) ;
       }
     }
   }

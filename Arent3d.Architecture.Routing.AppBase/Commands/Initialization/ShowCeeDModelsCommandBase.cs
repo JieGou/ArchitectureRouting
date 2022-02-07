@@ -36,8 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        var connectorOneSideFamilyType = GetConnectorFamilyType( dlgCeeDModel.SelectedFloorPlanType ) ;
-        var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, connectorOneSideFamilyType ) ;
+        var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeeDModel.SelectedFloorPlanType ) ;
         var ceeDCode = dlgCeeDModel.SelectedCeeDCode + "-" + dlgCeeDModel.SelectedDeviceSymbol + "-" + dlgCeeDModel.SelectedModelNumber ;
         element.SetProperty( ConnectorFamilyParameter.CeeDCode, ceeDCode ) ;
         if ( element is FamilyInstance familyInstance ) familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
@@ -94,8 +93,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return result ;
     }
 
-    private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, ConnectorOneSideFamilyType connectorOneSideFamilyType )
+    private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, string floorPlanType )
     {
+      if ( string.IsNullOrEmpty( floorPlanType ) ) {
+        var routingSymbol = ( uiDocument.Document.GetFamilySymbols( RoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
+        return routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+      }
+
+      var connectorOneSideFamilyType = GetConnectorFamilyType( floorPlanType ) ;
       var symbol = uiDocument.Document.GetFamilySymbols( connectorOneSideFamilyType ).FirstOrDefault() ?? ( uiDocument.Document.GetFamilySymbols( RoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
       return symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
     }
