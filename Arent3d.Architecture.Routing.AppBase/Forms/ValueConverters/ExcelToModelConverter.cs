@@ -20,9 +20,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 {
   public static class ExcelToModelConverter
   {
+    private const string DefaultSymbol = "Dummy" ;
+    
     public static List<CeedModel> GetAllCeeDModelNumber( string path, string path2 )
     {
-      const string defaultSymbol = "Dummy" ;
       List<CeedModel> ceedModelData = new List<CeedModel>() ;
 
       var equipmentSymbols = new List<EquipmentSymbol>() ;
@@ -159,7 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
                 CreateCeeDModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty, floorPlanImages, instrumentationImages, true ) ;
                 break ;
               case > 1 :
-                floorPlanSymbol = defaultSymbol ;
+                floorPlanSymbol = DefaultSymbol ;
                 CreateCeeDModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty, floorPlanImages, instrumentationImages, false, true ) ;
                 break ;
               default :
@@ -176,7 +177,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
                   CreateCeeDModel( ceedModelData, equipmentSymbols, ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, true ) ;
                   break ;
                 case > 1 :
-                  floorPlanSymbol = defaultSymbol ;
+                  floorPlanSymbol = DefaultSymbol ;
                   CreateCeeDModel( ceedModelData, equipmentSymbols, ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, false, true ) ;
                   break ;
                 default :
@@ -258,7 +259,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 
     private static void AddCeeDModel( ICollection<CeedModel> ceeDModelData, string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string ceeDName, string condition, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages, bool isDummySymbol )
     {
-      var floorPlanType = SetFloorPlanType( ceeDModelNumber, generalDisplayDeviceSymbol ) ;
+      var floorPlanType = SetFloorPlanType( ceeDModelNumber, generalDisplayDeviceSymbol, floorPlanSymbol ) ;
       if ( isFloorPlanImages )
         ceeDModelData.Add( new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, floorPlanType ) ) ;
       else if ( isDummySymbol )
@@ -267,9 +268,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         ceeDModelData.Add( new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty, floorPlanType ) ) ;
     }
 
-    private static string SetFloorPlanType( string ceeDModelNumber, string generalDisplayDeviceSymbol )
+    private static string SetFloorPlanType( string ceeDModelNumber, string generalDisplayDeviceSymbol, string floorPlanSymbol )
     {
       string defaultFloorPlanType = string.Empty ;
+      if ( floorPlanSymbol == DefaultSymbol ) return defaultFloorPlanType ;
       if ( string.IsNullOrEmpty( ceeDModelNumber ) ) {
         if ( ! string.IsNullOrEmpty( generalDisplayDeviceSymbol ) && generalDisplayDeviceSymbol.Contains( "BOX" ) )
           return ConnectorOneSideFamilyType.ConnectorOneSide32.GetFieldName() ;
