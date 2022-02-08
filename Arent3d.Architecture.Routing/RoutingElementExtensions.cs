@@ -56,7 +56,6 @@ namespace Arent3d.Architecture.Routing
       EraseArentConduitType( document ) ;
       document.EraseAllRoutingFamilies() ;
       document.UnloadAllRoutingParameters() ;
-      document.EraseAllConnectorFamilies() ;
     }
 
     private static string GetElbowTypeName( Document document )
