@@ -109,78 +109,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide1 ;
       if ( string.IsNullOrEmpty( floorPlanType ) ) return connectorOneSideFamilyType ;
-      if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide1 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide2.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide2 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide3.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide3 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide4.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide4 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide5.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide5 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide6.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide6 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide7.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide7 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide8.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide8 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide9.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide9 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide10.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide10 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide11.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide11 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide12.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide12 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide13.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide13 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide14.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide14 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide15.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide15 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide16.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide16 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide17.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide17 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide18.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide18 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide19.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide19 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide20.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide20 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide21.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide21 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide22.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide22 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide23.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide23 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide24.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide24 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide25.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide25 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide26.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide26 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide27.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide27 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide28.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide28 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide29.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide29 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide30.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide30 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide31.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide31 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide32.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide32 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide33.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide33 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide34.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide34 ;
-      else if ( floorPlanType == ConnectorOneSideFamilyType.ConnectorOneSide35.GetFieldName() )
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide35 ;
-      else
-        connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide36 ;
+      foreach ( var item in (ConnectorOneSideFamilyType[]) Enum.GetValues( typeof( ConnectorOneSideFamilyType ) ) ) {
+        if ( floorPlanType == item.GetFieldName() ) connectorOneSideFamilyType = item ;
+      }
 
       return connectorOneSideFamilyType ;
     }

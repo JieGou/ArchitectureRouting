@@ -89,6 +89,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               using Transaction t = new Transaction( _document, "Save CeeD data" ) ;
               t.Start() ;
               ceeDStorable.Save() ;
+              _document.MakeCertainAllConnectorFamilies() ;
               t.Commit() ;
             }
             catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -406,17 +407,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       if ( File.Exists( ceeDCodeXlsFilePath ) && ! isLoadedCeeDFile ) {
         isLoadedCeeDFile = LoadCeeDCodeFile( correctMessage, errorMessage, ceeDCodeFile, equipmentSymbolsFile, ceeDCodeXlsFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath ) ;
-      }
-
-      if ( isLoadedCeeDFile ) {
-        try {
-          using Transaction t = new Transaction( _document, "Load connector's families" ) ;
-          t.Start() ;
-          _document.MakeCertainAllConnectorFamilies() ;
-          t.Commit() ;
-        }
-        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        }
       }
 
       string resultMessage = string.Empty ;
