@@ -134,12 +134,162 @@ namespace Arent3d.Architecture.Routing
     Room,
   }
 
+  public enum ConnectorOneSideFamilyType
+  {
+    [NameOnRevit("電線管用ファミリ(片側のみ)_1")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide1,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_2")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide2,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_3")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide3,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_4")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide4,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_5")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide5,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_6")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide6,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_7")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide7,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_8")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide8,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_9")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide9,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_10")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide10,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_11")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide11,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_12")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide12,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_13")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide13,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_14")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide14,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_15")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide15,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_16")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide16,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_17")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide17,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_18")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide18,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_19")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide19,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_20")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide20,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_21")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide21,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_22")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide22,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_23")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide23,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_24")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide24,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_25")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide25,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_26")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide26,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_27")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide27,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_28")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide28,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_29")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide29,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_30")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide30,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_31")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide31,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_32")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide32,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_33")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide33,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_34")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide34,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_35")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide35,
+    
+    [NameOnRevit("電線管用ファミリ(片側のみ)_36")]
+    [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
+    ConnectorOneSide36
+  }
+
   public static class RoutingFamilyExtensions
   {
     public static bool AllRoutingFamiliesAreLoaded( this Document document ) => document.AllFamiliesAreLoaded<RoutingFamilyType>() ;
 
     public static void MakeCertainAllRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<RoutingFamilyType>( AssetManager.GetFamilyPath, true ) ;
     public static void EraseAllRoutingFamilies( this Document document ) => document.UnloadAllFamilies<RoutingFamilyType>() ;
+
+    public static void MakeCertainAllConnectorFamilies( this Document document ) => document.MakeCertainAllFamilies<ConnectorOneSideFamilyType>( AssetManager.GetFamilyPath ) ;
+    public static void EraseAllConnectorFamilies( this Document document ) => document.UnloadAllFamilies<ConnectorOneSideFamilyType>() ;
 
     public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, string levelName, StructuralType structuralType )
     {
