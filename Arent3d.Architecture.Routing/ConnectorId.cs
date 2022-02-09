@@ -10,24 +10,24 @@ namespace Arent3d.Architecture.Routing
   /// </summary>
   public readonly struct ConnectorId : IEquatable<ConnectorId>
   {
-    private int OwnerIdValue { get ; }
+    private string OwnerUniqueId { get ; }
     private int Id { get ; }
 
     public ConnectorId( Connector connector )
     {
-      OwnerIdValue = connector.Owner.Id.IntegerValue ;
+      OwnerUniqueId = connector.Owner.UniqueId ;
       Id = connector.Id ;
     }
 
     public ConnectorId( ConnectorEndPoint connectorEndPoint )
     {
-      OwnerIdValue = connectorEndPoint.EquipmentId.IntegerValue ;
+      OwnerUniqueId = connectorEndPoint.EquipmentUniqueId ;
       Id = connectorEndPoint.ConnectorIndex ;
     }
 
     public Element? GetOwner( Document document )
     {
-      return document.GetElement( new ElementId( OwnerIdValue ) ) ;
+      return document.GetElement( OwnerUniqueId ) ;
     }
     public Connector? GetConnector( Document document )
     {
@@ -35,7 +35,7 @@ namespace Arent3d.Architecture.Routing
     }
     public Connector? GetConnector( Element element )
     {
-      if ( element.Id.IntegerValue != OwnerIdValue ) return null ;
+      if ( element.UniqueId != OwnerUniqueId ) return null ;
 
       return element.GetConnectorManager()?.Lookup( Id ) ;
     }
@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing
 
     public bool Equals( ConnectorId other )
     {
-      return OwnerIdValue.Equals( other.OwnerIdValue ) && Id == other.Id ;
+      return OwnerUniqueId == other.OwnerUniqueId && Id == other.Id ;
     }
 
     public override bool Equals( object? obj )
@@ -67,7 +67,7 @@ namespace Arent3d.Architecture.Routing
     public override int GetHashCode()
     {
       unchecked {
-        return ( OwnerIdValue.GetHashCode() * 397 ) ^ Id ;
+        return ( OwnerUniqueId.GetHashCode() * 397 ) ^ Id ;
       }
     }
 

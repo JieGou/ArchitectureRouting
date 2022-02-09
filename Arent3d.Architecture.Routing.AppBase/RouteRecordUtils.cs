@@ -54,14 +54,8 @@ namespace Arent3d.Architecture.Routing.AppBase
         var fromFixedHeight=FixedHeight.CreateOrNull( record.FromFixedHeightType, record.FromFixedHeightValue );
         var toFixedHeight=FixedHeight.CreateOrNull( record.ToFixedHeightType, record.ToFixedHeightValue );
 
-        yield return ( record.RouteName, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, record.NominalDiameter, record.IsRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, record.AvoidType, ToElementId( record.ShaftElementId ) ) ) ;
+        yield return ( record.RouteName, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, record.NominalDiameter, record.IsRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, record.AvoidType, record.ShaftElementUniqueId ) ) ;
       }
-    }
-
-    private static ElementId ToElementId( int elementId )
-    {
-      if ( elementId <= 0 ) return ElementId.InvalidElementId ;
-      return new ElementId( elementId ) ;
     }
 
     private static MEPSystemType? GetSystemType( Document document, MEPSystemClassificationInfo classificationInfo, string systemTypeName )
@@ -102,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase
           AvoidType = segment.AvoidType,
           SystemClassification = segment.SystemClassificationInfo.Serialize(),
           SystemTypeName = GetSystemTypeName( segment.SystemType ),
-          ShaftElementId = segment.ShaftElementId.IntegerValue,
+          ShaftElementUniqueId = segment.ShaftElementUniqueId ?? string.Empty,
         } ;
       }
     }

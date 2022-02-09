@@ -10,11 +10,11 @@ namespace Arent3d.Architecture.Routing
   /// </summary>
   public class PassPointConnectorMapper
   {
-    private readonly Dictionary<(Route Route, int PassPointElementId), (ConnectorId? Prev, ConnectorId? Next)> _passPointConnectors = new() ;
+    private readonly Dictionary<(Route Route, string PassPointElementUniqueId), (ConnectorId? Prev, ConnectorId? Next)> _passPointConnectors = new() ;
 
-    public void Add( Route route, ElementId passPointElementId, Connector connector, bool continuesToFrom )
+    public void Add( Route route, string passPointElementUniqueId, Connector connector, bool continuesToFrom )
     {
-      var key = ( Route: route, PassPointElementId: passPointElementId.IntegerValue ) ;
+      var key = ( Route: route, PassPointElementUniqueId: passPointElementUniqueId ) ;
 
       if ( _passPointConnectors.TryGetValue( key, out var tuple ) ) {
         if ( continuesToFrom ) {
@@ -51,13 +51,13 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    public IEnumerable<(Route Route, ElementId PassPointElementId, Connector Prev, Connector Next)> GetPassPointConnections( Document document )
+    public IEnumerable<(Route Route, string PassPointElementUniqueId, Connector Prev, Connector Next)> GetPassPointConnections( Document document )
     {
       foreach ( var (key, (prevConnector, nextConnector)) in _passPointConnectors ) {
         if ( prevConnector?.GetConnector( document ) is not { } con1 ) continue ;
         if ( nextConnector?.GetConnector( document ) is not { } con2 ) continue ;
 
-        yield return ( key.Route, new ElementId( key.PassPointElementId ), con1, con2 ) ;
+        yield return ( key.Route, key.PassPointElementUniqueId, con1, con2 ) ;
       }
     }
   }

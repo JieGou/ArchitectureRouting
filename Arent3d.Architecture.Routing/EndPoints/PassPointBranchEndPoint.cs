@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private enum SerializeField
     {
-      PassPointId,
+      PassPointUniqueId,
       Diameter,
       EndPointKeyOverSubRoute,
     }
@@ -27,11 +27,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       var deserializer = new DeserializerObject<SerializeField>( str ) ;
 
-      if ( deserializer.GetElementId( SerializeField.PassPointId ) is not { } passPointId ) return null ;
+      if ( deserializer.GetString( SerializeField.PassPointUniqueId ) is not { } passPointUniqueId ) return null ;
       var diameter = deserializer.GetDouble( SerializeField.Diameter ) ;
       if ( deserializer.GetEndPointKey( SerializeField.EndPointKeyOverSubRoute ) is not { } referenceEndPointKey ) return null ;
 
-      return new PassPointBranchEndPoint( document, passPointId, diameter * 0.5, referenceEndPointKey ) ;
+      return new PassPointBranchEndPoint( document, passPointUniqueId, diameter * 0.5, referenceEndPointKey ) ;
     }
 
     public string ParameterString
@@ -40,7 +40,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       {
         var stringifier = new SerializerObject<SerializeField>() ;
 
-        stringifier.Add( SerializeField.PassPointId, PassPointId ) ;
+        stringifier.AddNonNull( SerializeField.PassPointUniqueId, PassPointUniqueId ) ;
         stringifier.Add( SerializeField.Diameter, GetDiameter() ) ;
         stringifier.AddNonNull( SerializeField.EndPointKeyOverSubRoute, EndPointKeyOverSubRoute ) ;
 
@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public string TypeName => Type ;
     public string DisplayTypeName => "EndPoint.DisplayTypeName.PassPointBranch".GetAppStringByKeyOrDefault( TypeName ) ;
-    public EndPointKey Key => new EndPointKey( TypeName, PassPointId.IntegerValue.ToString() ) ;
+    public EndPointKey Key => new EndPointKey( TypeName, PassPointUniqueId ) ;
 
     public EndPointKey EndPointKeyOverSubRoute { get ; }
 
@@ -61,9 +61,9 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     internal Document Document { get ; }
 
-    public ElementId PassPointId { get ; }
+    public string PassPointUniqueId { get ; }
 
-    public Instance? GetPassPoint() => Document.GetElementById<Instance>( PassPointId ) ;
+    public Instance? GetPassPoint() => Document.GetElementById<Instance>( PassPointUniqueId ) ;
 
     public string RouteName => GetPassPoint()?.GetRouteName() ?? string.Empty ;
 
@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       if ( ParentRoute() is not { } route ) return null ;
 
-      var passPointKey = PassPointEndPoint.KeyFromPassPointId( PassPointId ) ;
+      var passPointKey = PassPointEndPoint.KeyFromPassPointId( PassPointUniqueId ) ;
       return route.SubRoutes.FirstOrDefault( subRoute => HasPassPoint( subRoute, passPointKey, fromSideOfPassPoint ) ) ;
 
       static bool HasPassPoint( SubRoute subRoute, EndPointKey passPointKey, bool fromSideOfPassPoint )
@@ -117,7 +117,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
       var startPosition = passPoint.GetTotalTransform().Origin ;
 
-      if ( passPoint.GetRouteName() is not { } routeName || false == RouteCache.Get( passPoint.Document ).TryGetValue( routeName, out var route ) ) return startPosition ;
+      if ( passPoint.GetRouteName() is not { } routeName || false == RouteCache.Get( DocumentKey.Get( passPoint.Document ) ).TryGetValue( routeName, out var route ) ) return startPosition ;
 
       var segments = GetRelatedSegments( route, Key ) ;
       var document = passPoint.Document ;
@@ -160,10 +160,10 @@ namespace Arent3d.Architecture.Routing.EndPoints
       return route.RouteSegments.Where( s => s.FromEndPoint.Key == pointKey || s.ToEndPoint.Key == pointKey ) ;
     }
 
-    public PassPointBranchEndPoint( Document document, ElementId passPointId, double? preferredRadius, EndPointKey endPointKeyOverSubRoute )
+    public PassPointBranchEndPoint( Document document, string passPointUniqueId, double? preferredRadius, EndPointKey endPointKeyOverSubRoute )
     {
       Document = document ;
-      PassPointId = passPointId ;
+      PassPointUniqueId = passPointUniqueId ;
 
       PreferredRadius = preferredRadius ;
 
@@ -182,7 +182,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
-    public Route? ParentRoute() => RouteCache.Get( Document ).TryGetValue( RouteName, out var route ) ? route : null ;
+    public Route? ParentRoute() => RouteCache.Get( DocumentKey.Get( Document ) ).TryGetValue( RouteName, out var route ) ? route : null ;
     SubRoute? IEndPoint.ParentSubRoute() => null ;
 
     public bool GenerateInstance( string routeName )

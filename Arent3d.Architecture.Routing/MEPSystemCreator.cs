@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing
 
       switch ( routeVertex.LineInfo.GetEndPoint() ) {
         case IEndPointOfPassPoint ep :
-          PassPointConnectorMapper.Add( route, ep.PassPointId, connector, continuesToFrom ) ;
+          PassPointConnectorMapper.Add( route, ep.PassPointUniqueId, connector, continuesToFrom ) ;
           break ;
       }
     }

@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
       return ! Equals( left, right ) ;
     }
 
-    public string GetElementId()
+    public string GetElementUniqueId()
     {
       const string connectorPointType = "Connector" ;
       const string terminatePointType = "Terminate Point" ;
@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
         case connectorPointType :
         {
           var deserializer = new DeserializerObject<SerializeField>( Param ) ;
-          elementId = deserializer.GetElementId( SerializeField.ElementId ) is not { } connectorId ? string.Empty : connectorId.IntegerValue.ToString() ;
+          elementId = deserializer.GetString( SerializeField.ElementUniqueId ) ?? string.Empty ;
           break ;
         }
         case terminatePointType or passPointType or passPointBranchType :
@@ -74,7 +74,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private enum SerializeField
     {
-      ElementId
+      ElementUniqueId
     }
   }
 }

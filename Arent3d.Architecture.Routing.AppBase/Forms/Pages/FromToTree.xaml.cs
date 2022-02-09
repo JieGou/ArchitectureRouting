@@ -285,10 +285,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// <summary>
     /// SelecteViewItem from Element id
     /// </summary>
-    /// <param name="elementId"></param>
-    public void SelectTreeViewItem( ElementId? elementId )
+    /// <param name="elementUniqueId"></param>
+    public void SelectTreeViewItem( string? elementUniqueId )
     {
-      var targetItem = GetTreeViewItemFromElementId( FromToTreeView, FromToTreeView.Items, elementId ) ;
+      var targetItem = GetTreeViewItemFromElementId( FromToTreeView, FromToTreeView.Items, elementUniqueId ) ;
       if ( targetItem != null ) {
         // Select in TreeView
         targetItem.IsSelected = true ;
@@ -303,7 +303,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void ClearSelectedItem()
     {
       var selectedFromToItem = FromToTreeView.SelectedItem as FromToItem ;
-      if ( GetTreeViewItemFromElementId( FromToTreeView, FromToTreeView.Items,  selectedFromToItem?.ElementId) is TreeViewItem selectedItem) {
+      if ( GetTreeViewItemFromElementId( FromToTreeView, FromToTreeView.Items, selectedFromToItem?.ElementUniqueId ) is TreeViewItem selectedItem) {
         selectedItem.IsSelected = false ;
       }
     }
@@ -340,22 +340,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// <param name="collection"></param>
     /// <param name="elementId"></param>
     /// <returns></returns>
-    private TreeViewItem? GetTreeViewItemFromElementId( ItemsControl control, ItemCollection collection, ElementId? elementId )
+    private TreeViewItem? GetTreeViewItemFromElementId( ItemsControl control, ItemCollection collection, string? elementUniqueId )
     {
       // this method is in developing. This works only in Parent Item
       foreach ( var item in collection ) {
-        if ( item is FromToItem fromToItem && fromToItem.ElementId != null ) {
+        if ( item is FromToItem fromToItem ) {
           FromToTreeView.UpdateLayout() ;
           TreeViewItem? treeViewItem = control.ItemContainerGenerator.ContainerFromItem( item ) as TreeViewItem ;
           // Find in current
-          if ( fromToItem.ElementId.Equals( elementId ) ) {
+          if ( fromToItem.ElementUniqueId == elementUniqueId ) {
             return treeViewItem ;
           }
 
           // Find in Children
           if ( treeViewItem != null ) {
             treeViewItem.IsExpanded = true ;
-            TreeViewItem? childItem = this.GetTreeViewItemFromElementId( treeViewItem, treeViewItem.Items, elementId ) ;
+            TreeViewItem? childItem = this.GetTreeViewItemFromElementId( treeViewItem, treeViewItem.Items, elementUniqueId ) ;
             if ( childItem != null ) {
               return childItem ;
             }

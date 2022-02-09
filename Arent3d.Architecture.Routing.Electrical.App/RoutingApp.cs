@@ -46,23 +46,23 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     {
     }
 
-    protected override void OnDocumentListenStarted( Document document )
+    protected override void OnDocumentListenStarted( DocumentKey documentKey )
     {
-      DocumentMapper.Register( document ) ;
+      DocumentMapper.Register( documentKey ) ;
       FromToTreeManager.OnDocumentOpened( AddInType.Electrical ) ;
     }
 
-    protected override void OnDocumentListenFinished( Document document )
+    protected override void OnDocumentListenFinished( DocumentKey documentKey )
     {
-      DocumentMapper.Unregister( document ) ;
+      DocumentMapper.Unregister( documentKey ) ;
     }
 
-    protected override void OnDocumentChanged( Document document, DocumentChangedEventArgs e )
+    protected override void OnDocumentChanged( DocumentKey documentKey, DocumentChangedEventArgs e )
     {
       FromToTreeManager.OnDocumentChanged( e, AddInType.Electrical ) ;
     }
 
-    protected override void OnApplicationViewChanged( Document document, ViewActivatedEventArgs e )
+    protected override void OnApplicationViewChanged( DocumentKey documentKey, ViewActivatedEventArgs e )
     {
       FromToTreeManager.OnViewActivated( e, AddInType.Electrical ) ;
     }

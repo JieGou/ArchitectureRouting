@@ -92,7 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
       {
         return ep switch
         {
-          ConnectorEndPoint c => c.EquipmentId == nextConnector.Owner.Id && c.ConnectorIndex == nextConnector.Id,
+          ConnectorEndPoint c => c.EquipmentUniqueId == nextConnector.Owner.UniqueId && c.ConnectorIndex == nextConnector.Id,
           PassPointBranchEndPoint => false,
           PassPointEndPoint => false, // FIXME: check whether >|= type pass point or =|< type pass point
           RouteEndPoint r => r.RouteName == nextConnector.Owner.GetRouteName() && r.SubRouteIndex == nextConnector.Owner.GetSubRouteIndex(),

@@ -10,11 +10,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private class EndPointIdGetter : IEndPointVisitor<string>
     {
-      public string Visit( ConnectorEndPoint endPoint ) => endPoint.EquipmentId.IntegerValue.ToString() ;
+      public string Visit( ConnectorEndPoint endPoint ) => endPoint.EquipmentUniqueId ;
       public string Visit( RouteEndPoint endPoint ) => endPoint.RouteName ;
-      public string Visit( PassPointEndPoint endPoint ) => endPoint.PassPointId.IntegerValue.ToString() ;
-      public string Visit( PassPointBranchEndPoint endPoint ) => endPoint.PassPointId.IntegerValue.ToString() ;
-      public string Visit( TerminatePointEndPoint endPoint ) => endPoint.TerminatePointId.IntegerValue.ToString() ;
+      public string Visit( PassPointEndPoint endPoint ) => endPoint.PassPointUniqueId ;
+      public string Visit( PassPointBranchEndPoint endPoint ) => endPoint.PassPointUniqueId ;
+      public string Visit( TerminatePointEndPoint endPoint ) => endPoint.TerminatePointUniqueId ;
     }
 
     private class EndPointSubIdGetter : IEndPointVisitor<string>
@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       public string Visit( RouteEndPoint endPoint ) => string.Empty ;
       public string Visit( PassPointEndPoint endPoint ) => string.Empty ;
       public string Visit( PassPointBranchEndPoint endPoint ) => string.Empty ;
-      public string Visit( TerminatePointEndPoint endPoint ) => endPoint.LinkedInstanceId.IntegerValue.ToString() ;
+      public string Visit( TerminatePointEndPoint endPoint ) => endPoint.LinkedInstanceUniqueId ;
     }
   }
 }

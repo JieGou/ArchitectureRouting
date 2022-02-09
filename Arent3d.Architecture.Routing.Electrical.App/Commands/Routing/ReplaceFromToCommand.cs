@@ -48,7 +48,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       public Opening? GetShaft()
       {
-        if ( _route.UniqueShaftElementId is not { } shaftElementId || ElementId.InvalidElementId == shaftElementId ) return null ;
+        if ( _route.UniqueShaftElementUniqueId is not { } shaftElementId || false == string.IsNullOrEmpty(  shaftElementId ) ) return null ;
         return _route.Document.GetElementById<Opening>( shaftElementId ) ;
       }
     }

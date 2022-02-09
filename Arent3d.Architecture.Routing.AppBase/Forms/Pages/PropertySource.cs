@@ -85,7 +85,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public XYZ TerminatePointPosition { get ; }
     public XYZ TerminatePointDirection { get ; }
 
-    public ElementId LinkedElementId { get ; }
+    public string LinkedElementUniqueId { get ; }
     public string? LinkedElementName { get ; }
 
     public TerminatePointPropertySource( Document doc, TerminatePointEndPoint terminatePointEndPoint ) : base( doc )
@@ -95,8 +95,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       TerminatePointPosition = terminatePointEndPoint.RoutingStartPosition ;
       TerminatePointDirection = terminatePointEndPoint.Direction ;
 
-      LinkedElementId = terminatePointEndPoint.LinkedInstanceId ;
-      LinkedElementName = doc.GetElement( LinkedElementId )?.Name ;
+      LinkedElementUniqueId = terminatePointEndPoint.LinkedInstanceUniqueId ;
+      LinkedElementName = doc.GetElement( LinkedElementUniqueId )?.Name ;
     }
   }
 }

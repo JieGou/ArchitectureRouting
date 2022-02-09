@@ -397,19 +397,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string elementId, string fromElementId, List<int> pickUpNumbers )
     {
-      var connector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == elementId ) ;
+      var connector = allConnectors.FirstOrDefault( c => c.UniqueId == elementId ) ;
       if ( connector!.IsTerminatePoint() || connector!.IsPassPoint() ) {
-        connector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? connectorId ) ;
+        connector!.TryGetProperty( PassPointParameter.RelatedConnectorUniqueId, out string? connectorId ) ;
         if ( ! string.IsNullOrEmpty( connectorId ) ) {
-          connector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == connectorId ) ;
+          connector = allConnectors.FirstOrDefault( c => c.UniqueId == connectorId ) ;
           elementId = connectorId! ;
         }
       }
 
       if ( ! string.IsNullOrEmpty( fromElementId ) ) {
-        var fromConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
+        var fromConnector = allConnectors.FirstOrDefault( c => c.UniqueId == fromElementId ) ;
         if ( fromConnector!.IsTerminatePoint() || fromConnector!.IsPassPoint() ) {
-          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorId, out string? fromConnectorId ) ;
+          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId, out string? fromConnectorId ) ;
           fromElementId = fromConnectorId! ;
         }
       }
@@ -457,11 +457,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       foreach ( var conduit in conduitsOfRoute ) {
         var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
-        var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
-        var toElementId = toEndPointKey!.GetElementId() ;
+        var toEndPointKey = toEndPoint.First().Key ;
+        var toElementId = toEndPointKey.GetElementUniqueId() ;
         if ( string.IsNullOrEmpty( toElementId ) ) continue ;
-        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
-        if ( toConnector == null || toConnector!.IsTerminatePoint() || toConnector!.IsPassPoint() ) continue ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
+        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
         return toConnector ;
       }
 

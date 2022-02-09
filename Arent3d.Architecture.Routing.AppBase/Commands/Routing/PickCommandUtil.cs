@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var anotherPos = anotherResult.GetOrigin() ;
       var dir = GetPreferredDirection( pos, anotherPos ) ;
 
-      return new TerminatePointEndPoint( element.Document, ElementId.InvalidElementId, pos, dir, preferredRadius, element.Id ) ;
+      return new TerminatePointEndPoint( element.Document, string.Empty, pos, dir, preferredRadius, element.UniqueId ) ;
     }
     
 
@@ -94,18 +94,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var routeName = subRoute.Route.Name ;
       if ( InsertBranchingPassPointElement( document, subRoute, element, pos ) is not { } passPointElement ) throw new InvalidOperationException() ;
       if ( isFrom ) {
-        var fromEndPointKey = subRoute.FromEndPoints.FirstOrDefault()!.Key ;
-        var fromElementId = fromEndPointKey!.GetElementId() ;
-        var endPointKey = subRoute.ToEndPoints.FirstOrDefault()?.Key ;
-        var elementId = endPointKey!.GetElementId() ;
-        passPointElement.SetProperty( PassPointParameter.RelatedConnectorId, elementId ) ;
-        passPointElement.SetProperty( PassPointParameter.RelatedFromConnectorId, fromElementId ) ;
+        var fromEndPointKey = subRoute.FromEndPoints.First().Key ;
+        var fromElementId = fromEndPointKey.GetElementUniqueId() ;
+        var endPointKey = subRoute.ToEndPoints.First().Key ;
+        var elementId = endPointKey.GetElementUniqueId() ;
+        passPointElement.SetProperty( PassPointParameter.RelatedConnectorUniqueId, elementId ) ;
+        passPointElement.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromElementId ) ;
       }
       var otherSegments = GetNewSegmentList( subRoute, element, passPointElement ).Select( segment => ( routeName, segment ) ).EnumerateAll() ;
 
       // Create PassPointBranchEndPoint
       var preferredRadius = ( routePickResult.PickedConnector ?? anotherPickResult.PickedConnector )?.Radius ;
-      var endPoint = new PassPointBranchEndPoint( document, passPointElement.Id, preferredRadius, routePickResult.EndPointOverSubRoute! ) ;
+      var endPoint = new PassPointBranchEndPoint( document, passPointElement.UniqueId, preferredRadius, routePickResult.EndPointOverSubRoute! ) ;
 
       return ( endPoint, otherSegments ) ;
     }
@@ -114,7 +114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       if ( ( element.GetRepresentativeSubRoute() ?? element.GetSubRouteInfo() ) is not { } subRouteInfo ) return null ;
 
-      return RouteCache.Get( element.Document ).GetSubRoute( subRouteInfo ) ;
+      return RouteCache.Get( DocumentKey.Get( element.Document ) ).GetSubRoute( subRouteInfo ) ;
     }
 
     private static XYZ GetAdjustedOrigin( Document document, ConnectorPicker.IPickResult routePickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, IFittingSizeCalculator fittingSizeCalculator, bool isFrom )
@@ -209,8 +209,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var fromFixedHeight = segment.FromFixedHeight ;
           var toFixedHeight = segment.ToFixedHeight ;
           var avoidType = segment.AvoidType ;
-          var shaft1 = ( segment.FromEndPoint.GetLevelId( subRoute.Route.Document ) != passPoint.GetLevelId( subRoute.Route.Document ) ) ? segment.ShaftElementId : ElementId.InvalidElementId ;
-          var shaft2 = ( passPoint.GetLevelId( subRoute.Route.Document ) != segment.ToEndPoint.GetLevelId( subRoute.Route.Document ) ) ? segment.ShaftElementId : ElementId.InvalidElementId ;
+          var shaft1 = ( segment.FromEndPoint.GetLevelId( subRoute.Route.Document ) != passPoint.GetLevelId( subRoute.Route.Document ) ) ? segment.ShaftElementUniqueId : null ;
+          var shaft2 = ( passPoint.GetLevelId( subRoute.Route.Document ) != segment.ToEndPoint.GetLevelId( subRoute.Route.Document ) ) ? segment.ShaftElementUniqueId : null ;
           yield return new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, segment.FromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaft1 ) ;
           yield return new RouteSegment( segment.SystemClassificationInfo, segment.SystemType, segment.CurveType, passPoint, segment.ToEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaft2 ) ;
         }

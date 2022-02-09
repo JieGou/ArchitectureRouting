@@ -123,7 +123,7 @@ namespace Arent3d.Architecture.Routing
     public FixedHeight? UniqueFromFixedHeight => SubRoutes.Select( subRoute => subRoute.FromFixedHeight ).Distinct().UniqueOrDefault() ;
     public FixedHeight? UniqueToFixedHeight => SubRoutes.Select( subRoute => subRoute.ToFixedHeight ).Distinct().UniqueOrDefault() ;
     public AvoidType? UniqueAvoidType => SubRoutes.Select( subRoute => subRoute.AvoidType ).Distinct().Select( at => (AvoidType?)at ).UniqueOrDefault() ;
-    public ElementId? UniqueShaftElementId => SubRoutes.Select( subRoute => subRoute.ShaftElementId ).Distinct().UniqueOrDefault() ;
+    public string? UniqueShaftElementUniqueId => SubRoutes.Select( subRoute => subRoute.ShaftElementUniqueId ).Distinct().UniqueOrDefault() ;
 
     /// <summary>
     /// for loading from storage.
@@ -293,7 +293,7 @@ namespace Arent3d.Architecture.Routing
 
     private void RenameOtherSubRoutes( string oldRouteName, string newRouteName )
     {
-      foreach ( var route in RouteCache.Get( Document ).Values ) {
+      foreach ( var route in RouteCache.Get( DocumentKey.Get( Document ) ).Values ) {
         foreach ( var segment in route.SubRoutes.SelectMany( subRoute => subRoute.Segments ) ) {
           foreach ( var endPoint in new[] { segment.FromEndPoint, segment.ToEndPoint }.OfType<RouteEndPoint>().Where( ep => ep.RouteName == oldRouteName ) ) {
             endPoint.ReplaceRouteName( newRouteName ) ;
@@ -358,7 +358,7 @@ namespace Arent3d.Architecture.Routing
 
     public IEnumerable<Route> GetChildBranches()
     {
-      return RouteCache.Get( Document ).Values.Where( IsParentBranch ) ;
+      return RouteCache.Get( DocumentKey.Get( Document ) ).Values.Where( IsParentBranch ) ;
     }
 
     public bool IsParentBranch( Route route )

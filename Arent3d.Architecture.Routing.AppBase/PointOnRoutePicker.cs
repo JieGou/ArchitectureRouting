@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -51,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     public static IEnumerable<Route> PickedRoutesFromSelections( UIDocument uiDocument )
     {
       var document = uiDocument.Document ;
-      var dic = RouteCache.Get( document ) ;
+      var dic = RouteCache.Get( DocumentKey.Get( document ) ) ;
 
       var routes = new HashSet<Route>() ;
 
@@ -70,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     {
       var document = uiDocument.Document ;
 
-      var dic = RouteCache.Get( document ) ;
+      var dic = RouteCache.Get( DocumentKey.Get( document ) ) ;
       AddInType = addInType ;
       var filter = new RouteFilter( dic, mepCurveOnly, elementFilter ) ;
 

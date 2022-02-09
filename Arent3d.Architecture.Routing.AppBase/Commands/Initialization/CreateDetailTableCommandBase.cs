@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       CnsSettingStorable cnsStorable = doc.GetCnsSettingStorable() ;
       try {
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
-        var pickedObjectIds = pickedObjects.Select( p => p.Id.IntegerValue.ToString() ).ToList() ;
+        var pickedObjectIds = pickedObjects.Select( p => p.UniqueId ).ToList() ;
         var detailSymbolModelsByDetailSymbolId = detailSymbolStorable.DetailSymbolModelData.Where( x => pickedObjectIds.Contains( x.ConduitId ) ).OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.IsParentSymbol ).GroupBy( x => x.DetailSymbolId, ( key, p ) => new { DetailSymbolId = key, DetailSymbolModels = p.ToList() } ) ;
         foreach ( var detailSymbolModelByDetailSymbolId in detailSymbolModelsByDetailSymbolId ) {
           var firstDetailSymbolModelByDetailSymbolId = detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault() ;
@@ -261,11 +261,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       foreach ( var conduit in conduitsAndConnectorOfRoute ) {
         var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
-        var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
-        var toElementId = toEndPointKey!.GetElementId() ;
-        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
-        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
-        if ( toConnector == null || toConnector!.IsTerminatePoint() || toConnector!.IsPassPoint() ) continue ;
+        var toEndPointKey = toEndPoint.First().Key ;
+        var toElementUniqueId = toEndPointKey.GetElementUniqueId() ;
+        if ( string.IsNullOrEmpty( toElementUniqueId ) ) continue ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementUniqueId ) ;
+        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
         conduitsAndConnectorOfRoute.Add( toConnector ) ;
         return conduitsAndConnectorOfRoute ;
       }
@@ -296,7 +296,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var wireSize = string.Empty ;
       var wireStrip = string.Empty ;
       double wireCrossSectionalArea = 0 ;
-      var element = pickedObjects.FirstOrDefault( p => p.Id.IntegerValue.ToString() == detailSymbolModel.ConduitId ) ;
+      var element = pickedObjects.FirstOrDefault( p => p.UniqueId == detailSymbolModel.ConduitId ) ;
       string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
       string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ;
       string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;

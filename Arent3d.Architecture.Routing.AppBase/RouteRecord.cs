@@ -59,7 +59,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     [Index( 16 ), Name( "MEP System Type Name" )]
     public string SystemTypeName { get ; set ; } = string.Empty ;
 
-    [Index( 17 ), Name( "Shaft Element Id" )]
-    public int ShaftElementId { get ; set ; } = -1 ;
+    [Index( 17 ), Name( "Shaft Element Unique Id" )]
+    public string ShaftElementUniqueId { get ; set ; } = string.Empty ;
   }
 }

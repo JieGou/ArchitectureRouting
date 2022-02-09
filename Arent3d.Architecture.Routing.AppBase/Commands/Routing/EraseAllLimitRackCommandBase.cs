@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       List<string> rackIds = elementIds.Select( i => i.IntegerValue.ToString() ).ToList() ;
       foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData.Where( d => rackIds.Contains( d.RackId ) ).ToList() ) {
         // delete notation
-        var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.Id.IntegerValue.ToString() == rackNotationModel.NotationId ).Select( t => t.Id ).FirstOrDefault() ;
+        var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == rackNotationModel.NotationId ).Select( t => t.Id ).FirstOrDefault() ;
         if ( notationId != null ) document.Delete( notationId ) ;
         rackNotationModels.Add( rackNotationModel ) ;
       }

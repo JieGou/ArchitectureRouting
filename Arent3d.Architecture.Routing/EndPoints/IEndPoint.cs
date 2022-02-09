@@ -109,7 +109,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
   public interface IEndPointOfPassPoint : IEndPoint
   {
-    ElementId PassPointId { get ; }
+    string PassPointUniqueId { get ; }
   }
 
   public interface IRouteBranchEndPoint : IEndPoint

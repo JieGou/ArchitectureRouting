@@ -92,7 +92,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var curveType = TTEUtil.GetRoundDuctTypeWhosePreferred( doc ) ;
       if ( curveType == null ) return null ;
       var nameBase = TTEUtil.GetNameBase( systemType, curveType ) ;
-      var currentMaxRouteIndex = TTEUtil.GetRouteNameIndex( RouteCache.Get( doc ), nameBase ) ;
+      var currentMaxRouteIndex = TTEUtil.GetRouteNameIndex( RouteCache.Get( DocumentKey.Get( doc ) ), nameBase ) ;
       var uniqueNameCreatorForRoute = new UniqueNameCreatorForRoute( nameBase, currentMaxRouteIndex ) ;
       var fasuLevel = doc.GuessLevel( inConnector.Origin ) ;
       var fixedHeight = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, inConnector.Origin.Z - fasuLevel.Elevation ) ;
@@ -108,7 +108,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var fromPoint = new ConnectorEndPoint( fasuConnectors[ fromConnectorIndex ], null ) ;
         var toPoint = new ConnectorEndPoint( anemoConnectors[ index ], null ) ;
         var routeName = segmentSetting.uniqueNameCreatorForRoute.CreateName() ;
-        var routeSegment = new RouteSegment( segmentSetting.ClassificationInfo, segmentSetting.SystemType, segmentSetting.CurveType, fromPoint, toPoint, null, false, segmentSetting.FixedHeight, segmentSetting.FixedHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ;
+        var routeSegment = new RouteSegment( segmentSetting.ClassificationInfo, segmentSetting.SystemType, segmentSetting.CurveType, fromPoint, toPoint, null, false, segmentSetting.FixedHeight, segmentSetting.FixedHeight, AvoidType.Whichever, null ) ;
         segmentList.Add( ( routeName, routeSegment ) ) ;
       }
 

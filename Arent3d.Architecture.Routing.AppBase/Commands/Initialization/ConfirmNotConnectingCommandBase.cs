@@ -61,9 +61,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var fromEndPoint = conduit.GetNearestEndPoints( true ) ;
       var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;
       if ( fromEndPointKey != null ) {
-        var fromElementId = fromEndPointKey!.GetElementId() ;
-        if ( ! string.IsNullOrEmpty( fromElementId ) ) {
-          var fromConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
+        var fromElementUniqueId = fromEndPointKey.GetElementUniqueId() ;
+        if ( ! string.IsNullOrEmpty( fromElementUniqueId ) ) {
+          var fromConnector = allConnectors.FirstOrDefault( c => c.UniqueId == fromElementUniqueId ) ;
           if ( fromConnector != null ) {
             cableIsFromConnected = true ;
             if ( ! connectorIdsNotConnected.Contains( fromConnector.Id ) ) 
@@ -75,9 +75,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var toEndPoint = conduit.GetNearestEndPoints( false ) ;
       var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
       if ( toEndPointKey != null ) {
-        var toElementId = toEndPointKey!.GetElementId() ;
-        if ( ! string.IsNullOrEmpty( toElementId ) ) {
-          var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
+        var toElementUniqueId = toEndPointKey.GetElementUniqueId() ;
+        if ( ! string.IsNullOrEmpty( toElementUniqueId ) ) {
+          var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementUniqueId ) ;
           if ( toConnector != null ) {
             cableIsToConnected = true ;
             if ( ! connectorIdsNotConnected.Contains( toConnector.Id ) )

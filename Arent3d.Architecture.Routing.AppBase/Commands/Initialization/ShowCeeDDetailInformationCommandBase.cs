@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       public bool AllowElement( Element e )
       {
-        return ( e.Category.Id.IntegerValue.Equals( (int) BuiltInCategory.OST_TextNotes ) ) ;
+        return ( e.GetBuiltInCategory() == BuiltInCategory.OST_TextNotes ) ;
       }
 
       public bool AllowReference( Reference r, XYZ p )

@@ -75,7 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         SetIndeterminateValues( firstSubRoute.Route ) ;
       }
 
-      Shaft = document.GetElementById<Opening>( firstSubRoute.ShaftElementId ) ;
+      Shaft = document.GetElementById<Opening>( firstSubRoute.ShaftElementUniqueId ?? string.Empty ) ;
     }
 
     public RouteProperties( Document document, RoutePropertyTypeList spec )
@@ -234,7 +234,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// <returns></returns>
     private static bool IsShaftMultiSelected( Route route )
     {
-      return ( null == route.UniqueShaftElementId ) ;
+      return ( null == route.UniqueShaftElementUniqueId ) ;
     }
   }
 }

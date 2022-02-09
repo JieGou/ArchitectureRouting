@@ -243,7 +243,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var old = document.GetAllStorables<CnsSettingStorable>()
         .FirstOrDefault() ; // generates new instance from document
-      return old == null || ! newSettings.Equals( old ) ;
+      return old == null || newSettings != old ;
     }
 
     private static void DataProcessBeforeSave( CnsSettingStorable cnsSettings )

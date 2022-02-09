@@ -320,15 +320,15 @@ namespace Arent3d.Architecture.Routing
 
     public static void SetPassPointConnectors( this Element element, IReadOnlyCollection<Connector> fromConnectors, IReadOnlyCollection<Connector> toConnectors )
     {
-      element.SetProperty( PassPointParameter.PassPointNextToFromSideConnectorIds, string.Join( "|", fromConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
-      element.SetProperty( PassPointParameter.PassPointNextToToSideConnectorIds, string.Join( "|", toConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
+      element.SetProperty( PassPointParameter.PassPointNextToFromSideConnectorUniqueIds, string.Join( "|", fromConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
+      element.SetProperty( PassPointParameter.PassPointNextToToSideConnectorUniqueIds, string.Join( "|", toConnectors.Select( ConnectorEndPoint.BuildParameterString ) ) ) ;
     }
 
     private static readonly char[] PassPointConnectorSeparator = { '|' } ;
 
     public static IEnumerable<IEndPoint> GetPassPointConnectors( this Element element, bool isFrom )
     {
-      var parameter = isFrom ? PassPointParameter.PassPointNextToFromSideConnectorIds : PassPointParameter.PassPointNextToToSideConnectorIds ;
+      var parameter = isFrom ? PassPointParameter.PassPointNextToFromSideConnectorUniqueIds : PassPointParameter.PassPointNextToToSideConnectorUniqueIds ;
       if ( false == element.TryGetProperty( parameter, out string? str ) ) return Array.Empty<IEndPoint>() ;
       if ( string.IsNullOrEmpty( str ) ) return Array.Empty<IEndPoint>() ;
 
@@ -343,7 +343,7 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsPassPoint( this FamilyInstance element )
     {
-      return element.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || element.HasParameter( RoutingParameter.RelatedPassPointId ) ;
+      return element.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || ( element.TryGetProperty( RoutingParameter.RelatedPassPointUniqueId, out string? uniqueId ) && null != uniqueId && null != element.Document.GetElementById<Element>( uniqueId ) ) ;
     }
 
     public static bool IsConnectorPoint( this FamilyInstance element )
@@ -351,12 +351,12 @@ namespace Arent3d.Architecture.Routing
       return element.IsFamilyInstanceOfAny( RoutingFamilyType.ConnectorInPoint, RoutingFamilyType.ConnectorOutPoint, RoutingFamilyType.ConnectorPoint, RoutingFamilyType.TerminatePoint ) ;
     }
 
-    public static int? GetPassPointId( this Element element )
+    public static string? GetPassPointUniqueId( this Element element )
     {
       if ( element is not FamilyInstance fi ) return null ;
 
-      if ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) return fi.Id.IntegerValue ;
-      if ( element.TryGetProperty( RoutingParameter.RelatedPassPointId, out int id ) ) return id ;
+      if ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) return fi.UniqueId ;
+      if ( element.TryGetProperty( RoutingParameter.RelatedPassPointUniqueId, out string? id ) && false == string.IsNullOrEmpty( id ) ) return id ;
       return null ;
     }
 
@@ -471,15 +471,15 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsTerminatePoint( this FamilyInstance element )
     {
-      return element.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) || element.HasParameter( RoutingParameter.RelatedTerminatePointId ) ;
+      return element.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) || ( element.TryGetProperty( RoutingParameter.RelatedTerminatePointUniqueId, out string? uniqueId ) && null != uniqueId && null != element.Document.GetElementById<Element>( uniqueId ) ) ;
     }
 
-    public static int? GetTerminatePointId( this Element element )
+    public static string? GetTerminatePointUniqueId( this Element element )
     {
       if ( element is not FamilyInstance fi ) return null ;
 
-      if ( fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) ) return fi.Id.IntegerValue ;
-      if ( element.TryGetProperty( RoutingParameter.RelatedTerminatePointId, out int id ) ) return id ;
+      if ( fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint ) ) return fi.UniqueId ;
+      if ( element.TryGetProperty( RoutingParameter.RelatedTerminatePointUniqueId, out string? id ) && false == string.IsNullOrEmpty( id ) ) return id ;
       return null ;
     }
 
@@ -501,7 +501,7 @@ namespace Arent3d.Architecture.Routing
 
     public static bool IsAutoRoutingGeneratedElement( this Element element )
     {
-      return element.IsAutoRoutingGeneratedElementType() && element.HasParameter( RoutingParameter.RouteName ) ;
+      return element.IsAutoRoutingGeneratedElementType() && element.TryGetProperty( RoutingParameter.RouteName, out string? routeName ) && false == string.IsNullOrEmpty( routeName ) ;
     }
 
     public static bool IsAutoRoutingGeneratedElementType( this Element element )
@@ -577,12 +577,12 @@ namespace Arent3d.Architecture.Routing
       return document.GetAllElements<Element>().OfCategory( builtInCategories ).OfNotElementType().Where( filter ).OfType<TElement>() ;
     }
 
-    public static IEnumerable<FamilyInstance> GetAllElementsOfPassPoint( this Document document, int passPointId )
+    public static IEnumerable<FamilyInstance> GetAllElementsOfPassPoint( this Document document, string passPointUniqueId )
     {
-      var parameterName = document.GetParameterName( RoutingParameter.RelatedPassPointId ) ;
+      var parameterName = document.GetParameterName( RoutingParameter.RelatedPassPointUniqueId ) ;
       if ( null == parameterName ) yield break ;
 
-      var elm = document.GetElementById<FamilyInstance>( passPointId ) ;
+      var elm = document.GetElementById<FamilyInstance>( passPointUniqueId ) ;
       if ( null == elm ) yield break ;
       if ( elm.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) yield return elm ;
 
@@ -590,7 +590,7 @@ namespace Arent3d.Architecture.Routing
 
       foreach ( var e in document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PassPoints ).OfNotElementType().Where( filter ).OfType<FamilyInstance>() ) {
         if ( e.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) ) continue ;
-        if ( e.TryGetProperty( RoutingParameter.RelatedPassPointId, out int id ) && id == passPointId ) yield return e ;
+        if ( e.TryGetProperty( RoutingParameter.RelatedPassPointUniqueId, out string? id ) && id == passPointUniqueId ) yield return e ;
       }
     }
 
@@ -630,7 +630,7 @@ namespace Arent3d.Architecture.Routing
     {
       if ( multiplicity < 2 ) throw new ArgumentOutOfRangeException( nameof( multiplicity ) ) ;
 
-      var routes = RouteCache.Get( document ) ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
 
       foreach ( var mepCurve in document.GetAllElementsOfRoute<MEPCurve>() ) {
         if ( mepCurve.GetSubRouteInfo() is not { } subRouteInfo ) continue ;
@@ -686,7 +686,7 @@ namespace Arent3d.Architecture.Routing
 
     public static IEnumerable<Route> CollectRoutes( this Document document, AddInType addInType )
     {
-      var routes = RouteCache.Get( document ).Values ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ).Values ;
 
       return addInType switch
       {
@@ -714,7 +714,7 @@ namespace Arent3d.Architecture.Routing
     {
       if ( ( element.GetRepresentativeSubRoute() ?? element.GetSubRouteInfo() ) is not { } subRouteInfo ) return Array.Empty<SubRoute>() ;
 
-      var routeCache = RouteCache.Get( element.Document ) ;
+      var routeCache = RouteCache.Get( DocumentKey.Get( element.Document ) ) ;
       if ( routeCache.GetSubRoute( subRouteInfo ) is not { } subRoute ) return Array.Empty<SubRoute>() ;
 
       var subRouteGroup = subRoute.GetSubRouteGroup() ;

@@ -216,7 +216,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var diameter = routeProperty.GetDiameter() ;
       var radius = diameter * 0.5 ;
       var nameBase = GetNameBase( systemType, curveType ) ;
-      var nextIndex = GetRouteNameIndex( RouteCache.Get( document ), nameBase ) ;
+      var nextIndex = GetRouteNameIndex( RouteCache.Get( DocumentKey.Get( document ) ), nameBase ) ;
       var routeName = nameBase + "_" + nextIndex ;
 
       var (footPassPoint, passPoints) = CreatePassPoints( routeName, powerConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
@@ -232,10 +232,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( sensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
         var firstToEndPoint = secondFromEndPoints[ 0 ] ;
 
-        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft().GetValidId() ) ) ) ;
+        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
         result.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
         {
-          var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+          var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
           return ( routeName, segment ) ;
         } ) ) ;
       }
@@ -244,9 +244,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       result.AddRange( passPoints.Zip( sensorConnectors.Take( passPoints.Count ), ( pp, sensor ) =>
       {
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
-        var branchEndPoint = new PassPointBranchEndPoint( document, pp.Id, radius, powerConnectorEndPointKey ) ;
+        var branchEndPoint = new PassPointBranchEndPoint( document, pp.UniqueId, radius, powerConnectorEndPointKey ) ;
         var connectorEndPoint = new ConnectorEndPoint( sensor.GetTopConnectorOfConnectorFamily(), radius ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, ElementId.InvalidElementId ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
         return ( subRouteName, segment ) ;
       } ) ) ;
       
@@ -292,26 +292,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var passPoints = new List<FamilyInstance>( passPointPositions.Count + 1 ) ;
       var footPassPoint = CreateFootPassPoint( routeName, powerConnector, passPointPositions[ 0 ], sensorDirection, bendingRadius, diameter * 0.5, levelId ) ;
-      footPassPoint!.SetProperty( PassPointParameter.RelatedConnectorId, sensorConnectors.Last().Id.IntegerValue.ToString() ) ;
-      footPassPoint!.SetProperty( PassPointParameter.RelatedFromConnectorId, powerConnector.Id.IntegerValue.ToString() ) ;
+      footPassPoint!.SetProperty( PassPointParameter.RelatedConnectorUniqueId, sensorConnectors.Last().UniqueId ) ;
+      footPassPoint!.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, powerConnector.UniqueId ) ;
 
       var lastPos = footPassPoint?.GetTotalTransform().Origin ;
       var lastFamilyInstance = footPassPoint ;
       var connectorIndex = 0 ;
       foreach ( var pos in passPointPositions ) {
-        var connectorId = sensorConnectors.ElementAt( connectorIndex ).Id.IntegerValue.ToString() ;
+        var connectorId = sensorConnectors.ElementAt( connectorIndex ).UniqueId ;
         if ( null != lastFamilyInstance && AreTooClose( lastPos!, pos, MEPSystemPipeSpec.MinimumShortCurveLength ) ) {
           // reuse last family instance
-          lastFamilyInstance.SetProperty( PassPointParameter.RelatedConnectorId, connectorId ) ;
-          lastFamilyInstance.SetProperty( PassPointParameter.RelatedFromConnectorId, powerConnector.Id.IntegerValue.ToString() ) ;
+          lastFamilyInstance.SetProperty( PassPointParameter.RelatedConnectorUniqueId, connectorId ) ;
+          lastFamilyInstance.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, powerConnector.UniqueId ) ;
           passPoints.Add( lastFamilyInstance ) ;
         }
         else {
           // create new family instance
           lastPos = pos ;
           var newFamilyInstance = document.AddPassPoint( routeName, pos, passPointDirection, diameter * 0.5, levelId ) ;
-          newFamilyInstance.SetProperty( PassPointParameter.RelatedConnectorId, connectorId ) ;
-          newFamilyInstance.SetProperty( PassPointParameter.RelatedFromConnectorId, powerConnector.Id.IntegerValue.ToString() ) ;
+          newFamilyInstance.SetProperty( PassPointParameter.RelatedConnectorUniqueId, connectorId ) ;
+          newFamilyInstance.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, powerConnector.UniqueId ) ;
           passPoints.Add( newFamilyInstance ) ;
           lastFamilyInstance = newFamilyInstance ;
         }
