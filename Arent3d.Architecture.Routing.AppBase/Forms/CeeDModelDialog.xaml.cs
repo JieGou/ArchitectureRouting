@@ -1,5 +1,9 @@
+using System ;
 using System.Collections.Generic ;
+using System.IO ;
 using System.Linq ;
+using System.Reflection ;
+using System.Threading ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
@@ -12,6 +16,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using MessageBox = System.Windows.MessageBox ;
+using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 using Style = System.Windows.Style ;
 using Window = System.Windows.Window ;
 using Visibility = System.Windows.Visibility ;
@@ -29,6 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public string SelectedCondition ;
     public string SelectedCeeDCode ;
     public string SelectedModelNumber ;
+    public string SelectedFloorPlanType ;
 
     public CeeDModelDialog( Document document )
     {
@@ -42,6 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedCondition = string.Empty ;
       SelectedCeeDCode = string.Empty ;
       SelectedModelNumber = string.Empty ;
+      SelectedFloorPlanType = string.Empty ;
 
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
@@ -61,6 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedCondition = selectedItem.Condition ;
       SelectedCeeDCode = selectedItem.CeeDSetCode ;
       SelectedModelNumber = selectedItem.ModelNumber ;
+      SelectedFloorPlanType = selectedItem.FloorPlanType ;
       if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) ) return ;
       DialogResult = true ;
       Close() ;
@@ -174,7 +182,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
         }
       }
+
       if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
+      using var progress = ProgressBar.ShowWithNewThread( new CancellationTokenSource() ) ;
+      progress.Message = "Loading data..." ;
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {
         List<CeedModel> ceeDModelData = ExcelToModelConverter.GetAllCeeDModelNumber( filePath, fileEquipmentSymbolsPath ) ;
@@ -188,7 +199,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         try {
           using Transaction t = new Transaction( _document, "Save data" ) ;
           t.Start() ;
-          ceeDStorable.Save() ;
+          using ( var progressData = progress?.Reserve( 0.5 ) ) {
+            ceeDStorable.Save() ;
+            progressData?.ThrowIfCanceled() ;
+          }
+
+          using ( var progressData = progress?.Reserve( 0.9 ) ) {
+            _document.MakeCertainAllConnectorFamilies() ;
+            progressData?.ThrowIfCanceled() ;
+          }
+
           t.Commit() ;
         }
         catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {

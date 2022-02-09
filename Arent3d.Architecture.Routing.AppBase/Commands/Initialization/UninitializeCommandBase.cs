@@ -13,10 +13,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     protected override ExecutionResult Execute( Document document, TransactionWrapper transaction )
     {
       RouteCache.Release( document ) ;
-      document.UnsetupRoutingFamiliesAndParameters() ;
+      UnSetup( document ) ;
       document.DeleteAllDerivedStorables( typeof( AppInfo ).Assembly ) ;
 
       return ExecutionResult.Succeeded ;
+    }
+    
+    protected virtual void UnSetup( Document document )
+    {
+      document.UnsetupRoutingFamiliesAndParameters() ;
     }
   }
 }

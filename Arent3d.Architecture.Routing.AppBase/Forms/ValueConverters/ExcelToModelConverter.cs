@@ -7,6 +7,7 @@ using System.Runtime.InteropServices ;
 using System.Text ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Utility ;
 using Microsoft.Office.Interop.Excel ;
 using NPOI.HSSF.UserModel ;
 using NPOI.SS.UserModel ;
@@ -19,9 +20,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
 {
   public static class ExcelToModelConverter
   {
+    private const string DefaultSymbol = "Dummy" ;
+    
     public static List<CeedModel> GetAllCeeDModelNumber( string path, string path2 )
     {
-      const string defaultSymbol = "Dummy" ;
       List<CeedModel> ceedModelData = new List<CeedModel>() ;
 
       var equipmentSymbols = new List<EquipmentSymbol>() ;
@@ -153,7 +155,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           #endregion
 
           if ( ! ceeDModelNumbers.Any() ) {
-            CreateCeeDModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty, floorPlanImages, instrumentationImages ) ;
+            switch ( floorPlanImages.Count ) {
+              case 1 when string.IsNullOrEmpty( floorPlanSymbol ) :
+                CreateCeeDModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty, floorPlanImages, instrumentationImages, true ) ;
+                break ;
+              case > 1 :
+                floorPlanSymbol = DefaultSymbol ;
+                CreateCeeDModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty, floorPlanImages, instrumentationImages, false, true ) ;
+                break ;
+              default :
+                CreateCeeDModel( ceedModelData, equipmentSymbols, string.Empty, string.Empty, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, string.Empty, floorPlanImages, instrumentationImages ) ;
+                break ;
+            }
           }
           else {
             for ( var k = 0 ; k < ceeDModelNumbers.Count ; k++ ) {
@@ -164,8 +177,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
                   CreateCeeDModel( ceedModelData, equipmentSymbols, ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, true ) ;
                   break ;
                 case > 1 :
-                  floorPlanSymbol = defaultSymbol ;
-                  CreateCeeDModel( ceedModelData, equipmentSymbols, ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages ) ;
+                  floorPlanSymbol = DefaultSymbol ;
+                  CreateCeeDModel( ceedModelData, equipmentSymbols, ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, false, true ) ;
                   break ;
                 default :
                   CreateCeeDModel( ceedModelData, equipmentSymbols, ceeDModelNumbers[ k ], ceeDSetCode, generalDisplayDeviceSymbols, modelNumbers, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages ) ;
@@ -188,7 +201,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       return ceedModelData ;
     }
 
-    private static void CreateCeeDModel( List<CeedModel> ceeDModelData, List<EquipmentSymbol> equipmentSymbols, string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbols, List<string> modelNumbers, string floorPlanSymbol, string instrumentationSymbol, string ceeDName, string condition, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages = false )
+    private static void CreateCeeDModel( List<CeedModel> ceeDModelData, List<EquipmentSymbol> equipmentSymbols, string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbols, List<string> modelNumbers, string floorPlanSymbol, string instrumentationSymbol, string ceeDName, string condition, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages = false, bool isDummySymbol = false )
     {
       var symbols = generalDisplayDeviceSymbols.Split( '\n' ) ;
       var symbolsNotHaveModelNumber = new List<string>() ;
@@ -199,7 +212,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         if ( equipmentSymbols.Any() ) {
           var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol && modelNumbers.Contains( s.ModelNumber ) ).Select( s => s.ModelNumber ).Distinct().ToList() ;
           if ( modelNumberList.Any() ) {
-            ceeDModelData.AddRange( from modelNumber in modelNumberList select isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+            foreach ( var modelNumber in modelNumberList ) {
+              AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+            }
+
             otherSymbolModelNumber.AddRange( modelNumberList ) ;
           }
           else {
@@ -218,23 +234,166 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
           if ( string.IsNullOrEmpty( generalDisplayDeviceSymbol ) ) continue ;
           var symbolModelNumber = modelNumbers.Where( m => ! otherSymbolModelNumber.Contains( m ) ).ToList() ;
           if ( symbolModelNumber.Any() )
-            ceeDModelData.AddRange( from modelNumber in symbolModelNumber select isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+            foreach ( var modelNumber in symbolModelNumber ) {
+              AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+            }
           else {
             if ( equipmentSymbols.Any() ) {
               var modelNumberList = equipmentSymbols.Where( s => s.Symbol == generalDisplayDeviceSymbol ).Select( s => s.ModelNumber ).Distinct().ToList() ;
               if ( modelNumberList.Any() ) {
-                ceeDModelData.AddRange( from modelNumber in modelNumberList select isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+                foreach ( var modelNumber in modelNumberList ) {
+                  AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
+                }
               }
               else {
-                ceeDModelData.Add( isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+                AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
               }
             }
             else {
-              ceeDModelData.Add( isFloorPlanImages ? new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty ) : new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty ) ) ;
+              AddCeeDModel( ceeDModelData, ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, string.Empty, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanImages, instrumentationImages, isFloorPlanImages, isDummySymbol ) ;
             }
           }
         }
       }
+    }
+
+    private static void AddCeeDModel( ICollection<CeedModel> ceeDModelData, string ceeDModelNumber, string ceeDSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string ceeDName, string condition, List<Image> floorPlanImages, List<Image> instrumentationImages, bool isFloorPlanImages, bool isDummySymbol )
+    {
+      var floorPlanType = SetFloorPlanType( ceeDModelNumber, generalDisplayDeviceSymbol, floorPlanSymbol ) ;
+      if ( isFloorPlanImages )
+        ceeDModelData.Add( new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, floorPlanType ) ) ;
+      else if ( isDummySymbol )
+        ceeDModelData.Add( new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanImages, instrumentationImages, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, floorPlanType ) ) ;
+      else
+        ceeDModelData.Add( new CeedModel( ceeDModelNumber, ceeDSetCode, generalDisplayDeviceSymbol, modelNumber, floorPlanSymbol, instrumentationSymbol, ceeDName, condition, string.Empty, string.Empty, floorPlanType ) ) ;
+    }
+
+    private static string SetFloorPlanType( string ceeDModelNumber, string generalDisplayDeviceSymbol, string floorPlanSymbol )
+    {
+      string defaultFloorPlanType = string.Empty ;
+      if ( floorPlanSymbol == DefaultSymbol ) return defaultFloorPlanType ;
+      if ( string.IsNullOrEmpty( ceeDModelNumber ) ) {
+        if ( ! string.IsNullOrEmpty( generalDisplayDeviceSymbol ) && generalDisplayDeviceSymbol.Contains( "BOX" ) )
+          return ConnectorOneSideFamilyType.ConnectorOneSide32.GetFieldName() ;
+        if ( ! string.IsNullOrEmpty( generalDisplayDeviceSymbol ) && ( generalDisplayDeviceSymbol.Contains( "CVV" ) || generalDisplayDeviceSymbol.Contains( "CVR" ) ) )
+          return ConnectorOneSideFamilyType.ConnectorOneSide34.GetFieldName() ;
+      }
+      else {
+        var arrCeeDSetCode = ceeDModelNumber.Split( '_' ) ;
+        var charCode = arrCeeDSetCode.First() ;
+        var numberCode = int.Parse( arrCeeDSetCode.ElementAt( 1 ) ) ;
+        switch ( charCode ) {
+          case "A" :
+          case "B" :
+          case "C" :
+          case "D" when ( numberCode is >= 1 and <= 6 ) :
+          case "D" when ( numberCode is >= 12 and <= 14 ) :
+          case "G" when ( numberCode is >= 1 and <= 4 ) :
+          case "G" when numberCode == 12 :
+          case "G" when numberCode == 15 :
+          case "H" when numberCode == 7 :
+          case "H" when numberCode == 12 :
+          case "H" when numberCode == 14 :
+          case "L" when numberCode == 27 :
+          case "M" when numberCode == 5 :
+          case "N" when ( numberCode is >= 1 and <= 2 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() ;
+          case "D" when ( numberCode is >= 7 and <= 11 ) :
+          case "D" when numberCode == 15 :
+          case "H" when numberCode == 13 :
+          case "H" when numberCode == 15 :
+          case "H" when numberCode == 16 :
+          case "H" when ( numberCode is >= 19 and <= 22 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide2.GetFieldName() ;
+          case "E" :
+          case "H" when numberCode == 9 :
+          case "H" when numberCode == 10 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide5.GetFieldName() ;
+          case "F" when ( numberCode is >= 1 and <= 12 ) :
+          case "F" when ( numberCode is >= 18 and <= 23 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide6.GetFieldName() ;
+          case "F" when ( numberCode is >= 13 and <= 15 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide7.GetFieldName() ;
+          case "F" when ( numberCode is >= 16 and <= 17 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide8.GetFieldName() ;
+          case "G" when ( numberCode is >= 6 and <= 11 ) :
+          case "G" when numberCode == 14 :
+          case "H" when numberCode == 4 :
+          case "H" when numberCode == 5 :
+          case "H" when numberCode == 23 :
+          case "I" when numberCode != 16 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide9.GetFieldName() ;
+          case "H" when ( numberCode is >= 1 and <= 2 ) :
+          case "H" when numberCode == 11 :
+          case "H" when ( numberCode is >= 17 and <= 18 ) :
+          case "H" when numberCode == 24 :
+          case "I" :
+          case "K" :
+          case "mb" :
+          case "L" when numberCode == 21 :
+          case "N" when ( numberCode is >= 3 and <= 6 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide10.GetFieldName() ;
+          case "lp" when ( numberCode <= 22 && numberCode != 13 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide11.GetFieldName() ;
+          case "lp" when numberCode == 13 :
+          case "lp" when numberCode == 23 :
+          case "lp" when numberCode == 24 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide12.GetFieldName() ;
+          case "M" when numberCode == 7 :
+          case "th" when numberCode == 33 :
+          case "th" when numberCode == 34 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide13.GetFieldName() ;
+          case "lp" when ( numberCode is >= 34 and <= 42 ) :
+          case "J" when numberCode == 1 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide14.GetFieldName() ;
+          case "lp" when ( numberCode is >= 25 and <= 33 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide15.GetFieldName() ;
+          case "lp" when numberCode == 43 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide16.GetFieldName() ;
+          case "lp" when ( numberCode is >= 44 and <= 49 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide17.GetFieldName() ;
+          case "L" when ( numberCode is >= 1 and <= 4 ) :
+          case "L" when numberCode == 10 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide19.GetFieldName() ;
+          case "L" when ( numberCode is >= 5 and <= 9 ) :
+          case "L" when ( numberCode is >= 11 and <= 17 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide20.GetFieldName() ;
+          case "L" when numberCode == 18 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide21.GetFieldName() ;
+          case "L" when numberCode == 19 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide22.GetFieldName() ;
+          case "L" when numberCode == 20 :
+          case "L" when numberCode == 31 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide23.GetFieldName() ;
+          case "th" when numberCode == 14 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide24.GetFieldName() ;
+          case "L" when numberCode == 22 :
+          case "L" when ( numberCode is >= 24 and <= 26 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide25.GetFieldName() ;
+          case "L" when numberCode == 23 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide26.GetFieldName() ;
+          case "th" when numberCode == 16 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide27.GetFieldName() ;
+          case "L" when numberCode == 28 :
+          case "th" when numberCode == 18 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide28.GetFieldName() ;
+          case "th" when numberCode == 17 :
+          case "th" when numberCode == 32 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide29.GetFieldName() ;
+          case "L" when numberCode == 29 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide30.GetFieldName() ;
+          case "op" :
+            return ConnectorOneSideFamilyType.ConnectorOneSide31.GetFieldName() ;
+          case "M" when ( numberCode is >= 1 and <= 4 ) :
+            return ConnectorOneSideFamilyType.ConnectorOneSide33.GetFieldName() ;
+          case "M" when numberCode == 6 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide35.GetFieldName() ;
+          case "M" when numberCode == 8 :
+            return ConnectorOneSideFamilyType.ConnectorOneSide36.GetFieldName() ;
+        }
+      }
+
+      return defaultFloorPlanType ;
     }
 
     private static List<EquipmentSymbol> GetAllEquipmentSymbols( string path )

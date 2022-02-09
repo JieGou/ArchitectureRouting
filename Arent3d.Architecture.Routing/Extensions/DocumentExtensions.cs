@@ -100,7 +100,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new DetailSymbolStorable( document ) ;
       }
     }
-    
+
     /// <summary>
     /// Get rack notation data from snoop DB.
     /// </summary>
