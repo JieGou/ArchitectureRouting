@@ -108,10 +108,30 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "442b05ee-df38-4595-93c9-e2d7cfa227e9" ), NameOnRevit( "Connector Type" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
     ConnectorType,
-            
+
     [ParameterGuid( "f71cbd72-3fe4-47cb-b777-36d6511d42ed" ), NameOnRevit( "CeeD Code" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
-    CeeDCode
+    CeeDCode,
+
+    [ParameterGuid( "a0e5ff51-73c3-4c2d-a1e2-3c510e034d2b" ), NameOnRevit( "シンボル" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_GRAPHICS, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
+    FloorPlanSymbol,
+
+    [ParameterGuid( "52051eae-d0e5-4879-9642-ffc8556464a9" ), NameOnRevit( "記号" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
+    DeviceSymbol,
+
+    [ParameterGuid( "fddd9337-f973-45f6-8d83-8710deb1fb5c" ), NameOnRevit( "配線" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
+    WiringType,
+
+    [ParameterGuid( "7b13e548-c07e-416e-bef6-725a7fea2ea5" ), NameOnRevit( "配管（屋内）" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
+    InPlumbingType,
+
+    [ParameterGuid( "079640dc-d750-4b8a-af07-64206c295135" ), NameOnRevit( "配管（屋外）" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
+    OutPlumbingType,
   }
 
   public enum BranchNumberParameter
