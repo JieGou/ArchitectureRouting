@@ -216,6 +216,7 @@ namespace Arent3d.Architecture.Routing
         IsRoutingOnPipeRacks = ( 0 < documentData.RackCollection.RackCount ) && subRoute.IsRoutingOnPipeSpace ;
         AllowHorizontalBranches = documentData.AllowHorizontalBranches( subRoute ) ;
         FixedBopHeight = forcedFixedHeight ;
+        PriorityBoxes = new List<List<Box3d>>() ;
       }
 
       public bool IsRoutingOnPipeRacks { get ; }
@@ -228,6 +229,8 @@ namespace Arent3d.Architecture.Routing
 
       public bool AllowHorizontalBranches { get ; }
       public double? FixedBopHeight { get ; set ; }
+      
+      public List<List<Box3d>> PriorityBoxes { get ; }
     }
 
     private class AutoRoutingSpatialConstraints : IAutoRoutingSpatialConstraints
