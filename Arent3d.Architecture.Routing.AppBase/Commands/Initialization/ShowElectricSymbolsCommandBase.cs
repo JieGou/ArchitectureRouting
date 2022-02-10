@@ -250,34 +250,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var fields = new List<string>() { "シンボル", "記号", "配線", "（屋内）", "（屋外）" } ;
       TableData tableData = viewSchedule.GetTableData() ;
-      TableSectionData tsd = tableData.GetSectionData( SectionType.Header ) ;
+      TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
+      TableSectionData tsdBody = tableData.GetSectionData( SectionType.Body ) ;
+
       for ( var i = 0 ; i < 4 ; i++ ) {
-        tsd.InsertColumn( i ) ;
+        tsdHeader.InsertColumn( i ) ;
       }
 
-      tsd.InsertRow( tsd.FirstRowNumber ) ;
-      tsd.InsertRow( tsd.FirstRowNumber ) ;
-      
+      tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
+      tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
+
       TableCellStyleOverrideOptions options = new TableCellStyleOverrideOptions { FontSize = true, Bold = true } ;
       TableCellStyle tcs = new TableCellStyle() ;
       tcs.SetCellStyleOverrideOptions( options ) ;
       tcs.FontHorizontalAlignment = HorizontalAlignmentStyle.Left ;
-      tsd.SetCellStyle( 0, 0, tcs ) ;
-      tsd.SetCellText( 0, 0, "機器凡例" ) ;
-      tsd.MergeCells( new TableMergedCell( 0, 0, 0, 4 ) ) ;
-
-      tsd.MergeCells( new TableMergedCell( 1, 3, 1, 4 ) ) ;
-      tsd.SetCellText( 1, 3, "配管" ) ;
+      tsdHeader.SetCellStyle( 0, 0, tcs ) ;
+      tsdHeader.MergeCells( new TableMergedCell( 0, 0, 0, 4 ) ) ;
+      tsdHeader.SetCellText( 0, 0, "機器凡例" ) ;
+      tsdHeader.MergeCells( new TableMergedCell( 1, 3, 1, 4 ) ) ;
+      tsdHeader.SetCellText( 1, 3, "配管" ) ;
 
       for ( var i = 0 ; i < 5 ; i++ ) {
-        if ( i < 3 ) tsd.MergeCells( new TableMergedCell( 1, i, 2, i ) ) ;
-        tsd.SetCellText( i < 3 ? 1 : tsd.LastRowNumber, i, fields.ElementAt( i ) ) ;
-        tsd.SetColumnWidth( i, i is 2 or 3 ? 0.2 : 0.15 ) ;
-      }
-
-      TableSectionData tsd2 = tableData.GetSectionData( SectionType.Body ) ;
-      for ( var i = 0 ; i < 5 ; i++ ) {
-        tsd2.SetColumnWidth( i, i is 2 or 3 ? 0.2 : 0.15 ) ;
+        if ( i < 3 ) tsdHeader.MergeCells( new TableMergedCell( 1, i, 2, i ) ) ;
+        tsdHeader.SetCellText( i < 3 ? 1 : tsdHeader.LastRowNumber, i, fields.ElementAt( i ) ) ;
+        var columnWidth = i is 2 or 3 ? 0.2 : 0.15 ;
+        tsdHeader.SetColumnWidth( i, columnWidth ) ;
+        tsdBody.SetColumnWidth( i, columnWidth ) ;
       }
     }
 
