@@ -113,10 +113,6 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
     CeeDCode,
 
-    [ParameterGuid( "a0e5ff51-73c3-4c2d-a1e2-3c510e034d2b" ), NameOnRevit( "シンボル" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_GRAPHICS, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
-    FloorPlanSymbol,
-
     [ParameterGuid( "52051eae-d0e5-4879-9642-ffc8556464a9" ), NameOnRevit( "記号" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
     DeviceSymbol,

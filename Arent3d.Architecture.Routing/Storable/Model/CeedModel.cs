@@ -203,7 +203,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       }
     }
 
-    public static Bitmap Base64StringToBitmap( string base64String )
+    private static Bitmap Base64StringToBitmap( string base64String )
     {
       Byte[] bitmapData = Convert.FromBase64String( FixBase64ForImage( base64String ) ) ;
       System.IO.MemoryStream streamBitmap = new System.IO.MemoryStream( bitmapData ) ;
