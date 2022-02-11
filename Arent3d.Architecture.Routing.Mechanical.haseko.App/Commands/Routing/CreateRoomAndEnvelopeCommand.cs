@@ -21,15 +21,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
-        using ( var groupTran = new TransactionGroup( commandData.Application.ActiveUIDocument.Document ) ) {
-          groupTran.Start( "Create room and envelope" ) ;
+        using ( var transaction = new Transaction( commandData.Application.ActiveUIDocument.Document ) ) {
+          transaction.Start( "Create room and envelope" ) ;
           //1. Wall Envelope Feature
           ExcuteWallEnvelope( commandData ) ;
           //2. Room Box Feature
           ExcuteRoomBoxes( commandData ) ;
           //3. Floor Envelope Feature
           ExcuteFloorEnvelope( commandData ) ;
-          groupTran.Assimilate() ;
+          transaction.Commit() ;
         }
 
         return Result.Succeeded ;
@@ -70,117 +70,112 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
       level ??= levels.First() ;
 
-      using ( var tran = new Transaction( document, "Create box direct shape" ) ) {
-        tran.Start() ;
-        foreach ( var floorInstance in allFloors ) {
-          if ( floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭以外" || floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭" ) {
-            listGarden.Add( floorInstance ) ;
-            continue ;
-          }
+      foreach ( var floorInstance in allFloors ) {
+        if ( floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭以外" || floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭" ) {
+          listGarden.Add( floorInstance ) ;
+          continue ;
+        }
 
-          //shape complex with vertices edited
-          if ( floorInstance.SlabShapeEditor.SlabShapeVertices.Size > 0 ) {
+        //shape complex with vertices edited
+        if ( floorInstance.SlabShapeEditor.SlabShapeVertices.Size > 0 ) {
+          listComplex.Add( floorInstance ) ;
+          continue ;
+        }
+
+        //shape complex 
+        var geoElement = floorInstance.get_Geometry( option ) ;
+        foreach ( GeometryObject geoObject in geoElement ) {
+          if ( geoObject is not Solid solid ) continue ;
+          var btnFace = GetBottomFace( solid ) ;
+          if ( btnFace is null ) continue ;
+          var edgeLoops = btnFace.EdgeLoops ;
+          //check shape with more than 2 boundaries
+          if ( edgeLoops.Size >= 2 ) {
             listComplex.Add( floorInstance ) ;
-            continue ;
           }
-
-          //shape complex 
-          var geoElement = floorInstance.get_Geometry( option ) ;
-          foreach ( GeometryObject geoObject in geoElement ) {
-            if ( geoObject is not Solid solid ) continue ;
-            var btnFace = GetBottomFace( solid ) ;
-            if ( btnFace is null ) continue ;
-            var edgeLoops = btnFace.EdgeLoops ;
-            //check shape with more than 2 boundaries
-            if ( edgeLoops.Size >= 2 ) {
+          else {
+            //check shape with arc boundaries
+            var edgeArray = edgeLoops.get_Item( 0 ) ;
+            var isComplex = false ;
+            var curves = new List<Line>() ;
+            foreach ( Edge edge in edgeArray ) {
+              if ( edge.AsCurve() is Line line ) curves.Add( line ) ;
+              if ( edge.AsCurve() is not Arc ) continue ;
               listComplex.Add( floorInstance ) ;
+              isComplex = true ;
+              break ;
             }
-            else {
-              //check shape with arc boundaries
-              var edgeArray = edgeLoops.get_Item( 0 ) ;
-              var isComplex = false ;
-              var curves = new List<Line>() ;
-              foreach ( Edge edge in edgeArray ) {
-                if ( edge.AsCurve() is Line line ) curves.Add( line ) ;
-                if ( edge.AsCurve() is not Arc ) continue ;
-                listComplex.Add( floorInstance ) ;
-                isComplex = true ;
-                break ;
-              }
 
-              //basic shape
-              if ( isComplex ) continue ;
-              listBasic.Add( floorInstance ) ;
-              try {
-                //Get all boundary segments
-                var height = floorInstance.get_Parameter( BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM ).AsDouble() ;
-                var bb = floorInstance.get_BoundingBox( null ) ;
-                var lenghtMaxY = bb.Max.Y - bb.Min.Y ;
+            //basic shape
+            if ( isComplex ) continue ;
+            listBasic.Add( floorInstance ) ;
+            try {
+              //Get all boundary segments
+              var height = floorInstance.get_Parameter( BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM ).AsDouble() ;
+              var bb = floorInstance.get_BoundingBox( null ) ;
+              var lenghtMaxY = bb.Max.Y - bb.Min.Y ;
 
-                var curvesFix = GeoExtension.FixDiagonalLines( curves, lenghtMaxY * 2 ) ;
+              var curvesFix = GeoExtension.FixDiagonalLines( curves, lenghtMaxY * 2 ) ;
 
-                //Joined unnecessary segments 
-                var listJoinedX = GeoExtension.GetAllXLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.Y, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
-                var listJoinedY = GeoExtension.GetAllYLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.X, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
+              //Joined unnecessary segments 
+              var listJoinedX = GeoExtension.GetAllXLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.Y, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
+              var listJoinedY = GeoExtension.GetAllYLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.X, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
 
-                //get all points in boundary
-                var allConnerPoints = new List<XYZ>() ;
-                listJoinedY.ForEach( x =>
-                {
-                  allConnerPoints.Add( x.GetEndPoint( 0 ) ) ;
-                  allConnerPoints.Add( x.GetEndPoint( 1 ) ) ;
-                } ) ;
+              //get all points in boundary
+              var allConnerPoints = new List<XYZ>() ;
+              listJoinedY.ForEach( x =>
+              {
+                allConnerPoints.Add( x.GetEndPoint( 0 ) ) ;
+                allConnerPoints.Add( x.GetEndPoint( 1 ) ) ;
+              } ) ;
 
-                //get all points of intersect with Y to X curves
-                foreach ( var lineY in listJoinedY ) {
-                  var lineExtend = lineY.ExtendBothY( lenghtMaxY * 2 ) ;
-                  var (intersected, points) = lineExtend.CheckIntersectPoint( listJoinedX ) ;
-                  if ( intersected ) {
-                    allConnerPoints.AddRange( points ) ;
-                  }
-                }
-
-                //distinct points
-                var comparer = new XyzComparer() ;
-                var distinctPoints = allConnerPoints.Distinct( comparer ).ToList() ;
-                var dic = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
-
-                //Find out the rectangular
-                var listRec = new List<RectangularBox>() ;
-                for ( var i = 0 ; i < dic.Count - 1 ; i++ ) {
-                  var l1 = dic[ dic.Keys.ToList()[ i ] ] ;
-                  var l2 = dic[ dic.Keys.ToList()[ i + 1 ] ] ;
-                  l1.AddRange( l2 ) ;
-                  var rec = GeoExtension.FindRectangular( l1, GeoExtension.GetAllXLine( curvesFix ), lenghtMaxY * 2 ) ;
-                  listRec.AddRange( rec ) ;
-                }
-
-                //Create the room box
-                foreach ( var rectangular in listRec ) {
-                  var envelopeOrigin = rectangular.GetCentroid() ;
-                  var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-                  var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, level, StructuralType.NonStructural ) ;
-                  envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-                  envelopeInstance.LookupParameter( "奥行き" ).Set( rectangular.GetLengthY() ) ;
-                  envelopeInstance.LookupParameter( "幅" ).Set( rectangular.GetLengthX() ) ;
-                  envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
-                  envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "FLOOR_ENVELOPE" ) ;
+              //get all points of intersect with Y to X curves
+              foreach ( var lineY in listJoinedY ) {
+                var lineExtend = lineY.ExtendBothY( lenghtMaxY * 2 ) ;
+                var (intersected, points) = lineExtend.CheckIntersectPoint( listJoinedX ) ;
+                if ( intersected ) {
+                  allConnerPoints.AddRange( points ) ;
                 }
               }
-              catch {
-                //ignore
+
+              //distinct points
+              var comparer = new XyzComparer() ;
+              var distinctPoints = allConnerPoints.Distinct( comparer ).ToList() ;
+              var dic = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
+
+              //Find out the rectangular
+              var listRec = new List<RectangularBox>() ;
+              for ( var i = 0 ; i < dic.Count - 1 ; i++ ) {
+                var l1 = dic[ dic.Keys.ToList()[ i ] ] ;
+                var l2 = dic[ dic.Keys.ToList()[ i + 1 ] ] ;
+                l1.AddRange( l2 ) ;
+                var rec = GeoExtension.FindRectangular( l1, GeoExtension.GetAllXLine( curvesFix ), lenghtMaxY * 2 ) ;
+                listRec.AddRange( rec ) ;
               }
+
+              //Create the room box
+              foreach ( var rectangular in listRec ) {
+                var envelopeOrigin = rectangular.GetCentroid() ;
+                var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+                var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, level, StructuralType.NonStructural ) ;
+                envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
+                envelopeInstance.LookupParameter( "奥行き" ).Set( rectangular.GetLengthY() ) ;
+                envelopeInstance.LookupParameter( "幅" ).Set( rectangular.GetLengthX() ) ;
+                envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
+                envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "FLOOR_ENVELOPE" ) ;
+              }
+            }
+            catch {
+              //ignore
             }
           }
         }
-
-        var gardenCount = listGarden.Count ;
-        var basicCount = listBasic.Count ;
-        if ( listComplex.Count == 0 ) return ;
-        MessageBox.Show( $"このドキュメントには、{listComplex.Count}つの複雑な床の形状があります。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning ) ;
-
-        tran.Commit() ;
       }
+
+      var gardenCount = listGarden.Count ;
+      var basicCount = listBasic.Count ;
+      if ( listComplex.Count == 0 ) return ;
+      MessageBox.Show( $"このドキュメントには、{listComplex.Count}つの複雑な床の形状があります。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning ) ;
     }
 
     private PlanarFace? GetBottomFace( Solid solid )
@@ -216,47 +211,41 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var wallsCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<Wall>().ToList() ;
       allWalls.AddRange( wallsCurrent ) ;
 
-      using ( var trans = new Transaction( document ) ) {
-        trans.Start( "Create wall envelope" ) ;
+      var level = uiDocument.ActiveView.GenLevel ;
+      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
+      level ??= levels.First() ;
 
-        var level = uiDocument.ActiveView.GenLevel ;
-        var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
-        level ??= levels.First() ;
+      foreach ( var wallInstance in allWalls ) {
+        var height = wallInstance.get_Parameter( BuiltInParameter.WALL_USER_HEIGHT_PARAM ).AsDouble() ;
+        var width = wallInstance.WallType.Width ;
+        var backSize = wallInstance.get_Parameter( BuiltInParameter.CURVE_ELEM_LENGTH ).AsDouble() ;
+        var locationCurve = ( wallInstance.Location as LocationCurve ) ! ;
+        var wallLine = locationCurve.Curve as Line ;
+        var wallArc = locationCurve.Curve as Arc ;
 
-        foreach ( var wallInstance in allWalls ) {
-          var height = wallInstance.get_Parameter( BuiltInParameter.WALL_USER_HEIGHT_PARAM ).AsDouble() ;
-          var width = wallInstance.WallType.Width ;
-          var backSize = wallInstance.get_Parameter( BuiltInParameter.CURVE_ELEM_LENGTH ).AsDouble() ;
-          var locationCurve = ( wallInstance.Location as LocationCurve ) ! ;
-          var wallLine = locationCurve.Curve as Line ;
-          var wallArc = locationCurve.Curve as Arc ;
-
-          XYZ startPoint = new(), endPoint = new() ;
-          if ( wallLine != null ) {
-            startPoint = wallLine.GetEndPoint( 0 ) ;
-            endPoint = wallLine.GetEndPoint( 1 ) ;
-          }
-          else if ( wallArc != null ) {
-            startPoint = wallArc.GetEndPoint( 0 ) ;
-            endPoint = wallArc.GetEndPoint( 1 ) ;
-          }
-
-          var envelopeOrigin = new XYZ( ( startPoint.X + endPoint.X ) / 2, ( startPoint.Y + endPoint.Y ) / 2, ( startPoint.Z + endPoint.Z ) / 2 ) ;
-          var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-          var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, level, StructuralType.NonStructural ) ;
-          envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-          envelopeInstance.LookupParameter( "奥行き" ).Set( backSize ) ;
-          envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
-          envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
-          envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "WALL_ENVELOPE" ) ;
-
-          if ( wallLine != null ) {
-            var rotationAngle = wallLine.Direction.AngleTo( XYZ.BasisY ) ;
-            ElementTransformUtils.RotateElement( document, envelopeInstance.Id, Line.CreateBound( envelopeOrigin, new XYZ( envelopeOrigin.X, envelopeOrigin.Y, envelopeOrigin.Z + 1 ) ), rotationAngle ) ;
-          }
+        XYZ startPoint = new(), endPoint = new() ;
+        if ( wallLine != null ) {
+          startPoint = wallLine.GetEndPoint( 0 ) ;
+          endPoint = wallLine.GetEndPoint( 1 ) ;
+        }
+        else if ( wallArc != null ) {
+          startPoint = wallArc.GetEndPoint( 0 ) ;
+          endPoint = wallArc.GetEndPoint( 1 ) ;
         }
 
-        trans.Commit() ;
+        var envelopeOrigin = new XYZ( ( startPoint.X + endPoint.X ) / 2, ( startPoint.Y + endPoint.Y ) / 2, ( startPoint.Z + endPoint.Z ) / 2 ) ;
+        var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+        var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, level, StructuralType.NonStructural ) ;
+        envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
+        envelopeInstance.LookupParameter( "奥行き" ).Set( backSize ) ;
+        envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
+        envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
+        envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "WALL_ENVELOPE" ) ;
+
+        if ( wallLine != null ) {
+          var rotationAngle = wallLine.Direction.AngleTo( XYZ.BasisY ) ;
+          ElementTransformUtils.RotateElement( document, envelopeInstance.Id, Line.CreateBound( envelopeOrigin, new XYZ( envelopeOrigin.X, envelopeOrigin.Y, envelopeOrigin.Z + 1 ) ), rotationAngle ) ;
+        }
       }
     }
 
@@ -273,13 +262,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
       var otherRooms = allRooms.Except( livingRooms ).ToList() ;
 
-      using ( var trans = new Transaction( doc ) ) {
-        trans.Start( "Create room boxes" ) ;
-
-        CreateRoomBoxFromLivingRoom( livingRooms, doc ) ;
-        CreateRoomBoxFromOther( otherRooms, doc ) ;
-        trans.Commit() ;
-      }
+      CreateRoomBoxFromLivingRoom( livingRooms, doc ) ;
+      CreateRoomBoxFromOther( otherRooms, doc ) ;
     }
 
     private FilteredElementCollector? GetLinkedDocFilter( Document doc, Application app )
