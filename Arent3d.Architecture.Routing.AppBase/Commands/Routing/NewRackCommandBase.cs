@@ -193,7 +193,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                line.Direction == otherLine.Direction && line.Length == otherLine.Length ;
       }
 
-      return location.Equals( otherLocation ) ;
+      return location == otherLocation ;
     }
 
     public static void CreateRackForConduit( UIDocument uiDocument, Application app, IEnumerable<Element> allElementsInRoute, List<FamilyInstance> racks )
@@ -297,7 +297,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableRackWidth == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
       // set To-Side Connector Id
-      var (fromConnectorId, toConnectorId) = GetFromConnectorIdAndToConnectorId( conduit ) ;
+      var (fromConnectorId, toConnectorId) = GetFromAndToConnectorUniqueId( conduit ) ;
       if ( ! string.IsNullOrEmpty( toConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
@@ -356,7 +356,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       SetParameter( instance, "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ), cableTrayDefaultBendRadius == 0 ? RackTypes[ 0 ] : RackTypes[ 1 ] ) ;
 
       // set To-Side Connector Id
-      var (fromConnectorId, toConnectorId) = GetFromConnectorIdAndToConnectorId( conduit ) ;
+      var (fromConnectorId, toConnectorId) = GetFromAndToConnectorUniqueId( conduit ) ;
       if ( ! string.IsNullOrEmpty( toConnectorId ) )
         SetParameter( instance, "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( document, "To-Side Connector Id" ), toConnectorId ) ;
       if ( ! string.IsNullOrEmpty( fromConnectorId ) )
@@ -391,15 +391,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return isSameConnectors ;
     }
 
-    public static ( string, string ) GetFromConnectorIdAndToConnectorId( Element conduit )
+    public static ( string, string ) GetFromAndToConnectorUniqueId( Element conduit )
     {
       var fromEndPoint = conduit.GetNearestEndPoints( true ) ;
-      var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;
-      var fromConnectorId = fromEndPointKey!.GetElementId() ;
+      var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ?? throw new NullReferenceException() ;
+      var fromConnectorId = fromEndPointKey.GetElementUniqueId() ;
 
       var toEndPoint = conduit.GetNearestEndPoints( false ) ;
-      var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
-      var toConnectorId = toEndPointKey!.GetElementId() ;
+      var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ?? throw new NullReferenceException() ;
+      var toConnectorId = toEndPointKey.GetElementUniqueId() ;
 
       return ( fromConnectorId, toConnectorId ) ;
     }
@@ -466,9 +466,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var fromElementId = rack.ParametersMap.get_Item( "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( doc, "From-Side Connector Id" ) ).AsString() ;
       if ( string.IsNullOrEmpty( fromElementId ) ) return string.Empty ;
-      var fromConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
+      var fromConnector = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == fromElementId ) ;
       if ( ! fromConnector!.IsTerminatePoint() && ! fromConnector!.IsPassPoint() ) return fromElementId ;
-      fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorId, out string? fromConnectorId ) ;
+      fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId, out string? fromConnectorId ) ;
       fromElementId = fromConnectorId! ;
 
       return fromElementId ;
@@ -516,12 +516,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           noteLeader.End = endPoint ;
 
           foreach ( var item in racks ) {
-            var rackNotationModel = new RackNotationModel( item.Id.IntegerValue.ToString(), textNote.Id.IntegerValue.ToString(), rack.Id.IntegerValue.ToString(), fromConnectorId, isDirectionX, Math.Round( bendRadiusRack, 4 ) ) ;
+            var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, rack.UniqueId, fromConnectorId, isDirectionX, Math.Round( bendRadiusRack, 4 ) ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }
         else {
-          var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == notationModel.NotationId ) ;
+          var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.UniqueId == notationModel.NotationId ) ;
           if ( textElement == null ) return ;
           var textNote = textElement as TextNote ;
           var text = textNote!.Text ;
@@ -534,7 +534,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           foreach ( var item in racks ) {
-            var rackNotationModel = new RackNotationModel( item.Id.IntegerValue.ToString(), notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth ) ;
+            var rackNotationModel = new RackNotationModel( item.UniqueId, notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }
@@ -546,10 +546,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var notationUnused = new List<RackNotationModel>() ;
       if ( ! rackNotationStorable.RackNotationModelData.Any() ) return ;
       foreach ( var notationModel in rackNotationStorable.RackNotationModelData ) {
-        var rack = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.RackTypeElements ).FirstOrDefault( c => c.Id.IntegerValue.ToString() == notationModel.RackId ) ;
+        var rack = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.RackTypeElements ).FirstOrDefault( c => c.UniqueId == notationModel.RackId ) ;
         if ( rack != null ) continue ;
         notationUnused.Add( notationModel ) ;
-        var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( e => e.Id.IntegerValue.ToString() == notationModel.NotationId ) ;
+        var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( e => e.UniqueId == notationModel.NotationId ) ;
         if ( textElement == null ) continue ;
         var textNote = textElement as TextNote ;
         var text = textNote!.Text ;

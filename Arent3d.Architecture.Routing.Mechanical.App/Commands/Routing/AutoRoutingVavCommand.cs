@@ -211,7 +211,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var systemType = document.GetAllElements<MEPSystemType>().Where( classificationInfo.IsCompatibleTo ).FirstOrDefault() ;
       var curveType = GetRoundDuctTypeWhosePreferredJunctionTypeIsTee( document )! ; // 取得できることはこれより前に確認済み.
       var nameBase = TTEUtil.GetNameBase( systemType, curveType ) ;
-      var nextIndex = TTEUtil.GetRouteNameIndex( RouteCache.Get( document ), nameBase ) ;
+      var nextIndex = TTEUtil.GetRouteNameIndex( RouteCache.Get( DocumentKey.Get( document ) ), nameBase ) ;
       var routeName = nameBase + "_" + nextIndex ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
@@ -220,7 +220,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var rootConnectorEndPoint = new ConnectorEndPoint( rootConnector, null ) ;
       var vavConnectorEndPoint = new ConnectorEndPoint( parentVavs.Last().GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
       var mainRouteHeight = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, rootConnector.Origin.Z - _rootLevel.Elevation ) ;
-      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, rootConnectorEndPoint, vavConnectorEndPoint, null, false, mainRouteHeight, mainRouteHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ) ) ;
+      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, rootConnectorEndPoint, vavConnectorEndPoint, null, false, mainRouteHeight, mainRouteHeight, AvoidType.Whichever, null ) ) ) ;
 
       // Branch routes
       foreach ( var vav in parentVavs.Take( parentVavs.Count - 1 ) ) {
@@ -229,7 +229,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var subRouteName = nameBase + "_" + ++nextIndex ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
         var connectorEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, null, null, AvoidType.Whichever, ElementId.InvalidElementId ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, null, null, AvoidType.Whichever, null ) ;
         result.Add( ( subRouteName, segment ) ) ;
       }
 
@@ -239,7 +239,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
         var subRouteName = nameBase + "_" + ++nextIndex ;
         var branchEndPoint = new RouteEndPoint( document, routeName, DefaultSubRouteIndex ) ;
         var connectorEndPoint = new ConnectorEndPoint( childVav.Last().GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, mainRouteHeight, mainRouteHeight, AvoidType.Whichever, ElementId.InvalidElementId ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, childDiameter, false, mainRouteHeight, mainRouteHeight, AvoidType.Whichever, null ) ;
         result.Add( ( subRouteName, segment ) ) ;
         foreach ( var vav in childVav.Take( childVav.Count - 1 ) ) {
           // サブメインダクト - VAV
@@ -247,7 +247,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           var subChildRouteName = nameBase + "_" + ++nextIndex ;
           var branchChildEndPoint = new RouteEndPoint( document, subRouteName, DefaultSubRouteIndex ) ;
           var connectorChildEndPoint = new ConnectorEndPoint( vav.GetConnectors().First( c => c.Direction != FlowDirectionType.Out ), null ) ;
-          var childSegment = new RouteSegment( classificationInfo, systemType, curveType, branchChildEndPoint, connectorChildEndPoint, childDiameter, false, null, null, AvoidType.Whichever, ElementId.InvalidElementId ) ;
+          var childSegment = new RouteSegment( classificationInfo, systemType, curveType, branchChildEndPoint, connectorChildEndPoint, childDiameter, false, null, null, AvoidType.Whichever, null ) ;
           result.Add( ( subChildRouteName, childSegment ) ) ;
         }
       }

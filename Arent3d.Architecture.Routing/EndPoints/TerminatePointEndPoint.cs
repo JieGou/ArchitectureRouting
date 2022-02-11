@@ -14,24 +14,24 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private enum SerializeField
     {
-      TerminatePointId,
+      TerminatePointUniqueId,
       Diameter,
       Position,
       Direction,
-      LinkedInstanceId,
+      LinkedInstanceUniqueId,
     }
 
     public static TerminatePointEndPoint? ParseParameterString( Document document, string str )
     {
       var deserializer = new DeserializerObject<SerializeField>( str ) ;
 
-      if ( deserializer.GetElementId( SerializeField.TerminatePointId ) is not { } terminatePointId ) return null ;
+      if ( deserializer.GetString( SerializeField.TerminatePointUniqueId ) is not { } terminatePointUniqueId ) return null ;
       var diameter = deserializer.GetDouble( SerializeField.Diameter ) ;
       if ( deserializer.GetXYZ( SerializeField.Position ) is not { } position ) return null ;
       if ( deserializer.GetXYZ( SerializeField.Direction ) is not { } direction ) return null ;
-      if ( deserializer.GetElementId( SerializeField.LinkedInstanceId ) is not { } linkedInstanceId ) return null ;
+      if ( deserializer.GetString( SerializeField.LinkedInstanceUniqueId ) is not { } linkedInstanceUniqueId ) return null ;
 
-      return new TerminatePointEndPoint( document, terminatePointId, position, direction, diameter * 0.5, linkedInstanceId ) ;
+      return new TerminatePointEndPoint( document, terminatePointUniqueId, position, direction, diameter * 0.5, linkedInstanceUniqueId ) ;
     }
 
     public string ParameterString
@@ -40,11 +40,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
       {
         var stringifier = new SerializerObject<SerializeField>() ;
 
-        stringifier.Add( SerializeField.TerminatePointId, TerminatePointId ) ;
+        stringifier.AddNonNull( SerializeField.TerminatePointUniqueId, TerminatePointUniqueId ) ;
         stringifier.Add( SerializeField.Diameter, GetDiameter() ) ;
         stringifier.AddNonNull( SerializeField.Position, RoutingStartPosition ) ;
         stringifier.AddNonNull( SerializeField.Direction, Direction ) ;
-        stringifier.Add( SerializeField.LinkedInstanceId, LinkedInstanceId ) ;
+        stringifier.AddNonNull( SerializeField.LinkedInstanceUniqueId, LinkedInstanceUniqueId ) ;
 
         return stringifier.ToString() ;
       }
@@ -53,12 +53,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public string TypeName => Type ;
     public string DisplayTypeName => "EndPoint.DisplayTypeName.Terminal".GetAppStringByKeyOrDefault( TypeName ) ;
-    public EndPointKey Key => new EndPointKey( TypeName, TerminatePointId.IntegerValue.ToString() ) ;
+    public EndPointKey Key => new EndPointKey( TypeName, TerminatePointUniqueId ) ;
 
     internal static TerminatePointEndPoint? FromKeyParam( Document document, string param )
     {
-      if ( false == int.TryParse( param, out var terminatePointId ) ) return null ;
-      if ( document.GetElementById<FamilyInstance>( terminatePointId ) is not { } instance ) return null ;
+      if ( document.GetElementById<FamilyInstance>( param ) is not { } instance ) return null ;
       if ( instance.Symbol.Id != document.GetFamilySymbols( RoutingFamilyType.TerminatePoint ).FirstOrDefault()?.Id ) return null ;
 
       return new TerminatePointEndPoint( instance, null ) ;
@@ -70,10 +69,10 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private readonly Document _document ;
 
-    public ElementId TerminatePointId { get ; private set ; }
-    public ElementId LinkedInstanceId { get ; private set ; }
+    public string TerminatePointUniqueId { get ; private set ; }
+    public string LinkedInstanceUniqueId { get ; private set ; }
 
-    public Instance? GetTerminatePoint() => _document.GetElementById<Instance>( TerminatePointId ) ;
+    public Instance? GetTerminatePoint() => _document.GetElementById<Instance>( TerminatePointUniqueId ) ;
 
     private XYZ PreferredPosition { get ; set ; } = XYZ.Zero ;
 
@@ -82,11 +81,11 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public XYZ Direction => GetTerminatePoint()?.GetTotalTransform().BasisX ?? PreferredDirection ;
     private double? PreferredRadius { get ; set ; } = 0 ;
 
-    public ElementId GetLevelId( Document document ) => GetTerminatePoint()?.GetLevelId() ?? GetElementLevelId( document, LinkedInstanceId ) ?? document.GuessLevelId( PreferredPosition ) ;
+    public ElementId GetLevelId( Document document ) => GetTerminatePoint()?.GetLevelId() ?? GetElementLevelId( document, LinkedInstanceUniqueId ) ?? document.GuessLevelId( PreferredPosition ) ;
 
-    private static ElementId? GetElementLevelId( Document document, ElementId linkedInstanceId )
+    private static ElementId? GetElementLevelId( Document document, string linkedInstanceUniqueId )
     {
-      return document.GetElementById<Element>( linkedInstanceId )?.GetLevelId() ;
+      return document.GetElementById<Element>( linkedInstanceUniqueId )?.GetLevelId() ;
     }
 
     public void UpdatePreferredParameters()
@@ -107,17 +106,17 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public TerminatePointEndPoint( Instance instance, Instance? linkedInstance )
     {
       _document = instance.Document ;
-      TerminatePointId = instance.Id ;
-      LinkedInstanceId = linkedInstance.GetValidId() ;
+      TerminatePointUniqueId = instance.UniqueId ;
+      LinkedInstanceUniqueId = linkedInstance?.UniqueId ?? string.Empty ;
 
       SetPreferredParameters( instance ) ;
     }
 
-    public TerminatePointEndPoint( Document document, ElementId terminatePointId, XYZ preferredPosition, XYZ preferredDirection, double? preferredRadius, ElementId linkedInstanceId )
+    public TerminatePointEndPoint( Document document, string terminatePointUniqueId, XYZ preferredPosition, XYZ preferredDirection, double? preferredRadius, string linkedInstanceUniqueId )
     {
       _document = document ;
-      TerminatePointId = terminatePointId ;
-      LinkedInstanceId = linkedInstanceId ;
+      TerminatePointUniqueId = terminatePointUniqueId ;
+      LinkedInstanceUniqueId = linkedInstanceUniqueId ;
 
       PreferredPosition = preferredPosition ;
       PreferredDirection = ( preferredDirection.IsZeroLength() ? XYZ.BasisX : preferredDirection.Normalize() ) ;
@@ -142,14 +141,14 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       if ( null != GetTerminatePoint() ) return false ;
 
-      TerminatePointId = _document.AddTerminatePoint( routeName, PreferredPosition, PreferredDirection, PreferredRadius, GetLevelId( _document ) ).Id ;
+      TerminatePointUniqueId = _document.AddTerminatePoint( routeName, PreferredPosition, PreferredDirection, PreferredRadius, GetLevelId( _document ) ).UniqueId ;
 
-      Element elemTerP = _document.GetElement( TerminatePointId ) ;
-      Element elemOrg = _document.GetElement( LinkedInstanceId ) ;
+      Element elemTerP = _document.GetElement( TerminatePointUniqueId ) ;
+      Element elemOrg = _document.GetElement( LinkedInstanceUniqueId ) ;
 
       foreach ( Parameter parameter in elemTerP.Parameters ) {
         if ( parameter.Definition.Name == "LinkedInstanceId" ) {
-          parameter.Set( LinkedInstanceId.ToString() ) ;
+          parameter.Set( LinkedInstanceUniqueId ) ;
         }
 
         if ( parameter.Definition.Name == "LinkedInstanceXYZ" ) {
@@ -161,8 +160,8 @@ namespace Arent3d.Architecture.Routing.EndPoints
         }
       }
 
-      elemTerP.SetProperty( PassPointParameter.RelatedConnectorId, LinkedInstanceId.IntegerValue.ToString() ) ;
-      elemTerP.SetProperty( PassPointParameter.RelatedFromConnectorId, LinkedInstanceId.IntegerValue.ToString() ) ;
+      elemTerP.SetProperty( PassPointParameter.RelatedConnectorUniqueId, LinkedInstanceUniqueId ) ;
+      elemTerP.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, LinkedInstanceUniqueId ) ;
 
       return true ;
     }
@@ -170,7 +169,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
     public bool EraseInstance()
     {
       UpdatePreferredParameters() ;
-      return ( 0 < _document.Delete( TerminatePointId ).Count ) ;
+      return ( 0 < _document.Delete( TerminatePointUniqueId ).Count ) ;
     }
 
     public override string ToString() => this.Stringify() ;

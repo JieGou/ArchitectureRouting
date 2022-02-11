@@ -83,13 +83,13 @@ namespace Arent3d.Architecture.Routing
       }
     }
 
-    public ElementId ShaftElementId => Segments.First().ShaftElementId ;
+    public string? ShaftElementUniqueId => Segments.First().ShaftElementUniqueId ;
 
     public void ChangeShaftElement( Opening? shaftElement )
     {
-      var shaftElementId = shaftElement?.Id ?? ElementId.InvalidElementId ;
+      var shaftElementId = shaftElement?.UniqueId ?? string.Empty ;
       foreach ( var seg in Segments ) {
-        seg.ShaftElementId = shaftElementId ;
+        seg.ShaftElementUniqueId = shaftElementId ;
       }
     }
 

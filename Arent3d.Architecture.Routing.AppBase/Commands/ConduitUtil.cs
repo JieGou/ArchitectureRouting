@@ -20,19 +20,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
         var startPoint = conduit.GetNearestEndPoints( true ) ;
         var startPointKey = startPoint.FirstOrDefault()?.Key ;
         if ( startPointKey != null ) {
-          startTerminateId = startPointKey.GetElementId().ToString() ;
+          startTerminateId = startPointKey.GetElementUniqueId() ;
         }
 
         var endPoint = conduit.GetNearestEndPoints( false ) ;
         var endPointKey = endPoint.FirstOrDefault()?.Key ;
         if ( endPointKey != null ) {
-          endTerminateId = endPointKey!.GetElementId().ToString() ;
+          endTerminateId = endPointKey.GetElementUniqueId() ;
         }
 
         if ( ! string.IsNullOrEmpty( startTerminateId ) && ! string.IsNullOrEmpty( endTerminateId ) ) {
           var (startConnectorId, endConnectorId) = GetFromConnectorIdAndToConnectorId( doc, startTerminateId, endTerminateId ) ;
-          hasStartElement = conduits.Any( c => c.Id.IntegerValue.ToString() == startConnectorId ) ;
-          hasEndElement = conduits.Any( c => c.Id.IntegerValue.ToString() == endConnectorId ) ;
+          hasStartElement = conduits.Any( c => c.UniqueId == startConnectorId ) ;
+          hasEndElement = conduits.Any( c => c.UniqueId == endConnectorId ) ;
         }
 
         if ( ! string.IsNullOrEmpty( conduitRouteName ) && hasStartElement && hasEndElement ) {
@@ -52,9 +52,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
 
       if ( ! string.IsNullOrEmpty( fromElementId ) ) {
-        var fromConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
+        var fromConnector = allConnectors.FirstOrDefault( c => c.UniqueId == fromElementId ) ;
         if ( fromConnector!.IsTerminatePoint() || fromConnector!.IsPassPoint() ) {
-          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorId, out string? fromConnectorId ) ;
+          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId, out string? fromConnectorId ) ;
           if ( ! string.IsNullOrEmpty( fromConnectorId ) )
             fromElementId = fromConnectorId! ;
         }
@@ -62,9 +62,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands
 
       if ( string.IsNullOrEmpty( toElementId ) ) return ( fromElementId, toElementId ) ;
       {
-        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
         if ( ! toConnector!.IsTerminatePoint() && ! toConnector!.IsPassPoint() ) return ( fromElementId, toElementId ) ;
-        toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? toConnectorId ) ;
+        toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorUniqueId, out string? toConnectorId ) ;
         if ( ! string.IsNullOrEmpty( toConnectorId ) )
           toElementId = toConnectorId! ;
       }

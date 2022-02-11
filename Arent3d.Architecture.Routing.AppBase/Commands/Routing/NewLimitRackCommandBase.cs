@@ -209,7 +209,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <returns></returns>
     private double CalcCableRackWidth( Document document, SubRoute subRoute )
     {
-      var routes = RouteCache.Get( document ) ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var sumDiameter = subRoute.GetSubRouteGroup()
         .Sum( s => routes.GetSubRoute( s )?.GetDiameter().RevitUnitsToMillimeters() + 10 ) + 120 ;
       var cableTraywidth = 0.6 * sumDiameter ;

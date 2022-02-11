@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing
@@ -9,25 +10,25 @@ namespace Arent3d.Architecture.Routing
   /// </summary>
   public static class DocumentMapper
   {
-    private static readonly Dictionary<Document, DocumentData> _mapper = new() ;
+    private static readonly Dictionary<DocumentKey, DocumentData> _mapper = new() ;
 
     public static DocumentData Get( Document document )
     {
-      return _mapper.TryGetValue( document, out var data ) ? data : throw new KeyNotFoundException() ;
+      return _mapper.TryGetValue( DocumentKey.Get( document ), out var data ) ? data : throw new KeyNotFoundException() ;
     }
 
-    public static void Register( Document document )
+    public static void Register( DocumentKey documentKey )
     {
-      if ( _mapper.ContainsKey( document ) ) return ; // duplicated
+      if ( _mapper.ContainsKey( documentKey ) ) return ; // duplicated
 
-      _mapper.Add( document, new DocumentData( document ) ) ;
+      _mapper.Add( documentKey, new DocumentData( documentKey.Document ) ) ;
       
       // TODO: search auto routing families
     }
 
-    public static void Unregister( Document document )
+    public static void Unregister( DocumentKey documentKey )
     {
-      _mapper.Remove( document ) ;
+      _mapper.Remove( documentKey ) ;
     }
   }
 }

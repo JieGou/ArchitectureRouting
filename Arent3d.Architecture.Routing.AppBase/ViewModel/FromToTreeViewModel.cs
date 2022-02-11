@@ -28,10 +28,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       FromToItems = FromToModel?.GetFromToData( addInType, fromToItemsUiBase ) ;
     }
 
-    public static void GetSelectedElementId( ElementId? elementId )
+    public static void GetSelectedElementId( string? elementUniqueId )
     {
       if ( FromToTreePanel != null ) {
-        FromToTreePanel.SelectTreeViewItem( elementId ) ;
+        FromToTreePanel.SelectTreeViewItem( elementUniqueId ) ;
       }
       else {
         return ;

@@ -61,12 +61,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         if ( targetElements == null ) return ;
         if ( elementsInActiveView.Any( ids => targetElements.Contains( ids ) ) ) {
           //Select TreeViewItem
-          FromToTreeViewModel.GetSelectedElementId( selectedRoute.OwnerElement?.Id ) ;
+          FromToTreeViewModel.GetSelectedElementId( selectedRoute.OwnerElement?.UniqueId ) ;
         }
       }
       else if ( connectorsInView.Any( c => UiApp.ActiveUIDocument.Selection.GetElementIds().Contains( c.Owner.Id ) ) ) {
-        var selectedElementId = UiApp.ActiveUIDocument.Selection.GetElementIds().FirstOrDefault() ;
-        FromToTreeViewModel.GetSelectedElementId( selectedElementId ) ;
+        var selectedElementId = UiApp.ActiveUIDocument.Selection.GetElementIds().First() ;
+        FromToTreeViewModel.GetSelectedElementId( doc.GetElementById<Element>( selectedElementId )?.UniqueId ) ;
       }
       else {
         FromToTreeViewModel.ClearSelection() ;

@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing
     public IEndPoint ToEndPoint { get ; private set ; }
     public bool IsRoutingOnPipeSpace { get ; internal set ; } = false ;
 
-    public ElementId ShaftElementId { get ; internal set ; }
+    public string? ShaftElementUniqueId { get ; internal set ; }
 
     public IReadOnlyCollection<SubRouteInfo> SubRouteGroup { get ; private set ; } = Array.Empty<SubRouteInfo>() ;
 
@@ -70,7 +70,7 @@ namespace Arent3d.Architecture.Routing
       return true ;
     }
 
-    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeight, FixedHeight? toFixedHeight, AvoidType avoidType, ElementId shaftElementId )
+    public RouteSegment( MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IEndPoint fromEndPoint, IEndPoint toEndPoint, double? preferredNominalDiameter, bool isRoutingOnPipeSpace, FixedHeight? fromFixedHeight, FixedHeight? toFixedHeight, AvoidType avoidType, string? shaftElementUniqueId )
     {
       SystemClassificationInfo = classificationInfo ;
       SystemType = systemType ;
@@ -83,7 +83,7 @@ namespace Arent3d.Architecture.Routing
       AvoidType = avoidType ;
       FromEndPoint = fromEndPoint ;
       ToEndPoint = toEndPoint ;
-      ShaftElementId = shaftElementId ;
+      ShaftElementUniqueId = shaftElementUniqueId ;
     }
 
     public void ReplaceEndPoint( IEndPoint oldEndPoint, IEndPoint newEndPoint )
@@ -119,7 +119,7 @@ namespace Arent3d.Architecture.Routing
       SystemClassificationInfo,
       SystemType,
       SubRouteGroup,
-      ShaftElementId,
+      ShaftElementUniqueId,
     }
 
     protected override RouteSegment Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -143,12 +143,12 @@ namespace Arent3d.Architecture.Routing
       }
 
       var subRouteGroups = deserializer.GetNonNullArray( SerializeField.SubRouteGroup, SubRouteInfo.CreateForDeserialize ) ;
-      var shaftElementId = deserializer.GetElementId( SerializeField.ShaftElementId ) ?? ElementId.InvalidElementId ;
+      var shaftElementUniqueId = deserializer.GetString( SerializeField.ShaftElementUniqueId ) ;
 
       var fromFixedHeight = FixedHeight.CreateOrNull( fromFixedHeightType, fromFixedHeightValue ) ;
       var toFixedHeight = FixedHeight.CreateOrNull( toFixedHeightType, toFixedHeightValue ) ;
 
-      var routeSegment = new RouteSegment( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ;
+      var routeSegment = new RouteSegment( classificationInfo, systemType, curveType, fromId, toId, preferredDiameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ;
       if ( null != subRouteGroups ) {
         routeSegment.SetSubRouteGroup( subRouteGroups ) ;
       }
@@ -177,7 +177,7 @@ namespace Arent3d.Architecture.Routing
         serializerObject.AddNonNull( SerializeField.SubRouteGroup, customTypeValue.SubRouteGroup ) ;
       }
 
-      serializerObject.Add( SerializeField.ShaftElementId, customTypeValue.ShaftElementId ) ;
+      serializerObject.AddNullable( SerializeField.ShaftElementUniqueId, customTypeValue.ShaftElementUniqueId ) ;
 
       return serializerObject ;
     }

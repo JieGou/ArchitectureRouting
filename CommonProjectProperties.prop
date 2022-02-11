@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <CommonLibraryVersion>1.0.22.120</CommonLibraryVersion>
+        <CommonLibraryVersion>1.0.22.208</CommonLibraryVersion>
         <AssemblyVersion>$(CommonLibraryVersion)</AssemblyVersion>
         <FileVersion>$(CommonLibraryVersion)</FileVersion>
         <Version>$(CommonLibraryVersion)</Version>
@@ -69,25 +69,13 @@
     <PropertyGroup Condition="2019 &lt;= $(RevitVersion)">
         <DefineConstants>$(DefineConstants);REVIT2019_OR_GREATER</DefineConstants>
     </PropertyGroup>
-    <PropertyGroup Condition="2019 &gt;= $(RevitVersion)">
-        <DefineConstants>$(DefineConstants);REVIT2019_OR_LESS</DefineConstants>
-    </PropertyGroup>
     <PropertyGroup Condition="2020 &lt;= $(RevitVersion)">
         <DefineConstants>$(DefineConstants);REVIT2020_OR_GREATER</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition="2020 &gt;= $(RevitVersion)">
-        <DefineConstants>$(DefineConstants);REVIT2020_OR_LESS</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition="2021 &lt;= $(RevitVersion)">
         <DefineConstants>$(DefineConstants);REVIT2021_OR_GREATER</DefineConstants>
     </PropertyGroup>
-    <PropertyGroup Condition="2021 &gt;= $(RevitVersion)">
-        <DefineConstants>$(DefineConstants);REVIT2021_OR_LESS</DefineConstants>
-    </PropertyGroup>
     <PropertyGroup Condition="2022 &lt;= $(RevitVersion)">
         <DefineConstants>$(DefineConstants);REVIT2022_OR_GREATER</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition="2022 &gt;= $(RevitVersion)">
-        <DefineConstants>$(DefineConstants);REVIT2022_OR_LESS</DefineConstants>
     </PropertyGroup>
 </Project>

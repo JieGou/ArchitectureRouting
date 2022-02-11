@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Diagnostics ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
@@ -86,7 +87,7 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     public double GetMinimumStraightLength( double edgeDiameter, bool isFrom ) => 0 ;
 
-    public Route? ParentRoute() => RouteCache.Get( _document ).TryGetValue( RouteName, out var route ) ? route : null ;
+    public Route? ParentRoute() => RouteCache.Get( DocumentKey.Get( _document ) ).TryGetValue( RouteName, out var route ) ? route : null ;
     public SubRoute? ParentSubRoute() => ParentRoute()?.GetSubRoute( SubRouteIndex ) ;
 
     public bool GenerateInstance( string routeName ) => false ;

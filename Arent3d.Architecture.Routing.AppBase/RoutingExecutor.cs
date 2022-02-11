@@ -167,7 +167,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     /// <returns>Routing objects</returns>
     private IReadOnlyCollection<Route> ConvertToRoutes( IReadOnlyCollection<(string RouteName, RouteSegment Segment)> fromToList, IProgressData? progressData )
     {
-      var oldRoutes = RouteCache.Get( Document ) ;
+      var oldRoutes = RouteCache.Get( DocumentKey.Get( Document ) ) ;
 
       var dic = new Dictionary<string, (Route, List<RouteSegment>)>() ;
       var result = new List<Route>() ;

@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ConstructionClassificationCombobox.ItemsSource = _hiroiSetCdMasterModel.Select( x => x.ConstructionClassification ).Distinct() ;
 
       //Set selected value for combobox
-      var hiroiSetCdMaster = _hiroiSetCdMasterModel.Find( x => x.SetCode.Equals( _setCode ) ) ;
+      var hiroiSetCdMaster = _hiroiSetCdMasterModel.Find( x => x.SetCode == _setCode ) ;
       ConstructionClassificationCombobox.SelectedValue = hiroiSetCdMaster == null ? string.Empty : hiroiSetCdMaster.ConstructionClassification ;
     }
 
@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       ObservableCollection<QueryData> queryData = new ObservableCollection<QueryData>() ;
       if ( ! string.IsNullOrWhiteSpace( _setCode ) ) {
-        CeedModel? ceedModel = _listCeedModel.FirstOrDefault( ( model => model.CeeDSetCode.ToUpper().Equals( _setCode.ToUpper() ) ) ) ;
+        CeedModel? ceedModel = _listCeedModel.FirstOrDefault( ( model => string.Equals( model.CeeDSetCode, _setCode, StringComparison.InvariantCultureIgnoreCase ) ) ) ;
         if ( ceedModel != null ) {
           var hiroiSetMasterNormalList = _hiroiSetMasterNormalModel.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ) ;
           foreach ( var item in hiroiSetMasterNormalList ) {
@@ -90,7 +90,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _setCode = txtSetCode.Text.Trim() ;
 
       //Set selected value for combobox
-      var hiroiSetCdMaster = _hiroiSetCdMasterModel.Find( x => x.SetCode.Equals( _setCode ) ) ;
+      var hiroiSetCdMaster = _hiroiSetCdMasterModel.Find( x => x.SetCode == _setCode ) ;
 
       if ( hiroiSetCdMaster == null ) {
         ConstructionClassificationCombobox.SelectedIndex = -1 ;

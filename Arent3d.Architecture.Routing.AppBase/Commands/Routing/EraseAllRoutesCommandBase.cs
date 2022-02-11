@@ -1,6 +1,7 @@
 using System ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
@@ -14,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      var cache = RouteCache.Get( document ) ;
+      var cache = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var hashSet = commandData.Application.ActiveUIDocument.Document.CollectRoutes( GetAddInType() ).Select( route => route.RouteName ).ToHashSet() ;
 
       try {

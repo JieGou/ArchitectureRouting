@@ -16,14 +16,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var segment = subRoute.Segments.FirstOrDefault() ;
         if ( segment == null ) continue ;
         var toEndPointKey = segment.ToEndPoint.Key ;
-        if ( toEndPointKey == null ) continue ;
-        var toEndPointId = toEndPointKey.GetElementId() ;
+        var toEndPointId = toEndPointKey.GetElementUniqueId() ;
         if ( string.IsNullOrEmpty( toEndPointId ) ) continue ;
-        var toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.Id.IntegerValue.ToString() == toEndPointId ) ;
+        var toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == toEndPointId ) ;
         if ( toConnector != null && ( toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) ) {
-          toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? connectorId ) ;
+          toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorUniqueId, out string? connectorId ) ;
           if ( ! string.IsNullOrEmpty( connectorId ) ) {
-            toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.Id.IntegerValue.ToString() == connectorId ) ;
+            toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == connectorId ) ;
           }
         }
 

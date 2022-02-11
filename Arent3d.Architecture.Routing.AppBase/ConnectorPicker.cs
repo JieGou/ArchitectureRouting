@@ -280,7 +280,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public static SubRoutePickResult? Create( RoutingExecutor routingExecutor, Element element, XYZ pickPosition )
       {
         if ( element.GetSubRouteInfo() is not { } subRouteInfo ) return null ;
-        if ( RouteCache.Get( element.Document ).GetSubRoute( subRouteInfo ) is not { } subRoute ) return null ;
+        if ( RouteCache.Get( DocumentKey.Get( element.Document ) ).GetSubRoute( subRouteInfo ) is not { } subRoute ) return null ;
 
         return new SubRoutePickResult( routingExecutor.GetMEPSystemPipeSpec( subRoute ), element, subRoute, pickPosition ) ;
       }
@@ -288,7 +288,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       public static SubRoutePickResult? Create( MEPSystemPipeSpec pipeSpec, Element element, XYZ pickPosition )
       {
         if ( element.GetSubRouteInfo() is not { } subRouteInfo ) return null ;
-        if ( RouteCache.Get( element.Document ).GetSubRoute( subRouteInfo ) is not { } subRoute ) return null ;
+        if ( RouteCache.Get( DocumentKey.Get( element.Document ) ).GetSubRoute( subRouteInfo ) is not { } subRoute ) return null ;
 
         return new SubRoutePickResult( pipeSpec, element, subRoute, pickPosition ) ;
       }
@@ -320,13 +320,13 @@ namespace Arent3d.Architecture.Routing.AppBase
         _element = element ;
 
         if ( element.GetRouteName() is { } routeName ) {
-          RouteCache.Get( element.Document ).TryGetValue( routeName, out _route ) ;
+          RouteCache.Get( DocumentKey.Get( element.Document ) ).TryGetValue( routeName, out _route ) ;
         }
       }
 
       public IEnumerable<ElementId> GetAllRelatedElements()
       {
-        return _element.Document.GetAllElementsOfPassPoint( _element.GetPassPointId() ?? _element.Id.IntegerValue ).Select( e => e.Id ) ;
+        return _element.Document.GetAllElementsOfPassPoint( _element.GetPassPointUniqueId() ?? string.Empty ).Select( e => e.Id ) ;
       }
       public ElementId GetLevelId() => _element.GetLevelId() ;
 
@@ -334,8 +334,8 @@ namespace Arent3d.Architecture.Routing.AppBase
       {
         if ( false == element.IsPassPoint() ) return null ;
 
-        if ( element.GetPassPointId() is { } i && i != element.Id.IntegerValue ) {
-          element = element.Document.GetElement( new ElementId( i ) ) ;
+        if ( element.GetPassPointUniqueId() is { } uniqueId && uniqueId != element.UniqueId ) {
+          element = element.Document.GetElement( uniqueId ) ;
           if ( null == element || false == element.IsPassPoint() ) return null ;
         }
 

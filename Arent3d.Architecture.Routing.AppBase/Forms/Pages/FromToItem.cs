@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     private string _itemTypeName { get ; set ; }
     public string ItemTag { get ; init ; }
-    public ElementId? ElementId { get ; private init ; }
+    public string ElementUniqueId { get ; private init ; }
     public IReadOnlyList<FromToItem> Children => ChildrenList ;
     private bool _isEditing { get ; set ; }
 
@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _itemTypeName = "" ;
       IsEditing = false ;
       ItemTag = "" ;
-      ElementId = null ;
+      ElementUniqueId = string.Empty ;
       ChildrenList = new List<FromToItem>() ;
       AllRoutes = allRoutes ;
       Doc = doc ;
@@ -123,7 +123,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var is3DView = ( doc.ActiveView is View3D ) ;
 
       foreach ( var route in parentFromTos.Distinct().OrderBy( r => r.RouteName ).ToList() ) {
-        var routeItem = new FromToItem.RouteItem( doc, uiDoc, allRoutes, route, fromToItemsUiBase.FromToTreeIcons?[ "RouteItem" ] ) { ItemTypeName = route.RouteName, ElementId = route.OwnerElement?.Id, ItemTag = "Route" } ;
+        var routeItem = new FromToItem.RouteItem( doc, uiDoc, allRoutes, route, fromToItemsUiBase.FromToTreeIcons?[ "RouteItem" ] ) { ItemTypeName = route.RouteName, ElementUniqueId = route.OwnerElement?.UniqueId ?? string.Empty, ItemTag = "Route" } ;
         routeItem.IsRootRoute = true ;
         List<ElementId> elements = doc.GetAllElementsOfRouteName<Element>( route.RouteName ).Select( elem => elem.Id ).ToList() ;
 
@@ -157,7 +157,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       foreach ( var c in childBranches ) {
-        var branchItem = new FromToItem.RouteItem( doc, uiDoc, allRoutes, c, fromToItemsUiBase.FromToTreeIcons?[ "SubRouteItem" ] ) { ItemTypeName = c.RouteName, ElementId = c.OwnerElement?.Id, ItemTag = "Route" } ;
+        var branchItem = new FromToItem.RouteItem( doc, uiDoc, allRoutes, c, fromToItemsUiBase.FromToTreeIcons?[ "SubRouteItem" ] ) { ItemTypeName = c.RouteName, ElementUniqueId = c.OwnerElement?.UniqueId ?? string.Empty, ItemTag = "Route" } ;
         var parentRouteName = c.GetParentBranches().ToList().Last().RouteName ;
 
 
@@ -204,7 +204,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         {
           var connector = connectorEndPoint.GetConnector() ;
           if ( connector?.Owner is FamilyInstance familyInstance ) {
-            var connectorItem = new ConnectorItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, connector, fromToItemsUiBase.FromToTreeIcons?[ "ConnectorItem" ] ) { ItemTypeName = familyInstance.Symbol.Family.Name + ":" + connector.Owner.Name, ElementId = connectorEndPoint.EquipmentId, ItemTag = "Connector", } ;
+            var connectorItem = new ConnectorItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, connector, fromToItemsUiBase.FromToTreeIcons?[ "ConnectorItem" ] ) { ItemTypeName = familyInstance.Symbol.Family.Name + ":" + connector.Owner.Name, ElementUniqueId = connectorEndPoint.EquipmentUniqueId, ItemTag = "Connector", } ;
             var level = routeItem.Doc.GetElementById<Level>( familyInstance.GetLevelId() ) ;
             connectorItem.ItemFloor = "(" + level?.Name + ")" ;
             if ( routeItem.Doc.GetElementById<ViewFamilyType>( routeItem.Doc.ActiveView.GetTypeId() ) is { } vft && ! vft.Name.Contains( "3D" ) ) {
@@ -221,7 +221,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
         case PassPointEndPoint passPointEndPoint :
         {
-          var passPointItem = new PassPointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, passPointEndPoint, fromToItemsUiBase.FromToTreeIcons?[ "PassPointItem" ] ) { ItemTypeName = "PassPoint", ElementId = passPointEndPoint.PassPointId, ItemTag = "PassPoint", } ;
+          var passPointItem = new PassPointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, passPointEndPoint, fromToItemsUiBase.FromToTreeIcons?[ "PassPointItem" ] ) { ItemTypeName = "PassPoint", ElementUniqueId = passPointEndPoint.PassPointUniqueId, ItemTag = "PassPoint", } ;
           routeItem.ChildrenList.Add( passPointItem ) ;
           break ;
         }
@@ -234,7 +234,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
         case TerminatePointEndPoint terminatePointEndPoint :
         {
-          var passPointItem = new TerminatePointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, terminatePointEndPoint, fromToItemsUiBase.FromToTreeIcons?[ "TerminatePointItem" ] ) { ItemTypeName = "TerminatePoint", ElementId = terminatePointEndPoint.TerminatePointId, ItemTag = "TerminatePoint", } ;
+          var passPointItem = new TerminatePointItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, terminatePointEndPoint, fromToItemsUiBase.FromToTreeIcons?[ "TerminatePointItem" ] ) { ItemTypeName = "TerminatePoint", ElementUniqueId = terminatePointEndPoint.TerminatePointUniqueId, ItemTag = "TerminatePoint", } ;
           routeItem.ChildrenList.Add( passPointItem ) ;
           break ;
         }
@@ -248,7 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// <param name="subRoute"></param>
     private void CreateSubRouteItem( RouteItem routeItem, SubRoute subRoute, FromToItemsUiBase fromToItemsUiBase )
     {
-      var subRouteItem = new FromToItem.SubRouteItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, subRoute, fromToItemsUiBase.FromToTreeIcons?[ "SubRouteItem" ] ) { ItemTypeName = "Section", ElementId = Doc.GetAllElementsOfSubRoute<Element>( subRoute.Route.RouteName, subRoute.SubRouteIndex ).FirstOrDefault()?.Id, ItemTag = "SubRoute" } ;
+      var subRouteItem = new FromToItem.SubRouteItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, subRoute, fromToItemsUiBase.FromToTreeIcons?[ "SubRouteItem" ] ) { ItemTypeName = "Section", ElementUniqueId = Doc.GetAllElementsOfSubRoute<Element>( subRoute.Route.RouteName, subRoute.SubRouteIndex ).FirstOrDefault()?.UniqueId ?? string.Empty, ItemTag = "SubRoute" } ;
       List<ElementId> elements = routeItem.Doc.GetAllElementsOfRouteName<Element>( subRoute.Route.RouteName ).Select( elem => elem.Id ).ToList() ;
       Element element = routeItem.Doc.GetElement( elements[ 0 ] ) ;
       Parameter? levelName = element.get_Parameter( BuiltInParameter.RBS_START_LEVEL_PARAM ) ;
@@ -344,7 +344,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       {
         _targetElements = new List<ElementId>() ;
 
-        _selectedRoute = AllRoutes.FirstOrDefault( r => r.OwnerElement?.Id == ElementId ) ;
+        _selectedRoute = AllRoutes.FirstOrDefault( r => r.OwnerElement?.UniqueId == ElementUniqueId ) ;
         if ( _selectedRoute == null ) return ;
 
         _targetElements = Doc.GetAllElementsOfRouteName<Element>( ItemTypeName ).Select( elem => elem.Id ).ToList() ;
@@ -365,7 +365,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private class ConnectorItem : FromToItem
     {
-      private List<ElementId>? _targetElements ;
+      private ICollection<ElementId>? _targetElements ;
 
       private static BitmapImage RouteItemIcon { get ; set ; } = new BitmapImage( new Uri( "../../resources/InsertBranchPoint.png", UriKind.Relative ) ) ;
       public override BitmapImage Icon => RouteItemIcon ;
@@ -380,8 +380,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       public override void OnSelected()
       {
-        if ( ElementId == null ) return ;
-        _targetElements = new List<ElementId>() { ElementId } ;
+        if ( string.IsNullOrEmpty( ElementUniqueId ) ) return ;
+        if ( Doc.GetElementById<Element>( ElementUniqueId ) is not { } elm ) return ;
+        _targetElements = new[] { elm.Id } ;
         UiDoc.Selection.SetElementIds( _targetElements ) ;
       }
 
@@ -431,7 +432,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private class PassPointItem : FromToItem
     {
-      private List<ElementId>? _targetElements ;
+      private ICollection<ElementId>? _targetElements ;
       private static BitmapImage RouteItemIcon { get ; set ; } = new BitmapImage( new Uri( "../../resources/InsertPassPoint.png", UriKind.Relative ) ) ;
       public override BitmapImage Icon => RouteItemIcon ;
 
@@ -445,10 +446,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       public override void OnSelected()
       {
-        _targetElements = new List<ElementId>() ;
+        _targetElements = Array.Empty<ElementId>() ;
 
-        if ( ElementId == null ) return ;
-        _targetElements = new List<ElementId>() { ElementId } ;
+        if ( string.IsNullOrEmpty( ElementUniqueId ) ) return ;
+        if ( Doc.GetElementById<Element>( ElementUniqueId ) is not { } elm ) return ;
+        _targetElements = new[] { elm.Id } ;
         UiDoc.Selection.SetElementIds( _targetElements ) ;
       }
 
@@ -460,7 +462,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private class TerminatePointItem : FromToItem
     {
-      private List<ElementId>? _targetElements ;
+      private ICollection<ElementId>? _targetElements ;
       private static BitmapImage RouteItemIcon { get ; set ; } = new BitmapImage( new Uri( "../../resources/InsertPassPoint.png", UriKind.Relative ) ) ;
       public override BitmapImage Icon => RouteItemIcon ;
 
@@ -474,10 +476,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       public override void OnSelected()
       {
-        _targetElements = new List<ElementId>() ;
+        _targetElements = Array.Empty<ElementId>() ;
 
-        if ( ElementId == null ) return ;
-        _targetElements = new List<ElementId>() { ElementId } ;
+        if ( string.IsNullOrEmpty( ElementUniqueId ) ) return ;
+        if ( Doc.GetElementById<Element>( ElementUniqueId ) is not { } elm ) return ;
+        _targetElements = new[] { elm.Id } ;
         UiDoc.Selection.SetElementIds( _targetElements ) ;
       }
 

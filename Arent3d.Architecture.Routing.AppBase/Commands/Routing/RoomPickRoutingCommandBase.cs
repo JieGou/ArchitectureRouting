@@ -157,8 +157,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter ) ;
       var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult, useConnectorDiameter ) ;
       var fromOrigin = fromPickResult.GetOrigin() ;
-      var fromConnectorId = fromPickResult.PickedElement.Id.IntegerValue.ToString() ;
-      var toConnectorId = toPickResult.PickedElement.Id.IntegerValue.ToString() ;
+      var fromConnectorId = fromPickResult.PickedElement.UniqueId ;
+      var toConnectorId = toPickResult.PickedElement.UniqueId ;
 
       var routeSegments = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, room, fromOrigin, fromConnectorId, toConnectorId, routeProperty, classificationInfo ) ;
 
@@ -269,14 +269,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var passPoints = new List<FamilyInstance>() ;
       var passPoint = document.AddPassPoint( routeName, isOut ? position : position2, direction.normalized.ToXYZRaw(), radius, levelId! ) ;
-      passPoint.SetProperty( PassPointParameter.RelatedConnectorId, toConnectorId ) ;
-      passPoint.SetProperty( PassPointParameter.RelatedFromConnectorId, fromConnectorId ) ;
+      passPoint.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toConnectorId ) ;
+      passPoint.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromConnectorId ) ;
       passPoints.Add( passPoint ) ;
 
       if ( ! ( thickness > thicknessDefault ) ) return passPoints ;
       var passPoint2 = document.AddPassPoint( routeName, isOut ? position2 : position, direction.normalized.ToXYZRaw(), radius, levelId! ) ;
-      passPoint2.SetProperty( PassPointParameter.RelatedConnectorId, toConnectorId ) ;
-      passPoint2.SetProperty( PassPointParameter.RelatedFromConnectorId, fromConnectorId ) ;
+      passPoint2.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toConnectorId ) ;
+      passPoint2.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromConnectorId ) ;
       passPoints.Add( passPoint2 ) ;
 
       return passPoints ;
@@ -328,7 +328,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
 
-      var routes = RouteCache.Get( document ) ;
+      var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var nameBase = GetNameBase( systemType, curveType ) ;
       var nextIndex = GetRouteNameIndex( routes, nameBase ) ;
       var name = nameBase + "_" + nextIndex ;
@@ -339,7 +339,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var fromFixedHeight = routeProperty.GetFromFixedHeight() ;
       var toFixedHeight = routeProperty.GetToFixedHeight() ;
       var avoidType = routeProperty.GetAvoidType() ;
-      var shaftElementId = routeProperty.GetShaft()?.Id ?? ElementId.InvalidElementId ;
+      var shaftElementUniqueId = routeProperty.GetShaft()?.UniqueId ;
 
       List<(string RouteName, RouteSegment Segment)> routeSegments = new List<(string RouteName, RouteSegment Segment)>() ;
       if ( room != null ) {
@@ -350,18 +350,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( passPoints.Count > 1 ) {
           var passPoint = new PassPointEndPoint( passPoints.FirstOrDefault()! ) ;
           var passPoint2 = new PassPointEndPoint( passPoints.LastOrDefault()! ) ;
-          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
-          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPoint, passPoint2, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
-          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPoint2, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
+          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPoint, passPoint2, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPoint2, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
         }
         else {
           var passPoint = new PassPointEndPoint( passPoints.FirstOrDefault()! ) ;
-          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
-          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
+          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, passPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
+          routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, passPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
         }
       }
       else {
-        routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementId ) ) ) ;
+        routeSegments.Add( ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ) ;
       }
 
       return routeSegments ;
@@ -391,12 +391,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var document = routePickResult.SubRoute!.Route.Document ;
       var fromOrigin = anotherIndicatorIsFromSide ? anotherPickResult.GetOrigin() : routePickResult.GetOrigin() ;
-      var fromConnectorId = anotherIndicatorIsFromSide ? anotherPickResult.PickedElement.Id.IntegerValue.ToString() : routePickResult.EndPointOverSubRoute!.GetElementId() ;
+      var fromConnectorId = anotherIndicatorIsFromSide ? anotherPickResult.PickedElement.UniqueId : routePickResult.EndPointOverSubRoute!.GetElementUniqueId() ;
       string toConnectorId ;
       if ( anotherIndicatorIsFromSide )
-        toConnectorId = routePickResult.EndPointOverSubRoute!.GetElementId() ;
+        toConnectorId = routePickResult.EndPointOverSubRoute!.GetElementUniqueId() ;
       else
-        toConnectorId = null != anotherPickResult.SubRoute ? anotherPickResult.EndPointOverSubRoute!.GetElementId() : anotherPickResult.PickedElement.Id.IntegerValue.ToString() ;
+        toConnectorId = null != anotherPickResult.SubRoute ? anotherPickResult.EndPointOverSubRoute!.GetElementUniqueId() : anotherPickResult.PickedElement.UniqueId ;
 
       var routeSegments = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, room, fromOrigin, fromConnectorId, toConnectorId, routeProperty, classificationInfo ) ;
 
@@ -406,7 +406,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       // Routes where pass points are inserted
-      var routes = RouteCache.Get( routePickResult.SubRoute!.Route.Document ) ;
+      var routes = RouteCache.Get( DocumentKey.Get( routePickResult.SubRoute!.Route.Document ) ) ;
       var changedRoutes = new HashSet<Route>() ;
       if ( null != otherSegments1 ) {
         foreach ( var tuple in otherSegments1 ) {
@@ -458,7 +458,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       public bool AllowElement( Element e )
       {
-        return ( e.Category.Id.IntegerValue.Equals( (int) BuiltInCategory.OST_GenericModel ) ) ;
+        return ( e.GetBuiltInCategory() == BuiltInCategory.OST_GenericModel ) ;
       }
 
       public bool AllowReference( Reference r, XYZ p )

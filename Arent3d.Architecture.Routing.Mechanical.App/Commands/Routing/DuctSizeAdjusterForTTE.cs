@@ -340,7 +340,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
           _orgSegment.FromFixedHeight,
           _orgSegment.ToFixedHeight,
           _orgSegment.AvoidType,
-          _orgSegment.ShaftElementId ) ) ;
+          _orgSegment.ShaftElementUniqueId ) ) ;
 
         foreach ( var childSegment in _childSegments ) {
           foreach ( var routeSegment in childSegment.CreateRouteSegments( document, subRouteIndex ) ) {

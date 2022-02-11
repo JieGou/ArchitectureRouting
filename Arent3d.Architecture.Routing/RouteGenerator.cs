@@ -89,14 +89,14 @@ namespace Arent3d.Architecture.Routing
         list = list.Where( p => false == ( p is FamilyInstance fi && ( fi.IsFamilyInstanceOf( RoutingFamilyType.PassPoint ) || fi.IsFamilyInstanceOf( RoutingFamilyType.TerminatePoint )) ) );
       }
 
-      List<string> elementIds = list.Select( elm => elm.Id.IntegerValue.ToString() ).Distinct().ToList() ;
+      List<string> elementIds = list.Select( elm => elm.UniqueId ).Distinct().ToList() ;
       RemoveRouteDetailSymbol( document, elementIds ) ;
 
       document.Delete( list.Select( elm => elm.Id ).Distinct().ToArray() ) ;
 
       if ( eraseRouteStoragesAndPassPoints ) {
         // erase routes, too.
-        RouteCache.Get( document ).Drop( hashSet ) ;
+        RouteCache.Get( DocumentKey.Get( document ) ).Drop( hashSet ) ;
       }
     }
 
@@ -145,8 +145,8 @@ namespace Arent3d.Architecture.Routing
 
     protected override void OnGenerationFinished()
     {
-      foreach ( var (route, passPointId, prevConn, nextConn) in _globalPassPointConnectorMapper.GetPassPointConnections( _document ) ) {
-        var element = _document.GetElement( passPointId ) ;
+      foreach ( var (route, passPointUniqueId, prevConn, nextConn) in _globalPassPointConnectorMapper.GetPassPointConnections( _document ) ) {
+        var element = _document.GetElement( passPointUniqueId ) ;
         if ( element.GetRouteName() == route.RouteName ) {
           element.SetPassPointConnectors( new[] { prevConn }, new[] { nextConn } ) ;
         }
@@ -160,7 +160,7 @@ namespace Arent3d.Architecture.Routing
           }
 
           // Relate fitting to the pass point.
-          element.SetProperty( RoutingParameter.RelatedPassPointId, passPointId.IntegerValue ) ;
+          element.SetProperty( RoutingParameter.RelatedPassPointUniqueId, passPointUniqueId ) ;
         }
       }
     }
@@ -208,10 +208,10 @@ namespace Arent3d.Architecture.Routing
       var detailSymbolModels = new List<DetailSymbolModel>() ;
       foreach ( var detailSymbolModel in detailSymbolStorable.DetailSymbolModelData.Where( d => elementIds.Contains( d.ConduitId ) ).ToList() ) {
         // delete symbol
-        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.Id.IntegerValue.ToString() == detailSymbolModel.DetailSymbolId ).Select( t => t.Id ).FirstOrDefault() ;
+        var symbolId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == detailSymbolModel.DetailSymbolId ).Select( t => t.Id ).FirstOrDefault() ;
         if ( symbolId != null ) document.Delete( symbolId ) ;
         foreach ( var lineId in detailSymbolModel.LineIds.Split( ',' ) ) {
-          var id = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.Id.IntegerValue.ToString() == lineId ).Select( e => e.Id ).FirstOrDefault() ;
+          var id = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Lines ).Where( e => e.UniqueId == lineId ).Select( e => e.Id ).FirstOrDefault() ;
           if ( id != null ) document.Delete( id ) ;
         }
 
@@ -244,7 +244,7 @@ namespace Arent3d.Architecture.Routing
       {
         var detailSymbolIds = detailSymbolModels.Where( d => d.DetailSymbol == firstChildSymbol.DetailSymbol && d.Code == firstChildSymbol.Code ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
         foreach ( var id in detailSymbolIds ) {
-          var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.Id.IntegerValue.ToString() == id ) ;
+          var textElement = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).FirstOrDefault( t => t.UniqueId == id ) ;
           if ( textElement == null ) continue ;
           var textNote = ( textElement as TextNote ) ! ;
           CreateNewTextNoteType( doc, textNote, 0 ) ;

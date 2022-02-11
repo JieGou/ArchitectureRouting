@@ -11,27 +11,27 @@ namespace Arent3d.Architecture.Routing.EndPoints
   {
     public const string Type = "Connector" ;
 
-    public static EndPointKey GenerateKey( Connector connector ) => GenerateKey( connector.Owner.Id, connector.Id ) ;
-    private static EndPointKey GenerateKey( ElementId equipmentId, int connectorIndex )
+    public static EndPointKey GenerateKey( Connector connector ) => GenerateKey( connector.Owner.UniqueId, connector.Id ) ;
+    private static EndPointKey GenerateKey( string equipmentUniqueId, int connectorIndex )
     {
-      return new EndPointKey( Type, BuildParameterString( equipmentId, connectorIndex, null ) ) ;
+      return new EndPointKey( Type, BuildParameterString( equipmentUniqueId, connectorIndex, null ) ) ;
     }
-    public static string BuildParameterString( Connector connector ) => BuildParameterString( connector.Owner.Id, connector.Id, null ) ;
+    public static string BuildParameterString( Connector connector ) => BuildParameterString( connector.Owner.UniqueId, connector.Id, null ) ;
 
     internal static ConnectorEndPoint? FromKeyParam( Document document, string param ) => ParseParameterString( document, param ) ;
 
     private enum SerializeField
     {
-      ElementId,
+      ElementUniqueId,
       ConnectorIndex,
       PreferredRadius,
     }
 
-    private static string BuildParameterString( ElementId equipmentId, int connectorIndex, double? preferredRadius )
+    private static string BuildParameterString( string uniqueId, int connectorIndex, double? preferredRadius )
     {
       var stringifier = new SerializerObject<SerializeField>() ;
 
-      stringifier.Add( SerializeField.ElementId, equipmentId ) ;
+      stringifier.AddNonNull( SerializeField.ElementUniqueId, uniqueId ) ;
       stringifier.Add( SerializeField.ConnectorIndex, connectorIndex ) ;
       stringifier.Add( SerializeField.PreferredRadius, preferredRadius ) ;
 
@@ -42,18 +42,18 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       var deserializer = new DeserializerObject<SerializeField>( str ) ;
 
-      if ( deserializer.GetElementId( SerializeField.ElementId ) is not { } elementId ) return null ;
+      if ( deserializer.GetString( SerializeField.ElementUniqueId ) is not { } elementUniqueId ) return null ;
       if ( deserializer.GetInt( SerializeField.ConnectorIndex ) is not { } connectorIndex ) return null ;
       var preferredRadius = deserializer.GetDouble( SerializeField.PreferredRadius ) ;
 
-      return new ConnectorEndPoint( document, elementId, connectorIndex, preferredRadius ) ;
+      return new ConnectorEndPoint( document, elementUniqueId, connectorIndex, preferredRadius ) ;
     }
 
 
     public string TypeName => Type ;
     public string DisplayTypeName => "EndPoint.DisplayTypeName.Connector".GetAppStringByKeyOrDefault( TypeName ) ;
 
-    public EndPointKey Key => GenerateKey( EquipmentId, ConnectorIndex ) ;
+    public EndPointKey Key => GenerateKey( EquipmentUniqueId, ConnectorIndex ) ;
 
     public bool IsReplaceable => true ;
 
@@ -61,14 +61,14 @@ namespace Arent3d.Architecture.Routing.EndPoints
 
     private readonly Document _document ;
 
-    public ElementId EquipmentId { get ; }
+    public string EquipmentUniqueId { get ; }
     public int ConnectorIndex { get ; }
     public double? PreferredRadius { get ; }
 
-    public Element? GetOwnerElement() => _document.GetElementById<Instance>( EquipmentId ) ;
+    public Element? GetOwnerElement() => _document.GetElementById<Instance>( EquipmentUniqueId ) ;
     public Connector? GetConnector() => GetOwnerElement()?.GetConnectorManager()?.Lookup( ConnectorIndex ) ;
 
-    public string ParameterString => BuildParameterString( EquipmentId, ConnectorIndex, PreferredRadius ) ;
+    public string ParameterString => BuildParameterString( EquipmentUniqueId, ConnectorIndex, PreferredRadius ) ;
 
     public XYZ RoutingStartPosition => GetConnector()?.Origin ?? XYZ.Zero ;
 
@@ -78,15 +78,15 @@ namespace Arent3d.Architecture.Routing.EndPoints
     {
       _document = connector.Owner.Document ;
       PreferredRadius = preferredRadius ;
-      EquipmentId = connector.Owner.Id ;
+      EquipmentUniqueId = connector.Owner.UniqueId ;
       ConnectorIndex = connector.Id ;
     }
 
-    private ConnectorEndPoint( Document document, ElementId equipmentId, int connectorIndex, double? preferredRadius )
+    private ConnectorEndPoint( Document document, string equipmentUniqueId, int connectorIndex, double? preferredRadius )
     {
       _document = document ;
       PreferredRadius = preferredRadius ;
-      EquipmentId = equipmentId ;
+      EquipmentUniqueId = equipmentUniqueId ;
       ConnectorIndex = connectorIndex ;
     }
 
