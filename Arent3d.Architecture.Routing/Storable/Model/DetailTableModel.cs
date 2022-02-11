@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string IsEcoMode { get ; set ; }
     public bool IsParentRoute { get ; set ; }
     public bool IsReadOnly { get ; set ; }
+    public string ParentPlumbingType { get ; set ; }
 
     public DetailTableModel( 
       bool? calculationExclusion, 
@@ -57,7 +58,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? routeName,
       string? isEcoMode,
       bool? isParentRoute,
-      bool? isReadOnly)
+      bool? isReadOnly,  
+      string? parentPlumbingType )
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -85,6 +87,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsEcoMode = isEcoMode ?? string.Empty ;
       IsParentRoute = isParentRoute ?? false ;
       IsReadOnly = isReadOnly ?? true ;
+      ParentPlumbingType = parentPlumbingType ?? string.Empty ;
     }
   }
 }

@@ -180,6 +180,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableModelsBySignalType = detailTableModelsByDetailSymbolId.GroupBy( d => d.SignalType ).Select( g =>  g.ToList()).ToList() ;
 
       foreach ( var detailTableModels in detailTableModelsBySignalType ) {
+        Dictionary<string, List<DetailTableModel>> detailTableModelsSamePlumbing = new Dictionary<string, List<DetailTableModel>>() ;
+        List<DetailTableModel> childDetailTableModels = new List<DetailTableModel>() ;
         var parentDetailTableModel = detailTableModels.First() ;
         var currentPlumbingCrossSectionalArea = 0.0 ;
         foreach ( var currentDetailTableModel in detailTableModels ) {
@@ -189,6 +191,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var plumbing = conduitsModels.Last() ;
             parentDetailTableModel.PlumbingType = parentDetailTableModel.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             parentDetailTableModel.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
+            parentDetailTableModel.ParentPlumbingType = parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType ;
+            detailTableModelsSamePlumbing.Add( parentDetailTableModel.ParentPlumbingType, childDetailTableModels ) ;
+            childDetailTableModels = new List<DetailTableModel>() ;
             plumbingCount++ ;
             parentDetailTableModel = currentDetailTableModel ;
             currentPlumbingCrossSectionalArea = currentDetailTableModel.WireCrossSectionalArea ;
@@ -196,6 +201,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableModel.WireCrossSectionalArea ) ;
             currentDetailTableModel.PlumbingType = currentDetailTableModel == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             currentDetailTableModel.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+            currentDetailTableModel.ParentPlumbingType = currentDetailTableModel.PlumbingSize + "-" + currentDetailTableModel.SignalType ;
             plumbingCount++ ;
           }
           else {
@@ -203,6 +209,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
               parentDetailTableModel.PlumbingType = parentDetailTableModel.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
               parentDetailTableModel.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+              parentDetailTableModel.ParentPlumbingType = parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType ;
+              detailTableModelsSamePlumbing.Add( parentDetailTableModel.ParentPlumbingType, childDetailTableModels ) ;
               plumbingCount++ ;
             }
 
@@ -210,6 +218,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             currentDetailTableModel.PlumbingType = defaultChildPlumbingSymbol ;
             currentDetailTableModel.PlumbingSize = defaultChildPlumbingSymbol ;
             currentDetailTableModel.NumberOfPlumbing = defaultChildPlumbingSymbol ;
+            childDetailTableModels.Add( currentDetailTableModel ) ;
+          }
+        }
+
+        foreach ( var (parentPlumbingType, detailTableModelSamePlumbing) in detailTableModelsSamePlumbing ) {
+          foreach ( var detailTableModel in detailTableModelSamePlumbing ) {
+            detailTableModel.ParentPlumbingType = parentPlumbingType ;
           }
         }
       }
@@ -329,7 +344,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      var detailTableModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, constructionClassification, signalType, constructionItem, constructionItem, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute ) ;
+      var detailTableModel = new DetailTableModel( false, floor, ceeDCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, constructionClassification, signalType, constructionItem, constructionItem, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, string.Empty ) ;
       detailTableModels.Add( detailTableModel ) ;
     }
 

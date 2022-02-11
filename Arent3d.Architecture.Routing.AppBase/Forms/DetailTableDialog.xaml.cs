@@ -9,6 +9,7 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -32,12 +33,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
     {
+      SaveData( _detailTableViewModel.DetailTableModels ) ;
       DialogResult = true ;
       this.Close() ;
     }
 
     private void BtnCompleted_OnClick( object sender, RoutedEventArgs e )
     {
+      SaveData( _detailTableViewModel.DetailTableModels ) ;
       DialogResult = true ;
       this.Close() ;
     }
@@ -85,7 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       List<DetailTableModel> newDetailTableModels = new List<DetailTableModel>() ;
       foreach ( var oldDetailTableModel in _detailTableViewModel.DetailTableModels ) {
         if ( detailTableModelsSameRoute.Contains( oldDetailTableModel ) ) {
-          var newDetailSymbolModel = new DetailTableModel( oldDetailTableModel.CalculationExclusion, oldDetailTableModel.Floor, oldDetailTableModel.CeeDCode, oldDetailTableModel.DetailSymbol, oldDetailTableModel.DetailSymbolId, oldDetailTableModel.WireType, oldDetailTableModel.WireSize, oldDetailTableModel.WireStrip, oldDetailTableModel.WireBook, oldDetailTableModel.EarthType, oldDetailTableModel.EarthSize, oldDetailTableModel.NumberOfGrounds, oldDetailTableModel.PlumbingType, oldDetailTableModel.PlumbingSize, oldDetailTableModel.NumberOfPlumbing, oldDetailTableModel.ConstructionClassification, oldDetailTableModel.SignalType, constructionItem!.ToString(), constructionItem!.ToString(), oldDetailTableModel.Remark, oldDetailTableModel.WireCrossSectionalArea, oldDetailTableModel.CountCableSamePosition, oldDetailTableModel.RouteName, oldDetailTableModel.IsEcoMode, oldDetailTableModel.IsParentRoute, oldDetailTableModel.IsReadOnly ) ;
+          var newDetailSymbolModel = new DetailTableModel( oldDetailTableModel.CalculationExclusion, oldDetailTableModel.Floor, oldDetailTableModel.CeeDCode, oldDetailTableModel.DetailSymbol, oldDetailTableModel.DetailSymbolId, oldDetailTableModel.WireType, oldDetailTableModel.WireSize, oldDetailTableModel.WireStrip, oldDetailTableModel.WireBook, oldDetailTableModel.EarthType, oldDetailTableModel.EarthSize, oldDetailTableModel.NumberOfGrounds, oldDetailTableModel.PlumbingType, oldDetailTableModel.PlumbingSize, oldDetailTableModel.NumberOfPlumbing, oldDetailTableModel.ConstructionClassification, oldDetailTableModel.SignalType, constructionItem!.ToString(), constructionItem!.ToString(), oldDetailTableModel.Remark, oldDetailTableModel.WireCrossSectionalArea, oldDetailTableModel.CountCableSamePosition, oldDetailTableModel.RouteName, oldDetailTableModel.IsEcoMode, oldDetailTableModel.IsParentRoute, oldDetailTableModel.IsReadOnly, oldDetailTableModel.ParentPlumbingType ) ;
           newDetailTableModels.Add( newDetailSymbolModel ) ;
         }
         else {
@@ -121,6 +124,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
       }
+    }
+
+    private void BtnPlumbingSummary_Click( object sender, RoutedEventArgs e )
+    {
+      List<DetailTableModel> newDetailTableModels = new List<DetailTableModel>() ;
+      var detailTableModelsGroupByDetailSymbolId = _detailTableViewModel.DetailTableModels.ToList().GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      foreach ( var (_, detailTableModelsSameDetailSymbolId) in detailTableModelsGroupByDetailSymbolId ) {
+        var detailTableModelsGroupByPlumbingType = detailTableModelsSameDetailSymbolId.ToList().GroupBy( d => d.ParentPlumbingType ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+        foreach ( var (_, detailTableModelsSamePlumbingType) in detailTableModelsGroupByPlumbingType ) {
+          var detailTableModelsGroupByConstructionItem = detailTableModelsSamePlumbingType.ToList().GroupBy( d => d.ConstructionItems ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+          foreach ( var (_, detailTableModelsSameConstructionItem) in detailTableModelsGroupByConstructionItem ) {
+            var oldDetailTableModel = detailTableModelsSameConstructionItem.FirstOrDefault() ;
+            if ( oldDetailTableModel == null ) continue ;
+            var detailTableModelsGroupByRemark = detailTableModelsSameConstructionItem.GroupBy( d => d.Remark ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+            List<string> newRemark = new List<string>() ;
+            foreach ( var (remark, detailTableModelsSameRemark) in detailTableModelsGroupByRemark ) {
+              newRemark.Add( remark + ( detailTableModelsSameRemark.Count == 1 ? string.Empty : "x" + detailTableModelsSameRemark.Count ) ) ;
+            }
+
+            var newDetailSymbolModel = new DetailTableModel( oldDetailTableModel.CalculationExclusion, oldDetailTableModel.Floor, oldDetailTableModel.CeeDCode, oldDetailTableModel.DetailSymbol, oldDetailTableModel.DetailSymbolId, oldDetailTableModel.WireType, oldDetailTableModel.WireSize, oldDetailTableModel.WireStrip, oldDetailTableModel.WireBook, oldDetailTableModel.EarthType, oldDetailTableModel.EarthSize, oldDetailTableModel.NumberOfGrounds, oldDetailTableModel.PlumbingType, oldDetailTableModel.PlumbingSize, oldDetailTableModel.NumberOfPlumbing, oldDetailTableModel.ConstructionClassification, oldDetailTableModel.SignalType, oldDetailTableModel.ConstructionItems, oldDetailTableModel.PlumbingItems, string.Join( ", ", newRemark ), oldDetailTableModel.WireCrossSectionalArea, oldDetailTableModel.CountCableSamePosition, oldDetailTableModel.RouteName, oldDetailTableModel.IsEcoMode, oldDetailTableModel.IsParentRoute, oldDetailTableModel.IsReadOnly, oldDetailTableModel.ParentPlumbingType ) ;
+            newDetailTableModels.Add( newDetailSymbolModel ) ;
+          }
+        }
+      }
+
+      DetailTableViewModel newDetailTableViewModel = new DetailTableViewModel( new ObservableCollection<DetailTableModel>( newDetailTableModels ), _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems ) ;
+      this.DataContext = newDetailTableViewModel ;
+      DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
     }
   }
 }
