@@ -6,19 +6,24 @@ using System.Windows ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class DetailTableDialog : Window
   {
+    private readonly Document _document ;
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly DetailTableViewModel _detailTableViewModel ;
     public readonly Dictionary<string, string> RoutesChangedConstructionItem ;
 
-    public DetailTableDialog( DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData )
+    public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData )
     {
       InitializeComponent() ;
+      _document = document ;
       DataContext = viewModel ;
       _detailTableViewModel = viewModel ;
       _conduitsModelData = conduitsModelData ;
@@ -66,6 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
         this.DataContext = _detailTableViewModel ;
         DtGrid.ItemsSource = _detailTableViewModel.DetailTableModels ;
+        SaveData( _detailTableViewModel.DetailTableModels ) ;
       }
     }
 
@@ -97,6 +103,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
       this.DataContext = _detailTableViewModel ;
       DtGrid.ItemsSource = _detailTableViewModel.DetailTableModels ;
+      SaveData( _detailTableViewModel.DetailTableModels ) ;
+    }
+
+    private void SaveData( IReadOnlyCollection<DetailTableModel> detailTableModels )
+    {
+      try {
+        DetailTableStorable detailTableStorable = _document.GetDetailTableStorable() ;
+        {
+          if ( ! detailTableModels.Any() ) return ;
+          detailTableStorable.DetailTableModelData = detailTableModels.ToList() ;
+        }
+        using Transaction t = new Transaction( _document, "Save data" ) ;
+        t.Start() ;
+        detailTableStorable.Save() ;
+        t.Commit() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      }
     }
   }
 }

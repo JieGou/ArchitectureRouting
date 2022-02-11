@@ -69,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       List<ComboboxItemType> constructionItems = ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() ;
 
       DetailTableViewModel viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems ) ;
-      var dialog = new DetailTableDialog( viewModel, conduitsModelData ) ;
+      var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData ) ;
       dialog.ShowDialog() ;
 
       if ( dialog.DialogResult ?? false ) {

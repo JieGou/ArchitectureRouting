@@ -114,5 +114,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new RackNotationStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get detail table data from snoop DB.
+    /// </summary>
+    public static DetailTableStorable GetDetailTableStorable( this Document document )
+    {
+      try {
+        return DetailTableStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DetailTableStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new DetailTableStorable( document ) ;
+      }
+    }
   }
 }
