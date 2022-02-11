@@ -5,7 +5,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class ElectricalSymbolModel
   {
-    public string ElementId { get ; set ; }
+    public string UniqueId { get ; set ; }
     public string FloorPlanSymbol { get ; set ; }
     public string GeneralDisplayDeviceSymbol { get ; set ; }
     public string WireType { get ; set ; }
@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string PipingSize { get ; set ; }
 
     public ElectricalSymbolModel( 
-      string elementId,
+      string uniqueId,
       string floorPlanSymbol,
       string generalDisplayDeviceSymbol,
       string wireType, 
@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string pipingType,
       string pipingSize)
     {
-      ElementId = elementId ;
+      UniqueId = uniqueId ;
       FloorPlanSymbol = floorPlanSymbol ;
       GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
       WireType = wireType ;

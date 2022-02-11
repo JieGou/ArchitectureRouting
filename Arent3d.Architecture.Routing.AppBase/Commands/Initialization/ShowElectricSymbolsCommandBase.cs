@@ -25,7 +25,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var uiDoc = commandData.Application.ActiveUIDocument ;
-      var conduitsModelData = doc.GetCsvStorable().ConduitsModelData ;
       var hiroiSetMasterNormalModelData = doc.GetCsvStorable().HiroiSetMasterNormalModelData ;
       var hiroiMasterModelData = doc.GetCsvStorable().HiroiMasterModelData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
@@ -42,13 +41,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var startPoint = element.GetNearestEndPoints( true ) ;
         var startPointKey = startPoint.FirstOrDefault()?.Key ;
         if ( startPointKey != null ) {
-          startTeminateId = startPointKey.GetElementId() ;
+          startTeminateId = startPointKey.GetElementUniqueId() ;
         }
 
         var endPoint = element.GetNearestEndPoints( false ) ;
         var endPointKey = endPoint.FirstOrDefault()?.Key ;
         if ( endPointKey != null ) {
-          endTeminateId = endPointKey!.GetElementId() ;
+          endTeminateId = endPointKey!.GetElementUniqueId() ;
         }
 
         var (startElementId, startCeeDSymbol, startCondition, endElementId, endCeeDSymbol, endCondition) = GetFromConnectorAndToConnectorCeeDCode( doc, startTeminateId, endTeminateId ) ;
@@ -97,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       using Transaction transaction = new Transaction( document ) ;
       transaction.Start( "Set connector's properties" ) ;
       foreach ( var item in electricalSymbolModels ) {
-        var connector =  document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault( c => c.Id.IntegerValue.ToString() == item.ElementId ) ;
+        var connector =  document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault( c => c.UniqueId == item.UniqueId ) ;
         if ( connector == null ) continue ;
         UnGroupConnector( document, connector, connectorGroups ) ;
         connector.SetProperty( ConnectorFamilyParameter.DeviceSymbol, item.GeneralDisplayDeviceSymbol ) ;
@@ -109,8 +108,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         param.Set( imageType.Id ) ;
       }
 
-      var connectorIds = electricalSymbolModels.Select( c => c.ElementId ).ToList() ;
-      var connectorsNotSchedule = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( c => ! connectorIds.Contains( c.Id.IntegerValue.ToString() ) && c is FamilyInstance ).ToList() ;
+      var connectorUniqueIds = electricalSymbolModels.Select( c => c.UniqueId ).ToList() ;
+      var connectorsNotSchedule = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( c => ! connectorUniqueIds.Contains( c.UniqueId ) && c is FamilyInstance ).ToList() ;
       foreach ( var connector in connectorsNotSchedule ) {
         UnGroupConnector( document, connector, connectorGroups ) ;
         connector.SetProperty( ConnectorFamilyParameter.DeviceSymbol, string.Empty ) ;
@@ -150,53 +149,61 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       parentGroup.UngroupMembers() ;
     }
 
-    private static (string, string, string, string, string, string) GetFromConnectorAndToConnectorCeeDCode( Document document, string fromElementId, string toElementId )
+    private static (string, string, string, string, string, string) GetFromConnectorAndToConnectorCeeDCode( Document document, string fromUniqueId, string toUniqueId )
     {
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
 
-      if ( ! string.IsNullOrEmpty( fromElementId ) ) {
-        var fromConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == fromElementId ) ;
+      if ( ! string.IsNullOrEmpty( fromUniqueId ) ) {
+        var fromConnector = allConnectors.FirstOrDefault( c => c.UniqueId == fromUniqueId ) ;
         if ( fromConnector!.IsTerminatePoint() || fromConnector!.IsPassPoint() ) {
-          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorId, out string? fromConnectorId ) ;
-          if ( ! string.IsNullOrEmpty( fromConnectorId ) )
-            fromElementId = fromConnectorId! ;
+          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId, out string? fromConnectorUniqueId ) ;
+          if ( ! string.IsNullOrEmpty( fromConnectorUniqueId ) )
+            fromUniqueId= fromConnectorUniqueId! ;
         }
       }
 
-      if ( ! string.IsNullOrEmpty( toElementId ) ) {
-        var toConnector = allConnectors.FirstOrDefault( c => c.Id.IntegerValue.ToString() == toElementId ) ;
+      if ( ! string.IsNullOrEmpty( toUniqueId ) ) {
+        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toUniqueId ) ;
         if ( toConnector!.IsTerminatePoint() || toConnector!.IsPassPoint() ) {
-          toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorId, out string? toConnectorId ) ;
-          if ( ! string.IsNullOrEmpty( toConnectorId ) )
-            toElementId = toConnectorId! ;
+          toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorUniqueId, out string? toConnectorUniqueId ) ;
+          if ( ! string.IsNullOrEmpty( toConnectorUniqueId ) )
+            toUniqueId = toConnectorUniqueId! ;
         }
       }
 
-      var (fromGeneralSymbol, fromCondition) = GetTextFromGroup( document, fromElementId ) ;
-      var (toGeneralSymbol, toCondition) = GetTextFromGroup( document, toElementId ) ;
-      return ( fromElementId, fromGeneralSymbol, fromCondition, toElementId, toGeneralSymbol, toCondition ) ;
+      var (fromGeneralSymbol, fromCondition) = GetTextFromGroup( document, allConnectors, fromUniqueId ) ;
+      var (toGeneralSymbol, toCondition) = GetTextFromGroup( document, allConnectors, toUniqueId ) ;
+      return ( fromUniqueId, fromGeneralSymbol, fromCondition, toUniqueId, toGeneralSymbol, toCondition ) ;
     }
 
-    private static (string, string) GetTextFromGroup( Document document, string elementId )
+    private static (string, string) GetTextFromGroup( Document document, IReadOnlyCollection<Element> allConnectors, string uniqueId )
     {
       var (result1, result2) = ( string.Empty, string.Empty ) ;
-      var parentGroup = document.GetAllElements<Group>().FirstOrDefault( x => x.GetMemberIds().Any( y => y.ToString().Equals( elementId ) ) ) ;
-      if ( parentGroup != null ) {
-        // ungroup before set property
-        var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-        var enumerable = attachedGroup as Group[] ?? attachedGroup.ToArray() ;
-        if ( enumerable.Any() ) {
-          var textNoteId = enumerable.FirstOrDefault()?.GetMemberIds().FirstOrDefault() ;
-          var textNote = document.GetAllElements<TextNote>().FirstOrDefault( x => x.Id == textNoteId ) ;
-          if ( textNote != null ) {
-            result1 = textNote.Text ;
-          }
+      Group? parentGroup = null ;
+      var allGroup = document.GetAllElements<Group>().ToList() ;
+      foreach ( var group in allGroup ) {
+        var elementIds = group.GetMemberIds().ToList() ;
+        var connector = allConnectors.FirstOrDefault( c => elementIds.Contains( c.Id ) && c.UniqueId == uniqueId ) ;
+        if ( connector == null ) continue ;
+        parentGroup = @group ;
+        break ;
+      }
 
-          var textNoteId2 = enumerable.FirstOrDefault()?.GetMemberIds().Skip( 1 ).FirstOrDefault() ;
-          var textNote2 = document.GetAllElements<TextNote>().FirstOrDefault( x => x.Id == textNoteId2 ) ;
-          if ( textNote2 != null ) {
-            result2 = textNote2.Text ;
-          }
+      if ( parentGroup == null ) return ( result1, result2 ) ;
+      // ungroup before set property
+      var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
+      var enumerable = attachedGroup as Group[] ?? attachedGroup.ToArray() ;
+      if ( enumerable.Any() ) {
+        var textNoteId = enumerable.FirstOrDefault()?.GetMemberIds().FirstOrDefault() ;
+        var textNote = document.GetAllElements<TextNote>().FirstOrDefault( x => x.Id == textNoteId ) ;
+        if ( textNote != null ) {
+          result1 = textNote.Text ;
+        }
+
+        var textNoteId2 = enumerable.FirstOrDefault()?.GetMemberIds().Skip( 1 ).FirstOrDefault() ;
+        var textNote2 = document.GetAllElements<TextNote>().FirstOrDefault( x => x.Id == textNoteId2 ) ;
+        if ( textNote2 != null ) {
+          result2 = textNote2.Text ;
         }
       }
 
