@@ -64,6 +64,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( CreateDetailTableCommand ), OnlyInitialized = true )]
           private static class CreateDetailTableCommandButton { }
 
+          [Button( typeof( ShowElectricSymbolsCommand ), OnlyInitialized = true )]
+          private static class ShowElectricSymbolsCommandButton { }
+
           [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
           private static class ShowPickUpInformationCommandButton { }
 
