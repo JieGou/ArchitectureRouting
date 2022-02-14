@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
     protected override IEnumerable<FamilyInstance> GetRackFamilyInstances()
     {
-      return Document.GetAllFamilyInstances( RoutingFamilyType.RackSpace ) ;
+      return Document.GetAllFamilyInstances( ElectricalRoutingFamilyType.RackSpace ) ;
     }
 
     protected override RouteGenerator CreateRouteGenerator( IReadOnlyCollection<Route> routes, Document document, ICollisionCheckTargetCollector collector )

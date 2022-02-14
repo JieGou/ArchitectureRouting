@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
 
       // Get all envelop
-      var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
+      var envelops = document.GetAllFamilyInstances( ElectricalRoutingFamilyType.Envelope ) ;
       var familyInstances = envelops as FamilyInstance[] ?? envelops.ToArray() ;
       foreach ( var envelop in familyInstances ) {
         if ( string.IsNullOrEmpty( envelop.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ) {
@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // Create new envelope
       if ( childrenEnvelop == null ) {
-        var symbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new System.InvalidOperationException() ;
+        var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new System.InvalidOperationException() ;
         var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level!, StructuralType.NonStructural ) ;
 
         // Change envelope size

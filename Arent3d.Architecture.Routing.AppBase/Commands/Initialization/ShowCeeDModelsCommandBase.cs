@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     private const string ConditionTextNoteTypeName = "1.5 mm" ;
 
-    protected abstract RoutingFamilyType RoutingFamilyType { get ; }
+    protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -96,12 +96,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, string floorPlanType )
     {
       if ( string.IsNullOrEmpty( floorPlanType ) ) {
-        var routingSymbol = ( uiDocument.Document.GetFamilySymbols( RoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
+        var routingSymbol = ( uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
         return routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
       }
 
       var connectorOneSideFamilyType = GetConnectorFamilyType( floorPlanType ) ;
-      var symbol = uiDocument.Document.GetFamilySymbols( connectorOneSideFamilyType ).FirstOrDefault() ?? ( uiDocument.Document.GetFamilySymbols( RoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
+      var symbol = uiDocument.Document.GetFamilySymbols( connectorOneSideFamilyType ).FirstOrDefault() ?? ( uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
       return symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
     }
 

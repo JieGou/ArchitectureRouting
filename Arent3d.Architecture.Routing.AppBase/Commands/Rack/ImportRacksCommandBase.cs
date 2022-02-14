@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Rack
 
     private static void GenerateRack( Document document, RackRecord rackRecord )
     {
-      var symbol = document.GetFamilySymbols( RoutingFamilyType.RackGuide ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.RackGuide ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = symbol.Instantiate( rackRecord.Origin, rackRecord.Level, StructuralType.NonStructural ) ;
 
       instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;

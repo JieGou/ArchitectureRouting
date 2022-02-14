@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Rack
       try {
         var result = document.Transaction( "TransactionName.Commands.Rack.EraseAll".GetAppStringByKeyOrDefault( "Erase All Pipe Spaces" ), _ =>
         {
-          document.Delete( document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ).Select( fi => fi.Id ).ToList() ) ;
+          document.Delete( document.GetAllFamilyInstances( ElectricalRoutingFamilyType.RackGuide ).Select( fi => fi.Id ).ToList() ) ;
           return Result.Succeeded ;
         } ) ;
 

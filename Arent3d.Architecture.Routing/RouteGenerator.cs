@@ -184,7 +184,7 @@ namespace Arent3d.Architecture.Routing
     public static void CorrectEnvelopes( Document document )
     {
       // get all envelope
-      var envelopes = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ).ToList() ;
+      var envelopes = document.GetAllFamilyInstances( ElectricalRoutingFamilyType.Envelope ).ToList() ;
       if ( ! envelopes.Any() ) return ;
       var parentEnvelopes = envelopes.Where( f => string.IsNullOrEmpty( f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ).ToList() ;
       if ( ! parentEnvelopes.Any() ) return ;

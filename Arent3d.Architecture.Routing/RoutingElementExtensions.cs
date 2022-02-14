@@ -36,14 +36,6 @@ namespace Arent3d.Architecture.Routing
     {
       document.MakeCertainAllRoutingFamilies() ;
       document.MakeCertainAllRoutingParameters() ;
-      AddArentConduitType( document ) ;
-
-      //Add connector type value
-      var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Connectors ) ;
-      foreach ( var connector in connectorOneSide ) {
-        connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
-      }
-
       return document.RoutingSettingsAreInitialized() ;
     }
 
@@ -72,7 +64,7 @@ namespace Arent3d.Architecture.Routing
       return ( 1.0 ).MillimetersToRevitUnits() ;
     }
     
-    private static void AddArentConduitType( Document document )
+    public static void AddArentConduitType( Document document )
     {
       var elbowTypeName = GetElbowTypeName( document ) ;
       var conduitTypeName = GetConduitTypeName( document ) ;
@@ -428,11 +420,11 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddRackGuide( this Document document, XYZ position, Level? level )
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true, level ) ;
+      return document.CreateFamilyInstance( ElectricalRoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true, level ) ;
     }
     public static FamilyInstance AddRackSpace( this Document document, XYZ position, Level level )
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
+      return document.CreateFamilyInstance( ElectricalRoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
     }
     public static FamilyInstance AddFASU(this Document document, RoutingFamilyType fasuFamilyType, XYZ position, ElementId levelId)
     {
@@ -444,7 +436,7 @@ namespace Arent3d.Architecture.Routing
     }
     public static FamilyInstance AddShaft( this Document document, XYZ position, Level? level )
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.Shaft, position, StructuralType.NonStructural, true, level ) ;
+      return document.CreateFamilyInstance( ElectricalRoutingFamilyType.Shaft, position, StructuralType.NonStructural, true, level ) ;
     }
 
     #endregion
@@ -789,6 +781,11 @@ namespace Arent3d.Architecture.Routing
     private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
     {
       return document.CreateFamilyInstance( familyType, position, null, structuralType, useLevel, level ) ;
+    }
+    
+    private static FamilyInstance CreateFamilyInstance( this Document document, ElectricalRoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
+    {
+      return document.CreateFamilyInstance( (RoutingFamilyType) familyType, position, null, structuralType, useLevel, level ) ;
     }
 
     private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, XYZ? direction, StructuralType structuralType, bool useLevel, Level? level )

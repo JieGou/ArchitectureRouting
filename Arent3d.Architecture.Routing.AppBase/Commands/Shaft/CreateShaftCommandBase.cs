@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
                     shaftOpening.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE).Set(highestLevel!.Id);
 
                     double heightOfFloor = highestLevel!.Elevation - lowestLevel!.Elevation;
-                    var familySymbol = document.GetFamilySymbols(RoutingFamilyType.ConnectorTwoSide).FirstOrDefault() ?? throw new InvalidOperationException() ;
+                    var familySymbol = document.GetFamilySymbols(ElectricalRoutingFamilyType.ConnectorTwoSide).FirstOrDefault() ?? throw new InvalidOperationException() ;
                     var bottomConnector = familySymbol.Instantiate(selectedPoint, lowestLevel, StructuralType.NonStructural);
                     bottomConnector.get_Parameter(BuiltInParameter.INSTANCE_ELEVATION_PARAM).Set(0);
                     var topConnector = familySymbol.Instantiate(selectedPoint, lowestLevel, StructuralType.NonStructural);

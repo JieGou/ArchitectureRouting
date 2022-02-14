@@ -8,18 +8,6 @@ namespace Arent3d.Architecture.Routing
 {
   public enum RoutingFamilyType
   {
-    [NameOnRevit( "Routing Rack Guide" )]
-    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
-    RackGuide,
-
-    [NameOnRevit( "Routing Rack Space" )]
-    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
-    RackSpace,
-
-    [NameOnRevit( "Routing Shaft" )]
-    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
-    Shaft,
-
     [NameOnRevit( "Routing Pass Point" )]
     [FamilyCategory( BuiltInCategory.OST_MechanicalEquipment )]
     PassPoint,
@@ -40,6 +28,59 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     ConnectorOutPoint,
 
+
+    [NameOnRevit( "SA_FASU(F4-150 200Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F4_150_200Phi,
+    
+    [NameOnRevit( "SA_FASU(F4-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F4_150_250Phi,
+    
+    [NameOnRevit( "SA_FASU(F5-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F5_150_250Phi,
+    
+    [NameOnRevit( "SA_FASU(F6-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F6_150_250Phi,
+    
+    [NameOnRevit( "SA_FASU(F6-150 300Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F6_150_300Phi,
+    
+    [NameOnRevit( "SA_FASU(F7-150 300Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F7_150_300Phi,
+    
+    [NameOnRevit( "SA_FASU(F8-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F8_150_250Phi,
+    
+    [NameOnRevit( "SA_FASU(F8-150 300Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F8_150_300Phi,
+
+    [NameOnRevit( "SA_VAV" )]
+    [FamilyVersion( 1 )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    TTE_VAV_140,
+  }
+
+  public enum ElectricalRoutingFamilyType
+  {
+    [NameOnRevit( "Routing Rack Guide" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    RackGuide,
+
+    [NameOnRevit( "Routing Rack Space" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    RackSpace,
+
+    [NameOnRevit( "Routing Shaft" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Shaft,
+    
     [NameOnRevit("電線管用ファミリ_ver1.0")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
     ConnectorTwoSide,
@@ -47,7 +88,8 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit("電線管用ファミリ(片側のみ)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
     ConnectorOneSide,
-
+    
+    
     [NameOnRevit("ダクト用湿度ｾﾝｻｰ(ロゴあり)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
     HumiditySensorForDuctWithLogo,
@@ -87,43 +129,6 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Cable Tray Elbow" )]
     [FamilyCategory( BuiltInCategory.OST_CableTrayFitting )]
     CableTrayFitting,
-
-    [NameOnRevit( "SA_FASU(F4-150 200Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F4_150_200Phi,
-    
-    [NameOnRevit( "SA_FASU(F4-150 250Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F4_150_250Phi,
-    
-    [NameOnRevit( "SA_FASU(F5-150 250Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F5_150_250Phi,
-    
-    [NameOnRevit( "SA_FASU(F6-150 250Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F6_150_250Phi,
-    
-    [NameOnRevit( "SA_FASU(F6-150 300Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F6_150_300Phi,
-    
-    [NameOnRevit( "SA_FASU(F7-150 300Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F7_150_300Phi,
-    
-    [NameOnRevit( "SA_FASU(F8-150 250Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F8_150_250Phi,
-    
-    [NameOnRevit( "SA_FASU(F8-150 300Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F8_150_300Phi,
-
-    [NameOnRevit( "SA_VAV" )]
-    [FamilyVersion( 1 )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    TTE_VAV_140,
     
     [NameOnRevit( "Direction Cylindrical Shaft" )]
     [FamilyCategory( BuiltInCategory.OST_DetailComponents)]
@@ -133,6 +138,7 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     Room,
   }
+  
 
   public enum ConnectorOneSideFamilyType
   {
@@ -290,6 +296,9 @@ namespace Arent3d.Architecture.Routing
 
     public static void MakeCertainAllConnectorFamilies( this Document document ) => document.MakeCertainAllFamilies<ConnectorOneSideFamilyType>( AssetManager.GetFamilyPath ) ;
     public static void EraseAllConnectorFamilies( this Document document ) => document.UnloadAllFamilies<ConnectorOneSideFamilyType>() ;
+    
+    public static void MakeCertainAllElectricalRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<ElectricalRoutingFamilyType>( AssetManager.GetFamilyPath, true ) ;
+    public static void EraseAllElectricalRoutingFamilies( this Document document ) => document.UnloadAllFamilies<ElectricalRoutingFamilyType>() ;
 
     public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, string levelName, StructuralType structuralType )
     {

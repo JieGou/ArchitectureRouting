@@ -22,6 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     protected virtual void UnSetup( Document document )
     {
       document.UnsetupRoutingFamiliesAndParameters() ;
+      document.EraseAllElectricalRoutingFamilies();
     }
   }
 }
