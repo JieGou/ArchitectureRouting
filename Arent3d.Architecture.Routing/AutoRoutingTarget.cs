@@ -100,7 +100,8 @@ namespace Arent3d.Architecture.Routing
       LineId = $"{firstSubRoute.Route.RouteName}@{firstSubRoute.SubRouteIndex}" ;
 
       var trueFixedBopHeight = firstSubRoute.GetTrueFixedBopHeight( FixedHeightUsage.Default ) ;
-      Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ], trueFixedBopHeight ) ;
+      var listListBox3dRoom = ObstacleGeneration.GetAllObstacleRoomBox( document ) ;
+      Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ], trueFixedBopHeight , listListBox3dRoom) ;
     }
 
     public AutoRoutingTarget( Document document, SubRoute subRoute, int priority, AutoRoutingEndPoint fromEndPoint, AutoRoutingEndPoint toEndPoint, double? forcedFixedHeight )
@@ -113,8 +114,8 @@ namespace Arent3d.Architecture.Routing
       _ep2SubRoute = new Dictionary<AutoRoutingEndPoint, SubRoute> { { fromEndPoint, subRoute }, { toEndPoint, subRoute } } ;
 
       LineId = $"{subRoute.Route.RouteName}@{subRoute.SubRouteIndex}" ;
-
-      Condition = new AutoRoutingCondition( document, subRoute, priority, forcedFixedHeight ) ;
+      var listListBox3dRoom = ObstacleGeneration.GetAllObstacleRoomBox( document ) ;
+      Condition = new AutoRoutingCondition( document, subRoute, priority, forcedFixedHeight, listListBox3dRoom ) ;
     }
 
     private static IReadOnlyDictionary<SubRoute, int> GetDepths( IReadOnlyCollection<SubRoute> subRoutes )
@@ -207,7 +208,7 @@ namespace Arent3d.Architecture.Routing
     {
       private readonly SubRoute _subRoute ;
 
-      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority, double? forcedFixedHeight )
+      public AutoRoutingCondition( Document document, SubRoute subRoute, int priority, double? forcedFixedHeight, List<List<Box3d>> priorityBoxes )
       {
         var documentData = DocumentMapper.Get( document ) ;
 
@@ -216,7 +217,7 @@ namespace Arent3d.Architecture.Routing
         IsRoutingOnPipeRacks = ( 0 < documentData.RackCollection.RackCount ) && subRoute.IsRoutingOnPipeSpace ;
         AllowHorizontalBranches = documentData.AllowHorizontalBranches( subRoute ) ;
         FixedBopHeight = forcedFixedHeight ;
-        PriorityBoxes = new List<List<Box3d>>() ;
+        PriorityBoxes = priorityBoxes ;
       }
 
       public bool IsRoutingOnPipeRacks { get ; }
