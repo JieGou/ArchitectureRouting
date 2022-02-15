@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Windows ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Architecture ;
 using Application = Autodesk.Revit.ApplicationServices.Application ;
@@ -21,8 +22,12 @@ namespace Arent3d.Architecture.Routing
       var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
       var otherRooms = allRooms.Except( livingRooms ).ToList() ;
 
-      var otherListBox3d = CreateBox3dFromOther( otherRooms, doc ) ;
-      var livingListBox3d = CreateBox3dFromLivingRoom( livingRooms, doc ) ;
+      var res = MessageBox.Show( "PriorityBoxを表示しますか？", "通知", MessageBoxButton.OKCancel, MessageBoxImage.Information ) ;
+      bool show = true ;
+
+      var otherListBox3d = CreateBox3dFromOther( otherRooms, doc, show ) ;
+      var livingListBox3d = CreateBox3dFromLivingRoom( livingRooms, doc, show ) ;
+
       listOut.AddRange( otherListBox3d ) ;
       listOut.AddRange( livingListBox3d ) ;
       return listOut ;
@@ -55,22 +60,24 @@ namespace Arent3d.Architecture.Routing
       return rooms ;
     }
 
-    private static List<List<Box3d>> CreateBox3dFromOther( List<Room> list, Document document )
+    private static List<List<Box3d>> CreateBox3dFromOther( List<Room> list, Document document, bool? show )
     {
       var listOut = new List<List<Box3d>>() ;
       foreach ( var room in list ) {
         var bb = room.get_BoundingBox( document.ActiveView ) ;
         if ( bb is null ) continue ;
-        var min = bb.Min.To3dRaw() ;
-        var max = bb.Max.To3dRaw() ;
-        var box3d = new Box3d( min, max ) ;
+        var min = bb.Min ;
+        var max = bb.Max ;
+        var box3d = new Box3d( min.To3dRaw(), max.To3dRaw() ) ;
         listOut.Add( new List<Box3d>() { box3d } ) ;
+        var height = ( max.Z - min.Z ) ;
+        if ( show == true ) CreateBoxGenericModelInPlace( min, max, height, document, room.Name ) ;
       }
 
       return listOut ;
     }
 
-    private static List<List<Box3d>> CreateBox3dFromLivingRoom( List<Room> list, Document document )
+    private static List<List<Box3d>> CreateBox3dFromLivingRoom( List<Room> list, Document document, bool? show )
     {
       var listOut = new List<List<Box3d>>() ;
       var option = new SpatialElementBoundaryOptions() ;
@@ -127,6 +134,10 @@ namespace Arent3d.Architecture.Routing
             rectangular.Height = height ;
             var box3d = new Box3d( rectangular.GetMin().To3dRaw(), rectangular.GetMax().To3dRaw() ) ;
             listInRoom.Add( box3d ) ;
+            if ( show == true ) {
+              var index = listRec.IndexOf( rectangular ) ;
+              CreateBoxGenericModelInPlace( rectangular.GetMin(), rectangular.GetMax(), height, document, $"{room.Name}_{index}" ) ;
+            }
           }
 
           if ( listInRoom.Count != 0 ) listOut.Add( listInRoom ) ;
@@ -137,6 +148,30 @@ namespace Arent3d.Architecture.Routing
       }
 
       return listOut ;
+    }
+
+    public static ElementId CreateBoxGenericModelInPlace( XYZ min, XYZ max, double height, Document doc, string name )
+    {
+      try {
+        var line1 = Line.CreateBound( min, new XYZ( max.X, min.Y, min.Z ) ) ;
+        var line2 = Line.CreateBound( new XYZ( max.X, min.Y, min.Z ), new XYZ( max.X, max.Y, min.Z ) ) ;
+        var line3 = Line.CreateBound( new XYZ( max.X, max.Y, min.Z ), new XYZ( min.X, max.Y, min.Z ) ) ;
+        var line4 = Line.CreateBound( new XYZ( min.X, max.Y, min.Z ), min ) ;
+
+        var profile = new List<Curve>() { line1, line2, line3, line4 } ;
+        var curveLoop = CurveLoop.Create( profile ) ;
+        var profileLoops = new List<CurveLoop>() { curveLoop } ;
+        var solid = GeometryCreationUtilities.CreateExtrusionGeometry( profileLoops, XYZ.BasisZ, height ) ;
+
+        var ds = DirectShape.CreateElement( doc, new ElementId( BuiltInCategory.OST_GenericModel ) ) ;
+        ds.SetShape( new GeometryObject[] { solid } ) ;
+        ds.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "ROOM_BOX_" + name ) ;
+        return ds.Id ;
+      }
+      catch ( Exception ex ) {
+        var message = ex.Message ;
+        return ElementId.InvalidElementId ;
+      }
     }
   }
 

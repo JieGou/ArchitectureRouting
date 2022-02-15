@@ -20,9 +20,28 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
+      var document = commandData.Application.ActiveUIDocument.Document ;
       try {
-        using ( var transaction = new Transaction( commandData.Application.ActiveUIDocument.Document ) ) {
+        using ( var transaction = new Transaction( document ) ) {
           transaction.Start( "Create room and envelope" ) ;
+          //Delete all
+          ElementCategoryFilter filterGen = new(BuiltInCategory.OST_GenericModel) ;
+
+          var pvp = new ParameterValueProvider( new ElementId( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ) ) ;
+          var stringContains = new FilterStringContains() ;
+          var value1 = "ROOM_BOX" ;
+          var value2 = "_ENVELOPE" ;
+          var fRule1 = new FilterStringRule( pvp, stringContains, value1, true ) ;
+          var fRule2 = new FilterStringRule( pvp, stringContains, value2, true ) ;
+          var filterComment1 = new ElementParameterFilter( fRule1 ) ;
+          var filterComment2 = new ElementParameterFilter( fRule2 ) ;
+          var filterComment = new LogicalOrFilter( filterComment1, filterComment2 ) ;
+
+          var collector = new FilteredElementCollector( document ) ;
+          var allBoxEnvelope = collector.WherePasses( filterGen ).WherePasses( filterComment ).WhereElementIsNotElementType().ToElementIds() ;
+
+          document.Delete( allBoxEnvelope ) ;
+
           //1. Wall Envelope Feature
           ExcuteWallEnvelope( commandData ) ;
           //2. Room Box Feature
