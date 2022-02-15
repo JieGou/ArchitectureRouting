@@ -92,7 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( dialog.DetailSymbolsChangedPlumbingType.Any() ) {
           UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, dialog.DetailSymbolsChangedPlumbingType ) ;
         }
-        
+
         return doc.Transaction( "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
         {
           if ( viewModel.IsCreateSchedule || dialog.DetailTableViewModelSummary.IsCreateSchedule ) {
@@ -102,9 +102,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
             ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
             var noteWidth = 0.4 ;
-            TextNoteOptions opts = new(defaultTextTypeId) ;
+            TextNoteOptions opts = new( defaultTextTypeId ) ;
             var txtPosition = new XYZ( originX, originY, heightOfConnector ) ;
-            TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( viewModel, level.Name ), opts ) ;
+            TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( viewModel.IsCreateSchedule ? viewModel : dialog.DetailTableViewModelSummary, level.Name ), opts ) ;
             viewModel.IsCreateSchedule = false ;
             dialog.DetailTableViewModelSummary.IsCreateSchedule = false ;
           }
