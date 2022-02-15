@@ -20,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly DetailTableViewModel _detailTableViewModel ;
     public readonly Dictionary<string, string> RoutesChangedConstructionItem ;
+    public readonly Dictionary<string, string> DetailSymbolsChangedPlumbingType ;
 
     public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData )
     {
@@ -29,6 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _detailTableViewModel = viewModel ;
       _conduitsModelData = conduitsModelData ;
       RoutesChangedConstructionItem = new Dictionary<string, string>() ;
+      DetailSymbolsChangedPlumbingType = new Dictionary<string, string>() ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
@@ -59,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         List<DetailTableModel> newDetailTableModels = detailTableModels.Select( x => x ).ToList() ;
 
-        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, ref newDetailTableModels, plumbingType!.ToString() ) ;
+        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, ref newDetailTableModels, plumbingType!.ToString(), true ) ;
 
 
         foreach ( var oldDetailTableModel in detailTableModels ) {
@@ -70,6 +72,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           _detailTableViewModel.DetailTableModels.Add( newDetailSymbolModel ) ;
         }
 
+        if ( ! DetailSymbolsChangedPlumbingType.ContainsKey( newDetailTableModels.First().DetailSymbolId ) ) {
+          DetailSymbolsChangedPlumbingType.Add( newDetailTableModels.First().DetailSymbolId, plumbingType!.ToString() ) ;
+        }
+        else {
+          DetailSymbolsChangedPlumbingType[ newDetailTableModels.First().DetailSymbolId ] = plumbingType!.ToString() ;
+        }
+        
         newDetailTableModels = _detailTableViewModel.DetailTableModels.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.IsParentRoute ).GroupBy( x => x.DetailSymbolId ).SelectMany( x => x ).ToList() ;
         _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
         this.DataContext = _detailTableViewModel ;
@@ -141,11 +150,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               if ( oldDetailTableModel == null ) continue ;
               var detailTableModelsGroupByRemark = detailTableModelsSameWiringType.GroupBy( d => d.Remark ).ToDictionary( g => g.Key, g => g.ToList() ) ;
               List<string> newRemark = new List<string>() ;
+              int numberOfGrounds = 0 ;
               foreach ( var (remark, detailTableModelsSameRemark) in detailTableModelsGroupByRemark ) {
                 newRemark.Add( remark + ( detailTableModelsSameRemark.Count == 1 ? string.Empty : "x" + detailTableModelsSameRemark.Count ) ) ;
+                numberOfGrounds += detailTableModelsSameRemark.Count == 1 ? 1 : detailTableModelsSameRemark.Count ;
               }
 
-              var newDetailSymbolModel = new DetailTableModel( oldDetailTableModel.CalculationExclusion, oldDetailTableModel.Floor, oldDetailTableModel.CeeDCode, oldDetailTableModel.DetailSymbol, oldDetailTableModel.DetailSymbolId, oldDetailTableModel.WireType, oldDetailTableModel.WireSize, oldDetailTableModel.WireStrip, oldDetailTableModel.WireBook, oldDetailTableModel.EarthType, 
+              var newDetailSymbolModel = new DetailTableModel( oldDetailTableModel.CalculationExclusion, oldDetailTableModel.Floor, oldDetailTableModel.CeeDCode, oldDetailTableModel.DetailSymbol, oldDetailTableModel.DetailSymbolId, oldDetailTableModel.WireType, oldDetailTableModel.WireSize, oldDetailTableModel.WireStrip, numberOfGrounds.ToString(), oldDetailTableModel.EarthType, 
                 oldDetailTableModel.EarthSize, oldDetailTableModel.NumberOfGrounds, oldDetailTableModel.PlumbingType, oldDetailTableModel.PlumbingSize, oldDetailTableModel.NumberOfPlumbing, oldDetailTableModel.ConstructionClassification, oldDetailTableModel.SignalType, oldDetailTableModel.ConstructionItems, oldDetailTableModel.PlumbingItems, string.Join( ", ", newRemark ), oldDetailTableModel.WireCrossSectionalArea, oldDetailTableModel.CountCableSamePosition, oldDetailTableModel.RouteName, oldDetailTableModel.IsEcoMode, oldDetailTableModel.IsParentRoute, oldDetailTableModel.IsReadOnly, oldDetailTableModel.ParentPlumbingType ) ;
               newDetailTableModels.Add( newDetailSymbolModel ) ;
             }

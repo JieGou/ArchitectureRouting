@@ -18,7 +18,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       LineIds,
       IsParentSymbol,
       CountCableSamePosition, 
-      DeviceSymbol
+      DeviceSymbol,
+      PlumbingType
     }
 
     protected override DetailSymbolModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -34,8 +35,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var isParentSymbol = deserializer.GetBool( SerializeField.IsParentSymbol ) ;
       var countCableSamePosition = deserializer.GetInt( SerializeField.CountCableSamePosition ) ;
       var deviceSymbol = deserializer.GetString( SerializeField.DeviceSymbol ) ;
+      var plumbingType = deserializer.GetString( SerializeField.PlumbingType ) ;
 
-      return new DetailSymbolModel( detailSymbolId, detailSymbol, conduitId, routeName, code, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol ) ;
+      return new DetailSymbolModel( detailSymbolId, detailSymbol, conduitId, routeName, code, lineIds, isParentSymbol, countCableSamePosition, deviceSymbol, plumbingType ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailSymbolModel customTypeValue )
@@ -51,6 +53,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.Add( SerializeField.IsParentSymbol, customTypeValue.IsParentSymbol ) ;
       serializerObject.Add( SerializeField.CountCableSamePosition, customTypeValue.CountCableSamePosition ) ;
       serializerObject.AddNonNull( SerializeField.DeviceSymbol, customTypeValue.DeviceSymbol ) ;
+      serializerObject.AddNonNull( SerializeField.PlumbingType, customTypeValue.PlumbingType ) ;
 
       return serializerObject ;
     }
