@@ -27,7 +27,18 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Routing Connector Out Point" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     ConnectorOutPoint,
+    
+    [NameOnRevit( "Routing Rack Guide" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    RackGuide,
 
+    [NameOnRevit( "Routing Rack Space" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    RackSpace,
+    
+    [NameOnRevit( "Routing Envelope" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Envelope,
 
     [NameOnRevit( "SA_FASU(F4-150 200Φ)" )]
     [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
@@ -69,14 +80,6 @@ namespace Arent3d.Architecture.Routing
 
   public enum ElectricalRoutingFamilyType
   {
-    [NameOnRevit( "Routing Rack Guide" )]
-    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
-    RackGuide,
-
-    [NameOnRevit( "Routing Rack Space" )]
-    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
-    RackSpace,
-
     [NameOnRevit( "Routing Shaft" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     Shaft,
@@ -118,10 +121,6 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
     ElectricTwoWayValveWithoutLogo,
 
-    [NameOnRevit( "Routing Envelope" )]
-    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
-    Envelope,
-    
     [NameOnRevit( "Cable Tray" )]
     [FamilyCategory( BuiltInCategory.OST_CableTrayFitting )]
     CableTray,

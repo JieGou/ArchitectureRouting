@@ -420,11 +420,11 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddRackGuide( this Document document, XYZ position, Level? level )
     {
-      return document.CreateFamilyInstance( ElectricalRoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true, level ) ;
+      return document.CreateFamilyInstance( RoutingFamilyType.RackGuide, position, StructuralType.NonStructural, true, level ) ;
     }
     public static FamilyInstance AddRackSpace( this Document document, XYZ position, Level level )
     {
-      return document.CreateFamilyInstance( ElectricalRoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
+      return document.CreateFamilyInstance( RoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
     }
     public static FamilyInstance AddFASU(this Document document, RoutingFamilyType fasuFamilyType, XYZ position, ElementId levelId)
     {

@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       level ??= levels.First() ;
 
       var heightOfLevel = document.GetHeightSettingStorable()[ level ].HeightOfLevel.MillimetersToRevitUnits() ;
-      var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var symbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = isCeiling ? symbol.Instantiate( new XYZ( originX, originY, heightOfLevel ), level, StructuralType.NonStructural ) : symbol.Instantiate( new XYZ( originX, originY, 0 ), level, StructuralType.NonStructural ) ;
       instance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
 

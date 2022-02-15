@@ -12,20 +12,26 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   [Image( "resources/Initialize.png", ImageType = ImageType.Large )]
   public class InitializeCommand : InitializeCommandBase
   {
+    protected override bool RoutingSettingsAreInitialized( Document document )
+    {
+      // 電気ルートアシストには電気ルートアシスト用のファミリを追加する必要があるため、追加のチェックを入れる
+      return base.RoutingSettingsAreInitialized(document) &&  document.AllFamiliesAreLoaded<ElectricalRoutingFamilyType>() ;
+    }
     protected override bool Setup( Document document )
     {
+      var baseSetupResult = base.Setup( document ) ;
+      if ( ! baseSetupResult ) return false ;
+
       document.MakeCertainAllElectricalRoutingFamilies() ;
+      document.LoadAllParametersFromFile<ConnectorFamilyParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
       
       RoutingElementExtensions.AddArentConduitType( document ) ;
+      var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Connectors ) ;
+      foreach ( var connector in connectorOneSide ) {
+        connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
+      }
 
-      // TODO:　Initializeのエラーになるが、必要なさそう（要確認）なので消せる
-      //Add connector type value
-      // var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Connectors ) ;
-      // foreach ( var connector in connectorOneSide ) {
-      //   connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
-      // }
-      
-      return base.Setup( document ) ;
+      return RoutingSettingsAreInitialized( document ) ;
     }
   }
 }

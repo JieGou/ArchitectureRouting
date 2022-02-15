@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
       if ( elm is not FamilyInstance fi ) return true ;
 
       // Racks are not collision targets.
-      return fi.IsFamilyInstanceExcept( RoutingFamilyType.PassPoint, (RoutingFamilyType) ElectricalRoutingFamilyType.RackGuide ) ;
+      return fi.IsFamilyInstanceExcept( RoutingFamilyType.PassPoint, (RoutingFamilyType) RoutingFamilyType.RackGuide ) ;
     }
   }
 }

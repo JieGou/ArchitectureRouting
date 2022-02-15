@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Rack
 
     private static IEnumerable<RackRecord> GetRackList( Document document )
     {
-      foreach ( var familyInstance in document.GetAllFamilyInstances( ElectricalRoutingFamilyType.RackGuide ) ) {
+      foreach ( var familyInstance in document.GetAllFamilyInstances( RoutingFamilyType.RackGuide ) ) {
         var transform = familyInstance.GetTotalTransform() ;
         yield return new RackRecord
         {
