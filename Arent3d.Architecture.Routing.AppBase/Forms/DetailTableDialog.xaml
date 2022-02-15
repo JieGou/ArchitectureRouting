@@ -112,7 +112,8 @@
                 <DataGridComboBoxColumn Header="工事項目" Width="90"
                                         SelectedValueBinding="{Binding ConstructionItems}"
                                         DisplayMemberPath="Type"
-                                        SelectedValuePath="Name">
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
