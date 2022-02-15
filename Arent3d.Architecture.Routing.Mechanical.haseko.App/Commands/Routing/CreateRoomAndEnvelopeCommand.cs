@@ -78,12 +78,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       allFloors.AddRange( floorsCurrent ) ;
 
       var option = new Options() ;
-      // option.View = null ;
       option.DetailLevel = ViewDetailLevel.Fine ;
-
-      var listGarden = new List<Floor>() ;
       var listComplex = new List<Floor>() ;
-      var listBasic = new List<Floor>() ;
 
       var level = uiDocument.ActiveView.GenLevel ;
       var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
@@ -91,16 +87,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
       foreach ( var floorInstance in allFloors ) {
         if ( floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭以外" || floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭" ) {
-          listGarden.Add( floorInstance ) ;
           continue ;
         }
-
         //shape complex with vertices edited
         if ( floorInstance.SlabShapeEditor.SlabShapeVertices.Size > 0 ) {
           listComplex.Add( floorInstance ) ;
           continue ;
         }
-
         //shape complex 
         var geoElement = floorInstance.get_Geometry( option ) ;
         foreach ( GeometryObject geoObject in geoElement ) {
@@ -127,7 +120,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
             //basic shape
             if ( isComplex ) continue ;
-            listBasic.Add( floorInstance ) ;
             try {
               //Get all boundary segments
               var height = floorInstance.get_Parameter( BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM ).AsDouble() ;
@@ -139,7 +131,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
               //Joined unnecessary segments 
               var listJoinedX = GeoExtension.GetAllXLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.Y, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
               var listJoinedY = GeoExtension.GetAllYLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.X, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
-
               //get all points in boundary
               var allConnerPoints = new List<XYZ>() ;
               listJoinedY.ForEach( x =>
@@ -147,7 +138,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
                 allConnerPoints.Add( x.GetEndPoint( 0 ) ) ;
                 allConnerPoints.Add( x.GetEndPoint( 1 ) ) ;
               } ) ;
-
               //get all points of intersect with Y to X curves
               foreach ( var lineY in listJoinedY ) {
                 var lineExtend = lineY.ExtendBothY( lenghtMaxY * 2 ) ;
@@ -156,12 +146,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
                   allConnerPoints.AddRange( points ) ;
                 }
               }
-
               //distinct points
               var comparer = new XyzComparer() ;
               var distinctPoints = allConnerPoints.Distinct( comparer ).ToList() ;
               var dic = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
-
               //Find out the rectangular
               var listRec = new List<RectangularBox>() ;
               for ( var i = 0 ; i < dic.Count - 1 ; i++ ) {
@@ -171,7 +159,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
                 var rec = GeoExtension.FindRectangular( l1, GeoExtension.GetAllXLine( curvesFix ), lenghtMaxY * 2 ) ;
                 listRec.AddRange( rec ) ;
               }
-
               //Create the room box
               foreach ( var rectangular in listRec ) {
                 var envelopeOrigin = rectangular.GetCentroid() ;
@@ -190,9 +177,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           }
         }
       }
-
-      var gardenCount = listGarden.Count ;
-      var basicCount = listBasic.Count ;
       if ( listComplex.Count == 0 ) return ;
       MessageBox.Show( $"このドキュメントには、{listComplex.Count}つの複雑な床の形状があります。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning ) ;
     }
@@ -336,14 +320,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           var height = room.UnboundedHeight ;
           var bb = room.get_BoundingBox( null ) ;
           var lenghtMaxY = bb.Max.Y - bb.Min.Y ;
-
           var curves = room!.GetBoundarySegments( option ).First().Select( x => x.GetCurve() ).Cast<Line>().ToList() ;
           var curvesFix = GeoExtension.FixDiagonalLines( curves, lenghtMaxY * 2 ) ;
-
+          
           //Joined unnecessary segments 
           var listJoinedX = GeoExtension.GetAllXLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.Y, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
           var listJoinedY = GeoExtension.GetAllYLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.X, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
-
           //get all points in boundary
           var allConnerPoints = new List<XYZ>() ;
           listJoinedY.ForEach( x =>
@@ -365,7 +347,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           var comparer = new XyzComparer() ;
           var distinctPoints = allConnerPoints.Distinct( comparer ).ToList() ;
           var dic = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
-
           //Find out the rectangular
           var listRec = new List<RectangularBox>() ;
           for ( int i = 0 ; i < dic.Count - 1 ; i++ ) {
@@ -375,7 +356,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
             var rec = GeoExtension.FindRectangular( l1, GeoExtension.GetAllXLine( curvesFix ), lenghtMaxY * 2 ) ;
             listRec.AddRange( rec ) ;
           }
-
           //Create the room box
           foreach ( var rectangular in listRec ) {
             var index = listRec.IndexOf( rectangular ) ;
