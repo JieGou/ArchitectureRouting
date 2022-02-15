@@ -23,41 +23,58 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
+      const string defaultPlumbingType = "配管なし" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var uiDoc = commandData.Application.ActiveUIDocument ;
-      var hiroiSetMasterNormalModelData = doc.GetCsvStorable().HiroiSetMasterNormalModelData ;
-      var hiroiMasterModelData = doc.GetCsvStorable().HiroiMasterModelData ;
-      var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      var ceeDStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      if ( ceeDStorable == null ) return Result.Failed ;
+      var csvStorable = doc.GetCsvStorable() ;
+      var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
+      var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
+      var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
+      var detailTableModelData = doc.GetDetailTableStorable().DetailTableModelData ;
       var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ) ;
+      var routePicked = pickedObjects.Select( e => e.GetRouteName() ).Distinct().ToList() ;
       var electricalSymbolModels = new ObservableCollection<ElectricalSymbolModel>() ;
-      var processedDetailSymbol = new List<string>() ;
-      foreach ( var element in pickedObjects ) {
-        string pipingType = element.Name ;
-        var existSymbolRoute = element.GetRouteName() ?? string.Empty ;
-        if ( string.IsNullOrEmpty( existSymbolRoute ) || ceedStorable == null ) continue ;
-        if ( processedDetailSymbol.Contains( existSymbolRoute ) ) continue ;
-        string startTeminateId = string.Empty ;
-        string endTeminateId = string.Empty ;
-        var startPoint = element.GetNearestEndPoints( true ) ;
-        var startPointKey = startPoint.FirstOrDefault()?.Key ;
-        if ( startPointKey != null ) {
-          startTeminateId = startPointKey.GetElementUniqueId() ;
-        }
+      foreach ( var routeName in routePicked ) {
+        string wireType = string.Empty ;
+        string wireSize = string.Empty ;
+        string wireStrip = string.Empty ;
+        string plumbingType = string.Empty ;
+        var plumbingSize = string.Empty ;
+        var (startUniqueId, startCeeDSymbol, startCondition, endUniqueId, endCeeDSymbol, endCondition) = GetFromConnectorAndToConnectorCeeDCode( doc, routeName! ) ;
+        var startCeeDModel = ceeDStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( startCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( startCeeDSymbol.Trim( '\r' ) ) ) ;
+        var endCeeDModel = ceeDStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( endCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( endCeeDSymbol.Trim( '\r' ) ) ) ;
+        if ( startCeeDModel == null || endCeeDModel == null ) continue ;
+        var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
+        if ( detailTableModelData.Any() && detailTableModelsByRouteName.Any() ) {
+          foreach ( var element in detailTableModelsByRouteName ) {
+            wireType = element.WireType ;
+            wireSize = element.WireSize ;
+            wireStrip = element.WireStrip ;
+            if ( element.IsParentRoute ) {
+              plumbingType = element.PlumbingType ;
+              plumbingSize = element.PlumbingSize ;
+            }
+            else {
+              var parentRouteDetailTableModel = detailTableModelData.FirstOrDefault( d => d.DetailSymbolId == element.DetailSymbolId && d.IsParentRoute ) ;
+              if ( parentRouteDetailTableModel != null ) {
+                plumbingType = parentRouteDetailTableModel.PlumbingType ;
+                plumbingSize = parentRouteDetailTableModel.PlumbingSize ;
+              }
+            }
 
-        var endPoint = element.GetNearestEndPoints( false ) ;
-        var endPointKey = endPoint.FirstOrDefault()?.Key ;
-        if ( endPointKey != null ) {
-          endTeminateId = endPointKey!.GetElementUniqueId() ;
+            var startElectricalSymbolModel = new ElectricalSymbolModel( startUniqueId, startCeeDModel?.FloorPlanType ?? string.Empty, startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+            var endElectricalSymbolModel = new ElectricalSymbolModel( endUniqueId, endCeeDModel?.FloorPlanType ?? string.Empty, endCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+            electricalSymbolModels.Add( startElectricalSymbolModel ) ;
+            electricalSymbolModels.Add( endElectricalSymbolModel ) ;
+          }
         }
-
-        var (startElementId, startCeeDSymbol, startCondition, endElementId, endCeeDSymbol, endCondition) = GetFromConnectorAndToConnectorCeeDCode( doc, startTeminateId, endTeminateId ) ;
-        var startCeeDModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( startCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( startCeeDSymbol.Trim( '\r' ) ) ) ;
-        var endCeeDModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( endCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( endCeeDSymbol.Trim( '\r' ) ) ) ;
-        var startElectricalSymbolModel = new ElectricalSymbolModel( startElementId, startCeeDModel?.FloorPlanType ?? string.Empty, startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, string.Empty, string.Empty, string.Empty, pipingType, string.Empty ) ;
-        var endElectricalSymbolModel = new ElectricalSymbolModel( endElementId, endCeeDModel?.FloorPlanType ?? string.Empty, endCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, string.Empty, string.Empty, string.Empty, pipingType, string.Empty ) ;
-        processedDetailSymbol.Add( existSymbolRoute ) ;
-        if ( endCeeDModel != null ) {
-          var hiroiSetModels = hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( endCeeDModel.CeeDModelNumber ) ).Skip( 1 ) ;
+        else {
+          var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).ToList() ;
+          var endConnector = allConnectors.FirstOrDefault( c => c.UniqueId == endUniqueId ) ;
+          string isEcoMode = endConnector!.LookupParameter( "IsEcoMode" ).AsString() ;
+          var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( endCeeDModel.CeeDModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( endCeeDModel.CeeDModelNumber ) ).Skip( 1 ) ;
           foreach ( var item in hiroiSetModels ) {
             List<string> listMaterialCode = new List<string>() ;
             if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
@@ -67,19 +84,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( ! listMaterialCode.Any() ) continue ;
             var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
             foreach ( var master in masterModels ) {
-              startElectricalSymbolModel.WireType = master.Type ;
-              startElectricalSymbolModel.WireSize = master.Size1 ;
-              startElectricalSymbolModel.WireStrip = master.Size2 ;
-              endElectricalSymbolModel.WireType = master.Type ;
-              endElectricalSymbolModel.WireSize = master.Size1 ;
-              endElectricalSymbolModel.WireStrip = master.Size2 ;
+              wireType = master.Type ;
+              wireSize = master.Size1 ;
+              wireStrip = master.Size2 ;
             }
           }
-        }
 
-        if ( startCeeDModel == null || endCeeDModel == null ) continue ;
-        electricalSymbolModels.Add( startElectricalSymbolModel ) ;
-        electricalSymbolModels.Add( endElectricalSymbolModel ) ;
+          plumbingType = defaultPlumbingType ;
+          var startElectricalSymbolModel = new ElectricalSymbolModel( startUniqueId, startCeeDModel?.FloorPlanType ?? string.Empty, startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+          var endElectricalSymbolModel = new ElectricalSymbolModel( endUniqueId, endCeeDModel?.FloorPlanType ?? string.Empty, endCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+          electricalSymbolModels.Add( startElectricalSymbolModel ) ;
+          electricalSymbolModels.Add( endElectricalSymbolModel ) ;
+        }
       }
 
       SetConnectorProperties( doc, electricalSymbolModels ) ;
@@ -95,14 +111,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       using Transaction transaction = new Transaction( document ) ;
       transaction.Start( "Set connector's properties" ) ;
-      foreach ( var item in electricalSymbolModels ) {
-        var connector =  document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault( c => c.UniqueId == item.UniqueId ) ;
+      var detailTableModelsGroupByUniqueId = electricalSymbolModels.GroupBy( d => d.UniqueId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      foreach ( var (uniqueId, detailTableModelGroupByUniqueId) in detailTableModelsGroupByUniqueId ) {
+        List<string> wiringAndPlumbingTypes = new List<string>() ;
+        List<string> wiringTypes = new List<string>() ;
+        List<string> plumingTypes = new List<string>() ;
+        var detailTableModel = detailTableModelGroupByUniqueId.FirstOrDefault() ;
+        foreach ( var item in detailTableModelGroupByUniqueId ) {
+          var count = detailTableModelGroupByUniqueId.Count( d => d.WireType == item.WireType && d.WireSize == item.WireSize && d.WireStrip == item.WireStrip && d.PipingType == item.PipingType && d.PipingSize == item.PipingSize ) ;
+          string wiringType = $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
+          string plumbingType = "(" + item.PipingType + item.PipingSize + ")" ;
+          if ( wiringAndPlumbingTypes.Contains( wiringType + "-" + plumbingType ) ) continue ;
+          wiringAndPlumbingTypes.Add( wiringType + "-" + plumbingType ) ;
+          wiringTypes.Add( wiringType ) ;
+          plumingTypes.Add( plumbingType ) ;
+        }
+
+        var connector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault( c => c.UniqueId == uniqueId ) ;
         if ( connector == null ) continue ;
         UnGroupConnector( document, connector, connectorGroups ) ;
-        connector.SetProperty( ConnectorFamilyParameter.DeviceSymbol, item.GeneralDisplayDeviceSymbol ) ;
-        connector.SetProperty( ConnectorFamilyParameter.WiringType, $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x 1",15}" ) ;
-        connector.SetProperty( ConnectorFamilyParameter.InPlumbingType, item.PipingType + item.PipingSize ) ;
-        var pathToImage = GetFloorPlanImagePath( item.FloorPlanSymbol ) ;
+        connector.SetProperty( ConnectorFamilyParameter.DeviceSymbol, detailTableModel!.GeneralDisplayDeviceSymbol ) ;
+        connector.SetProperty( ConnectorFamilyParameter.WiringType, string.Join( "\n", wiringTypes ) ) ;
+        connector.SetProperty( ConnectorFamilyParameter.InPlumbingType, string.Join( "\n", plumingTypes ) ) ;
+        var pathToImage = GetFloorPlanImagePath( detailTableModel.FloorPlanSymbol ) ;
         var imageType = document.GetAllElements<ImageType>().FirstOrDefault( i => i.Path == pathToImage ) ?? ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
         Parameter param = connector.get_Parameter( BuiltInParameter.ALL_MODEL_IMAGE ) ;
         param.Set( imageType.Id ) ;
@@ -149,20 +180,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       parentGroup.UngroupMembers() ;
     }
 
-    private static (string, string, string, string, string, string) GetFromConnectorAndToConnectorCeeDCode( Document document, string fromUniqueId, string toUniqueId )
+    private static (string, string, string, string, string, string) GetFromConnectorAndToConnectorCeeDCode( Document document, string routeName )
     {
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
-
-      if ( ! string.IsNullOrEmpty( fromUniqueId ) ) {
+      var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      var fromUniqueId = string.Empty ;
+      var toUniqueId = string.Empty ;
+      foreach ( var conduit in conduitsOfRoute ) {
+        var fromEndPoint = conduit.GetNearestEndPoints( true ).ToList() ;
+        if ( ! fromEndPoint.Any() ) continue ;
+        var fromEndPointKey = fromEndPoint.First().Key ;
+        fromUniqueId = fromEndPointKey.GetElementUniqueId() ;
+        if ( string.IsNullOrEmpty( fromUniqueId ) ) continue ;
         var fromConnector = allConnectors.FirstOrDefault( c => c.UniqueId == fromUniqueId ) ;
         if ( fromConnector!.IsTerminatePoint() || fromConnector!.IsPassPoint() ) {
           fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId, out string? fromConnectorUniqueId ) ;
           if ( ! string.IsNullOrEmpty( fromConnectorUniqueId ) )
-            fromUniqueId= fromConnectorUniqueId! ;
+            fromUniqueId = fromConnectorUniqueId! ;
         }
-      }
 
-      if ( ! string.IsNullOrEmpty( toUniqueId ) ) {
+        var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
+        if ( ! toEndPoint.Any() ) continue ;
+        var toEndPointKey = toEndPoint.First().Key ;
+        toUniqueId = toEndPointKey.GetElementUniqueId() ;
+        if ( string.IsNullOrEmpty( toUniqueId ) ) continue ;
         var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toUniqueId ) ;
         if ( toConnector!.IsTerminatePoint() || toConnector!.IsPassPoint() ) {
           toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorUniqueId, out string? toConnectorUniqueId ) ;
