@@ -19,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly Document _document ;
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly DetailTableViewModel _detailTableViewModel ;
+    public DetailTableViewModel DetailTableViewModelSummary ;
     public readonly Dictionary<string, string> RoutesChangedConstructionItem ;
     public readonly Dictionary<string, string> DetailSymbolsChangedPlumbingType ;
 
@@ -28,6 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _document = document ;
       DataContext = viewModel ;
       _detailTableViewModel = viewModel ;
+      DetailTableViewModelSummary = viewModel ;
       _conduitsModelData = conduitsModelData ;
       RoutesChangedConstructionItem = new Dictionary<string, string>() ;
       DetailSymbolsChangedPlumbingType = new Dictionary<string, string>() ;
@@ -167,6 +169,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DetailTableViewModel newDetailTableViewModel = new DetailTableViewModel( new ObservableCollection<DetailTableModel>( newDetailTableModels ), _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems ) ;
       this.DataContext = newDetailTableViewModel ;
       DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
+      DetailTableViewModelSummary = newDetailTableViewModel ;
     }
   }
 }

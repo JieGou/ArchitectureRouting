@@ -95,7 +95,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         
         return doc.Transaction( "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
         {
-          if ( viewModel.IsCreateSchedule ) {
+          if ( viewModel.IsCreateSchedule || dialog.DetailTableViewModelSummary.IsCreateSchedule ) {
             var (originX, originY, originZ) = uiDoc.Selection.PickPoint() ;
             var level = uiDoc.ActiveView.GenLevel ;
             var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
@@ -106,6 +106,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var txtPosition = new XYZ( originX, originY, heightOfConnector ) ;
             TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( viewModel, level.Name ), opts ) ;
             viewModel.IsCreateSchedule = false ;
+            dialog.DetailTableViewModelSummary.IsCreateSchedule = false ;
           }
 
           return Result.Succeeded ;
