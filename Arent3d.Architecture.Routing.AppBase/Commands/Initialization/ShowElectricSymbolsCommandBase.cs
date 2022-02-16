@@ -98,10 +98,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      SetConnectorProperties( doc, electricalSymbolModels ) ;
       return doc.Transaction( "TransactionName.Commands.Routing.ConduitInformation".GetAppStringByKeyOrDefault( "Create electrical symbol schedules" ), _ =>
       {
-        CreateSchedule( doc ) ;
+        CreateSchedule( doc, electricalSymbolModels ) ;
         return Result.Succeeded ;
       } ) ;
     }
@@ -251,79 +250,102 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( result1, result2 ) ;
     }
 
-    private static void CreateSchedule( Document document )
+    private static void CreateSchedule( Document document, ObservableCollection<ElectricalSymbolModel> electricalSymbolModels )
     {
       const string scheduleName = "Electrical Schedule" ;
       var electricalSchedule = document.GetAllElements<ViewSchedule>().FirstOrDefault( v => v.Name.Contains( scheduleName ) ) ;
-      if ( electricalSchedule != null ) return ;
-      electricalSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
-      electricalSchedule.Name = scheduleName ;
-      AddScheduleFields( document, electricalSchedule ) ;
-      SetScheduleStyle( electricalSchedule ) ;
+      if ( electricalSchedule == null ) {
+        electricalSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
+        electricalSchedule.Name = scheduleName ;
+      }
+
+      CreateScheduleData( document, electricalSchedule, electricalSymbolModels ) ;
     }
 
-    private static void AddScheduleFields( Document document, ViewSchedule viewSchedule )
+    private static void CreateScheduleData( Document document, ViewSchedule viewSchedule, ObservableCollection<ElectricalSymbolModel> electricalSymbolModels )
     {
-      var fields = new List<string>() { "記号", "配線", "配管（屋内）", "配管（屋外）" } ;
-      List<SchedulableField> schedulableFields = new List<SchedulableField>() ;
-      //Get all schedulable fields from view schedule definition.
-      IList<SchedulableField> allSchedulableFields = viewSchedule.Definition.GetSchedulableFields() ;
-      foreach ( SchedulableField sf in allSchedulableFields ) {
-        //Get all schedule field ids
-        IList<ScheduleFieldId> ids = viewSchedule.Definition.GetFieldOrder() ;
-        var fieldAlreadyAdded = ids.Any( id => viewSchedule.Definition.GetField( id ).GetSchedulableField() == sf ) ;
-        //If schedulable field doesn't exist in view schedule, add it.
-        if ( fieldAlreadyAdded == false && ( fields.Contains( sf.GetName( document ) ) || sf.ParameterId == new ElementId( BuiltInParameter.ALL_MODEL_IMAGE ) ) ) {
-          schedulableFields.Add( sf ) ;
+      const int startRowData = 3 ;
+      var fields = new List<string>()
+      {
+        "シンボル",
+        "記号",
+        "配線",
+        "（屋内）",
+        "（屋外）"
+      } ;
+      TableData tableData = viewSchedule.GetTableData() ;
+      TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
+      var rowCount = tsdHeader.NumberOfRows ;
+      var columnCount = tsdHeader.NumberOfColumns ;
+
+      // remove old data
+      if ( columnCount != 1 ) {
+        for ( var i = 1 ; i < rowCount ; i++ ) {
+          tsdHeader.RemoveRow( tsdHeader.FirstRowNumber ) ;
+        }
+
+        for ( var i = 1 ; i < columnCount ; i++ ) {
+          tsdHeader.RemoveColumn( tsdHeader.FirstColumnNumber ) ;
         }
       }
 
-      var imageField = schedulableFields.FirstOrDefault( f => f.ParameterId == new ElementId( BuiltInParameter.ALL_MODEL_IMAGE ) ) ;
-      if ( imageField != null ) {
-        var floorPlanSymbolField = viewSchedule.Definition.AddField( imageField ) ;
-        floorPlanSymbolField.ColumnHeading = "シンボル" ;
-      }
+      var electricalSymbolModelsGroupByUniqueId = electricalSymbolModels.GroupBy( d => d.UniqueId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      List<string> floorPlanSymbols = new List<string>() ;
+      List<string> generalDisplayDeviceSymbols = new List<string>() ;
+      List<string> wiringTypes = new List<string>() ;
+      List<string> plumingTypes = new List<string>() ;
+      SummarizeElectricalSymbolByUniqueId( electricalSymbolModelsGroupByUniqueId, ref floorPlanSymbols, ref generalDisplayDeviceSymbols, ref wiringTypes, ref plumingTypes ) ;
 
-      foreach ( var schedulableField in fields.Select( field => schedulableFields.FirstOrDefault( s => s.GetName( document ) == field ) ).Where( schedulableField => schedulableField != null ) ) {
-        var scheduleField = viewSchedule.Definition.AddField( schedulableField ) ;
-        if ( schedulableField == null || schedulableField.GetName( document ) != "記号" ) continue ;
-        var filter = new ScheduleFilter( scheduleField.FieldId, ScheduleFilterType.NotEqual, string.Empty ) ;
-        viewSchedule.Definition.AddFilter( filter ) ;
-      }
-
-      viewSchedule.Definition.ShowHeaders = false ;
-    }
-
-    private static void SetScheduleStyle( ViewSchedule viewSchedule )
-    {
-      var fields = new List<string>() { "シンボル", "記号", "配線", "（屋内）", "（屋外）" } ;
-      TableData tableData = viewSchedule.GetTableData() ;
-      TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
-      TableSectionData tsdBody = tableData.GetSectionData( SectionType.Body ) ;
-
-      for ( var i = 0 ; i < 4 ; i++ ) {
+      for ( var i = 1 ; i < fields.Count ; i++ ) {
         tsdHeader.InsertColumn( i ) ;
       }
 
-      tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
-      tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
+      for ( var i = 1 ; i < wiringTypes.Count + startRowData ; i++ ) {
+        tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
+      }
 
-      TableCellStyleOverrideOptions options = new TableCellStyleOverrideOptions { FontSize = true, Bold = true } ;
-      TableCellStyle tcs = new TableCellStyle() ;
-      tcs.SetCellStyleOverrideOptions( options ) ;
-      tcs.FontHorizontalAlignment = HorizontalAlignmentStyle.Left ;
-      tsdHeader.SetCellStyle( 0, 0, tcs ) ;
+      // Set columns name
       tsdHeader.MergeCells( new TableMergedCell( 0, 0, 0, 4 ) ) ;
       tsdHeader.SetCellText( 0, 0, "機器凡例" ) ;
       tsdHeader.MergeCells( new TableMergedCell( 1, 3, 1, 4 ) ) ;
       tsdHeader.SetCellText( 1, 3, "配管" ) ;
 
-      for ( var i = 0 ; i < 5 ; i++ ) {
+      for ( var i = 0 ; i < fields.Count ; i++ ) {
         if ( i < 3 ) tsdHeader.MergeCells( new TableMergedCell( 1, i, 2, i ) ) ;
-        tsdHeader.SetCellText( i < 3 ? 1 : tsdHeader.LastRowNumber, i, fields.ElementAt( i ) ) ;
-        var columnWidth = i is 2 or 3 ? 0.2 : 0.15 ;
+        tsdHeader.SetCellText( i < 3 ? 1 : 2, i, fields.ElementAt( i ) ) ;
+        var columnWidth = i == 2 ? 0.2 : 0.1 ;
         tsdHeader.SetColumnWidth( i, columnWidth ) ;
-        tsdBody.SetColumnWidth( i, columnWidth ) ;
+      }
+      
+      for ( var j = 0 ; j < wiringTypes.Count ; j++ ) {
+        if ( ! string.IsNullOrEmpty( floorPlanSymbols.ElementAt( j ) ) ) {
+          var pathToImage = GetFloorPlanImagePath( floorPlanSymbols.ElementAt( j ) ) ;
+          var imageType = document.GetAllElements<ImageType>().FirstOrDefault( i => i.Path == pathToImage ) ?? ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
+          tsdHeader.InsertImage( startRowData + j, 0, imageType.Id ) ;
+          tsdHeader.SetCellText( startRowData + j, 1, generalDisplayDeviceSymbols.ElementAt( j ) ) ;
+        }
+
+        tsdHeader.SetCellText( startRowData + j, 2, wiringTypes.ElementAt( j ) ) ;
+        tsdHeader.SetCellText( startRowData + j, 3, plumingTypes.ElementAt( j ) ) ;
+      }
+    }
+
+    private static void SummarizeElectricalSymbolByUniqueId( Dictionary<string, List<ElectricalSymbolModel>> electricalSymbolModelsGroupByUniqueId, ref List<string> floorPlanSymbols, ref List<string> generalDisplayDeviceSymbols, ref List<string> wiringTypes, ref List<string> plumingTypes )
+    {
+      foreach ( var (_, electricalSymbolModels) in electricalSymbolModelsGroupByUniqueId ) {
+        List<string> wiringAndPlumbingTypes = new List<string>() ;
+        var detailTableModel = electricalSymbolModels.FirstOrDefault() ;
+        foreach ( var item in electricalSymbolModels ) {
+          var count = electricalSymbolModels.Count( d => d.WireType == item.WireType && d.WireSize == item.WireSize && d.WireStrip == item.WireStrip && d.PipingType == item.PipingType && d.PipingSize == item.PipingSize ) ;
+          string wiringType = $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
+          string plumbingType = "(" + item.PipingType + item.PipingSize + ")" ;
+          if ( wiringAndPlumbingTypes.Contains( wiringType + "-" + plumbingType ) ) continue ;
+          wiringAndPlumbingTypes.Add( wiringType + "-" + plumbingType ) ;
+          floorPlanSymbols.Add( wiringAndPlumbingTypes.Count == 1 ? detailTableModel!.FloorPlanSymbol : string.Empty ) ;
+          generalDisplayDeviceSymbols.Add( wiringAndPlumbingTypes.Count == 1 ? detailTableModel!.GeneralDisplayDeviceSymbol : string.Empty ) ;
+          wiringTypes.Add( wiringType ) ;
+          plumingTypes.Add( plumbingType ) ;
+        }
       }
     }
 
