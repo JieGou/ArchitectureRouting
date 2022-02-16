@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing
 {
   public class ObstacleGeneration
   {
-    public static List<List<Box3d>> GetAllObstacleRoomBox( Document doc )
+    public static List<List<Box3d>> GetAllObstacleRoomBox( Document doc, bool show )
     {
       var listOut = new List<List<Box3d>>() ;
       var linkedDocumentFilter = GetLinkedDocFilter( doc, doc.Application ) ;
@@ -21,9 +21,6 @@ namespace Arent3d.Architecture.Routing
       var allRooms = GetAllRoomInCurrentAndLinkedDocument( linkedDocumentFilter, currentDocumentFilter ) ;
       var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
       var otherRooms = allRooms.Except( livingRooms ).ToList() ;
-
-      var res = MessageBox.Show( "PriorityBoxを表示しますか？", "通知", MessageBoxButton.OKCancel, MessageBoxImage.Information ) ;
-      bool show = true ;
 
       var otherListBox3d = CreateBox3dFromOther( otherRooms, doc, show ) ;
       var livingListBox3d = CreateBox3dFromLivingRoom( livingRooms, doc, show ) ;
@@ -60,7 +57,7 @@ namespace Arent3d.Architecture.Routing
       return rooms ;
     }
 
-    private static List<List<Box3d>> CreateBox3dFromOther( List<Room> list, Document document, bool? show )
+    private static List<List<Box3d>> CreateBox3dFromOther( List<Room> list, Document document, bool show )
     {
       var listOut = new List<List<Box3d>>() ;
       foreach ( var room in list ) {
@@ -71,13 +68,13 @@ namespace Arent3d.Architecture.Routing
         var box3d = new Box3d( min.To3dRaw(), max.To3dRaw() ) ;
         listOut.Add( new List<Box3d>() { box3d } ) ;
         var height = ( max.Z - min.Z ) ;
-        if ( show == true ) CreateBoxGenericModelInPlace( min, max, height, document, room.Name ) ;
+        if ( show ) CreateBoxGenericModelInPlace( min, max, height, document, room.Name ) ;
       }
 
       return listOut ;
     }
 
-    private static List<List<Box3d>> CreateBox3dFromLivingRoom( List<Room> list, Document document, bool? show )
+    private static List<List<Box3d>> CreateBox3dFromLivingRoom( List<Room> list, Document document, bool show )
     {
       var listOut = new List<List<Box3d>>() ;
       var option = new SpatialElementBoundaryOptions() ;
@@ -134,10 +131,10 @@ namespace Arent3d.Architecture.Routing
             rectangular.Height = height ;
             var box3d = new Box3d( rectangular.GetMin().To3dRaw(), rectangular.GetMax().To3dRaw() ) ;
             listInRoom.Add( box3d ) ;
-            if ( show == true ) {
-              var index = listRec.IndexOf( rectangular ) ;
-              CreateBoxGenericModelInPlace( rectangular.GetMin(), rectangular.GetMax(), height, document, $"{room.Name}_{index}" ) ;
-            }
+
+            if ( ! show ) continue ;
+            var index = listRec.IndexOf( rectangular ) ;
+            CreateBoxGenericModelInPlace( rectangular.GetMin(), rectangular.GetMax(), height, document, $"{room.Name}_{index}" ) ;
           }
 
           if ( listInRoom.Count != 0 ) listOut.Add( listInRoom ) ;

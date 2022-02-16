@@ -100,7 +100,7 @@ namespace Arent3d.Architecture.Routing
       LineId = $"{firstSubRoute.Route.RouteName}@{firstSubRoute.SubRouteIndex}" ;
 
       var trueFixedBopHeight = firstSubRoute.GetTrueFixedBopHeight( FixedHeightUsage.Default ) ;
-      var listListBox3dRoom = ObstacleGeneration.GetAllObstacleRoomBox( document ) ;
+      var listListBox3dRoom = ObstacleGeneration.GetAllObstacleRoomBox( document , false) ;
       Condition = new AutoRoutingCondition( document, firstSubRoute, priorities[ firstSubRoute.Route ], trueFixedBopHeight , listListBox3dRoom) ;
     }
 
@@ -114,7 +114,7 @@ namespace Arent3d.Architecture.Routing
       _ep2SubRoute = new Dictionary<AutoRoutingEndPoint, SubRoute> { { fromEndPoint, subRoute }, { toEndPoint, subRoute } } ;
 
       LineId = $"{subRoute.Route.RouteName}@{subRoute.SubRouteIndex}" ;
-      var listListBox3dRoom = ObstacleGeneration.GetAllObstacleRoomBox( document ) ;
+      var listListBox3dRoom = ObstacleGeneration.GetAllObstacleRoomBox( document , false) ;
       Condition = new AutoRoutingCondition( document, subRoute, priority, forcedFixedHeight, listListBox3dRoom ) ;
     }
 
