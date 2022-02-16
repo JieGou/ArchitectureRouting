@@ -37,10 +37,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           var document = commandData.Application.ActiveUIDocument.Document ;
           using var tran = new Transaction( document, "Create PriorityBox" ) ;
           tran.Start() ;
+          var collector = new FilteredElementCollector( document ) ;
+          ElementCategoryFilter filterGen = new(BuiltInCategory.OST_GenericModel) ;
+          var pvp = new ParameterValueProvider( new ElementId( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ) ) ;
+          var fRule = new FilterStringRule( pvp, new FilterStringContains(), "ROOM_BOX", true ) ;
+          var filterComment = new ElementParameterFilter( fRule ) ;
+          var allRoomBox = collector.WherePasses( filterGen ).WherePasses( filterComment ).WhereElementIsNotElementType().ToElementIds() ;
+
+          if ( allRoomBox.Any() ) document.Delete( allRoomBox ) ;
           ObstacleGeneration.GetAllObstacleRoomBox( document, true ) ;
           tran.Commit() ;
         }
       }
+
       base.AfterCommand( commandSpanResource ) ;
     }
 
