@@ -200,7 +200,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var plumbing = conduitsModels.Last() ;
             parentDetailTableModel.PlumbingType = parentDetailTableModel.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             parentDetailTableModel.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
-            parentDetailTableModel.ParentPlumbingType = parentDetailTableModel.PlumbingType + parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType ;
+            parentDetailTableModel.ParentPlumbingType = plumbingType + parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType ;
             detailTableModelsSamePlumbing.Add( parentDetailTableModel.ParentPlumbingType, childDetailTableModels ) ;
             childDetailTableModels = new List<DetailTableModel>() ;
             plumbingCount++ ;
@@ -218,7 +218,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
               parentDetailTableModel.PlumbingType = parentDetailTableModel.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
               parentDetailTableModel.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-              parentDetailTableModel.ParentPlumbingType = parentDetailTableModel.PlumbingType + parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType ;
+              parentDetailTableModel.ParentPlumbingType = plumbingType + parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType ;
               detailTableModelsSamePlumbing.Add( parentDetailTableModel.ParentPlumbingType, childDetailTableModels ) ;
               plumbingCount++ ;
             }

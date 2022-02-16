@@ -27,156 +27,83 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var ceeDStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      if ( ceeDStorable == null ) return Result.Failed ;
+      if ( ceeDStorable == null ) return Result.Cancelled ;
       var csvStorable = doc.GetCsvStorable() ;
       var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
       var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
       var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
       var detailTableModelData = doc.GetDetailTableStorable().DetailTableModelData ;
-      var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ) ;
-      var routePicked = pickedObjects.Select( e => e.GetRouteName() ).Distinct().ToList() ;
       var electricalSymbolModels = new ObservableCollection<ElectricalSymbolModel>() ;
-      foreach ( var routeName in routePicked ) {
-        string wireType = string.Empty ;
-        string wireSize = string.Empty ;
-        string wireStrip = string.Empty ;
-        string plumbingType = string.Empty ;
-        var plumbingSize = string.Empty ;
-        var (startUniqueId, startCeeDSymbol, startCondition, endUniqueId, endCeeDSymbol, endCondition) = GetFromConnectorAndToConnectorCeeDCode( doc, routeName! ) ;
-        var startCeeDModel = ceeDStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( startCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( startCeeDSymbol.Trim( '\r' ) ) ) ;
-        var endCeeDModel = ceeDStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( endCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( endCeeDSymbol.Trim( '\r' ) ) ) ;
-        if ( startCeeDModel == null || endCeeDModel == null ) continue ;
-        var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
-        if ( detailTableModelData.Any() && detailTableModelsByRouteName.Any() ) {
-          foreach ( var element in detailTableModelsByRouteName ) {
-            wireType = element.WireType ;
-            wireSize = element.WireSize ;
-            wireStrip = element.WireStrip ;
-            if ( element.IsParentRoute ) {
-              plumbingType = element.PlumbingType ;
-              plumbingSize = element.PlumbingSize ;
+      try {
+        var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ) ;
+        var routePicked = pickedObjects.Select( e => e.GetRouteName() ).Distinct().ToList() ;
+        foreach ( var routeName in routePicked ) {
+          string wireType = string.Empty ;
+          string wireSize = string.Empty ;
+          string wireStrip = string.Empty ;
+          string plumbingType ;
+          var plumbingSize = string.Empty ;
+          var (startUniqueId, startCeeDSymbol, startCondition, endUniqueId, endCeeDSymbol, endCondition) = GetFromConnectorAndToConnectorCeeDCode( doc, routeName! ) ;
+          var startCeeDModel = ceeDStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( startCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( startCeeDSymbol.Trim( '\r' ) ) ) ;
+          var endCeeDModel = ceeDStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( endCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( endCeeDSymbol.Trim( '\r' ) ) ) ;
+          if ( startCeeDModel == null || endCeeDModel == null ) continue ;
+          var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
+          if ( detailTableModelData.Any() && detailTableModelsByRouteName.Any() ) {
+            foreach ( var element in detailTableModelsByRouteName ) {
+              wireType = element.WireType ;
+              wireSize = element.WireSize ;
+              wireStrip = element.WireStrip ;
+              if ( element.IsParentRoute ) {
+                plumbingType = element.PlumbingType ;
+                plumbingSize = element.PlumbingSize ;
+              }
+              else {
+                plumbingType = element.ParentPlumbingType.Split( '-' ).First() ;
+              }
+
+              var startElectricalSymbolModel = new ElectricalSymbolModel( startUniqueId, startCeeDModel?.FloorPlanType ?? string.Empty, startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+              var endElectricalSymbolModel = new ElectricalSymbolModel( endUniqueId, endCeeDModel?.FloorPlanType ?? string.Empty, endCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+              electricalSymbolModels.Add( startElectricalSymbolModel ) ;
+              electricalSymbolModels.Add( endElectricalSymbolModel ) ;
             }
-            else {
-              var parentRouteDetailTableModel = detailTableModelData.FirstOrDefault( d => d.DetailSymbolId == element.DetailSymbolId && d.IsParentRoute ) ;
-              if ( parentRouteDetailTableModel != null ) {
-                plumbingType = parentRouteDetailTableModel.PlumbingType ;
-                plumbingSize = parentRouteDetailTableModel.PlumbingSize ;
+          }
+          else {
+            var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).ToList() ;
+            var endConnector = allConnectors.FirstOrDefault( c => c.UniqueId == endUniqueId ) ;
+            endConnector!.TryGetProperty( RoutingFamilyLinkedParameter.IsEcoMode, out string? isEcoMode ) ;
+            var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode! ) ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( endCeeDModel.CeeDModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( endCeeDModel.CeeDModelNumber ) ).Skip( 1 ) ;
+            foreach ( var item in hiroiSetModels ) {
+              List<string> listMaterialCode = new List<string>() ;
+              if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
+                listMaterialCode.Add( int.Parse( item.MaterialCode1 ).ToString() ) ;
+              }
+
+              if ( ! listMaterialCode.Any() ) continue ;
+              var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
+              foreach ( var master in masterModels ) {
+                wireType = master.Type ;
+                wireSize = master.Size1 ;
+                wireStrip = master.Size2 ;
               }
             }
 
+            plumbingType = defaultPlumbingType ;
             var startElectricalSymbolModel = new ElectricalSymbolModel( startUniqueId, startCeeDModel?.FloorPlanType ?? string.Empty, startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
             var endElectricalSymbolModel = new ElectricalSymbolModel( endUniqueId, endCeeDModel?.FloorPlanType ?? string.Empty, endCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
             electricalSymbolModels.Add( startElectricalSymbolModel ) ;
             electricalSymbolModels.Add( endElectricalSymbolModel ) ;
           }
         }
-        else {
-          var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).ToList() ;
-          var endConnector = allConnectors.FirstOrDefault( c => c.UniqueId == endUniqueId ) ;
-          string isEcoMode = endConnector!.LookupParameter( "IsEcoMode" ).AsString() ;
-          var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( endCeeDModel.CeeDModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( endCeeDModel.CeeDModelNumber ) ).Skip( 1 ) ;
-          foreach ( var item in hiroiSetModels ) {
-            List<string> listMaterialCode = new List<string>() ;
-            if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
-              listMaterialCode.Add( int.Parse( item.MaterialCode1 ).ToString() ) ;
-            }
-
-            if ( ! listMaterialCode.Any() ) continue ;
-            var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
-            foreach ( var master in masterModels ) {
-              wireType = master.Type ;
-              wireSize = master.Size1 ;
-              wireStrip = master.Size2 ;
-            }
-          }
-
-          plumbingType = defaultPlumbingType ;
-          var startElectricalSymbolModel = new ElectricalSymbolModel( startUniqueId, startCeeDModel?.FloorPlanType ?? string.Empty, startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
-          var endElectricalSymbolModel = new ElectricalSymbolModel( endUniqueId, endCeeDModel?.FloorPlanType ?? string.Empty, endCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
-          electricalSymbolModels.Add( startElectricalSymbolModel ) ;
-          electricalSymbolModels.Add( endElectricalSymbolModel ) ;
-        }
+      }
+      catch {
+        return Result.Cancelled ;
       }
 
-      return doc.Transaction( "TransactionName.Commands.Routing.ConduitInformation".GetAppStringByKeyOrDefault( "Create electrical symbol schedules" ), _ =>
+      return doc.Transaction( "TransactionName.Commands.Initialization.ShowElectricSymbolsCommand".GetAppStringByKeyOrDefault( "Create electrical schedule" ), _ =>
       {
-        CreateSchedule( doc, electricalSymbolModels ) ;
+        CreateElectricalSchedule( doc, electricalSymbolModels ) ;
         return Result.Succeeded ;
       } ) ;
-    }
-
-    private static void SetConnectorProperties( Document document, ObservableCollection<ElectricalSymbolModel> electricalSymbolModels )
-    {
-      Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
-      using Transaction transaction = new Transaction( document ) ;
-      transaction.Start( "Set connector's properties" ) ;
-      var detailTableModelsGroupByUniqueId = electricalSymbolModels.GroupBy( d => d.UniqueId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-      foreach ( var (uniqueId, detailTableModelGroupByUniqueId) in detailTableModelsGroupByUniqueId ) {
-        List<string> wiringAndPlumbingTypes = new List<string>() ;
-        List<string> wiringTypes = new List<string>() ;
-        List<string> plumingTypes = new List<string>() ;
-        var detailTableModel = detailTableModelGroupByUniqueId.FirstOrDefault() ;
-        foreach ( var item in detailTableModelGroupByUniqueId ) {
-          var count = detailTableModelGroupByUniqueId.Count( d => d.WireType == item.WireType && d.WireSize == item.WireSize && d.WireStrip == item.WireStrip && d.PipingType == item.PipingType && d.PipingSize == item.PipingSize ) ;
-          string wiringType = $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
-          string plumbingType = "(" + item.PipingType + item.PipingSize + ")" ;
-          if ( wiringAndPlumbingTypes.Contains( wiringType + "-" + plumbingType ) ) continue ;
-          wiringAndPlumbingTypes.Add( wiringType + "-" + plumbingType ) ;
-          wiringTypes.Add( wiringType ) ;
-          plumingTypes.Add( plumbingType ) ;
-        }
-
-        var connector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault( c => c.UniqueId == uniqueId ) ;
-        if ( connector == null ) continue ;
-        UnGroupConnector( document, connector, connectorGroups ) ;
-        connector.SetProperty( ConnectorFamilyParameter.DeviceSymbol, detailTableModel!.GeneralDisplayDeviceSymbol ) ;
-        connector.SetProperty( ConnectorFamilyParameter.WiringType, string.Join( "\n", wiringTypes ) ) ;
-        connector.SetProperty( ConnectorFamilyParameter.InPlumbingType, string.Join( "\n", plumingTypes ) ) ;
-        var pathToImage = GetFloorPlanImagePath( detailTableModel.FloorPlanSymbol ) ;
-        var imageType = document.GetAllElements<ImageType>().FirstOrDefault( i => i.Path == pathToImage ) ?? ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
-        Parameter param = connector.get_Parameter( BuiltInParameter.ALL_MODEL_IMAGE ) ;
-        param.Set( imageType.Id ) ;
-      }
-
-      var connectorUniqueIds = electricalSymbolModels.Select( c => c.UniqueId ).ToList() ;
-      var connectorsNotSchedule = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( c => ! connectorUniqueIds.Contains( c.UniqueId ) && c is FamilyInstance ).ToList() ;
-      foreach ( var connector in connectorsNotSchedule ) {
-        UnGroupConnector( document, connector, connectorGroups ) ;
-        connector.SetProperty( ConnectorFamilyParameter.DeviceSymbol, string.Empty ) ;
-        connector.SetProperty( ConnectorFamilyParameter.WiringType, string.Empty ) ;
-        connector.SetProperty( ConnectorFamilyParameter.InPlumbingType, string.Empty ) ;
-      }
-
-      transaction.Commit() ;
-
-      using Transaction transaction2 = new Transaction( document ) ;
-      transaction2.Start( "Group connector" ) ;
-      foreach ( var (connectorId, textNoteIds) in connectorGroups ) {
-        // create group for updated connector (with new property) and related text note if any
-        List<ElementId> groupIds = new List<ElementId> { connectorId } ;
-        groupIds.AddRange( textNoteIds ) ;
-        document.Create.NewGroup( groupIds ) ;
-      }
-
-      transaction2.Commit() ;
-    }
-
-    private static void UnGroupConnector( Document document, Element connector, Dictionary<ElementId, List<ElementId>> connectorGroups )
-    {
-      var parentGroup = document.GetElement( connector.GroupId ) as Group ;
-      if ( parentGroup == null ) return ;
-      // ungroup before set property
-      var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-      List<ElementId> listTextNoteIds = new List<ElementId>() ;
-      // ungroup textNote before ungroup connector
-      foreach ( var group in attachedGroup ) {
-        var ids = @group.GetMemberIds() ;
-        listTextNoteIds.AddRange( ids ) ;
-        @group.UngroupMembers() ;
-      }
-
-      connectorGroups.Add( connector.Id, listTextNoteIds ) ;
-      parentGroup.UngroupMembers() ;
     }
 
     private static (string, string, string, string, string, string) GetFromConnectorAndToConnectorCeeDCode( Document document, string routeName )
@@ -250,7 +177,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return ( result1, result2 ) ;
     }
 
-    private static void CreateSchedule( Document document, ObservableCollection<ElectricalSymbolModel> electricalSymbolModels )
+    private static void CreateElectricalSchedule( Document document, ObservableCollection<ElectricalSymbolModel> electricalSymbolModels )
     {
       const string scheduleName = "Electrical Schedule" ;
       var electricalSchedule = document.GetAllElements<ViewSchedule>().FirstOrDefault( v => v.Name.Contains( scheduleName ) ) ;
@@ -296,8 +223,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       List<string> plumingTypes = new List<string>() ;
       SummarizeElectricalSymbolByUniqueId( electricalSymbolModelsGroupByUniqueId, ref floorPlanSymbols, ref generalDisplayDeviceSymbols, ref wiringTypes, ref plumingTypes ) ;
 
-      for ( var i = 1 ; i < fields.Count ; i++ ) {
-        tsdHeader.InsertColumn( i ) ;
+      for ( var i = 0 ; i < fields.Count ; i++ ) {
+        if ( i != 2 ) tsdHeader.InsertColumn( i ) ;
       }
 
       for ( var i = 1 ; i < wiringTypes.Count + startRowData ; i++ ) {
