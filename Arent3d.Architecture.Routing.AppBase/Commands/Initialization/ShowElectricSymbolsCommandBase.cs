@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var (startUniqueId, startCeeDSymbol, startCondition, endUniqueId, endCeeDSymbol, endCondition) = GetFromConnectorAndToConnectorCeeDCode( doc, routeName! ) ;
           var startCeeDModel = ceeDStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( startCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( startCeeDSymbol.Trim( '\r' ) ) ) ;
           var endCeeDModel = ceeDStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( endCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( endCeeDSymbol.Trim( '\r' ) ) ) ;
-          if ( startCeeDModel == null || endCeeDModel == null ) continue ;
+          if ( startCeeDModel == null && endCeeDModel == null ) continue ;
           var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
           if ( detailTableModelData.Any() && detailTableModelsByRouteName.Any() ) {
             foreach ( var element in detailTableModelsByRouteName ) {
@@ -61,10 +61,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                 plumbingType = element.ParentPlumbingType.Split( '-' ).First() ;
               }
 
-              var startElectricalSymbolModel = new ElectricalSymbolModel( startUniqueId, startCeeDModel?.FloorPlanType ?? string.Empty, startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
-              var endElectricalSymbolModel = new ElectricalSymbolModel( endUniqueId, endCeeDModel?.FloorPlanType ?? string.Empty, endCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
-              electricalSymbolModels.Add( startElectricalSymbolModel ) ;
-              electricalSymbolModels.Add( endElectricalSymbolModel ) ;
+              if ( startCeeDModel != null ) {
+                var startElectricalSymbolModel = new ElectricalSymbolModel( startUniqueId, startCeeDModel?.FloorPlanType ?? string.Empty, startCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+                electricalSymbolModels.Add( startElectricalSymbolModel ) ;
+              }
+
+              if ( endCeeDModel != null ) {
+                var endElectricalSymbolModel = new ElectricalSymbolModel( endUniqueId, endCeeDModel?.FloorPlanType ?? string.Empty, endCeeDModel?.GeneralDisplayDeviceSymbol ?? string.Empty, wireType, wireSize, wireStrip, plumbingType, plumbingSize ) ;
+                electricalSymbolModels.Add( endElectricalSymbolModel ) ;
+              }
             }
           }
           else {
@@ -243,7 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var columnWidth = i == 2 ? 0.2 : 0.1 ;
         tsdHeader.SetColumnWidth( i, columnWidth ) ;
       }
-      
+
       for ( var j = 0 ; j < wiringTypes.Count ; j++ ) {
         if ( ! string.IsNullOrEmpty( floorPlanSymbols.ElementAt( j ) ) ) {
           var pathToImage = GetFloorPlanImagePath( floorPlanSymbols.ElementAt( j ) ) ;
