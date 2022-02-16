@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private UIDocument UiDocument { get ; }
 
-    public FromToWindow( IFromToWindowBehaviour behaviour, UIDocument uiDoc, ObservableCollection<FromToItems> fromToItemsList ) : base( uiDoc )
+    public FromToWindow( IFromToWindowBehaviour behaviour, UIApplication uiApplication, ObservableCollection<FromToItems> fromToItemsList ) : base( uiApplication )
     {
       InitializeComponent() ;
 
@@ -30,7 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Title = behaviour.Title ;
 
       FromToItemsList = fromToItemsList ;
-      UiDocument = uiDoc;
+      UiDocument = uiApplication.ActiveUIDocument ;
     }
 
     public class FromToItems

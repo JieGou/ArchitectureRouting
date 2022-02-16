@@ -12,12 +12,13 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class CsvModelDialog : Window
+  public partial class CsvModelDialog
   {
     private readonly Document _document ;
     private List<WiresAndCablesModel> _allWiresAndCablesModels ;
@@ -29,11 +30,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private List<HiroiMasterModel> _allHiroiMasterModels ;
     private List<CeedModel> _ceeDModelData ;
 
-    public CsvModelDialog( Document document )
+    public CsvModelDialog( UIApplication uiApplication ) : base( uiApplication )
     {
       InitializeComponent() ;
 
-      _document = document ;
+      _document = uiApplication.ActiveUIDocument.Document ;
       _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
       _allConduitModels = new List<ConduitsModel>() ;
       _allHiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
@@ -46,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_Save( object sender, RoutedEventArgs e )
     {
-      using var progress = ProgressBar.ShowWithNewThread( new CancellationTokenSource() ) ;
+      using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
       progress.Message = "Saving data..." ;
       using ( var progressData = progress?.Reserve( 0.5 ) ) {
         CsvStorable csvStorable = _document.GetCsvStorable() ;

@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
 
-      var dlgCeeDModel = new CeeDModelDialog( doc ) ;
+      var dlgCeeDModel = new CeeDModelDialog( commandData.Application ) ;
 
       dlgCeeDModel.ShowDialog() ;
       if ( ! ( dlgCeeDModel.DialogResult ?? false ) ) return Result.Cancelled ;
