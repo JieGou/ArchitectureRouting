@@ -1,5 +1,6 @@
 ﻿using System ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -22,9 +23,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         var dp = _uiDocument.Application.GetDockablePane( dpid ) ;
         if ( ! dp.IsShown() ) {
           dp.Show() ;
+          AppBaseManager.Instance.HasekoDockPanelId = dp.Id ;
+          AppBaseManager.Instance.IsFocusHasekoDockPanel = true ;
         }
         else {
           dp.Hide() ;
+          AppBaseManager.Instance.HasekoDockPanelId = null ;
+          AppBaseManager.Instance.IsFocusHasekoDockPanel = false ;
         }
       }
       catch ( Exception e ) {

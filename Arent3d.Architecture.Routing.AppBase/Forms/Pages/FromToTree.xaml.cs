@@ -4,6 +4,7 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Input ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
@@ -72,6 +73,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private FromToItem? SelectedLeftItem { get ; set ; }
     
     public string TitleLabel { get ; }
+    
+    // focus dockpanel event does not work in Revit
+    public DockablePaneId? DpId { get ; set ; }
     
     public IPostCommandExecutorBase PostCommandExecutor { get ; }
     
@@ -241,6 +245,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void FromToTreeView_OnSelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
     {
       var selectedItem = FromToTreeView.SelectedItem ;
+
+      if ( AppBaseManager.Instance.HasekoDockPanelId == DpId ) {
+        AppBaseManager.Instance.IsFocusHasekoDockPanel = true ;
+      }
+      else {
+        AppBaseManager.Instance.IsFocusHasekoDockPanel = false ;
+      }
       
       if ( selectedItem is FromToItem selectedFromToItem ) {
         selectedFromToItem.OnSelected() ;

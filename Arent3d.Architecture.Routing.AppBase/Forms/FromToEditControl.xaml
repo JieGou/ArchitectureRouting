@@ -148,24 +148,27 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
 
-            <Label Content="Via PS"
+            <Label Content="Via PS" Margin="0 5 0 2.5"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Grid.Column="0"
-                   Grid.Row="3" />
+                   Grid.Row="3" 
+                   Visibility="{Binding IsVisibility, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"/>
 
-            <CheckBox Grid.Column="1"
+            <CheckBox Grid.Column="1" Margin="0 5 0 2.5"
                       Grid.Row="3"
                       IsChecked="{Binding IsRouteOnPipeSpace, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       Checked="Direct_OnChecked"
                       Unchecked="Direct_OnUnchecked"
                       HorizontalAlignment="Left"
-                      VerticalAlignment="Center" />
+                      VerticalAlignment="Center" 
+                      Visibility="{Binding IsVisibility, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"/>
 
             <Label Grid.Row="4" Grid.Column="0" Content="First connector through height"
                    HorizontalAlignment="Left"
-                   VerticalAlignment="Center" />
-            <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"
+                   VerticalAlignment="Center" 
+                   Margin="0 2.5 0 5"/>
+            <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"  Margin="0 2.5 0 5"
                         Orientation="Horizontal">
                 <CheckBox x:Name="FromHeightSetting" Margin="0,0,0,0"
                           IsChecked="{Binding UseFromFixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
@@ -227,7 +230,8 @@
 
             <Label Grid.Row="5" Grid.Column="0" Content="Second connector through height"
                    HorizontalAlignment="Left"
-                   VerticalAlignment="Center">
+                   VerticalAlignment="Center"
+                   Visibility="{Binding IsVisibility, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}">
                 <Label.Style>
                     <Style TargetType="Label">
                         <Setter Property="Visibility" Value="Hidden"/>
@@ -240,7 +244,8 @@
                 </Label.Style>
             </Label>
             <StackPanel Grid.Row="5" Grid.Column="1" VerticalAlignment="Center"
-                        Orientation="Horizontal">
+                        Orientation="Horizontal"
+                        Visibility="{Binding IsVisibility, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}">
                 <StackPanel.Style>
                     <Style TargetType="StackPanel">
                         <Setter Property="Visibility" Value="Hidden"/>

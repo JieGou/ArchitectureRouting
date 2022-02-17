@@ -22,10 +22,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       FromToTreeView = new FromToTree( fromToTreeTitle, postCommandExecutor, fromToItemsUi ) ;
       UiControlledApplication = uiControlledApplication ;
       DpId = new DockablePaneId( dpId ) ;
+      FromToTreeView.DpId = DpId ;
       PostCommandExecutor = postCommandExecutor ;
       InitializeDockablePane( fromToItemsUi ) ;
       // subscribe DockableFrameVisibilityChanged event
       uiControlledApplication.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>( UIControlledApplication_DockableVisibilityChanged ) ;
+      // subscribe DockableFrameFocusChanged event
+      uiControlledApplication.DockableFrameFocusChanged += new EventHandler<DockableFrameFocusChangedEventArgs>(UIControlledApplication_DockableFrameFocusChanged) ;
     }
 
     private void InitializeDockablePane( FromToItemsUiBase fromToItemsUi )
@@ -46,7 +49,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( ! DockablePane.PaneExists( DpId ) ) return ;
       if ( Dockable != null ) {
         RibbonHelper.ToggleShowFromToTreeCommandButton( dockableFrameVisibilityChangedEventArgs.DockableFrameShown ) ;
+
+        if ( ! dockableFrameVisibilityChangedEventArgs.DockableFrameShown &&
+             null != AppBaseManager.Instance.HasekoDockPanelId ) {
+          AppBaseManager.Instance.HasekoDockPanelId = null ;
+          AppBaseManager.Instance.IsFocusHasekoDockPanel = false ;
+        }
       }
+    }
+    
+    /// <summary>
+    /// Change DockPanel Id
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="dockableFrameFocusChangedEventArgs"></param>
+    private void UIControlledApplication_DockableFrameFocusChanged(object sender, DockableFrameFocusChangedEventArgs dockableFrameFocusChangedEventArgs)
+    {
+      if ( dockableFrameFocusChangedEventArgs.PaneId == AppBaseManager.Instance.HasekoDockPanelId )
+        AppBaseManager.Instance.IsFocusHasekoDockPanel = dockableFrameFocusChangedEventArgs.FocusGained ;
+      else
+        AppBaseManager.Instance.IsFocusHasekoDockPanel = false ;
     }
   }
 }

@@ -5,11 +5,13 @@ using System.Windows ;
 using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
 using System.Windows.Controls ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using ControlLib ;
 using LengthConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters.LengthConverter ;
+using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -38,6 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public static readonly DependencyProperty CurveTypeIndexProperty = DependencyProperty.Register( "CurveTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( -1 ) ) ;
     public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( FromToEditControl ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
     public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)true ) ) ;
+    public static readonly DependencyProperty IsVisibilityProperty = DependencyProperty.Register( "IsVisibility", typeof( Visibility ), typeof( FromToEditControl ), new PropertyMetadata( System.Windows.Visibility.Visible ) ) ;
     public static readonly DependencyProperty UseFromFixedHeightProperty = DependencyProperty.Register( "UseFromFixedHeight", typeof( bool? ), typeof( FromToEditControl ), new PropertyMetadata( (bool?)false ) ) ;
     public static readonly DependencyProperty FromFixedHeightProperty = DependencyProperty.Register( "FromFixedHeight", typeof( double? ), typeof( FromToEditControl ), new PropertyMetadata( 0.0, FromFixedHeight_Changed ) ) ;
     public static readonly DependencyProperty FromLocationTypeIndexProperty = DependencyProperty.Register( "FromLocationTypeIndex", typeof( int ), typeof( FromToEditControl ), new PropertyMetadata( 0, FromLocationTypeIndex_PropertyChanged ) ) ;
@@ -54,8 +57,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static readonly DependencyPropertyKey FromMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey FromMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey FromMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMinimumHeightAsSecondCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsSecondCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMaximumHeightAsSecondCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsSecondCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey FromDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey FromDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromDefaultHeightAsSecondCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsSecondCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey ToMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey ToMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMaximumHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey ToMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToMinimumHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
@@ -63,6 +69,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static readonly DependencyPropertyKey ToDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsFloorLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
     private static readonly DependencyPropertyKey ToDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "ToDefaultHeightAsCeilingLevel", typeof( double ), typeof( FromToEditControl ), new PropertyMetadata( 0.0 ) ) ;
 
+    //Haseko
+    public Visibility IsVisibility
+    {
+      get => (Visibility)GetValue( IsVisibilityProperty ) ;
+      private set => SetValue( IsVisibilityProperty, value ) ;
+    }
+    
     //Diameter Info
     private double VertexTolerance { get ; set ; }
     public ObservableCollection<double> Diameters { get ; } = new ObservableCollection<double>() ;
@@ -286,10 +299,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       get => (double)GetValue( FromMinimumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
       set => SetValue( FromMinimumHeightAsCeilingLevelPropertyKey, value ) ;
     }
-    private double FromMaximumHeightAsCeilingLevel
+    public double FromMaximumHeightAsCeilingLevel
     {
       get => (double)GetValue( FromMaximumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
       set => SetValue( FromMaximumHeightAsCeilingLevelPropertyKey, value ) ;
+    }
+    private double FromMinimumHeightAsSecondCeilingLevel
+    {
+      get => (double)GetValue( FromMinimumHeightAsSecondCeilingLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( FromMinimumHeightAsSecondCeilingLevelPropertyKey, value ) ;
+    }
+    private double FromMaximumHeightAsSecondCeilingLevel
+    {
+      get => (double)GetValue( FromMaximumHeightAsSecondCeilingLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( FromMaximumHeightAsSecondCeilingLevelPropertyKey, value ) ;
     }
     private double FromDefaultHeightAsFloorLevel
     {
@@ -300,6 +323,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       get => (double)GetValue( FromDefaultHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
       set => SetValue( FromDefaultHeightAsCeilingLevelPropertyKey, value ) ;
+    }
+    private double FromDefaultHeightAsSecondCeilingLevel
+    {
+      get => (double)GetValue( FromDefaultHeightAsSecondCeilingLevelPropertyKey.DependencyProperty ) ;
+      set => SetValue( FromDefaultHeightAsSecondCeilingLevelPropertyKey, value ) ;
     }
     private double ToMinimumHeightAsFloorLevel
     {
@@ -344,8 +372,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       if ( FromLocationType is not { } locationType ) return ;
 
-      var minimumValue = ( locationType == FixedHeightType.Ceiling ? FromMinimumHeightAsCeilingLevel : FromMinimumHeightAsFloorLevel ) ;
-      var maximumValue = ( locationType == FixedHeightType.Ceiling ? FromMaximumHeightAsCeilingLevel : FromMaximumHeightAsFloorLevel ) ;
+      var minimumValue = ( locationType == FixedHeightType.Ceiling 
+        ? AppBaseManager.Instance.IsFocusHasekoDockPanel ? FromMinimumHeightAsSecondCeilingLevel : FromMinimumHeightAsCeilingLevel 
+        : FromMinimumHeightAsFloorLevel ) ;
+      var maximumValue = ( locationType == FixedHeightType.Ceiling 
+        ? AppBaseManager.Instance.IsFocusHasekoDockPanel ? FromMaximumHeightAsSecondCeilingLevel :FromMaximumHeightAsCeilingLevel 
+        : FromMaximumHeightAsFloorLevel ) ;
       SetMinMax( FromFixedHeightNumericUpDown, locationType, minimumValue, maximumValue ) ;
     }
     private void OnToLocationTypeChanged()
@@ -562,9 +594,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       IsDifferentLevel = propertyTypeList.HasDifferentLevel ;
 
       ( FromMinimumHeightAsFloorLevel, FromMaximumHeightAsFloorLevel ) = propertyTypeList.FromHeightRangeAsFloorLevel ;
+      
+      ( FromMinimumHeightAsSecondCeilingLevel, FromMaximumHeightAsSecondCeilingLevel ) = propertyTypeList.FromHeightRangeAsSecondCeilingLevel ;
       ( FromMinimumHeightAsCeilingLevel, FromMaximumHeightAsCeilingLevel ) = propertyTypeList.FromHeightRangeAsCeilingLevel ;
-      FromDefaultHeightAsFloorLevel = propertyTypeList.FromDefaultHeightAsFloorLevel ;
+      
+      FromDefaultHeightAsSecondCeilingLevel = propertyTypeList.FromDefaultHeightAsSecondCeilingLevel ;
       FromDefaultHeightAsCeilingLevel = propertyTypeList.FromDefaultHeightAsCeilingLevel ;
+      FromDefaultHeightAsFloorLevel = propertyTypeList.FromDefaultHeightAsFloorLevel ;
 
       ( ToMinimumHeightAsFloorLevel, ToMaximumHeightAsFloorLevel ) = propertyTypeList.ToHeightRangeAsFloorLevel ;
       ( ToMinimumHeightAsCeilingLevel, ToMaximumHeightAsCeilingLevel ) = propertyTypeList.ToHeightRangeAsCeilingLevel ;
@@ -574,6 +610,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public void SetRouteProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
+      if ( AppBaseManager.Instance.IsFocusHasekoDockPanel ) {
+        IsVisibility = Visibility.Collapsed ;
+      }
+      else {
+        IsVisibility = Visibility.Visible ;
+      }
+      
       VertexTolerance = properties.VertexTolerance ;
       SetAvailableParameterList( propertyTypeList ) ;
 
@@ -592,6 +635,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       else {
         FromLocationTypeOrg = properties.FromFixedHeight?.Type ?? FixedHeightType.Ceiling ;
         FromFixedHeightOrg = properties.FromFixedHeight?.Height ?? GetFromDefaultHeight( FromLocationTypeOrg.Value ) ;
+        if ( AppBaseManager.Instance.IsFocusHasekoDockPanel ) {
+          FromFixedHeightOrg -= FromMaximumHeightAsCeilingLevel ;
+        }
       }
 
       UseToFixedHeightOrg = properties.UseToFixedHeight ;
