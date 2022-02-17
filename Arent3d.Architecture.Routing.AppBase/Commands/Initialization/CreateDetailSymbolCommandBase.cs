@@ -268,11 +268,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModelIsDeleted ) ;
           }
         }
+        
+        //Update detail table when update detail symbol
+        if ( oldDetailSymbolModel != null )
+          UpdateDetailTableModel( doc, oldDetailSymbolModel.DetailSymbolId, detailSymbol.UniqueId, detailSymbolSettingDialog.DetailSymbol ) ;
 
         detailSymbolStorable.Save() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         MessageBox.Show( "Save Data Failed.", "Error Message" ) ;
+      }
+    }
+
+    private void UpdateDetailTableModel( Document doc, string oldDetailSymbolId, string newDetailSymbolId, string detailSymbol )
+    {
+      try {
+        DetailTableStorable detailTableStorable = doc.GetDetailTableStorable() ;
+        var detailTableModels = detailTableStorable.DetailTableModelData.Where( d => d.DetailSymbolId == oldDetailSymbolId ).ToList() ;
+        if ( ! detailTableModels.Any() ) return ;
+        foreach ( var detailTableModel in detailTableModels ) {
+          detailTableModel.DetailSymbolId = newDetailSymbolId ;
+          detailTableModel.DetailSymbol = detailSymbol ;
+        }
+
+        detailTableStorable.Save() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
       }
     }
 

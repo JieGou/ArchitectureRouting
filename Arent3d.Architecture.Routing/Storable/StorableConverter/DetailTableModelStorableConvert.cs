@@ -73,7 +73,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var parentPlumbingType = deserializer.GetString( SerializeField.ParentPlumbingType ) ;
       var groupId = deserializer.GetString( SerializeField.GroupId ) ;
 
-      return new DetailTableModel( calculationExclusion, floor, ceeDCode, detailSymbolId, detailSymbol, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode, isParentRoute, isReadOnly, parentPlumbingType, groupId ) ;
+      return new DetailTableModel( calculationExclusion, floor, ceeDCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode, isParentRoute, isReadOnly, parentPlumbingType, groupId ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailTableModel customTypeValue )
