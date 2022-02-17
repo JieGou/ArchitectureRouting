@@ -4,6 +4,7 @@ using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
+using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -34,6 +35,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       RoutesChangedConstructionItem = new Dictionary<string, string>() ;
       DetailSymbolsChangedPlumbingType = new Dictionary<string, string>() ;
       CreateDetailTableViewModelByGroupId() ;
+      
+      Style rowStyle = new Style( typeof( DataGridRow ) ) ;
+      rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
+      DtGrid.RowStyle = rowStyle ;
+    }
+    
+    private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
+    {
+      var selectedItem = (DetailTableModel) DtGrid.SelectedValue ;
+      if ( string.IsNullOrEmpty( selectedItem.GroupId ) ) return ;
+      UnGroupDetailTableModel( selectedItem.GroupId ) ;
+      CreateDetailTableViewModelByGroupId() ;
+      SaveData( _detailTableViewModel.DetailTableModels ) ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
@@ -66,7 +80,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, ref newDetailTableModels, plumbingType!.ToString(), true ) ;
 
-        SetGroupId( newDetailTableModels ) ;
+        if ( newDetailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null )
+          SetGroupId( newDetailTableModels ) ;
 
         foreach ( var oldDetailTableModel in detailTableModels ) {
           _detailTableViewModel.DetailTableModels.Remove( oldDetailTableModel ) ;
@@ -178,6 +193,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       CreateDetailTableViewModelByGroupId() ;
+      SaveData( _detailTableViewModel.DetailTableModels ) ;
     }
 
     private void SetGroupId( List<DetailTableModel> detailTableModelsGroupByDetailSymbolId )
@@ -233,6 +249,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.DataContext = newDetailTableViewModel ;
       DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
       DetailTableViewModelSummary = newDetailTableViewModel ;
+    }
+    
+    private void UnGroupDetailTableModel( string groupId )
+    {
+      var detailTableModels = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == groupId ).ToList() ;
+      foreach ( var detailTableModel in detailTableModels ) {
+        detailTableModel.GroupId = string.Empty ;
+      }
     }
   }
 }
