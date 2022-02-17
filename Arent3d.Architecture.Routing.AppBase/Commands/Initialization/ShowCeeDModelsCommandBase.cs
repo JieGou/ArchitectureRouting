@@ -16,6 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public abstract class ShowCeeDModelsCommandBase : IExternalCommand
   {
     private const string ConditionTextNoteTypeName = "1.5 mm" ;
+    private const string DefaultConstructionItem = "未設定" ;
 
     protected abstract RoutingFamilyType RoutingFamilyType { get ; }
 
@@ -38,8 +39,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeeDModel.SelectedFloorPlanType ) ;
         var ceeDCode = dlgCeeDModel.SelectedCeeDCode + "-" + dlgCeeDModel.SelectedDeviceSymbol + "-" + dlgCeeDModel.SelectedModelNumber ;
-        element.SetProperty( ConnectorFamilyParameter.CeeDCode, ceeDCode ) ;
-        if ( element is FamilyInstance familyInstance ) familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
+        if ( element is FamilyInstance familyInstance ) {
+          element.SetProperty( ConnectorFamilyParameter.CeeDCode, ceeDCode ) ;
+          element.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, DefaultConstructionItem ) ;
+          familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
+        }
 
         ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
         var noteWidth = .05 ;
