@@ -127,7 +127,7 @@
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
                 <DataGridTextColumn Header="配管工事項目" Width="90" Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" />
+                <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" IsReadOnly="True" />
             </DataGrid.Columns>
         </DataGrid>
         <Grid VerticalAlignment="Bottom" Width="1100" Height="70">

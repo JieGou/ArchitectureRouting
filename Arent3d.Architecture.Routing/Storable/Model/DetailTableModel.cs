@@ -1,6 +1,4 @@
-﻿using System.ComponentModel ;
-
-namespace Arent3d.Architecture.Routing.Storable.Model
+﻿namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class DetailTableModel
   {
@@ -31,6 +29,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public bool IsParentRoute { get ; set ; }
     public bool IsReadOnly { get ; set ; }
     public string ParentPlumbingType { get ; set ; }
+    public string GroupId { get ; set ; }
 
     public DetailTableModel( 
       bool? calculationExclusion, 
@@ -59,7 +58,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? isEcoMode,
       bool? isParentRoute,
       bool? isReadOnly,  
-      string? parentPlumbingType )
+      string? parentPlumbingType,
+      string? groupId )
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -88,6 +88,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsParentRoute = isParentRoute ?? false ;
       IsReadOnly = isReadOnly ?? true ;
       ParentPlumbingType = parentPlumbingType ?? string.Empty ;
+      GroupId = groupId ?? string.Empty ;
     }
   }
 }
