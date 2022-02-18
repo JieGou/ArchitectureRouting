@@ -310,7 +310,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( string.IsNullOrEmpty( toElementUniqueId ) ) continue ;
         var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementUniqueId ) ;
         if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
-        ( ceeDCode, deviceSymbol ) = GetCeeDSetCodeOfElement( toConnector ) ;
+        ( ceeDCode, deviceSymbol ) = GetCeeDCodeAndDeviceSymbolOfElement( toConnector ) ;
       }
 
       return ( ceeDCode, deviceSymbol ) ;
@@ -322,7 +322,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return detailSymbolModel ;
     }
 
-    private ( string, string ) GetCeeDSetCodeOfElement( Element element )
+    private ( string, string ) GetCeeDCodeAndDeviceSymbolOfElement( Element element )
     {
       element.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCodeModel ) ;
       if ( string.IsNullOrEmpty( ceeDSetCodeModel ) ) return ( string.Empty, string.Empty ) ;

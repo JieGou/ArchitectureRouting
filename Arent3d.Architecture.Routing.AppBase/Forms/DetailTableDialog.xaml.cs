@@ -34,6 +34,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _conduitsModelData = conduitsModelData ;
       RoutesChangedConstructionItem = new Dictionary<string, string>() ;
       DetailSymbolsChangedPlumbingType = new Dictionary<string, string>() ;
+
+      var isGroup = viewModel.DetailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null ;
+      if ( isGroup ) SetGroupIdForNewDetailTableRows() ;
       CreateDetailTableViewModelByGroupId() ;
       
       Style rowStyle = new Style( typeof( DataGridRow ) ) ;
@@ -256,6 +259,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var detailTableModels = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == groupId ).ToList() ;
       foreach ( var detailTableRow in detailTableModels ) {
         detailTableRow.GroupId = string.Empty ;
+      }
+    }
+
+    private void SetGroupIdForNewDetailTableRows()
+    {
+      DetailTableStorable detailTableStorable = _document.GetDetailTableStorable() ;
+      var allDetailSymbolIds = detailTableStorable.DetailTableModelData.Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+      var newDetailTableRows = _detailTableViewModel.DetailTableModels.Where( d => ! allDetailSymbolIds.Contains( d.DetailSymbolId ) ).ToList() ;
+      if ( ! newDetailTableRows.Any() ) return ;
+      {
+        var newDetailTableRowsGroupByDetailSymbolId = newDetailTableRows.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+        foreach ( var (_, detailTableRowsSameDetailSymbolId) in newDetailTableRowsGroupByDetailSymbolId ) {
+          SetGroupId( detailTableRowsSameDetailSymbolId ) ;
+        }
       }
     }
   }
