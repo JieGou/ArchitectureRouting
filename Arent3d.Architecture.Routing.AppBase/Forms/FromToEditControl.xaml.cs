@@ -373,10 +373,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( FromLocationType is not { } locationType ) return ;
 
       var minimumValue = ( locationType == FixedHeightType.Ceiling 
-        ? AppBaseManager.Instance.IsFocusHasekoDockPanel ? FromMinimumHeightAsSecondCeilingLevel : FromMinimumHeightAsCeilingLevel 
+        ? null != AppBaseManager.Instance.HasekoDockPanelId ? FromMinimumHeightAsSecondCeilingLevel : FromMinimumHeightAsCeilingLevel 
         : FromMinimumHeightAsFloorLevel ) ;
       var maximumValue = ( locationType == FixedHeightType.Ceiling 
-        ? AppBaseManager.Instance.IsFocusHasekoDockPanel ? FromMaximumHeightAsSecondCeilingLevel :FromMaximumHeightAsCeilingLevel 
+        ? null != AppBaseManager.Instance.HasekoDockPanelId ? FromMaximumHeightAsSecondCeilingLevel :FromMaximumHeightAsCeilingLevel 
         : FromMaximumHeightAsFloorLevel ) ;
       SetMinMax( FromFixedHeightNumericUpDown, locationType, minimumValue, maximumValue ) ;
     }
@@ -610,7 +610,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public void SetRouteProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
-      if ( AppBaseManager.Instance.IsFocusHasekoDockPanel ) {
+      if ( null != AppBaseManager.Instance.HasekoDockPanelId ) {
         IsVisibility = Visibility.Collapsed ;
       }
       else {
@@ -635,7 +635,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       else {
         FromLocationTypeOrg = properties.FromFixedHeight?.Type ?? FixedHeightType.Ceiling ;
         FromFixedHeightOrg = properties.FromFixedHeight?.Height ?? GetFromDefaultHeight( FromLocationTypeOrg.Value ) ;
-        if ( AppBaseManager.Instance.IsFocusHasekoDockPanel ) {
+        if ( null != AppBaseManager.Instance.HasekoDockPanelId ) {
           FromFixedHeightOrg -= FromMaximumHeightAsCeilingLevel ;
         }
       }

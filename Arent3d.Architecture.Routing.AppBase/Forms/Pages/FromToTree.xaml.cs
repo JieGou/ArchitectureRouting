@@ -74,9 +74,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     public string TitleLabel { get ; }
     
-    // focus dockpanel event does not work in Revit
-    public DockablePaneId? DpId { get ; set ; }
-    
     public IPostCommandExecutorBase PostCommandExecutor { get ; }
     
     public FromToItemsUiBase FromToItemsUi { get ; }
@@ -246,13 +243,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var selectedItem = FromToTreeView.SelectedItem ;
 
-      if ( AppBaseManager.Instance.HasekoDockPanelId == DpId ) {
-        AppBaseManager.Instance.IsFocusHasekoDockPanel = true ;
-      }
-      else {
-        AppBaseManager.Instance.IsFocusHasekoDockPanel = false ;
-      }
-      
       if ( selectedItem is FromToItem selectedFromToItem ) {
         selectedFromToItem.OnSelected() ;
         SelectedFromTo.TargetFromToItem = selectedFromToItem ;

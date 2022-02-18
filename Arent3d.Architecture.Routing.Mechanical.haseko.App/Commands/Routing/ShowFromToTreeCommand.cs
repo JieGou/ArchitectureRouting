@@ -24,12 +24,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         if ( ! dp.IsShown() ) {
           dp.Show() ;
           AppBaseManager.Instance.HasekoDockPanelId = dp.Id ;
-          AppBaseManager.Instance.IsFocusHasekoDockPanel = true ;
         }
         else {
           dp.Hide() ;
           AppBaseManager.Instance.HasekoDockPanelId = null ;
-          AppBaseManager.Instance.IsFocusHasekoDockPanel = false ;
         }
       }
       catch ( Exception e ) {

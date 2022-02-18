@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var route = routePropertySource.TargetRoute ;
 
       var fromFixedHeight = FixedHeight.CreateOrNull( FromToEdit.FromLocationType, FromToEdit.FromFixedHeight  ) ;
-      if ( AppBaseManager.Instance.IsFocusHasekoDockPanel ) {
+      if ( null != AppBaseManager.Instance.HasekoDockPanelId ) {
         var height = FromToEdit.FromLocationType == FixedHeightType.Ceiling 
           ? FromToEdit.FromFixedHeight + FromToEdit.FromMaximumHeightAsCeilingLevel
           : FromToEdit.FromFixedHeight ;

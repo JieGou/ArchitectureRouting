@@ -32,6 +32,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       if ( fromToManager.FromToTreeUiManager is { } fromToTreeUiManager && fromToManager.UiApp.ActiveUIDocument != null ) {
         fromToTreeUiManager.FromToTreeView.CustomInitiator( uiApplication, AddInType.Electrical ) ;
         fromToTreeUiManager.Dockable = uiApplication.GetDockablePane( fromToTreeUiManager.DpId ) ;
+        fromToTreeUiManager.Dockable.Hide();
       }
 
       return Result.Succeeded ;

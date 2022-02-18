@@ -25,7 +25,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       }
     }
     
-    public bool IsFocusHasekoDockPanel { get ; set ; }
     public DockablePaneId? HasekoDockPanelId { get ; set ; } 
   }
 }
