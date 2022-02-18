@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase
   /// <summary>
   /// Entry point of auto routing application. This class calls UI initializers.
   /// </summary>
-  public abstract class RoutingAppBase : ExternalApplicationBase
+  public abstract class RoutingAppBase<TApp> : ExternalApplicationBase<TApp> where TApp : RoutingAppBase<TApp>
   {
     protected override string GetLanguageDirectoryPath()
     {

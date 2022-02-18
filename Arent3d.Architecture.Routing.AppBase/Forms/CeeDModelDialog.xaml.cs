@@ -15,6 +15,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 using Style = System.Windows.Style ;
@@ -23,7 +24,7 @@ using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class CeeDModelDialog : Window
+  public partial class CeeDModelDialog
   {
     private readonly Document _document ;
     private CeedViewModel? _allCeeDModels ;
@@ -36,10 +37,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public string SelectedModelNumber ;
     public string SelectedFloorPlanType ;
 
-    public CeeDModelDialog( Document document )
+    public CeeDModelDialog( UIApplication uiApplication ) : base( uiApplication )
     {
       InitializeComponent() ;
-      _document = document ;
+      _document = uiApplication.ActiveUIDocument.Document ;
       _allCeeDModels = null ;
       _usingCeeDModel = null ;
       _ceeDModelNumberSearch = string.Empty ;
@@ -184,7 +185,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       if ( string.IsNullOrEmpty( filePath ) || string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
-      using var progress = ProgressBar.ShowWithNewThread( new CancellationTokenSource() ) ;
+      using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
       progress.Message = "Loading data..." ;
       CeedStorable ceeDStorable = _document.GetCeeDStorable() ;
       {

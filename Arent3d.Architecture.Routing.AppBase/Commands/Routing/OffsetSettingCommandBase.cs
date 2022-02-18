@@ -31,8 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return document.Transaction( "TransactionName.Commands.Routing.OffsetSetting".GetAppStringByKeyOrDefault( "Offset Setting" ), _ =>
         {
           var newStorage = viewModel.SettingStorable ;
-          var tokenSource = new CancellationTokenSource() ;
-          using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
+          using var progress = ProgressBar.ShowWithNewThread( commandData.Application ) ;
           progress.Message = "Offset Setting..." ;
 
           using ( var p = progress?.Reserve( 0.5 ) ) {

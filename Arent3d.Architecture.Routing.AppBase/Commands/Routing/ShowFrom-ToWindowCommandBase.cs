@@ -9,16 +9,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class ShowFrom_ToWindowCommandBase : IExternalCommand
   {
-    private UIDocument? _uiDocument = null ;
+    private UIApplication? _uiApplication = null ;
     protected abstract AddInType GetAddInType() ;
 
-    protected abstract FromToWindow CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindow.FromToItems> fromToItemsList ) ;
+    protected abstract FromToWindow CreateFromToWindow( UIApplication uiApplication, ObservableCollection<FromToWindow.FromToItems> fromToItemsList ) ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      _uiDocument = commandData.Application.ActiveUIDocument ;
+      _uiApplication = commandData.Application ;
       try {
-        FromToWindowViewModel.ShowFromToWindow( _uiDocument, GetAddInType(), CreateFromToWindow ) ;
+        FromToWindowViewModel.ShowFromToWindow( _uiApplication, GetAddInType(), CreateFromToWindow ) ;
       }
       catch ( Exception e ) {
         TaskDialog.Show( "ShowFrom_ToWindowCommand", e.Message ) ;
