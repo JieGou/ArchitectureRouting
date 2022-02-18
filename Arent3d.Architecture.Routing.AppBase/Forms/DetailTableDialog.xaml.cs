@@ -84,7 +84,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, ref newDetailTableModels, plumbingType!.ToString(), true ) ;
 
         if ( newDetailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null )
-          SetGroupId( newDetailTableModels ) ;
+          SetGroupIdForDetailTableRows( newDetailTableModels ) ;
 
         foreach ( var oldDetailTableRow in detailTableModels ) {
           _detailTableViewModel.DetailTableModels.Remove( oldDetailTableRow ) ;
@@ -115,10 +115,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( constructionItem == null ) return ;
       if ( DtGrid.SelectedItem is not DetailTableModel detailTableRow || detailTableRow.ConstructionItems == constructionItem!.ToString() ) return ;
       var detailTableRowsChangeConstructionItems = _detailTableViewModel.DetailTableModels.Where( c => c.RouteName == detailTableRow.RouteName ).ToList() ;
-      var detailTableRowsSameGroupId = _detailTableViewModel.DetailTableModels.Where( c => ! string.IsNullOrEmpty( c.GroupId ) && c.GroupId == detailTableRow.GroupId && c.RouteName != detailTableRow.RouteName ).ToList() ;
-      if ( detailTableRowsSameGroupId.Any() ) {
-        var routeSameGroupId = detailTableRowsSameGroupId.Select( d => d.RouteName ).Distinct().ToList() ;
-        detailTableRowsChangeConstructionItems.AddRange( _detailTableViewModel.DetailTableModels.Where( c => routeSameGroupId.Contains( c.RouteName ) ).ToList() ) ;
+      var detailTableRowsWithSameGroupId = _detailTableViewModel.DetailTableModels.Where( c => ! string.IsNullOrEmpty( c.GroupId ) && c.GroupId == detailTableRow.GroupId && c.RouteName != detailTableRow.RouteName ).ToList() ;
+      if ( detailTableRowsWithSameGroupId.Any() ) {
+        var routeWithSameGroupId = detailTableRowsWithSameGroupId.Select( d => d.RouteName ).Distinct().ToList() ;
+        detailTableRowsChangeConstructionItems.AddRange( _detailTableViewModel.DetailTableModels.Where( c => routeWithSameGroupId.Contains( c.RouteName ) ).ToList() ) ;
       }
       List<DetailTableModel> newDetailTableModels = new List<DetailTableModel>() ;
       foreach ( var oldDetailTableRow in _detailTableViewModel.DetailTableModels ) {
@@ -191,17 +191,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void BtnPlumbingSummary_Click( object sender, RoutedEventArgs e )
     {
       var detailTableModelsGroupByDetailSymbolId = _detailTableViewModel.DetailTableModels.ToList().GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-      foreach ( var (_, detailTableRowsSameDetailSymbolId) in detailTableModelsGroupByDetailSymbolId ) {
-        SetGroupId( detailTableRowsSameDetailSymbolId ) ;
+      foreach ( var (_, detailTableRowsWithSameDetailSymbolId) in detailTableModelsGroupByDetailSymbolId ) {
+        SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
       }
 
       CreateDetailTableViewModelByGroupId() ;
       SaveData( _detailTableViewModel.DetailTableModels ) ;
     }
 
-    private void SetGroupId( List<DetailTableModel> detailTableRowsSameDetailSymbolId )
+    private void SetGroupIdForDetailTableRows( List<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
     {
-      var detailTableRowsGroupByPlumbingIdentityInfo = detailTableRowsSameDetailSymbolId.GroupBy( d => d.PlumbingIdentityInfo ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      var detailTableRowsGroupByPlumbingIdentityInfo = detailTableRowsWithSameDetailSymbolId.GroupBy( d => d.PlumbingIdentityInfo ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var (_, detailTableRowsWithSamePlumbingIdentityInfo) in detailTableRowsGroupByPlumbingIdentityInfo ) {
         var detailTableRowsGroupByConstructionItem = detailTableRowsWithSamePlumbingIdentityInfo.GroupBy( d => d.ConstructionItems ).ToDictionary( g => g.Key, g => g.ToList() ) ;
         foreach ( var (_, detailTableRowsWithSameConstructionItem) in detailTableRowsGroupByConstructionItem ) {
@@ -214,8 +214,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             }
             else {
               var groupId = oldDetailTableRow.DetailSymbolId + "-" + oldDetailTableRow.PlumbingIdentityInfo + "-" + oldDetailTableRow.ConstructionItems + "-" + oldDetailTableRow.WireType + oldDetailTableRow.WireSize + oldDetailTableRow.WireStrip ;
-              foreach ( var detailTableRowSameWiringType in detailTableRowsWithSameWiringType ) {
-                detailTableRowSameWiringType.GroupId = groupId ;
+              foreach ( var detailTableRowWithSameWiringType in detailTableRowsWithSameWiringType ) {
+                detailTableRowWithSameWiringType.GroupId = groupId ;
               }
             }
           }
@@ -233,8 +233,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
         else {
           if ( existedGroupIds.Contains( detailTableRow.GroupId ) ) continue ;
-          var detailTableRowsSameGroupId = _detailTableViewModel.DetailTableModels.Where( d => d.GroupId == detailTableRow.GroupId ) ;
-          var detailTableRowsGroupByRemark = detailTableRowsSameGroupId.GroupBy( d => d.Remark ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+          var detailTableRowWithSameWiringType = _detailTableViewModel.DetailTableModels.Where( d => d.GroupId == detailTableRow.GroupId ) ;
+          var detailTableRowsGroupByRemark = detailTableRowWithSameWiringType.GroupBy( d => d.Remark ).ToDictionary( g => g.Key, g => g.ToList() ) ;
           List<string> newRemark = new List<string>() ;
           var numberOfGrounds = 0 ;
           foreach ( var (remark, detailTableRowsWithSameRemark) in detailTableRowsGroupByRemark ) {
@@ -270,8 +270,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! newDetailTableRows.Any() ) return ;
       {
         var newDetailTableRowsGroupByDetailSymbolId = newDetailTableRows.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-        foreach ( var (_, detailTableRowsSameDetailSymbolId) in newDetailTableRowsGroupByDetailSymbolId ) {
-          SetGroupId( detailTableRowsSameDetailSymbolId ) ;
+        foreach ( var (_, detailTableRowsWithSameDetailSymbolId) in newDetailTableRowsGroupByDetailSymbolId ) {
+          SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
         }
       }
     }

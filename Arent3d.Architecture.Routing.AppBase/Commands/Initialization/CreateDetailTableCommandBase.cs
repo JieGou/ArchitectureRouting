@@ -241,15 +241,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
         }
 
-        foreach ( var (parentPlumbingType, detailTableRowsSamePlumbing) in detailTableRowsGroupByPlumbingType ) {
-          foreach ( var detailTableRow in detailTableRowsSamePlumbing ) {
+        foreach ( var (parentPlumbingType, detailTableRowsWithSamePlumbing) in detailTableRowsGroupByPlumbingType ) {
+          foreach ( var detailTableRow in detailTableRowsWithSamePlumbing ) {
             detailTableRow.PlumbingIdentityInfo = parentPlumbingType ;
           }
         }
       }
 
-      foreach ( var detailTableRowsSameSignalType in detailTableModelsBySignalType ) {
-        foreach ( var detailTableRow in detailTableRowsSameSignalType.Where( d => d.PlumbingSize != defaultChildPlumbingSymbol ).ToList() ) {
+      foreach ( var detailTableRowsWithSameSignalType in detailTableModelsBySignalType ) {
+        foreach ( var detailTableRow in detailTableRowsWithSameSignalType.Where( d => d.PlumbingSize != defaultChildPlumbingSymbol ).ToList() ) {
           detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
         }
       }
