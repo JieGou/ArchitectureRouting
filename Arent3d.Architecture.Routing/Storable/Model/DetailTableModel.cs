@@ -28,7 +28,7 @@
     public string IsEcoMode { get ; set ; }
     public bool IsParentRoute { get ; set ; }
     public bool IsReadOnly { get ; set ; }
-    public string ParentPlumbingType { get ; set ; }
+    public string PlumbingIdentityInfo { get ; set ; }
     public string GroupId { get ; set ; }
 
     public DetailTableModel( 
@@ -58,7 +58,7 @@
       string? isEcoMode,
       bool? isParentRoute,
       bool? isReadOnly,  
-      string? parentPlumbingType,
+      string? plumbingIdentityInfo,
       string? groupId )
     {
       CalculationExclusion = calculationExclusion ?? false ;
@@ -87,7 +87,7 @@
       IsEcoMode = isEcoMode ?? string.Empty ;
       IsParentRoute = isParentRoute ?? false ;
       IsReadOnly = isReadOnly ?? true ;
-      ParentPlumbingType = parentPlumbingType ?? string.Empty ;
+      PlumbingIdentityInfo = plumbingIdentityInfo ?? string.Empty ;
       GroupId = groupId ?? string.Empty ;
     }
   }
