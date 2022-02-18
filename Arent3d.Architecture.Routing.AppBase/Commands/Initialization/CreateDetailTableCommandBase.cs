@@ -201,8 +201,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var plumbing = conduitsModels.Last() ;
             parentDetailTableModel.PlumbingType = parentDetailTableModel.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             parentDetailTableModel.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
-            parentDetailTableModel.ParentPlumbingType = parentDetailTableModel.PlumbingType + parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType ;
-            detailTableModelsSamePlumbing.Add( parentDetailTableModel.ParentPlumbingType, childDetailTableModels ) ;
+            parentDetailTableModel.ParentPlumbingType = parentDetailTableModel.PlumbingType + parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType + "-" + parentDetailTableModel.RouteName ;
+            if ( ! detailTableModelsSamePlumbing.ContainsKey( parentDetailTableModel.ParentPlumbingType ) )
+              detailTableModelsSamePlumbing.Add( parentDetailTableModel.ParentPlumbingType, childDetailTableModels ) ;
+            else {
+              detailTableModelsSamePlumbing[ parentDetailTableModel.ParentPlumbingType ].AddRange( childDetailTableModels ) ;
+            }
             childDetailTableModels = new List<DetailTableModel>() ;
             plumbingCount++ ;
             parentDetailTableModel = currentDetailTableModel ;
@@ -211,7 +215,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableModel.WireCrossSectionalArea ) ;
             currentDetailTableModel.PlumbingType = currentDetailTableModel == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             currentDetailTableModel.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-            currentDetailTableModel.ParentPlumbingType = plumbingType + currentDetailTableModel.PlumbingSize + "-" + currentDetailTableModel.SignalType ;
+            currentDetailTableModel.ParentPlumbingType = plumbingType + currentDetailTableModel.PlumbingSize + "-" + currentDetailTableModel.SignalType + "-" + currentDetailTableModel.RouteName ;
             plumbingCount++ ;
           }
           else {
@@ -219,8 +223,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
               parentDetailTableModel.PlumbingType = parentDetailTableModel.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
               parentDetailTableModel.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-              parentDetailTableModel.ParentPlumbingType = parentDetailTableModel.PlumbingType + parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType ;
-              detailTableModelsSamePlumbing.Add( parentDetailTableModel.ParentPlumbingType, childDetailTableModels ) ;
+              parentDetailTableModel.ParentPlumbingType = parentDetailTableModel.PlumbingType + parentDetailTableModel.PlumbingSize + "-" + parentDetailTableModel.SignalType + "-" + parentDetailTableModel.RouteName ;
+              if ( ! detailTableModelsSamePlumbing.ContainsKey( parentDetailTableModel.ParentPlumbingType ) )
+                detailTableModelsSamePlumbing.Add( parentDetailTableModel.ParentPlumbingType, childDetailTableModels ) ;
+              else {
+                detailTableModelsSamePlumbing[ parentDetailTableModel.ParentPlumbingType ].AddRange( childDetailTableModels ) ;
+                detailTableModelsSamePlumbing[ parentDetailTableModel.ParentPlumbingType ].Add( currentDetailTableModel ) ;
+              }
               plumbingCount++ ;
             }
 
@@ -372,7 +381,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       if ( detailTableModelsData.Any() ) {
-        var oldDetailTableModel = detailTableModelsData.FirstOrDefault( d => d.DetailSymbolId == detailSymbolModel.DetailSymbolId && d.WireType == wireType && d.WireSize == wireSize && d.WireStrip == wireStrip && d.SignalType == signalType && d.ConstructionItems == constructionItem && d.Remark == remark ) ;
+        var oldDetailTableModel = detailTableModelsData.FirstOrDefault( d => d.DetailSymbolId == detailSymbolModel.DetailSymbolId && d.RouteName == detailSymbolModel.RouteName ) ;
         groupId = oldDetailTableModel == null ? string.Empty : oldDetailTableModel.GroupId ;
       }
 
