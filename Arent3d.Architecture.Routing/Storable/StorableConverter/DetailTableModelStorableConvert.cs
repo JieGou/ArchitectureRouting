@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
       CalculationExclusion,
       Floor,
-      CeeDCode,
+      CeedCode,
       DetailSymbol,
       DetailSymbolId,
       WireType,
@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 
       var calculationExclusion = deserializer.GetBool( SerializeField.CalculationExclusion ) ;
       var floor = deserializer.GetString( SerializeField.Floor ) ;
-      var ceeDCode = deserializer.GetString( SerializeField.CeeDCode ) ;
+      var ceedCode = deserializer.GetString( SerializeField.CeedCode ) ;
       var detailSymbolId = deserializer.GetString( SerializeField.DetailSymbolId ) ;
       var detailSymbol = deserializer.GetString( SerializeField.DetailSymbol ) ;
       var wireType = deserializer.GetString( SerializeField.WireType ) ;
@@ -73,7 +73,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var plumbingIdentityInfo = deserializer.GetString( SerializeField.PlumbingIdentityInfo ) ;
       var groupId = deserializer.GetString( SerializeField.GroupId ) ;
 
-      return new DetailTableModel( calculationExclusion, floor, ceeDCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode, isParentRoute, isReadOnly, plumbingIdentityInfo, groupId ) ;
+      return new DetailTableModel( calculationExclusion, floor, ceedCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode, isParentRoute, isReadOnly, plumbingIdentityInfo, groupId ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailTableModel customTypeValue )
@@ -82,7 +82,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 
       serializerObject.Add( SerializeField.CalculationExclusion, customTypeValue.CalculationExclusion ) ;
       serializerObject.AddNonNull( SerializeField.Floor, customTypeValue.Floor ) ;
-      serializerObject.AddNonNull( SerializeField.CeeDCode, customTypeValue.CeeDCode ) ;
+      serializerObject.AddNonNull( SerializeField.CeedCode, customTypeValue.CeedCode ) ;
       serializerObject.AddNonNull( SerializeField.DetailSymbolId, customTypeValue.DetailSymbolId ) ;
       serializerObject.AddNonNull( SerializeField.DetailSymbol, customTypeValue.DetailSymbol ) ;
       serializerObject.AddNonNull( SerializeField.WireType, customTypeValue.WireType ) ;

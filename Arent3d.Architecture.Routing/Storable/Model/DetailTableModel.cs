@@ -4,7 +4,7 @@
   {
     public bool CalculationExclusion { get ; set ; }
     public string Floor { get ; set ; }
-    public string CeeDCode { get ; set ; }
+    public string CeedCode { get ; set ; }
     public string DetailSymbol { get ; set ; }
     public string DetailSymbolId { get ; set ; }
     public string WireType { get ; set ; }
@@ -34,7 +34,7 @@
     public DetailTableModel( 
       bool? calculationExclusion, 
       string? floor, 
-      string? ceeDCode,
+      string? ceedCode,
       string? detailSymbol,
       string? detailSymbolId,
       string? wireType, 
@@ -63,7 +63,7 @@
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
-      CeeDCode = ceeDCode ?? string.Empty ;
+      CeedCode = ceedCode ?? string.Empty ;
       DetailSymbol = detailSymbol ?? string.Empty ;
       DetailSymbolId = detailSymbolId ?? string.Empty ;
       WireType = wireType ?? string.Empty ;
