@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.Extensions
     /// <summary>
     /// Get Ceed Model data from snoop DB.
     /// </summary>
-    public static CeedStorable GetCeeDStorable( this Document document )
+    public static CeedStorable GetCeedStorable( this Document document )
     {
       try {
         return CeedStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( CeedStorable.StorableName ) ;
@@ -112,6 +112,19 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new RackNotationStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get detail table data from snoop DB.
+    /// </summary>
+    public static DetailTableStorable GetDetailTableStorable( this Document document )
+    {
+      try {
+        return DetailTableStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DetailTableStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new DetailTableStorable( document ) ;
       }
     }
   }

@@ -111,7 +111,7 @@ namespace Arent3d.Architecture.Routing
             
     [ParameterGuid( "f71cbd72-3fe4-47cb-b777-36d6511d42ed" ), NameOnRevit( "CeeD Code" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
-    CeeDCode
+    CeedCode
   }
 
   public enum BranchNumberParameter

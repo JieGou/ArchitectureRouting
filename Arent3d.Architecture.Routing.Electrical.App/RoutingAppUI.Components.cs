@@ -33,8 +33,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button(typeof(CnsSettingCommand), OnlyInitialized = true)]
           private static class CnsSettingCommandButton { }
 
-          [Button( typeof( ShowCeeDModelsCommand ), OnlyInitialized = true )]
-          private static class ShowCeeDModelsCommandButton { }
+          [Button( typeof( ShowCeedModelsCommand ), OnlyInitialized = true )]
+          private static class ShowCeedModelsCommandButton { }
 
           [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
           private static class ShowHeightSettingCommandButton { }
@@ -55,8 +55,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
         private static class PickupSplitButton
         {
-          [Button( typeof( ShowCeeDDetailInformationCommand ), OnlyInitialized = true )]
-          private static class ShowCeeDDetailInformationCommandButton { }
+          [Button( typeof( ShowCeedDetailInformationCommand ), OnlyInitialized = true )]
+          private static class ShowCeedDetailInformationCommandButton { }
 
           [Button(typeof(LoadCsvFilesCommand), OnlyInitialized = true)]
           private static class LoadCsvFilesCommandButton { }

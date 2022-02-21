@@ -11,8 +11,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
   {
     private enum SerializeField
     {
-      CeeDModelNumber,
-      CeeDSetCode,
+      CeedModelNumber,
+      CeedSetCode,
       GeneralDisplayDeviceSymbol,
       ModelNumber,
       FloorPlanSymbol,
@@ -28,8 +28,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
       var serializerObject = new SerializerObject<SerializeField>() ;
 
-      serializerObject.AddNonNull( SerializeField.CeeDModelNumber, customTypeValue.CeeDModelNumber ) ;
-      serializerObject.AddNonNull( SerializeField.CeeDSetCode, customTypeValue.CeeDSetCode ) ;
+      serializerObject.AddNonNull( SerializeField.CeedModelNumber, customTypeValue.CeedModelNumber ) ;
+      serializerObject.AddNonNull( SerializeField.CeedSetCode, customTypeValue.CeedSetCode ) ;
       serializerObject.AddNonNull( SerializeField.GeneralDisplayDeviceSymbol, customTypeValue.GeneralDisplayDeviceSymbol ) ;
       serializerObject.AddNonNull( SerializeField.ModelNumber, customTypeValue.ModelNumber ) ;
       serializerObject.AddNonNull( SerializeField.FloorPlanSymbol, customTypeValue.FloorPlanSymbol ) ;
@@ -47,8 +47,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
-      var ceeDModelNumber = deserializer.GetString( SerializeField.CeeDModelNumber ) ;
-      var ceeDSetCode = deserializer.GetString( SerializeField.CeeDSetCode ) ;
+      var ceedModelNumber = deserializer.GetString( SerializeField.CeedModelNumber ) ;
+      var ceedSetCode = deserializer.GetString( SerializeField.CeedSetCode ) ;
       var generalDisplayDeviceSymbol = deserializer.GetString( SerializeField.GeneralDisplayDeviceSymbol ) ;
       var modelNumber = deserializer.GetString( SerializeField.ModelNumber ) ;
       var floorPlanSymbol = deserializer.GetString( SerializeField.FloorPlanSymbol ) ;
@@ -59,7 +59,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var base64FloorPlanImages = deserializer.GetString( SerializeField.Base64FloorPlanImages ) ;
       var floorPlanType = deserializer.GetString( SerializeField.FloorPlanType ) ;
 
-      return new CeedModel( ceeDModelNumber!, ceeDSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition!, base64InstrumentationImageString!, base64FloorPlanImages!, floorPlanType! ) ;
+      return new CeedModel( ceedModelNumber!, ceedSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition!, base64InstrumentationImageString!, base64FloorPlanImages!, floorPlanType! ) ;
     }
   }
 }

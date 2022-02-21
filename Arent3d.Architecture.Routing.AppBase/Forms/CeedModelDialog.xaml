@@ -1,4 +1,4 @@
-﻿<ui:RevitDialog x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CeeDModelDialog"
+﻿<ui:RevitDialog x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CeedModelDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -17,7 +17,7 @@
       
       <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" >
         <Label Content="CeeD型番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5" />
-        <ComboBox Name="CmbCeeDModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeeDModelNumbers_TextChanged" />
+        <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" />
         <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
         <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" />        
         <Button x:Name="BtnSearch"
@@ -60,9 +60,9 @@
 
         <DataGrid.Columns>
 
-          <DataGridTextColumn Header="CeeDセットコード" Binding="{Binding CeeDSetCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
+          <DataGridTextColumn Header="CeeDセットコード" Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
 
-          <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeeDModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="150" />
+          <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="150" />
 
           <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
 
