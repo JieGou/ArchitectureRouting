@@ -1,8 +1,6 @@
-using System ;
 using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
-using System.Reflection ;
 using System.Threading ;
 using System.Windows ;
 using System.Windows.Controls ;
@@ -30,6 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private CeedViewModel? _usingCeeDModel ;
     private string _ceeDModelNumberSearch ;
     private string _modelNumberSearch ;
+    private CeedModel? _selectedCeeDModel ;
     public string SelectedDeviceSymbol ;
     public string SelectedCondition ;
     public string SelectedCeeDCode ;
@@ -42,6 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _document = document ;
       _allCeeDModels = null ;
       _usingCeeDModel = null ;
+      _selectedCeeDModel = null ;
       _ceeDModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
       SelectedDeviceSymbol = string.Empty ;
@@ -53,12 +53,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var oldCeeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeeDStorable != null ) {
         LoadData( oldCeeDStorable ) ;
+        LoadConnectorFamilies() ;
       }
 
       Style rowStyle = new Style( typeof( DataGridRow ) ) ;
-      rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent,
-        new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
+      rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
+      rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseRightButtonDownEvent, new MouseButtonEventHandler( Row_MouseRightButtonDown ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
+    }
+
+    private void Row_MouseRightButtonDown( object sender, MouseButtonEventArgs e )
+    {
+      _selectedCeeDModel = (CeedModel) DtGrid.SelectedValue ;
     }
 
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
@@ -216,6 +222,58 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
+    private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
+    {
+      var selectConnectorFamilyDialog = new SelectConnectorFamily() ;
+      selectConnectorFamilyDialog.ShowDialog() ;
+      if ( ! ( selectConnectorFamilyDialog.DialogResult ?? false ) ) return ;
+      var connectorFamilyFileName = selectConnectorFamilyDialog.ConnectorFamilyList.FirstOrDefault( f => f.IsSelected )?.ToString() ;
+      var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      if ( ceedStorable == null ) return ;
+      if ( ( _allCeeDModels == null && _usingCeeDModel == null ) || _selectedCeeDModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
+      var connectorFamilyName = connectorFamilyFileName!.Replace( ".rfa", "" ) ;
+      if ( _allCeeDModels != null ) {
+        var ceedModel = _allCeeDModels.CeedModels.FirstOrDefault( c => c == _selectedCeeDModel ) ;
+        if ( ceedModel != null ) {
+          ceedModel.FloorPlanType = connectorFamilyName ;
+          ceedStorable.CeedModelData = _allCeeDModels.CeedModels ;
+        }
+      }
+
+      if ( _usingCeeDModel != null ) {
+        var ceedModel = _usingCeeDModel.CeedModels.FirstOrDefault( c => c == _selectedCeeDModel ) ;
+        if ( ceedModel != null ) {
+          ceedModel.FloorPlanType = connectorFamilyName ;
+          ceedStorable.CeedModelUsedData = _usingCeeDModel.CeedModels ;
+        }
+      }
+
+      try {
+        using var progress = ProgressBar.ShowWithNewThread( new CancellationTokenSource() ) ;
+        progress.Message = "Loading data..." ;
+        using Transaction t = new Transaction( _document, "Load connector's family and save CeeD data" ) ;
+        t.Start() ;
+        using ( var progressData = progress?.Reserve( 0.5 ) ) {
+          var path = ConnectorFamilyManager.GetFolderPath() ;
+          if ( ! Directory.Exists( path ) ) return ;
+          LoadFamily( path, connectorFamilyFileName! ) ;
+          progressData?.ThrowIfCanceled() ;
+        }
+
+        using ( var progressData = progress?.Reserve( 0.9 ) ) {
+          ceedStorable.Save() ;
+          progressData?.ThrowIfCanceled() ;
+        }
+
+        t.Commit() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        MessageBox.Show( "Load connector's family failed.", "Error" ) ;
+      }
+
+      MessageBox.Show( "Replace floor plan type successful.", "Message" ) ;
+    }
+
     private void LoadData( CeedStorable ceeDStorable )
     {
       var viewModel = new ViewModel.CeedViewModel( ceeDStorable ) ;
@@ -242,6 +300,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.DataContext = ceeDViewModel ;
       CmbCeeDModelNumbers.ItemsSource = ceeDViewModel.CeeDModelNumbers ;
       CmbModelNumbers.ItemsSource = ceeDViewModel.ModelNumbers ;
+    }
+
+    private void LoadConnectorFamilies()
+    {
+      var path = ConnectorFamilyManager.GetFolderPath() ;
+      if ( ! Directory.Exists( path ) ) return ;
+      using Transaction tx = new Transaction( _document ) ;
+      tx.Start( "Load Family" ) ;
+      string[] files = Directory.GetFiles( path ) ;
+      foreach ( string s in files ) {
+        var fileName = Path.GetFileName( s ) ;
+        if ( ! fileName.Contains( ".rfa" ) ) continue ;
+        LoadFamily( path, fileName ) ;
+      }
+
+      tx.Commit() ;
+    }
+
+    private void LoadFamily( string path, string fileName )
+    {
+      string familyName = fileName.Replace( ".rfa", "" ) ;
+      if ( new FilteredElementCollector( _document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == familyName ) is Family family ) return ;
+      _document.LoadFamily( Path.Combine( path, fileName ), out family ) ;
+      foreach ( ElementId familySymbolId in (IEnumerable<ElementId>) family.GetFamilySymbolIds() )
+        _document.GetElementById<FamilySymbol>( familySymbolId ) ;
     }
   }
 }
