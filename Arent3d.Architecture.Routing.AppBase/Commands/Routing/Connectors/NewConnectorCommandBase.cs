@@ -13,6 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
 {
   public abstract class NewConnectorCommandBase : IExternalCommand
   {
+    private const string DefaultConstructionItem = "未設定" ;
     protected abstract RoutingFamilyType RoutingFamilyType { get ; }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -46,6 +47,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
     {
       var symbol = uiDocument.Document.GetFamilySymbols( RoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+      if ( false == instance.TryGetProperty( RoutingFamilyLinkedParameter.ConstructionItem, out string? _ ) ) return ;
+      instance.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, DefaultConstructionItem ) ;
     }
 
     private static Level? GetUpperLevel( Level refRevel )

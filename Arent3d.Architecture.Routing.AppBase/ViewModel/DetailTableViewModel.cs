@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
         public ObservableCollection<DetailTableModel> DetailTableModels { get; set; }
 
-        public  bool IsCreateSchedule { get; set; }
+        public  bool IsCreateDetailTableOnFloorPlanView { get; set; }
 
         public ICommand SaveDetailTableCommand { get; set; }
 
@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         public DetailTableViewModel(ObservableCollection<DetailTableModel> detailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems )
         {
             DetailTableModels = detailTableModels;
-            IsCreateSchedule = false ;
+            IsCreateDetailTableOnFloorPlanView = false ;
 
             SaveDetailTableCommand = new RelayCommand<object>(
                 (p) => true, // CanExecute()
@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         private void SaveAndCreateDetailTable()
         {
             SaveDetailTable() ;
-            IsCreateSchedule = true ;
+            IsCreateDetailTableOnFloorPlanView = true ;
         }
     }
 }

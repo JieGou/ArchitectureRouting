@@ -13,9 +13,10 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  public abstract class ShowCeeDModelsCommandBase : IExternalCommand
+  public abstract class ShowCeedModelsCommandBase : IExternalCommand
   {
     private const string ConditionTextNoteTypeName = "1.5 mm" ;
+    private const string DefaultConstructionItem = "未設定" ;
 
     protected abstract RoutingFamilyType RoutingFamilyType { get ; }
 
@@ -23,12 +24,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
 
-      var dlgCeeDModel = new CeeDModelDialog( doc ) ;
+      var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
 
-      dlgCeeDModel.ShowDialog() ;
-      if ( ! ( dlgCeeDModel.DialogResult ?? false ) ) return Result.Cancelled ;
+      dlgCeedModel.ShowDialog() ;
+      if ( ! ( dlgCeedModel.DialogResult ?? false ) ) return Result.Cancelled ;
       ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( dlgCeeDModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
+      if ( string.IsNullOrEmpty( dlgCeedModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
         var uiDoc = commandData.Application.ActiveUIDocument ;
@@ -36,10 +37,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeeDModel.SelectedFloorPlanType ) ;
-        var ceeDCode = dlgCeeDModel.SelectedCeeDCode + "-" + dlgCeeDModel.SelectedDeviceSymbol + "-" + dlgCeeDModel.SelectedModelNumber ;
-        element.SetProperty( ConnectorFamilyParameter.CeeDCode, ceeDCode ) ;
-        if ( element is FamilyInstance familyInstance ) familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
+        var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeedModel.SelectedFloorPlanType ) ;
+        var ceedCode = dlgCeedModel.SelectedCeedCode + "-" + dlgCeedModel.SelectedDeviceSymbol + "-" + dlgCeedModel.SelectedModelNumber ;
+        if ( element is FamilyInstance familyInstance ) {
+          element.SetProperty( ConnectorFamilyParameter.CeedCode, ceedCode ) ;
+          element.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, DefaultConstructionItem ) ;
+          familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
+        }
 
         ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
         var noteWidth = .05 ;
@@ -57,15 +61,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
         var txtPosition = new XYZ( originX - 2, originY + 3, heightOfConnector ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeeDModel.SelectedDeviceSymbol, opts ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeedModel.SelectedDeviceSymbol, opts ) ;
 
         // create group of selected element and new text note
         groupIds.Add( element.Id ) ;
         groupIds.Add( textNote.Id ) ;
-        if ( ! string.IsNullOrEmpty( dlgCeeDModel.SelectedCondition ) ) {
-          if ( dlgCeeDModel.SelectedCondition.Length > 6 ) noteWidth += ( dlgCeeDModel.SelectedCondition.Length - 6 ) * 0.007 ;
+        if ( ! string.IsNullOrEmpty( dlgCeedModel.SelectedCondition ) ) {
+          if ( dlgCeedModel.SelectedCondition.Length > 6 ) noteWidth += ( dlgCeedModel.SelectedCondition.Length - 6 ) * 0.007 ;
           var txtConditionPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
-          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeeDModel.SelectedCondition, opts ) ;
+          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeedModel.SelectedCondition, opts ) ;
 
           var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
           if ( textNoteType == null ) {

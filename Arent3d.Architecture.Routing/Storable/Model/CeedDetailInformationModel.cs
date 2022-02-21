@@ -2,12 +2,12 @@
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
-  public class CeeDDetailInformationModel
+  public class CeedDetailInformationModel
   {
     public string SymbolImage { get ; set ; }
     public ObservableCollection<QueryData> QueryData { get ; set ; }
 
-    public CeeDDetailInformationModel( ObservableCollection<QueryData> queryData, string symbolImage )
+    public CeedDetailInformationModel( ObservableCollection<QueryData> queryData, string symbolImage )
     {
       QueryData = queryData ;
       SymbolImage = symbolImage ;

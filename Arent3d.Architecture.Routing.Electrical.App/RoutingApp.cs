@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
   /// </summary>
   [RevitAddin( AppInfo.ApplicationGuid )]
   [DisplayName( AppInfo.ApplicationName )]
-  internal class RoutingApp : RoutingAppBase
+  internal class RoutingApp : RoutingAppBase<RoutingApp>
   {
     private static FromToTreeManager? _fromToTreeManager = null ;
 
