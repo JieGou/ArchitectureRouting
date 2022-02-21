@@ -25,8 +25,8 @@ namespace Arent3d.Architecture.Routing
       var otherListBox3d = CreateBox3dFromOther( otherRooms, doc, show ) ;
       var livingListBox3d = CreateBox3dFromLivingRoom( livingRooms, doc, show ) ;
 
-      listOut.AddRange( otherListBox3d ) ;
-      listOut.AddRange( livingListBox3d ) ;
+      listOut.Add( livingListBox3d ) ;
+      listOut.Add( otherListBox3d.ToList() ) ;
       return listOut ;
     }
 
@@ -57,7 +57,7 @@ namespace Arent3d.Architecture.Routing
       return rooms ;
     }
 
-    private static List<List<Box3d>> CreateBox3dFromOther( List<Room> list, Document document, bool show )
+    private static IEnumerable<Box3d> CreateBox3dFromOther( List<Room> list, Document document, bool show )
     {
       var listOut = new List<List<Box3d>>() ;
       foreach ( var room in list ) {
@@ -66,17 +66,15 @@ namespace Arent3d.Architecture.Routing
         var min = bb.Min ;
         var max = bb.Max ;
         var box3d = new Box3d( min.To3dRaw(), max.To3dRaw() ) ;
-        listOut.Add( new List<Box3d>() { box3d } ) ;
         var height = ( max.Z - min.Z ) ;
         if ( show ) CreateBoxGenericModelInPlace( min, max, height, document, room.Name ) ;
+        yield return box3d ;
       }
-
-      return listOut ;
     }
 
-    private static List<List<Box3d>> CreateBox3dFromLivingRoom( List<Room> list, Document document, bool show )
+    private static List<Box3d> CreateBox3dFromLivingRoom( List<Room> list, Document document, bool show )
     {
-      var listOut = new List<List<Box3d>>() ;
+      var listOut = new List<Box3d>() ;
       var option = new SpatialElementBoundaryOptions() ;
       option.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.CoreCenter ;
       foreach ( var room in list ) {
@@ -125,19 +123,17 @@ namespace Arent3d.Architecture.Routing
             listRec.AddRange( rec ) ;
           }
 
-          var listInRoom = new List<Box3d>() ;
           //Create the room box
           foreach ( var rectangular in listRec ) {
             rectangular.Height = height ;
             var box3d = new Box3d( rectangular.GetMin().To3dRaw(), rectangular.GetMax().To3dRaw() ) ;
-            listInRoom.Add( box3d ) ;
+            if ( show ) {
+              var index = listRec.IndexOf( rectangular ) ;
+              CreateBoxGenericModelInPlace( rectangular.GetMin(), rectangular.GetMax(), height, document, $"{room.Name}_{index}" ) ;
+            }
 
-            if ( ! show ) continue ;
-            var index = listRec.IndexOf( rectangular ) ;
-            CreateBoxGenericModelInPlace( rectangular.GetMin(), rectangular.GetMax(), height, document, $"{room.Name}_{index}" ) ;
+            listOut.Add( box3d ) ;
           }
-
-          if ( listInRoom.Count != 0 ) listOut.Add( listInRoom ) ;
         }
         catch {
           //ignore
