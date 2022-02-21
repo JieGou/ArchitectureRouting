@@ -23,7 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     // view activated event
-    public void OnViewActivated( ViewActivatedEventArgs e, AddInType addInType )
+    public virtual void OnViewActivated( ViewActivatedEventArgs e, AddInType addInType )
     {
       // provide ExternalCommandData object to dockable page
       if ( FromToTreeUiManager?.FromToTreeView == null || UiApp == null ) return ;
@@ -74,7 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     // document opened event
-    public void OnDocumentOpened( AddInType addInType )
+    public virtual void OnDocumentOpened( AddInType addInType )
     {
       // provide ExternalCommandData object to dockable page
       if ( FromToTreeUiManager is { } fromToTreeUiManager && UiApp != null ) {
@@ -82,13 +82,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         FromToTreeViewModel.FromToTreePanel = FromToTreeUiManager?.FromToTreeView ;
         if ( fromToTreeUiManager.Dockable == null ) {
           fromToTreeUiManager.Dockable = UiApp.GetDockablePane( fromToTreeUiManager.DpId ) ;
-          fromToTreeUiManager.Dockable.Hide();
         }
       }
     }
 
     // document opened event
-    public void OnDocumentChanged( Autodesk.Revit.DB.Events.DocumentChangedEventArgs e, AddInType addInType )
+    public virtual void OnDocumentChanged( Autodesk.Revit.DB.Events.DocumentChangedEventArgs e, AddInType addInType )
     {
       if ( FromToTreeUiManager?.FromToTreeView is not { } fromToTreeView || UiApp == null ) return ;
       if ( UpdateSuppressed() ) return ;
@@ -103,7 +102,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     }
 
     // document opened event
-    public void UpdateTreeView( AddInType addInType )
+    public virtual void UpdateTreeView( AddInType addInType )
     {
       if ( FromToTreeUiManager?.FromToTreeView is not { } fromToTreeView || UiApp == null ) return ;
       if ( UpdateSuppressed() ) return ;

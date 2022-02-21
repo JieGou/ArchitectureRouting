@@ -1,10 +1,11 @@
-﻿<UserControl x:Class="Arent3d.Architecture.Routing.AppBase.Forms.FromToEditControl"
+﻿<UserControl x:Class="Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms.FromToEditControlHaseko"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
-             xmlns:valueConverters="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters"
+             xmlns:formbase="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms;assembly=Arent3d.Architecture.Routing.AppBase"
+             xmlns:formlocal="clr-namespace:Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms"
+             xmlns:valueConverters="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters;assembly=Arent3d.Architecture.Routing.AppBase"
              mc:Ignorable="d"
              Background="White"
              Height="Auto" Width="Auto">
@@ -12,10 +13,10 @@
         <Style TargetType="{x:Type Label}" x:Key="LengthUnit">
             <Setter Property="Content" Value="&quot;"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="IMPERIAL">
+                <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="IMPERIAL">
                     <Setter Property="Content" Value="&quot;"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="METRIC">
+                <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="METRIC">
                     <Setter Property="Content" Value="mm"/>
                 </DataTrigger>
             </Style.Triggers>
@@ -49,7 +50,7 @@
                     <Style TargetType="{x:Type Label}">
                         <Setter Property="Foreground" Value="{DynamicResource SystemColors.ControlTextBrushKey}"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding UseSystemType, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                            <DataTrigger Binding="{Binding UseSystemType, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="False">
                                 <Setter Property="Foreground" Value="{DynamicResource SystemColors.GrayTextBrushKey}"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -58,19 +59,19 @@
             </Label>
             <ComboBox Grid.Column="1"
                       Grid.Row="0"
-                      ItemsSource="{Binding  SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      ItemsSource="{Binding  SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       DisplayMemberPath="Name"
                       SelectionChanged="SystemTypeComboBox_SelectionChanged"
-                      SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       VerticalAlignment="Center">
                 <ComboBox.Style>
                     <Style TargetType="{x:Type ComboBox}">
                         <Setter Property="IsEnabled" Value="True"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding SystemTypeEditable, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                            <DataTrigger Binding="{Binding SystemTypeEditable, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="False">
                                 <Setter Property="IsEnabled" Value="False"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding UseSystemType, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                            <DataTrigger Binding="{Binding UseSystemType, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="False">
                                 <Setter Property="IsEnabled" Value="False"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -78,7 +79,7 @@
                 </ComboBox.Style>
             </ComboBox>
 
-            <Label Content="{Binding CurveTypeLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+            <Label Content="{Binding CurveTypeLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Grid.Column="0"
@@ -87,7 +88,7 @@
                     <Style TargetType="{x:Type Label}">
                         <Setter Property="Foreground" Value="{DynamicResource SystemColors.ControlTextBrushKey}"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding UseCurveType, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                            <DataTrigger Binding="{Binding UseCurveType, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="False">
                                 <Setter Property="Foreground" Value="{DynamicResource SystemColors.GrayTextBrushKey}"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -96,19 +97,19 @@
             </Label>
             <ComboBox Grid.Column="1"
                       Grid.Row="1"
-                      ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       DisplayMemberPath="Name"
                       SelectionChanged="CurveTypeComboBox_SelectionChanged"
-                      SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       VerticalAlignment="Center">
                 <ComboBox.Style>
                     <Style TargetType="{x:Type ComboBox}">
                         <Setter Property="IsEnabled" Value="True"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding CurveTypeEditable, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                            <DataTrigger Binding="{Binding CurveTypeEditable, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="False">
                                 <Setter Property="IsEnabled" Value="False"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding UseCurveType, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                            <DataTrigger Binding="{Binding UseCurveType, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="False">
                                 <Setter Property="IsEnabled" Value="False"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -123,9 +124,9 @@
                    Grid.Row="2" />
             <ComboBox Grid.Column="1"
                       Grid.Row="2"
-                      ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       SelectionChanged="DiameterComboBox_SelectionChanged"
-                      SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       VerticalAlignment="Center">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
@@ -134,10 +135,10 @@
                                 <Style TargetType="{x:Type TextBlock}">
                                     <Setter Property="Text" Value="{Binding Converter={x:Static valueConverters:LengthToStringConverter.Default}, Mode=OneWay}"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="IMPERIAL">
+                                        <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="IMPERIAL">
                                             <Setter Property="Text" Value="{Binding Converter={x:Static valueConverters:LengthToStringConverter.Inches}, Mode=OneWay}"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="METRIC">
+                                        <DataTrigger Binding="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="METRIC">
                                             <Setter Property="Text" Value="{Binding Converter={x:Static valueConverters:LengthToStringConverter.Millimeters}, Mode=OneWay}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -152,15 +153,17 @@
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Grid.Column="0"
-                   Grid.Row="3" />
+                   Grid.Row="3" 
+                   Visibility="Collapsed"/>
 
             <CheckBox Grid.Column="1" Margin="0 5 0 2.5"
                       Grid.Row="3"
-                      IsChecked="{Binding IsRouteOnPipeSpace, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      IsChecked="{Binding IsRouteOnPipeSpace, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       Checked="Direct_OnChecked"
                       Unchecked="Direct_OnUnchecked"
                       HorizontalAlignment="Left"
-                      VerticalAlignment="Center"/>
+                      VerticalAlignment="Center" 
+                      Visibility="Collapsed"/>
 
             <Label Grid.Row="4" Grid.Column="0" Content="First connector through height"
                    HorizontalAlignment="Left"
@@ -169,15 +172,15 @@
             <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"  Margin="0 2.5 0 5"
                         Orientation="Horizontal">
                 <CheckBox x:Name="FromHeightSetting" Margin="0,0,0,0"
-                          IsChecked="{Binding UseFromFixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                          IsChecked="{Binding UseFromFixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                           Checked="Height_OnChecked"
                           Unchecked="Height_OnUnchecked"
                           HorizontalAlignment="Left"
                           VerticalAlignment="Center" />
                 <ComboBox Name="FromLocationTypeComboBox"
-                          ItemsSource="{Binding LocationTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                          ItemsSource="{Binding LocationTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                           SelectionChanged="LocationTypeComboBox_SelectionChanged"
-                          SelectedIndex="{Binding FromLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                          SelectedIndex="{Binding FromLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                           VerticalAlignment="Center"
                           DisplayMemberPath="Value"
                           Margin="5,0,5,0"
@@ -196,13 +199,13 @@
                     </ComboBox.Style>
                 </ComboBox>
                 <!-- Manually update Value because binding is not called -->
-                <local:NumericUpDownEx x:Name="FromFixedHeightNumericUpDown"
+                <formbase:NumericUpDownEx x:Name="FromFixedHeightNumericUpDown"
                                        ValueChanged="FromFixedHeightNumericUpDown_OnValueChanged"
                                        TextAlignment="Right"
                                        Increment="100"
                                        Width="80">
-                    <local:NumericUpDownEx.Style>
-                        <Style TargetType="{x:Type local:NumericUpDownEx}">
+                    <formbase:NumericUpDownEx.Style>
+                        <Style TargetType="{x:Type formbase:NumericUpDownEx}">
                             <Setter Property="Visibility" Value="Hidden"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsChecked, ElementName=FromHeightSetting}" Value="True">
@@ -210,8 +213,8 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </local:NumericUpDownEx.Style>
-                </local:NumericUpDownEx>
+                    </formbase:NumericUpDownEx.Style>
+                </formbase:NumericUpDownEx>
                 <Label Margin="0,0,0,0">
                     <Label.Style>
                         <Style TargetType="{x:Type Label}" BasedOn="{StaticResource LengthUnit}">
@@ -228,12 +231,13 @@
 
             <Label Grid.Row="5" Grid.Column="0" Content="Second connector through height"
                    HorizontalAlignment="Left"
-                   VerticalAlignment="Center">
+                   VerticalAlignment="Center"
+                   Visibility="Collapsed">
                 <Label.Style>
                     <Style TargetType="Label">
                         <Setter Property="Visibility" Value="Hidden"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsDifferentLevel, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="True">
+                            <DataTrigger Binding="{Binding IsDifferentLevel, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="True">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -241,12 +245,13 @@
                 </Label.Style>
             </Label>
             <StackPanel Grid.Row="5" Grid.Column="1" VerticalAlignment="Center"
-                        Orientation="Horizontal">
+                        Orientation="Horizontal"
+                        Visibility="Collapsed">
                 <StackPanel.Style>
                     <Style TargetType="StackPanel">
                         <Setter Property="Visibility" Value="Hidden"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsDifferentLevel, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="True">
+                            <DataTrigger Binding="{Binding IsDifferentLevel, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="True">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -254,15 +259,15 @@
                 </StackPanel.Style>
 
                 <CheckBox x:Name="ToHeightSetting" Margin="0,0,0,0"
-                          IsChecked="{Binding UseToFixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                          IsChecked="{Binding UseToFixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                           Checked="ToHeight_OnChecked"
                           Unchecked="ToHeight_OnUnchecked"
                           HorizontalAlignment="Left"
                           VerticalAlignment="Center"/>
                 <ComboBox Name="ToLocationTypeComboBox"
-                          ItemsSource="{Binding LocationTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                          ItemsSource="{Binding LocationTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                           SelectionChanged="LocationTypeComboBox_SelectionChanged"
-                          SelectedIndex="{Binding ToLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                          SelectedIndex="{Binding ToLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                           VerticalAlignment="Center"
                           DisplayMemberPath="Value"
                           Margin="5,0,5,0"
@@ -281,13 +286,13 @@
                     </ComboBox.Style>
                 </ComboBox>
                 <!-- Manually update Value because binding is not called -->
-                <local:NumericUpDownEx x:Name="ToFixedHeightNumericUpDown"
+                <formbase:NumericUpDownEx x:Name="ToFixedHeightNumericUpDown"
                                        ValueChanged="ToFixedHeightNumericUpDown_OnValueChanged"
                                        TextAlignment="Right"
                                        Increment="100"
                                        Width="80">
-                    <local:NumericUpDownEx.Style>
-                        <Style TargetType="{x:Type local:NumericUpDownEx}">
+                    <formbase:NumericUpDownEx.Style>
+                        <Style TargetType="{x:Type formbase:NumericUpDownEx}">
                             <Setter Property="Visibility" Value="Hidden"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsChecked, ElementName=ToHeightSetting}" Value="True">
@@ -295,8 +300,8 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </local:NumericUpDownEx.Style>
-                </local:NumericUpDownEx>
+                    </formbase:NumericUpDownEx.Style>
+                </formbase:NumericUpDownEx>
                 <Label Margin="0,0,0,0">
                     <Label.Style>
                         <Style TargetType="{x:Type Label}" BasedOn="{StaticResource LengthUnit}">
@@ -319,9 +324,9 @@
 
             <ComboBox Grid.Column="1"
                       Grid.Row="6"
-                      ItemsSource="{Binding AvoidTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      ItemsSource="{Binding AvoidTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       DisplayMemberPath="Value"
-                      SelectedIndex="{Binding AvoidTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      SelectedIndex="{Binding AvoidTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       SelectionChanged="AvoidTypeComboBox_OnSelectionChanged"
                       VerticalAlignment="Center">
             </ComboBox>
@@ -335,7 +340,7 @@
                     <Style TargetType="{x:Type Label}">
                         <Setter Property="Foreground" Value="{DynamicResource SystemColors.ControlTextBrushKey}"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding UseShaft, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                            <DataTrigger Binding="{Binding UseShaft, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="False">
                                 <Setter Property="Foreground" Value="{DynamicResource SystemColors.GrayTextBrushKey}"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -344,9 +349,9 @@
             </Label>
             <ComboBox Grid.Column="1"
                       Grid.Row="7"
-                      ItemsSource="{Binding Shafts, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      ItemsSource="{Binding Shafts, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       SelectionChanged="ShaftComboBox_SelectionChanged"
-                      SelectedIndex="{Binding ShaftIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
+                      SelectedIndex="{Binding ShaftIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}"
                       VerticalAlignment="Center">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
@@ -355,7 +360,7 @@
                                 <MultiBinding Converter="{x:Static valueConverters:ShaftToStringConverter.Instance}" Mode="OneWay">
                                     <MultiBinding.Bindings>
                                         <Binding Path="Value" />
-                                        <Binding Path="DisplayUnitSystem" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:FromToEditControl}" />
+                                        <Binding Path="DisplayUnitSystem" RelativeSource="{RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}" />
                                     </MultiBinding.Bindings>
                                 </MultiBinding>
                             </TextBlock.Text>
@@ -366,10 +371,10 @@
                     <Style TargetType="{x:Type ComboBox}">
                         <Setter Property="IsEnabled" Value="True"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding ShaftEditable, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                            <DataTrigger Binding="{Binding ShaftEditable, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="False">
                                 <Setter Property="IsEnabled" Value="False"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding UseShaft, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}" Value="False">
+                            <DataTrigger Binding="{Binding UseShaft, RelativeSource={RelativeSource FindAncestor, AncestorType=formlocal:FromToEditControlHaseko}}" Value="False">
                                 <Setter Property="IsEnabled" Value="False"/>
                             </DataTrigger>
                         </Style.Triggers>

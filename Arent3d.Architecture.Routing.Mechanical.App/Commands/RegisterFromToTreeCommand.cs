@@ -41,7 +41,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     protected override void CreateFromToTreeUiManager( UIControlledApplication application, Guid dpId, IPostCommandExecutorBase postCommandExecutor )
     {
       var fromToTreeUiManager = new FromToTreeUiManager( application, dpId, "Mechanical From-To View", postCommandExecutor, new FromToItemsUi() ) ;
-
+      fromToTreeUiManager.InitializeDockablePane(fromToTreeUiManager.FromToTreeView.TitleLabel, fromToTreeUiManager.FromToTreeView);
       RoutingApp.FromToTreeManager.FromToTreeUiManager = fromToTreeUiManager ;
     }
   }

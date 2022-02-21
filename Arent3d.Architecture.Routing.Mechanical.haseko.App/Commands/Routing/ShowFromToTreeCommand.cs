@@ -19,15 +19,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       _uiDocument = commandData.Application.ActiveUIDocument ;
 
       try {
-        var dpid = RoutingApp.FromToTreeManager.FromToTreeUiManager?.DpId ;
+        var dpid = RoutingApp.FromToTreeHasekoManager.FromToTreeHasekoUiManager?.DpId ;
         var dp = _uiDocument.Application.GetDockablePane( dpid ) ;
         if ( ! dp.IsShown() ) {
           dp.Show() ;
-          AppBaseManager.Instance.HasekoDockPanelId = dp.Id ;
         }
         else {
           dp.Hide() ;
-          AppBaseManager.Instance.HasekoDockPanelId = null ;
         }
       }
       catch ( Exception e ) {

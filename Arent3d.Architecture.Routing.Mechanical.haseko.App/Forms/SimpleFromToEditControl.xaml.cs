@@ -564,9 +564,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
       IsDifferentLevel = propertyTypeList.HasDifferentLevel ;
 
       ( FromMinimumHeightAsFloorLevel, FromMaximumHeightAsFloorLevel ) = propertyTypeList.FromHeightRangeAsFloorLevel ;
-      ( FromMinimumHeightAsCeilingLevel, FromMaximumHeightAsCeilingLevel ) = propertyTypeList.FromHeightRangeAsSecondCeilingLevel ;
+      ( FromMinimumHeightAsCeilingLevel, FromMaximumHeightAsCeilingLevel ) = propertyTypeList.FromHeightRangeAsNextCeilingLevel ;
       FromDefaultHeightAsFloorLevel = propertyTypeList.FromDefaultHeightAsFloorLevel ;
-      FromDefaultHeightAsCeilingLevel = propertyTypeList.FromDefaultHeightAsSecondCeilingLevel ;
+      FromDefaultHeightAsCeilingLevel = propertyTypeList.FromDefaultHeightAsNextCeilingLevel ;
 
       ( ToMinimumHeightAsFloorLevel, ToMaximumHeightAsFloorLevel ) = propertyTypeList.ToHeightRangeAsFloorLevel ;
       ( ToMinimumHeightAsCeilingLevel, ToMaximumHeightAsCeilingLevel ) = propertyTypeList.ToHeightRangeAsCeilingLevel ;

@@ -1,0 +1,132 @@
+﻿<Page x:Class="Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms.FromToTreeHaseko"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms"
+      xmlns:formsbase="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms;assembly=Arent3d.Architecture.Routing.AppBase"
+      mc:Ignorable="d"
+      Title="FromToTree"
+      x:Name="root"
+      Height="Auto" Width="Auto" Background="White">
+    <Grid Background="White" Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="50*" />
+            <RowDefinition Height="50*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Width="Auto" Height="Auto">
+            <Label Content="{Binding TitleLabel, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:FromToTreeHaseko}}" FontSize="20" />
+        </StackPanel>
+
+
+        <TreeView Name="FromToTreeView" Width="Auto" Height="Auto" Grid.Row="1"
+                  BorderBrush="LightGray" BorderThickness="1"
+                  SelectedItemChanged="FromToTreeView_OnSelectedItemChanged"
+                  MouseDoubleClick="FromToTreeView_OnMouseDoubleClick" PreviewKeyDown="FromToTreeView_PreviewKeyDown">
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate DataType="formsbase:FromToItem" ItemsSource="{Binding Children}">
+
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="{Binding Icon}" Height="16" Width="16" />
+                        <TextBlock Text="{Binding ItemTypeName}" PreviewMouseLeftButtonDown="TextBlock_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="TextBlock_PreviewMouseLeftButtonUp">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Setter Property="Foreground" Value="{Binding NormalTextColor}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
+                                                <Condition Binding="{Binding IsSelectionActive, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
+                                        </MultiDataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
+                                                <Condition Binding="{Binding IsSelectionActive, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="False" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}" />
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBox Name="secondTextBox" Text="{Binding ItemTypeName}" KeyDown="TextBox_KeyDown" PreviewLostKeyboardFocus="TextBox_PreviewLostKeyboardFocus">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Setter Property="FocusManager.FocusedElement" Value="{Binding ElementName=secondTextBox}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                        <TextBlock Text="{Binding ItemFloor}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{Binding NormalTextColor}" />
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
+                                                <Condition Binding="{Binding IsSelectionActive, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
+                                        </MultiDataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="True" />
+                                                <Condition Binding="{Binding IsSelectionActive, RelativeSource={RelativeSource FindAncestor, AncestorType=TreeViewItem}}" Value="False" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}" />
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+
+        <forms:SelectedFromToHaseko x:Name="SelectedFromTo" Grid.Row="2" Width="Auto" DisplayUnitSystem="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:FromToTreeHaseko}}">
+            <forms:SelectedFromToHaseko.Style>
+                <Style TargetType="forms:SelectedFromToHaseko">
+                    <Setter Property="Visibility" Value="Hidden" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsRouterVisible, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:FromToTreeHaseko}}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </forms:SelectedFromToHaseko.Style>
+        </forms:SelectedFromToHaseko>
+
+        <formsbase:PassPointInfo Grid.Row="2" Width="Auto" DisplayUnitSystem="{Binding DisplayUnitSystem, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:FromToTreeHaseko}}">
+            <formsbase:PassPointInfo.Style>
+                <Style TargetType="formsbase:PassPointInfo">
+                    <Setter Property="Visibility" Value="Hidden" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsPassPointVisible, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:FromToTreeHaseko}}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Setter Property="XPoint" Value="{Binding CoordinatesX, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:FromToTreeHaseko}, Mode=OneWay}" />
+                            <Setter Property="YPoint" Value="{Binding CoordinatesY, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:FromToTreeHaseko}, Mode=OneWay}" />
+                            <Setter Property="ZPoint" Value="{Binding CoordinatesZ, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:FromToTreeHaseko}, Mode=OneWay}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </formsbase:PassPointInfo.Style>
+        </formsbase:PassPointInfo>
+
+    </Grid>
+</Page>

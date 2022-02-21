@@ -27,13 +27,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public (double, double) FromHeightRangeAsFloorLevel { get ; private set ; }
     public (double, double) FromHeightRangeAsCeilingLevel { get ; private set ; }
     
-    public (double, double) FromHeightRangeAsSecondCeilingLevel { get ; private set ; }
+    public (double, double) FromHeightRangeAsNextCeilingLevel { get ; private set ; }
     public (double, double) ToHeightRangeAsFloorLevel { get ; private set ; }
     public (double, double) ToHeightRangeAsCeilingLevel { get ; private set ; }
     public double FromDefaultHeightAsFloorLevel { get ; private set ; }
     public double FromDefaultHeightAsCeilingLevel { get ; private set ; }
     
-    public double FromDefaultHeightAsSecondCeilingLevel { get ; private set ; }
+    public double FromDefaultHeightAsNextCeilingLevel { get ; private set ; }
     public double ToDefaultHeightAsFloorLevel { get ; private set ; }
     public double ToDefaultHeightAsCeilingLevel { get ; private set ; }
 
@@ -43,13 +43,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       
       var nextLevelId = settings.GetNextLevelId( levelId ) ;
       if ( null == nextLevelId ) {
-        FromHeightRangeAsSecondCeilingLevel = ( 0, HeightSettingStorable.DefaultMaxLevelDistance.MillimetersToRevitUnits() ) ;
-        FromDefaultHeightAsSecondCeilingLevel = HeightSettingModel.DEFAULT_HEIGHT_OF_LEVEL.MillimetersToRevitUnits() ;
+        FromHeightRangeAsNextCeilingLevel = ( 0, HeightSettingStorable.DefaultMaxLevelDistance.MillimetersToRevitUnits() ) ;
+        FromDefaultHeightAsNextCeilingLevel = HeightSettingModel.DEFAULT_HEIGHT_OF_LEVEL.MillimetersToRevitUnits() ;
       }
       else {
-        FromHeightRangeAsSecondCeilingLevel = ( 0, settings.GetDistanceToNextLevel( nextLevelId ).MillimetersToRevitUnits() ) ;
-        var level = settings[ nextLevelId ] ;
-        FromDefaultHeightAsSecondCeilingLevel = level.HeightOfLevel.MillimetersToRevitUnits() ;
+        FromHeightRangeAsNextCeilingLevel = ( 0, settings.GetDistanceToNextLevel( nextLevelId ).MillimetersToRevitUnits() ) ;
+        FromDefaultHeightAsNextCeilingLevel = settings[ nextLevelId ].HeightOfLevel.MillimetersToRevitUnits() ;
       }
     }
     private void SetToLevelSetting( HeightSettingStorable settings, ElementId levelId )
@@ -67,7 +66,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return ( floorRange, floorDefault, ceilingRange, ceilingDefault ) ;
     }
 
-    internal RoutePropertyTypeList( IReadOnlyCollection<SubRoute> subRoutes )
+    public RoutePropertyTypeList( IReadOnlyCollection<SubRoute> subRoutes )
     {
       if ( 0 == subRoutes.Count ) throw new ArgumentException() ;
 

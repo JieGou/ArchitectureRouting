@@ -3,14 +3,15 @@ using System.Collections.Generic ;
 using System.Windows ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
+using Arent3d.Architecture.Routing.AppBase.Forms;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Forms
+namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
 {
-  public partial class SelectedFromToBase : UserControl
+  public partial class SelectedFromToHaseko : UserControl
   {
-    public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( SelectedFromToBase ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
+    public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( SelectedFromToHaseko ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
 
     public DisplayUnit DisplayUnitSystem
     {
@@ -18,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       set { SetValue( DisplayUnitSystemProperty, value ) ; }
     }
 
-    public FromToTree? ParentFromToTree { get ; set ; }
+    public FromToTreeHaseko? ParentFromToTree { get ; set ; }
 
     private RoutePropertySource? _editingSource ;
     public RoutePropertySource? EditingSource
@@ -39,7 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public FromToItem? TargetFromToItem { get ; set ; }
 
-    public SelectedFromToBase()
+    public SelectedFromToHaseko()
     {
       InitializeComponent() ;
     }
@@ -85,7 +86,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       var route = routePropertySource.TargetRoute ;
 
-      var fromFixedHeight = FixedHeight.CreateOrNull( FromToEdit.FromLocationType, FromToEdit.FromFixedHeight  ) ;
+      var height = FromToEdit.FromLocationType == FixedHeightType.Ceiling 
+        ? FromToEdit.FromFixedHeight + FromToEdit.FromMaximumHeightAsCeilingLevel
+        : FromToEdit.FromFixedHeight ;
+      var fromFixedHeight = FixedHeight.CreateOrNull( FromToEdit.FromLocationType, height  ) ;
+      
       var toFixedHeight = FixedHeight.CreateOrNull( FromToEdit.ToLocationType, FromToEdit.ToFixedHeight ) ;
       var routeProperties = new RouteProperties( route, FromToEdit.SystemType, FromToEdit.CurveType, FromToEdit.Diameter, FromToEdit.IsRouteOnPipeSpace, FromToEdit.UseFromFixedHeight, fromFixedHeight, FromToEdit.UseToFixedHeight, toFixedHeight, FromToEdit.AvoidType, FromToEdit.Shaft ) ;
       ParentFromToTree?.PostCommandExecutor.ApplySelectedFromToChangesCommand( route, routePropertySource.TargetSubRoutes, routeProperties ) ;
