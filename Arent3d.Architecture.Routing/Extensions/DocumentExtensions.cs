@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.Extensions
     /// <summary>
     /// Get Ceed Model data from snoop DB.
     /// </summary>
-    public static CeedStorable GetCeeDStorable( this Document document )
+    public static CeedStorable GetCeedStorable( this Document document )
     {
       try {
         return CeedStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( CeedStorable.StorableName ) ;

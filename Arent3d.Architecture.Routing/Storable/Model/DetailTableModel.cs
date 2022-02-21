@@ -1,12 +1,10 @@
-﻿using System.ComponentModel ;
-
-namespace Arent3d.Architecture.Routing.Storable.Model
+﻿namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class DetailTableModel
   {
     public bool CalculationExclusion { get ; set ; }
     public string Floor { get ; set ; }
-    public string CeeDCode { get ; set ; }
+    public string CeedCode { get ; set ; }
     public string DetailSymbol { get ; set ; }
     public string DetailSymbolId { get ; set ; }
     public string WireType { get ; set ; }
@@ -30,12 +28,13 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string IsEcoMode { get ; set ; }
     public bool IsParentRoute { get ; set ; }
     public bool IsReadOnly { get ; set ; }
-    public string ParentPlumbingType { get ; set ; }
+    public string PlumbingIdentityInfo { get ; set ; }
+    public string GroupId { get ; set ; }
 
     public DetailTableModel( 
       bool? calculationExclusion, 
       string? floor, 
-      string? ceeDCode,
+      string? ceedCode,
       string? detailSymbol,
       string? detailSymbolId,
       string? wireType, 
@@ -59,11 +58,12 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? isEcoMode,
       bool? isParentRoute,
       bool? isReadOnly,  
-      string? parentPlumbingType )
+      string? plumbingIdentityInfo,
+      string? groupId )
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
-      CeeDCode = ceeDCode ?? string.Empty ;
+      CeedCode = ceedCode ?? string.Empty ;
       DetailSymbol = detailSymbol ?? string.Empty ;
       DetailSymbolId = detailSymbolId ?? string.Empty ;
       WireType = wireType ?? string.Empty ;
@@ -87,7 +87,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsEcoMode = isEcoMode ?? string.Empty ;
       IsParentRoute = isParentRoute ?? false ;
       IsReadOnly = isReadOnly ?? true ;
-      ParentPlumbingType = parentPlumbingType ?? string.Empty ;
+      PlumbingIdentityInfo = plumbingIdentityInfo ?? string.Empty ;
+      GroupId = groupId ?? string.Empty ;
     }
   }
 }

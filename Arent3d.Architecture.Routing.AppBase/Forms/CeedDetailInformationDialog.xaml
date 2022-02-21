@@ -48,11 +48,11 @@
                       Name="ConstructionClassificationCombobox" 
                       IsEditable="True" 
                       Height="27" />
-            <Image Grid.Row="1" Grid.Column="4" Width="100" Height="100" HorizontalAlignment="Right" Source="{Binding CeeDDetailInformationModel.SymbolImage}" />
+            <Image Grid.Row="1" Grid.Column="4" Width="100" Height="100" HorizontalAlignment="Right" Source="{Binding CeedDetailInformationModel.SymbolImage}" />
             <Button Grid.Row="1" Grid.Column="5" HorizontalAlignment="Left" VerticalAlignment="Top" x:Name="btnChangeImage" Command="{Binding ChangeImageCommand}" Content="シンボル変更" Margin="10,15,0,10" Height="27" Width="150" />
         </Grid>
 
-        <DataGrid x:Name="DtGrid" Width="850" HorizontalAlignment="Left" Margin="10 5 5 5" Grid.ColumnSpan="1" Grid.Row="1" ItemsSource="{Binding CeeDDetailInformationModel.QueryData}" CanUserAddRows="False" AutoGenerateColumns="False">
+        <DataGrid x:Name="DtGrid" Width="850" HorizontalAlignment="Left" Margin="10 5 5 5" Grid.ColumnSpan="1" Grid.Row="1" ItemsSource="{Binding CeedDetailInformationModel.QueryData}" CanUserAddRows="False" AutoGenerateColumns="False">
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
                     <Setter Property="Padding" Value="-2" />

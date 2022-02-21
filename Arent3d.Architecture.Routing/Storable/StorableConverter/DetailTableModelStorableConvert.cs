@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
       CalculationExclusion,
       Floor,
-      CeeDCode,
+      CeedCode,
       DetailSymbol,
       DetailSymbolId,
       WireType,
@@ -36,7 +36,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       IsEcoMode,
       IsParentRoute,
       IsReadOnly,
-      ParentPlumbingType,
+      PlumbingIdentityInfo,
+      GroupId
     }
 
     protected override DetailTableModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -45,7 +46,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 
       var calculationExclusion = deserializer.GetBool( SerializeField.CalculationExclusion ) ;
       var floor = deserializer.GetString( SerializeField.Floor ) ;
-      var ceeDCode = deserializer.GetString( SerializeField.CeeDCode ) ;
+      var ceedCode = deserializer.GetString( SerializeField.CeedCode ) ;
       var detailSymbolId = deserializer.GetString( SerializeField.DetailSymbolId ) ;
       var detailSymbol = deserializer.GetString( SerializeField.DetailSymbol ) ;
       var wireType = deserializer.GetString( SerializeField.WireType ) ;
@@ -69,9 +70,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var isEcoMode = deserializer.GetString( SerializeField.IsEcoMode ) ;
       var isParentRoute = deserializer.GetBool( SerializeField.IsParentRoute ) ;
       var isReadOnly = deserializer.GetBool( SerializeField.IsReadOnly ) ;
-      var parentPlumbingType = deserializer.GetString( SerializeField.ParentPlumbingType ) ;
+      var plumbingIdentityInfo = deserializer.GetString( SerializeField.PlumbingIdentityInfo ) ;
+      var groupId = deserializer.GetString( SerializeField.GroupId ) ;
 
-      return new DetailTableModel( calculationExclusion, floor, ceeDCode, detailSymbolId, detailSymbol, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode, isParentRoute, isReadOnly, parentPlumbingType ) ;
+      return new DetailTableModel( calculationExclusion, floor, ceedCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode, isParentRoute, isReadOnly, plumbingIdentityInfo, groupId ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailTableModel customTypeValue )
@@ -80,7 +82,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 
       serializerObject.Add( SerializeField.CalculationExclusion, customTypeValue.CalculationExclusion ) ;
       serializerObject.AddNonNull( SerializeField.Floor, customTypeValue.Floor ) ;
-      serializerObject.AddNonNull( SerializeField.CeeDCode, customTypeValue.CeeDCode ) ;
+      serializerObject.AddNonNull( SerializeField.CeedCode, customTypeValue.CeedCode ) ;
       serializerObject.AddNonNull( SerializeField.DetailSymbolId, customTypeValue.DetailSymbolId ) ;
       serializerObject.AddNonNull( SerializeField.DetailSymbol, customTypeValue.DetailSymbol ) ;
       serializerObject.AddNonNull( SerializeField.WireType, customTypeValue.WireType ) ;
@@ -104,7 +106,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.IsEcoMode, customTypeValue.IsEcoMode ) ;
       serializerObject.Add( SerializeField.IsParentRoute, customTypeValue.IsParentRoute ) ;
       serializerObject.Add( SerializeField.IsReadOnly, customTypeValue.IsReadOnly ) ;
-      serializerObject.AddNonNull( SerializeField.ParentPlumbingType, customTypeValue.ParentPlumbingType ) ;
+      serializerObject.AddNonNull( SerializeField.PlumbingIdentityInfo, customTypeValue.PlumbingIdentityInfo ) ;
+      serializerObject.AddNonNull( SerializeField.GroupId, customTypeValue.GroupId ) ;
 
       return serializerObject ;
     }
