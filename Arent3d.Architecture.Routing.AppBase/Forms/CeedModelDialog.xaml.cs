@@ -59,6 +59,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         LoadConnectorFamilies() ;
       }
 
+      BtnReplaceSymbol.IsEnabled = false ;
+
       Style rowStyle = new Style( typeof( DataGridRow ) ) ;
       rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
       rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseRightButtonDownEvent, new MouseButtonEventHandler( Row_MouseRightButtonDown ) ) ) ;
@@ -67,7 +69,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Row_MouseRightButtonDown( object sender, MouseButtonEventArgs e )
     {
+      BtnReplaceSymbol.IsEnabled = false ;
       _selectedCeedModel = (CeedModel) DtGrid.SelectedValue ;
+      if ( _selectedCeedModel != null ) BtnReplaceSymbol.IsEnabled = true ;
     }
 
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
@@ -274,6 +278,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         MessageBox.Show( "Load connector's family failed.", "Error" ) ;
       }
 
+      BtnReplaceSymbol.IsEnabled = false ;
       MessageBox.Show( "Replace floor plan type successful.", "Message" ) ;
     }
 
