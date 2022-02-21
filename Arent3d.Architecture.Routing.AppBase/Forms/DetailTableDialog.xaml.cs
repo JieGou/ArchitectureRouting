@@ -198,6 +198,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CreateDetailTableViewModelByGroupId() ;
       SaveData( _detailTableViewModel.DetailTableModels ) ;
     }
+    
+    private void BtnPlumbingSummaryMixedConstructionItems_Click( object sender, RoutedEventArgs e )
+    {
+      var detailTableModelsGroupByDetailSymbolId = _detailTableViewModel.DetailTableModels.ToList().GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      foreach ( var (_, detailTableRowsWithSameDetailSymbolId) in detailTableModelsGroupByDetailSymbolId ) {
+        SetGroupIdForDetailTableRowsMixContribution( detailTableRowsWithSameDetailSymbolId ) ;
+      }
+
+      CreateDetailTableViewModelByGroupId() ;
+      SaveData( _detailTableViewModel.DetailTableModels ) ;
+    }
 
     private void SetGroupIdForDetailTableRows( List<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
     {
@@ -217,6 +228,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               foreach ( var detailTableRowWithSameWiringType in detailTableRowsWithSameWiringType ) {
                 detailTableRowWithSameWiringType.GroupId = groupId ;
               }
+            }
+          }
+        }
+      }
+    }
+    
+    private void SetGroupIdForDetailTableRowsMixContribution( List<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
+    {
+      var detailTableRowsGroupByPlumbingIdentityInfo = detailTableRowsWithSameDetailSymbolId.GroupBy( d => d.PlumbingIdentityInfo ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      foreach ( var (_, detailTableRowsWithSamePlumbingIdentityInfo) in detailTableRowsGroupByPlumbingIdentityInfo ) {
+        var detailTableRowsGroupByWiringType = detailTableRowsWithSamePlumbingIdentityInfo.GroupBy( d => ( d.WireType, d.WireSize, d.WireStrip ) ).ToDictionary( g => g.Key.WireType + g.Key.WireSize + "x" + g.Key.WireStrip, g => g.ToList() ) ;
+        foreach ( var (_, detailTableRowsWithSameWiringType) in detailTableRowsGroupByWiringType ) {
+          var oldDetailTableRow = detailTableRowsWithSameWiringType.FirstOrDefault() ;
+          if ( oldDetailTableRow == null ) continue ;
+          if ( detailTableRowsWithSameWiringType.Count == 1 ) {
+            oldDetailTableRow.GroupId = string.Empty ;
+          }
+          else {
+            var groupId = oldDetailTableRow.DetailSymbolId + "-" + oldDetailTableRow.PlumbingIdentityInfo + "-" + oldDetailTableRow.ConstructionItems + "-" + oldDetailTableRow.WireType + oldDetailTableRow.WireSize + oldDetailTableRow.WireStrip ;
+            foreach ( var detailTableRowWithSameWiringType in detailTableRowsWithSameWiringType ) {
+              detailTableRowWithSameWiringType.GroupId = groupId ;
             }
           }
         }
