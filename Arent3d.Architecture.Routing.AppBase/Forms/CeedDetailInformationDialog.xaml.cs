@@ -64,9 +64,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       ObservableCollection<QueryData> queryData = new ObservableCollection<QueryData>() ;
       if ( ! string.IsNullOrWhiteSpace( _setCode ) ) {
-        CeedModel? ceedModel = _listCeedModel.FirstOrDefault( ( model => string.Equals( model.CeeDSetCode, _setCode, StringComparison.InvariantCultureIgnoreCase ) ) ) ;
+        CeedModel? ceedModel = _listCeedModel.FirstOrDefault( ( model => string.Equals( model.CeedSetCode, _setCode, StringComparison.InvariantCultureIgnoreCase ) ) ) ;
         if ( ceedModel != null ) {
-          var hiroiSetMasterNormalList = _hiroiSetMasterNormalModel.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeeDModelNumber ) ) ;
+          var hiroiSetMasterNormalList = _hiroiSetMasterNormalModel.Where( x => x.ParentPartModelNumber.Contains( ceedModel.CeedModelNumber ) ) ;
           foreach ( var item in hiroiSetMasterNormalList ) {
             BuildQueryData( item.MaterialCode1, item.Quantity1, item.ParentPartModelNumber, 1, ref queryData ) ;
             BuildQueryData( item.MaterialCode2, item.Quantity2, item.ParentPartModelNumber, 2, ref queryData ) ;
@@ -80,8 +80,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
 
-      CeeDDetailInformationModel ceeDDetailInformationModels = new CeeDDetailInformationModel( queryData, "" ) ;
-      CeeDDetailInformationViewModel viewModel = new CeeDDetailInformationViewModel( ceeDDetailInformationModels ) ;
+      CeedDetailInformationModel ceedDetailInformationModels = new CeedDetailInformationModel( queryData, "" ) ;
+      CeedDetailInformationViewModel viewModel = new CeedDetailInformationViewModel( ceedDetailInformationModels ) ;
       DataContext = viewModel ;
     }
 
