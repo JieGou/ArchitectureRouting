@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     public BitmapImage? RouteItemIcon { get ; } = null ;
     private IPostCommandExecutorBase PostCommandExecutor { get ; }
-    
+
 
     public FromToTreeUiManager( UIControlledApplication uiControlledApplication, Guid dpId, string fromToTreeTitle, IPostCommandExecutorBase postCommandExecutor, FromToItemsUiBase fromToItemsUi )
     {

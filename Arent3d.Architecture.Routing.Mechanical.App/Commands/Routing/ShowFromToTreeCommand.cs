@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     public override Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       _uiDocument = commandData.Application.ActiveUIDocument ;
-      
+
       try {
         var dpid = RoutingApp.FromToTreeManager.FromToTreeUiManager?.DpId ;
         var dp = _uiDocument.Application.GetDockablePane( dpid ) ;
