@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly Document _document ;
     private List<PickUpModel> _pickUpModels ;
     private PickUpStorable _pickUpStorable ;
-    private readonly List<CeedModel> _ceeDModels ;
+    private readonly List<CeedModel> _ceedModels ;
     private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModels ;
     private readonly List<HiroiSetMasterModel> _hiroiSetMasterEcoModels ;
     private readonly List<HiroiMasterModel> _hiroiMasterModels ;
@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       InitializeComponent() ;
       _document = document ;
-      _ceeDModels = new List<CeedModel>() ;
+      _ceedModels = new List<CeedModel>() ;
       _hiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
       _hiroiSetMasterEcoModels = new List<HiroiSetMasterModel>() ;
       _hiroiMasterModels = new List<HiroiMasterModel>() ;
@@ -46,8 +46,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _pickUpNumbers = new Dictionary<int, string>() ;
       _pickUpNumber = 1 ;
 
-      var ceeDStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      if ( ceeDStorable != null ) _ceeDModels = ceeDStorable.CeedModelData ;
+      var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      if ( ceedStorable != null ) _ceedModels = ceedStorable.CeedModelData ;
 
       var csvStorable = _document.GetAllStorables<CsvStorable>().FirstOrDefault() ;
       if ( csvStorable != null ) {
@@ -216,34 +216,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var standard = string.Empty ;
         var pickUpNumber = productType == ProductType.Connector ? string.Empty : pickUpNumbers[ index ].ToString() ;
         var direction = productType == ProductType.Conduit ? directionZ[ index ] : string.Empty ;
-        var ceeDCodeModel = GetCeeDSetCodeOfElement( element ) ;
-        if ( _ceeDModels.Any() && ceeDCodeModel.Any() ) {
-          var ceeDSetCode = ceeDCodeModel.First() ;
-          var symbol = ceeDCodeModel.Count > 1 ? ceeDCodeModel.ElementAt( 1 ) : string.Empty ;
-          modelNumber = ceeDCodeModel.Count > 2 ? ceeDCodeModel.ElementAt( 2 ) : string.Empty ;
-          var ceeDModels = _ceeDModels.Where( x => x.CeeDSetCode == ceeDSetCode && x.GeneralDisplayDeviceSymbol == symbol && x.ModelNumber == modelNumber ).ToList() ;
-          var ceeDModel = ceeDModels.FirstOrDefault() ;
-          if ( ceeDModel != null ) {
-            modelNumber = ceeDModel.ModelNumber ;
-            specification2 = ceeDModel.CeeDSetCode ;
-            supplement = ceeDModel.Name ;
+        var ceedCodeModel = GetCeedSetCodeOfElement( element ) ;
+        if ( _ceedModels.Any() && ceedCodeModel.Any() ) {
+          var ceedSetCode = ceedCodeModel.First() ;
+          var symbol = ceedCodeModel.Count > 1 ? ceedCodeModel.ElementAt( 1 ) : string.Empty ;
+          modelNumber = ceedCodeModel.Count > 2 ? ceedCodeModel.ElementAt( 2 ) : string.Empty ;
+          var ceedModels = _ceedModels.Where( x => x.CeedSetCode == ceedSetCode && x.GeneralDisplayDeviceSymbol == symbol && x.ModelNumber == modelNumber ).ToList() ;
+          var ceedModel = ceedModels.FirstOrDefault() ;
+          if ( ceedModel != null ) {
+            modelNumber = ceedModel.ModelNumber ;
+            specification2 = ceedModel.CeedSetCode ;
+            supplement = ceedModel.Name ;
 
-            var ceeDModelNumber = string.Empty ;
+            var ceedModelNumber = string.Empty ;
             var hiroiSetCdMasterModels = !string.IsNullOrEmpty(isEcoMode) && bool.Parse( isEcoMode )
                                                                 ? _hiroiSetCdMasterEcoModels
                                                                 : _hiroiSetCdMasterNormalModels ;
             if ( hiroiSetCdMasterModels.Any() ) {
-              var hiroiSetCdMasterModel = hiroiSetCdMasterModels.FirstOrDefault( h => h.SetCode == ceeDSetCode ) ;
+              var hiroiSetCdMasterModel = hiroiSetCdMasterModels.FirstOrDefault( h => h.SetCode == ceedSetCode ) ;
               if ( hiroiSetCdMasterModel != null ) {
-                ceeDModelNumber = productType == ProductType.Connector ? hiroiSetCdMasterModel.QuantityParentPartModelNumber : hiroiSetCdMasterModel.LengthParentPartModelNumber ;
+                ceedModelNumber = productType == ProductType.Connector ? hiroiSetCdMasterModel.QuantityParentPartModelNumber : hiroiSetCdMasterModel.LengthParentPartModelNumber ;
                 construction = productType == ProductType.Conduit ? hiroiSetCdMasterModel.ConstructionClassification : string.Empty ;
               }
             }
             var hiroiSetMasterModels = !string.IsNullOrEmpty(isEcoMode) && bool.Parse( isEcoMode )
                                                             ? _hiroiSetMasterEcoModels
                                                             : _hiroiSetMasterNormalModels ;
-            if ( hiroiSetMasterModels.Any() && ! string.IsNullOrEmpty( ceeDModelNumber ) ) {
-              var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceeDModelNumber ) ;
+            if ( hiroiSetMasterModels.Any() && ! string.IsNullOrEmpty( ceedModelNumber ) ) {
+              var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
               if ( hiroiSetMasterModel != null ) {
                 var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
@@ -294,10 +294,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return materialCodes ;
     }
 
-    private List<string> GetCeeDSetCodeOfElement( Element element )
+    private List<string> GetCeedSetCodeOfElement( Element element )
     {
-      element.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCode ) ;
-      return ! string.IsNullOrEmpty( ceeDSetCode ) ? ceeDSetCode!.Split( '-' ).ToList() : new List<string>() ;
+      element.TryGetProperty( ConnectorFamilyParameter.CeedCode, out string? ceedSetCode ) ;
+      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( '-' ).ToList() : new List<string>() ;
     }
 
     private enum ConduitType

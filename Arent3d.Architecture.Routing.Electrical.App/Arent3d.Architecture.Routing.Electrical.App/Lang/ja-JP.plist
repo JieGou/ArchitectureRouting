@@ -137,10 +137,10 @@
         <key>Electrical.App.Commands.Routing.OffsetSettingCommand</key>
         <string>オフセット設定</string>
 
-        <key>Electrical.App.Commands.Initialization.ShowCeeDModelsCommand</key>
+        <key>Electrical.App.Commands.Initialization.ShowCeedModelsCommand</key>
         <string>セットコード表示</string>
 
-        <key>Electrical.App.Commands.Initialization.ShowCeeDDetailInformationCommand</key>
+        <key>Electrical.App.Commands.Initialization.ShowCeedDetailInformationCommand</key>
         <string>拾い情報表示</string>
 
         <key>Electrical.App.Commands.Initialization.CreateDetailTableCommand</key>

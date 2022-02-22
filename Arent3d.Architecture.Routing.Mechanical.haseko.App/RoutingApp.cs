@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
   /// </summary>
   [RevitAddin( AppInfo.ApplicationGuid )]
   [DisplayName( AppInfo.ApplicationName )]
-  public class RoutingApp : RoutingAppBase
+  public class RoutingApp : RoutingAppBase<RoutingApp>
   {
     private static FromToTreeHasekoManager? _fromToTreeHasekoManager = null ;
 
