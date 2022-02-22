@@ -25,12 +25,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public bool HasDifferentLevel { get ; }
     public (double, double) FromHeightRangeAsFloorLevel { get ; private set ; }
     public (double, double) FromHeightRangeAsCeilingLevel { get ; private set ; }
-    public (double, double) FromHeightRangeAsNextCeilingLevel { get ; set ; } // このメンバー変数はHasekoプロジェクトだけが使われる。
+    public (double, double) FromHeightRangeAsNextCeilingLevel { get ; set ; } // Hasekoプロジェクト用のメンバー
     public (double, double) ToHeightRangeAsFloorLevel { get ; private set ; }
     public (double, double) ToHeightRangeAsCeilingLevel { get ; private set ; }
     public double FromDefaultHeightAsFloorLevel { get ; private set ; }
     public double FromDefaultHeightAsCeilingLevel { get ; private set ; }
-    public double FromDefaultHeightAsNextCeilingLevel { get ; set ; }　// このメンバー変数はHasekoプロジェクトだけが使われる。
+    public double FromDefaultHeightAsNextCeilingLevel { get ; set ; }　// Hasekoプロジェクト用のメンバー
     public double ToDefaultHeightAsFloorLevel { get ; private set ; }
     public double ToDefaultHeightAsCeilingLevel { get ; private set ; }
 
