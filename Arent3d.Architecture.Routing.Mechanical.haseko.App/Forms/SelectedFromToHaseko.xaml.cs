@@ -1,9 +1,10 @@
 ﻿using System ;
 using System.Collections.Generic ;
+using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
-using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Forms;
+using Arent3d.Architecture.Routing.Mechanical.haseko.App.Utils ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 
@@ -29,7 +30,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
       {
         _editingSource = value ;
         if ( value is { } source ) {
-          FromToEdit.SetRouteProperties( new RoutePropertyTypeList( source.TargetSubRoutes ), source.Properties ) ;
+          var routePropertyTypeList = new RoutePropertyTypeList( source.TargetSubRoutes ) ;
+          if ( 0 == source.TargetSubRoutes.Count ) throw new ArgumentException() ;
+          var firstSubRoute = source.TargetSubRoutes.First() ;
+          var document = firstSubRoute.Route.Document ;
+          var fromLevelId = SimplePickRoutingUtil.GetLevelId( document, firstSubRoute.FromEndPoints ) ;
+          var toLevelId = SimplePickRoutingUtil.GetLevelId( document, firstSubRoute.ToEndPoints ) ;
+          SimplePickRoutingUtil.SetFromHeightLevelSetting( document, fromLevelId, toLevelId, ref routePropertyTypeList ) ;
+          FromToEdit.SetRouteProperties( routePropertyTypeList, source.Properties ) ;
+
           ResetDialog() ;
         }
         else {

@@ -4,7 +4,6 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -26,28 +25,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public bool HasDifferentLevel { get ; }
     public (double, double) FromHeightRangeAsFloorLevel { get ; private set ; }
     public (double, double) FromHeightRangeAsCeilingLevel { get ; private set ; }
-    public (double, double) FromHeightRangeAsNextCeilingLevel { get ; private set ; }
+    public (double, double) FromHeightRangeAsNextCeilingLevel { get ; set ; }
     public (double, double) ToHeightRangeAsFloorLevel { get ; private set ; }
     public (double, double) ToHeightRangeAsCeilingLevel { get ; private set ; }
     public double FromDefaultHeightAsFloorLevel { get ; private set ; }
     public double FromDefaultHeightAsCeilingLevel { get ; private set ; }
-    public double FromDefaultHeightAsNextCeilingLevel { get ; private set ; }
+    public double FromDefaultHeightAsNextCeilingLevel { get ; set ; }
     public double ToDefaultHeightAsFloorLevel { get ; private set ; }
     public double ToDefaultHeightAsCeilingLevel { get ; private set ; }
 
     private void SetFromLevelSetting( HeightSettingStorable settings, ElementId levelId )
     {
       ( FromHeightRangeAsFloorLevel, FromDefaultHeightAsFloorLevel, FromHeightRangeAsCeilingLevel, FromDefaultHeightAsCeilingLevel ) = CalculateHeightRanges( settings, levelId ) ;
-
-      var nextLevelId = settings.GetNextLevelId( levelId ) ;
-      if ( null == nextLevelId ) {
-        FromHeightRangeAsNextCeilingLevel = ( 0, HeightSettingStorable.DefaultMaxLevelDistance.MillimetersToRevitUnits() ) ;
-        FromDefaultHeightAsNextCeilingLevel = HeightSettingModel.DEFAULT_HEIGHT_OF_LEVEL.MillimetersToRevitUnits() ;
-      }
-      else {
-        FromHeightRangeAsNextCeilingLevel = ( 0, settings.GetDistanceToNextLevel( nextLevelId ).MillimetersToRevitUnits() ) ;
-        FromDefaultHeightAsNextCeilingLevel = settings[ nextLevelId ].HeightOfLevel.MillimetersToRevitUnits() ;
-      }
     }
     private void SetToLevelSetting( HeightSettingStorable settings, ElementId levelId )
     {
