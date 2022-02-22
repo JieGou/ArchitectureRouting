@@ -27,7 +27,7 @@
             <Button Grid.Row="2"  Width="90" Content="コピー" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="3"  Width="90" Content="挿入貼付" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="4"  Width="90" Content="配管まとめ" Margin="5,5,5,5" Height="25" Click="BtnPlumbingSummary_Click"/>
-            <Button Grid.Row="5"  Width="90" Margin="5,5,5,5" Height="45" Click="BtnPlumbingSummaryMixedConstructionItems_Click">
+            <Button Grid.Row="5"  Width="90" Margin="5,5,5,5" Height="45" Click="BtnPlumbingSummaryMixConstructionItems_Click">
                 <Button.Content>
                     <TextBlock TextWrapping="Wrap" Text="配管まとめ（工事項目混在）"/>
                 </Button.Content>
@@ -132,7 +132,24 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                <DataGridTextColumn Header="配管工事項目" Width="90" Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridComboBoxColumn Header="配管工事項目" Width="90"
+                                        SelectedValueBinding="{Binding PlumbingItems}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="PlumbingItemsSelectionChanged" />
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+                <!--<DataGridTextColumn Header="配管工事項目" Width="90" Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />-->
                 <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" IsReadOnly="True" />
             </DataGrid.Columns>
         </DataGrid>
