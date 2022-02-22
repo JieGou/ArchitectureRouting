@@ -56,10 +56,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
     {
       if ( true != FromToEdit.UseFromFixedHeight || null == _propertyTypeList) return null ;
 
-      var fromFixedHeight = FromToEdit.FromLocationType == FixedHeightType.Ceiling
-        ? FromToEdit.FromFixedHeight + _propertyTypeList.FromHeightRangeAsCeilingLevel.Item2
-        : FromToEdit.FromFixedHeight ;
-      
+      var fromFixedHeight = FromToEdit.FromFixedHeight + _propertyTypeList.FromHeightRangeAsCeilingLevel.Item2 ;
       return FixedHeight.CreateOrNull( FromToEdit.FromLocationType, fromFixedHeight ) ;
     }
     

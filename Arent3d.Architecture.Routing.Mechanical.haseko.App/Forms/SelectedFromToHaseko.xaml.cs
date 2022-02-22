@@ -85,12 +85,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
       }
 
       var route = routePropertySource.TargetRoute ;
-
-      var height = FromToEdit.FromLocationType == FixedHeightType.Ceiling 
-        ? FromToEdit.FromFixedHeight + FromToEdit.FromMaximumHeightAsCeilingLevel
-        : FromToEdit.FromFixedHeight ;
-      var fromFixedHeight = FixedHeight.CreateOrNull( FromToEdit.FromLocationType, height  ) ;
-      
+      var fromFixedHeight = FixedHeight.CreateOrNull( FromToEdit.FromLocationType, FromToEdit.FromFixedHeight + FromToEdit.FromMaximumHeightAsCeilingLevel  ) ;
       var toFixedHeight = FixedHeight.CreateOrNull( FromToEdit.ToLocationType, FromToEdit.ToFixedHeight ) ;
       var routeProperties = new RouteProperties( route, FromToEdit.SystemType, FromToEdit.CurveType, FromToEdit.Diameter, FromToEdit.IsRouteOnPipeSpace, FromToEdit.UseFromFixedHeight, fromFixedHeight, FromToEdit.UseToFixedHeight, toFixedHeight, FromToEdit.AvoidType, FromToEdit.Shaft ) ;
       ParentFromToTree?.PostCommandExecutor.ApplySelectedFromToChangesCommand( route, routePropertySource.TargetSubRoutes, routeProperties ) ;

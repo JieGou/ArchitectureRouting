@@ -241,7 +241,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void FromToTreeView_OnSelectedItemChanged( object sender, RoutedPropertyChangedEventArgs<object> e )
     {
       var selectedItem = FromToTreeView.SelectedItem ;
-
       if ( selectedItem is FromToItem selectedFromToItem ) {
         selectedFromToItem.OnSelected() ;
         SelectedFromTo.TargetFromToItem = selectedFromToItem ;

@@ -148,13 +148,13 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
 
-            <Label Content="Via PS" Margin="0 5 0 2.5"
+            <Label Content="Via PS"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Grid.Column="0"
                    Grid.Row="3" />
 
-            <CheckBox Grid.Column="1" Margin="0 5 0 2.5"
+            <CheckBox Grid.Column="1"
                       Grid.Row="3"
                       IsChecked="{Binding IsRouteOnPipeSpace, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
                       Checked="Direct_OnChecked"
@@ -164,9 +164,8 @@
 
             <Label Grid.Row="4" Grid.Column="0" Content="First connector through height"
                    HorizontalAlignment="Left"
-                   VerticalAlignment="Center" 
-                   Margin="0 2.5 0 5"/>
-            <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"  Margin="0 2.5 0 5"
+                   VerticalAlignment="Center"/>
+            <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"
                         Orientation="Horizontal">
                 <CheckBox x:Name="FromHeightSetting" Margin="0,0,0,0"
                           IsChecked="{Binding UseFromFixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=local:FromToEditControl}}"
