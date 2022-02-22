@@ -1,9 +1,6 @@
-using System ;
 using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
-using System.Reflection ;
-using System.Threading ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
@@ -19,7 +16,6 @@ using Autodesk.Revit.UI ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 using Style = System.Windows.Style ;
-using Window = System.Windows.Window ;
 using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -70,7 +66,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Row_MouseRightButtonDown( object sender, MouseButtonEventArgs e )
     {
       BtnReplaceSymbol.IsEnabled = false ;
-      _selectedCeedModel = (CeedModel) DtGrid.SelectedValue ;
+      _selectedCeedModel = null ;
+      _selectedCeedModel = ( (DataGridRow) sender ).DataContext as CeedModel ;
       if ( _selectedCeedModel != null ) BtnReplaceSymbol.IsEnabled = true ;
     }
 
@@ -119,10 +116,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _allCeedModels == null && _usingCeedModel == null ) return ;
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels == null ) return ;
-      if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) ) {
-        this.DataContext = ceedViewModels ;
-      }
-      else {
+      if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) || ! string.IsNullOrEmpty( _modelNumberSearch ) ) {
         List<CeedModel> ceedModels = new List<CeedModel>() ;
         switch ( string.IsNullOrEmpty( _ceedModelNumberSearch ) ) {
           case false when ! string.IsNullOrEmpty( _modelNumberSearch ) :
@@ -136,8 +130,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             break ;
         }
 
-        var ceedModelsSearch = new CeedViewModel( ceedViewModels.CeedStorable, ceedModels ) ;
-        this.DataContext = ceedModelsSearch ;
+        DtGrid.ItemsSource = ceedModels ;
       }
     }
 
@@ -231,6 +224,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
     {
+      var defaultFloorPlanSymbolUpdate = "Updated Symbol" ;
       var selectConnectorFamilyDialog = new SelectConnectorFamily() ;
       selectConnectorFamilyDialog.ShowDialog() ;
       if ( ! ( selectConnectorFamilyDialog.DialogResult ?? false ) ) return ;
@@ -243,6 +237,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var ceedModel = _allCeedModels.CeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
         if ( ceedModel != null ) {
           ceedModel.FloorPlanType = connectorFamilyName ;
+          ceedModel.FloorPlanSymbol = defaultFloorPlanSymbolUpdate ;
+          ceedModel.FloorPlanImages = null ;
           ceedStorable.CeedModelData = _allCeedModels.CeedModels ;
         }
       }
@@ -251,6 +247,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var ceedModel = _usingCeedModel.CeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
         if ( ceedModel != null ) {
           ceedModel.FloorPlanType = connectorFamilyName ;
+          ceedModel.FloorPlanSymbol = defaultFloorPlanSymbolUpdate ;
+          ceedModel.FloorPlanImages = null ;
           ceedStorable.CeedModelUsedData = _usingCeedModel.CeedModels ;
         }
       }
@@ -278,8 +276,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         MessageBox.Show( "Load connector's family failed.", "Error" ) ;
       }
 
+      if ( DtGrid.ItemsSource is List<CeedModel> newCeedModels ) {
+        var ceedModel = newCeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
+        if ( ceedModel != null ) {
+          ceedModel.FloorPlanType = connectorFamilyName ;
+          ceedModel.FloorPlanSymbol = defaultFloorPlanSymbolUpdate ;
+          ceedModel.FloorPlanImages = null ;
+          DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
+        }
+      }
+
       BtnReplaceSymbol.IsEnabled = false ;
-      MessageBox.Show( "Replace floor plan type successful.", "Message" ) ;
     }
 
     private void LoadData( CeedStorable ceedStorable )
@@ -287,6 +294,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var viewModel = new ViewModel.CeedViewModel( ceedStorable ) ;
       this.DataContext = viewModel ;
       _allCeedModels = viewModel ;
+      DtGrid.ItemsSource = viewModel.CeedModels ;
       CmbCeedModelNumbers.ItemsSource = viewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = viewModel.ModelNumbers ;
     }
@@ -306,6 +314,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void LoadData( CeedViewModel ceedViewModel )
     {
       this.DataContext = ceedViewModel ;
+      DtGrid.ItemsSource = ceedViewModel.CeedModels ;
       CmbCeedModelNumbers.ItemsSource = ceedViewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = ceedViewModel.ModelNumbers ;
     }
@@ -329,8 +338,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void LoadFamily( string path, string fileName )
     {
       string familyName = fileName.Replace( ".rfa", "" ) ;
-      if ( new FilteredElementCollector( _document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == familyName ) is Family family ) return ;
-      _document.LoadFamily( Path.Combine( path, fileName ), out family ) ;
+      if ( new FilteredElementCollector( _document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == familyName ) is Family ) return ;
+      _document.LoadFamily( Path.Combine( path, fileName ), out Family family ) ;
       foreach ( ElementId familySymbolId in (IEnumerable<ElementId>) family.GetFamilySymbolIds() )
         _document.GetElementById<FamilySymbol>( familySymbolId ) ;
     }
