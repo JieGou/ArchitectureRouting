@@ -2,7 +2,6 @@
 using System.Collections.Generic ;
 using System.Windows ;
 using System.Windows.Controls ;
-using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 
@@ -84,7 +83,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       var route = routePropertySource.TargetRoute ;
-
       var fromFixedHeight = FixedHeight.CreateOrNull( FromToEdit.FromLocationType, FromToEdit.FromFixedHeight  ) ;
       var toFixedHeight = FixedHeight.CreateOrNull( FromToEdit.ToLocationType, FromToEdit.ToFixedHeight ) ;
       var routeProperties = new RouteProperties( route, FromToEdit.SystemType, FromToEdit.CurveType, FromToEdit.Diameter, FromToEdit.IsRouteOnPipeSpace, FromToEdit.UseFromFixedHeight, fromFixedHeight, FromToEdit.UseToFixedHeight, toFixedHeight, FromToEdit.AvoidType, FromToEdit.Shaft ) ;

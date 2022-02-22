@@ -43,7 +43,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     protected override void CreateFromToTreeUiManager( UIControlledApplication application, Guid dpId, IPostCommandExecutorBase postCommandExecutor )
     {
       var fromToTreeHasekoUiManager = new FromToTreeHasekoUiManager( application, dpId, "Mechanical From-To View", postCommandExecutor, new FromToItemsUi() ) ;
-      fromToTreeHasekoUiManager.InitializeDockablePane(fromToTreeHasekoUiManager.FromToTreeHasekoView.TitleLabel, fromToTreeHasekoUiManager.FromToTreeHasekoView);
+      
       RoutingApp.FromToTreeHasekoManager.FromToTreeHasekoUiManager = fromToTreeHasekoUiManager ;
     }
     

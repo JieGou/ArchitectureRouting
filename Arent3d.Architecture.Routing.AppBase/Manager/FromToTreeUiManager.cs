@@ -22,17 +22,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       UiControlledApplication = uiControlledApplication ;
       DpId = new DockablePaneId( dpId ) ;
       PostCommandExecutor = postCommandExecutor ;
+      InitializeDockablePane( fromToItemsUi ) ;
+      // subscribe DockableFrameVisibilityChanged event
+      uiControlledApplication.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>( UIControlledApplication_DockableVisibilityChanged ) ;
     }
 
-    public void InitializeDockablePane(string fromToTreeTitle, IDockablePaneProvider dockablePaneProvider )
+    private void InitializeDockablePane(FromToItemsUiBase fromToItemsUi )
     {
       // register dockable pane
       if ( ! DockablePane.PaneIsRegistered( DpId ) ) {
-        UiControlledApplication.RegisterDockablePane( DpId, fromToTreeTitle, dockablePaneProvider ) ;
+        UiControlledApplication.RegisterDockablePane( DpId, fromToItemsUi.TabTitle, FromToTreeView  ) ;
       }
-      
-      // subscribe DockableFrameVisibilityChanged event
-      UiControlledApplication.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>( UIControlledApplication_DockableVisibilityChanged ) ;
     }
 
     /// <summary>
