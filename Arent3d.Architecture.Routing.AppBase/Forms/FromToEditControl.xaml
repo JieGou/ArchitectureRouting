@@ -160,11 +160,11 @@
                       Checked="Direct_OnChecked"
                       Unchecked="Direct_OnUnchecked"
                       HorizontalAlignment="Left"
-                      VerticalAlignment="Center"/>
+                      VerticalAlignment="Center" />
 
             <Label Grid.Row="4" Grid.Column="0" Content="First connector through height"
                    HorizontalAlignment="Left"
-                   VerticalAlignment="Center"/>
+                   VerticalAlignment="Center" />
             <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"
                         Orientation="Horizontal">
                 <CheckBox x:Name="FromHeightSetting" Margin="0,0,0,0"

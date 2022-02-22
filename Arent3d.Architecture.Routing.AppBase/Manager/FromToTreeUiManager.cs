@@ -15,6 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
 
     public BitmapImage? RouteItemIcon { get ; } = null ;
     private IPostCommandExecutorBase PostCommandExecutor { get ; }
+    
 
     public FromToTreeUiManager( UIControlledApplication uiControlledApplication, Guid dpId, string fromToTreeTitle, IPostCommandExecutorBase postCommandExecutor, FromToItemsUiBase fromToItemsUi )
     {
@@ -27,11 +28,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       uiControlledApplication.DockableFrameVisibilityChanged += new EventHandler<DockableFrameVisibilityChangedEventArgs>( UIControlledApplication_DockableVisibilityChanged ) ;
     }
 
-    private void InitializeDockablePane(FromToItemsUiBase fromToItemsUi )
+    private void InitializeDockablePane( FromToItemsUiBase fromToItemsUi )
     {
       // register dockable pane
       if ( ! DockablePane.PaneIsRegistered( DpId ) ) {
-        UiControlledApplication.RegisterDockablePane( DpId, fromToItemsUi.TabTitle, FromToTreeView  ) ;
+        UiControlledApplication.RegisterDockablePane( DpId, fromToItemsUi.TabTitle, FromToTreeView ) ;
       }
     }
 
