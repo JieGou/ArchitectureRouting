@@ -30,7 +30,7 @@ namespace Arent3d.Architecture.Routing
       return listOut ;
     }
 
-    private static FilteredElementCollector? GetLinkedDocFilter( Document doc, Application app )
+    public static FilteredElementCollector? GetLinkedDocFilter( Document doc, Application app )
     {
       var firstLinkDoc = new FilteredElementCollector( doc ).OfCategory( BuiltInCategory.OST_RvtLinks ).ToElements().First() ;
       foreach ( Document linkedDoc in app.Documents ) {
@@ -41,7 +41,7 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    private static IList<Room> GetAllRoomInCurrentAndLinkedDocument( FilteredElementCollector? filterLinked, FilteredElementCollector? filterCurrent )
+    public static IList<Room> GetAllRoomInCurrentAndLinkedDocument( FilteredElementCollector? filterLinked, FilteredElementCollector? filterCurrent )
     {
       var rooms = new List<Room>() ;
       if ( filterLinked != null ) {
@@ -57,22 +57,28 @@ namespace Arent3d.Architecture.Routing
       return rooms ;
     }
 
-    private static IEnumerable<Box3d> CreateBox3dFromOther( List<Room> list, Document document, bool show )
+    public static IEnumerable<Box3d> CreateBox3dFromOther( List<Room> list, Document document, bool show )
     {
-      var listOut = new List<List<Box3d>>() ;
+      var listOut = new List<Box3d>() ;
       foreach ( var room in list ) {
         var bb = room.get_BoundingBox( document.ActiveView ) ;
         if ( bb is null ) continue ;
         var min = bb.Min ;
         var max = bb.Max ;
         var box3d = new Box3d( min.To3dRaw(), max.To3dRaw() ) ;
-        var height = ( max.Z - min.Z ) ;
-        if ( show ) CreateBoxGenericModelInPlace( min, max, height, document, room.Name ) ;
-        yield return box3d ;
+        listOut.Add( box3d) ;
       }
+
+      if ( show ) {
+        listOut.ForEach( x =>
+        {
+          CreateBoxGenericModelInPlace( x.Min.ToXYZRaw(), x.Max.ToXYZRaw(), x.ZWidth, document, "" ) ;
+        } );
+      }
+      return listOut ;
     }
 
-    private static List<Box3d> CreateBox3dFromLivingRoom( List<Room> list, Document document, bool show )
+    public static List<Box3d> CreateBox3dFromLivingRoom( List<Room> list, Document document, bool show )
     {
       var listOut = new List<Box3d>() ;
       var option = new SpatialElementBoundaryOptions() ;
@@ -114,25 +120,21 @@ namespace Arent3d.Architecture.Routing
           var dic = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
 
           //Find out the rectangular
-          var listRec = new List<RectangularBox>() ;
           for ( int i = 0 ; i < dic.Count - 1 ; i++ ) {
             var l1 = dic[ dic.Keys.ToList()[ i ] ] ;
             var l2 = dic[ dic.Keys.ToList()[ i + 1 ] ] ;
             l1.AddRange( l2 ) ;
-            var rec = GeoExtension.FindRectangular( l1, GeoExtension.GetAllXLine( curvesFix ), lenghtMaxY * 2 ) ;
-            listRec.AddRange( rec ) ;
+            var recBox = GeoExtension.FindRectangularBox( l1, GeoExtension.GetAllXLine( curvesFix ), lenghtMaxY * 2, height ) ;
+            listOut.AddRange( recBox ) ;
           }
 
           //Create the room box
-          foreach ( var rectangular in listRec ) {
-            rectangular.Height = height ;
-            var box3d = new Box3d( rectangular.GetMin().To3dRaw(), rectangular.GetMax().To3dRaw() ) ;
-            if ( show ) {
-              var index = listRec.IndexOf( rectangular ) ;
-              CreateBoxGenericModelInPlace( rectangular.GetMin(), rectangular.GetMax(), height, document, $"{room.Name}_{index}" ) ;
-            }
-
-            listOut.Add( box3d ) ;
+          if ( show ) {
+            listOut.ForEach( recBox =>
+            {
+              var index = listOut.IndexOf( recBox ) ;
+              CreateBoxGenericModelInPlace( recBox.Min.ToXYZRaw(), recBox.Max.ToXYZRaw(), height, document, $"{room.Name}_{index}" ) ;
+            } ) ;
           }
         }
         catch {
@@ -260,10 +262,9 @@ namespace Arent3d.Architecture.Routing
       return list.OrderBy( x => x.Y ).Last() ;
     }
 
-    public static XYZ ProjectPointToCurve( XYZ point, Curve curve )
+    public static XYZ AddHeight( this XYZ point, double value )
     {
-      var res = curve.Project( point ) ;
-      return res.XYZPoint ;
+      return new XYZ( point.X, point.Y, point.Z + value ) ;
     }
 
     public static List<Line> FixDiagonalLines( List<Line> lines, double lengthEx )
@@ -308,14 +309,15 @@ namespace Arent3d.Architecture.Routing
       return ( points.Count != 0, points ) ;
     }
 
-    public static List<RectangularBox> FindRectangular( IEnumerable<XYZ> list, List<Line> supportLine, double lengthExt )
+    public static IEnumerable<Box3d> FindRectangularBox( IEnumerable<XYZ> list, List<Line> supportLine, double lengthExt, double addHeight )
     {
-      var listOut = new List<RectangularBox>() ;
+      var listOut = new List<Box3d>() ;
       try {
         var listSort = list.GroupBy( x => Math.Round( x.Y, 6 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Where( d => d.Value.Count > 1 ).OrderBy( x => x.Key ).ToList() ;
         if ( listSort.Count == 2 ) {
           var (lower, upper) = ( listSort.First().Value.OrderBy( x => x.X ).ToList(), listSort.Last().Value.OrderBy( x => x.X ).ToList() ) ;
-          listOut.Add( new RectangularBox( lower.First(), lower.Last(), upper.First(), upper.Last() ) ) ;
+          var box3d = new Box3d( new[] { lower.First().To3dRaw(), lower.Last().To3dRaw(), upper.First().AddHeight( addHeight ).To3dRaw(), upper.Last().AddHeight( addHeight ).To3dRaw() } ) ;
+          listOut.Add( box3d ) ;
         }
         else {
           //Create line in middle
@@ -334,7 +336,8 @@ namespace Arent3d.Architecture.Routing
             {
               if ( listItem.Count == 2 ) {
                 var (low, up) = ( listItem.First().Value.OrderBy( x => x.X ).ToList(), listItem.Last().Value.OrderBy( x => x.X ).ToList() ) ;
-                listOut.Add( new RectangularBox( low.First(), low.Last(), up.First(), up.Last() ) ) ;
+                var box3d = new Box3d( new[] { low.First().To3dRaw(), low.Last().To3dRaw(), up.First().AddHeight( addHeight ).To3dRaw(), up.Last().AddHeight( addHeight ).To3dRaw() } ) ;
+                listOut.Add( box3d ) ;
               }
             } ) ;
           }
@@ -345,36 +348,6 @@ namespace Arent3d.Architecture.Routing
       }
 
       return listOut ;
-    }
-  }
-
-  public class RectangularBox
-  {
-    private readonly XYZ _pt1 ;
-    private readonly XYZ _pt2 ;
-    private readonly XYZ _pt3 ;
-    private readonly XYZ _pt4 ;
-    public double? Height ;
-
-    public RectangularBox( XYZ pt1, XYZ pt2, XYZ pt3, XYZ pt4 )
-    {
-      _pt1 = pt1 ;
-      _pt2 = pt2 ;
-      _pt3 = pt3 ;
-      _pt4 = pt4 ;
-    }
-
-    public XYZ GetMin()
-    {
-      var list = new List<XYZ>() { _pt1, _pt2, _pt3, _pt4 } ;
-      return list.OrderBy( p => p.X ).Where( ( x, i ) => i is 0 or 1 ).OrderBy( p => p.Y ).First() ;
-    }
-
-    public XYZ GetMax()
-    {
-      var list = new List<XYZ>() { _pt1, _pt2, _pt3, _pt4 } ;
-      var max = list.OrderBy( p => p.X ).Where( ( x, i ) => i is 2 or 3 ).OrderBy( p => p.Y ).Last() ;
-      return Height != null ? new XYZ( max.X, max.Y, (double) ( max.Z + Height ) ) : max ;
     }
   }
 }
