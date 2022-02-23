@@ -43,7 +43,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         File.Copy( sourcePath, destPath, true ) ;
         if ( ! File.Exists( destPath ) ) return ;
         var isExistedFileName = ConnectorFamilyList.FirstOrDefault( f => f.ToString() == fileName ) != null ;
-        if ( ! isExistedFileName ) ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
+        if ( ! isExistedFileName ) {
+          ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
+        }
       }
       catch {
         MessageBox.Show( "Load connector's family failed.", "Error" ) ;
@@ -74,6 +76,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       public ConnectorFamilyInfo( string connectorFamilyName )
       {
         _connectorFamilyName = connectorFamilyName ;
+        _isSelected = true ;
       }
 
       public bool IsSelected

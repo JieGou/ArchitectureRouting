@@ -13,8 +13,11 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using Image = System.Drawing.Image ;
+using ImageConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters.ImageConverter ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
+using Size = System.Drawing.Size ;
 using Style = System.Windows.Style ;
 using Visibility = System.Windows.Visibility ;
 
@@ -224,69 +227,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
     {
-      var defaultFloorPlanSymbolUpdate = "Updated Symbol" ;
       var selectConnectorFamilyDialog = new SelectConnectorFamily() ;
       selectConnectorFamilyDialog.ShowDialog() ;
       if ( ! ( selectConnectorFamilyDialog.DialogResult ?? false ) ) return ;
       var connectorFamilyFileName = selectConnectorFamilyDialog.ConnectorFamilyList.FirstOrDefault( f => f.IsSelected )?.ToString() ;
-      var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      if ( ceedStorable == null ) return ;
       if ( ( _allCeedModels == null && _usingCeedModel == null ) || _selectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
+
+      using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
+      progress.Message = "Loading and saving data...." ;
+      var path = ConnectorFamilyManager.GetFolderPath() ;
       var connectorFamilyName = connectorFamilyFileName!.Replace( ".rfa", "" ) ;
-      if ( _allCeedModels != null ) {
-        var ceedModel = _allCeedModels.CeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
-        if ( ceedModel != null ) {
-          ceedModel.FloorPlanType = connectorFamilyName ;
-          ceedModel.FloorPlanSymbol = defaultFloorPlanSymbolUpdate ;
-          ceedModel.FloorPlanImages = null ;
-          ceedStorable.CeedModelData = _allCeedModels.CeedModels ;
-        }
+      using ( var progressData = progress?.Reserve( 0.3 ) ) {
+        LoadConnectorFamilyAndExportImage( path, connectorFamilyFileName, connectorFamilyName ) ;
+        progressData?.ThrowIfCanceled() ;
       }
 
-      if ( _usingCeedModel != null ) {
-        var ceedModel = _usingCeedModel.CeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
-        if ( ceedModel != null ) {
-          ceedModel.FloorPlanType = connectorFamilyName ;
-          ceedModel.FloorPlanSymbol = defaultFloorPlanSymbolUpdate ;
-          ceedModel.FloorPlanImages = null ;
-          ceedStorable.CeedModelUsedData = _usingCeedModel.CeedModels ;
-        }
+      CeedModel? newCeedModel = null ;
+      using ( var progressData = progress?.Reserve( 0.6 ) ) {
+        UpdateCeedStorableAfterReplaceFloorPlanSymbol( ref newCeedModel, path, connectorFamilyName ) ;
+        progressData?.ThrowIfCanceled() ;
       }
 
-      try {
-        using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
-        progress.Message = "Loading data..." ;
-        using Transaction t = new Transaction( _document, "Load connector's family and save CeeD data" ) ;
-        t.Start() ;
-        using ( var progressData = progress?.Reserve( 0.5 ) ) {
-          var path = ConnectorFamilyManager.GetFolderPath() ;
-          if ( ! Directory.Exists( path ) ) return ;
-          LoadFamily( path, connectorFamilyFileName! ) ;
-          progressData?.ThrowIfCanceled() ;
-        }
-
-        using ( var progressData = progress?.Reserve( 0.9 ) ) {
-          ceedStorable.Save() ;
-          progressData?.ThrowIfCanceled() ;
-        }
-
-        t.Commit() ;
+      using ( var progressData = progress?.Reserve( 0.9 ) ) {
+        if ( newCeedModel != null ) UpdateDataGridAfterReplaceFloorPlanSymbol( newCeedModel ) ;
+        BtnReplaceSymbol.IsEnabled = false ;
+        progressData?.ThrowIfCanceled() ;
       }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        MessageBox.Show( "Load connector's family failed.", "Error" ) ;
-      }
-
-      if ( DtGrid.ItemsSource is List<CeedModel> newCeedModels ) {
-        var ceedModel = newCeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
-        if ( ceedModel != null ) {
-          ceedModel.FloorPlanType = connectorFamilyName ;
-          ceedModel.FloorPlanSymbol = defaultFloorPlanSymbolUpdate ;
-          ceedModel.FloorPlanImages = null ;
-          DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
-        }
-      }
-
-      BtnReplaceSymbol.IsEnabled = false ;
     }
 
     private void LoadData( CeedStorable ceedStorable )
@@ -319,6 +285,78 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbModelNumbers.ItemsSource = ceedViewModel.ModelNumbers ;
     }
 
+    private void LoadConnectorFamilyAndExportImage( string path, string connectorFamilyFileName, string connectorFamilyName )
+    {
+      try {
+        using Transaction t = new Transaction( _document, "Load connector's family" ) ;
+        t.Start() ;
+        if ( ! Directory.Exists( path ) ) return ;
+        var connectorFamily = LoadFamily( path, connectorFamilyFileName ) ;
+        t.Commit() ;
+
+        if ( connectorFamily == null ) return ;
+        var floorPlanImage = ImageConverter.GetFloorPlanImageFile( path, connectorFamilyName ) ;
+        if ( string.IsNullOrEmpty( floorPlanImage ) )
+          ImageConverter.ExportConnectorFamilyImage( _document, connectorFamily, path, connectorFamilyName ) ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        MessageBox.Show( "Load connector's family failed.", "Error" ) ;
+      }
+    }
+
+    private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( ref CeedModel? newCeedModel, string path, string connectorFamilyName )
+    {
+      var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      if ( ceedStorable == null ) return ;
+      if ( _allCeedModels != null ) {
+        var ceedModel = _allCeedModels.CeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
+        if ( ceedModel != null ) {
+          newCeedModel = SetFloorPlanImageAndFloorPlanType( ceedModel, path, connectorFamilyName ) ;
+          if ( newCeedModel != null ) {
+            ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
+            ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
+            ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
+            ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
+            ceedStorable.CeedModelData = _allCeedModels.CeedModels ;
+          }
+        }
+      }
+
+      if ( newCeedModel == null ) return ;
+      if ( _usingCeedModel != null ) {
+        var ceedModel = _usingCeedModel.CeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
+        if ( ceedModel != null ) {
+          ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
+          ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
+          ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
+          ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
+          ceedStorable.CeedModelUsedData = _usingCeedModel.CeedModels ;
+        }
+      }
+
+      try {
+        using Transaction t = new Transaction( _document, "Save CeeD data" ) ;
+        t.Start() ;
+        ceedStorable.Save() ;
+        t.Commit() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
+      }
+    }
+
+    private void UpdateDataGridAfterReplaceFloorPlanSymbol( CeedModel newCeedModel )
+    {
+      if ( DtGrid.ItemsSource is not List<CeedModel> newCeedModels ) return ;
+      var ceedModel = newCeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
+      if ( ceedModel == null ) return ;
+      ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
+      ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
+      ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
+      ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
+      DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
+    }
+
     private void LoadConnectorFamilies()
     {
       var path = ConnectorFamilyManager.GetFolderPath() ;
@@ -335,13 +373,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       tx.Commit() ;
     }
 
-    private void LoadFamily( string path, string fileName )
+    private Family? LoadFamily( string path, string fileName )
     {
       string familyName = fileName.Replace( ".rfa", "" ) ;
-      if ( new FilteredElementCollector( _document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == familyName ) is Family ) return ;
-      _document.LoadFamily( Path.Combine( path, fileName ), out Family family ) ;
+      if ( new FilteredElementCollector( _document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == familyName ) is Family family ) return family ;
+      _document.LoadFamily( Path.Combine( path, fileName ), out family ) ;
       foreach ( ElementId familySymbolId in (IEnumerable<ElementId>) family.GetFamilySymbolIds() )
         _document.GetElementById<FamilySymbol>( familySymbolId ) ;
+      return family ;
+    }
+
+    private CeedModel? SetFloorPlanImageAndFloorPlanType( CeedModel ceedModel, string path, string familyName )
+    {
+      var imageFileName = ImageConverter.CropImage( path, familyName ) ;
+      if ( string.IsNullOrEmpty( imageFileName ) ) return null ;
+      var floorPlanImage = Image.FromFile( imageFileName ) ;
+      floorPlanImage = ImageConverter.ResizeImage( floorPlanImage, new Size( 30, 30 ) ) ;
+      List<Image> floorPlanImages = new List<Image>() { floorPlanImage } ;
+      return new CeedModel( ceedModel.CeedModelNumber, ceedModel.CeedSetCode, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.ModelNumber, floorPlanImages, null, string.Empty, ceedModel.InstrumentationSymbol, ceedModel.Name, ceedModel.Condition, string.Empty, familyName ) ;
     }
   }
 }
