@@ -185,6 +185,21 @@ namespace Arent3d.Architecture.Routing
 
   public static class GeoExtension
   {
+    public static bool FilterBeamWithXyDirection( this FamilyInstance beam )
+    {
+      return beam.Location switch
+      {
+        LocationPoint => true,
+        LocationCurve { Curve: Line line } => line.Direction.IsAlmostEqualTo( XYZ.BasisX ) || line.Direction.IsAlmostEqualTo( -XYZ.BasisX ) || line.Direction.IsAlmostEqualTo( XYZ.BasisY ) || line.Direction.IsAlmostEqualTo( -XYZ.BasisY ),
+        _ => false
+      } ;
+    }
+
+    public static bool FilterBeamUniqueSolid( this FamilyInstance beam, Options option )
+    {
+      var geometryElement = beam.get_Geometry( option ) ;
+      return geometryElement.Select( x => x as Solid ).Count( x => x?.Volume > 0 ) == 1 ;
+    }
     public static List<Line> GetAllXLine( IEnumerable<Line> lines )
     {
       return lines.Where( l => l.Direction.IsAlmostEqualTo( XYZ.BasisX ) || l.Direction.IsAlmostEqualTo( -XYZ.BasisX ) ).ToList() ;

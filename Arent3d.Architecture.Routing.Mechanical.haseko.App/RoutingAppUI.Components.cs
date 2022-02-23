@@ -63,8 +63,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
         private static class NewEnvelopeCommandButton
         {
         }
-        [Button( typeof( CreateRoomAndEnvelopeCommand ), OnlyInitialized = true )]
-        private static class CreateRoomBoxesButton
+        [Button( typeof( GenerateStructureEnvelopeCommand ), OnlyInitialized = true )]
+        private static class GenerateStructureEnvelopeButton
         {
         }
       }

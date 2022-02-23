@@ -16,40 +16,31 @@ using Line = Autodesk.Revit.DB.Line ;
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.CreateRoomAndEnvelopeCommand", DefaultString = "Create\nRoom And Envelope" )]
+  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.GenerateStructureEnvelopeCommand", DefaultString = "Generate\nStructure Envelope" )]
   [Image( "resources/room_boxes.png" )]
-  public class CreateRoomAndEnvelopeCommand : IExternalCommand
+  public class GenerateStructureEnvelopeCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
       try {
         using var transaction = new Transaction( document ) ;
-        transaction.Start( "Create room and envelope" ) ;
+        transaction.Start( "Create structure envelope" ) ;
         //Delete all
-        ElementCategoryFilter filterGen = new(BuiltInCategory.OST_GenericModel) ;
-
-        var pvp = new ParameterValueProvider( new ElementId( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ) ) ;
-        var stringContains = new FilterStringContains() ;
-        const string value1 = "ROOM_BOX" ;
-        const string value2 = "_ENVELOPE" ;
-        var fRule1 = new FilterStringRule( pvp, stringContains, value1, true ) ;
-        var fRule2 = new FilterStringRule( pvp, stringContains, value2, true ) ;
-        var filterComment1 = new ElementParameterFilter( fRule1 ) ;
-        var filterComment2 = new ElementParameterFilter( fRule2 ) ;
-        var filterComment = new LogicalOrFilter( filterComment1, filterComment2 ) ;
-
+        var elementId = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault()?.Id ?? throw new InvalidOperationException() ;
+        FamilyInstanceFilter filter = new(document, elementId) ;
         var collector = new FilteredElementCollector( document ) ;
-        var allBoxEnvelope = collector.WherePasses( filterGen ).WherePasses( filterComment ).WhereElementIsNotElementType().ToElementIds() ;
-
+        var allBoxEnvelope = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElementIds() ;
         document.Delete( allBoxEnvelope ) ;
 
         //1. Wall Envelope Feature
-        ExecuteWallEnvelope( commandData ) ;
-        //2. Room Box Feature
-        ExecuteRoomBoxes( commandData ) ;
-        //3. Floor Envelope Feature
-        ExecuteFloorEnvelope( commandData ) ;
+        //ExecuteWallEnvelope( commandData ) ;
+        //2. Floor Envelope Feature
+        //ExecuteFloorEnvelope( commandData ) ;
+        //3. Column Envelope
+        ExecuteColumnEnvelope( commandData ) ;
+        //4. Beam Envelope
+        ExecuteBeamEnvelope( commandData ) ;
         transaction.Commit() ;
 
         return Result.Succeeded ;
@@ -258,21 +249,100 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       }
     }
 
-    private void ExecuteRoomBoxes( ExternalCommandData commandData )
+    private void ExecuteColumnEnvelope( ExternalCommandData commandData )
     {
-      var uiApp = commandData.Application ;
-      var uiDoc = uiApp.ActiveUIDocument ;
-      var doc = uiDoc.Document ;
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var document = uiDocument.Document ;
+      // Get all of the column instances
+      ElementCategoryFilter filter = new(BuiltInCategory.OST_Columns) ;
+      var collectorLink = ObstacleGeneration.GetLinkedDocFilter( document, commandData.Application.Application ) ;
+      var collectorCurrent = new FilteredElementCollector( document ) ;
+      var allColumns = new List<FamilyInstance>() ;
+      if ( collectorLink is not null ) {
+        var colLink = collectorLink.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<FamilyInstance>().ToList() ;
+        allColumns.AddRange( colLink ) ;
+      }
 
-      var linkedDocumentFilter = ObstacleGeneration.GetLinkedDocFilter( doc, uiApp.Application ) ;
-      var currentDocumentFilter = new FilteredElementCollector( doc ) ;
+      var colCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<FamilyInstance>().ToList() ;
+      allColumns.AddRange( colCurrent ) ;
+      var level = uiDocument.ActiveView.GenLevel ;
+      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
+      level ??= levels.First() ;
 
-      var allRooms = ObstacleGeneration.GetAllRoomInCurrentAndLinkedDocument( linkedDocumentFilter, currentDocumentFilter ) ;
-      var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
-      var otherRooms = allRooms.Except( livingRooms ).ToList() ;
+      var option = new Options() ;
+      option.DetailLevel = ViewDetailLevel.Fine ;
+      foreach ( var colInstance in allColumns ) {
+        var geometryElement = colInstance.get_Geometry( option ) ;
+        foreach ( var geoObject in geometryElement ) {
+          if ( geoObject is not Solid { Volume: > 0 } solid ) continue ;
+          var bb = solid.GetBoundingBox() ;
+          var (ox, oy, oz) = bb.Transform.Origin ;
+          var (x, y, z) = bb.Min ;
+          var (x1, y1, z1) = bb.Max ;
 
-      ObstacleGeneration.CreateBox3dFromOther( otherRooms, doc, true ) ;
-      ObstacleGeneration.CreateBox3dFromLivingRoom( livingRooms, doc, true ) ;
+          var (width, length, height) = ( x1 - x, y1 - y, z1 - z ) ;
+          var location = new XYZ( ox, oy, oz - z1 ) ;
+
+          var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+          var envelopeInstance = envelopeSymbol.Instantiate( location, level, StructuralType.NonStructural ) ;
+          envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
+          envelopeInstance.LookupParameter( "奥行き" ).Set( length ) ;
+          envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
+          envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
+          envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "COLUMN_ENVELOPE" ) ;
+        }
+      }
+    }
+
+    private void ExecuteBeamEnvelope( ExternalCommandData commandData )
+    {
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      var document = uiDocument.Document ;
+      // Get all of the beam instances
+      ElementCategoryFilter filter = new(BuiltInCategory.OST_StructuralFraming) ;
+      var collectorLink = ObstacleGeneration.GetLinkedDocFilter( document, commandData.Application.Application ) ;
+      var collectorCurrent = new FilteredElementCollector( document ) ;
+      var allBeams = new List<FamilyInstance>() ;
+      if ( collectorLink is not null ) {
+        var beamLink = collectorLink.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<FamilyInstance>().ToList() ;
+        allBeams.AddRange( beamLink ) ;
+      }
+
+      var beamCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<FamilyInstance>().ToList() ;
+      allBeams.AddRange( beamCurrent ) ;
+
+      //Filter beam not XY direction and Other Framing with multi layers
+      var option = new Options() ;
+      option.DetailLevel = ViewDetailLevel.Fine ;
+      var filterBeams = allBeams.Where( b => b.FilterBeamWithXyDirection() ).Where( b => b.FilterBeamUniqueSolid( option ) ).ToList() ;
+
+      var level = uiDocument.ActiveView.GenLevel ;
+      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
+      level ??= levels.First() ;
+
+      foreach ( var bmInstance in filterBeams ) {
+        var geometryElement = bmInstance.get_Geometry( option ) ;
+        foreach ( var geoObject in geometryElement ) {
+          if ( geoObject is not Solid { Volume: > 0 } solid ) continue ;
+          var bb = solid.GetBoundingBox() ;
+          var (ox, oy, oz) = bb.Transform.Origin ;
+          var (x, y, z) = bb.Min ;
+          var (x1, y1, z1) = bb.Max ;
+
+          var (width, length, height) = ( x1 - x, y1 - y, z1 - z ) ;
+          var location = new XYZ( ox, oy, oz - z1 ) ;
+
+          var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+          var envelopeInstance = envelopeSymbol.Instantiate( location, level, StructuralType.NonStructural ) ;
+          envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
+          envelopeInstance.LookupParameter( "奥行き" ).Set( length ) ;
+          envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
+          envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
+          envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "BEAM_ENVELOPE" ) ;
+        }
+      }
+
+      uiDocument.Selection.SetElementIds( filterBeams.Select( x => x.Id ).ToList() ) ;
     }
   }
 }
