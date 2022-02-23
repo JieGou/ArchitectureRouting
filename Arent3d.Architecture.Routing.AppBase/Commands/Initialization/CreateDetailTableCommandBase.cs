@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
+using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -19,6 +20,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class CreateDetailTableCommandBase : IExternalCommand
   {
+    private static string MULTIPLE_CONSTRUCTION_CATEGORIES_MIXED_WITH_SAME_DETAIL_SYMBOL_MESSAGE =
+      "Construction categories are mixed in the detail symbol. Please check again." ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       const string defaultParentPlumbingType = "E" ;
@@ -70,6 +73,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       List<ComboboxItemType> constructionItems = ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() ;
 
       DetailTableViewModel viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems ) ;
+      
+      if(CheckMultipleConstructionCategoriesAreMixedWithSameDetailSymbol(detailTableModels)) MessageBox.Show(
+        "Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MULTIPLE_CONSTRUCTION_CATEGORIES_MIXED_WITH_SAME_DETAIL_SYMBOL_MESSAGE ),
+        "Warning",
+        MessageBoxButtons.OK ) ;
+      
       var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData ) ;
       dialog.ShowDialog() ;
 
@@ -389,6 +398,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       detailTableModels.Add( detailTableRow ) ;
     }
 
+    private bool CheckMultipleConstructionCategoriesAreMixedWithSameDetailSymbol(ObservableCollection<DetailTableModel> detailTableModels )
+    {
+      var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ) ;
+      return detailTableModelsGroupByDetailSymbolId.Any(x => x.GroupBy( y => y.ConstructionClassification ).Count() > 1) ;
+    }
+    
     public class ComboboxItemType
     {
       public string Type { get ; set ; }

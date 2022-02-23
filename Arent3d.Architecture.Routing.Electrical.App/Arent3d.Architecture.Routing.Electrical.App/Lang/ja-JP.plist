@@ -321,6 +321,9 @@
 
         <key>Dialog.Electrical.SetElementProperty.Title</key>
         <string>工事項目付加結果</string>
+		
+		<key>Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning</key>
+        <string>明細記号○には施工区分が混在しています. 再度ご確認ください.</string>
 
 
         <!-- Element Names -->
