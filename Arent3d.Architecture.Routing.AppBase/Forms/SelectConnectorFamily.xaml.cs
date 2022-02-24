@@ -5,7 +5,6 @@ using System.Linq ;
 using System.Runtime.CompilerServices ;
 using System.Windows ;
 using System.Windows.Forms ;
-using Autodesk.Revit.DB ;
 using MessageBox = System.Windows.Forms.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -14,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     public ObservableCollection<ConnectorFamilyInfo> ConnectorFamilyList { get ; } = new() ;
 
-    public SelectConnectorFamily( )
+    public SelectConnectorFamily()
     {
       InitializeComponent() ;
       LoadConnectorFamilyList() ;

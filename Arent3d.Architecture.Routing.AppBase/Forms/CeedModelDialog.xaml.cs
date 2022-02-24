@@ -313,10 +313,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( ceedModel != null ) {
           newCeedModel = SetFloorPlanImageAndFloorPlanType( ceedModel, path, connectorFamilyName ) ;
           if ( newCeedModel != null ) {
-            ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
-            ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
-            ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
-            ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
+            ceedModel = newCeedModel ;
             ceedStorable.CeedModelData = _allCeedModels.CeedModels ;
           }
         }
@@ -326,10 +323,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _usingCeedModel != null ) {
         var ceedModel = _usingCeedModel.CeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
         if ( ceedModel != null ) {
-          ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
-          ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
-          ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
-          ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
+          ceedModel = newCeedModel ;
           ceedStorable.CeedModelUsedData = _usingCeedModel.CeedModels ;
         }
       }
@@ -350,10 +344,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( DtGrid.ItemsSource is not List<CeedModel> newCeedModels ) return ;
       var ceedModel = newCeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
       if ( ceedModel == null ) return ;
-      ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
-      ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
-      ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
-      ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
+      ceedModel = newCeedModel ;
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
     }
 

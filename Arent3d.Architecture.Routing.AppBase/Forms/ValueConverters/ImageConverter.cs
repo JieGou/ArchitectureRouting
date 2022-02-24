@@ -2,7 +2,6 @@
 using System.Drawing ;
 using System.IO ;
 using System.Linq ;
-using System.Windows ;
 using Autodesk.Revit.DB ;
 using Rectangle = System.Drawing.Rectangle ;
 using Size = System.Drawing.Size ;
@@ -42,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       familyDoc.ExportImage( imageExportOptions ) ;
       tx.RollBack() ;
     }
-    
+
     public static Image ResizeImage( Image imgToResize, Size size )
     {
       return new Bitmap( imgToResize, size ) ;
@@ -81,7 +80,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       for ( var x = 0 ; x < bitmapImage.Width ; x++ ) {
         for ( var y = 0 ; y < bitmapImage.Height ; y++ ) {
           var color = bitmapImage.GetPixel( x, y ) ;
-          var rgb = (byte)(.299 * color.R + .587 * color.G + .114 * color.B) ;
+          var rgb = (byte) ( .299 * color.R + .587 * color.G + .114 * color.B ) ;
           if ( rgb == 255 ) continue ;
           if ( x < minX ) minX = x ;
           if ( y < minY ) minY = y ;
