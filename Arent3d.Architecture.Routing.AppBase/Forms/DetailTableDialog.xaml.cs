@@ -223,24 +223,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void BtnPlumbingSummary_Click( object sender, RoutedEventArgs e )
     {
+      var detailTableModels = _detailTableViewModel.DetailTableModels ;
+      CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, "E" ) ;
       var detailTableModelsGroupByDetailSymbolId = _detailTableViewModel.DetailTableModels.ToList().GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var (_, detailTableRowsWithSameDetailSymbolId) in detailTableModelsGroupByDetailSymbolId ) {
         SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
       }
-
-      var detailTableModels = _detailTableViewModel.DetailTableModels ;
-      CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, "E" ) ;
       CreateDetailTableViewModelByGroupId() ;
       SaveData( _detailTableViewModel.DetailTableModels ) ;
     }
     
     private void BtnPlumbingSummaryMixConstructionItems_Click( object sender, RoutedEventArgs e )
     {
+      var detailTableModels = _detailTableViewModel.DetailTableModels ;
+      CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, "E", true ) ;
       var detailTableModelsGroupByDetailSymbolId = _detailTableViewModel.DetailTableModels.ToList().GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var (_, detailTableRowsWithSameDetailSymbolId) in detailTableModelsGroupByDetailSymbolId ) {
         SetGroupIdForDetailTableRowsMixConstructionItems( detailTableRowsWithSameDetailSymbolId ) ;
       }
-
       CreateDetailTableViewModelByGroupId() ;
       SaveData( _detailTableViewModel.DetailTableModels ) ;
     }

@@ -166,12 +166,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
     }
 
-    protected internal static void SetPlumbingData( List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType )
+    protected internal static void SetPlumbingData( List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType, bool mixConstructionItems = false )
     {
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var detailSymbolId in detailTableModelsGroupByDetailSymbolId.Keys ) {
         List<DetailTableModel> detailTableRowsByDetailSymbolId = detailTableModelsGroupByDetailSymbolId[ detailSymbolId ]! ;
-        SetPlumbingDataForOneSymbol( conduitsModelData, ref detailTableRowsByDetailSymbolId, plumbingType ) ;
+        if ( mixConstructionItems ) {
+          SetPlumbingDataMixConstructionItemsForOneSymbol( conduitsModelData, ref detailTableRowsByDetailSymbolId, plumbingType ) ;
+        }
+        else {
+          SetPlumbingDataForOneSymbol( conduitsModelData, ref detailTableRowsByDetailSymbolId, plumbingType ) ;
+        }
       }
     }
 
@@ -187,7 +192,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
       var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
       var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
-      //var detailTableModelsBySignalType = detailTableModelsByDetailSymbolId.GroupBy( d => d.SignalType ).Select( g =>  g.ToList()).ToList() ;
       var detailTableModelsBySignalTypeAndConstructionItems = detailTableModelsByDetailSymbolId.GroupBy( d => new {d.SignalType, d.ConstructionItems} ).Select( g =>  g.ToList()).ToList() ;
 
       foreach ( var detailTableRows in detailTableModelsBySignalTypeAndConstructionItems ) {
@@ -251,6 +255,86 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       foreach ( var detailTableRowsWithSameSignalTypeAndConstructionItems in detailTableModelsBySignalTypeAndConstructionItems ) {
         foreach ( var detailTableRow in detailTableRowsWithSameSignalTypeAndConstructionItems.Where( d => d.PlumbingSize != defaultChildPlumbingSymbol ).ToList() ) {
+          detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
+        }
+      }
+    }
+    
+    private static void SetPlumbingDataMixConstructionItemsForOneSymbol( List<ConduitsModel> conduitsModelData, ref List<DetailTableModel> detailTableModelsByDetailSymbolId, string plumbingType, bool isPlumbingTypeHasBeenChanged = false )
+    {
+      const double percentage = 0.32 ;
+      const string defaultChildPlumbingSymbol = "↑" ;
+      var plumbingCount = 0 ;
+
+      if ( ! isPlumbingTypeHasBeenChanged ) {
+        var parentDetailRow = detailTableModelsByDetailSymbolId.First() ;
+        if ( parentDetailRow != null ) plumbingType = string.IsNullOrEmpty( parentDetailRow.PlumbingType ) ? plumbingType : parentDetailRow.PlumbingType ;
+      }
+      var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+      var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
+      var detailTableModelsBySignalType = detailTableModelsByDetailSymbolId.GroupBy( d => d.SignalType ).Select( g =>  g.ToList()).ToList() ;
+      
+      foreach ( var detailTableRows in detailTableModelsBySignalType ) {
+        Dictionary<string, List<DetailTableModel>> detailTableRowsGroupByPlumbingType = new Dictionary<string, List<DetailTableModel>>() ;
+        List<DetailTableModel> childDetailRows = new List<DetailTableModel>() ;
+        var parentDetailRow = detailTableRows.First() ;
+        var currentPlumbingCrossSectionalArea = 0.0 ;
+        foreach ( var currentDetailTableRow in detailTableRows ) {
+          currentPlumbingCrossSectionalArea += currentDetailTableRow.WireCrossSectionalArea / percentage ;
+
+          if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
+            var plumbing = conduitsModels.Last() ;
+            parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
+            parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
+            parentDetailRow.PlumbingIdentityInfo = parentDetailRow.PlumbingType + parentDetailRow.PlumbingSize + "-" + parentDetailRow.SignalType + "-" + parentDetailRow.RouteName ;
+            if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
+              detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
+            else {
+              detailTableRowsGroupByPlumbingType[ parentDetailRow.PlumbingIdentityInfo ].AddRange( childDetailRows ) ;
+            }
+            childDetailRows = new List<DetailTableModel>() ;
+            plumbingCount++ ;
+            parentDetailRow = currentDetailTableRow ;
+            currentPlumbingCrossSectionalArea = currentDetailTableRow.WireCrossSectionalArea ;
+            if ( currentDetailTableRow != detailTableRows.Last() ) continue ;
+            plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableRow.WireCrossSectionalArea ) ;
+            currentDetailTableRow.PlumbingType = currentDetailTableRow == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
+            currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+            currentDetailTableRow.PlumbingIdentityInfo = plumbingType + currentDetailTableRow.PlumbingSize + "-" + currentDetailTableRow.SignalType + "-" + currentDetailTableRow.RouteName ;
+            plumbingCount++ ;
+          }
+          else {
+            if ( currentDetailTableRow == detailTableRows.Last() ) {
+              var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
+              parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
+              parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+              parentDetailRow.PlumbingIdentityInfo = parentDetailRow.PlumbingType + parentDetailRow.PlumbingSize + "-" + parentDetailRow.SignalType + "-" + parentDetailRow.RouteName ;
+              if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
+                detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
+              else {
+                detailTableRowsGroupByPlumbingType[ parentDetailRow.PlumbingIdentityInfo ].AddRange( childDetailRows ) ;
+                detailTableRowsGroupByPlumbingType[ parentDetailRow.PlumbingIdentityInfo ].Add( currentDetailTableRow ) ;
+              }
+              plumbingCount++ ;
+            }
+
+            if ( currentDetailTableRow == detailTableRows.First() ) continue ;
+            currentDetailTableRow.PlumbingType = defaultChildPlumbingSymbol ;
+            currentDetailTableRow.PlumbingSize = defaultChildPlumbingSymbol ;
+            currentDetailTableRow.NumberOfPlumbing = defaultChildPlumbingSymbol ;
+            childDetailRows.Add( currentDetailTableRow ) ;
+          }
+        }
+
+        foreach ( var (parentPlumbingType, detailTableRowsWithSamePlumbing) in detailTableRowsGroupByPlumbingType ) {
+          foreach ( var detailTableRow in detailTableRowsWithSamePlumbing ) {
+            detailTableRow.PlumbingIdentityInfo = parentPlumbingType ;
+          }
+        }
+      }
+
+      foreach ( var detailTableRowsWithSameSignalType in detailTableModelsBySignalType ) {
+        foreach ( var detailTableRow in detailTableRowsWithSameSignalType.Where( d => d.PlumbingSize != defaultChildPlumbingSymbol ).ToList() ) {
           detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
         }
       }
