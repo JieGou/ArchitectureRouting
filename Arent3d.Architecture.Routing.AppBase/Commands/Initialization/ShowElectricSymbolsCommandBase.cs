@@ -32,15 +32,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
       var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
       var detailTableModelData = doc.GetDetailTableStorable().DetailTableModelData ;
-      var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
+      var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
       var electricalSymbolModels = new ObservableCollection<ElectricalSymbolModel>() ;
       try {
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ) ;
         var routePicked = pickedObjects.Select( e => e.GetRouteName() ).Distinct().ToList() ;
         foreach ( var routeName in routePicked ) {
-          var (fromConnectorUniqueId, fromConnectorCeedSymbol, fromConnectorCondition, toConnectorUniqueId, toConnectorCeedSymbol, toConnectorCondition) = GetFromConnectorInfoAndToConnectorInfo( doc, allConnectors, routeName! ) ;
-          var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( fromConnectorCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( fromConnectorCeedSymbol.Trim( '\r' ) ) ) ;
-          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.Condition.Equals( toConnectorCondition.Trim( '\r' ) ) && x.GeneralDisplayDeviceSymbol.Equals( toConnectorCeedSymbol.Trim( '\r' ) ) ) ;
+          var (fromConnectorUniqueId, fromConnectorCeedSetCode, fromConnectorDeviceSymbol, fromConnectorModelNumber, toConnectorUniqueId, toConnectorCeedSetCode, toConnectorDeviceSymbol, toConnectorModelNumber) = GetFromConnectorInfoAndToConnectorInfo( doc, allConnectors, routeName! ) ;
+          var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorCeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorDeviceSymbol && x.ModelNumber == fromConnectorModelNumber ) ;
+          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == toConnectorCeedSetCode && x.GeneralDisplayDeviceSymbol == toConnectorDeviceSymbol && x.ModelNumber == toConnectorModelNumber ) ;
           if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
           var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
           if ( detailTableModelsByRouteName.Any() ) {
@@ -124,74 +124,47 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       electricalSymbolModels.Add( endElectricalSymbolModel ) ;
     }
 
-    private static (string, string, string, string, string, string) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName )
+    private static (string, string, string, string, string, string, string, string) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName )
     {
       var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
-      var fromUniqueId = string.Empty ;
-      var toUniqueId = string.Empty ;
+      Element? fromConnector = null ;
+      Element? toConnector = null ;
       foreach ( var conduit in conduitsOfRoute ) {
         var fromEndPoint = conduit.GetNearestEndPoints( true ).ToList() ;
         if ( ! fromEndPoint.Any() ) continue ;
         var fromEndPointKey = fromEndPoint.First().Key ;
-        fromUniqueId = fromEndPointKey.GetElementUniqueId() ;
+        var fromUniqueId = fromEndPointKey.GetElementUniqueId() ;
         if ( string.IsNullOrEmpty( fromUniqueId ) ) continue ;
-        var fromConnector = allConnectors.FirstOrDefault( c => c.UniqueId == fromUniqueId ) ;
-        if ( fromConnector!.IsTerminatePoint() || fromConnector!.IsPassPoint() ) {
-          fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId, out string? fromConnectorUniqueId ) ;
-          if ( ! string.IsNullOrEmpty( fromConnectorUniqueId ) )
-            fromUniqueId = fromConnectorUniqueId! ;
-        }
+        var fromElement = allConnectors.FirstOrDefault( c => c.UniqueId == fromUniqueId ) ;
+        if ( fromElement != null && ! fromElement.IsTerminatePoint() && ! fromElement.IsPassPoint() )
+          fromConnector = fromElement ;
 
         var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
         var toEndPointKey = toEndPoint.First().Key ;
-        toUniqueId = toEndPointKey.GetElementUniqueId() ;
+        var toUniqueId = toEndPointKey.GetElementUniqueId() ;
         if ( string.IsNullOrEmpty( toUniqueId ) ) continue ;
-        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toUniqueId ) ;
-        if ( toConnector!.IsTerminatePoint() || toConnector!.IsPassPoint() ) {
-          toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorUniqueId, out string? toConnectorUniqueId ) ;
-          if ( ! string.IsNullOrEmpty( toConnectorUniqueId ) )
-            toUniqueId = toConnectorUniqueId! ;
-        }
+        var toElement = allConnectors.FirstOrDefault( c => c.UniqueId == toUniqueId ) ;
+        if ( toElement == null || toElement.IsTerminatePoint() || toElement.IsPassPoint() ) continue ;
+        toConnector = toElement ;
       }
 
-      var (fromGeneralSymbol, fromCondition) = GetTextFromGroup( document, allConnectors, fromUniqueId ) ;
-      var (toGeneralSymbol, toCondition) = GetTextFromGroup( document, allConnectors, toUniqueId ) ;
-      return ( fromUniqueId, fromGeneralSymbol, fromCondition, toUniqueId, toGeneralSymbol, toCondition ) ;
+      var (fromCeedCode, fromDeviceSymbol, fromModelNumber) = GetConnectorCeedCodeInfo( fromConnector ) ;
+      var (toCeedCode, toDeviceSymbol, toModelNumber) = GetConnectorCeedCodeInfo( toConnector ) ;
+      return ( fromConnector!.UniqueId, fromCeedCode, fromDeviceSymbol, fromModelNumber, toConnector!.UniqueId, toCeedCode, toDeviceSymbol, toModelNumber ) ;
     }
 
-    private static (string, string) GetTextFromGroup( Document document, IReadOnlyCollection<Element> allConnectors, string uniqueId )
+    private static (string, string, string) GetConnectorCeedCodeInfo( Element? connector )
     {
-      var (result1, result2) = ( string.Empty, string.Empty ) ;
-      Group? parentGroup = null ;
-      var allGroup = document.GetAllElements<Group>().ToList() ;
-      foreach ( var group in allGroup ) {
-        var elementIds = group.GetMemberIds().ToList() ;
-        var connector = allConnectors.FirstOrDefault( c => elementIds.Contains( c.Id ) && c.UniqueId == uniqueId ) ;
-        if ( connector == null ) continue ;
-        parentGroup = group ;
-        break ;
-      }
-
-      if ( parentGroup == null ) return ( result1, result2 ) ;
-      // ungroup before set property
-      var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-      var enumerable = attachedGroup as Group[] ?? attachedGroup.ToArray() ;
-      if ( enumerable.Any() ) {
-        var textNoteId = enumerable.FirstOrDefault()?.GetMemberIds().FirstOrDefault() ;
-        var textNote = document.GetAllElements<TextNote>().FirstOrDefault( x => x.Id == textNoteId ) ;
-        if ( textNote != null ) {
-          result1 = textNote.Text ;
-        }
-
-        var textNoteId2 = enumerable.FirstOrDefault()?.GetMemberIds().Skip( 1 ).FirstOrDefault() ;
-        var textNote2 = document.GetAllElements<TextNote>().FirstOrDefault( x => x.Id == textNoteId2 ) ;
-        if ( textNote2 != null ) {
-          result2 = textNote2.Text ;
-        }
-      }
-
-      return ( result1, result2 ) ;
+      var (ceedSetCode, deviceSymbol, modelNumber) = ( string.Empty, string.Empty, string.Empty ) ;
+      if ( connector == null ) return ( ceedSetCode, deviceSymbol, modelNumber ) ;
+      connector.TryGetProperty( ConnectorFamilyParameter.CeedCode, out string? ceedCode ) ;
+      if ( string.IsNullOrEmpty( ceedCode ) ) return ( ceedSetCode, deviceSymbol, modelNumber ) ;
+      var ceedCodeInfo = ceedCode!.Split( '-' ).ToList() ;
+      ceedSetCode = ceedCodeInfo.First() ;
+      deviceSymbol = ceedCodeInfo.Count > 1 ? ceedCodeInfo.ElementAt( 1 ) : string.Empty ;
+      modelNumber = ceedCodeInfo.Count > 2 ? ceedCodeInfo.ElementAt( 2 ) : string.Empty ;
+      return ( ceedSetCode, deviceSymbol, modelNumber ) ;
     }
 
     private static void CreateElectricalSchedule( Document document, ObservableCollection<ElectricalSymbolModel> electricalSymbolModels )
@@ -281,7 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var detailTableModel = electricalSymbolModels.FirstOrDefault() ;
         foreach ( var item in electricalSymbolModels ) {
           var count = electricalSymbolModels.Count( d => d.WireType == item.WireType && d.WireSize == item.WireSize && d.WireStrip == item.WireStrip && d.PipingType + d.PipingSize == item.PipingType + item.PipingSize ) ;
-          string wiringType = $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
+          string wiringType = string.IsNullOrEmpty( item.WireStrip ) ? $"{item.WireType + item.WireSize,-15}{"x " + count,28}" : $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
           string plumbingType = "(" + item.PipingType + item.PipingSize + ")" ;
           if ( wiringAndPlumbingTypes.Contains( wiringType + "-" + plumbingType ) ) continue ;
           wiringAndPlumbingTypes.Add( wiringType + "-" + plumbingType ) ;
