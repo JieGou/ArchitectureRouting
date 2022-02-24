@@ -6,7 +6,7 @@
       xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms"
       xmlns:forms1="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms;assembly=Arent3d.Architecture.Routing.AppBase"
       mc:Ignorable="d"
-      Height="220" Width="630" Background="White"
+      Height="Auto" Width="630" Background="White" SizeToContent="Height"
       WindowStartupLocation="CenterOwner"      
       Title="RoutePropertyDialog">
 

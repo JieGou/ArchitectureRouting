@@ -4,7 +4,6 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -26,17 +25,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public bool HasDifferentLevel { get ; }
     public (double, double) FromHeightRangeAsFloorLevel { get ; private set ; }
     public (double, double) FromHeightRangeAsCeilingLevel { get ; private set ; }
+    public (double, double) FromHeightRangeAsNextCeilingLevel { get ; set ; } // Hasekoプロジェクト用のメンバー
     public (double, double) ToHeightRangeAsFloorLevel { get ; private set ; }
     public (double, double) ToHeightRangeAsCeilingLevel { get ; private set ; }
     public double FromDefaultHeightAsFloorLevel { get ; private set ; }
     public double FromDefaultHeightAsCeilingLevel { get ; private set ; }
+    public double FromDefaultHeightAsNextCeilingLevel { get ; set ; }　// Hasekoプロジェクト用のメンバー
     public double ToDefaultHeightAsFloorLevel { get ; private set ; }
     public double ToDefaultHeightAsCeilingLevel { get ; private set ; }
 
     private void SetFromLevelSetting( HeightSettingStorable settings, ElementId levelId )
     {
       ( FromHeightRangeAsFloorLevel, FromDefaultHeightAsFloorLevel, FromHeightRangeAsCeilingLevel, FromDefaultHeightAsCeilingLevel ) = CalculateHeightRanges( settings, levelId ) ;
-
     }
     private void SetToLevelSetting( HeightSettingStorable settings, ElementId levelId )
     {
@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       return ( floorRange, floorDefault, ceilingRange, ceilingDefault ) ;
     }
 
-    internal RoutePropertyTypeList( IReadOnlyCollection<SubRoute> subRoutes )
+    public RoutePropertyTypeList( IReadOnlyCollection<SubRoute> subRoutes )
     {
       if ( 0 == subRoutes.Count ) throw new ArgumentException() ;
 
