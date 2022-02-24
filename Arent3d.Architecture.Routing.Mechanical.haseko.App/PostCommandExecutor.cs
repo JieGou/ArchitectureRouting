@@ -10,7 +10,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
 {
   public class PostCommandExecutor : IPostCommandExecutorBase
   {
-    private static UIApplication? UiApp => RoutingApp.FromToTreeManager.UiApp ;
+    private static UIApplication? UiApp => RoutingApp.FromToTreeHasekoManager.UiApp ;
     
     public void ChangeRouteNameCommand( Route route, string newName )
     {
