@@ -23,6 +23,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public DetailTableViewModel DetailTableViewModelSummary ;
     public readonly Dictionary<string, string> RoutesWithConstructionItemHasChanged ;
     public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
+    
+    private static string MULTIPLE_CONSTRUCTION_CATEGORIES_MIXED_WITH_SAME_DETAIL_SYMBOL_MESSAGE =
+      "Construction categories are mixed in the detail symbol. Please check again." ;
 
     public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData )
     {
@@ -58,6 +61,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SaveData( _detailTableViewModel.DetailTableModels ) ;
       DialogResult = true ;
       this.Close() ;
+    }
+    
+    private void BtnSaveAndCreate_OnClick( object sender, RoutedEventArgs e )
+    {
+      MessageBoxResult confirmResult = MessageBoxResult.OK ;
+      if(CheckMultipleConstructionCategoriesAreMixedWithSameDetailSymbol(_detailTableViewModel.DetailTableModels)) confirmResult =  MessageBox.Show(MULTIPLE_CONSTRUCTION_CATEGORIES_MIXED_WITH_SAME_DETAIL_SYMBOL_MESSAGE, "Warning", MessageBoxButton.OKCancel);
+      if ( confirmResult == MessageBoxResult.OK ) {
+        SaveData( _detailTableViewModel.DetailTableModels ) ;
+        DialogResult = true ;
+        this.Close() ;
+      }
+      if ( this.DataContext is DetailTableViewModel context ) {
+        context.IsCancelCreateDetailTable = confirmResult == MessageBoxResult.Cancel ;
+      }
     }
 
     private void BtnCompleted_OnClick( object sender, RoutedEventArgs e )
@@ -274,6 +291,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
         }
       }
+    }
+    
+    private bool CheckMultipleConstructionCategoriesAreMixedWithSameDetailSymbol(ObservableCollection<DetailTableModel> detailTableModels )
+    {
+      var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ) ;
+      return detailTableModelsGroupByDetailSymbolId.Any(x => x.GroupBy( y => y.ConstructionClassification ).Count() > 1) ;
     }
   }
 }
