@@ -375,5 +375,9 @@
         <string>Bend Radius</string>
         <key>Revit.Property.Builtin.ConduitFitting.Length</key>
         <string>電線管長さ</string>
+        
+        <!-- Schedule Names -->
+        <key>Revit.Electrical.Schedule.Name</key>
+        <string>Electrical Schedule</string>
     </dict>
 </plist>
