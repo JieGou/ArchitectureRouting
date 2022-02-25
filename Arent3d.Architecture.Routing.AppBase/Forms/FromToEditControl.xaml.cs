@@ -286,7 +286,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       get => (double)GetValue( FromMinimumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
       set => SetValue( FromMinimumHeightAsCeilingLevelPropertyKey, value ) ;
     }
-    private double FromMaximumHeightAsCeilingLevel
+    public double FromMaximumHeightAsCeilingLevel
     {
       get => (double)GetValue( FromMaximumHeightAsCeilingLevelPropertyKey.DependencyProperty ) ;
       set => SetValue( FromMaximumHeightAsCeilingLevelPropertyKey, value ) ;

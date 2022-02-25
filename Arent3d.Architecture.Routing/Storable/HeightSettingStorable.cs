@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.Storable
   public sealed class HeightSettingStorable : StorableBase, IEquatable<HeightSettingStorable>
   {
     public const string StorableName = "Height Setting" ;
-    private const double DefaultMaxLevelDistance = 100000 ; // max level distance
+    public const double DefaultMaxLevelDistance = 100000 ; // max level distance
     
     private const string HeightSettingField = "HeightSetting" ;
 
@@ -90,6 +90,14 @@ namespace Arent3d.Architecture.Routing.Storable
       if ( index < 0 || Levels.Count - 1 <= index ) return DefaultMaxLevelDistance ;
 
       return this[ Levels[ index + 1 ] ].Elevation - this[ Levels[ index ] ].Elevation ;
+    }
+
+    public ElementId? GetNextLevelId( ElementId levelId )
+    {
+      var index = Levels.FindIndex( level => level.GetValidId() == levelId ) ;
+      if ( index < 0 || Levels.Count - 1 <= index ) return null ;
+
+      return Levels[ index + 1 ].Id ;
     }
 
     protected override void LoadAllFields( FieldReader reader )

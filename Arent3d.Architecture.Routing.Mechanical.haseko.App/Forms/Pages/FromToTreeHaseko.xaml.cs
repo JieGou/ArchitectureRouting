@@ -4,24 +4,28 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Input ;
+using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Forms
+namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
 {
-  public partial class FromToTree : Page, IDockablePaneProvider
+  public partial class FromToTreeHaseko : Page, IDockablePaneProvider
   {
-    private static readonly DependencyPropertyKey DisplayUnitSystemPropertyKey = DependencyProperty.RegisterReadOnly( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( FromToTree ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
-    private static readonly DependencyPropertyKey IsConnectorVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsConnectorVisible", typeof( bool ), typeof( FromToTree ), new PropertyMetadata( false ) ) ;
-    private static readonly DependencyPropertyKey IsPassPointVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsPassPointVisible", typeof( bool ), typeof( FromToTree ), new PropertyMetadata( false ) ) ;
-    private static readonly DependencyPropertyKey IsRouterVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsRouterVisible", typeof( bool ), typeof( FromToTree ), new PropertyMetadata( false ) ) ;
-    private static readonly DependencyPropertyKey CoordinatesXPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesX", typeof( string ), typeof( FromToTree ), new PropertyMetadata( string.Empty ) ) ;
-    private static readonly DependencyPropertyKey CoordinatesYPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesY", typeof( string ), typeof( FromToTree ), new PropertyMetadata( string.Empty ) ) ;
-    private static readonly DependencyPropertyKey CoordinatesZPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesZ", typeof( string ), typeof( FromToTree ), new PropertyMetadata( string.Empty ) ) ;
+    private static readonly DependencyPropertyKey DisplayUnitSystemPropertyKey = DependencyProperty.RegisterReadOnly( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( FromToTreeHaseko ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
+    private static readonly DependencyPropertyKey IsConnectorVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsConnectorVisible", typeof( bool ), typeof( FromToTreeHaseko ), new PropertyMetadata( false ) ) ;
+    private static readonly DependencyPropertyKey IsPassPointVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsPassPointVisible", typeof( bool ), typeof( FromToTreeHaseko ), new PropertyMetadata( false ) ) ;
+    private static readonly DependencyPropertyKey IsRouterVisiblePropertyKey = DependencyProperty.RegisterReadOnly( "IsRouterVisible", typeof( bool ), typeof( FromToTreeHaseko ), new PropertyMetadata( false ) ) ;
+    private static readonly DependencyPropertyKey CoordinatesXPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesX", typeof( string ), typeof( FromToTreeHaseko ), new PropertyMetadata( string.Empty ) ) ;
+    private static readonly DependencyPropertyKey CoordinatesYPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesY", typeof( string ), typeof( FromToTreeHaseko ), new PropertyMetadata( string.Empty ) ) ;
+    private static readonly DependencyPropertyKey CoordinatesZPropertyKey = DependencyProperty.RegisterReadOnly( "CoordinatesZ", typeof( string ), typeof( FromToTreeHaseko ), new PropertyMetadata( string.Empty ) ) ;
 
     public DisplayUnit DisplayUnitSystem
     {
@@ -77,17 +81,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     public FromToItemsUiBase FromToItemsUi { get ; }
 
-    public FromToTree( string titleLabel, IPostCommandExecutorBase postCommandExecutor, FromToItemsUiBase fromToItemsUi)
+    public FromToTreeHaseko( string titleLabel, IPostCommandExecutorBase postCommandExecutor, FromToItemsUiBase fromToItemsUi)
     {
       InitializeComponent() ;
       ItemDictionary = new SortedDictionary<string, TreeViewItem>() ;
-      TitleLabel = titleLabel ;
+      TitleLabel = titleLabel;
       PostCommandExecutor = postCommandExecutor ;
       FromToItemsUi = fromToItemsUi ;
       SelectedFromTo.ParentFromToTree = this ;
     }
-
-
+    
     public void SetupDockablePane( DockablePaneProviderData data )
     {
       data.FrameworkElement = this as FrameworkElement ;
@@ -128,7 +131,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void DisplayTreeViewItem( UIApplication uiApp, AddInType addInType )
     {
       ClearSelection();
-      var fromToVm = new FromToTreeViewModel() ;
+      var fromToVm = new FromToTreeHasekoViewModel() ;
 
       fromToVm.FromToModel = new FromToModel( uiApp ) ;
       fromToVm.SetFromToItems(addInType,  FromToItemsUi) ;
