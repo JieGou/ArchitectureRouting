@@ -24,8 +24,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public readonly Dictionary<string, string> RoutesWithConstructionItemHasChanged ;
     public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
     
-    private static string MULTIPLE_CONSTRUCTION_CATEGORIES_MIXED_WITH_SAME_DETAIL_SYMBOL_MESSAGE =
-      "Construction categories are mixed in the detail symbol. Please check again." ;
+    private static string MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage =
+      "Construction categories are mixed in the detail symbol {0}. Please check again." ;
 
     public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData )
     {
@@ -66,7 +66,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void BtnSaveAndCreate_OnClick( object sender, RoutedEventArgs e )
     {
       MessageBoxResult confirmResult = MessageBoxResult.OK ;
-      if(CheckMultipleConstructionCategoriesAreMixedWithSameDetailSymbol(_detailTableViewModel.DetailTableModels)) confirmResult =  MessageBox.Show(MULTIPLE_CONSTRUCTION_CATEGORIES_MIXED_WITH_SAME_DETAIL_SYMBOL_MESSAGE, "Warning", MessageBoxButton.OKCancel);
+      string mixtureOfMultipleConstructionClassificationsInDetailSymbol = "" ;
+      if(IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol(_detailTableViewModel.DetailTableModels, ref mixtureOfMultipleConstructionClassificationsInDetailSymbol)) 
+        confirmResult =  MessageBox.Show(string.Format(MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage, mixtureOfMultipleConstructionClassificationsInDetailSymbol ), "Warning", MessageBoxButton.OKCancel);
       if ( confirmResult == MessageBoxResult.OK ) {
         SaveData( _detailTableViewModel.DetailTableModels ) ;
         DialogResult = true ;
@@ -293,10 +295,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
     
-    private bool CheckMultipleConstructionCategoriesAreMixedWithSameDetailSymbol(ObservableCollection<DetailTableModel> detailTableModels )
+    private bool IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol(ObservableCollection<DetailTableModel> detailTableModels, ref string mixtureOfMultipleConstructionClassificationsInDetailSymbol )
     {
-      var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ) ;
-      return detailTableModelsGroupByDetailSymbolId.Any(x => x.GroupBy( y => y.ConstructionClassification ).Count() > 1) ;
+      var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbol ) ;
+      var mixSymbolGroup = detailTableModelsGroupByDetailSymbolId.Where( x => x.GroupBy( y => y.SignalType ).Count() > 1 ).ToList() ;
+      mixtureOfMultipleConstructionClassificationsInDetailSymbol = mixSymbolGroup.Any()
+        ? string.Join( ", ", mixSymbolGroup.Select( y => y.Key ).Distinct() )
+        : "" ;
+      return !string.IsNullOrEmpty( mixtureOfMultipleConstructionClassificationsInDetailSymbol ) ;
     }
   }
 }

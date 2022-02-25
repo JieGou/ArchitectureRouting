@@ -334,7 +334,7 @@
         <string>Construction item addition result</string>
 		
 		<key>Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning</key>
-        <string>Construction categories are mixed in the detail symbol. Please check again.</string>
+        <string>Construction categories are mixed in the detail symbol {0}. Please check again.</string>
 
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
