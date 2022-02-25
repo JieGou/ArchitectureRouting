@@ -99,5 +99,25 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       return ( elevations.Min(), elevations.Max() ) ;
     }
+
+    public static Curve? GetCurveClosestPoint( IEnumerable<Curve>? curves, XYZ point )
+    {
+      if ( ! curves?.Any() ?? true )
+        return null ;
+
+      var lists = new List<(Curve, double)>() ;
+      
+      foreach ( var curve in curves ) {
+        var dis1 = curve.GetEndPoint( 0 ).DistanceTo( point ) ;
+        var dis2 = curve.GetEndPoint( 1 ).DistanceTo( point ) ;
+        
+        if(dis1 < dis2 )
+          lists.Add((curve, dis1));
+        else 
+          lists.Add((curve, dis2));
+      }
+
+      return lists.MinBy( x => x.Item2 ).Item1 ;
+    }
   }
 }
