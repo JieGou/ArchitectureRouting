@@ -514,10 +514,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           Leader noteLeader = textNote.AddLeader( TextNoteLeaderTypes.TNLT_STRAIGHT_R ) ;
           noteLeader.Elbow = new XYZ( endPoint.X + ( isDirectionX ? baseLengthOfLine * 3 : -baseLengthOfLine * 4 ), noteLeader.Elbow.Y - minBaseLengthOfLine * 8.5, endPoint.Z ) ;
           noteLeader.End = endPoint ;
-          doc.Regenerate();
 
           var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
-          if ( curves.Count > 1 ) {
+          if ( curves.Count > 1 && doc.ActiveView is ViewPlan) {
+            doc.Regenerate();
             curves.Add( Line.CreateBound( noteLeader.Anchor, noteLeader.Elbow ) ) ;
             foreach ( var curve in curves ) {
               doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
