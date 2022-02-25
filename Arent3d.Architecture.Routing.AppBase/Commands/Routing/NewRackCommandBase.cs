@@ -518,7 +518,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
           if ( curves.Count > 1 && doc.ActiveView is ViewPlan) {
             doc.Regenerate();
-            curves.Add( Line.CreateBound( noteLeader.Anchor, noteLeader.Elbow ) ) ;
+            
+            if(noteLeader.Anchor.DistanceTo(noteLeader.Elbow) > doc.Application.ShortCurveTolerance)
+              curves.Add( Line.CreateBound( noteLeader.Anchor, noteLeader.Elbow ) ) ;
+            
             foreach ( var curve in curves ) {
               doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
             }
