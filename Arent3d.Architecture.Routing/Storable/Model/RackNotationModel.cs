@@ -8,8 +8,15 @@
     public string FromConnectorId { get ; set ; }
     public bool IsDirectionX { get ; set ; }
     public double RackWidth { get ; set ; }
+    public string EndLineLeaderId { get ; set ; }
 
-    public RackNotationModel( string? rackId, string? notationId, string? rackNotationId, string? fromConnectorId, bool? isDirectionX, double? rackWidth )
+    public RackNotationModel( string? rackId, 
+      string? notationId, 
+      string? rackNotationId, 
+      string? fromConnectorId, 
+      bool? isDirectionX, 
+      double? rackWidth,
+      string? endLineLeaderId = default)
     {
       RackId = rackId ?? string.Empty ;
       NotationId = notationId ?? string.Empty ;
@@ -17,6 +24,7 @@
       FromConnectorId = fromConnectorId ?? string.Empty ;
       IsDirectionX = isDirectionX ?? false ;
       RackWidth = rackWidth ?? 0 ;
+      EndLineLeaderId = endLineLeaderId ?? string.Empty ;
     }
   }
 }

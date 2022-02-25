@@ -15,7 +15,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       RackNotationId,
       FromConnectorId,
       IsDirectionX,
-      RackWidth
+      RackWidth,
+      EndLineLeaderId
     }
 
     protected override RackNotationModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -28,8 +29,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var fromConnectorId = deserializer.GetString( SerializeField.FromConnectorId ) ;
       var isDirectionX = deserializer.GetBool( SerializeField.IsDirectionX ) ;
       var rackWidth = deserializer.GetDouble( SerializeField.RackWidth ) ;
+      var endLineLeaderId = deserializer.GetString( SerializeField.EndLineLeaderId ) ;
 
-      return new RackNotationModel( rackId, notationId, rackNotationId, fromConnectorId, isDirectionX, rackWidth ) ;
+      return new RackNotationModel( rackId, notationId, rackNotationId, fromConnectorId, isDirectionX, rackWidth, endLineLeaderId ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, RackNotationModel customTypeValue )

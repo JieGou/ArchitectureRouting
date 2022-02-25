@@ -100,21 +100,21 @@ namespace Arent3d.Architecture.Routing.AppBase
       return ( elevations.Min(), elevations.Max() ) ;
     }
 
-    public static Curve? GetCurveClosestPoint( IEnumerable<Curve>? curves, XYZ point )
+    public static DetailCurve? GetCurveClosestPoint( IEnumerable<DetailCurve>? detailCurves, XYZ point )
     {
-      if ( ! curves?.Any() ?? true )
+      if ( ! detailCurves?.Any() ?? true )
         return null ;
 
-      var lists = new List<(Curve, double)>() ;
+      var lists = new List<(DetailCurve, double)>() ;
       
-      foreach ( var curve in curves ) {
-        var dis1 = curve.GetEndPoint( 0 ).DistanceTo( point ) ;
-        var dis2 = curve.GetEndPoint( 1 ).DistanceTo( point ) ;
+      foreach ( var detailCurve in detailCurves! ) {
+        var dis1 = detailCurve.GeometryCurve.GetEndPoint( 0 ).DistanceTo( point ) ;
+        var dis2 = detailCurve.GeometryCurve.GetEndPoint( 1 ).DistanceTo( point ) ;
         
         if(dis1 < dis2 )
-          lists.Add((curve, dis1));
+          lists.Add((detailCurve, dis1));
         else 
-          lists.Add((curve, dis2));
+          lists.Add((detailCurve, dis2));
       }
 
       return lists.MinBy( x => x.Item2 ).Item1 ;

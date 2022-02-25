@@ -516,20 +516,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           noteLeader.End = endPoint ;
 
           var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
+          var endLineLeaderId = string.Empty ;
           if ( curves.Count > 1 && doc.ActiveView is ViewPlan) {
             doc.Regenerate();
             
             if(noteLeader.Anchor.DistanceTo(noteLeader.Elbow) > doc.Application.ShortCurveTolerance)
               curves.Add( Line.CreateBound( noteLeader.Anchor, noteLeader.Elbow ) ) ;
-            
+
+            var detailCurves = new List<DetailCurve>() ;
             foreach ( var curve in curves ) {
-              doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
+              var detailCurve = doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
+              detailCurves.Add(detailCurve) ;
             }
+
+            endLineLeaderId = GeometryHelper.GetCurveClosestPoint( detailCurves, noteLeader.End )?.UniqueId ;
             textNote.RemoveLeaders();
           }
 
           foreach ( var item in racks ) {
-            var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, rack.UniqueId, fromConnectorId, isDirectionX, Math.Round( bendRadiusRack, 4 ) ) ;
+            var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, rack.UniqueId, fromConnectorId, isDirectionX, Math.Round( bendRadiusRack, 4 ), endLineLeaderId ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }
@@ -547,7 +552,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           foreach ( var item in racks ) {
-            var rackNotationModel = new RackNotationModel( item.UniqueId, notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth ) ;
+            var rackNotationModel = new RackNotationModel( item.UniqueId, notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth, notationModel.EndLineLeaderId ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }
