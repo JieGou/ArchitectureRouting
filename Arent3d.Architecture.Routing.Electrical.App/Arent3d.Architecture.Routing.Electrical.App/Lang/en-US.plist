@@ -378,6 +378,6 @@
         
         <!-- Schedule Names -->
         <key>Revit.Electrical.Schedule.Name</key>
-        <string>Electrical Schedule</string>
+        <string>Electrical Symbol Table</string>
     </dict>
 </plist>
