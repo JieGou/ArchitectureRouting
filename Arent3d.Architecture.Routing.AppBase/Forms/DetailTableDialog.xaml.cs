@@ -50,6 +50,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedItem = (DetailTableModel) DtGrid.SelectedValue ;
       if ( string.IsNullOrEmpty( selectedItem.GroupId ) ) return ;
       UnGroupDetailTableRows( selectedItem.GroupId ) ;
+      var detailTableModels = _detailTableViewModel.DetailTableModels ;
+      CreateDetailTableCommandBase.SortDetailTableModel( ref detailTableModels ) ;
+      _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( detailTableModels ) ;
       CreateDetailTableViewModelByGroupId() ;
       SaveData( _detailTableViewModel.DetailTableModels ) ;
     }
@@ -231,6 +234,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       foreach ( var (_, detailTableRowsWithSameDetailSymbolId) in detailTableModelsGroupByDetailSymbolId ) {
         SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
       }
+      CreateDetailTableCommandBase.SortDetailTableModel( ref detailTableModels ) ;
+      _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( detailTableModels ) ;
       CreateDetailTableViewModelByGroupId() ;
       SaveData( _detailTableViewModel.DetailTableModels ) ;
     }
