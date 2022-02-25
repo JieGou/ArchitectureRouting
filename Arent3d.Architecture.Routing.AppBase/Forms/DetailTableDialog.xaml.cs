@@ -10,6 +10,7 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -68,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       MessageBoxResult confirmResult = MessageBoxResult.OK ;
       string mixtureOfMultipleConstructionClassificationsInDetailSymbol = "" ;
       if(IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol(_detailTableViewModel.DetailTableModels, ref mixtureOfMultipleConstructionClassificationsInDetailSymbol)) 
-        confirmResult =  MessageBox.Show(string.Format(MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage, mixtureOfMultipleConstructionClassificationsInDetailSymbol ), "Warning", MessageBoxButton.OKCancel);
+        confirmResult =  MessageBox.Show(string.Format("Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), mixtureOfMultipleConstructionClassificationsInDetailSymbol ), "Warning", MessageBoxButton.OKCancel);
       if ( confirmResult == MessageBoxResult.OK ) {
         SaveData( _detailTableViewModel.DetailTableModels ) ;
         DialogResult = true ;
@@ -298,7 +299,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private bool IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol(ObservableCollection<DetailTableModel> detailTableModels, ref string mixtureOfMultipleConstructionClassificationsInDetailSymbol )
     {
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbol ) ;
-      var mixSymbolGroup = detailTableModelsGroupByDetailSymbolId.Where( x => x.GroupBy( y => y.SignalType ).Count() > 1 ).ToList() ;
+      var mixSymbolGroup = detailTableModelsGroupByDetailSymbolId.Where( x => x.GroupBy( y => y.ConstructionClassification ).Count() > 1 ).ToList() ;
       mixtureOfMultipleConstructionClassificationsInDetailSymbol = mixSymbolGroup.Any()
         ? string.Join( ", ", mixSymbolGroup.Select( y => y.Key ).Distinct() )
         : "" ;
