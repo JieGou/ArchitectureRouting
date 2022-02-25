@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
     
     private static string MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage =
-      "Construction categories are mixed in the detail symbol {0}. Please check again." ;
+      "Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?" ;
 
     public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData )
     {
