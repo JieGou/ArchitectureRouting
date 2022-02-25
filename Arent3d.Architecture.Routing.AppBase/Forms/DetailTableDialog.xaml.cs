@@ -23,6 +23,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public DetailTableViewModel DetailTableViewModelSummary ;
     public readonly Dictionary<string, string> RoutesWithConstructionItemHasChanged ;
     public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
+    private bool mixConstructionItems = false ;
 
     public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData )
     {
@@ -81,7 +82,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         List<DetailTableModel> newDetailTableModels = detailTableModels.Select( x => x ).ToList() ;
 
-        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, ref newDetailTableModels, plumbingType!.ToString(), true ) ;
+        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, ref newDetailTableModels, plumbingType!.ToString(), true, mixConstructionItems ) ;
 
         if ( newDetailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null )
           SetGroupIdForDetailTableRows( newDetailTableModels ) ;
@@ -223,8 +224,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void BtnPlumbingSummary_Click( object sender, RoutedEventArgs e )
     {
+      mixConstructionItems = false ;
       var detailTableModels = _detailTableViewModel.DetailTableModels ;
-      CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, "E" ) ;
+      CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, "E", mixConstructionItems ) ;
       var detailTableModelsGroupByDetailSymbolId = _detailTableViewModel.DetailTableModels.ToList().GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var (_, detailTableRowsWithSameDetailSymbolId) in detailTableModelsGroupByDetailSymbolId ) {
         SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
@@ -235,8 +237,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void BtnPlumbingSummaryMixConstructionItems_Click( object sender, RoutedEventArgs e )
     {
+      mixConstructionItems = true ;
       var detailTableModels = _detailTableViewModel.DetailTableModels ;
-      CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, "E", true ) ;
+      CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, "E", mixConstructionItems ) ;
       var detailTableModelsGroupByDetailSymbolId = _detailTableViewModel.DetailTableModels.ToList().GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var (_, detailTableRowsWithSameDetailSymbolId) in detailTableModelsGroupByDetailSymbolId ) {
         SetGroupIdForDetailTableRowsMixConstructionItems( detailTableRowsWithSameDetailSymbolId ) ;
