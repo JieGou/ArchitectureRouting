@@ -83,8 +83,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_Reset( object sender, RoutedEventArgs e )
     {
-      CmbCeedModelNumbers.SelectedIndex = -1 ;
-      CmbCeedModelNumbers.Text = "" ;
+      #region reset CmbCeedModelNumbers
+      // CmbCeedModelNumbers.SelectedIndex = -1 ;
+      // CmbCeedModelNumbers.Text = "" ;
+      #endregion
       CmbModelNumbers.SelectedIndex = -1 ;
       CmbModelNumbers.Text = "" ;
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
@@ -92,10 +94,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         LoadData( ceedViewModels ) ;
     }
 
-    private void CmbCeedModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
-    {
-      _ceedModelNumberSearch = ! string.IsNullOrEmpty( CmbCeedModelNumbers.Text ) ? CmbCeedModelNumbers.Text : string.Empty ;
-    }
+    #region CmbCeedModelNumbers_TextChanged
+    // private void CmbCeedModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
+    // {
+    //   _ceedModelNumberSearch = ! string.IsNullOrEmpty( CmbCeedModelNumbers.Text ) ? CmbCeedModelNumbers.Text : string.Empty ;
+    // }
+    #endregion
 
     private void CmbModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
     {
@@ -222,7 +226,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var viewModel = new ViewModel.CeedViewModel( ceedStorable ) ;
       this.DataContext = viewModel ;
       _allCeedModels = viewModel ;
-      CmbCeedModelNumbers.ItemsSource = viewModel.CeedModelNumbers ;
+      //CmbCeedModelNumbers.ItemsSource = viewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = viewModel.ModelNumbers ;
     }
 
@@ -241,7 +245,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void LoadData( CeedViewModel ceedViewModel )
     {
       this.DataContext = ceedViewModel ;
-      CmbCeedModelNumbers.ItemsSource = ceedViewModel.CeedModelNumbers ;
+      //CmbCeedModelNumbers.ItemsSource = ceedViewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = ceedViewModel.ModelNumbers ;
     }
   }
