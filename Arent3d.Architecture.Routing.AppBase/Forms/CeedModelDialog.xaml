@@ -16,8 +16,6 @@
     </Grid.RowDefinitions>
       
       <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" >
-        <!-- <Label Content="CeeD型番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5" /> -->
-        <!-- <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" /> -->
         <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
         <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" />        
         <Button x:Name="BtnSearch"
