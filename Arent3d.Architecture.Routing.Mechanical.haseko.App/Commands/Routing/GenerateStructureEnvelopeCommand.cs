@@ -34,9 +34,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         document.Delete( allBoxEnvelope ) ;
 
         //1. Wall Envelope Feature
-        //ExecuteWallEnvelope( commandData ) ;
+        ExecuteWallEnvelope( commandData ) ;
         //2. Floor Envelope Feature
-        //ExecuteFloorEnvelope( commandData ) ;
+        ExecuteFloorEnvelope( commandData ) ;
         //3. Column Envelope
         ExecuteColumnEnvelope( commandData ) ;
         //4. Beam Envelope
