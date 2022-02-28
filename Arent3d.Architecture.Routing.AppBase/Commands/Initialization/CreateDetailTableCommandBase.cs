@@ -156,7 +156,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       List<DetailTableModel> sortedDetailTableModelsList = new() ;
       foreach ( var detailSymbolId in detailTableModelsGroupByDetailSymbolId.Keys ) {
-        List<DetailTableModel> detailTableRowsByDetailSymbolId = detailTableModelsGroupByDetailSymbolId[ detailSymbolId ]!.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.SignalType ).ThenBy( x => x.ConstructionItems ).ToList() ;
+        List<DetailTableModel> detailTableRowsByDetailSymbolId = detailTableModelsGroupByDetailSymbolId[ detailSymbolId ]!.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.SignalType ).ThenByDescending( x => x.IsParentRoute ).ThenBy( x => x.ConstructionItems ).ToList() ;
         var detailTableRowsBySignalType = detailTableRowsByDetailSymbolId.GroupBy( d => d.SignalType ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).Select( g => g.ToList() ).ToList() ;
         foreach ( var item in detailTableRowsBySignalType ) {
           sortedDetailTableModelsList.AddRange( item ) ;
@@ -183,7 +183,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       if ( ! isPlumbingTypeHasBeenChanged ) {
         var parentDetailRow = detailTableModelsByDetailSymbolId.First() ;
-        if ( parentDetailRow != null ) plumbingType = string.IsNullOrEmpty( parentDetailRow.PlumbingType ) ? plumbingType : parentDetailRow.PlumbingType ;
+        if ( parentDetailRow != null ) plumbingType = string.IsNullOrEmpty( parentDetailRow.PlumbingType ) ? plumbingType : parentDetailRow.PlumbingType.Replace( defaultChildPlumbingSymbol, string.Empty ) ;
       }
       var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
       var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
