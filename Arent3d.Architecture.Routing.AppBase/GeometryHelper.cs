@@ -3,6 +3,7 @@ using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -59,8 +60,11 @@ namespace Arent3d.Architecture.Routing.AppBase
           var (startPoint, endPoint) = (locationLine.GetEndPoint( 0 ), locationLine.GetEndPoint( 1 ) ) ;
           var line = Line.CreateBound( new XYZ( startPoint.X, startPoint.Y, elbow.Z ),
             new XYZ( endPoint.X, endPoint.Y, elbow.Z ) ) ;
-          
-          var curveLoop = CurveLoop.CreateViaThicken( line.Clone(), 5 * conduit.GetParameter("Outside Diameter")!.AsDouble(), document.ActiveView.ViewDirection ) ;
+
+          var diameter = conduit.ParametersMap
+            .get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document,
+              "Outside Diameter" ) ).AsDouble() ;
+          var curveLoop = CurveLoop.CreateViaThicken( line.Clone(), 5 * diameter, document.ActiveView.ViewDirection ) ;
           var transform =
             Transform.CreateTranslation( document.ActiveView.ViewDirection.Negate() * ( elbow.Z - minHeight )) ;
           curveLoop = CurveLoop.CreateViaTransform(curveLoop, transform);
