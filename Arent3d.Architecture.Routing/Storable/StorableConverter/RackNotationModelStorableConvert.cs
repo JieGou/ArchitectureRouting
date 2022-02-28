@@ -16,7 +16,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       FromConnectorId,
       IsDirectionX,
       RackWidth,
-      EndLineLeaderId
+      EndLineLeaderId,
+      EndPoint,
+      OrtherLineId
     }
 
     protected override RackNotationModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -30,8 +32,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var isDirectionX = deserializer.GetBool( SerializeField.IsDirectionX ) ;
       var rackWidth = deserializer.GetDouble( SerializeField.RackWidth ) ;
       var endLineLeaderId = deserializer.GetString( SerializeField.EndLineLeaderId ) ;
+      var endPoint = deserializer.GetInt( SerializeField.EndPoint ) ;
+      var ortherLineId = deserializer.GetNonNullStringArray( SerializeField.OrtherLineId ) ;
 
-      return new RackNotationModel( rackId, notationId, rackNotationId, fromConnectorId, isDirectionX, rackWidth, endLineLeaderId ) ;
+      return new RackNotationModel( rackId, notationId, rackNotationId, fromConnectorId, isDirectionX, rackWidth, endLineLeaderId, endPoint, ortherLineId ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, RackNotationModel customTypeValue )
@@ -44,6 +48,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.FromConnectorId, customTypeValue.FromConnectorId ) ;
       serializerObject.Add( SerializeField.IsDirectionX, customTypeValue.IsDirectionX ) ;
       serializerObject.Add( SerializeField.RackWidth, customTypeValue.RackWidth ) ;
+      serializerObject.AddNonNull(SerializeField.EndLineLeaderId, customTypeValue.EndLineLeaderId ) ;
+      serializerObject.Add(SerializeField.EndPoint, customTypeValue.EndPoint ) ;
+      serializerObject.AddNonNull(SerializeField.OrtherLineId, customTypeValue.OrtherLineId ) ;
 
       return serializerObject ;
     }
