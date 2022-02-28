@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -96,19 +97,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         return doc.Transaction( "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
         {
-          if ( viewModel.IsCreateDetailTableOnFloorPlanView || dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView ) {
-            var (originX, originY, originZ) = uiDoc.Selection.PickPoint() ;
-            var level = uiDoc.ActiveView.GenLevel ;
-            var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-
-            ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-            var noteWidth = 0.4 ;
-            TextNoteOptions opts = new( defaultTextTypeId ) ;
-            var txtPosition = new XYZ( originX, originY, heightOfConnector ) ;
-            TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, GenerateTextTable( viewModel.IsCreateDetailTableOnFloorPlanView ? viewModel : dialog.DetailTableViewModelSummary, level.Name ), opts ) ;
-            viewModel.IsCreateDetailTableOnFloorPlanView = false ;
-            dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView = false ;
-          }
+          if ( ! viewModel.IsCreateDetailTableOnFloorPlanView && ! dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
+          var level = uiDoc.ActiveView.GenLevel ;
+          var detailTableData = viewModel.IsCreateDetailTableOnFloorPlanView ? viewModel.DetailTableModels : dialog.DetailTableViewModelSummary.DetailTableModels ;
+          CreateDetailTableSchedule( doc, detailTableData, level.Name ) ;
+          viewModel.IsCreateDetailTableOnFloorPlanView = false ;
+          dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView = false ;
 
           return Result.Succeeded ;
         } ) ;
@@ -118,37 +112,76 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private string GenerateTextTable( DetailTableViewModel viewModel, string level )
+    private static void CreateDetailTableSchedule( Document document, IReadOnlyCollection<DetailTableModel> detailTableModels, string level )
     {
-      string line = new string( '＿', 32 ) ;
-      string result = string.Empty ;
-      var detailTableModels = viewModel.DetailTableModels ;
-      var maxWireType = detailTableModels.Max( x => ( x.WireType + x.WireSize ).Length ) ;
-      var maxWireStrip = detailTableModels.Max( x => x.WireStrip?.Length ) ?? 0 ;
-      var maxPlumbingType = detailTableModels.Max( x => ( x.PlumbingType + x.PlumbingSize ).Length ) ;
-      var detailTableDictionary = detailTableModels.GroupBy( x => x.DetailSymbol ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-      result += $"{line}\r{level}階平面图" ;
-      foreach ( var group in detailTableDictionary ) {
-        result += $"\r{line}\r{group.Key}" ;
-        result = @group.Value.Aggregate( result, ( current, item ) => current + $"\r{line}\r{AddFullString( item.WireType + item.WireSize, maxWireType )}\t-{AddFullString( item.WireStrip ?? string.Empty, maxWireStrip )}\tX1\t{AddFullString( CheckEmptyString( item.PlumbingType + item.PlumbingSize, maxPlumbingType ), maxPlumbingType )}\t{item.Remark}" ) ;
+      string scheduleName = "Revit.Detail.Table.Name".GetDocumentStringByKeyOrDefault( document, "Detail Table" ) + DateTime.Now.ToString( " yyyy-MM-dd hh-mm-ss" ) ;
+      var detailTable = document.GetAllElements<ViewSchedule>().FirstOrDefault( v => v.Name.Contains( scheduleName ) ) ;
+      if ( detailTable == null ) {
+        detailTable = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
+        detailTable.Name = scheduleName ;
       }
 
-      result += $"\r{line}" ;
-      return result ;
+      CreateDetailTableSchedule( detailTable, detailTableModels, level ) ;
     }
 
-    private string CheckEmptyString( string str, int lenght )
+    private static void CreateDetailTableSchedule( ViewSchedule viewSchedule, IReadOnlyCollection<DetailTableModel> detailTableModels, string level )
     {
-      return ! string.IsNullOrEmpty( str ) ? $"({str})" : new string( '　', lenght ) ;
-    }
+      const int columnCount = 3 ;
+      const int maxCountOfCell = 4 ;
+      const double minColumnWidth = 0.05 ;
+      var rowData = 1 ;
+      var maxCharOfPlumbingTypeCell = 0 ;
+      var maxCharOfRemarkCell = 0 ;
 
-    private string AddFullString( string str, int length )
-    {
-      if ( str.Length < length ) {
-        str += new string( '　', length - str.Length ) ;
+      TableCellStyleOverrideOptions tableStyleOverride = new TableCellStyleOverrideOptions { HorizontalAlignment = true } ;
+      TableCellStyle cellStyle = new TableCellStyle() ;
+      cellStyle.SetCellStyleOverrideOptions( tableStyleOverride ) ;
+      cellStyle.FontHorizontalAlignment = HorizontalAlignmentStyle.Left ;
+
+      TableData tableData = viewSchedule.GetTableData() ;
+      TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
+      for ( var i = 0 ; i <= columnCount ; i++ ) {
+        if ( i != 1 ) tsdHeader.InsertColumn( i ) ;
       }
 
-      return str ;
+      var detailTableModelsGroupByDetailSymbol = detailTableModels.GroupBy( d => d.DetailSymbol ).ToDictionary( g => g.Key, g => g.ToList() ) ;
+      var rowCount = detailTableModels.Count + detailTableModelsGroupByDetailSymbol.Count ;
+      for ( var i = 0 ; i < rowCount ; i++ ) {
+        tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
+      }
+
+      tsdHeader.MergeCells( new TableMergedCell( 0, 0, 0, columnCount ) ) ;
+      tsdHeader.SetCellText( 0, 0, level + "階平面图" ) ;
+      tsdHeader.SetCellStyle( 0, 0, cellStyle ) ;
+
+      foreach ( var (detailSymbol, detailTableModelsSameWithDetailSymbol) in detailTableModelsGroupByDetailSymbol ) {
+        tsdHeader.MergeCells( new TableMergedCell( rowData, 0, rowData, columnCount ) ) ;
+        tsdHeader.SetCellText( rowData, 0, detailSymbol ) ;
+        tsdHeader.SetCellStyle( rowData, 0, cellStyle ) ;
+        rowData++ ;
+        foreach ( var rowDetailTableModel in detailTableModelsSameWithDetailSymbol ) {
+          var wireType = string.IsNullOrEmpty( rowDetailTableModel.WireStrip ) ? $"{rowDetailTableModel.WireType + rowDetailTableModel.WireSize,-15}" : $"{rowDetailTableModel.WireType + rowDetailTableModel.WireSize,-15}{"－" + rowDetailTableModel.WireStrip,5}" ;
+          var plumbingType = rowDetailTableModel.PlumbingType + rowDetailTableModel.PlumbingSize ;
+          tsdHeader.SetCellText( rowData, 0, wireType ) ;
+          tsdHeader.SetCellText( rowData, 1, "x" + rowDetailTableModel.WireBook ) ;
+          tsdHeader.SetCellText( rowData, 2, plumbingType ) ;
+          tsdHeader.SetCellText( rowData, 3, rowDetailTableModel.Remark ) ;
+          if ( plumbingType.Length > maxCharOfPlumbingTypeCell ) maxCharOfPlumbingTypeCell = plumbingType.Length ;
+          if ( rowDetailTableModel.Remark.Length > maxCharOfRemarkCell ) maxCharOfRemarkCell = rowDetailTableModel.Remark.Length ;
+          rowData++ ;
+        }
+      }
+
+      for ( var i = 0 ; i <= columnCount ; i++ ) {
+        var columnWidth = i switch
+        {
+          0 => minColumnWidth * 3,
+          2 when maxCharOfPlumbingTypeCell > maxCountOfCell => minColumnWidth * Math.Ceiling( (double) maxCharOfPlumbingTypeCell / maxCountOfCell ),
+          3 when maxCharOfRemarkCell > maxCountOfCell => minColumnWidth * Math.Ceiling( (double) maxCharOfRemarkCell / maxCountOfCell ),
+          _ => minColumnWidth
+        } ;
+        tsdHeader.SetColumnWidth( i, columnWidth ) ;
+      }
     }
 
     private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels )
