@@ -27,6 +27,7 @@ namespace Arent3d.Architecture.Routing
     }
 
 
+    bool IPipeSpec.IsVirtualBranch( IPipeDiameter header, IPipeDiameter branch ) => false ;
 
     private SizeTable<double, double>? _90ElbowSize ;
     private SizeTable<double, double>? _45ElbowSize ;
@@ -65,7 +66,18 @@ namespace Arent3d.Architecture.Routing
 
 
     double IPipeSpec.GetConcentricReducerCombinationLength( IPipeDiameter largeDiameter, IPipeDiameter smallDiameter ) => GetReducerLength( largeDiameter, smallDiameter ) ;
+    double IPipeSpec.GetConcentricReducerCombinationLength( IPipeDiameter largeDiameter, IPipeDiameter smallDiameter, out int reducerCount )
+    {
+      reducerCount = 1 ;
+      return GetReducerLength( largeDiameter, smallDiameter ) ;
+    }
+
     double IPipeSpec.GetEccentricReducerCombinationLength( IPipeDiameter largeDiameter, IPipeDiameter smallDiameter ) => GetReducerLength( largeDiameter, smallDiameter ) ;
+    double IPipeSpec.GetEccentricReducerCombinationLength( IPipeDiameter largeDiameter, IPipeDiameter smallDiameter, out int reducerCount )
+    {
+      reducerCount = 1 ;
+      return GetReducerLength( largeDiameter, smallDiameter ) ;
+    }
 
     public double GetReducerLength( IPipeDiameter pipe1, IPipeDiameter pipe2 )
     {
@@ -80,7 +92,7 @@ namespace Arent3d.Architecture.Routing
       return ( _reducerLength ??= new SizeTable<(double, double), double>( CalculateConcentricReducerLength ) ).Get( ( diameter1, diameter2 ) ) ;
     }
 
-    public double GetWeldMinDistance( IPipeDiameter diameter ) => 0 ;
+    public double GetWeldMinDistance( IPipeDiameter diameter, bool forcibly ) => 0 ;
 
 
     private IMEPCurveGenerator? _mepCurveGenerator = null ;
