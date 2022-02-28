@@ -156,10 +156,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       List<DetailTableModel> sortedDetailTableModelsList = new() ;
       foreach ( var detailSymbolId in detailTableModelsGroupByDetailSymbolId.Keys ) {
-        List<DetailTableModel> detailTableRowsByDetailSymbolId = detailTableModelsGroupByDetailSymbolId[ detailSymbolId ]!.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.SignalType ).ThenByDescending( x => x.IsParentRoute ).ThenBy( x => x.ConstructionItems ).ToList() ;
-        var detailTableRowsBySignalType = detailTableRowsByDetailSymbolId.GroupBy( d => d.SignalType ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).Select( g => g.ToList() ).ToList() ;
-        foreach ( var item in detailTableRowsBySignalType ) {
-          sortedDetailTableModelsList.AddRange( item ) ;
+        List<DetailTableModel> detailTableRowsByDetailSymbolId = detailTableModelsGroupByDetailSymbolId[ detailSymbolId ]!.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.SignalType ).ToList() ;
+        var detailTableRowsBySignalTypes = detailTableRowsByDetailSymbolId.GroupBy( d => d.SignalType ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).Select( g => g.ToList() ).ToList() ;
+        foreach ( var detailTableRowsBySignalType in detailTableRowsBySignalTypes ) {
+          var orderedDetailTableRowsBySignalType = detailTableRowsBySignalType.GroupBy( d => d.ConstructionItems ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).SelectMany( g => g.ToList() ).ToList() ;
+          sortedDetailTableModelsList.AddRange( orderedDetailTableRowsBySignalType ) ;
         }
       }
 
