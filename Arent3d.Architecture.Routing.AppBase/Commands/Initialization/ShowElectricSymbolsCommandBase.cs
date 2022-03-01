@@ -105,7 +105,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var wireStrip = string.Empty ;
       var endConnector = allConnectors.First( c => c.UniqueId == toConnectorUniqueId ) ;
       endConnector?.TryGetProperty( RoutingFamilyLinkedParameter.IsEcoMode, out isEcoMode ) ;
-      var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode! ) ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) ;
+      var hiroiSetModels = 
+        ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode! ) 
+          ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) 
+          : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) ;
       foreach ( var item in hiroiSetModels ) {
         List<string> listMaterialCode = new() ;
         if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
