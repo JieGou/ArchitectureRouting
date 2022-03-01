@@ -1,7 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Windows ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Architecture ;
 using Application = Autodesk.Revit.ApplicationServices.Application ;
@@ -12,7 +12,9 @@ namespace Arent3d.Architecture.Routing
 {
   public class ObstacleGeneration
   {
-    public static List<List<Box3d>> GetAllObstacleRoomBox( Document doc, bool show )
+    public static List<List<Box3d>> ListRoomBox3dInCurrentProject = new() ;
+
+    public static List<List<Box3d>> GetAllObstacleRoomBox( Document doc )
     {
       var listOut = new List<List<Box3d>>() ;
       var linkedDocumentFilter = GetLinkedDocFilter( doc, doc.Application ) ;
@@ -22,11 +24,10 @@ namespace Arent3d.Architecture.Routing
       var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
       var otherRooms = allRooms.Except( livingRooms ).ToList() ;
 
-      var otherListBox3d = CreateBox3dFromOther( otherRooms, doc, show ) ;
-      var livingListBox3d = CreateBox3dFromLivingRoom( livingRooms, doc, show ) ;
+      var livingListBox3d = CreateBox3dFromDividedRoom( livingRooms ) ;
+      var otherListBox3d = CreateBox3dFromDividedRoom( otherRooms ) ;
 
-      listOut.Add( livingListBox3d ) ;
-      listOut.Add( otherListBox3d.ToList() ) ;
+      ListRoomBox3dInCurrentProject = new List<List<Box3d>> { livingListBox3d, otherListBox3d } ;
       return listOut ;
     }
 
@@ -57,32 +58,12 @@ namespace Arent3d.Architecture.Routing
       return rooms ;
     }
 
-    public static IEnumerable<Box3d> CreateBox3dFromOther( List<Room> list, Document document, bool show )
-    {
-      var listOut = new List<Box3d>() ;
-      foreach ( var room in list ) {
-        var bb = room.get_BoundingBox( document.ActiveView ) ;
-        if ( bb is null ) continue ;
-        var min = bb.Min ;
-        var max = bb.Max ;
-        var box3d = new Box3d( min.To3dRaw(), max.To3dRaw() ) ;
-        listOut.Add( box3d) ;
-      }
-
-      if ( show ) {
-        listOut.ForEach( x =>
-        {
-          CreateBoxGenericModelInPlace( x.Min.ToXYZRaw(), x.Max.ToXYZRaw(), x.ZWidth, document, "" ) ;
-        } );
-      }
-      return listOut ;
-    }
-
-    public static List<Box3d> CreateBox3dFromLivingRoom( List<Room> list, Document document, bool show )
+    public static List<Box3d> CreateBox3dFromDividedRoom( List<Room> list )
     {
       var listOut = new List<Box3d>() ;
       var option = new SpatialElementBoundaryOptions() ;
       option.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.CoreCenter ;
+
       foreach ( var room in list ) {
         try {
           //Get all boundary segments
@@ -120,21 +101,12 @@ namespace Arent3d.Architecture.Routing
           var dic = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
 
           //Find out the rectangular
-          for ( int i = 0 ; i < dic.Count - 1 ; i++ ) {
+          for ( var i = 0 ; i < dic.Count - 1 ; i++ ) {
             var l1 = dic[ dic.Keys.ToList()[ i ] ] ;
             var l2 = dic[ dic.Keys.ToList()[ i + 1 ] ] ;
             l1.AddRange( l2 ) ;
             var recBox = GeoExtension.FindRectangularBox( l1, GeoExtension.GetAllXLine( curvesFix ), lenghtMaxY * 2, height ) ;
             listOut.AddRange( recBox ) ;
-          }
-
-          //Create the room box
-          if ( show ) {
-            listOut.ForEach( recBox =>
-            {
-              var index = listOut.IndexOf( recBox ) ;
-              CreateBoxGenericModelInPlace( recBox.Min.ToXYZRaw(), recBox.Max.ToXYZRaw(), height, document, $"{room.Name}_{index}" ) ;
-            } ) ;
           }
         }
         catch {
@@ -145,7 +117,12 @@ namespace Arent3d.Architecture.Routing
       return listOut ;
     }
 
-    public static ElementId CreateBoxGenericModelInPlace( XYZ min, XYZ max, double height, Document doc, string name )
+    public static void ShowRoomBox( Document document )
+    {
+      ListRoomBox3dInCurrentProject.ForEach( list => list.ForEach( recBox => { CreateBoxGenericModelInPlace( recBox.Min.ToXYZRaw(), recBox.Max.ToXYZRaw(), document ) ; } ) ) ;
+    }
+
+    private static ElementId CreateBoxGenericModelInPlace( XYZ min, XYZ max, Document doc )
     {
       try {
         var line1 = Line.CreateBound( min, new XYZ( max.X, min.Y, min.Z ) ) ;
@@ -156,15 +133,14 @@ namespace Arent3d.Architecture.Routing
         var profile = new List<Curve>() { line1, line2, line3, line4 } ;
         var curveLoop = CurveLoop.Create( profile ) ;
         var profileLoops = new List<CurveLoop>() { curveLoop } ;
-        var solid = GeometryCreationUtilities.CreateExtrusionGeometry( profileLoops, XYZ.BasisZ, height ) ;
+        var solid = GeometryCreationUtilities.CreateExtrusionGeometry( profileLoops, XYZ.BasisZ, max.Z - min.Z ) ;
 
         var ds = DirectShape.CreateElement( doc, new ElementId( BuiltInCategory.OST_GenericModel ) ) ;
         ds.SetShape( new GeometryObject[] { solid } ) ;
-        ds.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "ROOM_BOX_" + name ) ;
+        ds.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "ROOM_BOX" ) ;
         return ds.Id ;
       }
-      catch ( Exception ex ) {
-        var message = ex.Message ;
+      catch ( Exception ) {
         return ElementId.InvalidElementId ;
       }
     }
@@ -200,6 +176,7 @@ namespace Arent3d.Architecture.Routing
       var geometryElement = beam.get_Geometry( option ) ;
       return geometryElement.Select( x => x as Solid ).Count( x => x?.Volume > 0 ) == 1 ;
     }
+
     public static List<Line> GetAllXLine( IEnumerable<Line> lines )
     {
       return lines.Where( l => l.Direction.IsAlmostEqualTo( XYZ.BasisX ) || l.Direction.IsAlmostEqualTo( -XYZ.BasisX ) ).ToList() ;
@@ -271,15 +248,16 @@ namespace Arent3d.Architecture.Routing
       return list.OrderBy( x => x.Y ).First() ;
     }
 
-    private static XYZ UpperPoint( this Line line )
+    private static XYZ UpperPoint( this Curve line )
     {
       var list = new List<XYZ>() { line.GetEndPoint( 0 ), line.GetEndPoint( 1 ) } ;
       return list.OrderBy( x => x.Y ).Last() ;
     }
 
-    public static XYZ AddHeight( this XYZ point, double value )
+    private static XYZ AddHeight( this XYZ point, double value )
     {
-      return new XYZ( point.X, point.Y, point.Z + value ) ;
+      var (x, y, z) = point ;
+      return new XYZ( x, y, z + value ) ;
     }
 
     public static List<Line> FixDiagonalLines( List<Line> lines, double lengthEx )
@@ -358,8 +336,8 @@ namespace Arent3d.Architecture.Routing
           }
         }
       }
-      catch ( Exception ex ) {
-        var message = ex.Message ;
+      catch ( Exception ) {
+        //ignore
       }
 
       return listOut ;

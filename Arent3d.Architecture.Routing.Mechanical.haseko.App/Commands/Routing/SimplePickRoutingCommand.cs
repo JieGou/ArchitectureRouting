@@ -35,6 +35,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       if ( res == MessageBoxResult.OK ) {
         if ( commandSpanResource is ExternalCommandData commandData ) {
           var document = commandData.Application.ActiveUIDocument.Document ;
+          
           using var tran = new Transaction( document, "Create PriorityBox" ) ;
           tran.Start() ;
           var collector = new FilteredElementCollector( document ) ;
@@ -45,7 +46,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           var allRoomBox = collector.WherePasses( filterGen ).WherePasses( filterComment ).WhereElementIsNotElementType().ToElementIds() ;
 
           if ( allRoomBox.Any() ) document.Delete( allRoomBox ) ;
-          ObstacleGeneration.GetAllObstacleRoomBox( document, true ) ;
+          ObstacleGeneration.ShowRoomBox( document ) ;
           tran.Commit() ;
         }
       }
