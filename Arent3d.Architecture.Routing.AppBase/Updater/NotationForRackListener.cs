@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
     public bool IsDocumentSpan => false ;
     public bool IsOptional => false ;
     public ChangePriority ChangePriority => ChangePriority.Annotations ;
-    public DocumentUpdateListenType ListenType => DocumentUpdateListenType.Geometry ;
+    public DocumentUpdateListenType ListenType => DocumentUpdateListenType.Any ;
 
     public NotationForRackListener()
     {
@@ -74,6 +74,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
           var (endLineLeaderId, ortherLineId) = UpdateNotation( document, rackNotationModel, notation, detailLine ) ;
           Save( rackNotationStorable, notation, endLineLeaderId, ortherLineId ) ;
         }
+        
+        selection.SetElementIds(new List<ElementId>());
       }
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
@@ -103,6 +105,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
       var endLineLeader = ( curveClosestPoint.Item1?.UniqueId, curveClosestPoint.Item2 ) ;
       var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.Item1 ).ToList() ;
 
+      document.Delete( detailLine.Id ) ;
       foreach ( var lineId in rackNotationModel.OrtherLineId ) {
         if ( document.GetElement( lineId ) is Element line ) {
           document.Delete( line.Id ) ;

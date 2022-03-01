@@ -126,8 +126,8 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     public static Line CreateUnderLineText( TextNote textNote, XYZ basePoint )
     {
-      var height = textNote.Height +
-                   textNote.TextNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).AsDouble() *
+      var height = (textNote.Height + 
+                    textNote.TextNoteType.get_Parameter(BuiltInParameter.LEADER_OFFSET_SHEET).AsDouble()) * 
                    textNote.Document.ActiveView.Scale ;
       var coord = Transform.CreateTranslation( textNote.UpDirection.Negate() * height ).OfPoint( textNote.Coord ) ;
       var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * textNote.Width *
@@ -135,6 +135,32 @@ namespace Arent3d.Architecture.Routing.AppBase
       var middle = Transform.CreateTranslation( textNote.BaseDirection * width ).OfPoint( coord ) ;
 
       return Line.CreateBound( new XYZ(coord.X, coord.Y, basePoint.Z), new XYZ(middle.X, middle.Y, basePoint.Z) ) ;
+    }
+
+    private static Solid? CreateSolidFromBoundingBox<T>( T element, double tolerance ) where T : Element
+    {
+      var boundingBox = element.get_BoundingBox( null ) ;
+      if ( null == boundingBox )
+        return null ;
+
+      var minPoint = boundingBox.Min ;
+      var maxPoint = boundingBox.Max ;
+      
+      XYZ point0 = new XYZ(minPoint.X - tolerance, minPoint.Y - tolerance, minPoint.Z - tolerance);
+      XYZ point1 = new XYZ(maxPoint.X + tolerance, minPoint.Y - tolerance, minPoint.Z - tolerance);
+      XYZ point2 = new XYZ(maxPoint.X + tolerance, maxPoint.Y + tolerance, minPoint.Z - tolerance);
+      XYZ point3 = new XYZ(minPoint.X - tolerance, maxPoint.Y + tolerance, minPoint.Z - tolerance);
+      
+      List<Curve> curves = new List<Curve>()
+      {
+        Line.CreateBound(point0, point1), 
+        Line.CreateBound(point1, point2), 
+        Line.CreateBound(point2, point3), 
+        Line.CreateBound(point3, point0)
+      };
+      List<CurveLoop> curveLoops = new List<CurveLoop>() { CurveLoop.Create(curves) };
+      
+      return GeometryCreationUtilities.CreateExtrusionGeometry(curveLoops, XYZ.BasisZ, maxPoint.Z - minPoint.Z + 2*tolerance);
     }
   }
 }
