@@ -5,14 +5,14 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class ElectricalSymbolModel
   {
-    public string UniqueId { get ; set ; }
-    public string FloorPlanSymbol { get ; set ; }
-    public string GeneralDisplayDeviceSymbol { get ; set ; }
-    public string WireType { get ; set ; }
-    public string WireSize { get ; set ; }
-    public string WireStrip { get ; set ; }
-    public string PipingType { get ; set ; }
-    public string PipingSize { get ; set ; }
+    public string UniqueId { get ; }
+    public string FloorPlanSymbol { get ; }
+    public string GeneralDisplayDeviceSymbol { get ; }
+    public string WireType { get ; }
+    public string WireSize { get ; }
+    public string WireStrip { get ; }
+    public string PipingType { get ; }
+    public string PipingSize { get ; }
 
     public ElectricalSymbolModel( 
       string uniqueId,
