@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing
     {
       var listOut = new List<Box3d>() ;
       var option = new SpatialElementBoundaryOptions() ;
-      option.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.CoreCenter ;
+      option.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Finish ;
 
       foreach ( var room in list ) {
         try {
