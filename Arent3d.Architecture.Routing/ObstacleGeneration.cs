@@ -16,7 +16,6 @@ namespace Arent3d.Architecture.Routing
 
     public static List<List<Box3d>> GetAllObstacleRoomBox( Document doc )
     {
-      var listOut = new List<List<Box3d>>() ;
       var linkedDocumentFilter = GetLinkedDocFilter( doc, doc.Application ) ;
       var currentDocumentFilter = new FilteredElementCollector( doc ) ;
 
@@ -28,7 +27,7 @@ namespace Arent3d.Architecture.Routing
       var otherListBox3d = CreateBox3dFromDividedRoom( otherRooms ) ;
 
       ListRoomBox3dInCurrentProject = new List<List<Box3d>> { livingListBox3d, otherListBox3d } ;
-      return listOut ;
+      return ListRoomBox3dInCurrentProject ;
     }
 
     public static FilteredElementCollector? GetLinkedDocFilter( Document doc, Application app )
