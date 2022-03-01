@@ -304,6 +304,12 @@ namespace Arent3d.Architecture.Routing
 
       return document.Create.NewFamilyInstance( position, symbol, level, structuralType ) ;
     }
+    public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, StructuralType structuralType )
+    {
+      var document = symbol.Document ;
+      if ( false == symbol.IsActive ) symbol.Activate() ;
+      return document.Create.NewFamilyInstance( position, symbol, structuralType ) ;
+    }
 
     private static Level? GetLevel( Document document, string levelName )
     {

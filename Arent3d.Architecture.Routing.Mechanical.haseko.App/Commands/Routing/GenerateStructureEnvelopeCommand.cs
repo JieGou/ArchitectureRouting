@@ -73,10 +73,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       option.DetailLevel = ViewDetailLevel.Fine ;
       var listComplex = new List<Floor>() ;
 
-      var level = uiDocument.ActiveView.GenLevel ;
-      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
-      level ??= levels.First() ;
-
       foreach ( var floorInstance in allFloors ) {
         if ( floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭以外" || floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭" ) {
           continue ;
@@ -159,7 +155,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
               foreach ( var recBox in listRecBox ) {
                 var envelopeOrigin = recBox.Center.ToXYZRaw() ;
                 var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-                var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, level, StructuralType.NonStructural ) ;
+                var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, StructuralType.NonStructural ) ;
                 envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
                 envelopeInstance.LookupParameter( "奥行き" ).Set( recBox.YWidth ) ;
                 envelopeInstance.LookupParameter( "幅" ).Set( recBox.XWidth ) ;
@@ -211,10 +207,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var wallsCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<Wall>().ToList() ;
       allWalls.AddRange( wallsCurrent ) ;
 
-      var level = uiDocument.ActiveView.GenLevel ;
-      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
-      level ??= levels.First() ;
-
       foreach ( var wallInstance in allWalls ) {
         var height = wallInstance.get_Parameter( BuiltInParameter.WALL_USER_HEIGHT_PARAM ).AsDouble() ;
         var width = wallInstance.WallType.Width ;
@@ -235,7 +227,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
         var envelopeOrigin = new XYZ( ( startPoint.X + endPoint.X ) / 2, ( startPoint.Y + endPoint.Y ) / 2, ( startPoint.Z + endPoint.Z ) / 2 ) ;
         var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, level, StructuralType.NonStructural ) ;
+        var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, StructuralType.NonStructural ) ;
         envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
         envelopeInstance.LookupParameter( "奥行き" ).Set( backSize ) ;
         envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
@@ -265,9 +257,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
       var colCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<FamilyInstance>().ToList() ;
       allColumns.AddRange( colCurrent ) ;
-      var level = uiDocument.ActiveView.GenLevel ;
-      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
-      level ??= levels.First() ;
 
       var option = new Options() ;
       option.DetailLevel = ViewDetailLevel.Fine ;
@@ -284,7 +273,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           var location = new XYZ( ox, oy, oz - z1 ) ;
 
           var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-          var envelopeInstance = envelopeSymbol.Instantiate( location, level, StructuralType.NonStructural ) ;
+          var envelopeInstance = envelopeSymbol.Instantiate( location, StructuralType.NonStructural ) ;
           envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
           envelopeInstance.LookupParameter( "奥行き" ).Set( length ) ;
           envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
@@ -316,10 +305,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       option.DetailLevel = ViewDetailLevel.Fine ;
       var filterBeams = allBeams.Where( b => b.FilterBeamWithXyDirection() ).Where( b => b.FilterBeamUniqueSolid( option ) ).ToList() ;
 
-      var level = uiDocument.ActiveView.GenLevel ;
-      var levels = document.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).ToList() ;
-      level ??= levels.First() ;
-
       foreach ( var bmInstance in filterBeams ) {
         var geometryElement = bmInstance.get_Geometry( option ) ;
         foreach ( var geoObject in geometryElement ) {
@@ -333,7 +318,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           var location = new XYZ( ox, oy, oz - z1 ) ;
 
           var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-          var envelopeInstance = envelopeSymbol.Instantiate( location, level, StructuralType.NonStructural ) ;
+          var envelopeInstance = envelopeSymbol.Instantiate( location, StructuralType.NonStructural ) ;
           envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
           envelopeInstance.LookupParameter( "奥行き" ).Set( length ) ;
           envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
