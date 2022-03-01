@@ -70,6 +70,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     protected override IEnumerable<IDocumentUpdateListener> GetUpdateListeners()
     {
       yield return new RoutingUpdateListener( FromToTreeManager ) ;
+      yield return new NotationForRackListener() ;
     }
   }
 }

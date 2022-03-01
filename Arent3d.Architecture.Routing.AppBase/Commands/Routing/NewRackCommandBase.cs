@@ -14,6 +14,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Utility ;
 using Autodesk.Revit.ApplicationServices ;
+using TextElement = Autodesk.Revit.DB.TextElement ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -516,20 +517,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           noteLeader.End = endPoint ;
 
           var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
+          (string?, int?) endLineLeader = ( null, null ) ;
+          var ortherLineId = new List<string>() ;
+          
           if ( curves.Count > 1 && doc.ActiveView is ViewPlan) {
             doc.Regenerate();
             
             if(noteLeader.Anchor.DistanceTo(noteLeader.Elbow) > doc.Application.ShortCurveTolerance)
               curves.Add( Line.CreateBound( noteLeader.Anchor, noteLeader.Elbow ) ) ;
-            
+
+            var detailCurves = new List<DetailCurve>() ;
             foreach ( var curve in curves ) {
-              doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
+              var detailCurve = doc.Create.NewDetailCurve( doc.ActiveView, curve ) ;
+              detailCurves.Add(detailCurve) ;
             }
+
+            var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, noteLeader.End ) ;
+            endLineLeader = (curveClosestPoint.Item1?.UniqueId, curveClosestPoint.Item2)  ;
+            ortherLineId = detailCurves.Select(x => x.UniqueId).Where( x => x != endLineLeader.Item1 ).ToList() ;
             textNote.RemoveLeaders();
           }
 
           foreach ( var item in racks ) {
-            var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, rack.UniqueId, fromConnectorId, isDirectionX, Math.Round( bendRadiusRack, 4 ) ) ;
+            var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, rack.UniqueId, fromConnectorId, isDirectionX, Math.Round( bendRadiusRack, 4 ), 
+              endLineLeader.Item1, endLineLeader.Item2, ortherLineId ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }
@@ -547,7 +558,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           foreach ( var item in racks ) {
-            var rackNotationModel = new RackNotationModel( item.UniqueId, notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth ) ;
+            var rackNotationModel = new RackNotationModel( item.UniqueId, notationModel.NotationId, notationModel.RackNotationId, fromConnectorId, isDirectionX, notationModel.RackWidth, 
+              notationModel.EndLineLeaderId, notationModel.EndPoint, notationModel.OrtherLineId ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }
