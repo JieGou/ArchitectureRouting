@@ -38,21 +38,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ) ;
         var routePicked = pickedObjects.Select( e => e.GetRouteName() ).Distinct().ToList() ;
         foreach ( var routeName in routePicked ) {
-          var fromConnectorInfoAndToConnectorInfo = GetFromConnectorInfoAndToConnectorInfo( doc, allConnectors, routeName!, ref errorMess ) ;
+          ( string fromConnectorUniqueId, ( string fromCeedSetCode, string fromDeviceSymbol, string fromModelNumber ) fromConnectorInfo, string toConnectorUniqueId, ( string toCeedSetCode, string toDeviceSymbol, string toModelNumber ) toConnectorInfo ) fromConnectorInfoAndToConnectorInfo = GetFromConnectorInfoAndToConnectorInfo( doc, allConnectors, routeName!, ref errorMess ) ;
           if ( ! string.IsNullOrEmpty( errorMess ) ) {
             message = errorMess ;
             return Result.Cancelled ;
           }
 
-          var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.Item2.Item1 && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.Item2.Item2 && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.Item2.Item3 ) ;
-          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.Item4.Item1 && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.Item4.Item2 && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.Item4.Item3 ) ;
+          var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.fromCeedSetCode 
+                                                                                       && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.fromDeviceSymbol 
+                                                                                       && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.fromModelNumber ) ;
+          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.toCeedSetCode 
+                                                                                     && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.toDeviceSymbol 
+                                                                                     && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.toModelNumber ) ;
           if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
           var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
           if ( detailTableModelsByRouteName.Any() ) {
-            AddElectricalSymbolModelFromDetailTableModelData( electricalSymbolModels, detailTableModelsByRouteName, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.Item1, fromConnectorInfoAndToConnectorInfo.Item3 ) ;
+            InsertDataFromDetailTableModelIntoElectricalSymbolModel( electricalSymbolModels, detailTableModelsByRouteName, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ;
           }
           else {
-            AddElectricalSymbolModelFromRegularDatabase( hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.Item1, fromConnectorInfoAndToConnectorInfo.Item3 ) ;
+            InsertDataFromRegularDatabaseIntoElectricalSymbolModel( hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ;
           }
         }
       }
@@ -67,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       } ) ;
     }
 
-    private void AddElectricalSymbolModelFromDetailTableModelData( List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
+    private void InsertDataFromDetailTableModelIntoElectricalSymbolModel( List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
     {
       const string defaultChildPlumbingSymbol = "↑" ;
       foreach ( var element in detailTableModelsByRouteName ) {
@@ -95,7 +99,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void AddElectricalSymbolModelFromRegularDatabase( List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<Element> allConnectors, List<ElectricalSymbolModel> electricalSymbolModels, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
+    private void InsertDataFromRegularDatabaseIntoElectricalSymbolModel( List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<Element> allConnectors, List<ElectricalSymbolModel> electricalSymbolModels, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
     {
       const string defaultPlumbingType = "配管なし" ;
       if ( toConnectorCeedModel == null ) return ;
@@ -163,8 +167,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return ( string.Empty, ( string.Empty, string.Empty, string.Empty ), string.Empty, ( string.Empty, string.Empty, string.Empty ) ) ;
       }
 
-      var fromConnectorInfo = GetConnectorCeedCodeInfo( fromConnector ) ;
-      var toConnectorInfo = GetConnectorCeedCodeInfo( toConnector ) ;
+      ( string fromCeedSetCode, string fromDeviceSymbol, string fromModelNumber ) fromConnectorInfo = GetConnectorCeedCodeInfo( fromConnector ) ;
+      ( string toCeedSetCode, string toDeviceSymbol, string toModelNumber ) toConnectorInfo = GetConnectorCeedCodeInfo( toConnector ) ;
       return ( fromConnector.UniqueId, fromConnectorInfo, toConnector.UniqueId, toConnectorInfo ) ;
     }
 
