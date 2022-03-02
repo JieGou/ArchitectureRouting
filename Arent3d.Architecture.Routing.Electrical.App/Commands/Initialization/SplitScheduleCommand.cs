@@ -1,15 +1,20 @@
 ﻿using System ;
 using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.AppBase.Commands ;
+using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
+using ImageType = Autodesk.Revit.DB.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  public class SplitScheduleCommandBase : IExternalCommand
+  [DisplayNameKey( "Electrical.App.Commands.Initialization.SplitScheduleCommand", DefaultString = "Split Schedule" )]
+  [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
+  public class SplitScheduleCommand : IExternalCommand
   {
     private const string TITLE = "Arent Notification" ;
     private const int SPLIT_FROM_ROW = 4 ;
@@ -56,7 +61,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         }
 
         var heightRequest = 0d ;
-        for ( int i = 0 ; i < SPLIT_FROM_ROW - 2 ; i++ ) {
+        for ( int i = 0 ; i < SPLIT_FROM_ROW ; i++ ) {
           heightRequest += schedule.GetTableData().GetSectionData( SectionType.Header ).GetRowHeight( i ) ;
         }
 
@@ -95,7 +100,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         return Result.Succeeded ;
       }
       catch ( Exception exception ) {
-        TaskDialog.Show( "Notification", exception.Message ) ;
+        CommandUtils.DebugAlertException(exception);
         return Result.Cancelled ;
       }
     }
