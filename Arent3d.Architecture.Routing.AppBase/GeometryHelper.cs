@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase
           var diameter = conduit.ParametersMap
             .get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document,
               "Outside Diameter" ) ).AsDouble() ;
-          var curveLoop = CurveLoop.CreateViaThicken( line.Clone(), 5 * diameter, document.ActiveView.ViewDirection ) ;
+          var curveLoop = CurveLoop.CreateViaThicken( line.Clone(), 9 * diameter, document.ActiveView.ViewDirection ) ;
           var transform =
             Transform.CreateTranslation( document.ActiveView.ViewDirection.Negate() * ( elbow.Z - minHeight ) ) ;
           curveLoop = CurveLoop.CreateViaTransform( curveLoop, transform ) ;
@@ -137,30 +137,19 @@ namespace Arent3d.Architecture.Routing.AppBase
       return Line.CreateBound( new XYZ(coord.X, coord.Y, basePoint.Z), new XYZ(middle.X, middle.Y, basePoint.Z) ) ;
     }
 
-    private static Solid? CreateSolidFromBoundingBox<T>( T element, double tolerance ) where T : Element
+    public static List<DetailCurve> CreateDetailCurve( Document document, List<Curve> curves )
     {
-      var boundingBox = element.get_BoundingBox( null ) ;
-      if ( null == boundingBox )
-        return null ;
+      var graphicsStyle = document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines )
+        .GetGraphicsStyle( GraphicsStyleType.Projection ) ;
 
-      var minPoint = boundingBox.Min ;
-      var maxPoint = boundingBox.Max ;
+      var detailCurves = new List<DetailCurve>() ;
+      foreach ( var curve in curves ) {
+        var detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        detailCurve.LineStyle = graphicsStyle ;
+        detailCurves.Add( detailCurve ) ;
+      }
       
-      XYZ point0 = new XYZ(minPoint.X - tolerance, minPoint.Y - tolerance, minPoint.Z - tolerance);
-      XYZ point1 = new XYZ(maxPoint.X + tolerance, minPoint.Y - tolerance, minPoint.Z - tolerance);
-      XYZ point2 = new XYZ(maxPoint.X + tolerance, maxPoint.Y + tolerance, minPoint.Z - tolerance);
-      XYZ point3 = new XYZ(minPoint.X - tolerance, maxPoint.Y + tolerance, minPoint.Z - tolerance);
-      
-      List<Curve> curves = new List<Curve>()
-      {
-        Line.CreateBound(point0, point1), 
-        Line.CreateBound(point1, point2), 
-        Line.CreateBound(point2, point3), 
-        Line.CreateBound(point3, point0)
-      };
-      List<CurveLoop> curveLoops = new List<CurveLoop>() { CurveLoop.Create(curves) };
-      
-      return GeometryCreationUtilities.CreateExtrusionGeometry(curveLoops, XYZ.BasisZ, maxPoint.Z - minPoint.Z + 2*tolerance);
+      return  detailCurves;
     }
   }
 }

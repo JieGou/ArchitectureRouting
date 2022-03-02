@@ -95,13 +95,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
       var curves = GeometryHelper.IntersectCurveLeader( document, ( pointNearest, endPoint ) ) ;
       curves.Add( underLineText ) ;
 
-      var detailCurves = new List<DetailCurve>() ;
-      foreach ( var curve in curves ) {
-        var detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
-        detailCurves.Add( detailCurve ) ;
-      }
-
+      var detailCurves = GeometryHelper.CreateDetailCurve( document, curves ) ;
       var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, endPoint ) ;
+      
       var endLineLeader = ( curveClosestPoint.Item1?.UniqueId, curveClosestPoint.Item2 ) ;
       var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.Item1 ).ToList() ;
 
