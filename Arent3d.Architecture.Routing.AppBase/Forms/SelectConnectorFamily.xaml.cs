@@ -40,7 +40,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( ! Directory.Exists( destPath ) ) Directory.CreateDirectory( destPath ) ;
         destPath = ConnectorFamilyManager.GetFamilyPath( fileName ) ;
         File.Copy( sourcePath, destPath, true ) ;
-        if ( ! File.Exists( destPath ) ) return ;
         var isExistedFileName = ConnectorFamilyList.FirstOrDefault( f => f.ToString() == fileName ) != null ;
         if ( ! isExistedFileName ) {
           ConnectorFamilyList.Add( new ConnectorFamilyInfo( fileName ) ) ;
@@ -67,32 +66,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ConnectorFamilyList.Any() ) ConnectorFamilyList.First().IsSelected = true ;
     }
 
-    public class ConnectorFamilyInfo : INotifyPropertyChanged
+    public class ConnectorFamilyInfo
     {
-      private bool _isSelected ;
+      public bool IsSelected { get ; set ; }
       private readonly string _connectorFamilyName ;
 
       public ConnectorFamilyInfo( string connectorFamilyName )
       {
         _connectorFamilyName = connectorFamilyName ;
-        _isSelected = true ;
-      }
-
-      public bool IsSelected
-      {
-        get => _isSelected ;
-        set
-        {
-          _isSelected = value ;
-          NotifyPropertyChanged() ;
-        }
-      }
-
-      public event PropertyChangedEventHandler? PropertyChanged ;
-
-      private void NotifyPropertyChanged( [CallerMemberName] string propertyName = "" )
-      {
-        PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
+        IsSelected = true ;
       }
 
       public override string ToString()

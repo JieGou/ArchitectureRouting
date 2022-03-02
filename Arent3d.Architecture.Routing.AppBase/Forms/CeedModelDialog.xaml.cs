@@ -69,9 +69,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Row_MouseLeftButtonUp( object sender, MouseButtonEventArgs e )
     {
       BtnReplaceSymbol.IsEnabled = false ;
-      _selectedCeedModel = null ;
+      if ( ( (DataGridRow) sender ).DataContext is not CeedModel ) {
+        MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
+        return ;
+      }
       _selectedCeedModel = ( (DataGridRow) sender ).DataContext as CeedModel ;
-      if ( _selectedCeedModel != null ) BtnReplaceSymbol.IsEnabled = true ;
+      BtnReplaceSymbol.IsEnabled = true ;
     }
 
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
@@ -116,25 +119,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_Search( object sender, RoutedEventArgs e )
     {
-      if ( _allCeedModels == null && _usingCeedModel == null ) return ;
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels == null ) return ;
-      if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) || ! string.IsNullOrEmpty( _modelNumberSearch ) ) {
-        List<CeedModel> ceedModels = new List<CeedModel>() ;
-        switch ( string.IsNullOrEmpty( _ceedModelNumberSearch ) ) {
-          case false when ! string.IsNullOrEmpty( _modelNumberSearch ) :
-            ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) && c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
-            break ;
-          case false when string.IsNullOrEmpty( _modelNumberSearch ) :
-            ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) ).ToList() ;
-            break ;
-          case true when ! string.IsNullOrEmpty( _modelNumberSearch ) :
-            ceedModels = ceedViewModels.CeedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
-            break ;
-        }
+      if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) ) return ;
+      var ceedModels = new List<CeedModel>() ;
+      if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) && ! string.IsNullOrEmpty( _modelNumberSearch ) )
+        ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) && c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
+      else if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) )
+        ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) ).ToList() ;
+      else if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && ! string.IsNullOrEmpty( _modelNumberSearch ) )
+        ceedModels = ceedViewModels.CeedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
 
-        DtGrid.ItemsSource = ceedModels ;
-      }
+      DtGrid.ItemsSource = ceedModels ;
     }
 
     private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
@@ -230,8 +226,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectConnectorFamilyDialog = new SelectConnectorFamily() ;
       selectConnectorFamilyDialog.ShowDialog() ;
       if ( ! ( selectConnectorFamilyDialog.DialogResult ?? false ) ) return ;
-      var connectorFamilyFileName = selectConnectorFamilyDialog.ConnectorFamilyList.FirstOrDefault( f => f.IsSelected )?.ToString() ;
-      if ( ( _allCeedModels == null && _usingCeedModel == null ) || _selectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
+      var selectedConnectorFamily = selectConnectorFamilyDialog.ConnectorFamilyList.SingleOrDefault( f => f.IsSelected ) ;
+      if ( selectedConnectorFamily == null ) {
+        MessageBox.Show( "No connector family selected.", "Error" ) ;
+        return ;
+      }
+      var connectorFamilyFileName = selectedConnectorFamily.ToString() ;
+      if ( _selectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
 
       using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
       progress.Message = "Loading and saving data...." ;
@@ -257,7 +258,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void LoadData( CeedStorable ceedStorable )
     {
-      var viewModel = new ViewModel.CeedViewModel( ceedStorable ) ;
+      var viewModel = new CeedViewModel( ceedStorable ) ;
       this.DataContext = viewModel ;
       _allCeedModels = viewModel ;
       DtGrid.ItemsSource = viewModel.CeedModels ;
@@ -306,10 +307,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( ref CeedModel? newCeedModel, string path, string connectorFamilyName )
     {
-      var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
       if ( ceedStorable == null ) return ;
       if ( _allCeedModels != null ) {
-        var ceedModel = _allCeedModels.CeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
+        var ceedModel = _allCeedModels.CeedModels.First( c => c.CeedSetCode == _selectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == _selectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == _selectedCeedModel.ModelNumber ) ;
         if ( ceedModel != null ) {
           newCeedModel = SetFloorPlanImageAndFloorPlanType( ceedModel, path, connectorFamilyName ) ;
           if ( newCeedModel != null ) {
@@ -324,7 +325,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       if ( newCeedModel == null ) return ;
       if ( _usingCeedModel != null ) {
-        var ceedModel = _usingCeedModel.CeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
+        var ceedModel = _usingCeedModel.CeedModels.FirstOrDefault( c => c.CeedSetCode == _selectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == _selectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == _selectedCeedModel.ModelNumber ) ;
         if ( ceedModel != null ) {
           ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
           ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
@@ -347,8 +348,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void UpdateDataGridAfterReplaceFloorPlanSymbol( CeedModel newCeedModel )
     {
-      if ( DtGrid.ItemsSource is not List<CeedModel> newCeedModels ) return ;
-      var ceedModel = newCeedModels.FirstOrDefault( c => c == _selectedCeedModel ) ;
+      if ( DtGrid.ItemsSource is not List<CeedModel> newCeedModels ) {
+        MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
+        return ;
+      }
+      var ceedModel = newCeedModels.First( c => c == _selectedCeedModel ) ;
       if ( ceedModel == null ) return ;
       ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
       ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
@@ -389,8 +393,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( string.IsNullOrEmpty( imageFileName ) ) return null ;
       var floorPlanImage = Image.FromFile( imageFileName ) ;
       floorPlanImage = ImageConverter.ResizeImage( floorPlanImage, new Size( 30, 30 ) ) ;
-      List<Image> floorPlanImages = new List<Image>() { floorPlanImage } ;
-      return new CeedModel( ceedModel.CeedModelNumber, ceedModel.CeedSetCode, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.ModelNumber, floorPlanImages, null, string.Empty, ceedModel.InstrumentationSymbol, ceedModel.Name, ceedModel.Condition, string.Empty, familyName ) ;
+      var floorPlanImages = new List<Image>() { floorPlanImage } ;
+      var newCeedModel = new CeedModel( ceedModel.CeedModelNumber, ceedModel.CeedSetCode, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.ModelNumber, floorPlanImages, null, string.Empty, ceedModel.InstrumentationSymbol, ceedModel.Name, ceedModel.Condition, string.Empty, familyName ) ;
+      floorPlanImage.Dispose() ;
+      return newCeedModel ;
     }
   }
 }

@@ -100,7 +100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, string floorPlanType )
     {
       if ( ! string.IsNullOrEmpty( floorPlanType ) ) {
-        var connectorOneSideFamilyTypeNames = ( (ConnectorOneSideFamilyType[]) Enum.GetValues( typeof( ConnectorOneSideFamilyType ) ) ).Select( f => f.GetFieldName() ).ToList() ;
+        var connectorOneSideFamilyTypeNames = ( (ConnectorOneSideFamilyType[]) Enum.GetValues( typeof( ConnectorOneSideFamilyType ) ) ).Select( f => f.GetFieldName() ).ToHashSet() ;
         if ( connectorOneSideFamilyTypeNames.Contains( floorPlanType ) ) {
           var connectorOneSideFamilyType = GetConnectorFamilyType( floorPlanType ) ;
           var symbol = uiDocument.Document.GetFamilySymbols( connectorOneSideFamilyType ).FirstOrDefault() ?? ( uiDocument.Document.GetFamilySymbols( RoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
