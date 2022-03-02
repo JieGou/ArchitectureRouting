@@ -20,6 +20,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var selection = commandData.Application.ActiveUIDocument.Selection ;
 
       try {
+        if ( document.ActiveView is not ViewSheet ) {
+          TaskDialog.Show( TITLE, "Only active in sheet!" ) ;
+          return Result.Cancelled ;
+        }
+        
         var reference = selection.PickObject( ObjectType.Element, "Select schedule in sheet!" ) ;
         if ( document.GetElement( reference ) is not ScheduleSheetInstance sheetInstance )
           return Result.Failed ;
