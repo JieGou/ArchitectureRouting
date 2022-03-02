@@ -121,10 +121,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         detailTable.Name = scheduleName ;
       }
 
-      CreateDetailTableSchedule( detailTable, detailTableModels, level ) ;
+      InsertDetailTableDataIntoSchedule( detailTable, detailTableModels, level ) ;
     }
 
-    private static void CreateDetailTableSchedule( ViewSchedule viewSchedule, IReadOnlyCollection<DetailTableModel> detailTableModels, string level )
+    private static void InsertDetailTableDataIntoSchedule( ViewSchedule viewSchedule, IReadOnlyCollection<DetailTableModel> detailTableModels, string level )
     {
       const int columnCount = 3 ;
       const int maxCountOfCell = 4 ;
@@ -133,8 +133,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var maxCharOfPlumbingTypeCell = 0 ;
       var maxCharOfRemarkCell = 0 ;
 
-      TableCellStyleOverrideOptions tableStyleOverride = new TableCellStyleOverrideOptions { HorizontalAlignment = true } ;
-      TableCellStyle cellStyle = new TableCellStyle() ;
+      TableCellStyleOverrideOptions tableStyleOverride = new() { HorizontalAlignment = true } ;
+      TableCellStyle cellStyle = new() ;
       cellStyle.SetCellStyleOverrideOptions( tableStyleOverride ) ;
       cellStyle.FontHorizontalAlignment = HorizontalAlignmentStyle.Left ;
 
