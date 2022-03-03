@@ -139,13 +139,34 @@
                                         CanUserSort="False">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnly}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding PlumbingItems, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGridComboBoxColumn.ElementStyle>
                     <DataGridComboBoxColumn.EditingElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnly}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
                             <EventSetter Event="SelectionChanged" Handler="PlumbingItemsSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>

@@ -151,7 +151,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return str ;
     }
 
-    protected internal static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels )
+    protected internal static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool mixConstructionItems = false  )
     {
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       List<DetailTableModel> sortedDetailTableModelsList = new() ;
@@ -159,8 +159,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         List<DetailTableModel> detailTableRowsByDetailSymbolId = detailTableModelsGroupByDetailSymbolId[ detailSymbolId ]!.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.SignalType ).ToList() ;
         var detailTableRowsBySignalTypes = detailTableRowsByDetailSymbolId.GroupBy( d => d.SignalType ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).Select( g => g.ToList() ).ToList() ;
         foreach ( var detailTableRowsBySignalType in detailTableRowsBySignalTypes ) {
-          var orderedDetailTableRowsBySignalType = detailTableRowsBySignalType.GroupBy( d => d.ConstructionItems ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).SelectMany( g => g.ToList() ).ToList() ;
-          sortedDetailTableModelsList.AddRange( orderedDetailTableRowsBySignalType ) ;
+          if ( mixConstructionItems )
+            sortedDetailTableModelsList.AddRange( detailTableRowsBySignalType ) ;
+          else {
+            var orderedDetailTableRowsBySignalType = detailTableRowsBySignalType.GroupBy( d => d.ConstructionItems ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).SelectMany( g => g.ToList() ).ToList() ;
+            sortedDetailTableModelsList.AddRange( orderedDetailTableRowsBySignalType ) ;
+          }
         }
       }
 
@@ -202,7 +206,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             var plumbing = conduitsModels.Last() ;
             parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
-            parentDetailRow.PlumbingIdentityInfo = parentDetailRow.PlumbingType + GetDetailTableRowPlumbingIdentityInfo(parentDetailRow, mixConstructionItems) ;
+            parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, mixConstructionItems ) ;
             if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
               detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
             else {
@@ -216,7 +220,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableRow.WireCrossSectionalArea ) ;
             currentDetailTableRow.PlumbingType = currentDetailTableRow == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-            currentDetailTableRow.PlumbingIdentityInfo = plumbingType + GetDetailTableRowPlumbingIdentityInfo(currentDetailTableRow, mixConstructionItems) ;
+            currentDetailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( currentDetailTableRow, mixConstructionItems ) ;
             plumbingCount++ ;
           }
           else {
@@ -224,7 +228,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
               parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
               parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-              parentDetailRow.PlumbingIdentityInfo = parentDetailRow.PlumbingType + GetDetailTableRowPlumbingIdentityInfo(parentDetailRow, mixConstructionItems) ;
+              parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, mixConstructionItems ) ;
               if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
                 detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
               else {
@@ -242,9 +246,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
         }
 
-        foreach ( var (parentPlumbingType, detailTableRowsWithSamePlumbing) in detailTableRowsGroupByPlumbingType ) {
+        foreach ( var (plumbingIdentityInfo, detailTableRowsWithSamePlumbing) in detailTableRowsGroupByPlumbingType ) {
           foreach ( var detailTableRow in detailTableRowsWithSamePlumbing ) {
-            detailTableRow.PlumbingIdentityInfo = parentPlumbingType ;
+            detailTableRow.PlumbingIdentityInfo = plumbingIdentityInfo ;
           }
         }
       }
@@ -259,8 +263,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private static string GetDetailTableRowPlumbingIdentityInfo( DetailTableModel detailTableRow, bool mixConstructionItems )
     {
       return mixConstructionItems ? 
-        detailTableRow.PlumbingSize + "-" + detailTableRow.SignalType + "-" + detailTableRow.RouteName : 
-        detailTableRow.PlumbingSize + "-" + detailTableRow.SignalType + "-" + detailTableRow.ConstructionItems + "-" + detailTableRow.RouteName;
+        detailTableRow.PlumbingType + detailTableRow.PlumbingSize + "-" + detailTableRow.SignalType + "-" + detailTableRow.RouteName : 
+        detailTableRow.PlumbingType + detailTableRow.PlumbingSize + "-" + detailTableRow.SignalType + "-" + detailTableRow.RouteName + "-" + detailTableRow.ConstructionItems ;
     }
 
     private Dictionary<ElementId, List<ElementId>> UpdateConnectorAndConduitConstructionItem( Document document, Dictionary<string, string> routesChangedConstructionItem )
