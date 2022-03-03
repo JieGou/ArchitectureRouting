@@ -186,7 +186,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private static void CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels )
     {
       string scheduleName = "Revit.Electrical.Schedule.Name".GetDocumentStringByKeyOrDefault( document, "Electrical Symbol Table" ) + DateTime.Now.ToString( " yyyy-MM-dd hh-mm-ss" ) ;
-      var electricalSchedule = document.GetAllElements<ViewSchedule>().FirstOrDefault( v => v.Name.Contains( scheduleName ) ) ;
+      var electricalSchedule = document.GetAllElements<ViewSchedule>().SingleOrDefault( v => v.Name.Contains( scheduleName ) ) ;
       if ( electricalSchedule == null ) {
         electricalSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
         electricalSchedule.Name = scheduleName ;
