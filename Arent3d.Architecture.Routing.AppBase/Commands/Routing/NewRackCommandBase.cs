@@ -526,7 +526,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             if(noteLeader.Anchor.DistanceTo(noteLeader.Elbow) > doc.Application.ShortCurveTolerance)
               curves.Add( Line.CreateBound( noteLeader.Anchor, noteLeader.Elbow ) ) ;
 
-            var detailCurves = GeometryHelper.CreateDetailCurve( doc, curves ) ;
+            var detailCurves = GeometryHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
             var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, noteLeader.End ) ;
             
             endLineLeader = (curveClosestPoint.Item1?.UniqueId, curveClosestPoint.Item2)  ;

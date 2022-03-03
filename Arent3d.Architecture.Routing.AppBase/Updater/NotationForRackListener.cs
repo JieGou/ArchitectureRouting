@@ -58,8 +58,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                document.GetElement( rackNotationModel.EndLineLeaderId ) is not DetailLine detailLine )
             return ;
 
-          var (endLineLeaderId, ortherLineId) = UpdateNotation( document, rackNotationModel, textNote, detailLine ) ;
-          Save( rackNotationStorable, textNote, endLineLeaderId, ortherLineId ) ;
+          var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, textNote, detailLine ) ;
+          NotationHelper.SaveNotation( rackNotationStorable, textNote, endLineLeaderId, ortherLineId ) ;
         }
         else if ( elementSelected is DetailLine detailLine)
         {
@@ -71,8 +71,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
                document.GetElement( rackNotationModel.NotationId ) is not TextNote notation )
             return ;
           
-          var (endLineLeaderId, ortherLineId) = UpdateNotation( document, rackNotationModel, notation, detailLine ) ;
-          Save( rackNotationStorable, notation, endLineLeaderId, ortherLineId ) ;
+          var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, notation, detailLine ) ;
+          NotationHelper.SaveNotation( rackNotationStorable, notation, endLineLeaderId, ortherLineId ) ;
         }
         
         selection.SetElementIds(new List<ElementId>());
@@ -80,46 +80,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
       }
-    }
-
-    private (string, List<string>) UpdateNotation( Document document, RackNotationModel rackNotationModel,
-      TextNote textNote, DetailLine detailLine )
-    {
-      var endPoint = detailLine.GeometryCurve.GetEndPoint( rackNotationModel.EndPoint ) ;
-      var underLineText = GeometryHelper.CreateUnderLineText( textNote, endPoint ) ;
-      var pointNearest =
-        underLineText.GetEndPoint( 0 ).DistanceTo( endPoint ) < underLineText.GetEndPoint( 1 ).DistanceTo( endPoint )
-          ? underLineText.GetEndPoint( 0 )
-          : underLineText.GetEndPoint( 1 ) ;
-
-      var curves = GeometryHelper.IntersectCurveLeader( document, ( pointNearest, endPoint ) ) ;
-      curves.Add( underLineText ) ;
-
-      var detailCurves = GeometryHelper.CreateDetailCurve( document, curves ) ;
-      var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, endPoint ) ;
-      
-      var endLineLeader = ( curveClosestPoint.Item1?.UniqueId, curveClosestPoint.Item2 ) ;
-      var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.Item1 ).ToList() ;
-
-      document.Delete( detailLine.Id ) ;
-      foreach ( var lineId in rackNotationModel.OrtherLineId ) {
-        if ( document.GetElement( lineId ) is Element line ) {
-          document.Delete( line.Id ) ;
-        }
-      }
-
-      return ( endLineLeader.Item1 ?? string.Empty, ortherLineId ) ;
-    }
-
-    private void Save(RackNotationStorable rackNotationStorable, TextNote textNote, string endLineLeaderId, IReadOnlyList<string> ortherLineId)
-    {
-      foreach ( var rackNotation in rackNotationStorable.RackNotationModelData.Where( x =>
-                 x.NotationId == textNote.UniqueId ) ) {
-        rackNotation.EndLineLeaderId = endLineLeaderId ;
-        rackNotation.OrtherLineId = ortherLineId ;
-      }
-
-      rackNotationStorable.Save() ;
     }
   }
 }
