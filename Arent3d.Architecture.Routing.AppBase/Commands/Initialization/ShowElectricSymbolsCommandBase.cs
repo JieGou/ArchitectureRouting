@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
 using System.Reflection ;
+using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -185,7 +186,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static void CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels )
     {
-      string scheduleName = "Revit.Electrical.Schedule.Name".GetDocumentStringByKeyOrDefault( document, "Electrical Symbol Table" ) + DateTime.Now.ToString( " yyyy-MM-dd hh-mm-ss" ) ;
+      string scheduleName = "Revit.Electrical.Schedule.Name".GetDocumentStringByKeyOrDefault( document, "Electrical Symbol Table" ) + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
       var electricalSchedule = document.GetAllElements<ViewSchedule>().SingleOrDefault( v => v.Name.Contains( scheduleName ) ) ;
       if ( electricalSchedule == null ) {
         electricalSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
@@ -193,6 +194,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       CreateScheduleData( document, electricalSchedule, electricalSymbolModels ) ;
+      MessageBox.Show( "集計表 \"" + scheduleName + "\" を作成しました", "Message" ) ;
     }
 
     private enum ScheduleColumns
