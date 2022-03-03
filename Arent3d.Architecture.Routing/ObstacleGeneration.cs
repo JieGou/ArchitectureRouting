@@ -323,7 +323,7 @@ namespace Arent3d.Architecture.Routing
         var listSort = list.GroupBy( x => Math.Round( x.Y, 6 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Where( d => d.Value.Count > 1 ).OrderBy( x => x.Key ).ToList() ;
         if ( listSort.Count == 2 ) {
           var (lower, upper) = ( listSort.First().Value.OrderBy( x => x.X ).ToList(), listSort.Last().Value.OrderBy( x => x.X ).ToList() ) ;
-          var box3d = new Box3d( new[] { lower.First().To3dRaw(), lower.Last().To3dRaw(), upper.First().AddHeight( addHeight ).To3dRaw(), upper.Last().AddHeight( addHeight ).To3dRaw() } ) ;
+          var box3d = Box3d.ConstructClosure( new[] { lower.First().To3dRaw(), lower.Last().To3dRaw(), upper.First().AddHeight( addHeight ).To3dRaw(), upper.Last().AddHeight( addHeight ).To3dRaw() } ) ;
           listOut.Add( box3d ) ;
         }
         else {
@@ -343,7 +343,7 @@ namespace Arent3d.Architecture.Routing
             {
               if ( listItem.Count == 2 ) {
                 var (low, up) = ( listItem.First().Value.OrderBy( x => x.X ).ToList(), listItem.Last().Value.OrderBy( x => x.X ).ToList() ) ;
-                var box3d = new Box3d( new[] { low.First().To3dRaw(), low.Last().To3dRaw(), up.First().AddHeight( addHeight ).To3dRaw(), up.Last().AddHeight( addHeight ).To3dRaw() } ) ;
+                var box3d = Box3d.ConstructClosure( new[] { low.First().To3dRaw(), low.Last().To3dRaw(), up.First().AddHeight( addHeight ).To3dRaw(), up.Last().AddHeight( addHeight ).To3dRaw() } ) ;
                 listOut.Add( box3d ) ;
               }
             } ) ;
