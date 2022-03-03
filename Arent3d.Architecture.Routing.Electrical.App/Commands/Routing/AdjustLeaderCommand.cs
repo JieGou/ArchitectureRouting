@@ -5,11 +5,17 @@ using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
+using Arent3d.Revit.UI ;
+using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
+  [Transaction( TransactionMode.Manual )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.AdjustLeaderCommand", DefaultString = "Adjust Leader" )]
+  [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class AdjustLeaderCommand :IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -22,6 +28,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var notations = rackNotationStorable.RackNotationModelData.GroupBy( x => x.NotationId ).ToDictionary(x => x.Key, x => x.ToList()) ;
         if ( ! rackNotationStorable.RackNotationModelData.Any() )
           return Result.Cancelled ;
+
+        using Transaction transaction = new Transaction( document ) ;
+        transaction.Start( "Adjust Leader" ) ;
 
         foreach ( var notation in notations ) {
           if(document.GetElement(notation.Key) is not TextNote textNote)
@@ -40,8 +49,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
             model.OrtherLineId = ortherLineId ;
           }
         }
-        
         rackNotationStorable.Save();
+        
+        transaction.Commit() ;
         return Result.Succeeded ;
       }
       catch ( Exception exception ) {
