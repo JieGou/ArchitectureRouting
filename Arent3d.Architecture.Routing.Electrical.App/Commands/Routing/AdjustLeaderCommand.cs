@@ -26,15 +26,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         foreach ( var notation in notations ) {
           if(document.GetElement(notation.Key) is not TextNote textNote)
             continue;
-          
-          // if ( null == notations.FirstOrDefault()?.EndLineLeaderId ||
-          //      document.GetElement( rackNotationModel.EndLineLeaderId ) is not DetailLine detailLine )
-          //   return ;
-          //
-          // var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, textNote, detailLine ) ;
-          // NotationHelper.SaveNotation( rackNotationStorable, textNote, endLineLeaderId, ortherLineId ) ;
-        }
 
+          var rackNotationModel = notation.Value.First() ;
+          var oldEndLineLeaderId = rackNotationModel.EndLineLeaderId ;
+          if ( null == oldEndLineLeaderId ||
+               document.GetElement( oldEndLineLeaderId ) is not DetailLine detailLine )
+            continue ;
+          
+          var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, textNote, detailLine ) ;
+
+          foreach ( var model in notation.Value ) {
+            model.EndLineLeaderId = endLineLeaderId ;
+            model.OrtherLineId = ortherLineId ;
+          }
+        }
+        
+        rackNotationStorable.Save();
         return Result.Succeeded ;
       }
       catch ( Exception exception ) {
