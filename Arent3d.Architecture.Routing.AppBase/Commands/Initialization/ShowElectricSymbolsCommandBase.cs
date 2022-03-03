@@ -21,6 +21,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public class ShowElectricSymbolsCommandBase : IExternalCommand
   {
+    private readonly struct ConnectorInfo
+    {
+      public ConnectorInfo( string ceedSetCode, string deviceSymbol, string modelNumber )
+      {
+        CeedSetCode = ceedSetCode ;
+        DeviceSymbol = deviceSymbol ;
+        ModelNumber = modelNumber ;
+      }
+
+      public string CeedSetCode { get ; }
+      public string DeviceSymbol { get ; }
+      public string ModelNumber { get ; }
+    }
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
@@ -39,18 +52,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ) ;
         var routePicked = pickedObjects.Select( e => e.GetRouteName() ).Distinct().ToList() ;
         foreach ( var routeName in routePicked ) {
-          ( string fromConnectorUniqueId, ( string fromCeedSetCode, string fromDeviceSymbol, string fromModelNumber ) fromConnectorInfo, string toConnectorUniqueId, ( string toCeedSetCode, string toDeviceSymbol, string toModelNumber ) toConnectorInfo ) fromConnectorInfoAndToConnectorInfo = GetFromConnectorInfoAndToConnectorInfo( doc, allConnectors, routeName!, ref errorMess ) ;
+          var fromConnectorInfoAndToConnectorInfo = GetFromConnectorInfoAndToConnectorInfo( doc, allConnectors, routeName!, ref errorMess ) ;
           if ( ! string.IsNullOrEmpty( errorMess ) ) {
             message = errorMess ;
             return Result.Cancelled ;
           }
-
-          var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.fromCeedSetCode 
-                                                                                       && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.fromDeviceSymbol 
-                                                                                       && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.fromModelNumber ) ;
-          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.toCeedSetCode 
-                                                                                     && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.toDeviceSymbol 
-                                                                                     && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.toModelNumber ) ;
+          
+          var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.CeedSetCode
+                                                                                       && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.DeviceSymbol 
+                                                                                       && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.ModelNumber ) ;
+          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.CeedSetCode 
+                                                                                     && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.DeviceSymbol 
+                                                                                     && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.ModelNumber ) ;
           if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
           var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
           if ( detailTableModelsByRouteName.Any() ) {
@@ -138,7 +151,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       electricalSymbolModels.Add( endElectricalSymbolModel ) ;
     }
 
-    private static ValueTuple<string, ValueTuple<string, string, string>, string, ValueTuple<string, string, string>> GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
+    private static ( string fromConnectorUniqueId, ConnectorInfo fromConnectorInfo , string toConnectorUniqueId, ConnectorInfo toConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
     {
       var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ) ;
       Element? fromConnector = null ;
@@ -165,23 +178,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       if ( fromConnector == null || toConnector == null ) {
         errorMess = routeName + " is not connected." ;
-        return ( string.Empty, ( string.Empty, string.Empty, string.Empty ), string.Empty, ( string.Empty, string.Empty, string.Empty ) ) ;
+        return ( string.Empty, new ConnectorInfo( string.Empty, string.Empty, string.Empty ), string.Empty, new ConnectorInfo( string.Empty, string.Empty, string.Empty ) ) ;
       }
 
-      ( string fromCeedSetCode, string fromDeviceSymbol, string fromModelNumber ) fromConnectorInfo = GetConnectorCeedCodeInfo( fromConnector ) ;
-      ( string toCeedSetCode, string toDeviceSymbol, string toModelNumber ) toConnectorInfo = GetConnectorCeedCodeInfo( toConnector ) ;
+      var fromConnectorInfo = GetConnectorCeedCodeInfo( fromConnector ) ;
+      var toConnectorInfo = GetConnectorCeedCodeInfo( toConnector ) ;
       return ( fromConnector.UniqueId, fromConnectorInfo, toConnector.UniqueId, toConnectorInfo ) ;
     }
 
-    private static ValueTuple<string, string, string> GetConnectorCeedCodeInfo( Element connector )
+    private static ConnectorInfo GetConnectorCeedCodeInfo( Element connector )
     {
       connector.TryGetProperty( ConnectorFamilyParameter.CeedCode, out string? ceedCode ) ;
-      if ( string.IsNullOrEmpty( ceedCode ) ) return ( string.Empty, string.Empty, string.Empty ) ;
+      if ( string.IsNullOrEmpty( ceedCode ) ) return new ConnectorInfo( string.Empty, string.Empty, string.Empty ) ;
       var ceedCodeInfo = ceedCode!.Split( '-' ).ToList() ;
       var ceedSetCode = ceedCodeInfo.First() ;
       var deviceSymbol = ceedCodeInfo.Count > 1 ? ceedCodeInfo.ElementAt( 1 ) : string.Empty ;
       var modelNumber = ceedCodeInfo.Count > 2 ? ceedCodeInfo.ElementAt( 2 ) : string.Empty ;
-      return ( ceedSetCode, deviceSymbol, modelNumber ) ;
+      return new ConnectorInfo( ceedSetCode, deviceSymbol, modelNumber ) ;
     }
 
     private static void CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels )
