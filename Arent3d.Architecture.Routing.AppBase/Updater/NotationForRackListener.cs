@@ -54,8 +54,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
               not RackNotationModel rackNotationModel )
             return ;
 
-          if ( null == rackNotationModel.EndLineLeaderId ||
-               document.GetElement( rackNotationModel.EndLineLeaderId ) is not DetailLine detailLine )
+          if (document.GetElement( rackNotationModel.EndLineLeaderId ) is not DetailLine detailLine )
             return ;
 
           var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, textNote, detailLine ) ;

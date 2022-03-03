@@ -517,7 +517,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           noteLeader.End = endPoint ;
 
           var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
-          (string?, int?) endLineLeader = ( null, null ) ;
+          (string? endLineUniqueId, int? endPoint) endLineLeader = ( null, null ) ;
           var ortherLineId = new List<string>() ;
           
           if ( curves.Count > 1 && doc.ActiveView is ViewPlan) {
@@ -529,15 +529,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var detailCurves = GeometryHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
             var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, noteLeader.End ) ;
             
-            endLineLeader = (curveClosestPoint.Item1?.UniqueId, curveClosestPoint.Item2)  ;
-            ortherLineId = detailCurves.Select(x => x.UniqueId).Where( x => x != endLineLeader.Item1 ).ToList() ;
+            endLineLeader = (curveClosestPoint.detailCurve?.UniqueId, curveClosestPoint.endPoint)  ;
+            ortherLineId = detailCurves.Select(x => x.UniqueId).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
             
             textNote.RemoveLeaders();
           }
 
           foreach ( var item in racks ) {
             var rackNotationModel = new RackNotationModel( item.UniqueId, textNote.UniqueId, rack.UniqueId, fromConnectorId, isDirectionX, Math.Round( bendRadiusRack, 4 ), 
-              endLineLeader.Item1, endLineLeader.Item2, ortherLineId ) ;
+              endLineLeader.endLineUniqueId, endLineLeader.endPoint, ortherLineId ) ;
             rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
           }
         }

@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 {
   public static class GeometryHelper
   {
-    private static (IEnumerable<T>?, (double, double)) IntersectElements<T>( this (XYZ, XYZ ) leader,
+    private static (IList<T>?, (double, double)) IntersectElements<T>( this (XYZ, XYZ ) leader,
       Document document ) where T : Element
     {
       var (elbow, end) = leader ;
@@ -31,10 +31,11 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       var elementFilters = new List<T>() ;
       foreach ( var element in elements ) {
-        if ( element.Location is LocationCurve locationCurve && locationCurve.Curve is Line locationLine ) {
-          if ( Math.Abs( locationLine.Direction.DotProduct( document.ActiveView.ViewDirection ) ) < 0.0001 ) {
-            elementFilters.Add( element ) ;
-          }
+        if ( element.Location is not LocationCurve { Curve: Line locationLine } ) 
+          continue ;
+        
+        if ( Math.Abs( locationLine.Direction.DotProduct( document.ActiveView.ViewDirection ) ) < 0.0001 ) {
+          elementFilters.Add( element ) ;
         }
       }
 
@@ -46,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       var (elbow, end) = leader ;
       var curvesIntersected = new List<Curve>() { Line.CreateBound( elbow, end ) } ;
       var (conduits, (minHeight, maxHeight)) = leader.IntersectElements<Conduit>( document ) ;
-      if ( ! conduits?.Any() ?? true )
+      if ( (conduits?.Count ?? 0) == 0 )
         return curvesIntersected ;
 
       var locationIntersects = new List<XYZ>() ;
@@ -77,11 +78,12 @@ namespace Arent3d.Architecture.Routing.AppBase
             var results = solid.IntersectWithCurve( curveIntersected, solidOption ) ;
 
             if ( null != results ) {
-              foreach ( var curve in results ) {
+              results.ForEach( curve =>
+              {
                 if ( curve.Length > document.Application.ShortCurveTolerance ) {
                   curvesIntersectSolid.Add( curve ) ;
                 }
-              }
+              });
             }
           }
 
@@ -103,12 +105,12 @@ namespace Arent3d.Architecture.Routing.AppBase
       return ( elevations.Min(), elevations.Max() ) ;
     }
 
-    public static (DetailCurve?, int?) GetCurveClosestPoint( IEnumerable<DetailCurve>? detailCurves, XYZ point )
+    public static (DetailCurve? detailCurve, int? endPoint) GetCurveClosestPoint( IList<DetailCurve>? detailCurves, XYZ point )
     {
       if ( ! detailCurves?.Any() ?? true )
         return (null, null) ;
 
-      var lists = new List<(DetailCurve, (double, int))>() ;
+      var lists = new List<(DetailCurve detailCurve, (double distance, int endPoint) point)>() ;
 
       foreach ( var detailCurve in detailCurves! ) {
         var dis1 = detailCurve.GeometryCurve.GetEndPoint( 0 ).DistanceTo( point ) ;
@@ -120,8 +122,8 @@ namespace Arent3d.Architecture.Routing.AppBase
           lists.Add( ( detailCurve, (dis2, 1) ) ) ;
       }
 
-      var min = lists.MinBy( x => x.Item2.Item1 ) ;
-      return (min.Item1, min.Item2.Item2) ;
+      var min = lists.MinBy( x => x.point.distance ) ;
+      return (min.detailCurve, min.point.endPoint) ;
     }
 
     public static Line CreateUnderLineText( TextNote textNote, XYZ basePoint )

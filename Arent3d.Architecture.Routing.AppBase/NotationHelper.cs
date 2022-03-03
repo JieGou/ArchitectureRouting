@@ -24,9 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       var view = document.GetElement( detailLine.OwnerViewId ) as View;
       var detailCurves = GeometryHelper.CreateDetailCurve( view, curves ) ;
       var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, endPoint ) ;
-      
-      var endLineLeader = ( curveClosestPoint.Item1?.UniqueId, curveClosestPoint.Item2 ) ;
-      var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.Item1 ).ToList() ;
+      var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.detailCurve?.UniqueId ).ToList() ;
 
       document.Delete( detailLine.Id ) ;
       foreach ( var lineId in rackNotationModel.OrtherLineId ) {
@@ -35,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         }
       }
 
-      return ( endLineLeader.Item1 ?? string.Empty, ortherLineId ) ;
+      return ( curveClosestPoint.detailCurve?.UniqueId ?? string.Empty, ortherLineId ) ;
     }
     
     public static void SaveNotation(RackNotationStorable rackNotationStorable, TextNote textNote, string endLineLeaderId, IReadOnlyList<string> ortherLineId)
