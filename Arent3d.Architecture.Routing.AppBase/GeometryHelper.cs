@@ -137,14 +137,17 @@ namespace Arent3d.Architecture.Routing.AppBase
       return Line.CreateBound( new XYZ(coord.X, coord.Y, basePoint.Z), new XYZ(middle.X, middle.Y, basePoint.Z) ) ;
     }
 
-    public static List<DetailCurve> CreateDetailCurve( Document document, List<Curve> curves )
+    public static List<DetailCurve> CreateDetailCurve( View? view, List<Curve> curves )
     {
-      var graphicsStyle = document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines )
+      var detailCurves = new List<DetailCurve>() ;
+      if ( null == view )
+        return detailCurves ;
+      
+      var graphicsStyle = view.Document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines )
         .GetGraphicsStyle( GraphicsStyleType.Projection ) ;
 
-      var detailCurves = new List<DetailCurve>() ;
       foreach ( var curve in curves ) {
-        var detailCurve = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        var detailCurve = view.Document.Create.NewDetailCurve( view, curve ) ;
         detailCurve.LineStyle = graphicsStyle ;
         detailCurves.Add( detailCurve ) ;
       }
