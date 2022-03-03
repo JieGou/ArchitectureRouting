@@ -6,18 +6,16 @@ using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Architecture ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using MathLib ;
-using Application = Autodesk.Revit.ApplicationServices.Application ;
 using Line = Autodesk.Revit.DB.Line ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.GenerateStructureEnvelopeCommand", DefaultString = "Generate\nStructure Envelope" )]
-  [Image( "resources/room_boxes.png" )]
+  [Image( "resources/structure_envelope.png" )]
   public class GenerateStructureEnvelopeCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -35,14 +33,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
         //1. Wall Envelope Feature
         ExecuteWallEnvelope( commandData ) ;
+
         //2. Floor Envelope Feature
         ExecuteFloorEnvelope( commandData ) ;
+
         //3. Column Envelope
         ExecuteColumnEnvelope( commandData ) ;
+
         //4. Beam Envelope
         ExecuteBeamEnvelope( commandData ) ;
-        transaction.Commit() ;
 
+        transaction.Commit() ;
         return Result.Succeeded ;
       }
       catch ( Exception ex ) {
@@ -55,19 +56,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_Floors) ;
-      var linkedDocumentFilter = ObstacleGeneration.GetLinkedDocFilter( document, commandData.Application.Application ) ;
-      var collectorCurrent = new FilteredElementCollector( document ) ;
-      var allFloors = new List<Floor>() ;
-
-      if ( linkedDocumentFilter is not null ) {
-        var floorsLink = linkedDocumentFilter.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<Floor>().ToList() ;
-        allFloors.AddRange( floorsLink ) ;
-      }
-
-      var floorsCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<Floor>().ToList() ;
-      allFloors.AddRange( floorsCurrent ) ;
+      var allFloors = ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<Floor>( document, BuiltInCategory.OST_Floors ).ToList() ;
 
       var option = new Options() ;
       option.DetailLevel = ViewDetailLevel.Fine ;
@@ -193,19 +182,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-
-      // Get all of the wall instances
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_Walls) ;
-      var collectorLink = ObstacleGeneration.GetLinkedDocFilter( document, commandData.Application.Application ) ;
-      var collectorCurrent = new FilteredElementCollector( document ) ;
-      var allWalls = new List<Wall>() ;
-      if ( collectorLink is not null ) {
-        var wallsLink = collectorLink.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<Wall>().ToList() ;
-        allWalls.AddRange( wallsLink ) ;
-      }
-
-      var wallsCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<Wall>().ToList() ;
-      allWalls.AddRange( wallsCurrent ) ;
+      var allWalls = ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<Wall>( document, BuiltInCategory.OST_Walls ).ToList() ;
 
       foreach ( var wallInstance in allWalls ) {
         var height = wallInstance.get_Parameter( BuiltInParameter.WALL_USER_HEIGHT_PARAM ).AsDouble() ;
@@ -245,18 +222,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      // Get all of the column instances
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_Columns) ;
-      var collectorLink = ObstacleGeneration.GetLinkedDocFilter( document, commandData.Application.Application ) ;
-      var collectorCurrent = new FilteredElementCollector( document ) ;
-      var allColumns = new List<FamilyInstance>() ;
-      if ( collectorLink is not null ) {
-        var colLink = collectorLink.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<FamilyInstance>().ToList() ;
-        allColumns.AddRange( colLink ) ;
-      }
-
-      var colCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<FamilyInstance>().ToList() ;
-      allColumns.AddRange( colCurrent ) ;
+      var allColumns = ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<FamilyInstance>( document, BuiltInCategory.OST_Columns ).ToList() ;
+      allColumns.AddRange( ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<FamilyInstance>( document, BuiltInCategory.OST_StructuralColumns ).ToList() ) ;
 
       var option = new Options() ;
       option.DetailLevel = ViewDetailLevel.Fine ;
@@ -287,18 +254,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      // Get all of the beam instances
-      ElementCategoryFilter filter = new(BuiltInCategory.OST_StructuralFraming) ;
-      var collectorLink = ObstacleGeneration.GetLinkedDocFilter( document, commandData.Application.Application ) ;
-      var collectorCurrent = new FilteredElementCollector( document ) ;
-      var allBeams = new List<FamilyInstance>() ;
-      if ( collectorLink is not null ) {
-        var beamLink = collectorLink.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<FamilyInstance>().ToList() ;
-        allBeams.AddRange( beamLink ) ;
-      }
-
-      var beamCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<FamilyInstance>().ToList() ;
-      allBeams.AddRange( beamCurrent ) ;
+      var allBeams = ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<FamilyInstance>( document, BuiltInCategory.OST_StructuralFraming ).ToList() ;
 
       //Filter beam not XY direction and Other Framing with multi layers
       var option = new Options() ;
@@ -326,8 +282,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "BEAM_ENVELOPE" ) ;
         }
       }
-
-      uiDocument.Selection.SetElementIds( filterBeams.Select( x => x.Id ).ToList() ) ;
     }
   }
 }

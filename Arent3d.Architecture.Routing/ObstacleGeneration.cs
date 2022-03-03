@@ -16,10 +16,7 @@ namespace Arent3d.Architecture.Routing
 
     public static List<List<Box3d>> GetAllObstacleRoomBox( Document doc )
     {
-      var linkedDocumentFilter = GetLinkedDocFilter( doc, doc.Application ) ;
-      var currentDocumentFilter = new FilteredElementCollector( doc ) ;
-
-      var allRooms = GetAllRoomInCurrentAndLinkedDocument( linkedDocumentFilter, currentDocumentFilter ) ;
+      var allRooms = GetAllRoomsInCurrentAndLinkDocument( doc ) ;
       var livingRooms = allRooms.Where( r => r.Name.Contains( "LDR" ) || r.Name.Contains( "LDK" ) ).ToList() ;
       var otherRooms = allRooms.Except( livingRooms ).ToList() ;
 
@@ -41,20 +38,38 @@ namespace Arent3d.Architecture.Routing
       return null ;
     }
 
-    public static IList<Room> GetAllRoomInCurrentAndLinkedDocument( FilteredElementCollector? filterLinked, FilteredElementCollector? filterCurrent )
+    public static IList<Room> GetAllRoomsInCurrentAndLinkDocument( Document doc )
     {
+      var filterLinked = GetLinkedDocFilter( doc, doc.Application ) ;
+      var filterCurrent = new FilteredElementCollector( doc ) ;
+
       var rooms = new List<Room>() ;
       if ( filterLinked != null ) {
-        var filterRooms = filterLinked.WhereElementIsNotElementType().OfClass( typeof( SpatialElement ) ).Where( e => e.GetType() == typeof( Room ) ).Cast<Room>().ToList() ;
-        rooms.AddRange( filterRooms ) ;
+        var linkedRooms = filterLinked.WhereElementIsNotElementType().OfClass( typeof( SpatialElement ) ).Where( e => e.GetType() == typeof( Room ) ).Cast<Room>().ToList() ;
+        rooms.AddRange( linkedRooms ) ;
       }
 
-      if ( filterCurrent != null ) {
-        var filterRooms = filterCurrent.WhereElementIsNotElementType().OfClass( typeof( SpatialElement ) ).Where( e => e.GetType() == typeof( Room ) ).Cast<Room>().ToList() ;
-        rooms.AddRange( filterRooms ) ;
-      }
+      var currentRooms = filterCurrent.WhereElementIsNotElementType().OfClass( typeof( SpatialElement ) ).Where( e => e.GetType() == typeof( Room ) ).Cast<Room>().ToList() ;
+      rooms.AddRange( currentRooms ) ;
 
       return rooms ;
+    }
+
+    public static IList<T> GetAllElementInCurrentAndLinkDocument<T>( Document doc, BuiltInCategory category )
+    {
+      ElementCategoryFilter filter = new(category) ;
+      var collectorLink = GetLinkedDocFilter( doc, doc.Application ) ;
+      var collectorCurrent = new FilteredElementCollector( doc ) ;
+
+      var allElements = new List<T>() ;
+      if ( collectorLink is not null ) {
+        var elsLink = collectorLink.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<T>() ;
+        allElements.AddRange( elsLink ) ;
+      }
+
+      var elsCurrent = collectorCurrent.WherePasses( filter ).WhereElementIsNotElementType().ToElements().OfType<T>() ;
+      allElements.AddRange( elsCurrent ) ;
+      return allElements ;
     }
 
     public static List<Box3d> CreateBox3dFromDividedRoom( List<Room> list )
