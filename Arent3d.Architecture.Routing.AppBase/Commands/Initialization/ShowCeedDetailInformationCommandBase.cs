@@ -9,7 +9,7 @@ using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  public abstract class ShowCeeDDetailInformationCommandBase : IExternalCommand
+  public abstract class ShowCeedDetailInformationCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -26,10 +26,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( groupId != null && groupId != ElementId.InvalidElementId ) {
               var connector = doc.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).FirstOrDefault( e => e.GroupId == groupId || e.GroupId == textNote.GroupId ) ;
               if ( connector != null ) {
-                connector.TryGetProperty( ConnectorFamilyParameter.CeeDCode, out string? ceeDSetCodeModel ) ;
-                if ( ! string.IsNullOrEmpty( ceeDSetCodeModel ) ) {
-                  var ceeDSetCode = ceeDSetCodeModel!.Split( '-' ).ToList() ;
-                  pickedText = ceeDSetCode.FirstOrDefault() ?? string.Empty ;
+                connector.TryGetProperty( ConnectorFamilyParameter.CeedCode, out string? ceedSetCodeModel ) ;
+                if ( ! string.IsNullOrEmpty( ceedSetCodeModel ) ) {
+                  var ceedSetCode = ceedSetCodeModel!.Split( '-' ).ToList() ;
+                  pickedText = ceedSetCode.FirstOrDefault() ?? string.Empty ;
                 }
               }
             }

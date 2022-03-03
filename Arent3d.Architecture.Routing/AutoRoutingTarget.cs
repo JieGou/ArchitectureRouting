@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.EndPoints ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Routing ;
 using Arent3d.Routing.Conditions ;
 using Arent3d.Utility ;
@@ -219,6 +220,7 @@ namespace Arent3d.Architecture.Routing
         PriorityBoxes = priorityBoxes ;
       }
 
+      public bool PrefersInsertingTeeToReplacingFromElbowToTee => false ;
       public bool IsRoutingOnPipeRacks { get ; }
       public bool IsCrossingPipeRacks => false ;
       public bool IsRouteMergeEnabled => true ;

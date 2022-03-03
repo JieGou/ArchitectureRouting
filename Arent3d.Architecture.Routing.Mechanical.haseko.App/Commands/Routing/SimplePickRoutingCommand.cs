@@ -7,6 +7,7 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms ;
+using Arent3d.Architecture.Routing.Mechanical.haseko.App.Utils ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -81,6 +82,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     protected override IRoutePropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
+      SimplePickRoutingUtil.SetFromHeightLevelSetting( document, fromLevelId, toLevelId, ref routeChoiceSpec ) ;
       var routeProperty = new RouteProperties( document, initValues.SystemType, initValues.CurveType, initValues.Diameter, false, false, null, false, null, AvoidType.Whichever, null ) ;
       var sv = new SimpleRoutePropertyDialog( document, routeChoiceSpec, routeProperty ) ;
 

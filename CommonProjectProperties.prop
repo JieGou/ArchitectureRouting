@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <CommonLibraryVersion>1.0.22.208</CommonLibraryVersion>
+        <CommonLibraryVersion>1.0.22.225</CommonLibraryVersion>
         <AssemblyVersion>$(CommonLibraryVersion)</AssemblyVersion>
         <FileVersion>$(CommonLibraryVersion)</FileVersion>
         <Version>$(CommonLibraryVersion)</Version>
@@ -20,11 +20,13 @@
         <When Condition=" $(Configuration.StartsWith('Debug ')) ">
             <PropertyGroup>
                 <ConfigMode>Debug</ConfigMode>
+                <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
             </PropertyGroup>
         </When>
         <Otherwise>
             <PropertyGroup>
                 <ConfigMode>Release</ConfigMode>
+                <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
             </PropertyGroup>
         </Otherwise>
     </Choose>
