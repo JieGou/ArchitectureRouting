@@ -31,11 +31,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private string _ceedModelNumberSearch ;
     private string _modelNumberSearch ;
     private CeedModel? _selectedCeedModel ;
-    public string SelectedDeviceSymbol ;
-    public string SelectedCondition ;
-    public string SelectedCeedCode ;
-    public string SelectedModelNumber ;
-    public string SelectedFloorPlanType ;
+    public string SelectedDeviceSymbol { get ; set ; }
+    public string SelectedCondition { get ; set ; }
+    public string SelectedCeedCode { get ; set ; }
+    public string SelectedModelNumber { get ; set ; }
+    public string SelectedFloorPlanType { get ; set ; }
 
     public CeedModelDialog( UIApplication uiApplication ) : base( uiApplication )
     {
