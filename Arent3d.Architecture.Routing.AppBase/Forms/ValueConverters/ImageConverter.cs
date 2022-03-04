@@ -23,11 +23,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       return Directory.GetFiles( path ).FirstOrDefault( f => Path.GetFileName( f ).Contains( familyName ) && Path.GetExtension( Path.GetFileName( f ) ).Contains( "png" ) ) ?? string.Empty ;
     }
 
-    public static void ExportConnectorFamilyImage( Document document, Family connectorFamily, string path, string familyName )
+    public static bool ExportConnectorFamilyImage( Document document, Family connectorFamily, string path, string familyName )
     {
       var familyDoc = document.EditFamily( connectorFamily ) ;
-      if ( new FilteredElementCollector( familyDoc ).OfClass( typeof( View ) ).OfCategory( BuiltInCategory.OST_Views ).First( v => v is ViewPlan ) is not View floorPlanView ) return ;
-      if ( floorPlanView.IsTemplate ) return ;
+      if ( new FilteredElementCollector( familyDoc ).OfClass( typeof( View ) ).OfCategory( BuiltInCategory.OST_Views ).First( v => v is ViewPlan ) is not View floorPlanView ) return false ;
+      if ( floorPlanView.IsTemplate ) return false ;
       var imageExportList = new List<ElementId> { floorPlanView.Id } ;
       using Transaction tx = new Transaction( familyDoc ) ;
       tx.Start( "Export Image" ) ;
@@ -45,6 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       imageExportOptions.SetViewsAndSheets( imageExportList ) ;
       familyDoc.ExportImage( imageExportOptions ) ;
       tx.RollBack() ;
+      return true ;
     }
 
     public static Image ResizeImage( Image imgToResize, Size size )

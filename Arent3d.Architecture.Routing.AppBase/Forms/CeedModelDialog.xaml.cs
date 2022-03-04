@@ -55,7 +55,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeedStorable != null ) {
         LoadData( oldCeedStorable ) ;
-        LoadConnectorFamilies() ;
       }
 
       BtnReplaceSymbol.IsEnabled = false ;
@@ -197,6 +196,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( ! ceedModelData.Any() ) return ;
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
+        ceedStorable.ConnectorFamilyUploadData = new List<string>() ;
         LoadData( ceedStorable ) ;
         CbShowOnlyUsingCode.Visibility = Visibility.Hidden ;
         CbShowOnlyUsingCode.IsChecked = false ;
@@ -223,7 +223,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_ReplaceSymbol( object sender, RoutedEventArgs e )
     {
-      var selectConnectorFamilyDialog = new SelectConnectorFamily() ;
+      var selectConnectorFamilyDialog = new SelectConnectorFamily( _document ) ;
       selectConnectorFamilyDialog.ShowDialog() ;
       if ( ! ( selectConnectorFamilyDialog.DialogResult ?? false ) ) return ;
       var selectedConnectorFamily = selectConnectorFamilyDialog.ConnectorFamilyList.SingleOrDefault( f => f.IsSelected ) ;
@@ -236,16 +236,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
       progress.Message = "Loading and saving data...." ;
-      var path = ConnectorFamilyManager.GetFolderPath() ;
-      var connectorFamilyName = connectorFamilyFileName!.Replace( ".rfa", "" ) ;
-      using ( var progressData = progress?.Reserve( 0.3 ) ) {
-        LoadConnectorFamilyAndExportImage( path, connectorFamilyFileName, connectorFamilyName ) ;
-        progressData?.ThrowIfCanceled() ;
-      }
 
       CeedModel? newCeedModel = null ;
-      using ( var progressData = progress?.Reserve( 0.6 ) ) {
-        UpdateCeedStorableAfterReplaceFloorPlanSymbol( ref newCeedModel, path, connectorFamilyName ) ;
+      using ( var progressData = progress?.Reserve( 0.5 ) ) {
+        UpdateCeedStorableAfterReplaceFloorPlanSymbol( ref newCeedModel, connectorFamilyFileName ) ;
         progressData?.ThrowIfCanceled() ;
       }
 
@@ -286,29 +280,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbModelNumbers.ItemsSource = ceedViewModel.ModelNumbers ;
     }
 
-    private void LoadConnectorFamilyAndExportImage( string path, string connectorFamilyFileName, string connectorFamilyName )
-    {
-      try {
-        using Transaction t = new Transaction( _document, "Load connector's family" ) ;
-        t.Start() ;
-        if ( ! Directory.Exists( path ) ) return ;
-        var connectorFamily = LoadFamily( path, connectorFamilyFileName ) ;
-        t.Commit() ;
-
-        if ( connectorFamily == null ) return ;
-        var floorPlanImage = ImageConverter.GetFloorPlanImageFile( path, connectorFamilyName ) ;
-        if ( string.IsNullOrEmpty( floorPlanImage ) )
-          ImageConverter.ExportConnectorFamilyImage( _document, connectorFamily, path, connectorFamilyName ) ;
-      }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        MessageBox.Show( "Load connector's family failed.", "Error" ) ;
-      }
-    }
-
-    private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( ref CeedModel? newCeedModel, string path, string connectorFamilyName )
+    private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( ref CeedModel? newCeedModel, string connectorFamilyFileName)
     {
       var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
       if ( ceedStorable == null ) return ;
+      var path = ConnectorFamilyManager.GetFolderPath() ;
+      var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
       if ( _allCeedModels != null ) {
         var ceedModel = _allCeedModels.CeedModels.First( c => c.CeedSetCode == _selectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == _selectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == _selectedCeedModel.ModelNumber ) ;
         if ( ceedModel != null ) {
@@ -359,32 +336,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
       ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
-    }
-
-    private void LoadConnectorFamilies()
-    {
-      var path = ConnectorFamilyManager.GetFolderPath() ;
-      if ( ! Directory.Exists( path ) ) return ;
-      using Transaction tx = new Transaction( _document ) ;
-      tx.Start( "Load Family" ) ;
-      string[] files = Directory.GetFiles( path ) ;
-      foreach ( string s in files ) {
-        var fileName = Path.GetFileName( s ) ;
-        if ( ! fileName.Contains( ".rfa" ) ) continue ;
-        LoadFamily( path, fileName ) ;
-      }
-
-      tx.Commit() ;
-    }
-
-    private Family? LoadFamily( string path, string fileName )
-    {
-      string familyName = fileName.Replace( ".rfa", "" ) ;
-      if ( new FilteredElementCollector( _document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == familyName ) is Family family ) return family ;
-      _document.LoadFamily( Path.Combine( path, fileName ), out family ) ;
-      foreach ( ElementId familySymbolId in (IEnumerable<ElementId>) family.GetFamilySymbolIds() )
-        _document.GetElementById<FamilySymbol>( familySymbolId ) ;
-      return family ;
     }
 
     private CeedModel? SetFloorPlanImageAndFloorPlanType( CeedModel ceedModel, string path, string familyName )
