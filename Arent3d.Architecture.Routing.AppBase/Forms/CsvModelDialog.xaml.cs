@@ -87,7 +87,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           if ( _ceedModelData.Any() ) {
             ceedStorable.CeedModelData = _ceedModelData ;
             ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
-            ceedStorable.ConnectorFamilyUploadData = new List<string>() ;
             try {
               using Transaction t = new Transaction( _document, "Save CeeD data" ) ;
               t.Start() ;

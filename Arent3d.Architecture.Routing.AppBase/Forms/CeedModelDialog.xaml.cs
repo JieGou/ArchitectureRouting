@@ -196,7 +196,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( ! ceedModelData.Any() ) return ;
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
-        ceedStorable.ConnectorFamilyUploadData = new List<string>() ;
         LoadData( ceedStorable ) ;
         CbShowOnlyUsingCode.Visibility = Visibility.Hidden ;
         CbShowOnlyUsingCode.IsChecked = false ;
