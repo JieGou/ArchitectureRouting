@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Collections ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
@@ -7,13 +6,12 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
-using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase
 {
   public static class GeometryHelper
   {
-    private static (IList<T>?, (double, double)) IntersectElements<T>( this (XYZ, XYZ ) leader,
+    private static (IList<T>? elements, (double minHeight, double maxHeight)) IntersectElements<T>( this (XYZ, XYZ ) leader,
       Document document ) where T : Element
     {
       var (elbow, end) = leader ;
@@ -49,8 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       var (conduits, (minHeight, maxHeight)) = leader.IntersectElements<Conduit>( document ) ;
       if ( (conduits?.Count ?? 0) == 0 )
         return curvesIntersected ;
-
-      var locationIntersects = new List<XYZ>() ;
+      
       var solidOption = new SolidCurveIntersectionOptions()
       {
         ResultType = SolidCurveIntersectionMode.CurveSegmentsOutside
@@ -100,7 +97,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       if ( ! levels.Any() )
         return ( 0d, 0d ) ;
 
-      var elevations = levels.Select( x => x.Elevation ) ;
+      var elevations = levels.Select( x => x.Elevation ).ToList() ;
 
       return ( elevations.Min(), elevations.Max() ) ;
     }
@@ -116,10 +113,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         var dis1 = detailCurve.GeometryCurve.GetEndPoint( 0 ).DistanceTo( point ) ;
         var dis2 = detailCurve.GeometryCurve.GetEndPoint( 1 ).DistanceTo( point ) ;
 
-        if ( dis1 < dis2 )
-          lists.Add( ( detailCurve, (dis1, 0) ) ) ;
-        else
-          lists.Add( ( detailCurve, (dis2, 1) ) ) ;
+        lists.Add( dis1 < dis2 ? ( detailCurve, ( dis1, 0 ) ) : ( detailCurve, ( dis2, 1 ) ) ) ;
       }
 
       var min = lists.MinBy( x => x.point.distance ) ;
