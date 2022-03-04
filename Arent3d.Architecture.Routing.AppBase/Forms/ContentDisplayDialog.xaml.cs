@@ -176,7 +176,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
       foreach ( var connector in allConnector ) {
-        connector.TryGetProperty( RoutingFamilyLinkedParameter.ConstructionItem, out string? constructionItem ) ;
+        connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem! ) ;
       }
 
@@ -296,7 +296,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private List<string> GetCeedSetCodeOfElement( Element element )
     {
-      element.TryGetProperty( ConnectorFamilyParameter.CeedCode, out string? ceedSetCode ) ;
+      element.TryGetProperty(ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
       return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( '-' ).ToList() : new List<string>() ;
     }
 

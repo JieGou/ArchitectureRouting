@@ -50,23 +50,7 @@ namespace Arent3d.Architecture.Routing
     
     [ParameterGuid( "9e825887-84fe-474d-ac2e-c683f7376647" ), NameOnRevit( "Representative SubRoute Index" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.RoutingElements ) )]
-    RepresentativeSubRouteIndex,
-
-    [ParameterGuid("7632D393-DADE-437A-96A7-C4D508383012"), NameOnRevit("Rack Type")]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.RackTypeElements ) )]
-    RackType,
-
-    [ParameterGuid( "f208f9ab-b763-4b2a-afc9-0b2a22936dab" ), NameOnRevit( "Parent Envelope Id" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
-    ParentEnvelopeId,
-
-    [ParameterGuid( "f339149b-704c-403c-a97c-335646773992" ), NameOnRevit( "To-Side Connector Id" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
-    ToSideConnectorId,
-
-    [ParameterGuid( "57332190-02d7-4f25-a60d-b33a459f9fb7" ), NameOnRevit( "From-Side Connector Id" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
-    FromSideConnectorId,
+    RepresentativeSubRouteIndex
   }
 
   public enum PassPointParameter
@@ -92,26 +76,42 @@ namespace Arent3d.Architecture.Routing
   {
     [ParameterGuid( "3285f3e8-1838-4eba-a676-1a2af4708e7a" ), NameOnRevit( "Route Connector Relation Ids" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ElementsUsedForUI ) )]
-    RouteConnectorRelationIds,
-
-    [ParameterGuid( "f054f110-68e7-4bce-9d17-688557d410da" ), NameOnRevit( "Construction Item" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConstructionItems ) )]
-    ConstructionItem,
-    
-    [ParameterGuid( "302a0b15-ee8b-44a2-98b2-c5eb105a3579" ), NameOnRevit( "IsEcoMode" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConnectorsAndConduits ) )]
-    IsEcoMode
+    RouteConnectorRelationIds
   }
 
-  public enum ConnectorFamilyParameter
+  public enum ElectricalRoutingElementParameter
   {
     [ParameterGuid( "442b05ee-df38-4595-93c9-e2d7cfa227e9" ), NameOnRevit( "Connector Type" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
     ConnectorType,
-            
+    
+    [ParameterGuid( "7632D393-DADE-437A-96A7-C4D508383012" ), NameOnRevit( "Rack Type" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.RackTypeElements ) )]
+    RackType,
+
+    [ParameterGuid( "f208f9ab-b763-4b2a-afc9-0b2a22936dab" ), NameOnRevit( "Parent Envelope Id" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
+    ParentEnvelopeId,
+
+    [ParameterGuid( "f339149b-704c-403c-a97c-335646773992" ), NameOnRevit( "To-Side Connector Id" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
+    ToSideConnectorId,
+
+    [ParameterGuid( "57332190-02d7-4f25-a60d-b33a459f9fb7" ), NameOnRevit( "From-Side Connector Id" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
+    FromSideConnectorId,
+
     [ParameterGuid( "f71cbd72-3fe4-47cb-b777-36d6511d42ed" ), NameOnRevit( "CeeD Code" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.Connectors ) )]
-    CeedCode
+    CeedCode,
+
+    [ParameterGuid( "f054f110-68e7-4bce-9d17-688557d410da" ), NameOnRevit( "Construction Item" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConstructionItems ) )]
+    ConstructionItem,
+
+    [ParameterGuid( "302a0b15-ee8b-44a2-98b2-c5eb105a3579" ), NameOnRevit( "IsEcoMode" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConnectorsAndConduits ) )]
+    IsEcoMode,
   }
 
   public enum BranchNumberParameter
@@ -142,10 +142,16 @@ namespace Arent3d.Architecture.Routing
       document.LoadAllParametersFromFile<PassPointParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
       document.LoadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() );
     }
-
-    public static void MakeBranchNumberParameter( this Document document )
+    
+    public static void MakeElectricalRoutingElementParameters( this Document document )
     {
-      document.LoadAllParametersFromFile<BranchNumberParameter>( AssetManager.GetSpaceSharedParameterPath() ) ;
+      document.LoadAllParametersFromFile<ElectricalRoutingElementParameter>( AssetManager.GetElectricalRoutingElementSharedParameterPath() ) ;
+    }
+
+    public static void MakeMechanicalRoutingElementParameters( this Document document )
+    {
+      document.LoadAllParametersFromFile<BranchNumberParameter>( AssetManager.GetMechanicalRoutingElementSharedParameterPath() ) ;
+      document.LoadAllParametersFromFile<AHUNumberParameter>(AssetManager.GetMechanicalRoutingElementSharedParameterPath()) ;
     }
 
     public static void UnloadAllRoutingParameters( this Document document )
@@ -153,14 +159,9 @@ namespace Arent3d.Architecture.Routing
       document.UnloadAllParametersFromFile<RoutingParameter>( AssetManager.GetRoutingSharedParameterPath() ) ;
       document.UnloadAllParametersFromFile<PassPointParameter>( AssetManager.GetPassPointSharedParameterPath() ) ;
       document.UnloadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() ) ;
-      document.UnloadAllParametersFromFile<ConnectorFamilyParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
-      document.UnloadAllParametersFromFile<BranchNumberParameter>( AssetManager.GetSpaceSharedParameterPath() ) ;
-      document.UnloadAllParametersFromFile<AHUNumberParameter>( AssetManager.GetSpaceSharedParameterPath() );
-    }
-    
-    public static void MakeAHUNumberParameter( this Document document )
-    {
-      document.LoadAllParametersFromFile<AHUNumberParameter>(AssetManager.GetSpaceSharedParameterPath()) ;
+      document.UnloadAllParametersFromFile<BranchNumberParameter>( AssetManager.GetMechanicalRoutingElementSharedParameterPath() ) ;
+      document.UnloadAllParametersFromFile<AHUNumberParameter>( AssetManager.GetMechanicalRoutingElementSharedParameterPath() );
+      document.UnloadAllParametersFromFile<AHUNumberParameter>( AssetManager.GetElectricalRoutingElementSharedParameterPath() );
     }
   }
 }

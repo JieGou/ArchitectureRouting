@@ -40,8 +40,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeedModel.SelectedFloorPlanType ) ;
         var ceedCode = dlgCeedModel.SelectedCeedCode + "-" + dlgCeedModel.SelectedDeviceSymbol + "-" + dlgCeedModel.SelectedModelNumber ;
         if ( element is FamilyInstance familyInstance ) {
-          element.SetProperty( ConnectorFamilyParameter.CeedCode, ceedCode ) ;
-          element.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, DefaultConstructionItem ) ;
+          element.SetProperty(ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
+          element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 

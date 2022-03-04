@@ -271,7 +271,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static void SetConstructionItemForElements( List<Element> elements, string categoryName )
     {
       foreach ( var conduit in elements ) {
-        conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, categoryName ) ;
+        conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, categoryName ) ;
       }
     }
   }

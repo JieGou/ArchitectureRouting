@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         return document.Transaction( "TransactionName.Commands.Routing.ConfirmUnset".GetAppStringByKeyOrDefault( "Confirm Unset" ), _ =>
         {
-          var elementNotConstruction = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( RoutingFamilyLinkedParameter.ConstructionItem, out string? constructionItem ) && string.IsNullOrEmpty( constructionItem ) ).ToList() ;
+          var elementNotConstruction = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.ConstructionItems ).Where( c => c.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) && string.IsNullOrEmpty( constructionItem ) ).ToList() ;
           var color = new Color( 255, 215, 0 ) ;
           ChangeElementColor( document, elementNotConstruction, color ) ;
 

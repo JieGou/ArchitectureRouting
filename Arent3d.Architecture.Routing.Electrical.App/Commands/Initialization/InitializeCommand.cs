@@ -23,8 +23,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       if ( ! baseSetupResult ) return false ;
 
       document.MakeCertainAllElectricalRoutingFamilies() ;
-      document.LoadAllParametersFromFile<ConnectorFamilyParameter>( AssetManager.GetConnectorSharedParameterPath() ) ;
-      
+      document.MakeElectricalRoutingElementParameters() ;
+
       RoutingElementExtensions.AddArentConduitType( document ) ;
       var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Connectors ) ;
       foreach ( var connector in connectorOneSide ) {
