@@ -205,8 +205,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           DataProcessBeforeSave( cnsStorables ) ;
           if ( ShouldSaveCnsList( document, cnsStorables ) ) {
             // save CNS setting list
-            var tokenSource = new CancellationTokenSource() ;
-            using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
+            using var progress = ProgressBar.ShowWithNewThread( commandData.Application ) ;
             progress.Message = "Saving CNS Setting..." ;
             using ( progress?.Reserve( 0.5 ) ) {
               SaveCnsList( document, cnsStorables ) ;

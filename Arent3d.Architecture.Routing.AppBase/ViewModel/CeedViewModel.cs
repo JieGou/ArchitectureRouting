@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     public List<CeedModel> CeedModels { get ; }
     public CeedStorable CeedStorable { get ; }
-    public readonly List<string> CeeDModelNumbers = new List<string>() ;
+    public readonly List<string> CeedModelNumbers = new List<string>() ;
     public readonly List<string> ModelNumbers = new List<string>() ;
 
     public CeedViewModel( CeedStorable ceedStorable )
@@ -28,8 +28,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void AddModelNumber( List<CeedModel> ceedModels )
     {
-      foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeeDModelNumber ) ) ) {
-        if ( ! CeeDModelNumbers.Contains( ceedModel.CeeDModelNumber ) ) CeeDModelNumbers.Add( ceedModel.CeeDModelNumber ) ;
+      foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeedModelNumber ) ) ) {
+        if ( ! CeedModelNumbers.Contains( ceedModel.CeedModelNumber ) ) CeedModelNumbers.Add( ceedModel.CeedModelNumber ) ;
       }
       foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.ModelNumber ) ) ) {
         var modelNumbers = ceedModel.ModelNumber.Split( '\n' ) ;

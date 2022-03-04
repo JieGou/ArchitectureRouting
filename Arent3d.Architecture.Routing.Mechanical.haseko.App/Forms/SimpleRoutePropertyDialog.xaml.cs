@@ -10,17 +10,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
   /// </summary>
   public partial class SimpleRoutePropertyDialog : Window, IRoutePropertyDialog
   {
+    private RoutePropertyTypeList? _propertyTypeList ;
     public SimpleRoutePropertyDialog()
     {
       InitializeComponent() ;
     }
 
-    public SimpleRoutePropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
+    public SimpleRoutePropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties)
     {
       InitializeComponent() ;
       WindowStartupLocation = WindowStartupLocation.CenterScreen ;
       FromToEdit.DisplayUnitSystem = document.DisplayUnitSystem ;
-      UpdateProperties( propertyTypeList, properties ) ;
+      _propertyTypeList = propertyTypeList ;
+      UpdateProperties( _propertyTypeList, properties ) ;
     }
 
     private void UpdateProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
@@ -52,8 +54,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
 
     public FixedHeight? GetFromFixedHeight()
     {
-      if ( true != FromToEdit.UseFromFixedHeight ) return null ;
-      return FixedHeight.CreateOrNull( FromToEdit.FromLocationType, FromToEdit.FromFixedHeight ) ;
+      if ( true != FromToEdit.UseFromFixedHeight || null == _propertyTypeList) return null ;
+
+      var fromFixedHeight = FromToEdit.FromFixedHeight + _propertyTypeList.FromHeightRangeAsCeilingLevel.Item2 ;
+      return FixedHeight.CreateOrNull( FromToEdit.FromLocationType, fromFixedHeight ) ;
     }
     
     public FixedHeight? GetToFixedHeight()

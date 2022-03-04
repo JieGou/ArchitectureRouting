@@ -34,8 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         {
           var newStorage = viewModel.SettingStorable ;
           if ( ShouldApplySetting( document, settingStorables ) ) {
-            var tokenSource = new CancellationTokenSource() ;
-            using var progress = ProgressBar.ShowWithNewThread( tokenSource ) ;
+            using var progress = ProgressBar.ShowWithNewThread( commandData.Application ) ;
             progress.Message = "Height Setting..." ;
 
             using ( var p = progress?.Reserve( 0.5 ) ) {

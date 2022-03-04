@@ -16,9 +16,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
   {
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
 
-    protected override FromToWindow CreateFromToWindow( UIDocument uiDocument, ObservableCollection<FromToWindow.FromToItems> fromToItemsList )
+    protected override FromToWindow CreateFromToWindow( UIApplication uiApplication, ObservableCollection<FromToWindow.FromToItems> fromToItemsList )
     {
-      return new FromToWindow( FromToWindowBehaviour.Instance, uiDocument, fromToItemsList ) ;
+      return new FromToWindow( FromToWindowBehaviour.Instance, uiApplication, fromToItemsList ) ;
     }
 
     private class FromToWindowBehaviour : IFromToWindowBehaviour
