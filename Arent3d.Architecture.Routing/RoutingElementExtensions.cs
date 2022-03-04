@@ -426,13 +426,13 @@ namespace Arent3d.Architecture.Routing
     {
       return document.CreateFamilyInstance( RoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
     }
-    public static FamilyInstance AddFASU(this Document document, RoutingFamilyType fasuFamilyType, XYZ position, ElementId levelId)
+    public static FamilyInstance AddFASU(this Document document, MechanicalRoutingFamilyType fasuFamilyType, XYZ position, ElementId levelId)
     {
       return document.CreateFamilyInstance( fasuFamilyType, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
     }
     public static FamilyInstance AddVAV(this Document document, XYZ position, ElementId levelId)
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.TTE_VAV_140, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
+      return document.CreateFamilyInstance( MechanicalRoutingFamilyType.SA_VAV, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
     }
     public static FamilyInstance AddShaft( this Document document, XYZ position, Level? level )
     {
@@ -784,6 +784,11 @@ namespace Arent3d.Architecture.Routing
     }
     
     private static FamilyInstance CreateFamilyInstance( this Document document, ElectricalRoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
+    {
+      return document.CreateFamilyInstance( (RoutingFamilyType) familyType, position, null, structuralType, useLevel, level ) ;
+    }
+    
+    private static FamilyInstance CreateFamilyInstance( this Document document, MechanicalRoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
     {
       return document.CreateFamilyInstance( (RoutingFamilyType) familyType, position, null, structuralType, useLevel, level ) ;
     }

@@ -39,43 +39,6 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Routing Envelope" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     Envelope,
-
-    [NameOnRevit( "SA_FASU(F4-150 200Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F4_150_200Phi,
-    
-    [NameOnRevit( "SA_FASU(F4-150 250Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F4_150_250Phi,
-    
-    [NameOnRevit( "SA_FASU(F5-150 250Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F5_150_250Phi,
-    
-    [NameOnRevit( "SA_FASU(F6-150 250Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F6_150_250Phi,
-    
-    [NameOnRevit( "SA_FASU(F6-150 300Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F6_150_300Phi,
-    
-    [NameOnRevit( "SA_FASU(F7-150 300Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F7_150_300Phi,
-    
-    [NameOnRevit( "SA_FASU(F8-150 250Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F8_150_250Phi,
-    
-    [NameOnRevit( "SA_FASU(F8-150 300Φ)" )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    FASU_F8_150_300Phi,
-
-    [NameOnRevit( "SA_VAV" )]
-    [FamilyVersion( 1 )]
-    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
-    TTE_VAV_140,
   }
 
   public enum ElectricalRoutingFamilyType
@@ -136,6 +99,46 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Arent Room" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     Room,
+  }
+
+  public enum MechanicalRoutingFamilyType
+  {
+    [NameOnRevit( "SA_FASU(F4-150 200Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F4_150_200Phi,
+    
+    [NameOnRevit( "SA_FASU(F4-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F4_150_250Phi,
+    
+    [NameOnRevit( "SA_FASU(F5-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F5_150_250Phi,
+    
+    [NameOnRevit( "SA_FASU(F6-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F6_150_250Phi,
+    
+    [NameOnRevit( "SA_FASU(F6-150 300Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F6_150_300Phi,
+    
+    [NameOnRevit( "SA_FASU(F7-150 300Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F7_150_300Phi,
+    
+    [NameOnRevit( "SA_FASU(F8-150 250Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F8_150_250Phi,
+    
+    [NameOnRevit( "SA_FASU(F8-150 300Φ)" )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    FASU_F8_150_300Phi,
+
+    [NameOnRevit( "SA_VAV" )]
+    [FamilyVersion( 1 )]
+    [FamilyCategory( BuiltInCategory.OST_DuctAccessory)]
+    SA_VAV,
   }
   
 
@@ -298,6 +301,9 @@ namespace Arent3d.Architecture.Routing
     
     public static void MakeCertainAllElectricalRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<ElectricalRoutingFamilyType>( AssetManager.GetFamilyPath, true ) ;
     public static void EraseAllElectricalRoutingFamilies( this Document document ) => document.UnloadAllFamilies<ElectricalRoutingFamilyType>() ;
+    
+    public static void MakeCertainAllMechanicalRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<MechanicalRoutingFamilyType>( AssetManager.GetFamilyPath, true ) ;
+    public static void EraseAllMechanicalRoutingFamilies( this Document document ) => document.UnloadAllFamilies<MechanicalRoutingFamilyType>() ;
 
     public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, string levelName, StructuralType structuralType )
     {
