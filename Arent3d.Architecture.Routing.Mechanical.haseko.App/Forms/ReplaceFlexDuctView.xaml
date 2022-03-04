@@ -3,11 +3,39 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms"
-        Title="Replace Flex Duct" Height="300" Width="500"
-        WindowStartupLocation="CenterScreen" UseLayoutRounding="True" ResizeMode="NoResize"
-        Topmost="True" x:Name="wdReplaceFlexDuct" SizeToContent="WidthAndHeight">
-    <Border BorderBrush="LightGray" BorderThickness="1">
-        
-    </Border>
+        Title="Replace Flex Duct" SizeToContent="WidthAndHeight"
+        Height="Auto" Width="Auto" Topmost="True" x:Name="wdReplaceFlexDuct"
+        WindowStartupLocation="CenterScreen" UseLayoutRounding="True" ResizeMode="NoResize">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="80"/>
+            <ColumnDefinition Width="250"/>
+        </Grid.ColumnDefinitions>
+        <Label Grid.Column="0" Grid.Row="0" FontWeight="Bold" VerticalAlignment="Center" Content="Family Type" 
+            Padding="0 5 5 5" Margin="0 0 0 5"/>
+        <ComboBox Grid.Column="1" Grid.Row="0" Padding="5" Margin="0 0 0 5"
+            VerticalAlignment="Center" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+            ItemsSource="{Binding Path=FlexDuctTypes, UpdateSourceTrigger=PropertyChanged}"
+            SelectedItem="{Binding Path=FlexDuctType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            DisplayMemberPath="Name"/>
+        <Label Grid.Column="0" Grid.Row="1" FontWeight="Bold" VerticalAlignment="Center" Content="Diameter"
+            Padding="0 5 5 5" Margin="0 5 0 0"/>
+        <ComboBox Grid.Column="1" Grid.Row="1" Padding="5" Margin="0 5 0 0"
+            VerticalAlignment="Center" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+            ItemsSource="{Binding Path=Diameters}"
+            SelectedItem="{Binding Path=Diameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        <DockPanel Grid.Row="2" Grid.ColumnSpan="2" LastChildFill="False" Margin="0 10 0 0">
+            <Button DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Center"
+                Padding="5" Width="75" Content="Cancel" FontWeight="Bold"
+                Command="{Binding Path=CloseCommand}"
+                CommandParameter="{Binding ElementName=wdReplaceFlexDuct}"/>
+            <Button DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Center"
+                Padding="5" Width="75" Margin="0 0 10 0" Content="OK" FontWeight="Bold"/>
+        </DockPanel>
+    </Grid>
 </Window>

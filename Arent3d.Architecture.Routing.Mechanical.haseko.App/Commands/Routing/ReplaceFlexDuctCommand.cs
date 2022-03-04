@@ -1,9 +1,13 @@
 ﻿using Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms ;
+using Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel ;
+using Arent3d.Revit.UI ;
+using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 {
+  [Transaction( TransactionMode.Manual )]
   public class ReplaceFlexDuctCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -11,8 +15,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var document = commandData.Application.ActiveUIDocument.Document ;
       var selection = commandData.Application.ActiveUIDocument.Selection ;
 
-      var view = new ReplaceFlexDuctView() ;
-      
+      var replaceFlexDuctView = new ReplaceFlexDuctView() { DataContext = new ReplaceFlexDuctViewModel(document) } ;
+      replaceFlexDuctView.ShowDialog() ;
+
       return Result.Succeeded ;
     }
   }
