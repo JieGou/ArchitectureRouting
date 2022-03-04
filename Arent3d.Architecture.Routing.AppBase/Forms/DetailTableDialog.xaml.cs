@@ -20,9 +20,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly Document _document ;
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly DetailTableViewModel _detailTableViewModel ;
-    public DetailTableViewModel DetailTableViewModelSummary ;
-    public readonly Dictionary<string, string> RoutesWithConstructionItemHasChanged ;
-    public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
+    public DetailTableViewModel DetailTableViewModelSummary { get ; set ; }
+    public Dictionary<string, string> RoutesWithConstructionItemHasChanged { get ; }
+    public Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged { get ; }
 
     public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData )
     {
