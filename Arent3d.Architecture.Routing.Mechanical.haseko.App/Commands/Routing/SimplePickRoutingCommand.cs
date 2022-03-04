@@ -41,10 +41,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           tran.Start() ;
           var collector = new FilteredElementCollector( document ) ;
           ElementCategoryFilter filterGen = new(BuiltInCategory.OST_GenericModel) ;
-          var pvp = new ParameterValueProvider( new ElementId( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ) ) ;
-          var fRule = new FilterStringRule( pvp, new FilterStringContains(), "ROOM_BOX", true ) ;
-          var filterComment = new ElementParameterFilter( fRule ) ;
-          var allRoomBox = collector.WherePasses( filterGen ).WherePasses( filterComment ).WhereElementIsNotElementType().ToElementIds() ;
+          var allRoomBox = collector.WherePasses( filterGen ).WhereElementIsNotElementType().Where( r=>r.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).AsString()?.Contains( "ROOM_BOX" ) ?? false ).Select(x=>x.Id).ToList() ;
 
           if ( allRoomBox.Any() ) document.Delete( allRoomBox ) ;
           ObstacleGeneration.ShowRoomBox( document ) ;
