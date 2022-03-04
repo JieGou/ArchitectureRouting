@@ -1,4 +1,5 @@
-﻿using Autodesk.Revit.DB ;
+﻿using Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
@@ -10,6 +11,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var document = commandData.Application.ActiveUIDocument.Document ;
       var selection = commandData.Application.ActiveUIDocument.Selection ;
 
+      var view = new ReplaceFlexDuctView() ;
+      
       return Result.Succeeded ;
     }
   }
