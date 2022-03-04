@@ -162,7 +162,7 @@
         <string>未設定確認</string>
 
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
-        <string>Split Schedule</string>
+        <string>表分割</string>
 
         <key>Electrical.App.Commands.Routing.CreateRoomCommand</key>
         <string>部屋作成</string>

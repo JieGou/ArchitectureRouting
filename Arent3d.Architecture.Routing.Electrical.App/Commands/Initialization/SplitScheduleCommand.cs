@@ -16,8 +16,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
   public class SplitScheduleCommand : IExternalCommand
   {
-    private const string TITLE = "Arent Notification" ;
-    private const int SPLIT_FROM_ROW = 4 ;
+    private const string DialogTitle = "Arent Notification" ;
+    private const int SplitFromRow = 4 ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
     {
@@ -26,11 +26,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
       try {
         if ( document.ActiveView is not ViewSheet ) {
-          TaskDialog.Show( TITLE, "Only active in sheet!" ) ;
+          TaskDialog.Show( DialogTitle, "表分割機能はシート上にしか動作しないため、シートへ移動してください。" ) ;
           return Result.Cancelled ;
         }
         
-        var reference = selection.PickObject( ObjectType.Element, "Select schedule in sheet!" ) ;
+        var reference = selection.PickObject( ObjectType.Element, "シート上の集計表を選択してください。" ) ;
         if ( document.GetElement( reference ) is not ScheduleSheetInstance sheetInstance )
           return Result.Failed ;
 
@@ -39,11 +39,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         if ( document.GetElement( sheetInstance.ScheduleId ) is not ViewSchedule schedule )
           return Result.Failed ;
         
-        if ( schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows < SPLIT_FROM_ROW
+        if ( schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows < SplitFromRow
             && schedule.GetTableData().GetSectionData( SectionType.Body ).LastColumnNumber != -1)
           return Result.Cancelled ;
 
-        var pickedBox = selection.PickBox( PickBoxStyle.Crossing, "Select the data area to split schedule!" ) ;
+        var pickedBox = selection.PickBox( PickBoxStyle.Crossing, "分割範囲を選択してください。" ) ;
         var min = new XYZ( Math.Min( pickedBox.Min.X, pickedBox.Max.X ), Math.Min( pickedBox.Min.Y, pickedBox.Max.Y ), 0 ) ;
         var max = new XYZ( Math.Max( pickedBox.Min.X, pickedBox.Max.X ), Math.Max( pickedBox.Min.Y, pickedBox.Max.Y ), 0 ) ;
         pickedBox.Min = min ;
@@ -51,22 +51,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         if ( pickedBox.Max.Y <= boundingBoxXYZ.Min.Y || pickedBox.Min.Y >= boundingBoxXYZ.Max.Y || pickedBox.Max.X <= boundingBoxXYZ.Min.X ||
              pickedBox.Min.X >= boundingBoxXYZ.Max.X ) {
-          TaskDialog.Show( TITLE, "The selected area is outside the schedule!" ) ;
+          TaskDialog.Show( DialogTitle, "選択された領域は集計表の範囲外です。" ) ;
           return Result.Cancelled ;
         }
 
         if ( pickedBox.Max.Y >= boundingBoxXYZ.Max.Y && pickedBox.Min.Y <= boundingBoxXYZ.Min.Y ) {
-          TaskDialog.Show( TITLE, "The schedule is inside the selected area!" ) ;
+          TaskDialog.Show( DialogTitle, "選択された領域は集計表の範囲内です。" ) ;
           return Result.Cancelled ;
         }
 
         var heightRequest = 0d ;
-        for ( int i = 0 ; i < SPLIT_FROM_ROW ; i++ ) {
+        for ( int i = 0 ; i < SplitFromRow ; i++ ) {
           heightRequest += schedule.GetTableData().GetSectionData( SectionType.Header ).GetRowHeight( i ) ;
         }
 
         if ( pickedBox.Max.Y >= boundingBoxXYZ.Max.Y - heightRequest ) {
-          TaskDialog.Show( TITLE, "The selected area invalid!" ) ;
+          TaskDialog.Show( DialogTitle, "選択された領域は無効です。" ) ;
           return Result.Cancelled ;
         }
 
@@ -87,13 +87,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         }
 
         numberOfRows = cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
-        for ( int i = numberOfRows - 1 ; i >= SPLIT_FROM_ROW - 2 ; i-- ) {
+        for ( int i = numberOfRows - 1 ; i >= SplitFromRow - 2 ; i-- ) {
           if ( i < topIndex || i > bottomIndex )
             cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
         }
 
         ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id,
-          selection.PickPoint( "Select a point to place schedule!" ) ) ;
+          selection.PickPoint( "分割した表を配置する場所を指定してください。" ) ) ;
 
         transaction.Commit() ;
 
@@ -108,7 +108,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox )
     {
       var heightTable = boxXYZ.Max.Y ;
-      var topIndex = SPLIT_FROM_ROW - 1 ;
+      var topIndex = SplitFromRow - 1 ;
       var bottomIndex = sectionData.NumberOfRows - 1 ;
 
       for ( int i = 0 ; i < sectionData.NumberOfRows ; i++ ) {
