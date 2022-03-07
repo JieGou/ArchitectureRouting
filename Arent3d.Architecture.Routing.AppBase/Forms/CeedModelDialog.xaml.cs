@@ -26,6 +26,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class CeedModelDialog
   {
+    private const string HeaderCeedModelNumberColumn = "CeeD型番" ;
+    private readonly DataGridColumn? _ceedModelNumberColumn ;
     private readonly Document _document ;
     private CeedViewModel? _allCeedModels ;
     private CeedViewModel? _usingCeedModel ;
@@ -53,6 +55,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( oldCeedStorable != null ) {
         LoadData( oldCeedStorable ) ;
       }
+      
+      _ceedModelNumberColumn = DtGrid.Columns.SingleOrDefault( c => c.Header.ToString() == HeaderCeedModelNumberColumn ) ;
 
       Style rowStyle = new Style( typeof( DataGridRow ) ) ;
       rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent,
@@ -214,6 +218,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       if ( _allCeedModels == null ) return ;
       LoadData( _allCeedModels ) ;
+    }
+    
+    private void ShowCeedModelNumberColumn_Checked( object sender, RoutedEventArgs e )
+    {
+      if ( _ceedModelNumberColumn != null )
+        _ceedModelNumberColumn.Visibility = Visibility.Visible ;
+    }
+
+    private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
+    {
+      if ( _ceedModelNumberColumn != null )
+        _ceedModelNumberColumn.Visibility = Visibility.Hidden ;
     }
 
     private void LoadData( CeedViewModel ceedViewModel )
