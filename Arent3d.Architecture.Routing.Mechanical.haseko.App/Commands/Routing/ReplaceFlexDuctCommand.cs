@@ -17,8 +17,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var selection = commandData.Application.ActiveUIDocument.Selection ;
 
       try {
+        
+        
+        
+        
+        
         var replaceFlexDuctView = new ReplaceFlexDuctView() { DataContext = new ReplaceFlexDuctViewModel(document) } ;
         replaceFlexDuctView.ShowDialog() ;
+        
+        
 
         return Result.Succeeded ;
       }
