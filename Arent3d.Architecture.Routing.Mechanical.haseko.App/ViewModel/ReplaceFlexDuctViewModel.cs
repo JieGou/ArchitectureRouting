@@ -8,6 +8,7 @@ using System.Linq ;
 using System.Windows ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
 {
@@ -16,9 +17,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
     #region Members
 
     private Document _document ;
+    private const string Title = "Arent" ; 
 
     private ObservableCollection<FlexDuctType>? _flexDuctTypes ;
-
     public ObservableCollection<FlexDuctType> FlexDuctTypes
     {
       get
@@ -37,8 +38,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
     }
 
     private FlexDuctType? _flexDuctType ;
-
-    public FlexDuctType FlexDuctType
+    public FlexDuctType? FlexDuctType
     {
       get { return _flexDuctType ??= FlexDuctTypes.FirstOrDefault() ; }
       set
@@ -49,7 +49,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
     }
 
     private ObservableCollection<string>? _diameters ;
-
     public ObservableCollection<string> Diameters
     {
       get
@@ -59,9 +58,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
           Func<double, string> displayLength = d =>
           {
             if ( DisplayUnit == DisplayUnit.METRIC )
-              return $"{Math.Round( d.RevitUnitsToMillimeters(), 2, MidpointRounding.AwayFromZero )} mm" ;
+              return $"{Math.Round( d.RevitUnitsToMillimeters() )} mm" ;
             else
-              return $"{Math.Round( UnitUtils.ConvertFromInternalUnits( d, DisplayUnitTypes.Inches ), 2, MidpointRounding.AwayFromZero )}" ;
+              return $"{Math.Round( UnitUtils.ConvertFromInternalUnits( d, DisplayUnitTypes.Inches ) )}" ;
           } ;
           _diameters = new ObservableCollection<string>( ductSize.Select( displayLength ) ) ;
         }
@@ -71,8 +70,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
     }
 
     private string? _diameter ;
-
-    public string Diameter
+    public string? Diameter
     {
       get { return _diameter ??= Diameters.FirstOrDefault() ; }
       set
@@ -81,9 +79,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
         OnPropertyChanged() ;
       }
     }
-
-    public DisplayUnit DisplayUnit => _document.DisplayUnitSystem ;
-
+    protected DisplayUnit DisplayUnit => _document.DisplayUnitSystem ;
     #endregion
 
     public ReplaceFlexDuctViewModel( Document document )
@@ -98,6 +94,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
       get { return new RelayCommand<Window>( ( wd ) => { return null != wd ; }, ( wd ) => { wd.Close() ; } ) ; }
     }
 
+    public ICommand OkCommand
+    {
+      get 
+      { 
+        return new RelayCommand<Window>( ( wd ) => { return null != wd ; }, ( wd ) =>
+        {
+          wd.Close();
+          TaskDialog.Show( Title, Diameter ) ;
+        } ) ; 
+      }
+    }
     #endregion
+    
   }
 }

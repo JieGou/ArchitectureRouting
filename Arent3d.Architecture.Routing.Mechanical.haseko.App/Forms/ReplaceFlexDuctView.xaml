@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="Replace Flex Duct" SizeToContent="WidthAndHeight"
-        Height="Auto" Width="Auto" Topmost="True" x:Name="wdReplaceFlexDuct"
+        Height="Auto" Width="Auto" x:Name="WdReplaceFlexDuct"
         WindowStartupLocation="CenterScreen" UseLayoutRounding="True" ResizeMode="NoResize">
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -27,15 +27,21 @@
             Padding="0 5 5 5" Margin="0 5 0 0"/>
         <ComboBox Grid.Column="1" Grid.Row="1" Padding="5" Margin="0 5 0 0"
             VerticalAlignment="Center" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+            IsEditable="True"
+            IsTextSearchEnabled="True"
+            IsTextSearchCaseSensitive="False"
+            StaysOpenOnEdit="True"
             ItemsSource="{Binding Path=Diameters}"
-            SelectedItem="{Binding Path=Diameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-        <DockPanel Grid.Row="2" Grid.ColumnSpan="2" LastChildFill="False" Margin="0 10 0 0">
+            Text="{Binding Path=Diameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        <DockPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" LastChildFill="False" Margin="0 10 0 0">
             <Button DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Center"
                 Padding="5" Width="75" Content="Cancel" FontWeight="Bold"
                 Command="{Binding Path=CloseCommand}"
-                CommandParameter="{Binding ElementName=wdReplaceFlexDuct}"/>
+                CommandParameter="{Binding ElementName=WdReplaceFlexDuct}"/>
             <Button DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Center"
-                Padding="5" Width="75" Margin="0 0 10 0" Content="OK" FontWeight="Bold"/>
+                Padding="5" Width="75" Margin="0 0 10 0" Content="OK" FontWeight="Bold"
+                Command="{Binding Path=OkCommand}"
+                CommandParameter="{Binding ElementName=WdReplaceFlexDuct}"/>
         </DockPanel>
     </Grid>
 </Window>
