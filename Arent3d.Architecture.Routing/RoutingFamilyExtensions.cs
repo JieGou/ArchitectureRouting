@@ -39,14 +39,14 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Routing Envelope" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     Envelope,
+    
+    [NameOnRevit( "Routing Shaft" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    Shaft,
   }
 
   public enum ElectricalRoutingFamilyType
   {
-    [NameOnRevit( "Routing Shaft" )]
-    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
-    Shaft,
-    
     [NameOnRevit("電線管用ファミリ_ver1.0")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
     ConnectorTwoSide,
@@ -54,8 +54,7 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit("電線管用ファミリ(片側のみ)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalFixtures)]
     ConnectorOneSide,
-    
-    
+
     [NameOnRevit("ダクト用湿度ｾﾝｻｰ(ロゴあり)")]
     [FamilyCategory(BuiltInCategory.OST_ElectricalEquipment)]
     HumiditySensorForDuctWithLogo,
@@ -299,10 +298,10 @@ namespace Arent3d.Architecture.Routing
     public static void MakeCertainAllConnectorFamilies( this Document document ) => document.MakeCertainAllFamilies<ConnectorOneSideFamilyType>( AssetManager.GetFamilyPath ) ;
     public static void EraseAllConnectorFamilies( this Document document ) => document.UnloadAllFamilies<ConnectorOneSideFamilyType>() ;
     
-    public static void MakeCertainAllElectricalRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<ElectricalRoutingFamilyType>( AssetManager.GetFamilyPath, true ) ;
+    public static void MakeCertainAllElectricalRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<ElectricalRoutingFamilyType>( AssetManager.GetElectricalFamilyPath, true ) ;
     public static void EraseAllElectricalRoutingFamilies( this Document document ) => document.UnloadAllFamilies<ElectricalRoutingFamilyType>() ;
     
-    public static void MakeCertainAllMechanicalRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<MechanicalRoutingFamilyType>( AssetManager.GetFamilyPath, true ) ;
+    public static void MakeCertainAllMechanicalRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<MechanicalRoutingFamilyType>( AssetManager.GetMechanicalFamilyPath, true ) ;
     public static void EraseAllMechanicalRoutingFamilies( this Document document ) => document.UnloadAllFamilies<MechanicalRoutingFamilyType>() ;
 
     public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, string levelName, StructuralType structuralType )

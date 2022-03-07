@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       // Set height for Arent shaft
-      var arentShafts = document.GetAllFamilyInstances( ElectricalRoutingFamilyType.Shaft ) ;
+      var arentShafts = document.GetAllFamilyInstances( RoutingFamilyType.Shaft ) ;
       var levels = settingStorables.Levels.OrderBy( x => x.Elevation ).ToList() ;
       Level? lowestLevel = levels.FirstOrDefault() ;
       Level? highestLevel = levels.LastOrDefault() ;

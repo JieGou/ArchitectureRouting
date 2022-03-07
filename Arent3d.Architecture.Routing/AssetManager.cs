@@ -28,6 +28,16 @@ namespace Arent3d.Architecture.Routing
     {
       return GetPath( FamilyFolderName, familyName + ".rfa" ) ;
     }
+    
+    public static string GetElectricalFamilyPath( string familyName )
+    {
+      return GetPath( FamilyFolderName + @"\Electrical" , familyName + ".rfa" ) ;
+    }
+    
+    public static string GetMechanicalFamilyPath( string familyName )
+    {
+      return GetPath( FamilyFolderName + @"\Mechanical", familyName + ".rfa" ) ;
+    }
 
     public static string GetRoutingSharedParameterPath()
     {

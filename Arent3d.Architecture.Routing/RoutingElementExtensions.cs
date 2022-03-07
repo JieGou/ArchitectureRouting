@@ -437,7 +437,7 @@ namespace Arent3d.Architecture.Routing
     }
     public static FamilyInstance AddShaft( this Document document, XYZ position, Level? level )
     {
-      return document.CreateFamilyInstance( ElectricalRoutingFamilyType.Shaft, position, StructuralType.NonStructural, true, level ) ;
+      return document.CreateFamilyInstance( RoutingFamilyType.Shaft, position, StructuralType.NonStructural, true, level ) ;
     }
 
     #endregion
