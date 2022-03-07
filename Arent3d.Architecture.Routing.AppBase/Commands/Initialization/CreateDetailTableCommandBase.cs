@@ -19,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class CreateDetailTableCommandBase : IExternalCommand
   {
+    private const string DefaultConstructionItems = "未設定" ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       const string defaultParentPlumbingType = "E" ;
@@ -34,9 +35,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var hiroiSetCdMasterEcoModelData = doc.GetCsvStorable().HiroiSetCdMasterEcoModelData ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       var detailTableModelsData = doc.GetDetailTableStorable().DetailTableModelData ;
-      ObservableCollection<DetailTableModel> detailTableModels = new ObservableCollection<DetailTableModel>() ;
+      var detailTableModels = new ObservableCollection<DetailTableModel>() ;
       var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
-      CnsSettingStorable cnsStorable = doc.GetCnsSettingStorable() ;
+      var cnsStorable = doc.GetCnsSettingStorable() ;
       try {
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
         var pickedObjectIds = pickedObjects.Select( p => p.UniqueId ).ToList() ;
@@ -64,12 +65,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
-      List<ComboboxItemType> conduitTypes = ( from conduitTypeName in conduitTypeNames select new ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
+      var conduitTypes = ( from conduitTypeName in conduitTypeNames select new ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
 
       var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
-      List<ComboboxItemType> constructionItems = ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() ;
+      var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
 
-      DetailTableViewModel viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems ) ;
+      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems ) ;
       var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData ) ;
       dialog.ShowDialog() ;
 
@@ -354,7 +355,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private void AddDetailTableModelRow( Document doc, CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailTableModel> detailTableModelsData, ICollection<DetailTableModel> detailTableModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute )
     {
-      const string defaultConstructionItems = "未設定" ;
       var ceedCode = string.Empty ;
       var constructionClassification = string.Empty ;
       var signalType = string.Empty ;
@@ -366,7 +366,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       double wireCrossSectionalArea = 0 ;
       var element = pickedObjects.FirstOrDefault( p => p.UniqueId == detailSymbolModel.ConduitId ) ;
       string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
-      string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? defaultConstructionItems ;
+      string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? DefaultConstructionItems ;
       string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
       string plumbingType = detailSymbolModel.PlumbingType ;
 
