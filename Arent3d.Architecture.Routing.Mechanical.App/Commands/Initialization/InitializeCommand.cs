@@ -15,8 +15,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
     protected override bool RoutingSettingsAreInitialized( Document document )
     {
       // 設備ルートアシスト用のファミリを追加する必要があるため、追加のチェックを入れる
-      return base.RoutingSettingsAreInitialized(document) &&  document.AllFamiliesAreLoaded<MechanicalRoutingFamilyType>()  && document.AllMechanicalRoutingParametersAreRegistered();
+      return base.RoutingSettingsAreInitialized( document ) && document.AllFamiliesAreLoaded<MechanicalRoutingFamilyType>() && document.AllMechanicalRoutingParametersAreRegistered() ;
     }
+
     protected override bool Setup( Document document )
     {
       document.MakeMechanicalRoutingElementParameters() ;
