@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     protected override bool RoutingSettingsAreInitialized( Document document )
     {
       // 電気ルートアシスト用のファミリを追加する必要があるため、追加のチェックを入れる
-      return base.RoutingSettingsAreInitialized(document) &&  document.AllFamiliesAreLoaded<ElectricalRoutingFamilyType>() ;
+      return base.RoutingSettingsAreInitialized(document) &&  document.AllFamiliesAreLoaded<ElectricalRoutingFamilyType>() && document.AllElectricalRoutingParametersAreRegistered();
     }
     protected override bool Setup( Document document )
     {

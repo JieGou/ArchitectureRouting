@@ -136,6 +136,16 @@ namespace Arent3d.Architecture.Routing
       return document.AllParametersAreRegistered<RoutingParameter>() && document.AllParametersAreRegistered<RoutingFamilyLinkedParameter>() ;
     }
 
+    public static bool AllElectricalRoutingParametersAreRegistered( this Document document )
+    {
+      return document.AllParametersAreRegistered<ElectricalRoutingElementParameter>() ;
+    }
+
+    public static bool AllMechanicalRoutingParametersAreRegistered( this Document document )
+    {
+      return document.AllParametersAreRegistered<BranchNumberParameter>() && document.AllParametersAreRegistered<AHUNumberParameter>() ;
+    }
+
     public static void MakeCertainAllRoutingParameters( this Document document )
     {
       document.LoadAllParametersFromFile<RoutingParameter>( AssetManager.GetRoutingSharedParameterPath() ) ;
