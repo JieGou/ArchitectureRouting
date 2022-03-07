@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       MessageBox.Show( "Dialog.Electrical.SelectElement.Message".GetAppStringByKeyOrDefault( SELECT_RANGE_MESSAGE ), "Dialog.Electrical.SelectElement.Title".GetAppStringByKeyOrDefault( DIALOG_MESSAGE_TITLE ), MessageBoxButtons.OK ) ;
       var selectedElements = UiDocument.Selection.PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit or CableTray).ToList() ;
       var conduitList = selectedElements.Where( elem => BuiltInCategorySets.ConnectorsAndConduits.Contains( elem.GetBuiltInCategory() ) && elem is FamilyInstance or Conduit).ToList();
-      var connectorList = selectedElements.Where( elem => elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures && elem is FamilyInstance or TextNote).ToList() ;
+      var connectorList = selectedElements.Where( elem => ( elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ) && elem is FamilyInstance or TextNote).ToList() ;
       if( ! conduitList.Any() && ! connectorList.Any() )  {
         message = NO_ITEM_SELECTED_MESSAGE ;
       }
