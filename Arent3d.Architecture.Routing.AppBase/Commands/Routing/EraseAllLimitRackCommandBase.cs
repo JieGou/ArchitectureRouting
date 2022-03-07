@@ -57,7 +57,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData.Where( d => rackIds.Contains( d.RackId ) ).ToList() ) {
         // delete notation
         var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == rackNotationModel.NotationId ).Select( t => t.Id ).FirstOrDefault() ;
-        if ( notationId != null ) document.Delete( notationId ) ;
+        if ( notationId != null ) 
+          document.Delete( notationId ) ;
+
+        RemoveDetailLines( document, rackNotationModel ) ;
+        
         rackNotationModels.Add( rackNotationModel ) ;
       }
 
@@ -67,6 +71,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       rackNotationStorable.Save() ;
+    }
+    
+    private static void RemoveDetailLines(Document document, RackNotationModel rackNotationModel)
+    {
+      var detailLineUniqueIds = new List<string>() ;
+      
+      if(!string.IsNullOrEmpty(rackNotationModel.EndLineLeaderId))
+        detailLineUniqueIds.Add(rackNotationModel.EndLineLeaderId);
+        
+      if(rackNotationModel.OrtherLineId.Count > 0)
+        detailLineUniqueIds.AddRange(rackNotationModel.OrtherLineId);
+
+      if ( detailLineUniqueIds.Count == 0 ) 
+        return;
+      
+      var eleIds = new List<ElementId>() ;
+      foreach ( var detailLineUniqueId in detailLineUniqueIds.Distinct() ) {
+        if ( document.GetElement( detailLineUniqueId ) is { } element ) {
+          eleIds.Add(element.Id);
+        }
+      }
+
+      if ( eleIds.Count > 0 )
+        document.Delete( eleIds ) ;
     }
   }
 }

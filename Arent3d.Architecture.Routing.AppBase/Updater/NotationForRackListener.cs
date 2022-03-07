@@ -4,11 +4,9 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using NPOI.SS.Formula.Functions ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Updater
 {
@@ -21,10 +19,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
     public bool IsOptional => false ;
     public ChangePriority ChangePriority => ChangePriority.Annotations ;
     public DocumentUpdateListenType ListenType => DocumentUpdateListenType.Any ;
-
-    public NotationForRackListener()
-    {
-    }
 
     public ElementFilter GetElementFilter( Document? document )
     {
@@ -51,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
         var elementSelected = document.GetElement( selection.GetElementIds().FirstOrDefault() ) ;
         if ( elementSelected is TextNote textNote ) {
           if ( rackNotationStorable.RackNotationModelData.FirstOrDefault( x => x.NotationId == textNote.UniqueId ) is
-              not RackNotationModel rackNotationModel )
+              not {} rackNotationModel )
             return ;
 
           if (document.GetElement( rackNotationModel.EndLineLeaderId ) is not DetailLine detailLine )
@@ -63,11 +57,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Updater
         else if ( elementSelected is DetailLine detailLine)
         {
           if ( rackNotationStorable.RackNotationModelData.FirstOrDefault( x => x.EndLineLeaderId == detailLine.UniqueId ) is
-              not RackNotationModel rackNotationModel )
+              not {} rackNotationModel )
             return ;
 
-          if ( null == rackNotationModel.NotationId ||
-               document.GetElement( rackNotationModel.NotationId ) is not TextNote notation )
+          if ( document.GetElement( rackNotationModel.NotationId ) is not TextNote notation )
             return ;
           
           var (endLineLeaderId, ortherLineId) = NotationHelper.UpdateNotation( document, rackNotationModel, notation, detailLine ) ;

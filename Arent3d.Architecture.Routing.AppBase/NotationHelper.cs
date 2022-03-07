@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       document.Delete( detailLine.Id ) ;
       foreach ( var lineId in rackNotationModel.OrtherLineId ) {
-        if ( document.GetElement( lineId ) is Element line ) {
+        if ( document.GetElement( lineId ) is {} line ) {
           document.Delete( line.Id ) ;
         }
       }
