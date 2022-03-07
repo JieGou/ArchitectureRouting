@@ -151,7 +151,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return str ;
     }
 
-    protected internal static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool mixConstructionItems = false  )
+    private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool mixConstructionItems = false  )
     {
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       List<DetailTableModel> sortedDetailTableModelsList = new() ;
@@ -207,6 +207,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
             parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, mixConstructionItems ) ;
+            parentDetailRow.IsReadOnlyPlumbingItems = ! mixConstructionItems ;
             if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
               detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
             else {
@@ -221,6 +222,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             currentDetailTableRow.PlumbingType = currentDetailTableRow == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
             currentDetailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( currentDetailTableRow, mixConstructionItems ) ;
+            currentDetailTableRow.IsReadOnlyPlumbingItems = ! mixConstructionItems ;
             plumbingCount++ ;
           }
           else {
@@ -229,6 +231,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
               parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
               parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, mixConstructionItems ) ;
+              parentDetailRow.IsReadOnlyPlumbingItems = ! mixConstructionItems ;
               if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
                 detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
               else {
@@ -242,6 +245,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             currentDetailTableRow.PlumbingType = defaultChildPlumbingSymbol ;
             currentDetailTableRow.PlumbingSize = defaultChildPlumbingSymbol ;
             currentDetailTableRow.NumberOfPlumbing = defaultChildPlumbingSymbol ;
+            currentDetailTableRow.IsReadOnlyPlumbingItems = true ;
             childDetailRows.Add( currentDetailTableRow ) ;
           }
         }
@@ -350,6 +354,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private void AddDetailTableModelRow( Document doc, CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailTableModel> detailTableModelsData, ICollection<DetailTableModel> detailTableModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute )
     {
+      const string defaultConstructionItems = "未設定" ;
       var ceedCode = string.Empty ;
       var constructionClassification = string.Empty ;
       var signalType = string.Empty ;
@@ -361,7 +366,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       double wireCrossSectionalArea = 0 ;
       var element = pickedObjects.FirstOrDefault( p => p.UniqueId == detailSymbolModel.ConduitId ) ;
       string floor = doc.GetElementById<Level>( element!.GetLevelId() )?.Name ?? string.Empty ;
-      string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? string.Empty ;
+      string constructionItem = element!.LookupParameter( "Construction Item" ).AsString() ?? defaultConstructionItems ;
       string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
       string plumbingType = detailSymbolModel.PlumbingType ;
 
@@ -397,7 +402,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         groupId = oldDetailTableRow == null ? string.Empty : oldDetailTableRow.GroupId ;
       }
 
-      var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, constructionItem, constructionItem, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, string.Empty, groupId ) ;
+      var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, constructionItem, constructionItem, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, string.Empty, groupId, true ) ;
       detailTableModels.Add( detailTableRow ) ;
     }
 
