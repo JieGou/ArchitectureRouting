@@ -23,9 +23,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public DetailTableViewModel DetailTableViewModelSummary ;
     public readonly Dictionary<string, string> RoutesWithConstructionItemHasChanged ;
     public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
-    private bool _mixConstructionItems = false ;
+    private bool _mixConstructionItems ;
 
-    public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData )
+    public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData, bool mixConstructionItems )
     {
       InitializeComponent() ;
       _document = document ;
@@ -33,6 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _detailTableViewModel = viewModel ;
       DetailTableViewModelSummary = viewModel ;
       _conduitsModelData = conduitsModelData ;
+      _mixConstructionItems = mixConstructionItems ;
       RoutesWithConstructionItemHasChanged = new Dictionary<string, string>() ;
       DetailSymbolIdsWithPlumbingTypeHasChanged = new Dictionary<string, string>() ;
 
@@ -289,7 +290,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       {
         var newDetailTableRowsGroupByDetailSymbolId = newDetailTableRows.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
         foreach ( var (_, detailTableRowsWithSameDetailSymbolId) in newDetailTableRowsGroupByDetailSymbolId ) {
-          DetailTableViewModel.SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
+          if( _mixConstructionItems ) 
+            DetailTableViewModel.SetGroupIdForDetailTableRowsMixConstructionItems( detailTableRowsWithSameDetailSymbolId ) ;
+          else 
+            DetailTableViewModel.SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
         }
       }
     }

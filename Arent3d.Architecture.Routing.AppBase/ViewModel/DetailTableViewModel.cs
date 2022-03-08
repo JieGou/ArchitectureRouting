@@ -107,6 +107,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public static void SetGroupIdForDetailTableRows( List<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
     {
+      var mixConstructionItems = false ;
       var detailTableRowsGroupByPlumbingIdentityInfo = detailTableRowsWithSameDetailSymbolId.GroupBy( d => d.PlumbingIdentityInfo ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var (_, detailTableRowsWithSamePlumbingIdentityInfo) in detailTableRowsGroupByPlumbingIdentityInfo ) {
         var detailTableRowsGroupByWiringType = detailTableRowsWithSamePlumbingIdentityInfo.GroupBy( d => ( d.WireType, d.WireSize, d.WireStrip ) ).ToDictionary( g => g.Key.WireType + g.Key.WireSize + "x" + g.Key.WireStrip, g => g.ToList() ) ;
@@ -119,7 +120,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               oldDetailTableRow.PlumbingItems = oldDetailTableRow.ConstructionItems ;
             }
             else {
-              var groupId = oldDetailTableRow.DetailSymbolId + "-" + oldDetailTableRow.PlumbingIdentityInfo + "-" + oldDetailTableRow.WireType + oldDetailTableRow.WireSize + oldDetailTableRow.WireStrip ;
+              var groupId = mixConstructionItems + "-" + oldDetailTableRow.DetailSymbolId + "-" + oldDetailTableRow.PlumbingIdentityInfo + "-" + oldDetailTableRow.WireType + oldDetailTableRow.WireSize + oldDetailTableRow.WireStrip ;
               foreach ( var detailTableRow in detailTableRowsWithSameConstructionItem ) {
                 detailTableRow.GroupId = groupId ;
                 detailTableRow.PlumbingItems = detailTableRow.ConstructionItems ;
@@ -132,6 +133,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public static void SetGroupIdForDetailTableRowsMixConstructionItems( List<DetailTableModel> detailTableRowsWithSameDetailSymbolId )
     {
+      var mixConstructionItems = true ;
       var detailTableRowsGroupByPlumbingIdentityInfo = detailTableRowsWithSameDetailSymbolId.GroupBy( d => d.PlumbingIdentityInfo ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var (_, detailTableRowsWithSamePlumbingIdentityInfo) in detailTableRowsGroupByPlumbingIdentityInfo ) {
         var parentConstructionItems = detailTableRowsWithSamePlumbingIdentityInfo.First().ConstructionItems ;
@@ -143,7 +145,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             oldDetailTableRow.PlumbingItems = parentConstructionItems ;
           }
           else {
-            var groupId = oldDetailTableRow.DetailSymbolId + "-" + oldDetailTableRow.PlumbingIdentityInfo + "-" + oldDetailTableRow.WireType + oldDetailTableRow.WireSize + oldDetailTableRow.WireStrip + "-" + parentConstructionItems ;
+            var groupId = mixConstructionItems + "-" + oldDetailTableRow.DetailSymbolId + "-" + oldDetailTableRow.PlumbingIdentityInfo + "-" + oldDetailTableRow.WireType + oldDetailTableRow.WireSize + oldDetailTableRow.WireStrip + "-" + parentConstructionItems ;
             foreach ( var detailTableRowWithSameWiringType in detailTableRowsWithSameWiringType ) {
               detailTableRowWithSameWiringType.GroupId = groupId ;
               detailTableRowWithSameWiringType.PlumbingItems = parentConstructionItems ;
