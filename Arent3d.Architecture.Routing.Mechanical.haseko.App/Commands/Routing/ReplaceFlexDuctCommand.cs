@@ -4,16 +4,20 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms ;
 using Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel ;
+using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using MoreLinq.Extensions ;
+using ImageType = Autodesk.Revit.DB.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
+  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.ReplaceFlexDuctCommand", DefaultString = "Change Duct" )]
+  [Image( "resources/Initialize.png", ImageType = Revit.UI.ImageType.Large )]
   public class ReplaceFlexDuctCommand : IExternalCommand
   {
     private const string Title = "Arent" ;
