@@ -13,21 +13,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ObservableCollection<ImportDwgMappingModel> ImportDwgMappingModels { get ; set ; }
     public List<FileComboboxItemType> FileItems { get ; set ; }
     
-    public ICommand SaveCommand { get ; set ; }
-    
     public ImportDwgMappingViewModel(List<ImportDwgMappingModel> importDwgMappingModels, List<FileComboboxItemType> fileItems)
     {
       ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( importDwgMappingModels ) ;
       FileItems = fileItems ;
-      
-      SaveCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
-        ( p ) => { ImportDwgData() ; } // Execute()
-      ) ;
-    }
-
-    private void ImportDwgData()
-    {
-      
     }
   }
 }

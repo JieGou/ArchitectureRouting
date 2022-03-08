@@ -1,10 +1,20 @@
-﻿using System.Windows ;
+﻿using System.Linq ;
+using System.Windows ;
+using System.Windows.Controls ;
+using System.Windows.Forms ;
+using System.Windows.Media ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Arent3d.Revit.I18n ;
+using MessageBox = System.Windows.Forms.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class ImportDwgMappingDialog : Window
   {
+    private static string ImportDwgMappingNotUnique =
+      "Please input unique Floor Name for all floor." ;
+    
     public ImportDwgMappingDialog(ImportDwgMappingViewModel viewModel)
     {
       InitializeComponent() ;
@@ -13,13 +23,52 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
     {
+      if ( !IsValidImportDwgMappingModel() ) {
+        MessageBox.Show( ImportDwgMappingNotUnique, "Warning", MessageBoxButtons.OK ) ;
+        return;
+      }
       DialogResult = true ;
+    }
+
+    private bool IsValidImportDwgMappingModel()
+    {
+      var importDwgMappingViewModel = this.DataContext as ImportDwgMappingViewModel ;
+      if ( importDwgMappingViewModel == null ) return false ;
+      return importDwgMappingViewModel.ImportDwgMappingModels.All( x => !string.IsNullOrEmpty( x.FloorName ) ) &&
+             importDwgMappingViewModel.ImportDwgMappingModels.GroupBy( x => x.FloorName ).All( x => x.Count() == 1 ) ;
     }
 
     private void BtnCancel_OnClick( object sender, RoutedEventArgs e )
     {
       DialogResult = false ;
       this.Close() ;
+    }
+    
+    private void DeleteImportDwgMappingItem(object sender, RoutedEventArgs e)
+    {
+      for ( var visual = sender as Visual ; visual != null ; visual = VisualTreeHelper.GetParent( visual ) as Visual ) {
+        if (visual is DataGridRow)
+        {
+          var dataGridRow = (DataGridRow)visual;
+          var item = dataGridRow.Item as ImportDwgMappingModel;
+          if(item == null) return;;
+          var importDwgMappingViewModel = this.DataContext as ImportDwgMappingViewModel ;
+          if(importDwgMappingViewModel == null) return;;
+          var importDwgMappingModels = importDwgMappingViewModel.ImportDwgMappingModels.Where( x => !x.Id.Equals( item.Id ) ).ToList() ;
+          var newImportDwgMappingViewModel = new ImportDwgMappingViewModel( importDwgMappingModels, importDwgMappingViewModel.FileItems ) ;
+          this.DataContext = newImportDwgMappingViewModel ;
+        }
+      }
+    }
+
+    private void BtnAdd_OnClick( object sender, RoutedEventArgs e )
+    {
+      var importDwgMappingViewModel = this.DataContext as ImportDwgMappingViewModel ;
+      if(importDwgMappingViewModel == null) return;;
+      var importDwgMappingModels = importDwgMappingViewModel.ImportDwgMappingModels.ToList();
+      importDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, string.Empty, 3000  ) );
+      var newImportDwgMappingViewModel = new ImportDwgMappingViewModel( importDwgMappingModels, importDwgMappingViewModel.FileItems ) ;
+      this.DataContext = newImportDwgMappingViewModel ;
     }
   }
 }

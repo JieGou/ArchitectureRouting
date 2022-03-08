@@ -54,13 +54,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
         OnPropertyChanged() ;
       }
     }
+    
+    private double _floorHeight ;
 
-    public ImportDwgMappingModel( string fileName, string floorName )
+    public double FloorHeight
+    {
+      get => _floorHeight ;
+      set
+      {
+        _floorHeight = value ;
+        OnPropertyChanged() ;
+      }
+    }
+
+    public ImportDwgMappingModel( string fileName, string floorName, double floorHeight )
     {
       _id = Guid.NewGuid().ToString() ;
       _fullFilePath = fileName ;
       _fileName = !string.IsNullOrEmpty(fileName) ? Path.GetFileName(fileName) : "" ;
       _floorName = floorName ;
+      _floorHeight = floorHeight ;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged ;
