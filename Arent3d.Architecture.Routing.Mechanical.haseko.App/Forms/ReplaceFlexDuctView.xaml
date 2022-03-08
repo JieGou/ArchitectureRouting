@@ -4,8 +4,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="Replace Flex Duct" SizeToContent="WidthAndHeight"
-        Height="Auto" Width="Auto" x:Name="WdReplaceFlexDuct"
-        WindowStartupLocation="CenterScreen" UseLayoutRounding="True" ResizeMode="NoResize">
+        Height="Auto" Width="Auto" x:Name="WdReplaceFlexDuct" Topmost="True"
+        WindowStartupLocation="Manual" UseLayoutRounding="True" ResizeMode="NoResize">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
