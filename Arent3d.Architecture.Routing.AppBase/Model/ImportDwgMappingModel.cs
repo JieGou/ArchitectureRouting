@@ -7,6 +7,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
 {
   public class ImportDwgMappingModel: INotifyPropertyChanged
   {
+    private string _id ;
+
+    public string Id
+    {
+      get => _id ;
+      set
+      {
+        _id = value ;
+        OnPropertyChanged() ;
+      }
+    }
+    
     private string _fullFilePath ;
 
     public string FullFilePath
@@ -14,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       get => _fullFilePath ;
       set
       {
-        _fileName = value ;
+        _fullFilePath = value ;
         OnPropertyChanged() ;
       }
     }
@@ -45,8 +57,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
 
     public ImportDwgMappingModel( string fileName, string floorName )
     {
+      _id = Guid.NewGuid().ToString() ;
       _fullFilePath = fileName ;
-      _fileName = Path.GetFileName(fileName) ;
+      _fileName = !string.IsNullOrEmpty(fileName) ? Path.GetFileName(fileName) : "" ;
       _floorName = floorName ;
     }
 

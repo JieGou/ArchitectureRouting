@@ -15,5 +15,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       DialogResult = true ;
     }
+
+    private void BtnCancel_OnClick( object sender, RoutedEventArgs e )
+    {
+      DialogResult = false ;
+      this.Close() ;
+    }
   }
 }

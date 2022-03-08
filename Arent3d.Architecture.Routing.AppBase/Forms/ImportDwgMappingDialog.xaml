@@ -5,46 +5,81 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        d:DesignHeight="600" d:DesignWidth="600" Height="600" Width="600">
+        ResizeMode="NoResize"
+        d:DesignHeight="600" d:DesignWidth="600" Height="600" Width="625">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="55"/>
         </Grid.RowDefinitions>
         <Grid Grid.Row="0" >
-            <Grid Height="545" DockPanel.Dock="Top">
+            <Grid Height="545" DockPanel.Dock="Top" HorizontalAlignment="Left" Width="625">
                 <DataGrid x:Name="grdMappings"
                           ItemsSource="{Binding ImportDwgMappingModels}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
-                          Margin="2,0,2,0" IsReadOnly="False">
+                          IsReadOnly="False" 
+                          CanUserResizeColumns="False">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="工事項目名称" Width="400" IsReadOnly="True" CanUserSort="False">
-                            <DataGridTextColumn.Binding>
-                                <Binding Path="FileName" NotifyOnTargetUpdated="True"
-                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
-                            </DataGridTextColumn.Binding>
-                        </DataGridTextColumn>
-                        <DataGridTextColumn Header="工事項目名称" Width="200" CanUserSort="False">
+                        <DataGridTextColumn Header="階" Width="200" CanUserSort="False">
                             <DataGridTextColumn.Binding>
                                 <Binding Path="FloorName" NotifyOnTargetUpdated="True"
                                          UpdateSourceTrigger="PropertyChanged" Mode="TwoWay">
                                 </Binding>
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
+                        <DataGridComboBoxColumn Header="DWGファイル" Width="400"
+                                                SelectedValueBinding="{Binding FileName}"
+                                                DisplayMemberPath="FileName"
+                                                SelectedValuePath="FileName"
+                                                CanUserSort="False">
+                            <DataGridComboBoxColumn.ElementStyle>
+                                <Style TargetType="{x:Type ComboBox}">
+                                    <Setter Property="ItemsSource" Value="{Binding Path=DataContext.FileItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                </Style>
+                            </DataGridComboBoxColumn.ElementStyle>
+                            <DataGridComboBoxColumn.EditingElementStyle>
+                                <Style TargetType="{x:Type ComboBox}">
+                                    <Setter Property="ItemsSource" Value="{Binding Path=DataContext.FileItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                    <!--<EventSetter Event="SelectionChanged" Handler="ConstructionItemSelectionChanged" />-->
+                                </Style>
+                            </DataGridComboBoxColumn.EditingElementStyle>
+                        </DataGridComboBoxColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
         </Grid>
         <Grid Grid.Row="1" Height="55">
             <Grid DockPanel.Dock="Right" HorizontalAlignment="Right">
-                <Button Grid.Column="0" x:Name="btnSave"
-                        Content="保存"
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="2" x:Name="btnSave"
+                        Content="OK"
                         Margin="5,5,5,5"
                         HorizontalAlignment="Right"
                         DockPanel.Dock="Right"
                         Command="{Binding SaveCommand}"
                         Click="BtnSave_OnClick"
+                        Height="27"
+                        Width="110" />
+                <Button Grid.Column="1" x:Name="btnCancel"
+                        Content="Cancel"
+                        Margin="5,5,5,5"
+                        HorizontalAlignment="Right"
+                        DockPanel.Dock="Right"
+                        Click="BtnCancel_OnClick"
+                        Height="27"
+                        Width="110" />
+                <Button Grid.Column="0" x:Name="btnAdd"
+                        Content="階追加"
+                        Margin="5,5,5,5"
+                        HorizontalAlignment="Right"
+                        DockPanel.Dock="Right"
+                        Click="BtnCancel_OnClick"
                         Height="27"
                         Width="110" />
             </Grid>
