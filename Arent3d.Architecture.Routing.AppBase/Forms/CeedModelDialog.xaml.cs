@@ -31,6 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly Document _document ;
     private CeedViewModel? _allCeedModels ;
     private CeedViewModel? _usingCeedModel ;
+    private string _ceedModelNumberSearch ;
     private string _modelNumberSearch ;
     public string SelectedDeviceSymbol ;
     public string SelectedCondition ;
@@ -44,6 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _document = uiApplication.ActiveUIDocument.Document ;
       _allCeedModels = null ;
       _usingCeedModel = null ;
+      _ceedModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
       SelectedDeviceSymbol = string.Empty ;
       SelectedCondition = string.Empty ;
@@ -85,11 +87,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_Reset( object sender, RoutedEventArgs e )
     {
+      CmbCeedModelNumbers.SelectedIndex = -1 ;
+      CmbCeedModelNumbers.Text = "" ;
       CmbModelNumbers.SelectedIndex = -1 ;
       CmbModelNumbers.Text = "" ;
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels != null )
         LoadData( ceedViewModels ) ;
+    }
+    
+    private void CmbCeedModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
+    {
+      _ceedModelNumberSearch = ! string.IsNullOrEmpty( CmbCeedModelNumbers.Text ) ? CmbCeedModelNumbers.Text : string.Empty ;
     }
 
     private void CmbModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
@@ -102,14 +111,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _allCeedModels == null && _usingCeedModel == null ) return ;
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels == null ) return ;
-      if ( string.IsNullOrEmpty( _modelNumberSearch ) ) {
-        this.DataContext = ceedViewModels ;
-      }
-      else {
-        List<CeedModel> ceedModels = ceedViewModels.CeedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
-        var ceedModelsSearch = new CeedViewModel( ceedViewModels.CeedStorable, ceedModels ) ;
-        this.DataContext = ceedModelsSearch ;
-      }
+      if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) ) return ;
+      var ceedModels = new List<CeedModel>() ;
+      if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) && ! string.IsNullOrEmpty( _modelNumberSearch ) )
+        ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) && c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
+      else if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) )
+        ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) ).ToList() ;
+      else if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && ! string.IsNullOrEmpty( _modelNumberSearch ) )
+        ceedModels = ceedViewModels.CeedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
+
+      var ceedModelsSearch = new CeedViewModel( ceedViewModels.CeedStorable, ceedModels ) ;
+      this.DataContext = ceedModelsSearch ;
     }
 
     private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
@@ -205,6 +217,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var viewModel = new ViewModel.CeedViewModel( ceedStorable ) ;
       this.DataContext = viewModel ;
       _allCeedModels = viewModel ;
+      CmbCeedModelNumbers.ItemsSource = viewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = viewModel.ModelNumbers ;
     }
 
@@ -224,17 +237,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       if ( _ceedModelNumberColumn != null )
         _ceedModelNumberColumn.Visibility = Visibility.Visible ;
+      LbCeedModelNumbers.Visibility = Visibility.Visible ;
+      CmbCeedModelNumbers.Visibility = Visibility.Visible ;
     }
 
     private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
     {
       if ( _ceedModelNumberColumn != null )
         _ceedModelNumberColumn.Visibility = Visibility.Hidden ;
+      LbCeedModelNumbers.Visibility = Visibility.Hidden ;
+      CmbCeedModelNumbers.Visibility = Visibility.Hidden ;
     }
 
     private void LoadData( CeedViewModel ceedViewModel )
     {
       this.DataContext = ceedViewModel ;
+      CmbCeedModelNumbers.ItemsSource = ceedViewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = ceedViewModel.ModelNumbers ;
     }
   }
