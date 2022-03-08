@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       try {
         using var transaction = new Transaction( document ) ;
         transaction.Start( "Create structure envelope" ) ;
-        //Delete all
+        //Delete all current envelope
         var elementId = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault()?.Id ?? throw new InvalidOperationException() ;
         FamilyInstanceFilter filter = new(document, elementId) ;
         var collector = new FilteredElementCollector( document ) ;
@@ -61,6 +61,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var option = new Options() ;
       option.DetailLevel = ViewDetailLevel.Fine ;
       var listComplex = new List<Floor>() ;
+      var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
 
       foreach ( var floorInstance in allFloors ) {
         if ( floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭以外" || floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭" ) {
@@ -89,12 +90,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
             var edgeArray = edgeLoops.get_Item( 0 ) ;
             var isComplex = false ;
             var curves = new List<Line>() ;
+
             foreach ( Edge edge in edgeArray ) {
-              if ( edge.AsCurve() is Line line ) curves.Add( line ) ;
-              if ( edge.AsCurve() is not Arc ) continue ;
-              listComplex.Add( floorInstance ) ;
-              isComplex = true ;
-              break ;
+              if ( edge.AsCurve() is Line line ) {
+                curves.Add( line ) ;
+              }
+              else {
+                listComplex.Add( floorInstance ) ;
+                isComplex = true ;
+                break ;
+              }
             }
 
             //basic shape
@@ -143,13 +148,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
               //Create the room box
               foreach ( var recBox in listRecBox ) {
                 var envelopeOrigin = recBox.Center.ToXYZRaw() ;
-                var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-                var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, StructuralType.NonStructural ) ;
-                envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-                envelopeInstance.LookupParameter( "奥行き" ).Set( recBox.YWidth ) ;
-                envelopeInstance.LookupParameter( "幅" ).Set( recBox.XWidth ) ;
-                envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
-                envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "FLOOR_ENVELOPE" ) ;
+                CreateEnvelopeElement( envelopeSymbol, envelopeOrigin, recBox.YWidth, recBox.XWidth, height, "FLOOR_ENVELOPE" ) ;
               }
             }
             catch {
@@ -184,37 +183,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var document = uiDocument.Document ;
       var allWalls = ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<Wall>( document, BuiltInCategory.OST_Walls ).ToList() ;
 
+      var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       foreach ( var wallInstance in allWalls ) {
         var height = wallInstance.get_Parameter( BuiltInParameter.WALL_USER_HEIGHT_PARAM ).AsDouble() ;
         var width = wallInstance.WallType.Width ;
-        var backSize = wallInstance.get_Parameter( BuiltInParameter.CURVE_ELEM_LENGTH ).AsDouble() ;
+        var length = wallInstance.get_Parameter( BuiltInParameter.CURVE_ELEM_LENGTH ).AsDouble() ;
         var locationCurve = ( wallInstance.Location as LocationCurve ) ! ;
-        var wallLine = locationCurve.Curve as Line ;
-        var wallArc = locationCurve.Curve as Arc ;
 
-        XYZ startPoint = new(), endPoint = new() ;
-        if ( wallLine != null ) {
-          startPoint = wallLine.GetEndPoint( 0 ) ;
-          endPoint = wallLine.GetEndPoint( 1 ) ;
-        }
-        else if ( wallArc != null ) {
-          startPoint = wallArc.GetEndPoint( 0 ) ;
-          endPoint = wallArc.GetEndPoint( 1 ) ;
-        }
+        var wallCurve = locationCurve.Curve ;
+        if ( wallCurve is not Line && wallCurve is not Arc ) continue ;
 
+        var startPoint = wallCurve.GetEndPoint( 0 ) ;
+        var endPoint = wallCurve.GetEndPoint( 1 ) ;
         var envelopeOrigin = new XYZ( ( startPoint.X + endPoint.X ) / 2, ( startPoint.Y + endPoint.Y ) / 2, ( startPoint.Z + endPoint.Z ) / 2 ) ;
-        var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        var envelopeInstance = envelopeSymbol.Instantiate( envelopeOrigin, StructuralType.NonStructural ) ;
-        envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-        envelopeInstance.LookupParameter( "奥行き" ).Set( backSize ) ;
-        envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
-        envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
-        envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "WALL_ENVELOPE" ) ;
 
-        if ( wallLine != null ) {
-          var rotationAngle = wallLine.Direction.AngleTo( XYZ.BasisY ) ;
-          ElementTransformUtils.RotateElement( document, envelopeInstance.Id, Line.CreateBound( envelopeOrigin, new XYZ( envelopeOrigin.X, envelopeOrigin.Y, envelopeOrigin.Z + 1 ) ), rotationAngle ) ;
-        }
+        var envelopeInstance = CreateEnvelopeElement( envelopeSymbol, envelopeOrigin, length, width, height, "WALL_ENVELOPE" ) ;
+        var rotationAngle = Line.CreateBound( startPoint, endPoint ).Direction.AngleTo( XYZ.BasisY ) ;
+        ElementTransformUtils.RotateElement( document, envelopeInstance.Id, Line.CreateBound( envelopeOrigin, new XYZ( envelopeOrigin.X, envelopeOrigin.Y, envelopeOrigin.Z + 1 ) ), rotationAngle ) ;
       }
     }
 
@@ -226,28 +211,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       allColumns.AddRange( ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<FamilyInstance>( document, BuiltInCategory.OST_StructuralColumns ).ToList() ) ;
 
       var option = new Options() ;
-      option.DetailLevel = ViewDetailLevel.Fine ;
-      foreach ( var colInstance in allColumns ) {
-        var geometryElement = colInstance.get_Geometry( option ) ;
-        foreach ( var geoObject in geometryElement ) {
-          if ( geoObject is not Solid { Volume: > 0 } solid ) continue ;
-          var bb = solid.GetBoundingBox() ;
-          var (ox, oy, oz) = bb.Transform.Origin ;
-          var (x, y, z) = bb.Min ;
-          var (x1, y1, z1) = bb.Max ;
-
-          var (width, length, height) = ( x1 - x, y1 - y, z1 - z ) ;
-          var location = new XYZ( ox, oy, oz - z1 ) ;
-
-          var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-          var envelopeInstance = envelopeSymbol.Instantiate( location, StructuralType.NonStructural ) ;
-          envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-          envelopeInstance.LookupParameter( "奥行き" ).Set( length ) ;
-          envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
-          envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
-          envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "COLUMN_ENVELOPE" ) ;
-        }
-      }
+      var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      allColumns.ForEach( col => CreateEnvelopeFromInstance( col, envelopeSymbol, option, "COLUMN_ENVELOPE" ) ) ;
     }
 
     private void ExecuteBeamEnvelope( ExternalCommandData commandData )
@@ -258,30 +223,37 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
       //Filter beam not XY direction and Other Framing with multi layers
       var option = new Options() ;
-      option.DetailLevel = ViewDetailLevel.Fine ;
       var filterBeams = allBeams.Where( b => b.FilterBeamWithXyDirection() ).Where( b => b.FilterBeamUniqueSolid( option ) ).ToList() ;
+      var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      filterBeams.ForEach( beam => CreateEnvelopeFromInstance( beam, envelopeSymbol, option, "BEAM_ENVELOPE" ) ) ;
+    }
 
-      foreach ( var bmInstance in filterBeams ) {
-        var geometryElement = bmInstance.get_Geometry( option ) ;
-        foreach ( var geoObject in geometryElement ) {
-          if ( geoObject is not Solid { Volume: > 0 } solid ) continue ;
-          var bb = solid.GetBoundingBox() ;
-          var (ox, oy, oz) = bb.Transform.Origin ;
-          var (x, y, z) = bb.Min ;
-          var (x1, y1, z1) = bb.Max ;
+    private void CreateEnvelopeFromInstance( FamilyInstance instance, FamilySymbol envelopeSymbol, Options option, string comment )
+    {
+      var geometryElement = instance.get_Geometry( option ) ;
+      foreach ( var geoObject in geometryElement ) {
+        if ( geoObject is not Solid { Volume: > 0 } solid ) continue ;
+        var bb = solid.GetBoundingBox() ;
+        var (ox, oy, oz) = bb.Transform.Origin ;
+        var (x, y, z) = bb.Min ;
+        var (x1, y1, z1) = bb.Max ;
 
-          var (width, length, height) = ( x1 - x, y1 - y, z1 - z ) ;
-          var location = new XYZ( ox, oy, oz - z1 ) ;
+        var (width, length, height) = ( x1 - x, y1 - y, z1 - z ) ;
+        var location = new XYZ( ox, oy, oz - z1 ) ;
 
-          var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-          var envelopeInstance = envelopeSymbol.Instantiate( location, StructuralType.NonStructural ) ;
-          envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-          envelopeInstance.LookupParameter( "奥行き" ).Set( length ) ;
-          envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
-          envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
-          envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "BEAM_ENVELOPE" ) ;
-        }
+        CreateEnvelopeElement( envelopeSymbol, location, length, width, height, comment ) ;
       }
+    }
+
+    private FamilyInstance CreateEnvelopeElement( FamilySymbol familySymbol, XYZ location, double length, double width, double height, string comment )
+    {
+      var envelopeInstance = familySymbol.Instantiate( location, StructuralType.NonStructural ) ;
+      envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
+      envelopeInstance.LookupParameter( "奥行き" ).Set( length ) ;
+      envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
+      envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
+      envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( comment ) ;
+      return envelopeInstance ;
     }
   }
 }
