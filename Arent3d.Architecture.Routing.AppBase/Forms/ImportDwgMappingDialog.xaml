@@ -1,0 +1,53 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.ImportDwgMappingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        d:DesignHeight="600" d:DesignWidth="600" Height="600" Width="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="55"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" >
+            <Grid Height="545" DockPanel.Dock="Top">
+                <DataGrid x:Name="grdMappings"
+                          ItemsSource="{Binding ImportDwgMappingModels}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          Margin="2,0,2,0" IsReadOnly="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="工事項目名称" Width="400" IsReadOnly="True" CanUserSort="False">
+                            <DataGridTextColumn.Binding>
+                                <Binding Path="FileName" NotifyOnTargetUpdated="True"
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
+                            </DataGridTextColumn.Binding>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="工事項目名称" Width="200" CanUserSort="False">
+                            <DataGridTextColumn.Binding>
+                                <Binding Path="FloorName" NotifyOnTargetUpdated="True"
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay">
+                                </Binding>
+                            </DataGridTextColumn.Binding>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Grid>
+        <Grid Grid.Row="1" Height="55">
+            <Grid DockPanel.Dock="Right" HorizontalAlignment="Right">
+                <Button Grid.Column="0" x:Name="btnSave"
+                        Content="保存"
+                        Margin="5,5,5,5"
+                        HorizontalAlignment="Right"
+                        DockPanel.Dock="Right"
+                        Command="{Binding SaveCommand}"
+                        Click="BtnSave_OnClick"
+                        Height="27"
+                        Width="110" />
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
