@@ -29,8 +29,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).SingleOrDefault() ?? throw new InvalidOperationException() ;
         FamilyInstanceFilter filter = new(document, envelopeSymbol.Id) ;
         var collector = new FilteredElementCollector( document ) ;
-        var allBoxEnvelope = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElementIds() ;
-        document.Delete( allBoxEnvelope ) ;
+        var allBoxEnvelope = collector.WherePasses( filter ).WhereElementIsNotElementType().Where( r => r.LookupParameter( "Obstacle Name" ).AsString() == "STRUCTURE_ENVELOPE" ) ;
+        document.Delete( allBoxEnvelope.Select( x => x.Id ).ToList() ) ;
 
         ExecuteWallEnvelope( envelopeSymbol ) ;
         ExecuteFloorEnvelope( envelopeSymbol ) ;
@@ -225,6 +225,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
       envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
       envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( comment ) ;
+      envelopeInstance.LookupParameter( "Obstacle Name" ).Set( "STRUCTURE_ENVELOPE" ) ;
       return envelopeInstance ;
     }
 

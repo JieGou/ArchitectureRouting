@@ -66,7 +66,12 @@ namespace Arent3d.Architecture.Routing
 
     [ParameterGuid( "57332190-02d7-4f25-a60d-b33a459f9fb7" ), NameOnRevit( "From-Side Connector Id" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CableTrays ) )]
-    FromSideConnectorId,
+    FromSideConnectorId,    
+    
+    [ParameterGuid( "1957C74A-9BDA-4850-959A-796DF6BF43A9" ), NameOnRevit( "Obstacle Name" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
+    ObstacleName,
+    
   }
 
   public enum PassPointParameter

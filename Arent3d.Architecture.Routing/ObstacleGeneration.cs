@@ -153,6 +153,7 @@ namespace Arent3d.Architecture.Routing
         var ds = DirectShape.CreateElement( doc, new ElementId( BuiltInCategory.OST_GenericModel ) ) ;
         ds.SetShape( new GeometryObject[] { solid } ) ;
         ds.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( "ROOM_BOX" ) ;
+        ds.LookupParameter( "Obstacle Name" ).Set( "ROOM_BOX" ) ;
         return ds.Id ;
       }
       catch ( Exception ) {
