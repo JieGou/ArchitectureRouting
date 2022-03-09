@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
   public class ReplaceFlexDuctCommand : IExternalCommand
   {
     private const string Title = "Arent" ;
-    private const string GeneralNotify = "The elements are not continuously connected!" ;
+    private const string GeneralNotify = "The selected elements are not continuously connected!" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
     {

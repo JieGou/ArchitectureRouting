@@ -10,7 +10,6 @@ using System.Windows ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Autodesk.Revit.UI ;
-using MoreLinq ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
 {
@@ -75,7 +74,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
     {
       get
       {
-        if ( _data.ConnectorRefs.Count > 0 ) {
+        if ( null == _diameter && _data.ConnectorRefs.Count > 0 ) {
           var value = SuggestionDiameter( _data.ConnectorRefs ) ;
           _diameter = DisplayDiameter( value ) ;
         }
