@@ -119,6 +119,9 @@
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
 
+        <key>Electrical.App.Commands.Routing.AdjustLeaderCommand</key>
+        <string>Adjust Leader</string>
+
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
