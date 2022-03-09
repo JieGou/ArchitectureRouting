@@ -215,7 +215,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableRow.WireCrossSectionalArea ) ;
             currentDetailTableRow.PlumbingType = currentDetailTableRow == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
             currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-            currentDetailTableRow.PlumbingIdentityInfo = plumbingType + currentDetailTableRow.PlumbingSize + "-" + currentDetailTableRow.SignalType + "-" + currentDetailTableRow.RouteName ;
+            currentDetailTableRow.PlumbingIdentityInfo = currentDetailTableRow.PlumbingType + currentDetailTableRow.PlumbingSize + "-" + currentDetailTableRow.SignalType + "-" + currentDetailTableRow.RouteName ;
             plumbingCount++ ;
           }
           else {
