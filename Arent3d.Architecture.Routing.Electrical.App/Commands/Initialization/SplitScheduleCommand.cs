@@ -1,5 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
+using System.Linq ;
+using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -77,7 +79,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         if ( document.GetElement( schedule.Duplicate( ViewDuplicateOption.Duplicate ) ) is not ViewSchedule cloneSchedule )
           return Result.Failed ;
 
-        cloneSchedule.Name = $"{schedule.Name}_{DateTime.Now.ToString( "HHmmss" )}" ;
+        var (newName, oldName) = GetNewScheduleName( document, schedule.Name ) ;
+        cloneSchedule.Name = newName ;
+        schedule.Name = oldName ;
+        
         var (topIndex, bottomIndex) =
           GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBoxXYZ, pickedBox ) ;
 
@@ -99,6 +104,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         transaction.Commit() ;
 
         return Result.Succeeded ;
+      }
+      catch (Autodesk.Revit.Exceptions.OperationCanceledException)
+      {
+        return Result.Cancelled;
       }
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException(exception);
@@ -124,6 +133,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
 
       return ( topIndex, bottomIndex ) ;
+    }
+
+    private (string NewScheduleName, string OldScheduleName) GetNewScheduleName(Document document, string oldScheduleName)
+    {
+      var prefix = "Splited-" ;
+      var pattern = @$"{prefix}(\d+)$" ;
+      var match = Regex.Match( oldScheduleName, pattern ) ;
+      var scheduleNames = document.GetAllElements<ViewSchedule>().Select( x => x.Name ) ;
+
+      if ( match.Success ) {
+        var start = Regex.Split( oldScheduleName, match.Value ).First() ;
+        var count = scheduleNames.Where( x => Regex.IsMatch( x, $"{start}{pattern}" ) ).Count() ;
+        return ($"{start}{prefix}{count + 1}", oldScheduleName) ;
+      }
+      
+      return ($"{oldScheduleName} {prefix}2", $"{oldScheduleName} {prefix}1");
     }
   }
 }
