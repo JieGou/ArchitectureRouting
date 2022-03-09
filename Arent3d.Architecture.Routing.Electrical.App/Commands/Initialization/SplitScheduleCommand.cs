@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
+using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -87,13 +88,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         }
 
         numberOfRows = cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
-        for ( int i = numberOfRows - 1 ; i >= SplitFromRow - 2 ; i-- ) {
+        for ( int i = numberOfRows - 1 ; i >= SplitFromRow - 1 ; i-- ) {
           if ( i < topIndex || i > bottomIndex )
             cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
         }
 
         ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id,
-          selection.PickPoint( "分割した表を配置する場所を指定してください。" ) ) ;
+          Transform.CreateTranslation(XYZ.BasisX * 10.0.MillimetersToRevitUnits()).OfPoint(boundingBoxXYZ.Max) ) ;
 
         transaction.Commit() ;
 
