@@ -17,7 +17,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.ReplaceFlexDuctCommand", DefaultString = "Change Duct" )]
-  [Image( "resources/Initialize.png", ImageType = Revit.UI.ImageType.Large )]
+  [Image( "resources/change-duct.png", ImageType = Revit.UI.ImageType.Large )]
   public class ReplaceFlexDuctCommand : IExternalCommand
   {
     private const string Title = "Arent" ;
