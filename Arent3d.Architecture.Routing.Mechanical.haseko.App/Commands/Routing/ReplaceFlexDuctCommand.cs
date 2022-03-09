@@ -11,7 +11,6 @@ using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using MoreLinq.Extensions ;
-using ImageType = Autodesk.Revit.DB.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 {
@@ -103,7 +102,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         return ( false, GeneralNotify, connectorRefs, points ) ;
       else {
         foreach ( var endConnector in endConnectors )
-          ResolveConnector( endConnector.Connecteds, endConnector.UnConnects, ref connectorRefs, ref points ) ;
+          GetEndRefConnector( endConnector.Connecteds, endConnector.UnConnects, ref connectorRefs, ref points ) ;
 
         if ( ( connectorRefs.Count == 2 && points.Count == 0 ) || ( connectorRefs.Count == 1 && points.Count == 1 ) ||
              ( connectorRefs.Count == 0 && points.Count == 2 ) )
@@ -129,7 +128,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       return insideConnecteds ;
     }
     
-    private void ResolveConnector( List<Connector> connecteds, List<Connector> unConnects, 
+    private void GetEndRefConnector( List<Connector> connecteds, List<Connector> unConnects, 
       ref List<Connector> connectors, ref List<(XYZ, XYZ)> points )
     {
       if ( connecteds.Count > 0 ) {
