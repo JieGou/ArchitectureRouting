@@ -119,6 +119,9 @@
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
 
+        <key>Electrical.App.Commands.Routing.AdjustLeaderCommand</key>
+        <string>Adjust Leader</string>
+
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
@@ -148,6 +151,9 @@
 
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>Split Schedule</string>
+        
+        <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
+        <string>Electrical Symbol Table</string>
 
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>Load&#xA;Save To DB</string>
@@ -335,6 +341,9 @@
 
         <key>Dialog.Electrical.SetElementProperty.Title</key>
         <string>Construction item addition result</string>
+		
+		<key>Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning</key>
+        <string>Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?</string>
 
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
@@ -375,5 +384,9 @@
         <string>Bend Radius</string>
         <key>Revit.Property.Builtin.ConduitFitting.Length</key>
         <string>電線管長さ</string>
+        
+        <!-- Schedule Names -->
+        <key>Revit.Electrical.Schedule.Name</key>
+        <string>Electrical Symbol Table</string>
     </dict>
 </plist>
