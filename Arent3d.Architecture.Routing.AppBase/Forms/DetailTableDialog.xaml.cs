@@ -10,6 +10,7 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -24,6 +25,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public readonly Dictionary<string, string> RoutesWithConstructionItemHasChanged ;
     public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
     private bool _mixConstructionItems ;
+    
+    private static string MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage =
+      "Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?" ;
 
     public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData, bool mixConstructionItems )
     {
@@ -60,6 +64,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SaveData( _detailTableViewModel.DetailTableModels ) ;
       DialogResult = true ;
       this.Close() ;
+    }
+    
+    private void BtnSaveAndCreate_OnClick( object sender, RoutedEventArgs e )
+    {
+      MessageBoxResult confirmResult = MessageBoxResult.OK ;
+      string mixtureOfMultipleConstructionClassificationsInDetailSymbol = "" ;
+      if(IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol(_detailTableViewModel.DetailTableModels, ref mixtureOfMultipleConstructionClassificationsInDetailSymbol)) 
+        confirmResult =  MessageBox.Show(string.Format("Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), mixtureOfMultipleConstructionClassificationsInDetailSymbol ), "Warning", MessageBoxButton.OKCancel);
+      if ( confirmResult == MessageBoxResult.OK ) {
+        SaveData( _detailTableViewModel.DetailTableModels ) ;
+        DialogResult = true ;
+        this.Close() ;
+      }
+      if ( this.DataContext is DetailTableViewModel context ) {
+        context.IsCancelCreateDetailTable = confirmResult == MessageBoxResult.Cancel ;
+      }
     }
 
     private void BtnCompleted_OnClick( object sender, RoutedEventArgs e )
@@ -160,7 +180,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CreateDetailTableViewModelByGroupId() ;
       SaveData( _detailTableViewModel.DetailTableModels ) ;
     }
-    
+
     private void PlumbingItemsSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
@@ -272,7 +292,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
       DetailTableViewModelSummary = newDetailTableViewModel ;
     }
-
+    
     private void UnGroupDetailTableRows( string groupId )
     {
       var detailTableModels = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == groupId ).ToList() ;
@@ -296,6 +316,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             DetailTableViewModel.SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
         }
       }
+    }
+    
+    private bool IsThereAnyMixtureOfMultipleConstructionClassificationsInDetailSymbol(ObservableCollection<DetailTableModel> detailTableModels, ref string mixtureOfMultipleConstructionClassificationsInDetailSymbol )
+    {
+      var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbol ) ;
+      var mixSymbolGroup = detailTableModelsGroupByDetailSymbolId.Where( x => x.GroupBy( y => y.ConstructionClassification ).Count() > 1 ).ToList() ;
+      mixtureOfMultipleConstructionClassificationsInDetailSymbol = mixSymbolGroup.Any()
+        ? string.Join( ", ", mixSymbolGroup.Select( y => y.Key ).Distinct() )
+        : "" ;
+      return !string.IsNullOrEmpty( mixtureOfMultipleConstructionClassificationsInDetailSymbol ) ;
     }
   }
 }

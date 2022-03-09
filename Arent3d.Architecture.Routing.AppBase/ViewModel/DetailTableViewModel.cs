@@ -16,8 +16,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ObservableCollection<DetailTableModel> DetailTableModels { get ; set ; }
 
     public bool IsCreateDetailTableOnFloorPlanView { get ; set ; }
+    
+    public  bool IsCancelCreateDetailTable { get; set; }
 
-    public ICommand SaveDetailTableCommand { get ; set ; }
+    public ICommand SaveDetailTableCommand { get; set; }
 
     public ICommand SaveAndCreateDetailTableCommand { get ; set ; }
 
@@ -69,8 +71,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void SaveAndCreateDetailTable()
     {
-      SaveDetailTable() ;
-      IsCreateDetailTableOnFloorPlanView = true ;
+      if ( ! IsCancelCreateDetailTable ) {
+        SaveDetailTable() ;
+        IsCreateDetailTableOnFloorPlanView = true ;
+      }
     }
 
     public static void UnGroupDetailTableRowsAfterChangeConstructionItems( ref List<DetailTableModel> detailTableModels, List<string> routeNames, string constructionItems )

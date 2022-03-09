@@ -222,7 +222,7 @@
                     HorizontalAlignment="Right"
                     DockPanel.Dock="Right"
                     Command="{Binding SaveAndCreateDetailTableCommand}"
-                    Click="BtnSave_OnClick"
+                    Click="BtnSaveAndCreate_OnClick"
                     Height="27"
                     Width="110" />
             <Button Grid.Column="2" x:Name="btnCompleted"
