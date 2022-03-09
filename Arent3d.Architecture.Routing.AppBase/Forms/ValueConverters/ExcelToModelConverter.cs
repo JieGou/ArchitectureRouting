@@ -300,6 +300,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             return ConnectorOneSideFamilyType.ConnectorOneSide1.GetFieldName() ;
           case "D" when ( numberCode is >= 7 and <= 11 ) :
           case "D" when numberCode == 15 :
+          case "H" when numberCode == 3 :
+          case "H" when numberCode == 8 :
           case "H" when numberCode == 13 :
           case "H" when numberCode == 15 :
           case "H" when numberCode == 16 :
@@ -316,7 +318,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
             return ConnectorOneSideFamilyType.ConnectorOneSide7.GetFieldName() ;
           case "F" when ( numberCode is >= 16 and <= 17 ) :
             return ConnectorOneSideFamilyType.ConnectorOneSide8.GetFieldName() ;
-          case "G" when ( numberCode is >= 6 and <= 11 ) :
+          case "G" when ( numberCode is >= 5 and <= 11 ) :
           case "G" when numberCode == 14 :
           case "H" when numberCode == 4 :
           case "H" when numberCode == 5 :
