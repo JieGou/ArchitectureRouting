@@ -62,6 +62,9 @@
         <key>Electrical.App.Commands.Rack.EraseAllRacksCommand</key>
         <string>Delete&#xA;All PS</string>
 
+        <key>Electrical.App.Commands.Routing.AdjustLeaderCommand</key>
+        <string>Adjust Leader</string>
+
         <key>Electrical.App.Commands.Rack.ExportRacksCommand</key>
         <string>Export&#xA;PS</string>
 
@@ -145,6 +148,9 @@
 
         <key>Electrical.App.Commands.Initialization.CreateDetailTableCommand</key>
         <string>明細表作成</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
+        <string>電気シンボル表</string>
 
         <key>Electrical.App.Commands.Initialization.LoadCsvFilesCommand</key>
         <string>読み込みdb保存</string>
@@ -324,6 +330,9 @@
 
         <key>Dialog.Electrical.SetElementProperty.Title</key>
         <string>工事項目付加結果</string>
+		
+		<key>Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning</key>
+        <string>明細記号 {0} には施工区分が混在しています。そのまま明細表作成に進めますか。</string>
 
 
         <!-- Element Names -->
@@ -366,6 +375,10 @@
         <string>曲げ半径</string>
         <key>Revit.Property.Builtin.ConduitFitting.Length</key>
         <string>電線管長さ</string>
+
+        <!-- Schedule Names -->
+        <key>Revit.Electrical.Schedule.Name</key>
+        <string>電気シンボル表</string>
     </dict>
 </plist>
 

@@ -67,6 +67,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( CreateDetailTableCommand ), OnlyInitialized = true )]
           private static class CreateDetailTableCommandButton { }
 
+          [Button( typeof( ShowElectricSymbolsCommand ), OnlyInitialized = true )]
+          private static class ShowElectricSymbolsCommandButton { }
+
           [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
           private static class ShowPickUpInformationCommandButton { }
 
@@ -208,6 +211,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
         private static class EraseAllLimitRackCommandButton { }
+        
+        [Button( typeof( AdjustLeaderCommand ), OnlyInitialized = true )]
+        private static class AdjustLeaderCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Shafts" )]

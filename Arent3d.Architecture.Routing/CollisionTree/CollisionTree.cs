@@ -1,7 +1,6 @@
 using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Reflection ;
 using Arent3d.Revit ;
 using Arent3d.Routing ;
 using Arent3d.Utility ;
@@ -28,8 +27,6 @@ namespace Arent3d.Architecture.Routing.CollisionTree
       _routeConditions = routeConditions ;
     }
 
-    public IEnumerable<Box3d> GetCollidedBoxes( Box3d box ) => Enumerable.Empty<Box3d>() ;
-
     private static Solid CreateBoundingBoxSolid( XYZ min, XYZ max )
     {
       return GeometryCreationUtilities.CreateExtrusionGeometry( new[] { CreateBaseCurveLoop( min, max ) }, XYZ.BasisZ, max.Z - min.Z ) ;
@@ -49,7 +46,7 @@ namespace Arent3d.Architecture.Routing.CollisionTree
       return element.get_BoundingBox( null ).To3dRaw() ;
     }
 
-    public IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesAndConditions( in Box3d box, CollisionCheckStructureOption option = CollisionCheckStructureOption.CheckAll )
+    public IEnumerable<(Box3d, IRouteCondition?, bool)> GetCollidedBoxesAndConditions( in Box3d box, CollisionCheckOption option = CollisionCheckOption.None, bool canIgnoreMinorCollisionIfTrue = false  )
     {
       var min = box.Min.ToXYZRaw() ;
       var max = box.Max.ToXYZRaw() ;
@@ -83,21 +80,6 @@ namespace Arent3d.Architecture.Routing.CollisionTree
     }
 
     public IEnumerable<(Box3d, IRouteCondition, bool)> GetCollidedBoxesInDetailToRack( Box3d box ) => Enumerable.Empty<(Box3d, IRouteCondition, bool)>() ;
-
-    public IEnumerable<(ElementId ElementId, MeshTriangle Triangle)> GetTriangles()
-    {
-      var elements = _document.GetAllElements<Element>() ;
-      var filteredElements = _filters.Aggregate( elements, ( current, filter ) => current.Where( filter ) ).Where( _collector.IsCollisionCheckElement ) ;
-      foreach ( var element in filteredElements.Where( elm => false == elm.IsAutoRoutingGeneratedElement() ) ) {
-        var elementId = element.Id ;
-        foreach ( var face in element.GetFaces() ) {
-          var mesh = face.Triangulate() ;
-          for ( int i = 0, n = mesh.NumTriangles ; i < n ; ++i ) {
-            yield return ( elementId, mesh.get_Triangle( i ) ) ;
-          }
-        }
-      }
-    }
   }
 
   internal static class SolidExtensions
