@@ -24,24 +24,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       try {
         using var transaction = new Transaction( document ) ;
         transaction.Start( "Create structure envelope" ) ;
-        //Delete all current envelope
-        var elementId = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault()?.Id ?? throw new InvalidOperationException() ;
-        FamilyInstanceFilter filter = new(document, elementId) ;
+
+        //Need to update
+        var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).SingleOrDefault() ?? throw new InvalidOperationException() ;
+        FamilyInstanceFilter filter = new(document, envelopeSymbol.Id) ;
         var collector = new FilteredElementCollector( document ) ;
         var allBoxEnvelope = collector.WherePasses( filter ).WhereElementIsNotElementType().ToElementIds() ;
         document.Delete( allBoxEnvelope ) ;
 
-        //1. Wall Envelope Feature
-        ExecuteWallEnvelope( commandData ) ;
-
-        //2. Floor Envelope Feature
-        ExecuteFloorEnvelope( commandData ) ;
-
-        //3. Column Envelope
-        ExecuteColumnEnvelope( commandData ) ;
-
-        //4. Beam Envelope
-        ExecuteBeamEnvelope( commandData ) ;
+        ExecuteWallEnvelope( envelopeSymbol ) ;
+        ExecuteFloorEnvelope( envelopeSymbol ) ;
+        ExecuteColumnEnvelope( envelopeSymbol ) ;
+        ExecuteBeamEnvelope( envelopeSymbol ) ;
 
         transaction.Commit() ;
         return Result.Succeeded ;
@@ -52,17 +46,13 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       }
     }
 
-    private void ExecuteFloorEnvelope( ExternalCommandData commandData )
+    private void ExecuteFloorEnvelope( FamilySymbol envelopeSymbol )
     {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
+      var document = envelopeSymbol.Document ;
       var allFloors = ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<Floor>( document, BuiltInCategory.OST_Floors ).ToList() ;
 
       var option = new Options() ;
-      option.DetailLevel = ViewDetailLevel.Fine ;
       var listComplex = new List<Floor>() ;
-      var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-
       foreach ( var floorInstance in allFloors ) {
         if ( floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭以外" || floorInstance.LookupParameter( "専用庭キー_低木" ).AsValueString() == "専用庭" ) {
           continue ;
@@ -81,6 +71,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           var btnFace = GetBottomFace( solid ) ;
           if ( btnFace is null ) continue ;
           var edgeLoops = btnFace.EdgeLoops ;
+
           //check shape with more than 2 boundaries
           if ( edgeLoops.Size >= 2 ) {
             listComplex.Add( floorInstance ) ;
@@ -115,6 +106,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
               //Joined unnecessary segments 
               var listJoinedX = GeoExtension.GetAllXLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.Y, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
               var listJoinedY = GeoExtension.GetAllYLine( curvesFix ).GroupBy( x => Math.Round( x.Origin.X, 4 ) ).ToDictionary( x => x.Key, g => g.ToList() ).Select( d => GeoExtension.JoinListStraitLines( d.Value ) ).ToList() ;
+
               //get all points in boundary
               var allConnerPoints = new List<XYZ>() ;
               listJoinedY.ForEach( x =>
@@ -122,6 +114,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
                 allConnerPoints.Add( x.GetEndPoint( 0 ) ) ;
                 allConnerPoints.Add( x.GetEndPoint( 1 ) ) ;
               } ) ;
+
               //get all points of intersect with Y to X curves
               foreach ( var lineY in listJoinedY ) {
                 var lineExtend = lineY.ExtendBothY( lenghtMaxY * 2 ) ;
@@ -134,18 +127,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
               //distinct points
               var comparer = new XyzComparer() ;
               var distinctPoints = allConnerPoints.Distinct( comparer ).ToList() ;
-              var dic = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
+              var dicGroupByX = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
+
               //Find out the rectangular
               var listRecBox = new List<Box3d>() ;
-              for ( var i = 0 ; i < dic.Count - 1 ; i++ ) {
-                var l1 = dic[ dic.Keys.ToList()[ i ] ] ;
-                var l2 = dic[ dic.Keys.ToList()[ i + 1 ] ] ;
+              for ( var i = 0 ; i < dicGroupByX.Count - 1 ; i++ ) {
+                var l1 = dicGroupByX[ dicGroupByX.Keys.ToList()[ i ] ] ;
+                var l2 = dicGroupByX[ dicGroupByX.Keys.ToList()[ i + 1 ] ] ;
                 l1.AddRange( l2 ) ;
                 var recBox = GeoExtension.FindRectangularBox( l1, GeoExtension.GetAllXLine( curvesFix ), lenghtMaxY * 2, height ) ;
                 listRecBox.AddRange( recBox ) ;
               }
 
-              //Create the room box
+              //Create the floor envelope
               foreach ( var recBox in listRecBox ) {
                 var envelopeOrigin = recBox.Center.ToXYZRaw() ;
                 CreateEnvelopeElement( envelopeSymbol, envelopeOrigin, recBox.YWidth, recBox.XWidth, height, "FLOOR_ENVELOPE" ) ;
@@ -162,28 +156,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       MessageBox.Show( $"このドキュメントには、{listComplex.Count}つの複雑な床の形状があります。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning ) ;
     }
 
-    private PlanarFace? GetBottomFace( Solid solid )
+    private void ExecuteWallEnvelope( FamilySymbol envelopeSymbol )
     {
-      PlanarFace? bottomFace = null ;
-      var faces = solid.Faces ;
-      foreach ( Face f in faces ) {
-        var pf = f as PlanarFace ;
-        if ( null == pf || ! pf.FaceNormal.IsAlmostEqualTo( -XYZ.BasisZ ) ) continue ;
-        if ( ( null == bottomFace ) || ( bottomFace.Origin.Z > pf.Origin.Z ) ) {
-          bottomFace = pf ;
-        }
-      }
-
-      return bottomFace ;
-    }
-
-    private void ExecuteWallEnvelope( ExternalCommandData commandData )
-    {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
+      var document = envelopeSymbol.Document ;
       var allWalls = ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<Wall>( document, BuiltInCategory.OST_Walls ).ToList() ;
 
-      var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       foreach ( var wallInstance in allWalls ) {
         var height = wallInstance.get_Parameter( BuiltInParameter.WALL_USER_HEIGHT_PARAM ).AsDouble() ;
         var width = wallInstance.WallType.Width ;
@@ -203,28 +180,23 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       }
     }
 
-    private void ExecuteColumnEnvelope( ExternalCommandData commandData )
+    private void ExecuteColumnEnvelope( FamilySymbol envelopeSymbol )
     {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
+      var document = envelopeSymbol.Document ;
       var allColumns = ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<FamilyInstance>( document, BuiltInCategory.OST_Columns ).ToList() ;
       allColumns.AddRange( ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<FamilyInstance>( document, BuiltInCategory.OST_StructuralColumns ).ToList() ) ;
 
       var option = new Options() ;
-      var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       allColumns.ForEach( col => CreateEnvelopeFromInstance( col, envelopeSymbol, option, "COLUMN_ENVELOPE" ) ) ;
     }
 
-    private void ExecuteBeamEnvelope( ExternalCommandData commandData )
+    private void ExecuteBeamEnvelope( FamilySymbol envelopeSymbol )
     {
-      var uiDocument = commandData.Application.ActiveUIDocument ;
-      var document = uiDocument.Document ;
+      var document = envelopeSymbol.Document ;
       var allBeams = ObstacleGeneration.GetAllElementInCurrentAndLinkDocument<FamilyInstance>( document, BuiltInCategory.OST_StructuralFraming ).ToList() ;
 
-      //Filter beam not XY direction and Other Framing with multi layers
       var option = new Options() ;
       var filterBeams = allBeams.Where( b => b.FilterBeamWithXyDirection() ).Where( b => b.FilterBeamUniqueSolid( option ) ).ToList() ;
-      var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       filterBeams.ForEach( beam => CreateEnvelopeFromInstance( beam, envelopeSymbol, option, "BEAM_ENVELOPE" ) ) ;
     }
 
@@ -254,6 +226,21 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
       envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( comment ) ;
       return envelopeInstance ;
+    }
+
+    private PlanarFace? GetBottomFace( Solid solid )
+    {
+      PlanarFace? bottomFace = null ;
+      var faces = solid.Faces ;
+      foreach ( Face f in faces ) {
+        var pf = f as PlanarFace ;
+        if ( null == pf || ! pf.FaceNormal.IsAlmostEqualTo( -XYZ.BasisZ ) ) continue ;
+        if ( ( null == bottomFace ) || ( bottomFace.Origin.Z > pf.Origin.Z ) ) {
+          bottomFace = pf ;
+        }
+      }
+
+      return bottomFace ;
     }
   }
 }

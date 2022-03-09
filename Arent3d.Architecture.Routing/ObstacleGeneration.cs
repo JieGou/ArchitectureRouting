@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing
 {
   public class ObstacleGeneration
   {
-    public static List<List<Box3d>> ListRoomBox3dInCurrentProject = new() ;
+    private static List<List<Box3d>> _listRoomBox3dInCurrentProject = new() ;
 
     public static List<List<Box3d>> GetAllObstacleRoomBox( Document doc )
     {
@@ -23,22 +23,12 @@ namespace Arent3d.Architecture.Routing
       var livingListBox3d = CreateBox3dFromDividedRoom( livingRooms ) ;
       var otherListBox3d = CreateBox3dFromDividedRoom( otherRooms ) ;
 
-      ListRoomBox3dInCurrentProject = new List<List<Box3d>> { livingListBox3d, otherListBox3d } ;
-      return ListRoomBox3dInCurrentProject ;
+      _listRoomBox3dInCurrentProject = new List<List<Box3d>> { livingListBox3d, otherListBox3d } ;
+      return _listRoomBox3dInCurrentProject ;
     }
 
-    public static FilteredElementCollector? GetLinkedDocFilter( Document doc, Application app )
-    {
-      var firstLinkDoc = new FilteredElementCollector( doc ).OfCategory( BuiltInCategory.OST_RvtLinks ).ToElements().First() ;
-      foreach ( Document linkedDoc in app.Documents ) {
-        if ( linkedDoc.Title.Equals( firstLinkDoc.Name.Replace( ".rvt", "" ) ) )
-          return new FilteredElementCollector( linkedDoc ) ;
-      }
 
-      return null ;
-    }
-
-    public static IList<Room> GetAllRoomsInCurrentAndLinkDocument( Document doc )
+    private static IList<Room> GetAllRoomsInCurrentAndLinkDocument( Document doc )
     {
       var filterLinked = GetLinkedDocFilter( doc, doc.Application ) ;
       var filterCurrent = new FilteredElementCollector( doc ) ;
@@ -72,7 +62,18 @@ namespace Arent3d.Architecture.Routing
       return allElements ;
     }
 
-    public static List<Box3d> CreateBox3dFromDividedRoom( List<Room> list )
+    private static FilteredElementCollector? GetLinkedDocFilter( Document doc, Application app )
+    {
+      var firstLinkDoc = new FilteredElementCollector( doc ).OfCategory( BuiltInCategory.OST_RvtLinks ).ToElements().First() ;
+      foreach ( Document linkedDoc in app.Documents ) {
+        if ( linkedDoc.Title.Equals( firstLinkDoc.Name.Replace( ".rvt", "" ) ) )
+          return new FilteredElementCollector( linkedDoc ) ;
+      }
+
+      return null ;
+    }
+
+    private static List<Box3d> CreateBox3dFromDividedRoom( List<Room> list )
     {
       var listOut = new List<Box3d>() ;
       var option = new SpatialElementBoundaryOptions() ;
@@ -85,7 +86,7 @@ namespace Arent3d.Architecture.Routing
           var bb = room.get_BoundingBox( null ) ;
           var lenghtMaxY = bb.Max.Y - bb.Min.Y ;
 
-          var curves = room!.GetBoundarySegments( option ).First().Select( x => x.GetCurve() ).Cast<Line>().ToList() ;
+          var curves = room.GetBoundarySegments( option ).First().Select( x => x.GetCurve() ).Cast<Line>().ToList() ;
           var curvesFix = GeoExtension.FixDiagonalLines( curves, lenghtMaxY * 2 ) ;
 
           //Joined unnecessary segments 
@@ -112,12 +113,12 @@ namespace Arent3d.Architecture.Routing
           //distinct points
           var comparer = new XyzComparer() ;
           var distinctPoints = allConnerPoints.Distinct( comparer ).ToList() ;
-          var dic = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
+          var dicGroupByX = distinctPoints.GroupBy( x => Math.Round( x.X, 4 ) ).OrderBy( d => d.Key ).Where( d => d.ToList().Count > 1 ).ToDictionary( x => x.Key, g => g.ToList() ) ;
 
           //Find out the rectangular
-          for ( var i = 0 ; i < dic.Count - 1 ; i++ ) {
-            var l1 = dic[ dic.Keys.ToList()[ i ] ] ;
-            var l2 = dic[ dic.Keys.ToList()[ i + 1 ] ] ;
+          for ( var i = 0 ; i < dicGroupByX.Count - 1 ; i++ ) {
+            var l1 = dicGroupByX[ dicGroupByX.Keys.ToList()[ i ] ] ;
+            var l2 = dicGroupByX[ dicGroupByX.Keys.ToList()[ i + 1 ] ] ;
             l1.AddRange( l2 ) ;
             var recBox = GeoExtension.FindRectangularBox( l1, GeoExtension.GetAllXLine( curvesFix ), lenghtMaxY * 2, height ) ;
             listOut.AddRange( recBox ) ;
@@ -133,7 +134,7 @@ namespace Arent3d.Architecture.Routing
 
     public static void ShowRoomBox( Document document )
     {
-      ListRoomBox3dInCurrentProject.ForEach( list => list.ForEach( recBox => { CreateBoxGenericModelInPlace( recBox.Min.ToXYZRaw(), recBox.Max.ToXYZRaw(), document ) ; } ) ) ;
+      _listRoomBox3dInCurrentProject.ForEach( list => list.ForEach( recBox => { CreateBoxGenericModelInPlace( recBox.Min.ToXYZRaw(), recBox.Max.ToXYZRaw(), document ) ; } ) ) ;
     }
 
     private static ElementId CreateBoxGenericModelInPlace( XYZ min, XYZ max, Document doc )
@@ -280,16 +281,18 @@ namespace Arent3d.Architecture.Routing
       var allLineY = GetAllYLine( lines ) ;
       var diagLines = lines.Except( allLineX ).Except( allLineY ).ToList() ;
       if ( ! diagLines.Any() ) return lines ;
+
       var listOut = new List<Line>() ;
       listOut.AddRange( allLineX ) ;
       listOut.AddRange( allLineY ) ;
+
       foreach ( var line in diagLines ) {
         var lowerPoint = line.LowerPoint() ;
         var upperPoint = line.UpperPoint() ;
 
         var lineDown = Line.CreateBound( lowerPoint, new XYZ( lowerPoint.X, lowerPoint.Y - lengthEx, lowerPoint.Z ) ) ;
         var allXCheck = allLineX.Where( x => Math.Abs( x.Origin.Y - lowerPoint.Y ) > 0.0001 ).ToList() ;
-        var (intersected, result) = lineDown.CheckIntersectPoint( allXCheck ) ;
+        var (intersected, _) = lineDown.CheckIntersectPoint( allXCheck ) ;
 
         if ( intersected ) {
           var lineNew = Line.CreateBound( upperPoint, new XYZ( upperPoint.X, lowerPoint.Y, upperPoint.Z ) ) ;
@@ -338,6 +341,7 @@ namespace Arent3d.Architecture.Routing
             var listYIntersected = points.Select( x => Math.Round( x.Y, 6 ) ).ToList() ;
             var listByY = listSort.Where( x => listYIntersected.Contains( Math.Round( x.Key, 6 ) ) ).OrderBy( x => x.Key ).ToList() ;
             if ( listByY.Count < 2 ) return listOut ;
+
             var splitList = listByY.Select( ( x, i ) => new { Index = i, Value = x } ).GroupBy( x => x.Index / 2 ).Select( x => x.Select( v => v.Value ).ToList() ).ToList() ;
             splitList.ForEach( listItem =>
             {
