@@ -111,7 +111,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
             if ( null == FlexDuctType )
               MessageBox.Show( "Not found the flex duct type!" ) ;
             else {
-              var (canParse, diameter) = TryParseDiamater( Diameter ) ;
+              var (canParse, diameter) = TryParseDiameter( Diameter ) ;
               if ( ! canParse )
                 MessageBox.Show( "The diameter is invalid!" ) ;
               else {
@@ -150,7 +150,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
 
     #region Methods
 
-    private (bool CanParse, double Diameter) TryParseDiamater( string? diameter )
+    private (bool CanParse, double Diameter) TryParseDiameter( string? diameter )
     {
       if ( DisplayUnit == DisplayUnit.METRIC )
         return ( double.TryParse( diameter?.Replace( "mm", "" ).Replace( "MM", "" ).Trim(), out double value ), value.MillimetersToRevitUnits() ) ;
@@ -158,7 +158,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
         return ( double.TryParse( diameter?.Trim(), out double value ), UnitUtils.ConvertFromInternalUnits( value, DisplayUnitTypes.Inches ) ) ;
     }
 
-    private double SuggestionDiameter( IList<Connector> connectors )
+    private double SuggestionDiameter( IEnumerable<Connector> connectors )
     {
       var values = new List<double>() ;
 

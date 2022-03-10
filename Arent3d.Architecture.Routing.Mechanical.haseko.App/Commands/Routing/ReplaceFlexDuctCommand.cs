@@ -38,9 +38,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           return Result.Cancelled ;
         }
 
-        var (isContinuousConnected, mesage, connectorRefs, points) = IsContinuousConnected( selectedElements ) ;
+        var (isContinuousConnected, msg  , connectorRefs, points) = IsContinuousConnected( selectedElements ) ;
         if ( ! isContinuousConnected ) {
-          MessageBox.Show( mesage ) ;
+          MessageBox.Show( msg  ) ;
           return Result.Cancelled ;
         }
 
@@ -65,11 +65,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var points = new List<(XYZ, XYZ)>() ;
 
       var connectorManagers = GetConnectorManagers( elements ) ;
-      if ( connectorManagers.Count == 0 )
-        return ( false, "Not found the connectors!", connectorRefs, points ) ;
-
-      if ( connectorManagers.Count == 1 )
-        if ( connectorManagers[ 0 ].Connectors.Size != 2 )
+      if ( connectorManagers.Count <= 1 )
+        if ( !connectorManagers.Any() || connectorManagers[ 0 ].Connectors.Size != 2 )
           return ( false, "The number of the connectors is not satisfied!", connectorRefs, points ) ;
         else
           return ( true, string.Empty, connectorRefs, new List<(XYZ, XYZ)>() { ( connectorManagers[ 0 ].Lookup( 0 ).Origin, connectorManagers[ 0 ].Lookup( 0 ).CoordinateSystem.BasisZ ), ( connectorManagers[ 0 ].Lookup( 1 ).Origin, connectorManagers[ 0 ].Lookup( 1 ).CoordinateSystem.BasisZ ) } ) ;
@@ -105,16 +102,16 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       }
     }
 
-    private List<Connector> GetInsideConnecteds( IList<Connector> connecteds, IList<Element> selectedElements )
+    private List<Connector> GetInsideConnecteds( IList<Connector> connectedConnectors, IList<Element> selectedElements )
     {
       var insideConnecteds = new List<Connector>() ;
 
-      foreach ( var connected in connecteds ) {
-        var conRefs = GetConnectorRefs( connected ) ;
-        var otherElements = selectedElements.Where( x => x.Id != connected.Owner.Id ) ;
+      foreach ( var connectedConnector in connectedConnectors ) {
+        var conRefs = GetConnectorRefs( connectedConnector ) ;
+        var otherElements = selectedElements.Where( x => x.Id != connectedConnector.Owner.Id ) ;
         foreach ( var element in otherElements ) {
           if ( conRefs.Any( x => x.Owner.Id == element.Id ) ) {
-            insideConnecteds.Add( connected ) ;
+            insideConnecteds.Add( connectedConnector ) ;
             break ;
           }
         }

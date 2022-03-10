@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Replace Flex Duct" SizeToContent="WidthAndHeight"
         Height="Auto" Width="Auto" x:Name="WdReplaceFlexDuct" Topmost="True"
-        WindowStartupLocation="Manual" UseLayoutRounding="True" ResizeMode="NoResize">
+        WindowStartupLocation="CenterScreen" UseLayoutRounding="True" ResizeMode="NoResize">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
