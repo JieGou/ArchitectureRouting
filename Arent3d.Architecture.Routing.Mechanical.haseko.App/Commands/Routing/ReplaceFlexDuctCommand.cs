@@ -31,11 +31,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           return Result.Cancelled ;
         }
         
-        var filter = new ElementMulticategoryFilter(new List<BuiltInCategory>()
-        {
-          BuiltInCategory.OST_DuctCurves,
-          BuiltInCategory.OST_DuctFitting
-        }) ;
+        var filter = new ElementMulticategoryFilter(BuiltInCategorySets.Ducts) ;
         var selectedElements = new FilteredElementCollector( document, selection.GetElementIds() ).WherePasses( filter ).ToElements() ;
         if ( ! selectedElements.Any() ) {
           MessageBox.Show( "Please, select the duct elements!" ) ;
