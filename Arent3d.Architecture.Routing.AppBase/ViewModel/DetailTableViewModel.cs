@@ -15,6 +15,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         public  bool IsCreateDetailTableOnFloorPlanView { get; set; }
 
+        public  bool IsCancelCreateDetailTable { get; set; }
+
         public ICommand SaveDetailTableCommand { get; set; }
 
         public ICommand SaveAndCreateDetailTableCommand { get; set; }
@@ -71,8 +73,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         private void SaveAndCreateDetailTable()
         {
-            SaveDetailTable() ;
-            IsCreateDetailTableOnFloorPlanView = true ;
+            if ( ! IsCancelCreateDetailTable ) {
+                SaveDetailTable() ;
+                IsCreateDetailTableOnFloorPlanView = true ;
+            }
         }
     }
 }
