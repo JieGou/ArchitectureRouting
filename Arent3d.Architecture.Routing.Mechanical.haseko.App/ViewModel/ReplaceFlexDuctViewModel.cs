@@ -7,9 +7,9 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using System.Linq ;
 using System.Windows ;
+using System.Windows.Controls ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
 {
@@ -19,7 +19,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
 
     private Document _document ;
     private ( List<Connector> ConnectorRefs, List<(XYZ Origin, XYZ Direction)> Points, List<Element> DeletedElements) _data ;
-    private const string Title = "Arent" ;
     private DisplayUnit DisplayUnit => _document.DisplayUnitSystem ;
 
     private ObservableCollection<FlexDuctType>? _flexDuctTypes ;
@@ -109,13 +108,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
       {
         return new RelayCommand<Window>( ( wd ) => { return null != wd ; }, ( wd ) =>
         {
+          wd.Close();
           try {
             if ( null == FlexDuctType )
-              TaskDialog.Show( Title, "Not found the flex duct type!" ) ;
+              MessageBox.Show( "Not found the flex duct type!" ) ;
             else {
               var (canParse, diameter) = TryParseDiamater( Diameter ) ;
               if(!canParse)
-                TaskDialog.Show( Title, "The diameter is invalid!" ) ;
+                MessageBox.Show( "The diameter is invalid!" ) ;
               else {
                 
                 using Transaction transaction = new Transaction( _document ) ;
@@ -139,13 +139,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
                 _document.Delete( _data.DeletedElements.Select( x => x.Id ).ToList() ) ;
                   
                 transaction.Commit() ;
-                  
-                wd.Close();
               }
             }
           }
           catch ( Exception exception ) {
-            TaskDialog.Show( Title, exception.Message ) ;
+            MessageBox.Show( exception.Message ) ;
           }
         } ) ;
       }

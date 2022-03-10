@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms ;
 using Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel ;
@@ -16,10 +17,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.ReplaceFlexDuctCommand", DefaultString = "Change Duct" )]
-  [Image( "resources/change-duct.png", ImageType = Revit.UI.ImageType.Large )]
+  [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
   public class ReplaceFlexDuctCommand : IExternalCommand
   {
-    private const string Title = "Arent" ;
     private const string GeneralNotify = "The selected elements are not continuously connected!" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
@@ -34,14 +34,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         var elements = selection.PickObjects( ObjectType.Element, SelectionFilter.GetElementFilter( filter ) ).Select( r => document.GetElement( r ) )
           .ToList() ;
 
-        if ( elements.Count() == 0 ) {
-          TaskDialog.Show( Title, "Please select again!" ) ;
+        if ( ! elements.Any() ) {
+          MessageBox.Show( "Please select again!" ) ;
           return Result.Cancelled ;
         }
-        
+
         var (isContinuousConnected, mesage, connectorRefs, points) = IsContinuousConnected( elements ) ;
         if ( ! isContinuousConnected ) {
-          TaskDialog.Show( Title, mesage, TaskDialogCommonButtons.Ok ) ;
+          MessageBox.Show( mesage ) ;
           return Result.Cancelled ;
         }
 
@@ -60,7 +60,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       }
     }
 
-    private (bool IsValid, string Message, List<Connector> ConnectorRefs, List<(XYZ Origin, XYZ Direction)> Points) IsContinuousConnected( IList<Element> elements )
+    private (bool IsValid, string Message, List<Connector> ConnectorRefs, List<(XYZ Origin, XYZ Direction)> Points) IsContinuousConnected(
+      IList<Element> elements )
     {
       var connectorRefs = new List<Connector>() ;
       var points = new List<(XYZ, XYZ)>() ;
@@ -76,8 +77,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           return ( true, string.Empty, connectorRefs,
             new List<(XYZ, XYZ)>()
             {
-              (connectorManagers[ 0 ].Lookup( 0 ).Origin, connectorManagers[ 0 ].Lookup( 0 ).CoordinateSystem.BasisZ), 
-              (connectorManagers[ 0 ].Lookup( 1 ).Origin, connectorManagers[ 0 ].Lookup( 1 ).CoordinateSystem.BasisZ)
+              ( connectorManagers[ 0 ].Lookup( 0 ).Origin, connectorManagers[ 0 ].Lookup( 0 ).CoordinateSystem.BasisZ ),
+              ( connectorManagers[ 0 ].Lookup( 1 ).Origin, connectorManagers[ 0 ].Lookup( 1 ).CoordinateSystem.BasisZ )
             } ) ;
 
       var endConnectors = new List<(List<Connector> Connecteds, List<Connector> UnConnects)>() ;
@@ -87,8 +88,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         if ( connectors.Connecteds.Count == 0 )
           return ( false, GeneralNotify, connectorRefs, points ) ;
         else {
-          var insideConnecteds = GetInsideConnecteds(connectors.Connecteds, elements) ;
-          
+          var insideConnecteds = GetInsideConnecteds( connectors.Connecteds, elements ) ;
+
           if ( insideConnecteds.Count == 0 )
             return ( false, GeneralNotify, connectorRefs, points ) ;
           else if ( insideConnecteds.Count == 1 ) {
@@ -112,24 +113,24 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       }
     }
 
-    private List<Connector> GetInsideConnecteds(IList<Connector> connecteds, IList<Element> selectedElements)
+    private List<Connector> GetInsideConnecteds( IList<Connector> connecteds, IList<Element> selectedElements )
     {
       var insideConnecteds = new List<Connector>() ;
-      
+
       foreach ( var connected in connecteds ) {
         var conRefs = GetConnectorRefs( connected ) ;
         var otherElements = selectedElements.Where( x => x.Id != connected.Owner.Id ) ;
         foreach ( var element in otherElements ) {
-          if(conRefs.Any(x => x.Owner.Id == element.Id))
-            insideConnecteds.Add(connected);
+          if ( conRefs.Any( x => x.Owner.Id == element.Id ) )
+            insideConnecteds.Add( connected ) ;
         }
       }
 
       return insideConnecteds ;
     }
-    
-    private void GetEndRefConnector( List<Connector> connecteds, List<Connector> unConnects, 
-      ref List<Connector> connectors, ref List<(XYZ, XYZ)> points )
+
+    private void GetEndRefConnector( List<Connector> connecteds, List<Connector> unConnects, ref List<Connector> connectors,
+      ref List<(XYZ, XYZ)> points )
     {
       if ( connecteds.Count > 0 ) {
         var connectedRefs = GetConnectors( connecteds[ 0 ].AllRefs ).Connecteds ;
@@ -137,7 +138,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           connectors.Add( connectedRefs[ 0 ] ) ;
       }
       else if ( unConnects.Count > 0 ) {
-        points.Add( (unConnects[ 0 ].Origin, unConnects[ 0 ].CoordinateSystem.BasisZ) ) ;
+        points.Add( ( unConnects[ 0 ].Origin, unConnects[ 0 ].CoordinateSystem.BasisZ ) ) ;
       }
     }
 

@@ -86,8 +86,6 @@
         <Resource Include="resources\Plans.png" />
         <Resource Include="resources\ReplaceFromTo.png" />
         <Resource Include="resources\RerouteAll.png" />
-        <None Remove="resources\change-duct.png" />
-        <Resource Include="resources\change-duct.png" />
     </ItemGroup>
 
     <ItemGroup>
