@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private CeedViewModel? _usingCeedModel ;
     private string _ceedModelNumberSearch ;
     private string _modelNumberSearch ;
-    private bool _showCeedModelNumberState ;
+    private bool _isShowCeedModelNumber ;
     public string SelectedDeviceSymbol ;
     public string SelectedCondition ;
     public string SelectedCeedCode ;
@@ -53,16 +53,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedCeedCode = string.Empty ;
       SelectedModelNumber = string.Empty ;
       SelectedFloorPlanType = string.Empty ;
-      _showCeedModelNumberState = false ;
+      _isShowCeedModelNumber = false ;
 
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeedStorable != null ) {
         LoadData( oldCeedStorable ) ;
-        _showCeedModelNumberState = oldCeedStorable.ShowCeedModelNumberState ;
+        _isShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
       }
       
       _ceedModelNumberColumn = DtGrid.Columns.SingleOrDefault( c => c.Header.ToString() == HeaderCeedModelNumberColumn ) ;
-      CbShowCeedModelNumber.IsChecked = _showCeedModelNumberState ;
+      CbShowCeedModelNumber.IsChecked = _isShowCeedModelNumber ;
 
       Style rowStyle = new Style( typeof( DataGridRow ) ) ;
       rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent,
@@ -245,7 +245,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         _ceedModelNumberColumn.Visibility = Visibility.Visible ;
       LbCeedModelNumbers.Visibility = Visibility.Visible ;
       CmbCeedModelNumbers.Visibility = Visibility.Visible ;
-      _showCeedModelNumberState = true ;
+      _isShowCeedModelNumber = true ;
     }
 
     private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
@@ -254,7 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         _ceedModelNumberColumn.Visibility = Visibility.Hidden ;
       LbCeedModelNumbers.Visibility = Visibility.Hidden ;
       CmbCeedModelNumbers.Visibility = Visibility.Hidden ;
-      _showCeedModelNumberState = false ;
+      _isShowCeedModelNumber = false ;
     }
 
     private void LoadData( CeedViewModel ceedViewModel )
@@ -270,7 +270,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       try {
         using Transaction t = new Transaction( _document, "Save data" ) ;
         t.Start() ;
-        ceedStorable.ShowCeedModelNumberState = _showCeedModelNumberState ;
+        ceedStorable.IsShowCeedModelNumber = _isShowCeedModelNumber ;
         ceedStorable.Save() ;
         t.Commit() ;
       }
