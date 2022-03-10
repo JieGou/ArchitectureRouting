@@ -59,8 +59,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       }
     }
 
-    private (bool IsValid, string Message, List<Connector> ConnectorRefs, List<(XYZ Origin, XYZ Direction)> Points) IsContinuousConnected(
-      IList<Element> elements )
+    private (bool IsValid, string Message, List<Connector> ConnectorRefs, List<(XYZ Origin, XYZ Direction)> Points) IsContinuousConnected( IList<Element> elements )
     {
       var connectorRefs = new List<Connector>() ;
       var points = new List<(XYZ, XYZ)>() ;
@@ -73,12 +72,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         if ( connectorManagers[ 0 ].Connectors.Size != 2 )
           return ( false, "The number of the connectors is not satisfied!", connectorRefs, points ) ;
         else
-          return ( true, string.Empty, connectorRefs,
-            new List<(XYZ, XYZ)>()
-            {
-              ( connectorManagers[ 0 ].Lookup( 0 ).Origin, connectorManagers[ 0 ].Lookup( 0 ).CoordinateSystem.BasisZ ),
-              ( connectorManagers[ 0 ].Lookup( 1 ).Origin, connectorManagers[ 0 ].Lookup( 1 ).CoordinateSystem.BasisZ )
-            } ) ;
+          return ( true, string.Empty, connectorRefs, new List<(XYZ, XYZ)>() { ( connectorManagers[ 0 ].Lookup( 0 ).Origin, connectorManagers[ 0 ].Lookup( 0 ).CoordinateSystem.BasisZ ), ( connectorManagers[ 0 ].Lookup( 1 ).Origin, connectorManagers[ 0 ].Lookup( 1 ).CoordinateSystem.BasisZ ) } ) ;
 
       var endConnectors = new List<(List<Connector> Connecteds, List<Connector> UnConnects)>() ;
       foreach ( var connectorManager in connectorManagers ) {
@@ -104,8 +98,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         foreach ( var endConnector in endConnectors )
           GetEndRefConnector( endConnector.Connecteds, endConnector.UnConnects, ref connectorRefs, ref points ) ;
 
-        if ( ( connectorRefs.Count == 2 && points.Count == 0 ) || ( connectorRefs.Count == 1 && points.Count == 1 ) ||
-             ( connectorRefs.Count == 0 && points.Count == 2 ) )
+        if ( ( connectorRefs.Count == 2 && points.Count == 0 ) || ( connectorRefs.Count == 1 && points.Count == 1 ) || ( connectorRefs.Count == 0 && points.Count == 2 ) )
           return ( true, string.Empty, connectorRefs, points ) ;
 
         return ( false, "The flex duct cannot create!", connectorRefs, points ) ;
@@ -130,8 +123,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       return insideConnecteds ;
     }
 
-    private void GetEndRefConnector( List<Connector> connecteds, List<Connector> unConnects, ref List<Connector> connectors,
-      ref List<(XYZ, XYZ)> points )
+    private void GetEndRefConnector( List<Connector> connecteds, List<Connector> unConnects, ref List<Connector> connectors, ref List<(XYZ, XYZ)> points )
     {
       if ( connecteds.Count > 0 ) {
         var connectedRefs = GetConnectorRefs( connecteds[ 0 ] ).Where( x => x.IsConnected ).ToList() ;

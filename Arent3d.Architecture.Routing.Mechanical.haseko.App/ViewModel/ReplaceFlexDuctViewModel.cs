@@ -27,8 +27,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
       get
       {
         if ( null == _flexDuctTypes )
-          _flexDuctTypes = new ObservableCollection<FlexDuctType>( _document.GetAllElements<FlexDuctType>()
-            .Where( x => x.Shape == ConnectorProfileType.Round ) ) ;
+          _flexDuctTypes = new ObservableCollection<FlexDuctType>( _document.GetAllElements<FlexDuctType>().Where( x => x.Shape == ConnectorProfileType.Round ) ) ;
 
         return _flexDuctTypes ;
       }
@@ -88,8 +87,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
 
     #endregion
 
-    public ReplaceFlexDuctViewModel( Document document,
-      ( List<Connector> ConnectorRefs, List<(XYZ, XYZ)> Points, IList<Element> DeletedElements) data )
+    public ReplaceFlexDuctViewModel( Document document, ( List<Connector> ConnectorRefs, List<(XYZ, XYZ)> Points, IList<Element> DeletedElements) data )
     {
       _document = document ;
       _data = data ;
