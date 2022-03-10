@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
     #region Members
 
     private Document _document ;
-    private ( List<Connector> ConnectorRefs, List<(XYZ Origin, XYZ Direction)> Points, List<Element> DeletedElements) _data ;
+    private ( List<Connector> ConnectorRefs, List<(XYZ Origin, XYZ Direction)> Points, IList<Element> DeletedElements) _data ;
     private DisplayUnit DisplayUnit => _document.DisplayUnitSystem ;
 
     private ObservableCollection<FlexDuctType>? _flexDuctTypes ;
@@ -89,7 +89,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
     #endregion
 
     public ReplaceFlexDuctViewModel( Document document,
-      ( List<Connector> ConnectorRefs, List<(XYZ, XYZ)> Points, List<Element> DeletedElements) data)
+      ( List<Connector> ConnectorRefs, List<(XYZ, XYZ)> Points, IList<Element> DeletedElements) data)
     {
       _document = document ;
       _data = data ;

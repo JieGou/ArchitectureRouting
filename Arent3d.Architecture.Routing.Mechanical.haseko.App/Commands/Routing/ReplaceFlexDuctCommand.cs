@@ -2,7 +2,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
-using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms ;
 using Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel ;
 using Arent3d.Revit.UI ;
@@ -10,7 +9,6 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.UI ;
-using Autodesk.Revit.UI.Selection ;
 using MoreLinq.Extensions ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
@@ -28,24 +26,29 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var selection = commandData.Application.ActiveUIDocument.Selection ;
 
       try {
-        Func<Element, bool> filter = f =>
-          f.Category.Id.IntegerValue == (int) BuiltInCategory.OST_DuctCurves || f.Category.Id.IntegerValue == (int) BuiltInCategory.OST_DuctFitting ;
-
-        var elements = selection.PickObjects( ObjectType.Element, SelectionFilter.GetElementFilter( filter ) ).Select( r => document.GetElement( r ) )
-          .ToList() ;
-
-        if ( ! elements.Any() ) {
-          MessageBox.Show( "Please select again!" ) ;
+        if( !selection.GetElementIds().Any() ){
+          MessageBox.Show( "Please, select the duct elements before running the tool!" ) ;
+          return Result.Cancelled ;
+        }
+        
+        var filter = new ElementMulticategoryFilter(new List<BuiltInCategory>()
+        {
+          BuiltInCategory.OST_DuctCurves,
+          BuiltInCategory.OST_DuctFitting
+        }) ;
+        var selectedElements = new FilteredElementCollector( document, selection.GetElementIds() ).WherePasses( filter ).ToElements() ;
+        if ( ! selectedElements.Any() ) {
+          MessageBox.Show( "Please, select the duct elements!" ) ;
           return Result.Cancelled ;
         }
 
-        var (isContinuousConnected, mesage, connectorRefs, points) = IsContinuousConnected( elements ) ;
+        var (isContinuousConnected, mesage, connectorRefs, points) = IsContinuousConnected( selectedElements ) ;
         if ( ! isContinuousConnected ) {
           MessageBox.Show( mesage ) ;
           return Result.Cancelled ;
         }
 
-        var viewModel = new ReplaceFlexDuctViewModel( document, ( connectorRefs, points, elements ) ) ;
+        var viewModel = new ReplaceFlexDuctViewModel( document, ( connectorRefs, points, selectedElements ) ) ;
         var replaceFlexDuctView = new ReplaceFlexDuctView() { DataContext = viewModel } ;
         replaceFlexDuctView.ShowDialog() ;
 
@@ -121,8 +124,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         var conRefs = GetConnectorRefs( connected ) ;
         var otherElements = selectedElements.Where( x => x.Id != connected.Owner.Id ) ;
         foreach ( var element in otherElements ) {
-          if ( conRefs.Any( x => x.Owner.Id == element.Id ) )
+          if ( conRefs.Any( x => x.Owner.Id == element.Id ) ) {
             insideConnecteds.Add( connected ) ;
+            break;
+          }
         }
       }
 
@@ -133,7 +138,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       ref List<(XYZ, XYZ)> points )
     {
       if ( connecteds.Count > 0 ) {
-        var connectedRefs = GetConnectors( connecteds[ 0 ].AllRefs ).Connecteds ;
+        var connectedRefs = GetConnectorRefs( connecteds[ 0 ] ).Where(x => x.IsConnected).ToList() ;
         if ( connectedRefs.Count > 0 )
           connectors.Add( connectedRefs[ 0 ] ) ;
       }
