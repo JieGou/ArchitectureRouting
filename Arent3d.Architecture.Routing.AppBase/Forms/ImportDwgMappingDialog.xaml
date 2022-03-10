@@ -5,16 +5,17 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
-        d:DesignHeight="600" d:DesignWidth="600" Height="600" Width="625">
+        ResizeMode="NoResize" Title="Load DWG"
+        Height="Auto" Width="620">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="55"/>
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0" >
-            <Grid Height="545" DockPanel.Dock="Top" HorizontalAlignment="Left" Width="625">
-                <DataGrid x:Name="grdMappings"
+        <Grid Grid.Row="1" >
+            <Grid DockPanel.Dock="Top" HorizontalAlignment="Left" Width="620">
+                <DataGrid x:Name="grdMappings" Height="Auto" Background="White"
                           ItemsSource="{Binding ImportDwgMappingModels}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -63,7 +64,7 @@
                 </DataGrid>
             </Grid>
         </Grid>
-        <Grid Grid.Row="1" Height="55">
+        <Grid Grid.Row="2" Height="55">
             <Grid DockPanel.Dock="Right" HorizontalAlignment="Right">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="130" />
