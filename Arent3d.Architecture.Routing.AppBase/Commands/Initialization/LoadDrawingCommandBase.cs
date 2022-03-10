@@ -53,20 +53,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             ThisViewOnly = false,
             VisibleLayersOnly = false
           } ;
-          /*var firstMappingModel = completeImportDwgMappingModels.First() ;
-          var processFirstFloorTrans = new Transaction( doc ) ;
-          processFirstFloorTrans.SetName("Import");    
-          processFirstFloorTrans.Start();
-          Level firstFloorLevel = actView.GenLevel;
-          firstFloorLevel.Elevation = firstMappingModel.FloorHeight ;
-          firstFloorLevel.Name = "Level " + firstMappingModel.FloorName ;
-          actView.Name = firstMappingModel.FloorName ;
-          if(!string.IsNullOrEmpty(firstMappingModel.FullFilePath)) doc.Import( firstMappingModel.FullFilePath, dwgImportOptions, actView, out ElementId firstElementId ) ;
-          processFirstFloorTrans.Commit();*/
-
           var viewFamily = new FilteredElementCollector(doc).OfClass(typeof(ViewFamilyType)).Cast<ViewFamilyType>().First(x => x.ViewFamily == ViewFamily.FloorPlan);
           var allCurrentLevels = new FilteredElementCollector( doc ).OfClass( typeof( Level ) ).ToList() ;
           var allCurrentViewPlans = new FilteredElementCollector( doc ).OfClass( typeof( ViewPlan ) ).ToList() ;
+          ViewPlan? firstViewPlan = null ;
+          #region  Import
           var importTrans = new Transaction( doc ) ;
           importTrans.SetName("Import");
           importTrans.Start();
@@ -84,12 +75,35 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                 viewPlan = ViewPlan.Create(doc, viewFamily.Id , importDwgLevel.Id);
                 viewPlan.Name = importDwgMappingModel.FloorName;
               }
-              /*var columnSymbolicOffset = viewPlan.get_Parameter( BuiltInParameter.VIEW_SLANTED_COLUMN_SYMBOL_OFFSET ).AsValueString();
-              importDwgLevel.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight / Double.Parse(columnSymbolicOffset) );*/
+              importDwgLevel.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits());
               doc.Import( importDwgMappingModel.FullFilePath, dwgImportOptions, viewPlan, out ElementId importElementId ) ;
+              if ( i == 0 ) firstViewPlan = viewPlan ;
             }
           }
           importTrans.Commit();
+          #endregion
+
+          #region Create 3D view
+
+          if(firstViewPlan != null) commandData.Application.ActiveUIDocument.ActiveView = firstViewPlan;
+          var create3DTrans = new Transaction( doc ) ;
+          create3DTrans.SetName("Import");
+          create3DTrans.Start();
+          var threeDimensionalViewFamilyType = new FilteredElementCollector(doc).OfClass(typeof(ViewFamilyType)).ToElements()
+            .Cast<ViewFamilyType>().FirstOrDefault(vft => vft.ViewFamily == ViewFamily.ThreeDimensional);
+          if ( threeDimensionalViewFamilyType != null ) {
+            var allCurrent3DView = new FilteredElementCollector( doc ).OfClass( typeof( View3D ) ).ToList() ;
+            string view3DName = "3D ALL" ;
+            var current3DView = allCurrent3DView.FirstOrDefault( x => x.Name.Equals( view3DName ) ) ;
+            if(current3DView != null) doc.Delete( current3DView.Id ) ;
+            current3DView = View3D.CreateIsometric(doc, threeDimensionalViewFamilyType.Id);
+            current3DView.Name = view3DName ;
+          }
+
+          create3DTrans.Commit() ;
+
+          #endregion
+
         }
       }
       
