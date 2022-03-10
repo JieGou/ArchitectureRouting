@@ -26,12 +26,12 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var selection = commandData.Application.ActiveUIDocument.Selection ;
 
       try {
-        if( !selection.GetElementIds().Any() ){
+        if ( ! selection.GetElementIds().Any() ) {
           MessageBox.Show( "Please, select the duct elements before running the tool!" ) ;
           return Result.Cancelled ;
         }
-        
-        var filter = new ElementMulticategoryFilter(BuiltInCategorySets.Ducts) ;
+
+        var filter = new ElementMulticategoryFilter( BuiltInCategorySets.Ducts ) ;
         var selectedElements = new FilteredElementCollector( document, selection.GetElementIds() ).WherePasses( filter ).ToElements() ;
         if ( ! selectedElements.Any() ) {
           MessageBox.Show( "Please, select the duct elements!" ) ;
@@ -122,7 +122,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
         foreach ( var element in otherElements ) {
           if ( conRefs.Any( x => x.Owner.Id == element.Id ) ) {
             insideConnecteds.Add( connected ) ;
-            break;
+            break ;
           }
         }
       }
@@ -134,7 +134,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       ref List<(XYZ, XYZ)> points )
     {
       if ( connecteds.Count > 0 ) {
-        var connectedRefs = GetConnectorRefs( connecteds[ 0 ] ).Where(x => x.IsConnected).ToList() ;
+        var connectedRefs = GetConnectorRefs( connecteds[ 0 ] ).Where( x => x.IsConnected ).ToList() ;
         if ( connectedRefs.Count > 0 )
           connectors.Add( connectedRefs[ 0 ] ) ;
       }

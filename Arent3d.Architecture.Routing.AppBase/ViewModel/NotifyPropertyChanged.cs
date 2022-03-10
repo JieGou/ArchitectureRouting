@@ -5,18 +5,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class NotifyPropertyChanged : INotifyPropertyChanged
   {
-    public event PropertyChangedEventHandler? PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged ;
 
-    public virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    public virtual void OnPropertyChanged( [CallerMemberName] string? propertyName = null )
     {
-      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+      PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
     }
 
-    public static event PropertyChangedEventHandler? StaticPropertyChanged;
+    public static event PropertyChangedEventHandler? StaticPropertyChanged ;
 
-    public static void StaticOnPropertyChanged([CallerMemberName] string? propertyName = null)
+    public static void StaticOnPropertyChanged( [CallerMemberName] string? propertyName = null )
     {
-      StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs(propertyName));
+      StaticPropertyChanged?.Invoke( null, new PropertyChangedEventArgs( propertyName ) ) ;
     }
   }
 }

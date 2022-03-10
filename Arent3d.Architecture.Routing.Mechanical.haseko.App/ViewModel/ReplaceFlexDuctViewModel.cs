@@ -7,7 +7,6 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Mechanical ;
 using System.Linq ;
 using System.Windows ;
-using System.Windows.Controls ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 
@@ -77,6 +76,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
           var value = SuggestionDiameter( _data.ConnectorRefs ) ;
           _diameter = DisplayDiameter( value ) ;
         }
+
         return _diameter ??= Diameters.FirstOrDefault() ;
       }
       set
@@ -89,7 +89,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
     #endregion
 
     public ReplaceFlexDuctViewModel( Document document,
-      ( List<Connector> ConnectorRefs, List<(XYZ, XYZ)> Points, IList<Element> DeletedElements) data)
+      ( List<Connector> ConnectorRefs, List<(XYZ, XYZ)> Points, IList<Element> DeletedElements) data )
     {
       _document = document ;
       _data = data ;
@@ -108,36 +108,35 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
       {
         return new RelayCommand<Window>( ( wd ) => { return null != wd ; }, ( wd ) =>
         {
-          wd.Close();
+          wd.Close() ;
           try {
             if ( null == FlexDuctType )
               MessageBox.Show( "Not found the flex duct type!" ) ;
             else {
               var (canParse, diameter) = TryParseDiamater( Diameter ) ;
-              if(!canParse)
+              if ( ! canParse )
                 MessageBox.Show( "The diameter is invalid!" ) ;
               else {
-                
                 using Transaction transaction = new Transaction( _document ) ;
                 transaction.Start( "Change Flex Duct" ) ;
-                  
+
                 FlexDuct flexDuct ;
-                if ( _data.ConnectorRefs.Count == 2 ) 
+                if ( _data.ConnectorRefs.Count == 2 )
                   flexDuct = _document.Create.NewFlexDuct( _data.ConnectorRefs[ 0 ], _data.ConnectorRefs[ 1 ], FlexDuctType ) ;
                 else if ( _data.ConnectorRefs.Count == 1 ) {
-                  flexDuct = _document.Create.NewFlexDuct( _data.ConnectorRefs[ 0 ], _data.Points.Select(x => x.Origin).ToList(), FlexDuctType ) ;
+                  flexDuct = _document.Create.NewFlexDuct( _data.ConnectorRefs[ 0 ], _data.Points.Select( x => x.Origin ).ToList(), FlexDuctType ) ;
                   flexDuct.EndTangent = _data.Points[ 0 ].Direction ;
                 }
                 else {
-                  flexDuct = _document.Create.NewFlexDuct( _data.Points.Select(x => x.Origin).ToList(), FlexDuctType ) ;
+                  flexDuct = _document.Create.NewFlexDuct( _data.Points.Select( x => x.Origin ).ToList(), FlexDuctType ) ;
                   flexDuct.StartTangent = _data.Points[ 0 ].Direction.Negate() ;
                   flexDuct.EndTangent = _data.Points[ 1 ].Direction ;
                 }
-                  
+
                 flexDuct.get_Parameter( BuiltInParameter.RBS_CURVE_DIAMETER_PARAM ).Set( diameter ) ;
 
                 _document.Delete( _data.DeletedElements.Select( x => x.Id ).ToList() ) ;
-                  
+
                 transaction.Commit() ;
               }
             }
@@ -161,18 +160,17 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
         return ( double.TryParse( diameter?.Trim(), out double value ), UnitUtils.ConvertFromInternalUnits( value, DisplayUnitTypes.Inches ) ) ;
     }
 
-    private double SuggestionDiameter(IList<Connector> connectors )
+    private double SuggestionDiameter( IList<Connector> connectors )
     {
       var values = new List<double>() ;
 
       foreach ( var connector in connectors ) {
-        if(connector.Shape == ConnectorProfileType.Round)
-          values.Add(2 * connector.Radius);
-        else if (connector.Shape == ConnectorProfileType.Rectangular 
-                 || connector.Shape == ConnectorProfileType.Oval)
-          values.Add(Math.Min(connector.Width, connector.Height));
+        if ( connector.Shape == ConnectorProfileType.Round )
+          values.Add( 2 * connector.Radius ) ;
+        else if ( connector.Shape == ConnectorProfileType.Rectangular || connector.Shape == ConnectorProfileType.Oval )
+          values.Add( Math.Min( connector.Width, connector.Height ) ) ;
       }
-      
+
       return values.Min() ;
     }
 
@@ -183,6 +181,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
       else
         return $"{Math.Round( UnitUtils.ConvertFromInternalUnits( diameter, DisplayUnitTypes.Inches ) )}" ;
     }
+
     #endregion
   }
 }
