@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -23,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       var document = commandData.Application.ActiveUIDocument.Document ;
       try {
         using var transaction = new Transaction( document ) ;
-        transaction.Start( "Create structure envelope" ) ;
+        transaction.Start( "TransactionName.Commands.Routing.GenerateStructureEnvelopeCommand".GetAppStringByKeyOrDefault( "Generate Structure Envelope" ) ) ;
 
         //Need to update
         var envelopeSymbol = document.GetFamilySymbols( RoutingFamilyType.Envelope ).SingleOrDefault() ?? throw new InvalidOperationException() ;

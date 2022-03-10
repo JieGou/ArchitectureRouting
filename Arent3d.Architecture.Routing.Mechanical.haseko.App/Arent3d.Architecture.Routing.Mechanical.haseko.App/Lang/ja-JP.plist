@@ -79,6 +79,8 @@ FixedBopHeight</string>
     <key>Mechanical.haseko.App.Commands.Routing.AdjustDuctSizeCommand</key>
     <string>ダクト径
 自動調整</string>
+    <key>Mechanical.haseko.App.Commands.Routing.GenerateStructureEnvelopeCommand</key>
+    <string>障害物生成</string>
     <key>TransactionName.Commands.Initialization.Initialize</key>
     <string>自動ルーティングをセットアップ</string>
     <key>TransactionName.Commands.Initialization.CreateRoutingViews</key>
@@ -121,6 +123,8 @@ FixedBopHeight</string>
     <string>Route高さを変更</string>
     <key>TransactionName.Commands.Routing.AutoRoutingVav</key>
     <string>自動VAVsルーティング</string>
+    <key>TransactionName.Commands.Routing.GenerateStructureEnvelopeCommand</key>
+    <string>障害物生成</string>
     <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
     <string>自動ルーティング初期化エラー</string>
     <key>Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup</key>
