@@ -8,6 +8,7 @@ using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms ;
 using Arent3d.Architecture.Routing.Mechanical.haseko.App.Utils ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -32,20 +33,28 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
     protected override void AfterCommand( IDisposable? commandSpanResource )
     {
-      var res = MessageBox.Show( "PriorityBoxを表示しますか？", "通知", MessageBoxButton.OKCancel, MessageBoxImage.Information ) ;
-      if ( res == MessageBoxResult.OK ) {
+      var result = MessageBox.Show( "PriorityBoxを表示しますか？", "通知", MessageBoxButton.OKCancel, MessageBoxImage.Information ) ;
+      if ( result == MessageBoxResult.OK ) {
         if ( commandSpanResource is ExternalCommandData commandData ) {
           var document = commandData.Application.ActiveUIDocument.Document ;
-          
-          using var tran = new Transaction( document, "Create PriorityBox" ) ;
-          tran.Start() ;
+
+          using var transaction = new Transaction( document, "TransactionName.Commands.Routing.CreatePriorityBox".GetAppStringByKeyOrDefault( "Create PriorityBox" ) ) ;
+          transaction.Start() ;
           var collector = new FilteredElementCollector( document ) ;
           ElementCategoryFilter filterGen = new(BuiltInCategory.OST_GenericModel) ;
-          var allRoomBox = collector.WherePasses( filterGen ).WhereElementIsNotElementType().Where( r => r.LookupParameter( "Obstacle Name" ).AsString() == "ROOM_BOX" ).Select( x => x.Id ).ToList() ;
+          const string envelopeParameter = "Obstacle Name" ;
+          const string roomValueParam = "ROOM_BOX" ;
+
+          var allRoomBox = collector
+            .WherePasses( filterGen )
+            .WhereElementIsNotElementType()
+            .Where( r => r.LookupParameter( envelopeParameter ).AsString() == roomValueParam )
+            .Select( x => x.Id )
+            .ToList();
 
           if ( allRoomBox.Any() ) document.Delete( allRoomBox ) ;
           ObstacleGeneration.ShowRoomBox( document ) ;
-          tran.Commit() ;
+          transaction.Commit() ;
         }
       }
 
@@ -54,7 +63,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    protected override (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments ) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom )
+    protected override (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments
+      ) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult,
+        ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty,
+        MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom )
     {
       return ( PickCommandUtil.CreateRouteEndPoint( newPickResult ), null ) ;
     }

@@ -125,6 +125,8 @@ FixedBopHeight</string>
     <string>自動VAVsルーティング</string>
     <key>TransactionName.Commands.Routing.GenerateStructureEnvelopeCommand</key>
     <string>障害物生成</string>
+    <key>TransactionName.Commands.Routing.CreatePriorityBox</key>
+    <string>PriorityBoxを表示</string>
     <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
     <string>自動ルーティング初期化エラー</string>
     <key>Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup</key>

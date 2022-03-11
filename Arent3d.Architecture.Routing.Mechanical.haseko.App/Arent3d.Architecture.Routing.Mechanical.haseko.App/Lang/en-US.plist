@@ -126,6 +126,8 @@ Structure Envelope</string>
     <string>Auto Routing VAVs</string>
     <key>TransactionName.Commands.Routing.GenerateStructureEnvelopeCommand</key>
     <string>Generate Structure Envelope</string>
+    <key>TransactionName.Commands.Routing.CreatePriorityBox</key>
+    <string>Create PriorityBox</string>
     <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
     <string>Routing Setup Error</string>
     <key>Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup</key>
