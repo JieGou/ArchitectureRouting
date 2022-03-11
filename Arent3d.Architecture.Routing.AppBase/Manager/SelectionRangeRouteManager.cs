@@ -166,7 +166,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var diameter = routeProperty.GetDiameter() ;
       var bendingRadius = pipeSpec.GetLongElbowSize( diameter.DiameterValueToPipeDiameter() ) ;
       var forcedFixedHeight = PassPointEndPoint.GetForcedFixedHeight( document, routeProperty.GetFromFixedHeight(), levelId ) ;
-      var sensorConnectorsWithoutLast = sensorConnectors.Take( sensorConnectors.Count - 1 ).ToReadOnlyCollection( sensorConnectors.Count - 1 ) ;
+      var sensorConnectorsWithoutLast = sensorConnectors.Count > 1 ? sensorConnectors.Take( sensorConnectors.Count - 1 ).ToReadOnlyCollection( sensorConnectors.Count - 1 ) : sensorConnectors ;
       var passPointPositions = GetPassPointPositions( powerPosition, sensorConnectorsWithoutLast, sensorConnectors.Last(), sensorDirection, forcedFixedHeight, bendingRadius ) ;
 
       var passPointDirection = sensorDirection switch

@@ -88,10 +88,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var isOutFromConnector = RoomRouteManager.CheckPickElementIsInOrOutRoom( document, room, powerConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
       var (insideSensorConnectors, outsideSensorConnectors) = ClassifySensorConnectorsInsideOrOutsideRoom( document, sensorConnectors, room ) ;
       if ( isOutFromConnector ) {
-        CreateRouteSegment( result, document, isOutFromConnector, room, powerConnector, outsideSensorConnectors, insideSensorConnectors, classificationInfo, systemType, curveType, routeProperty, sensorDirection, pipeSpec, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex ) ;
+        CreateRouteSegment( result, document, isOutFromConnector, room, powerConnector, outsideSensorConnectors, insideSensorConnectors,
+          classificationInfo, systemType, curveType, routeProperty, sensorDirection, pipeSpec, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex ) ;
       }
       else {
-        CreateRouteSegment( result, document, isOutFromConnector, room, powerConnector, insideSensorConnectors, outsideSensorConnectors, classificationInfo, systemType, curveType, routeProperty, sensorDirection, pipeSpec, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex ) ;
+        CreateRouteSegment( result, document, isOutFromConnector, room, powerConnector, insideSensorConnectors, outsideSensorConnectors,
+          classificationInfo, systemType, curveType, routeProperty, sensorDirection, pipeSpec, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex ) ;
       }
 
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
@@ -123,14 +125,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( passPointsOnWallRoom.Any() ) {
           powerPosition = passPointPosition ;
         }
-
+        
         ( endFootPassPoint, endPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, endSensorConnectors, sensorDirection, routeProperty, pipeSpec, powerPosition ) ;
       }
 
-      CreateRouteSegment( result, document, powerConnector, startSensorConnectors, endSensorConnectors, startFootPassPoint, startPassPoints, endFootPassPoint, endPassPoints, passPointsOnWallRoom, classificationInfo, systemType, curveType, routeProperty, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex ) ;
+      CreateRouteSegment( result, document, powerConnector, startSensorConnectors, endSensorConnectors, startFootPassPoint, startPassPoints, endFootPassPoint, endPassPoints,
+        passPointsOnWallRoom, classificationInfo, systemType, curveType, routeProperty, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex ) ;
     }
 
-    private void CreateRouteSegment( List<(string RouteName, RouteSegment Segment)> result, Document document, FamilyInstance powerConnector, IReadOnlyList<FamilyInstance> startSensorConnectors, IReadOnlyList<FamilyInstance> endSensorConnectors, FamilyInstance? startFootPassPoint, IReadOnlyList<FamilyInstance> startPassPoints, FamilyInstance? endFootPassPoint, IReadOnlyList<FamilyInstance> endPassPoints, IReadOnlyList<FamilyInstance> passPointsOnWallRoom, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IRouteProperty routeProperty, string routeName, double radius, double diameter, FixedHeight? sensorFixedHeight, AvoidType avoidType, string nameBase, int nextIndex )
+    private void CreateRouteSegment( List<(string RouteName, RouteSegment Segment)> result, Document document, FamilyInstance powerConnector, IReadOnlyList<FamilyInstance> startSensorConnectors,
+      IReadOnlyList<FamilyInstance> endSensorConnectors, FamilyInstance? startFootPassPoint, IReadOnlyList<FamilyInstance> startPassPoints, FamilyInstance? endFootPassPoint, IReadOnlyList<FamilyInstance> endPassPoints, IReadOnlyList<FamilyInstance> passPointsOnWallRoom, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IRouteProperty routeProperty, string routeName, double radius, double diameter, FixedHeight? sensorFixedHeight, AvoidType avoidType, string nameBase, int nextIndex )
     {
       // main route
       var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
@@ -144,40 +148,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, firstStartRouteToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
           result.AddRange( secondStartRouteFromEndPoints.Zip( secondStartRouteToEndPoints, ( f, t ) =>
           {
-            var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
+            var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false,
+              sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
             return ( routeName, segment ) ;
           } ) ) ;
           lastStartRouteFromEndPoints = secondStartRouteFromEndPoints.Last() ;
         }
 
         if ( endPassPoints.Any() ) {
-          var secondEndRouteFromEndPoints = EliminateSamePassPoints( endFootPassPoint, endPassPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
-          var secondEndRouteToEndPoints = secondEndRouteFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( endSensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
-          var firstEndRouteToEndPoint = secondEndRouteFromEndPoints[ 0 ] ;
-
-          if ( passPointsOnWallRoom.Any() ) {
-            if ( passPointsOnWallRoom.Count > 1 ) {
-              var passPoint = new PassPointEndPoint( passPointsOnWallRoom.FirstOrDefault()! ) ;
-              var passPoint2 = new PassPointEndPoint( passPointsOnWallRoom.LastOrDefault()! ) ;
-              result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, lastStartRouteFromEndPoints, passPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
-              result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, passPoint, passPoint2, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
-              secondEndRouteFromEndPoints[ 0 ] = passPoint2 ;
-            }
-            else {
-              var passPoint = new PassPointEndPoint( passPointsOnWallRoom.FirstOrDefault()! ) ;
-              result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, lastStartRouteFromEndPoints, passPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
-              secondEndRouteFromEndPoints[ 0 ] = passPoint ;
+          if ( endSensorConnectors.Count == 1 ) {
+            var firstEndRouteToEndPoint = new ConnectorEndPoint( endSensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ;
+            if ( passPointsOnWallRoom.Any() ) {
+              CreateSegmentThroughPassPointOnWall( result, passPointsOnWallRoom, lastStartRouteFromEndPoints, firstEndRouteToEndPoint, classificationInfo, systemType, curveType,
+                routeProperty, routeName, diameter, sensorFixedHeight, avoidType ) ;
             }
           }
           else {
-            result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, lastStartRouteFromEndPoints, firstEndRouteToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
-          }
+            var secondEndRouteFromEndPoints = EliminateSamePassPoints( endFootPassPoint, endPassPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
+            var secondEndRouteToEndPoints = secondEndRouteFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( endSensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
+            var firstEndRouteToEndPoint = secondEndRouteFromEndPoints[ 0 ] ;
 
-          result.AddRange( secondEndRouteFromEndPoints.Zip( secondEndRouteToEndPoints, ( f, t ) =>
-          {
-            var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
-            return ( routeName, segment ) ;
-          } ) ) ;
+            if ( passPointsOnWallRoom.Any() ) {
+              CreateSegmentThroughPassPointOnWall( result, passPointsOnWallRoom, lastStartRouteFromEndPoints, firstEndRouteToEndPoint, classificationInfo, systemType, curveType,
+                routeProperty, routeName, diameter, sensorFixedHeight, avoidType ) ;
+            }
+            else {
+              result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, lastStartRouteFromEndPoints, firstEndRouteToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+            }
+
+            result.AddRange( secondEndRouteFromEndPoints.Zip( secondEndRouteToEndPoints, ( f, t ) =>
+            {
+              var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
+              return ( routeName, segment ) ;
+            } ) ) ;
+          }
         }
       }
 
@@ -188,25 +192,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
           var branchEndPoint = new PassPointBranchEndPoint( document, pp.UniqueId, radius, powerConnectorEndPointKey ) ;
           var connectorEndPoint = new ConnectorEndPoint( sensor.GetTopConnectorOfConnectorFamily(), radius ) ;
-          var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
+          var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false,
+            sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
           return ( subRouteName, segment ) ;
         } ) ) ;
-        if ( endPassPoints.Any() ) {
+        if ( endSensorConnectors.Any() ) {
           var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
           var branchEndPoint = new PassPointBranchEndPoint( document, startPassPoints.Last().UniqueId, radius, powerConnectorEndPointKey ) ;
           var connectorEndPoint = new ConnectorEndPoint( startSensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ;
-          var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
+          var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false,
+            sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
           result.Add( ( subRouteName, segment ) ) ;
         }
       }
 
-      if ( endPassPoints.Any() ) {
+      if ( endPassPoints.Any() && endSensorConnectors.Count > 1 ) {
         result.AddRange( endPassPoints.Zip( endSensorConnectors.Take( endPassPoints.Count ), ( pp, sensor ) =>
         {
           var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
           var branchEndPoint = new PassPointBranchEndPoint( document, pp.UniqueId, radius, powerConnectorEndPointKey ) ;
           var connectorEndPoint = new ConnectorEndPoint( sensor.GetTopConnectorOfConnectorFamily(), radius ) ;
-          var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
+          var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false,
+            sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
           return ( subRouteName, segment ) ;
         } ) ) ;
       }
@@ -221,6 +228,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           lastId = passPoint.Id ;
           yield return passPoint ;
         }
+      }
+    }
+    
+    private void CreateSegmentThroughPassPointOnWall( List<(string RouteName, RouteSegment Segment)> result, IReadOnlyCollection<FamilyInstance> passPointsOnWallRoom,
+      IEndPoint lastStartRouteFromEndPoints, IEndPoint firstEndRouteToEndPoint, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType,
+      IRouteProperty routeProperty, string routeName, double diameter, FixedHeight? sensorFixedHeight, AvoidType avoidType )
+    {
+      if ( passPointsOnWallRoom.Count > 1 ) {
+        var passPoint = new PassPointEndPoint( passPointsOnWallRoom.FirstOrDefault()! ) ;
+        var passPoint2 = new PassPointEndPoint( passPointsOnWallRoom.LastOrDefault()! ) ;
+        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, lastStartRouteFromEndPoints, passPoint, diameter,
+          routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, passPoint, passPoint2, diameter, routeProperty.GetRouteOnPipeSpace(),
+          routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, passPoint2, firstEndRouteToEndPoint, diameter,
+          routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+      }
+      else {
+        var passPoint = new PassPointEndPoint( passPointsOnWallRoom.FirstOrDefault()! ) ;
+        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, lastStartRouteFromEndPoints, passPoint, diameter,
+          routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+        result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, passPoint, firstEndRouteToEndPoint, diameter,
+          routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
       }
     }
 
