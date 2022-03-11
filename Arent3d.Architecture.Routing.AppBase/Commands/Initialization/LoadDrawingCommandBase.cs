@@ -21,14 +21,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var importDwgMappingModels = new List<ImportDwgMappingModel>()
         {
           new ImportDwgMappingModel( string.Empty, "B1FL", 0 ),
-          new ImportDwgMappingModel( string.Empty, "PH1F", 51200  ),
-          new ImportDwgMappingModel( string.Empty, "PH1RFL", 54600  )
+          new ImportDwgMappingModel( string.Empty, "PH1F", 0  ),
+          new ImportDwgMappingModel( string.Empty, "PH1RFL", 0  )
         } ;
         var fileItems = new List<FileComboboxItemType>() ;
         for ( int i = 1 ; i <= openFileDialog.FileNames.Length ; i++ ) {
-          importDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, $"{i}F", 3000  ) );
+          importDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, $"{i}F", 0  ) );
           fileItems.Add( new FileComboboxItemType(openFileDialog.FileNames[i - 1]) );
         }
+
+        UpdateDefaultFloorHeight( ref importDwgMappingModels ) ;
         var dialog = new ImportDwgMappingDialog( new ImportDwgMappingViewModel( importDwgMappingModels, fileItems ) ) ;
         dialog.ShowDialog() ;
         if ( dialog.DialogResult ?? false ) {
@@ -108,6 +110,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
       
       return Result.Succeeded ;
+    }
+
+    private void UpdateDefaultFloorHeight( ref List<ImportDwgMappingModel> importDwgMappingModels )
+    {
+      Dictionary<string, double> defaultHeights = new Dictionary<string, double>()
+      {
+        { "1F", 4200 },
+        { "2F", 9200 },
+        { "3F", 13900 },
+        { "4F", 18300 },
+        { "5F", 22700 },
+        { "6F", 27100 },
+        { "7F", 31500 },
+        { "8F", 35900 },
+        { "9F", 40300 },
+        { "10F", 44700 }
+      } ;
+      foreach ( var importDwgMappingModel in importDwgMappingModels ) {
+        var defaultFloorHeight = defaultHeights.FirstOrDefault( x => x.Key.Equals( importDwgMappingModel.FloorName ) ) ;
+        if ( defaultFloorHeight.Key != null ) importDwgMappingModel.FloorHeight = defaultFloorHeight.Value ;
+      }
+      var maxFloorHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
+      var pH1FFloor = importDwgMappingModels.FirstOrDefault( x => x.FloorName.Equals( "PH1F" ) ) ;
+      if ( pH1FFloor != null ) {
+        pH1FFloor.FloorHeight = maxFloorHeight + 6500 ;
+        var pH1RFLFloor = importDwgMappingModels.FirstOrDefault( x => x.FloorName.Equals( "PH1RFL" ) ) ?? throw new ArgumentNullException( "importDwgMappingModels.FirstOrDefault( x => x.FloorName.Equals( \"PH1RFL\" ) )" ) ;
+        pH1RFLFloor.FloorHeight = pH1FFloor.FloorHeight + 3400 ;
+      }
+
+      importDwgMappingModels = importDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ;
     }
   }
   
