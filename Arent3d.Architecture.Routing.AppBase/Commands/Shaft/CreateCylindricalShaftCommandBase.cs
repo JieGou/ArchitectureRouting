@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             return Result.Cancelled ;
           }
 
-          var symbol = document.GetFamilySymbols( RoutingFamilyType.DirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+          var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.DirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException() ;
           if ( ! symbol.IsActive ) symbol.Activate() ;
 
           if ( document.ActiveView.ViewType != ViewType.FloorPlan ) {
