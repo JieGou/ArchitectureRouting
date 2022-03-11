@@ -180,11 +180,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var detailSymbolId in detailTableModelsGroupByDetailSymbolId.Keys ) {
         List<DetailTableModel> detailTableRowsByDetailSymbolId = detailTableModelsGroupByDetailSymbolId[ detailSymbolId ]! ;
-        SetPlumbingDataForOneSymbol( conduitsModelData, ref detailTableRowsByDetailSymbolId, plumbingType, false, mixConstructionItems ) ;
+        SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsByDetailSymbolId, plumbingType, false, mixConstructionItems ) ;
       }
     }
     
-    protected internal static void SetPlumbingDataForOneSymbol( List<ConduitsModel> conduitsModelData, ref List<DetailTableModel> detailTableModelsByDetailSymbolId, string plumbingType, bool isPlumbingTypeHasBeenChanged, bool mixConstructionItems)
+    protected internal static void SetPlumbingDataForOneSymbol( List<ConduitsModel> conduitsModelData, List<DetailTableModel> detailTableModelsByDetailSymbolId, string plumbingType, bool isPlumbingTypeHasBeenChanged, bool mixConstructionItems)
     {
       const double percentage = 0.32 ;
       const string defaultChildPlumbingSymbol = "↑" ;
@@ -199,8 +199,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableModelsBySignalType = mixConstructionItems ? detailTableModelsByDetailSymbolId.GroupBy( d => d.SignalType ).Select( g =>  g.ToList()).ToList() : detailTableModelsByDetailSymbolId.GroupBy( d => new {d.SignalType, d.ConstructionItems} ).Select( g =>  g.ToList()).ToList();
 
       foreach ( var detailTableRows in detailTableModelsBySignalType ) {
-        Dictionary<string, List<DetailTableModel>> detailTableRowsGroupByPlumbingType = new Dictionary<string, List<DetailTableModel>>() ;
-        List<DetailTableModel> childDetailRows = new List<DetailTableModel>() ;
+        Dictionary<string, List<DetailTableModel>> detailTableRowsGroupByPlumbingType = new() ;
+        List<DetailTableModel> childDetailRows = new() ;
         var parentDetailRow = detailTableRows.First() ;
         var currentPlumbingCrossSectionalArea = 0.0 ;
         foreach ( var currentDetailTableRow in detailTableRows ) {
@@ -271,8 +271,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private static string GetDetailTableRowPlumbingIdentityInfo( DetailTableModel detailTableRow, bool mixConstructionItems )
     {
       return mixConstructionItems ? 
-        detailTableRow.PlumbingType + detailTableRow.PlumbingSize + "-" + detailTableRow.SignalType + "-" + detailTableRow.RouteName : 
-        detailTableRow.PlumbingType + detailTableRow.PlumbingSize + "-" + detailTableRow.SignalType + "-" + detailTableRow.RouteName + "-" + detailTableRow.ConstructionItems ;
+        string.Join( "-", detailTableRow.PlumbingType + detailTableRow.PlumbingSize, detailTableRow.SignalType, detailTableRow.RouteName ) : 
+        string.Join( "-", detailTableRow.PlumbingType + detailTableRow.PlumbingSize, detailTableRow.SignalType, detailTableRow.RouteName, detailTableRow.ConstructionItems ) ;
     }
 
     private Dictionary<ElementId, List<ElementId>> UpdateConnectorAndConduitConstructionItem( Document document, Dictionary<string, string> routesChangedConstructionItem )
@@ -422,8 +422,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public class ComboboxItemType
     {
-      public string Type { get ; set ; }
-      public string Name { get ; set ; }
+      public string Type { get ; }
+      public string Name { get ; }
 
       public ComboboxItemType( string type, string name )
       {

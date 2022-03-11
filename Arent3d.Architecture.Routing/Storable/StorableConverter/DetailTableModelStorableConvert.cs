@@ -75,7 +75,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var groupId = deserializer.GetString( SerializeField.GroupId ) ;
       var isReadOnlyPlumbingItems = deserializer.GetBool( SerializeField.IsReadOnlyPlumbingItems ) ;
 
-      return new DetailTableModel( calculationExclusion, floor, ceedCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode, isParentRoute, isReadOnly, plumbingIdentityInfo, groupId, isReadOnlyPlumbingItems ) ;
+      return new DetailTableModel( calculationExclusion, floor, ceedCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType,
+        plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode,
+        isParentRoute, isReadOnly, plumbingIdentityInfo, groupId, isReadOnlyPlumbingItems ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailTableModel customTypeValue )
