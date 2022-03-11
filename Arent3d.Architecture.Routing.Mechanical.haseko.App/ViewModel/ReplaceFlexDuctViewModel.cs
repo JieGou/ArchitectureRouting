@@ -16,8 +16,8 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
   {
     #region Members
 
-    private Document _document ;
-    private ( List<Connector> ConnectorRefs, List<(XYZ Origin, XYZ Direction)> Points, IList<Element> DeletedElements) _data ;
+    private readonly Document _document ;
+    private readonly ( List<Connector> ConnectorRefs, List<(XYZ Origin, XYZ Direction)> Points, IList<Element> DeletedElements) _data ;
     private DisplayUnit DisplayUnit => _document.DisplayUnitSystem ;
 
     private ObservableCollection<FlexDuctType>? _flexDuctTypes ;
@@ -97,14 +97,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
 
     public ICommand CloseCommand
     {
-      get { return new RelayCommand<Window>( ( wd ) => { return null != wd ; }, ( wd ) => { wd.Close() ; } ) ; }
+      get { return new RelayCommand<Window>( ( wd ) => null != wd, ( wd ) => { wd.Close() ; } ) ; }
     }
 
     public ICommand OkCommand
     {
       get
       {
-        return new RelayCommand<Window>( ( wd ) => { return null != wd ; }, ( wd ) =>
+        return new RelayCommand<Window>( ( wd ) => null != wd, ( wd ) =>
         {
           wd.Close() ;
           try {
@@ -163,10 +163,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
       var values = new List<double>() ;
 
       foreach ( var connector in connectors ) {
-        if ( connector.Shape == ConnectorProfileType.Round )
-          values.Add( 2 * connector.Radius ) ;
-        else if ( connector.Shape == ConnectorProfileType.Rectangular || connector.Shape == ConnectorProfileType.Oval )
-          values.Add( Math.Min( connector.Width, connector.Height ) ) ;
+        switch ( connector.Shape ) {
+          case ConnectorProfileType.Round :
+            values.Add( 2 * connector.Radius ) ;
+            break ;
+          case ConnectorProfileType.Rectangular or ConnectorProfileType.Oval :
+            values.Add( Math.Min( connector.Width, connector.Height ) ) ;
+            break ;
+        }
       }
 
       return values.Min() ;
@@ -174,10 +178,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
 
     private string DisplayDiameter( double diameter )
     {
-      if ( DisplayUnit == DisplayUnit.METRIC )
-        return $"{Math.Round( diameter.RevitUnitsToMillimeters() )} mm" ;
-      else
-        return $"{Math.Round( UnitUtils.ConvertFromInternalUnits( diameter, DisplayUnitTypes.Inches ) )}" ;
+      return DisplayUnit == DisplayUnit.METRIC ? $"{Math.Round( diameter.RevitUnitsToMillimeters() )} mm" : $"{Math.Round( UnitUtils.ConvertFromInternalUnits( diameter, DisplayUnitTypes.Inches ) )}" ;
     }
 
     #endregion

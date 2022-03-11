@@ -90,12 +90,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
 
       public bool AllowElement( Element elem )
       {
-        if ( elem is RevitLinkInstance revitLinkInstance ) {
-          Document = revitLinkInstance.GetLinkDocument() ;
-          return true ;
-        }
+        if ( elem is not RevitLinkInstance revitLinkInstance ) return false ;
+        Document = revitLinkInstance.GetLinkDocument() ;
+        return true ;
 
-        return false ;
       }
 
       public abstract bool AllowReference( Reference reference, XYZ position ) ;
@@ -364,7 +362,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
 
       public override bool AllowReference( Reference reference, XYZ position )
       {
-        bool erg = false ;
+        var erg = false ;
         if ( ExecuteAll ) {
           Filters.ForEach( filter => erg |= filter.AllowReference( reference, position ) ) ;
         }
@@ -392,7 +390,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
 
       public override bool AllowElement( Element elem )
       {
-        bool erg = true ;
+        var erg = true ;
         if ( ExecuteAll ) {
           Filters.ForEach( filter => erg &= filter.AllowElement( elem ) ) ;
         }
@@ -405,7 +403,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
 
       public override bool AllowReference( Reference reference, XYZ position )
       {
-        bool erg = true ;
+        var erg = true ;
         if ( ExecuteAll ) {
           Filters.ForEach( filter => erg &= filter.AllowReference( reference, position ) ) ;
         }

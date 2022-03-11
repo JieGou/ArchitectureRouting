@@ -73,57 +73,58 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
       var endConnectors = new List<(List<Connector> Connecteds, List<Connector> UnConnects)>() ;
       foreach ( var connectorManager in connectorManagers ) {
-        var connectors = GetConnectors( connectorManager.Connectors ) ;
+        var (connected, unConnect) = GetConnectors( connectorManager.Connectors ) ;
 
-        if ( connectors.Connecteds.Count == 0 )
+        if ( connected.Count == 0 )
           return ( false, GeneralNotify, connectorRefs, points ) ;
-        else {
-          var insideConnecteds = GetInsideConnecteds( connectors.Connecteds, elements ) ;
+        
+        var insideConnected = GetInsideConnected( connected, elements ) ;
 
-          if ( insideConnecteds.Count == 0 )
+        switch ( insideConnected.Count ) {
+          case 0 :
             return ( false, GeneralNotify, connectorRefs, points ) ;
-          else if ( insideConnecteds.Count == 1 ) {
-            var outsideConnecteds = connectors.Connecteds.Where( x => x.Id != insideConnecteds[ 0 ].Id ).ToList() ;
-            endConnectors.Add( ( outsideConnecteds, connectors.Unconnects ) ) ;
+          case 1 :
+          {
+            var outsideConnected = connected.Where( x => x.Id != insideConnected[ 0 ].Id ).ToList() ;
+            endConnectors.Add( ( outsideConnected, unConnect ) ) ;
+            break ;
           }
         }
       }
 
       if ( endConnectors.Count != 2 )
         return ( false, GeneralNotify, connectorRefs, points ) ;
-      else {
-        foreach ( var endConnector in endConnectors )
-          GetEndRefConnector( endConnector.Connecteds, endConnector.UnConnects, ref connectorRefs, ref points ) ;
+      foreach ( var ( connected, unConnects ) in endConnectors )
+        GetEndRefConnector( connected, unConnects, ref connectorRefs, ref points ) ;
 
-        if ( ( connectorRefs.Count == 2 && points.Count == 0 ) || ( connectorRefs.Count == 1 && points.Count == 1 ) || ( connectorRefs.Count == 0 && points.Count == 2 ) )
-          return ( true, string.Empty, connectorRefs, points ) ;
+      if ( ( connectorRefs.Count == 2 && points.Count == 0 ) || ( connectorRefs.Count == 1 && points.Count == 1 ) || ( connectorRefs.Count == 0 && points.Count == 2 ) )
+        return ( true, string.Empty, connectorRefs, points ) ;
 
-        return ( false, "The flex duct cannot create!", connectorRefs, points ) ;
-      }
+      return ( false, "The flex duct cannot create!", connectorRefs, points ) ;
     }
 
-    private List<Connector> GetInsideConnecteds( IList<Connector> connectedConnectors, IList<Element> selectedElements )
+    private List<Connector> GetInsideConnected( IEnumerable<Connector> connectedConnectors, IList<Element> selectedElements )
     {
-      var insideConnecteds = new List<Connector>() ;
+      var insideConnected = new List<Connector>() ;
 
       foreach ( var connectedConnector in connectedConnectors ) {
         var conRefs = GetConnectorRefs( connectedConnector ) ;
         var otherElements = selectedElements.Where( x => x.Id != connectedConnector.Owner.Id ) ;
         foreach ( var element in otherElements ) {
           if ( conRefs.Any( x => x.Owner.Id == element.Id ) ) {
-            insideConnecteds.Add( connectedConnector ) ;
+            insideConnected.Add( connectedConnector ) ;
             break ;
           }
         }
       }
 
-      return insideConnecteds ;
+      return insideConnected ;
     }
 
-    private void GetEndRefConnector( List<Connector> connecteds, List<Connector> unConnects, ref List<Connector> connectors, ref List<(XYZ, XYZ)> points )
+    private void GetEndRefConnector( IReadOnlyList<Connector> connected, IReadOnlyList<Connector> unConnects, ref List<Connector> connectors, ref List<(XYZ, XYZ)> points )
     {
-      if ( connecteds.Count > 0 ) {
-        var connectedRefs = GetConnectorRefs( connecteds[ 0 ] ).Where( x => x.IsConnected ).ToList() ;
+      if ( connected.Count > 0 ) {
+        var connectedRefs = GetConnectorRefs( connected[ 0 ] ).Where( x => x.IsConnected ).ToList() ;
         if ( connectedRefs.Count > 0 )
           connectors.Add( connectedRefs[ 0 ] ) ;
       }
@@ -140,18 +141,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
     private (List<Connector> Connecteds, List<Connector> Unconnects) GetConnectors( ConnectorSet connectorSet )
     {
-      var connecteds = new List<Connector>() ;
-      var unconnects = new List<Connector>() ;
+      var connected = new List<Connector>() ;
+      var unConnect = new List<Connector>() ;
 
       connectorSet.OfType<Connector>().ForEach( x =>
       {
         if ( x.IsConnected )
-          connecteds.Add( x ) ;
+          connected.Add( x ) ;
         else
-          unconnects.Add( x ) ;
+          unConnect.Add( x ) ;
       } ) ;
 
-      return ( connecteds, unconnects ) ;
+      return ( connected, unConnect ) ;
     }
 
     private List<ConnectorManager> GetConnectorManagers( IList<Element> elements )
