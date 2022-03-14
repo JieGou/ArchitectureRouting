@@ -50,6 +50,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( ChangeToNormalCommand ), OnlyInitialized = true )]
           private static class ChangeToNormalCommandButton { }
+          
+          [Button( typeof( SplitScheduleCommand ), OnlyInitialized = true )]
+          private static class SplitScheduleCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
@@ -211,6 +214,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
         private static class EraseAllLimitRackCommandButton { }
+        
+        [Button( typeof( AdjustLeaderCommand ), OnlyInitialized = true )]
+        private static class AdjustLeaderCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Shafts" )]
