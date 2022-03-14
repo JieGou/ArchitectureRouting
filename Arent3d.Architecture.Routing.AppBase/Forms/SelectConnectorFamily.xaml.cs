@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var connectorFamilyUploadFiles = new List<string>() ;
         foreach ( var sourcePath in sourcePaths ) {
           var fileName = Path.GetFileName( sourcePath ) ;
-          var resultLoadConnectorFamily = LoadConnectorFamilyAndExportImage( sourcePath, fileName ) ;
+          var resultLoadConnectorFamily = LoadConnectorFamily( sourcePath, fileName ) ;
           if ( ! resultLoadConnectorFamily ) continue ;
           var isExistedFileName = ConnectorFamilyList.SingleOrDefault( f => f.ToString() == fileName ) != null ;
           if ( isExistedFileName ) continue ;
@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    private bool LoadConnectorFamilyAndExportImage( string filePath, string connectorFamilyFileName )
+    private bool LoadConnectorFamily( string filePath, string connectorFamilyFileName )
     {
       var imagePath = ConnectorFamilyManager.GetFolderPath() ;
       if ( ! Directory.Exists( imagePath ) ) Directory.CreateDirectory( imagePath ) ;
@@ -78,9 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var connectorFamily = LoadFamily( filePath, connectorFamilyName ) ;
       t.Commit() ;
 
-      if ( connectorFamily == null ) return false ;
-      var floorPlanImage = ImageConverter.GetFloorPlanImageFile( imagePath, connectorFamilyName ) ;
-      return ! string.IsNullOrEmpty( floorPlanImage ) || ImageConverter.ExportConnectorFamilyImage( _document, connectorFamily, imagePath, connectorFamilyName ) ;
+      return connectorFamily != null ;
     }
 
     private Family? LoadFamily( string filePath, string familyName )

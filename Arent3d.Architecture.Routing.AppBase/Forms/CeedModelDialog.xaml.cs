@@ -1,5 +1,4 @@
 using System.Collections.Generic ;
-using System.IO ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
@@ -13,11 +12,8 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using Image = System.Drawing.Image ;
-using ImageConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters.ImageConverter ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
-using Size = System.Drawing.Size ;
 using Style = System.Windows.Style ;
 using Visibility = System.Windows.Visibility ;
 
@@ -231,22 +227,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         return ;
       }
       var connectorFamilyFileName = selectedConnectorFamily.ToString() ;
+      var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
       if ( _selectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
 
       using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
       progress.Message = "Loading and saving data...." ;
 
-      CeedModel? newCeedModel = null ;
       using ( var progressData = progress?.Reserve( 0.5 ) ) {
-        UpdateCeedStorableAfterReplaceFloorPlanSymbol( ref newCeedModel, connectorFamilyFileName ) ;
+        UpdateCeedStorableAfterReplaceFloorPlanSymbol( connectorFamilyName ) ;
         progressData?.ThrowIfCanceled() ;
       }
 
       using ( var progressData = progress?.Reserve( 0.9 ) ) {
-        if ( newCeedModel != null ) UpdateDataGridAfterReplaceFloorPlanSymbol( newCeedModel ) ;
+        UpdateDataGridAfterReplaceFloorPlanSymbol( connectorFamilyName ) ;
         BtnReplaceSymbol.IsEnabled = false ;
         progressData?.ThrowIfCanceled() ;
       }
+      
+      MessageBox.Show( "Replaced floor plan symbol successfully.", "Message" ) ;
     }
 
     private void LoadData( CeedStorable ceedStorable )
@@ -279,34 +277,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbModelNumbers.ItemsSource = ceedViewModel.ModelNumbers ;
     }
 
-    private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( ref CeedModel? newCeedModel, string connectorFamilyFileName)
+    private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName)
     {
       var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
       if ( ceedStorable == null ) return ;
-      var path = ConnectorFamilyManager.GetFolderPath() ;
-      var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
       if ( _allCeedModels != null ) {
         var ceedModel = _allCeedModels.CeedModels.First( c => c.CeedSetCode == _selectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == _selectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == _selectedCeedModel.ModelNumber ) ;
         if ( ceedModel != null ) {
-          newCeedModel = SetFloorPlanImageAndFloorPlanType( ceedModel, path, connectorFamilyName ) ;
-          if ( newCeedModel != null ) {
-            ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
-            ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
-            ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
-            ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
-            ceedStorable.CeedModelData = _allCeedModels.CeedModels ;
-          }
+          ceedModel.FloorPlanType = connectorFamilyName ;
+          ceedStorable.CeedModelData = _allCeedModels.CeedModels ;
         }
       }
 
-      if ( newCeedModel == null ) return ;
       if ( _usingCeedModel != null ) {
         var ceedModel = _usingCeedModel.CeedModels.FirstOrDefault( c => c.CeedSetCode == _selectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == _selectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == _selectedCeedModel.ModelNumber ) ;
         if ( ceedModel != null ) {
-          ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
-          ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
-          ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
-          ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
+          ceedModel.FloorPlanType = connectorFamilyName ;
           ceedStorable.CeedModelUsedData = _usingCeedModel.CeedModels ;
         }
       }
@@ -322,7 +308,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    private void UpdateDataGridAfterReplaceFloorPlanSymbol( CeedModel newCeedModel )
+    private void UpdateDataGridAfterReplaceFloorPlanSymbol( string floorPlanType )
     {
       if ( DtGrid.ItemsSource is not List<CeedModel> newCeedModels ) {
         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
@@ -330,23 +316,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       var ceedModel = newCeedModels.First( c => c == _selectedCeedModel ) ;
       if ( ceedModel == null ) return ;
-      ceedModel.FloorPlanType = newCeedModel.FloorPlanType ;
-      ceedModel.FloorPlanSymbol = newCeedModel.FloorPlanSymbol ;
-      ceedModel.FloorPlanImages = newCeedModel.FloorPlanImages ;
-      ceedModel.Base64FloorPlanImages = newCeedModel.Base64FloorPlanImages ;
+      ceedModel.FloorPlanType = floorPlanType ;
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
-    }
-
-    private CeedModel? SetFloorPlanImageAndFloorPlanType( CeedModel ceedModel, string path, string familyName )
-    {
-      var imageFileName = ImageConverter.CropImage( path, familyName ) ;
-      if ( string.IsNullOrEmpty( imageFileName ) ) return null ;
-      var floorPlanImage = Image.FromFile( imageFileName ) ;
-      floorPlanImage = ImageConverter.ResizeImage( floorPlanImage, new Size( 30, 30 ) ) ;
-      var floorPlanImages = new List<Image>() { floorPlanImage } ;
-      var newCeedModel = new CeedModel( ceedModel.CeedModelNumber, ceedModel.CeedSetCode, ceedModel.GeneralDisplayDeviceSymbol, ceedModel.ModelNumber, floorPlanImages, null, string.Empty, ceedModel.InstrumentationSymbol, ceedModel.Name, ceedModel.Condition, string.Empty, familyName ) ;
-      floorPlanImage.Dispose() ;
-      return newCeedModel ;
     }
   }
 }
