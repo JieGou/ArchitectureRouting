@@ -79,7 +79,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       if ( ! spaces.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoSpace ) ;
 
       // Get all vav
-      var vavs = doc.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ) ;
+      var vavs = doc.GetAllFamilyInstances( MechanicalRoutingFamilyType.SA_VAV ) ;
       var vavInstances = vavs as FamilyInstance[] ?? vavs.ToArray() ;
       if ( ! vavInstances.Any() ) return ( null!, Array.Empty<FamilyInstance>(), new Dictionary<int, List<FamilyInstance>>(), ErrorMessageNoVav ) ;
 

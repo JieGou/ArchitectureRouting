@@ -18,15 +18,25 @@ namespace Arent3d.Architecture.Routing
 
     private const string RoutingSharedParameterFileName = "RoutingSharedParameters.txt" ;
     private const string PassPointSharedParameterFileName = "PassPointSharedParameters.txt" ;
-    private const string RoutingElementSharedParameterFileName = "RoutingElementSharedParameters.txt";
-    private const string ConnectorSharedParameterFileName = "ConnectorSharedParameters.txt" ;
-    private const string SpaceSharedParameterFileName = "SpaceSharedParameters.txt" ;
+    private const string RoutingElementSharedParameterFileName = "RoutingElementSharedParameters.txt" ;
+    private const string MechanicalRoutingElementSharedParameterFileName = "MechanicalRoutingElementSharedParameters.txt" ;
+    private const string ElectricalRoutingElementSharedParameterFileName = "ElectricalRoutingElementSharedParameters.txt" ;
 
     private static readonly string AssetPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "Assets" ) ;
 
     public static string GetFamilyPath( string familyName )
     {
       return GetPath( FamilyFolderName, familyName + ".rfa" ) ;
+    }
+
+    public static string GetElectricalFamilyPath( string familyName )
+    {
+      return GetPath( FamilyFolderName + @"\Electrical", familyName + ".rfa" ) ;
+    }
+
+    public static string GetMechanicalFamilyPath( string familyName )
+    {
+      return GetPath( FamilyFolderName + @"\Mechanical", familyName + ".rfa" ) ;
     }
 
     public static string GetRoutingSharedParameterPath()
@@ -41,16 +51,17 @@ namespace Arent3d.Architecture.Routing
 
     public static string GetRoutingElementSharedParameterPath()
     {
-        return GetPath( SettingFolderName, RoutingElementSharedParameterFileName );
-    }
-    public static string GetConnectorSharedParameterPath()
-    {
-      return GetPath( SettingFolderName, ConnectorSharedParameterFileName );
+      return GetPath( SettingFolderName, RoutingElementSharedParameterFileName ) ;
     }
 
-    public static string GetSpaceSharedParameterPath()
+    public static string GetMechanicalRoutingElementSharedParameterPath()
     {
-      return GetPath( SettingFolderName, SpaceSharedParameterFileName );
+      return GetPath( SettingFolderName, MechanicalRoutingElementSharedParameterFileName ) ;
+    }
+
+    public static string GetElectricalRoutingElementSharedParameterPath()
+    {
+      return GetPath( SettingFolderName, ElectricalRoutingElementSharedParameterFileName ) ;
     }
 
     private static string GetPath( string folderName, string fileName )

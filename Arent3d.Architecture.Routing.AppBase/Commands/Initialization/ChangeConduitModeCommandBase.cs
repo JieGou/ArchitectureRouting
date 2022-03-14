@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       using var transaction = new Transaction( document ) ;
       transaction.Start( "Set conduits/racks mode" ) ;
       foreach ( var conduit in elements ) {
-        conduit.SetProperty( RoutingFamilyLinkedParameter.IsEcoMode, isEcoMode.ToString() ) ;
+        conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode.ToString() ) ;
       }
       transaction.Commit() ;
     }
@@ -80,7 +80,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           connectorGroups.Add( connector.Id, listTextNoteIds ) ;
           parentGroup.UngroupMembers() ;
         }
-        connector.SetProperty( RoutingFamilyLinkedParameter.IsEcoMode, isEcoMode.ToString() ) ;
+        connector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode.ToString() ) ;
       }
       transaction.Commit() ;
       transaction.Start( "Set connector group" ) ;
