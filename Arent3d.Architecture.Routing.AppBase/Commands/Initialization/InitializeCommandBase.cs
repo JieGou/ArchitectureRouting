@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-      if ( document.RoutingSettingsAreInitialized() ) return Result.Succeeded ;
+      if ( RoutingSettingsAreInitialized(document) ) return Result.Succeeded ;
 
       try {
         var result = document.Transaction( "TransactionName.Commands.Initialization.Initialize".GetAppStringByKeyOrDefault( "Setup Routing" ), _ =>
@@ -32,6 +32,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
+    }
+
+    protected virtual bool RoutingSettingsAreInitialized(Document document)
+    {
+      return document.RoutingSettingsAreInitialized() ;
     }
 
     protected virtual bool Setup( Document document )

@@ -1,6 +1,8 @@
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
+using Autodesk.Revit.DB ;
+using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
 {
@@ -9,5 +11,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Initialization
   [Image( "resources/Initialize.png", ImageType = ImageType.Large )]
   public class UninitializeCommand : UninitializeCommandBase
   {
+    protected override void UnSetup( Document document )
+    {
+      document.EraseAllMechanicalRoutingFamilies();
+      base.UnSetup( document ) ;
+    }
   }
 }

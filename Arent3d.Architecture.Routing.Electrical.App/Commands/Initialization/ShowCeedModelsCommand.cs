@@ -9,6 +9,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class ShowCeedModelsCommand : ShowCeedModelsCommandBase
   {
-    protected override RoutingFamilyType RoutingFamilyType => RoutingFamilyType.ConnectorOneSide ;
+    protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.ConnectorOneSide ;
   }
 }
