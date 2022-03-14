@@ -149,6 +149,9 @@
         <key>Electrical.App.Commands.Initialization.CreateDetailTableCommand</key>
         <string>Create Detail Table</string>
 
+        <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
+        <string>Split Schedule</string>
+        
         <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
         <string>Electrical Symbol Table</string>
 
