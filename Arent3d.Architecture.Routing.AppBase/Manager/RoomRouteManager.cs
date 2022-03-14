@@ -20,7 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       while ( room == null ) {
         MessageBox.Show( "Please select door position", "Message" ) ;
         element = uiDocument.Selection.PickObject( ObjectType.Element, roomPickFilter, "Select room." ) ;
-        room = uiDocument.Document.GetAllFamilyInstances( RoutingFamilyType.Room ).FirstOrDefault( r => r.Id == element.ElementId ) ;
+        room = uiDocument.Document.GetAllFamilyInstances( ElectricalRoutingFamilyType.Room ).FirstOrDefault( r => r.Id == element.ElementId ) ;
       }
 
       return element ;
