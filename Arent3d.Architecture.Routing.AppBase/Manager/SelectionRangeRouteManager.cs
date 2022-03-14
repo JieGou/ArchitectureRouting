@@ -159,15 +159,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return sv ;
     }
 
-    public static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemPipeSpec pipeSpec, XYZ powerPosition )
+    public static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemPipeSpec pipeSpec, XYZ powerPosition, XYZ? lastSensorPosition = null )
     {
       var document = powerConnector.Document ;
       var levelId = powerConnector.LevelId ;
       var diameter = routeProperty.GetDiameter() ;
       var bendingRadius = pipeSpec.GetLongElbowSize( diameter.DiameterValueToPipeDiameter() ) ;
       var forcedFixedHeight = PassPointEndPoint.GetForcedFixedHeight( document, routeProperty.GetFromFixedHeight(), levelId ) ;
-      var sensorConnectorsWithoutLast = sensorConnectors.Count > 1 ? sensorConnectors.Take( sensorConnectors.Count - 1 ).ToReadOnlyCollection( sensorConnectors.Count - 1 ) : sensorConnectors ;
-      var passPointPositions = GetPassPointPositions( powerPosition, sensorConnectorsWithoutLast, sensorConnectors.Last(), sensorDirection, forcedFixedHeight, bendingRadius ) ;
+      var sensorConnectorsWithoutLast = 
+        sensorConnectors.Count > 1 && lastSensorPosition == null
+          ? sensorConnectors.Take( sensorConnectors.Count - 1 ).ToReadOnlyCollection( sensorConnectors.Count - 1 ) 
+          : sensorConnectors ;
+      lastSensorPosition ??= sensorConnectors.Last().GetTopConnectorOfConnectorFamily().Origin ;
+      var passPointPositions = GetPassPointPositions( powerPosition, sensorConnectorsWithoutLast, lastSensorPosition, sensorDirection, forcedFixedHeight, bendingRadius ) ;
 
       var passPointDirection = sensorDirection switch
       {
@@ -246,10 +250,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
         return document.AddPassPoint( routeName, passPointPos, passPointDir, radius, levelId ) ;
       }
 
-      static IReadOnlyList<XYZ> GetPassPointPositions( XYZ powerPosition, IReadOnlyCollection<FamilyInstance> sensorConnectors, FamilyInstance lastSensorConnector, SensorArrayDirection sensorDirection, double? forcedFixedHeight, double bendingRadius )
+      static IReadOnlyList<XYZ> GetPassPointPositions( XYZ powerPosition, IReadOnlyCollection<FamilyInstance> sensorConnectors, XYZ lastSensorPosition, SensorArrayDirection sensorDirection, double? forcedFixedHeight, double bendingRadius )
       {
         var sensorPositions = sensorConnectors.ConvertAll( sensorConnector => sensorConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
-        var lastSensorPosition = lastSensorConnector.GetTopConnectorOfConnectorFamily().Origin ;
 
         var fixedHeight = forcedFixedHeight ?? GetPreferredRouteHeight( powerPosition, sensorPositions, lastSensorPosition, bendingRadius ) ;
         var (sensorLineX, sensorLineY, sensorLineZ) = GetSensorLine( powerPosition, sensorPositions, lastSensorPosition, sensorDirection, bendingRadius, fixedHeight ) ;

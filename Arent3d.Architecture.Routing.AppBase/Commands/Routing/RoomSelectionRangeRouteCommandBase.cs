@@ -115,17 +115,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       FamilyInstance? endFootPassPoint = null ;
       IReadOnlyList<FamilyInstance> passPointsOnWallRoom = new List<FamilyInstance>() ;
       var powerPosition = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
+      XYZ? lastSensorPosition = null ;
       if ( startSensorConnectors.Any() ) {
-        ( startFootPassPoint, startPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, startSensorConnectors, sensorDirection, routeProperty, pipeSpec, powerPosition ) ;
+        if ( endSensorConnectors.Any() ) {
+          XYZ passPointPosition ;
+          XYZ passPointPosition2 ;
+          ( passPointsOnWallRoom, passPointPosition, passPointPosition2 ) = CreatePassPointOnRoomWall( document, room, isOutFromConnector, routeName, diameter, routeProperty.GetFromFixedHeight(), powerConnector.UniqueId, endSensorConnectors.Last().UniqueId ) ;
+          if ( passPointsOnWallRoom.Any() ) {
+            lastSensorPosition = passPointPosition ;
+            powerPosition = passPointPosition2 ;
+          }
+        }
+        ( startFootPassPoint, startPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, startSensorConnectors, sensorDirection, routeProperty, pipeSpec, powerPosition, lastSensorPosition ) ;
       }
 
       if ( endSensorConnectors.Any() ) {
-        XYZ passPointPosition ;
-        ( passPointsOnWallRoom, passPointPosition ) = CreatePassPointOnRoomWall( document, room, isOutFromConnector, routeName, diameter, routeProperty.GetFromFixedHeight(), powerConnector.UniqueId, endSensorConnectors.Last().UniqueId ) ;
-        if ( passPointsOnWallRoom.Any() ) {
-          powerPosition = passPointPosition ;
-        }
-        
         ( endFootPassPoint, endPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, endSensorConnectors, sensorDirection, routeProperty, pipeSpec, powerPosition ) ;
       }
 
@@ -162,6 +166,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               CreateSegmentThroughPassPointOnWall( result, passPointsOnWallRoom, lastStartRouteFromEndPoints, firstEndRouteToEndPoint, classificationInfo, systemType, curveType,
                 routeProperty, routeName, diameter, sensorFixedHeight, avoidType ) ;
             }
+
+            document.Delete( endPassPoints.First().UniqueId ) ;
+            if ( endFootPassPoint != null ) document.Delete( endFootPassPoint.UniqueId ) ;
           }
           else {
             var secondEndRouteFromEndPoints = EliminateSamePassPoints( endFootPassPoint, endPassPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
@@ -196,14 +203,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
           return ( subRouteName, segment ) ;
         } ) ) ;
-        if ( endSensorConnectors.Any() ) {
-          var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
-          var branchEndPoint = new PassPointBranchEndPoint( document, startPassPoints.Last().UniqueId, radius, powerConnectorEndPointKey ) ;
-          var connectorEndPoint = new ConnectorEndPoint( startSensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ;
-          var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false,
-            sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
-          result.Add( ( subRouteName, segment ) ) ;
-        }
       }
 
       if ( endPassPoints.Any() && endSensorConnectors.Count > 1 ) {
@@ -267,9 +266,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return ( insideRoomConnectors, outsideRoomConnectors ) ;
     }
 
-    private ( List<FamilyInstance>, XYZ ) CreatePassPointOnRoomWall( Document document, Reference? room, bool isOutFromConnector, string name, double diameter, FixedHeight? fromFixedHeight, string fromConnectorId, string toConnectorId )
+    private ( List<FamilyInstance>, XYZ, XYZ ) CreatePassPointOnRoomWall( Document document, Reference? room, bool isOutFromConnector, string name, double diameter, FixedHeight? fromFixedHeight, string fromConnectorId, string toConnectorId )
     {
-      if ( room == null ) return ( new List<FamilyInstance>(), new XYZ() ) ;
+      if ( room == null ) return ( new List<FamilyInstance>(), new XYZ(), new XYZ() ) ;
       var pickRoom = document.GetElement( room.ElementId ) ;
       ElementId levelId = SelectionRangeRouteManager.GetTrueLevelId( document, pickRoom ) ;
       return RoomRouteManager.InsertPassPointElement( document, name, levelId, diameter, room, fromFixedHeight, isOutFromConnector, fromConnectorId, toConnectorId ) ;
