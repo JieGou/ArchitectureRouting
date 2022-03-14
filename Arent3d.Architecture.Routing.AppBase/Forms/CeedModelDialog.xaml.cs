@@ -231,7 +231,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _selectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
 
       using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
-      progress.Message = "Loading and saving data...." ;
+      progress.Message = "Processing......." ;
 
       using ( var progressData = progress?.Reserve( 0.5 ) ) {
         UpdateCeedStorableAfterReplaceFloorPlanSymbol( connectorFamilyName ) ;
@@ -244,6 +244,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         progressData?.ThrowIfCanceled() ;
       }
       
+      progress?.Finish() ;
       MessageBox.Show( "Replaced floor plan symbol successfully.", "Message" ) ;
     }
 
