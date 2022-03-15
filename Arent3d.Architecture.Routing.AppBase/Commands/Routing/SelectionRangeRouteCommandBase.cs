@@ -271,7 +271,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, MEPSystemPipeSpec pipeSpec )
+    public static (FamilyInstance? Foot, IReadOnlyList<FamilyInstance> Others) CreatePassPoints( string routeName, FamilyInstance powerConnector, IReadOnlyCollection<FamilyInstance> sensorConnectors, SensorArrayDirection sensorDirection, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, MEPSystemPipeSpec pipeSpec )
     {
       var document = powerConnector.Document ;
       var levelId = powerConnector.LevelId ;

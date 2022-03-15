@@ -115,6 +115,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
         private static class SelectionRangeRouteCommandButton { }
+        [Button( typeof( SelectionRangeRouteWithPassCommand ), OnlyInitialized = true )]
+        private static class SelectionRangeRouteWithPassCommandButton { }
 
         [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]
         private static class InsertPassPointCommandButton { }
