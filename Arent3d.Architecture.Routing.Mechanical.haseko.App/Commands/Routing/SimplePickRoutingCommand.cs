@@ -6,18 +6,18 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.EndPoints ;
-using Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms ;
-using Arent3d.Architecture.Routing.Mechanical.haseko.App.Utils ;
+using Arent3d.Architecture.Routing.Mechanical.Haseko.App.Forms ;
+using Arent3d.Architecture.Routing.Mechanical.Haseko.App.Utils ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.SimplePickRoutingCommand", DefaultString = "Simple\nPick From-To" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.Routing.SimplePickRoutingCommand", DefaultString = "Simple\nPick From-To" )]
   [Image( "resources/PickFrom-To.png" )]
   public class SimplePickRoutingCommand : PickRoutingCommandBase
   {

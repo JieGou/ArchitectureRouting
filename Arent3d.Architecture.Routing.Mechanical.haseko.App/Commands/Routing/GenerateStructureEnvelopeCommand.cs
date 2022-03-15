@@ -13,10 +13,10 @@ using Autodesk.Revit.UI ;
 using MathLib ;
 using Line = Autodesk.Revit.DB.Line ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.GenerateStructureEnvelopeCommand", DefaultString = "Generate\nStructure Envelope" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.Routing.GenerateStructureEnvelopeCommand", DefaultString = "Generate\nStructure Envelope" )]
   [Image( "resources/structure_envelope.png" )]
   public class GenerateStructureEnvelopeCommand : IExternalCommand
   {

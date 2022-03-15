@@ -3,7 +3,7 @@ using Autodesk.Revit.DB ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Forms;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Forms
 {
   /// <summary>
   /// SetProperty.xaml の相互作用ロジック

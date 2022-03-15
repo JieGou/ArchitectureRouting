@@ -15,7 +15,7 @@ using ControlLib ;
 using LengthConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters.LengthConverter ;
 using Visibility = System.Windows.Visibility ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Forms
 {
   public partial class FromToEditControlHaseko : UserControl
   {
