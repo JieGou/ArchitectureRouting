@@ -236,11 +236,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
     private FamilyInstance CreateEnvelopeElement( FamilySymbol familySymbol, XYZ location, double length, double width, double height, string comment )
     {
+      const string offsetParam = "Arent-Offset" ;
+      const string lengthParam = "奥行き" ;
+      const string widthParam = "幅" ;
+      const string heightParam = "高さ" ;
       var envelopeInstance = familySymbol.Instantiate( location, StructuralType.NonStructural ) ;
-      envelopeInstance.LookupParameter( "Arent-Offset" ).Set( 0.0 ) ;
-      envelopeInstance.LookupParameter( "奥行き" ).Set( length ) ;
-      envelopeInstance.LookupParameter( "幅" ).Set( width ) ;
-      envelopeInstance.LookupParameter( "高さ" ).Set( height ) ;
+      envelopeInstance.LookupParameter( offsetParam ).Set( 0.0 ) ;
+      envelopeInstance.LookupParameter( lengthParam ).Set( length ) ;
+      envelopeInstance.LookupParameter( widthParam ).Set( width ) ;
+      envelopeInstance.LookupParameter( heightParam ).Set( height ) ;
       envelopeInstance.get_Parameter( BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS ).Set( comment ) ;
       envelopeInstance.LookupParameter( EnvelopeParameter ).Set( StructureValueParam ) ;
       return envelopeInstance ;
