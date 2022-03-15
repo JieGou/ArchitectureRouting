@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic ;
+﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -7,6 +8,7 @@ using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -107,38 +109,46 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return result ;
     }
 
-    private void CreateRouteSegment( List<(string RouteName, RouteSegment Segment)> result, Document document, bool isOutFromConnector, Reference? room, FamilyInstance powerConnector, IReadOnlyList<FamilyInstance> startSensorConnectors, IReadOnlyList<FamilyInstance> endSensorConnectors, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IRouteProperty routeProperty, SelectionRangeRouteManager.SensorArrayDirection sensorDirection, MEPSystemPipeSpec pipeSpec, string routeName, double radius, double diameter, FixedHeight? sensorFixedHeight, AvoidType avoidType, string nameBase, int nextIndex )
+    private void CreateRouteSegment( List<(string RouteName, RouteSegment Segment)> result, Document document, bool isOutFromConnector, Reference? room, FamilyInstance powerConnector,
+      IReadOnlyList<FamilyInstance> startSensorConnectors, IReadOnlyList<FamilyInstance> endSensorConnectors, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType,
+      MEPCurveType? curveType, IRouteProperty routeProperty, SelectionRangeRouteManager.SensorArrayDirection sensorDirection, MEPSystemPipeSpec pipeSpec, string routeName, double radius,
+      double diameter, FixedHeight? sensorFixedHeight, AvoidType avoidType, string nameBase, int nextIndex )
     {
       IReadOnlyList<FamilyInstance> startPassPoints = new List<FamilyInstance>() ;
       FamilyInstance? startFootPassPoint = null ;
       IReadOnlyList<FamilyInstance> endPassPoints = new List<FamilyInstance>() ;
       FamilyInstance? endFootPassPoint = null ;
       IReadOnlyList<FamilyInstance> passPointsOnWallRoom = new List<FamilyInstance>() ;
-      var powerPosition = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
+      var startPowerPosition = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
+      var endPowerPosition = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
       XYZ? lastSensorPosition = null ;
-      if ( startSensorConnectors.Any() ) {
-        if ( endSensorConnectors.Any() ) {
-          XYZ passPointPosition ;
-          XYZ passPointPosition2 ;
-          ( passPointsOnWallRoom, passPointPosition, passPointPosition2 ) = CreatePassPointOnRoomWall( document, room, isOutFromConnector, routeName, diameter, routeProperty.GetFromFixedHeight(), powerConnector.UniqueId, endSensorConnectors.Last().UniqueId ) ;
-          if ( passPointsOnWallRoom.Any() ) {
-            lastSensorPosition = passPointPosition ;
-            powerPosition = passPointPosition2 ;
-          }
+      if ( endSensorConnectors.Any() ) {
+        XYZ passPointPosition ;
+        XYZ passPointPosition2 ;
+        ( passPointsOnWallRoom, passPointPosition, passPointPosition2 ) = CreatePassPointOnRoomWall( document, room, isOutFromConnector, routeName, diameter, routeProperty.GetFromFixedHeight(), powerConnector.UniqueId, endSensorConnectors.Last().UniqueId ) ;
+        if ( passPointsOnWallRoom.Any() ) {
+          lastSensorPosition = passPointPosition ;
+          endPowerPosition = passPointPosition2 ;
         }
-        ( startFootPassPoint, startPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, startSensorConnectors, sensorDirection, routeProperty, pipeSpec, powerPosition, lastSensorPosition ) ;
+      }
+      
+      if ( startSensorConnectors.Any() ) {
+        ( startFootPassPoint, startPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, startSensorConnectors, sensorDirection, routeProperty, pipeSpec, startPowerPosition, lastSensorPosition ) ;
       }
 
       if ( endSensorConnectors.Any() ) {
-        ( endFootPassPoint, endPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, endSensorConnectors, sensorDirection, routeProperty, pipeSpec, powerPosition ) ;
+        ( endFootPassPoint, endPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, endSensorConnectors, sensorDirection, routeProperty, pipeSpec, endPowerPosition ) ;
       }
 
       CreateRouteSegment( result, document, powerConnector, startSensorConnectors, endSensorConnectors, startFootPassPoint, startPassPoints, endFootPassPoint, endPassPoints,
-        passPointsOnWallRoom, classificationInfo, systemType, curveType, routeProperty, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex ) ;
+        passPointsOnWallRoom, classificationInfo, systemType, curveType, routeProperty, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex, room!, isOutFromConnector ) ;
     }
 
     private void CreateRouteSegment( List<(string RouteName, RouteSegment Segment)> result, Document document, FamilyInstance powerConnector, IReadOnlyList<FamilyInstance> startSensorConnectors,
-      IReadOnlyList<FamilyInstance> endSensorConnectors, FamilyInstance? startFootPassPoint, IReadOnlyList<FamilyInstance> startPassPoints, FamilyInstance? endFootPassPoint, IReadOnlyList<FamilyInstance> endPassPoints, IReadOnlyList<FamilyInstance> passPointsOnWallRoom, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType, MEPCurveType? curveType, IRouteProperty routeProperty, string routeName, double radius, double diameter, FixedHeight? sensorFixedHeight, AvoidType avoidType, string nameBase, int nextIndex )
+      IReadOnlyList<FamilyInstance> endSensorConnectors, FamilyInstance? startFootPassPoint, IReadOnlyList<FamilyInstance> startPassPoints, FamilyInstance? endFootPassPoint,
+      IReadOnlyList<FamilyInstance> endPassPoints, IReadOnlyList<FamilyInstance> passPointsOnWallRoom, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType,
+      MEPCurveType? curveType, IRouteProperty routeProperty, string routeName, double radius, double diameter, FixedHeight? sensorFixedHeight, AvoidType avoidType, string nameBase,
+      int nextIndex, Reference room, bool isOutFromConnector )
     {
       // main route
       var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
@@ -171,7 +181,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             if ( endFootPassPoint != null ) document.Delete( endFootPassPoint.UniqueId ) ;
           }
           else {
-            var secondEndRouteFromEndPoints = EliminateSamePassPoints( endFootPassPoint, endPassPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
+            var passPoints = EliminateSamePassPoints( endFootPassPoint, endPassPoints ).ToList() ;
+            MovePassPoint( document, passPoints, room, isOutFromConnector ) ;
+            var secondEndRouteFromEndPoints = passPoints.Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
             var secondEndRouteToEndPoints = secondEndRouteFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( endSensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
             var firstEndRouteToEndPoint = secondEndRouteFromEndPoints[ 0 ] ;
 
@@ -180,7 +192,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 routeProperty, routeName, diameter, sensorFixedHeight, avoidType ) ;
             }
             else {
-              result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, lastStartRouteFromEndPoints, firstEndRouteToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+              result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, lastStartRouteFromEndPoints, firstEndRouteToEndPoint, diameter,
+                routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
             }
 
             result.AddRange( secondEndRouteFromEndPoints.Zip( secondEndRouteToEndPoints, ( f, t ) =>
@@ -226,6 +239,94 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( passPoint.Id == lastId ) continue ;
           lastId = passPoint.Id ;
           yield return passPoint ;
+        }
+      }
+    }
+
+    private void MovePassPoint( Document document, IReadOnlyCollection<Element> passPoints, Reference reference, bool isOutFromConnector )
+    {
+      const double minDistanceBetweenPassPoints = 0.1 ;
+      const double minDistance = 0.8 ;
+      var room = document.GetElement( reference.ElementId ) ;
+      var lenght = room.ParametersMap.get_Item( "Lenght" ).AsDouble() ;
+      var width = room.ParametersMap.get_Item( "Width" ).AsDouble() ;
+      var thickness = isOutFromConnector ? room.ParametersMap.get_Item( "Thickness" ).AsDouble() : 0 ;
+      var roomLocationPoint = ( room.Location as LocationPoint )!.Point ;
+      var p1 = new XYZ( roomLocationPoint.X + thickness, roomLocationPoint.Y - thickness, roomLocationPoint.Z ) ;
+      var p2 = new XYZ( roomLocationPoint.X + lenght - thickness, p1.Y, p1.Z ) ;
+      var p4 = new XYZ( p1.X, roomLocationPoint.Y - width + thickness, p1.Z ) ;
+      var firstPassPoint = passPoints.First() ;
+      var firstPassPointLocationPoint = ( firstPassPoint.Location as LocationPoint ) ! ;
+      var firstPassPointOrigin = firstPassPointLocationPoint.Point ;
+      double xDistance = 0 ;
+      double yDistance = 0 ;
+      if ( Math.Abs( p1.X - firstPassPointOrigin.X ) < minDistance ) {
+        if ( isOutFromConnector ) {
+          xDistance = p1.X < firstPassPointOrigin.X ? minDistance - Math.Abs( p1.X - firstPassPointOrigin.X ) : Math.Abs( p1.X - firstPassPointOrigin.X ) + minDistance ;
+        }
+        else {
+          xDistance = p1.X < firstPassPointOrigin.X ? - minDistance - Math.Abs( p1.X - firstPassPointOrigin.X ) : Math.Abs( p1.X - firstPassPointOrigin.X ) - minDistance ;
+        }
+      }
+      else if ( Math.Abs( p2.X - firstPassPointOrigin.X ) < minDistance ) {
+        if ( isOutFromConnector ) {
+          xDistance = p2.X < firstPassPointOrigin.X ? - Math.Abs( p2.X - firstPassPointOrigin.X ) - minDistance : Math.Abs( p2.X - firstPassPointOrigin.X ) - minDistance ;
+        }
+        else {
+          xDistance = p2.X < firstPassPointOrigin.X ? minDistance - Math.Abs( p2.X - firstPassPointOrigin.X ) : Math.Abs( p2.X - firstPassPointOrigin.X ) - minDistance ;
+        }
+      }
+      
+      if ( Math.Abs( p1.Y - firstPassPointOrigin.Y ) < minDistance ) {
+        if ( isOutFromConnector ) {
+          yDistance = p1.Y < firstPassPointOrigin.Y ? minDistance - Math.Abs( p1.Y - firstPassPointOrigin.Y ) : Math.Abs( p1.Y - firstPassPointOrigin.Y ) + minDistance ;
+        }
+        else {
+          yDistance = p1.Y < firstPassPointOrigin.Y ? - minDistance - Math.Abs( p1.Y - firstPassPointOrigin.Y ) : Math.Abs( p1.Y - firstPassPointOrigin.Y ) - minDistance ;
+        }
+      }
+      else if ( Math.Abs( p4.Y - firstPassPointOrigin.Y ) < minDistance ) {
+        if ( isOutFromConnector ) {
+          yDistance = p4.Y < firstPassPointOrigin.Y ? - minDistance - Math.Abs( p4.Y - firstPassPointOrigin.Y ) : Math.Abs( p4.Y - firstPassPointOrigin.Y ) - minDistance ;
+        }
+        else {
+          yDistance = p4.Y < firstPassPointOrigin.Y ? minDistance - Math.Abs( p4.Y - firstPassPointOrigin.Y ) : Math.Abs( p4.Y - firstPassPointOrigin.Y ) + minDistance ;
+        }
+      }
+
+      if ( xDistance == 0 && yDistance == 0 ) return ;
+      firstPassPoint.Location.Move( new XYZ( xDistance, yDistance, 0 ) ) ;
+      if ( passPoints.Count <= 1 ) return ;
+      var passPointsWithoutFirst = passPoints.Take( passPoints.Count - 1 ).ToReadOnlyCollection( passPoints.Count - 1 ) ;
+      var prevPassPointOrigin = ( firstPassPoint.Location as LocationPoint )!.Point ;
+      foreach ( var passPoint in passPointsWithoutFirst ) {
+        double xDistanceBetweenPassPoint = 0 ;
+        double yDistanceBetweenPassPoint = 0 ;
+        var (xNextPassPoint, yNextPassPoint, _) = ( passPoint.Location as LocationPoint )!.Point ;
+        if ( xDistance != 0 && Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) < minDistanceBetweenPassPoints ) {
+          if ( xNextPassPoint > prevPassPointOrigin.X ) {
+            xDistanceBetweenPassPoint = xDistance > 0 ? minDistanceBetweenPassPoints - Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) : -minDistanceBetweenPassPoints - Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) ;
+          }
+          else {
+            xDistanceBetweenPassPoint = xDistance > 0 ? minDistanceBetweenPassPoints + Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) : Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) - minDistanceBetweenPassPoints ;
+          }
+        }
+
+        if ( yDistance != 0 && Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
+          if ( yNextPassPoint > prevPassPointOrigin.Y ) {
+            yDistanceBetweenPassPoint = yDistance > 0 ? minDistanceBetweenPassPoints - Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) : -minDistanceBetweenPassPoints - Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) ;
+          }
+          else {
+            yDistanceBetweenPassPoint = yDistance > 0 ? minDistanceBetweenPassPoints + Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) : Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) - minDistanceBetweenPassPoints ;
+          }
+        }
+
+        if ( xDistanceBetweenPassPoint != 0 || yDistanceBetweenPassPoint != 0 ) {
+          passPoint.Location.Move( new XYZ( xDistanceBetweenPassPoint, yDistanceBetweenPassPoint, 0 ) ) ;
+          prevPassPointOrigin = ( passPoint.Location as LocationPoint )!.Point ;
+        }
+        else {
+          return ;
         }
       }
     }
