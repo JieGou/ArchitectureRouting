@@ -122,7 +122,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var wireSize = string.Empty ;
       var wireStrip = string.Empty ;
       var endConnector = allConnectors.First( c => c.UniqueId == toConnectorUniqueId ) ;
-      endConnector?.TryGetProperty( RoutingFamilyLinkedParameter.IsEcoMode, out isEcoMode ) ;
+      endConnector?.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out isEcoMode ) ;
       var hiroiSetModels = 
         ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode! ) 
           ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) 
@@ -188,7 +188,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static ConnectorInfo GetConnectorCeedCodeInfo( Element connector )
     {
-      connector.TryGetProperty( ConnectorFamilyParameter.CeedCode, out string? ceedCode ) ;
+      connector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) ;
       if ( string.IsNullOrEmpty( ceedCode ) ) return new ConnectorInfo( string.Empty, string.Empty, string.Empty ) ;
       var ceedCodeInfo = ceedCode!.Split( '-' ).ToList() ;
       var ceedSetCode = ceedCodeInfo.First() ;

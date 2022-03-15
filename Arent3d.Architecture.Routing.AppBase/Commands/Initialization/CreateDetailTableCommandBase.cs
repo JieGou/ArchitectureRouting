@@ -314,7 +314,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             parentGroup.UngroupMembers() ;
           }
 
-          element.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, constructionItem ) ;
+          element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem ) ;
         }
       }
 
