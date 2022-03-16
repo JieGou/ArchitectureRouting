@@ -8,17 +8,19 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "7cbca694-3364-4f3d-bb1c-2e0462bb1256" )]
+  [Guid( "77c7ee59-8be2-40d2-b57c-17668875b03e" )]
   [StorableVisibility( AppInfo.VendorId )]
   public class CeedStorable : StorableBase
   {
     public const string StorableName = "CeeD Model" ;
     private const string CeedModelField = "CeeDModel" ;
     private const string CeedModelUsedField = "CeeDModelUsed" ;
+    private const string IsShowCeedModelNumberField = "IsShowCeedModelNumber" ;
     private const string ConnectorFamilyUploadField = "ConnectorFamilyUpload" ;
 
     public List<CeedModel> CeedModelData { get ; set ; }
     public List<CeedModel> CeedModelUsedData { get ; set ; }
+    public bool IsShowCeedModelNumber { get ; set ; }
     public List<string> ConnectorFamilyUploadData { get ; set ; }
 
     public CeedStorable( DataStorage owner ) : base( owner, false )
@@ -39,6 +41,7 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       CeedModelData = reader.GetArray<CeedModel>( CeedModelField ).ToList() ;
       CeedModelUsedData = reader.GetArray<CeedModel>( CeedModelUsedField ).ToList() ;
+      IsShowCeedModelNumber = reader.GetSingle<bool>( IsShowCeedModelNumberField ) ;
       ConnectorFamilyUploadData = reader.GetArray<string>( ConnectorFamilyUploadField ).ToList() ;
     }
 
@@ -46,6 +49,7 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       writer.SetArray( CeedModelField, CeedModelData ) ;
       writer.SetArray( CeedModelUsedField, CeedModelUsedData ) ;
+      writer.SetSingle(  IsShowCeedModelNumberField, IsShowCeedModelNumber) ;
       writer.SetArray( ConnectorFamilyUploadField, ConnectorFamilyUploadData ) ;
     }
 
@@ -53,6 +57,7 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       generator.SetArray<CeedModel>( CeedModelField ) ;
       generator.SetArray<CeedModel>( CeedModelUsedField ) ;
+      generator.SetSingle<bool>( IsShowCeedModelNumberField  ) ;
       generator.SetArray<string>( ConnectorFamilyUploadField ) ;
     }
 

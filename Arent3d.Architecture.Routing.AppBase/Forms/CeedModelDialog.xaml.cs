@@ -21,11 +21,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class CeedModelDialog
   {
+    private const string HeaderCeedModelNumberColumn = "CeeD型番" ;
+    private readonly DataGridColumn? _ceedModelNumberColumn ;
     private readonly Document _document ;
     private CeedViewModel? _allCeedModels ;
     private CeedViewModel? _usingCeedModel ;
     private string _ceedModelNumberSearch ;
     private string _modelNumberSearch ;
+    private bool _isShowCeedModelNumber ;
     private CeedModel? _selectedCeedModel ;
     public string SelectedDeviceSymbol { get ; set ; }
     public string SelectedCondition { get ; set ; }
@@ -47,11 +50,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedCeedCode = string.Empty ;
       SelectedModelNumber = string.Empty ;
       SelectedFloorPlanType = string.Empty ;
+      _isShowCeedModelNumber = false ;
 
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeedStorable != null ) {
         LoadData( oldCeedStorable ) ;
+        _isShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
       }
+      
+      _ceedModelNumberColumn = DtGrid.Columns.SingleOrDefault( c => c.Header.ToString() == HeaderCeedModelNumberColumn ) ;
+      CbShowCeedModelNumber.IsChecked = _isShowCeedModelNumber ;
 
       BtnReplaceSymbol.IsEnabled = false ;
 
@@ -81,12 +89,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedModelNumber = selectedItem.ModelNumber ;
       SelectedFloorPlanType = selectedItem.FloorPlanType ;
       if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) ) return ;
+      SaveCeedModelNumberDisplayState() ;
       DialogResult = true ;
       Close() ;
     }
 
     private void Button_OK( object sender, RoutedEventArgs e )
     {
+      SaveCeedModelNumberDisplayState() ;
       DialogResult = true ;
       Close() ;
     }
@@ -131,7 +141,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
     {
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      if ( ceedStorable != null ) {
+      if ( ceedStorable != null && ceedStorable.CeedModelData.Any() ) {
         OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Csv files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx", Multiselect = false } ;
         string filePath = string.Empty ;
         if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
@@ -269,6 +279,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _allCeedModels == null ) return ;
       LoadData( _allCeedModels ) ;
     }
+    
+    private void ShowCeedModelNumberColumn_Checked( object sender, RoutedEventArgs e )
+    {
+      if ( _ceedModelNumberColumn != null )
+        _ceedModelNumberColumn.Visibility = Visibility.Visible ;
+      LbCeedModelNumbers.Visibility = Visibility.Visible ;
+      CmbCeedModelNumbers.Visibility = Visibility.Visible ;
+      _isShowCeedModelNumber = true ;
+    }
+
+    private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
+    {
+      if ( _ceedModelNumberColumn != null )
+        _ceedModelNumberColumn.Visibility = Visibility.Hidden ;
+      LbCeedModelNumbers.Visibility = Visibility.Hidden ;
+      CmbCeedModelNumbers.Visibility = Visibility.Hidden ;
+      _isShowCeedModelNumber = false ;
+    }
 
     private void LoadData( CeedViewModel ceedViewModel )
     {
@@ -276,6 +304,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DtGrid.ItemsSource = ceedViewModel.CeedModels ;
       CmbCeedModelNumbers.ItemsSource = ceedViewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = ceedViewModel.ModelNumbers ;
+    }
+
+    private void SaveCeedModelNumberDisplayState()
+    {
+      var ceedStorable = _document.GetCeedStorable() ;
+      try {
+        using Transaction t = new Transaction( _document, "Save data" ) ;
+        t.Start() ;
+        ceedStorable.IsShowCeedModelNumber = _isShowCeedModelNumber ;
+        ceedStorable.Save() ;
+        t.Commit() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      }
     }
 
     private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName)

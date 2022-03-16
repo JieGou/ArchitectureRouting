@@ -6,7 +6,7 @@
         xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="CeeD Models" Height="800" Width="900">
+        Title="CeeD Models" Height="800" Width="900" MinHeight="200" MinWidth="900">
   <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
@@ -15,9 +15,23 @@
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
     
-      <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" >
-        <Label Content="CeeD型番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5" />
-        <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" />
+      <Button Grid.Row="0" x:Name="BtnLoadData"
+              Content="マスター読み込み"
+              Click="Button_LoadData"
+              Margin="10,10,10,10"
+              HorizontalAlignment="Left"
+              Width="100" />
+      
+      <Button Grid.Row="0" x:Name="BtnSymbolRegistration"
+              Content="使用シンボル登録"
+              Click="Button_SymbolRegistration"
+              Margin="120,10,10,10"
+              HorizontalAlignment="Left"
+              Width="100" />
+    
+      <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right">
+        <Label Content="CeeD型番" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5" Visibility="Hidden"/>
+        <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" Visibility="Hidden"/>
         <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
         <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" />        
         <Button Content="Search"
@@ -26,32 +40,19 @@
                 HorizontalAlignment="Right"
                 Width="80" />
       </StackPanel>
-      
-      <Button Grid.Row="0"
-              Content="使用シンボル登録"
-              Click="Button_SymbolRegistration"
-              Margin="10,5,120,5"
-              HorizontalAlignment="Right"
-              Width="100" />
-      
-      <Button Grid.Row="0"
-              Content="マスター読み込み"
-              Click="Button_LoadData"
-              Margin="10,5,10,5"
-              HorizontalAlignment="Right"
-              Width="100" />
-      
-      <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="False" Content="使用するものだけ表示" Width="200" HorizontalAlignment="Left" Margin="15, 10, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden" />
+
+      <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="False" Content="使用するものだけ表示" Width="130" HorizontalAlignment="Left" Margin="120, 0, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden" />
+      <CheckBox Grid.Row="1" Name="CbShowCeedModelNumber" IsChecked="False" Content="CeeD型番の表示" Width="120" HorizontalAlignment="Right" Margin="0, 0, 0, 0" Checked="ShowCeedModelNumberColumn_Checked" Unchecked="ShowCeedModelNumberColumn_UnChecked" />
       
       <Button Grid.Row="1" x:Name="BtnReplaceSymbol"
               Content="モデル置き換え"
               Click="Button_ReplaceSymbol"
               Margin="10,5,10,10"
-              HorizontalAlignment="Right"
+              HorizontalAlignment="Left"
               Width="100" 
               Height="27"/>
       
-      <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+    <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
         <DataGrid.Resources>
           <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
             <Setter Property="Padding" Value="-2"/>
@@ -69,8 +70,8 @@
 
           <DataGridTextColumn Header="CeeDセットコード" Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
 
-          <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="150" />
-
+          <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="150" Visibility="Hidden"/>
+          
           <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
 
           <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="140" />
