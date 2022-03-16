@@ -26,11 +26,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class CeedModelDialog
   {
+    private const string HeaderCeedModelNumberColumn = "CeeD型番" ;
+    private readonly DataGridColumn? _ceedModelNumberColumn ;
     private readonly Document _document ;
     private CeedViewModel? _allCeedModels ;
     private CeedViewModel? _usingCeedModel ;
     private string _ceedModelNumberSearch ;
     private string _modelNumberSearch ;
+    private bool _isShowCeedModelNumber ;
     public string SelectedDeviceSymbol ;
     public string SelectedCondition ;
     public string SelectedCeedCode ;
@@ -50,11 +53,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedCeedCode = string.Empty ;
       SelectedModelNumber = string.Empty ;
       SelectedFloorPlanType = string.Empty ;
+      _isShowCeedModelNumber = false ;
 
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeedStorable != null ) {
         LoadData( oldCeedStorable ) ;
+        _isShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
       }
+      
+      _ceedModelNumberColumn = DtGrid.Columns.SingleOrDefault( c => c.Header.ToString() == HeaderCeedModelNumberColumn ) ;
+      CbShowCeedModelNumber.IsChecked = _isShowCeedModelNumber ;
 
       Style rowStyle = new Style( typeof( DataGridRow ) ) ;
       rowStyle.Setters.Add( new EventSetter( DataGridRow.MouseDoubleClickEvent,
@@ -71,12 +79,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedModelNumber = selectedItem.ModelNumber ;
       SelectedFloorPlanType = selectedItem.FloorPlanType ;
       if ( string.IsNullOrEmpty( SelectedDeviceSymbol ) ) return ;
+      SaveCeedModelNumberDisplayState() ;
       DialogResult = true ;
       Close() ;
     }
 
     private void Button_OK( object sender, RoutedEventArgs e )
     {
+      SaveCeedModelNumberDisplayState() ;
       DialogResult = true ;
       Close() ;
     }
@@ -91,7 +101,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ceedViewModels != null )
         LoadData( ceedViewModels ) ;
     }
-
+    
     private void CmbCeedModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
     {
       _ceedModelNumberSearch = ! string.IsNullOrEmpty( CmbCeedModelNumbers.Text ) ? CmbCeedModelNumbers.Text : string.Empty ;
@@ -107,32 +117,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _allCeedModels == null && _usingCeedModel == null ) return ;
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels == null ) return ;
-      if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) ) {
-        this.DataContext = ceedViewModels ;
-      }
-      else {
-        List<CeedModel> ceedModels = new List<CeedModel>() ;
-        switch ( string.IsNullOrEmpty( _ceedModelNumberSearch ) ) {
-          case false when ! string.IsNullOrEmpty( _modelNumberSearch ) :
-            ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) && c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
-            break ;
-          case false when string.IsNullOrEmpty( _modelNumberSearch ) :
-            ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) ).ToList() ;
-            break ;
-          case true when ! string.IsNullOrEmpty( _modelNumberSearch ) :
-            ceedModels = ceedViewModels.CeedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
-            break ;
-        }
+      if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) ) return ;
+      var ceedModels = new List<CeedModel>() ;
+      if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) && ! string.IsNullOrEmpty( _modelNumberSearch ) )
+        ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) && c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
+      else if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) )
+        ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) ).ToList() ;
+      else if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && ! string.IsNullOrEmpty( _modelNumberSearch ) )
+        ceedModels = ceedViewModels.CeedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
 
-        var ceedModelsSearch = new CeedViewModel( ceedViewModels.CeedStorable, ceedModels ) ;
-        this.DataContext = ceedModelsSearch ;
-      }
+      var ceedModelsSearch = new CeedViewModel( ceedViewModels.CeedStorable, ceedModels ) ;
+      this.DataContext = ceedModelsSearch ;
     }
 
     private void Button_SymbolRegistration( object sender, RoutedEventArgs e )
     {
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      if ( ceedStorable != null ) {
+      if ( ceedStorable != null && ceedStorable.CeedModelData.Any() ) {
         OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Csv files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx", Multiselect = false } ;
         string filePath = string.Empty ;
         if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
@@ -237,12 +238,44 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( _allCeedModels == null ) return ;
       LoadData( _allCeedModels ) ;
     }
+    
+    private void ShowCeedModelNumberColumn_Checked( object sender, RoutedEventArgs e )
+    {
+      if ( _ceedModelNumberColumn != null )
+        _ceedModelNumberColumn.Visibility = Visibility.Visible ;
+      LbCeedModelNumbers.Visibility = Visibility.Visible ;
+      CmbCeedModelNumbers.Visibility = Visibility.Visible ;
+      _isShowCeedModelNumber = true ;
+    }
+
+    private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
+    {
+      if ( _ceedModelNumberColumn != null )
+        _ceedModelNumberColumn.Visibility = Visibility.Hidden ;
+      LbCeedModelNumbers.Visibility = Visibility.Hidden ;
+      CmbCeedModelNumbers.Visibility = Visibility.Hidden ;
+      _isShowCeedModelNumber = false ;
+    }
 
     private void LoadData( CeedViewModel ceedViewModel )
     {
       this.DataContext = ceedViewModel ;
       CmbCeedModelNumbers.ItemsSource = ceedViewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = ceedViewModel.ModelNumbers ;
+    }
+
+    private void SaveCeedModelNumberDisplayState()
+    {
+      var ceedStorable = _document.GetCeedStorable() ;
+      try {
+        using Transaction t = new Transaction( _document, "Save data" ) ;
+        t.Start() ;
+        ceedStorable.IsShowCeedModelNumber = _isShowCeedModelNumber ;
+        ceedStorable.Save() ;
+        t.Commit() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      }
     }
   }
 }
