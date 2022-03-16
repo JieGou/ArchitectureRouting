@@ -297,7 +297,7 @@ namespace Arent3d.Architecture.Routing
     public static void MakeCertainAllRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<RoutingFamilyType>( AssetManager.GetFamilyPath, true ) ;
     public static void EraseAllRoutingFamilies( this Document document ) => document.UnloadAllFamilies<RoutingFamilyType>() ;
 
-    public static void MakeCertainAllConnectorFamilies( this Document document ) => document.MakeCertainAllFamilies<ConnectorOneSideFamilyType>( AssetManager.GetFamilyPath, true ) ;
+    public static void MakeCertainAllConnectorFamilies( this Document document ) => document.MakeCertainAllFamilies<ConnectorOneSideFamilyType>( AssetManager.GetElectricalFamilyPath, true ) ;
 
     public static void EraseAllConnectorFamilies( this Document document )
     {
