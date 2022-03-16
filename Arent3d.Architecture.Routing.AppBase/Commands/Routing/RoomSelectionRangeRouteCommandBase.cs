@@ -246,7 +246,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private void MovePassPoint( Document document, IReadOnlyCollection<Element> passPoints, Reference reference, bool isOutFromConnector )
     {
       const double minDistanceBetweenPassPoints = 0.1 ;
-      const double minDistance = 0.8 ;
+      const double minDistanceBetweenPassPointAndWall = 0.8 ;
       var room = document.GetElement( reference.ElementId ) ;
       var lenght = room.ParametersMap.get_Item( "Lenght" ).AsDouble() ;
       var width = room.ParametersMap.get_Item( "Width" ).AsDouble() ;
@@ -260,37 +260,72 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var firstPassPointOrigin = firstPassPointLocationPoint.Point ;
       double xDistance = 0 ;
       double yDistance = 0 ;
-      if ( Math.Abs( p1.X - firstPassPointOrigin.X ) < minDistance ) {
-        if ( isOutFromConnector ) {
-          xDistance = p1.X < firstPassPointOrigin.X ? minDistance - Math.Abs( p1.X - firstPassPointOrigin.X ) : Math.Abs( p1.X - firstPassPointOrigin.X ) + minDistance ;
-        }
-        else {
-          xDistance = p1.X < firstPassPointOrigin.X ? - minDistance - Math.Abs( p1.X - firstPassPointOrigin.X ) : Math.Abs( p1.X - firstPassPointOrigin.X ) - minDistance ;
-        }
-      }
-      else if ( Math.Abs( p2.X - firstPassPointOrigin.X ) < minDistance ) {
-        if ( isOutFromConnector ) {
-          xDistance = p2.X < firstPassPointOrigin.X ? - Math.Abs( p2.X - firstPassPointOrigin.X ) - minDistance : Math.Abs( p2.X - firstPassPointOrigin.X ) - minDistance ;
-        }
-        else {
-          xDistance = p2.X < firstPassPointOrigin.X ? minDistance - Math.Abs( p2.X - firstPassPointOrigin.X ) : Math.Abs( p2.X - firstPassPointOrigin.X ) - minDistance ;
-        }
-      }
+      var xDistanceBetweenP1AndFirstPassPointOrigin = Math.Abs( p1.X - firstPassPointOrigin.X ) ;
+      var xDistanceBetweenP2AndFirstPassPointOrigin = Math.Abs( p2.X - firstPassPointOrigin.X ) ;
+      var yDistanceBetweenP1AndFirstPassPointOrigin = Math.Abs( p1.Y - firstPassPointOrigin.Y ) ;
+      var yDistanceBetweenP4AndFirstPassPointOrigin = Math.Abs( p4.Y - firstPassPointOrigin.Y ) ;
       
-      if ( Math.Abs( p1.Y - firstPassPointOrigin.Y ) < minDistance ) {
-        if ( isOutFromConnector ) {
-          yDistance = p1.Y < firstPassPointOrigin.Y ? minDistance - Math.Abs( p1.Y - firstPassPointOrigin.Y ) : Math.Abs( p1.Y - firstPassPointOrigin.Y ) + minDistance ;
+      if ( isOutFromConnector ) {
+        if ( p1.X > firstPassPointOrigin.X ) {
+          xDistance = xDistanceBetweenP1AndFirstPassPointOrigin + minDistanceBetweenPassPointAndWall ;
         }
-        else {
-          yDistance = p1.Y < firstPassPointOrigin.Y ? - minDistance - Math.Abs( p1.Y - firstPassPointOrigin.Y ) : Math.Abs( p1.Y - firstPassPointOrigin.Y ) - minDistance ;
+        else if ( xDistanceBetweenP1AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
+          xDistance = minDistanceBetweenPassPointAndWall - xDistanceBetweenP1AndFirstPassPointOrigin ;
+        }
+        else if ( p2.X < firstPassPointOrigin.X ) {
+          xDistance = -xDistanceBetweenP2AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+        }
+        else if ( xDistanceBetweenP2AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
+          xDistance = xDistanceBetweenP2AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+        }
+        
+        if ( p1.Y < firstPassPointOrigin.Y ) {
+          yDistance = - yDistanceBetweenP1AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+        }
+        else if ( yDistanceBetweenP1AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
+          yDistance = yDistanceBetweenP1AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+        }
+        else if ( p4.Y > firstPassPointOrigin.Y ) {
+          yDistance = yDistanceBetweenP4AndFirstPassPointOrigin + minDistanceBetweenPassPointAndWall ;
+        }
+        else if ( yDistanceBetweenP4AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
+          yDistance = minDistanceBetweenPassPointAndWall - yDistanceBetweenP4AndFirstPassPointOrigin ;
         }
       }
-      else if ( Math.Abs( p4.Y - firstPassPointOrigin.Y ) < minDistance ) {
-        if ( isOutFromConnector ) {
-          yDistance = p4.Y < firstPassPointOrigin.Y ? - minDistance - Math.Abs( p4.Y - firstPassPointOrigin.Y ) : Math.Abs( p4.Y - firstPassPointOrigin.Y ) - minDistance ;
+      else {
+        if ( p1.X < firstPassPointOrigin.X 
+             && firstPassPointOrigin.X < p2.X 
+             && ( ( xDistanceBetweenP1AndFirstPassPointOrigin < yDistanceBetweenP1AndFirstPassPointOrigin && xDistanceBetweenP1AndFirstPassPointOrigin < yDistanceBetweenP4AndFirstPassPointOrigin )
+             || ( xDistanceBetweenP2AndFirstPassPointOrigin < yDistanceBetweenP1AndFirstPassPointOrigin && xDistanceBetweenP2AndFirstPassPointOrigin < yDistanceBetweenP4AndFirstPassPointOrigin ) ) ) {
+          if ( xDistanceBetweenP1AndFirstPassPointOrigin < xDistanceBetweenP2AndFirstPassPointOrigin ) {
+            xDistance = - xDistanceBetweenP1AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+          }
+          else {
+            xDistance = xDistanceBetweenP2AndFirstPassPointOrigin + minDistanceBetweenPassPointAndWall ;
+          }
         }
-        else {
-          yDistance = p4.Y < firstPassPointOrigin.Y ? minDistance - Math.Abs( p4.Y - firstPassPointOrigin.Y ) : Math.Abs( p4.Y - firstPassPointOrigin.Y ) + minDistance ;
+        else if ( xDistanceBetweenP1AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
+          xDistance = xDistanceBetweenP1AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+        }
+        else if ( xDistanceBetweenP2AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
+          xDistance = minDistanceBetweenPassPointAndWall - xDistanceBetweenP2AndFirstPassPointOrigin ;
+        }
+
+        if ( p1.Y > firstPassPointOrigin.Y && firstPassPointOrigin.Y > p4.Y ) {
+          if ( xDistance == 0 ) {
+            if (yDistanceBetweenP1AndFirstPassPointOrigin < yDistanceBetweenP4AndFirstPassPointOrigin ) {
+              yDistance = yDistanceBetweenP1AndFirstPassPointOrigin + minDistanceBetweenPassPointAndWall ;
+            }
+            else {
+              yDistance = -yDistanceBetweenP4AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+            }
+          }
+        }
+        else if ( yDistanceBetweenP1AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
+          yDistance = minDistanceBetweenPassPointAndWall - yDistanceBetweenP1AndFirstPassPointOrigin ;
+        }
+        else if ( yDistanceBetweenP4AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
+          yDistance = yDistanceBetweenP4AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
         }
       }
 
@@ -303,21 +338,39 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         double xDistanceBetweenPassPoint = 0 ;
         double yDistanceBetweenPassPoint = 0 ;
         var (xNextPassPoint, yNextPassPoint, _) = ( passPoint.Location as LocationPoint )!.Point ;
-        if ( xDistance != 0 && Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) < minDistanceBetweenPassPoints ) {
-          if ( xNextPassPoint > prevPassPointOrigin.X ) {
-            xDistanceBetweenPassPoint = xDistance > 0 ? minDistanceBetweenPassPoints - Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) : -minDistanceBetweenPassPoints - Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) ;
+        var xDistanceBetweenPrevAndNextPassPoint = Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) ;
+        var yDistanceBetweenPrevAndNextPassPoint = Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) ;
+        if ( xDistance > 0 ) {
+          if ( xNextPassPoint < prevPassPointOrigin.X ) {
+            xDistanceBetweenPassPoint = minDistanceBetweenPassPoints + xDistanceBetweenPrevAndNextPassPoint ;
           }
-          else {
-            xDistanceBetweenPassPoint = xDistance > 0 ? minDistanceBetweenPassPoints + Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) : Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) - minDistanceBetweenPassPoints ;
+          else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
+            xDistanceBetweenPassPoint = minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
+          }
+        }
+        else if ( xDistance < 0 ) {
+          if ( xNextPassPoint > prevPassPointOrigin.X ) {
+            xDistanceBetweenPassPoint = - minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
+          }
+          else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
+            xDistanceBetweenPassPoint = xDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
           }
         }
 
-        if ( yDistance != 0 && Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
-          if ( yNextPassPoint > prevPassPointOrigin.Y ) {
-            yDistanceBetweenPassPoint = yDistance > 0 ? minDistanceBetweenPassPoints - Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) : -minDistanceBetweenPassPoints - Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) ;
+        if ( yDistance > 0 ) {
+          if ( yNextPassPoint < prevPassPointOrigin.Y ) {
+            yDistanceBetweenPassPoint = minDistanceBetweenPassPoints + yDistanceBetweenPrevAndNextPassPoint ;
           }
-          else {
-            yDistanceBetweenPassPoint = yDistance > 0 ? minDistanceBetweenPassPoints + Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) : Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) - minDistanceBetweenPassPoints ;
+          else if ( Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
+            yDistanceBetweenPassPoint = minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
+          }
+        }
+        else if ( yDistance < 0 ) {
+          if ( yNextPassPoint > prevPassPointOrigin.Y ) {
+            yDistanceBetweenPassPoint = - minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
+          }
+          else if ( yDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
+            yDistanceBetweenPassPoint = yDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
           }
         }
 
