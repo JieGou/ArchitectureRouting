@@ -22,7 +22,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Border BorderBrush="LightGray" BorderThickness="1">
+    <Border Name="FromToEditControlBorder" BorderBrush="LightGray" BorderThickness="1">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -163,6 +163,7 @@
                       VerticalAlignment="Center" />
 
             <Label Grid.Row="4" Grid.Column="0" Content="First connector through height"
+                   Name="FirstConnectorThroughHeightText"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center" />
             <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"

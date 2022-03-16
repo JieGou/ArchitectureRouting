@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
@@ -15,6 +16,7 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
+using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -22,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [DisplayNameKey( "Electrical.App.Commands.Routing.SelectionRangeRouteWithPassCommand", DefaultString = "Selection Range \nRoute With Pass" )]
   [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class SelectionRangeRouteWithPassCommand: RoutingCommandBase<SelectionRangeRouteWithPassCommand.SelectState>
+  public class SelectionRangeRouteWithPassCommand : RoutingCommandBase<SelectionRangeRouteWithPassCommand.SelectState>
   {
     private const string ErrorMessageNoPowerAndSensorConnector = "No power connectors and sensor connectors are selected." ;
     private const string ErrorMessageNoPowerConnector = "No power connectors are selected." ;
@@ -31,17 +33,25 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private const string ErrorMessageNoSensorConnector = "No sensor connectors are selected on the power connector level." ;
     private const string ErrorMessageSensorConnector = "At least two sensor connectors on the power connector level must be selected." ;
     private const string ErrorMessageCannotDetermineSensorConnectorArrayDirection = "Couldn't determine sensor array direction" ;
+    private const string ConfirmMessageHeightSettingNotGood = "First connect through height from Power to Pass need to be larger than height of Pass\nAnd height of Pass need to be larger than first connect through height from Pass to Sensors\nDo you still want to connect with these height settings?" ;
+    private const string ConfirmCaptionHeightSettingNotGood = "Height Settings Are Not Good Confirmation" ;
+
+
     protected override OperationResult<SelectState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var routingExecutor = GetRoutingExecutor() ;
 
-      var (powerConnector,passConnector, sensorConnectors, sensorDirection, errorMessage ) = SelectionRangeRoute( uiDocument ) ;
+      var (powerConnector, passConnector, sensorConnectors, sensorDirection, errorMessage) = SelectionRangeRoute( uiDocument ) ;
       if ( null != errorMessage ) return OperationResult<SelectState>.FailWithMessage( errorMessage ) ;
 
       var farthestSensorConnector = sensorConnectors.Last() ;
-      var property = ShowPropertyDialog( uiDocument.Document, powerConnector!, passConnector!,farthestSensorConnector ) ;
+      var property = ShowPropertyDialog( uiDocument.Document, powerConnector!, passConnector!, farthestSensorConnector ) ;
       if ( true != property?.DialogResult ) return OperationResult<SelectState>.Cancelled ;
+      if ( ! IsGoodHeightSettings( property, passConnector! ) ) {
+        MessageBoxResult messageBoxResult = MessageBox.Show( ConfirmMessageHeightSettingNotGood, ConfirmCaptionHeightSettingNotGood, MessageBoxButton.YesNo ) ;
+        if ( messageBoxResult == MessageBoxResult.No ) return OperationResult<SelectState>.Cancelled ;
+      }
 
       if ( GetMEPSystemClassificationInfo( powerConnector!, farthestSensorConnector, property.GetSystemType() ) is not { } classificationInfo ) return OperationResult<SelectState>.Failed ;
 
@@ -49,13 +59,40 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       return new OperationResult<SelectState>( new SelectState( powerConnector!, passConnector!, sensorConnectors, sensorDirection, property, classificationInfo, pipeSpec ) ) ;
     }
+
+    private static bool IsGoodHeightSettings( RouteWithPassPropertyDialog property, FamilyInstance passConnector )
+    {
+      var firstConnectThroughHeightFromPowerToPass = property.GetFromFixedHeight() ;
+      var firstConnectThroughHeightFromPassToSensors = property.GetPassToSensorsFromFixedHeight() ;
+      bool isFromPowerToPassLargerHigherThanPass = false, isPassHigherThanFromPassToSensorsHeight = false ;
+      Level? level = passConnector?.Document.GetElement(passConnector.LevelId) as Level;
+      var passTopHeight = passConnector?.GetTopConnectorOfConnectorFamily().Origin.Z - level?.Elevation ;
+      var passBottomHeight = passConnector?.GetBottomConnectorOfConnectorFamily().Origin.Z- level?.Elevation;
+      // passBottomHeight = AppBase.Forms.ValueConverters.LengthConverter.Default.ConvertUnit( passBottomHeight ?? 0 ) ;
+      // passTopHeight = AppBase.Forms.ValueConverters.LengthConverter.Default.ConvertUnit( passTopHeight ?? 0 ) ;
+
+
+      if ( firstConnectThroughHeightFromPowerToPass != null ) {
+        
+        isFromPowerToPassLargerHigherThanPass = firstConnectThroughHeightFromPowerToPass.Value.Height > passTopHeight ;
+      }
+
+      if ( firstConnectThroughHeightFromPassToSensors != null ) {
+        isPassHigherThanFromPassToSensorsHeight = firstConnectThroughHeightFromPassToSensors.Value.Height < passBottomHeight ;
+      }
+
+      return isFromPowerToPassLargerHigherThanPass && isPassHigherThanFromPassToSensorsHeight ;
+    }
+
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( Element fromPickElement, Element toPickElement, MEPSystemType? systemType )
     {
       if ( ( fromPickElement.GetConnectors().FirstOrDefault() ?? toPickElement.GetConnectors().FirstOrDefault() ) is { } connector && MEPSystemClassificationInfo.From( connector ) is { } connectorClassificationInfo ) return connectorClassificationInfo ;
 
       return GetMEPSystemClassificationInfoFromSystemType( systemType ) ;
     }
-    public record SelectState( FamilyInstance PowerConnector, FamilyInstance PassConnector,IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteCommandBase.SensorArrayDirection SensorDirection, IRouteWithPassPropertyDialog PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
+
+    public record SelectState( FamilyInstance PowerConnector, FamilyInstance PassConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteCommandBase.SensorArrayDirection SensorDirection, IRouteWithPassPropertyDialog PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
+
     private RouteWithPassPropertyDialog? ShowPropertyDialog( Document document, Element powerElement, Element passElement, Element sensorElement )
     {
       var fromLevelId = powerElement.LevelId ;
@@ -71,12 +108,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       return ShowDialog( document, GetAddInType(), fromLevelId, toLevelId ) ;
     }
+
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
+
     private static RouteWithPassPropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
-      var routeChoiceSpec1 = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
-      var sv = new RouteWithPassPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ,routeChoiceSpec1,new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter )) ;
+      var sv = new RouteWithPassPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ) ;
 
       sv.ShowDialog() ;
 
@@ -86,12 +124,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private static RouteWithPassPropertyDialog ShowDialog( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, addInType, fromLevelId, toLevelId ) ;
-      var routeChoiceSpec1 = new RoutePropertyTypeList( document, addInType, fromLevelId, toLevelId ) ;
-      var sv = new RouteWithPassPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ), routeChoiceSpec1 ,new RouteProperties( document, routeChoiceSpec )) ;
+      var sv = new RouteWithPassPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ) ) ;
       sv.ShowDialog() ;
 
       return sv ;
     }
+
     private static ( FamilyInstance? PowerConnector, FamilyInstance? PassConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteCommandBase.SensorArrayDirection SensorDirection, string? ErrorMessage ) SelectionRangeRoute( UIDocument iuDocument )
     {
       var selectedElements = iuDocument.Selection.PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コネクタを選択して下さい。" ).OfType<FamilyInstance>() ;
@@ -115,7 +153,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       }
 
       if ( powerConnector == null && 0 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPowerAndSensorConnector ) ;
-      if ( powerConnector == null ) return ( null ,null ,Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageNoPowerConnector ) ;
+      if ( powerConnector == null ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageNoPowerConnector ) ;
 
       var powerLevel = powerConnector.LevelId ;
       sensorConnectors.RemoveAll( fi => fi.LevelId != powerLevel ) ;
@@ -124,10 +162,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       if ( 1 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageSensorConnector ) ;
 
       var sensorDirection = SortSensorConnectors( passConnector!, sensorConnectors ) ;
-      if ( SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid == sensorDirection ) return ( null, null,Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;
+      if ( SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid == sensorDirection ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;
 
       return ( powerConnector, passConnector, sensorConnectors, sensorDirection, null ) ;
     }
+
     private static SelectionRangeRouteCommandBase.SensorArrayDirection SortSensorConnectors( FamilyInstance passConnector, List<FamilyInstance> sensorConnectors )
     {
       var powerPoint = passConnector.GetBottomConnectorOfConnectorFamily().Origin ;
@@ -166,7 +205,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       static double GetRange( double min, double max, double refPos )
       {
-        if ( min <= refPos && refPos <= max ) return -1.0 ;  // cannot use
+        if ( min <= refPos && refPos <= max ) return -1.0 ; // cannot use
         return max - min ;
       }
 
@@ -180,6 +219,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           _ => throw new ArgumentOutOfRangeException( nameof( dir ), dir, null )
         } ;
     }
+
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view )
     {
       return AppCommandSettings.CreateRoutingExecutor( document, view ) ;
@@ -189,6 +229,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     {
       return "TransactionName.Commands.Routing.SelectionRangeRouteWithPassCommand" ;
     }
+
     private static int GetRouteNameIndex( RouteCache routes, string? targetName )
     {
       string pattern = @"^" + Regex.Escape( targetName ?? string.Empty ) + @"_(\d+)$" ;
@@ -198,14 +239,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       return lastIndex + 1 ;
     }
-    
+
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, SelectState selectState )
     {
-      var (powerConnector, passConnector,sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec) = selectState ;
+      var (powerConnector, passConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec) = selectState ;
 
       var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
-      var sensorFixedHeight = routeProperty.GetFromFixedHeight() ;
+      var passToSensorsFromFixedHeight = routeProperty.GetPassToSensorsFromFixedHeight() ;
       var avoidType = routeProperty.GetAvoidType() ;
       var diameter = routeProperty.GetDiameter() ;
       var radius = diameter * 0.5 ;
@@ -221,31 +262,31 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       // main route
       var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
       var passConnectorUpEndPoint = new ConnectorEndPoint( passConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
-      result.Add( ( nameBase + "PowerToPass", new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, passConnectorUpEndPoint, diameter, routeProperty.GetPowerToPassRouteOnPipeSpace(), routeProperty.GetPowerToPassFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetPowerToPassShaft()?.UniqueId ) ) ) ;
+      result.Add( ( nameBase + "PowerToPass", new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, passConnectorUpEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
       var passConnectorEndPoint = new ConnectorEndPoint( passConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
       var passConnectorEndPointKey = passConnectorEndPoint.Key ;
-      
-      var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
-      var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( sensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
+
+      var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
+      var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( sensorConnectors.Last().GetBottomConnectorOfConnectorFamily(), radius ) ) ;
       var firstToEndPoint = secondFromEndPoints[ 0 ] ;
 
-      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, passConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), sensorFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, passConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetPassToSensorsFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
       result.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
       {
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, passToSensorsFromFixedHeight, passToSensorsFromFixedHeight, avoidType, null ) ;
         return ( routeName, segment ) ;
       } ) ) ;
-      
+
       // branch routes
       result.AddRange( passPoints.Zip( sensorConnectors.Take( passPoints.Count ), ( pp, sensor ) =>
       {
         var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
         var branchEndPoint = new PassPointBranchEndPoint( document, pp.UniqueId, radius, passConnectorEndPointKey ) ;
-        var connectorEndPoint = new ConnectorEndPoint( sensor.GetTopConnectorOfConnectorFamily(), radius ) ;
-        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
+        var connectorEndPoint = new ConnectorEndPoint( sensor.GetBottomConnectorOfConnectorFamily(), radius ) ;
+        var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, passToSensorsFromFixedHeight, passToSensorsFromFixedHeight, avoidType, null ) ;
         return ( subRouteName, segment ) ;
       } ) ) ;
-      
+
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
       allConnectors.AddRange( sensorConnectors ) ;
