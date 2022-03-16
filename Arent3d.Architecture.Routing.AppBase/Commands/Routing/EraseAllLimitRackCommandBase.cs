@@ -22,8 +22,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         return document.Transaction( "TransactionName.Commands.Routing.EraseAllLimitRack".GetAppStringByKeyOrDefault( null ), _ =>
         {
-          var cableTrays = document.GetAllFamilyInstances( RoutingFamilyType.CableTray ) ;
-          var cableTrayFittings = document.GetAllFamilyInstances( RoutingFamilyType.CableTrayFitting ) ;
+          var cableTrays = document.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTray ) ;
+          var cableTrayFittings = document.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTrayFitting ) ;
           var allLimitRack = new List<ElementId>() ;
           foreach ( var cableTray in cableTrays ) {
             var comment = cableTray.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ) ).AsString() ;

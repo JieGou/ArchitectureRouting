@@ -10,6 +10,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing.Connector
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class NewIndoorHumiditySensorWithLogoCommand : NewConnectorCommandBase
   {
-    protected override RoutingFamilyType RoutingFamilyType => RoutingFamilyType.IndoorHumiditySensorWithLogo ;
+    protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.IndoorHumiditySensorWithLogo ;
   }
 }

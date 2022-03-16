@@ -14,6 +14,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     protected override void UnSetup( Document document )
     {
       document.EraseAllConnectorFamilies() ;
+      document.EraseAllElectricalRoutingFamilies();
       base.UnSetup( document ) ;
     }
   }
