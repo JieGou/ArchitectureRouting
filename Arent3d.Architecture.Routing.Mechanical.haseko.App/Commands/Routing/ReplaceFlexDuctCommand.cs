@@ -31,7 +31,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           return Result.Cancelled ;
         }
 
-        var filter = new ElementMulticategoryFilter( BuiltInCategorySets.Ducts ) ;
+        var ductCategories = new List<BuiltInCategory>() { BuiltInCategory.OST_DuctAccessory } ;
+        ductCategories.AddRange(BuiltInCategorySets.Ducts);
+        
+        var filter = new ElementMulticategoryFilter( ductCategories ) ;
         var selectedElements = new FilteredElementCollector( document, selection.GetElementIds() ).WherePasses( filter ).ToElements() ;
         if ( ! selectedElements.Any() ) {
           MessageBox.Show( "Please, select the duct elements!" ) ;
@@ -124,7 +127,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     private void GetEndRefConnector( IReadOnlyList<Connector> connected, IReadOnlyList<Connector> unConnects, ref List<Connector> connectors, ref List<(XYZ, XYZ)> points )
     {
       if ( connected.Count > 0 ) {
-        var connectedRefs = GetConnectorRefs( connected[ 0 ] ).Where( x => x.IsConnected ).ToList() ;
+        var connectedRefs = GetConnectorRefs( connected[ 0 ] ).Where( x => x.ConnectorType == ConnectorType.Logical || x.IsConnected ).ToList() ;
         if ( connectedRefs.Count > 0 )
           connectors.Add( connectedRefs[ 0 ] ) ;
       }
@@ -159,10 +162,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     {
       var connectorManagers = new List<ConnectorManager>() ;
       foreach ( var element in elements ) {
-        if ( element is FamilyInstance familyInstance ) {
+        if ( element is FamilyInstance familyInstance && familyInstance.MEPModel.ConnectorManager is { }) {
           connectorManagers.Add( familyInstance.MEPModel.ConnectorManager ) ;
         }
-        else if ( element is Duct duct ) {
+        else if ( element is Duct { ConnectorManager: { } } duct) {
           connectorManagers.Add( duct.ConnectorManager ) ;
         }
       }
