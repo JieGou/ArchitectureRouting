@@ -30,6 +30,7 @@
     public bool IsReadOnly { get ; set ; }
     public string PlumbingIdentityInfo { get ; set ; }
     public string GroupId { get ; set ; }
+    public bool IsReadOnlyPlumbingItems { get ; set ; }
 
     public DetailTableModel( 
       bool? calculationExclusion, 
@@ -59,7 +60,8 @@
       bool? isParentRoute,
       bool? isReadOnly,  
       string? plumbingIdentityInfo,
-      string? groupId )
+      string? groupId,
+      bool? isReadOnlyPlumbingItems)
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -89,6 +91,7 @@
       IsReadOnly = isReadOnly ?? true ;
       PlumbingIdentityInfo = plumbingIdentityInfo ?? string.Empty ;
       GroupId = groupId ?? string.Empty ;
+      IsReadOnlyPlumbingItems = isReadOnlyPlumbingItems ?? true ;
     }
   }
 }
