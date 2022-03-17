@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
     private const double DistanceBetweenFASUAndVAVMillimeter = 45.0 ;
 
     private Document _document = null! ;
-    private Dictionary<RoutingFamilyType, FASUVAVInfo> _fasuTypeToInfoDictionary = new() ;
+    private Dictionary<MechanicalRoutingFamilyType, FASUVAVInfo> _fasuTypeToInfoDictionary = new() ;
 
     private class FASUVAVInfo
     {
@@ -65,21 +65,21 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       }
     }
 
-    private static IEnumerable<(RoutingFamilyType, string UpstreamDiameter)> GetFASUTypesAndDiameters()
+    private static IEnumerable<(MechanicalRoutingFamilyType, string UpstreamDiameter)> GetFASUTypesAndDiameters()
     {
       // PoC では F8 の2つのみ対象とする
 
-      // yield return (RoutingFamilyType.FASU_F4_150_200Phi, "200") ;
-      // yield return (RoutingFamilyType.FASU_F4_150_250Phi, "250") ;
-      // yield return (RoutingFamilyType.FASU_F5_150_250Phi, "250") ;
-      // yield return (RoutingFamilyType.FASU_F6_150_250Phi, "250") ;
-      // yield return (RoutingFamilyType.FASU_F6_150_300Phi, "300") ;
-      // yield return (RoutingFamilyType.FASU_F7_150_300Phi, "300") ;
-      yield return ( RoutingFamilyType.FASU_F8_150_250Phi, "250" ) ;
-      yield return ( RoutingFamilyType.FASU_F8_150_300Phi, "300" ) ;
+      // yield return (MechanicalRoutingFamilyType.FASU_F4_150_200Phi, "200") ;
+      // yield return (MechanicalRoutingFamilyType.FASU_F4_150_250Phi, "250") ;
+      // yield return (MechanicalRoutingFamilyType.FASU_F5_150_250Phi, "250") ;
+      // yield return (MechanicalRoutingFamilyType.FASU_F6_150_250Phi, "250") ;
+      // yield return (MechanicalRoutingFamilyType.FASU_F6_150_300Phi, "300") ;
+      // yield return (MechanicalRoutingFamilyType.FASU_F7_150_300Phi, "300") ;
+      yield return ( MechanicalRoutingFamilyType.FASU_F8_150_250Phi, "250" ) ;
+      yield return ( MechanicalRoutingFamilyType.FASU_F8_150_300Phi, "300" ) ;
     }
 
-    public static (RoutingFamilyType, string UpstreamDiameter) SelectFASUTypeAndDiameter( double airflow )
+    public static (MechanicalRoutingFamilyType, string UpstreamDiameter) SelectFASUTypeAndDiameter( double airflow )
     {
       if ( airflow <= 765 ) return GetFASUTypesAndDiameters().First( t => t.UpstreamDiameter == "250" ) ;
       return GetFASUTypesAndDiameters().First( t => t.UpstreamDiameter == "300" ) ;

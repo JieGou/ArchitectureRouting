@@ -324,7 +324,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private ( string, string ) GetCeedCodeAndDeviceSymbolOfElement( Element element )
     {
-      element.TryGetProperty( ConnectorFamilyParameter.CeedCode, out string? ceedSetCodeModel ) ;
+      element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
       if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) return ( string.Empty, string.Empty ) ;
       var ceedSetCode = ceedSetCodeModel!.Split( '-' ).ToList() ;
       var ceedCode = ceedSetCode.FirstOrDefault() ;
