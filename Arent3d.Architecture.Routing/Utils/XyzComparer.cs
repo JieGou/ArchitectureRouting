@@ -8,7 +8,7 @@ namespace Arent3d.Architecture.Routing.Utils
   {
     public bool Equals( XYZ x, XYZ y )
     {
-      return Math.Abs( x.X - y.X ) < 0.0001 && Math.Abs( x.Y - y.Y ) < 0.0001 && Math.Abs( x.Z - y.Z ) < 0.0001 ;
+      return Math.Abs( x.X - y.X ) < GeometryUtil.Tolerance && Math.Abs( x.Y - y.Y ) < GeometryUtil.Tolerance && Math.Abs( x.Z - y.Z ) < GeometryUtil.Tolerance ;
     }
 
     public int GetHashCode( XYZ obj )

@@ -11,6 +11,7 @@ namespace Arent3d.Architecture.Routing
 {
   public static class GeometryUtil
   {
+    public const double Tolerance = 0.0001 ;
     public static bool IsPerpendicularTo( this XYZ dir1, XYZ dir2, double angleTolerance )
     {
       return Math.Abs( Math.PI / 2 - dir1.AngleTo( dir2 ) ) < angleTolerance ;
@@ -131,7 +132,7 @@ namespace Arent3d.Architecture.Routing
         var upperPoint = line.UpperPoint() ;
 
         var lineDown = Line.CreateBound( lowerPoint, new XYZ( lowerPoint.X, lowerPoint.Y - lengthEx, lowerPoint.Z ) ) ;
-        var allXCheck = allLineX.Where( x => Math.Abs( x.Origin.Y - lowerPoint.Y ) > 0.0001 ).ToList() ;
+        var allXCheck = allLineX.Where( x => Math.Abs( x.Origin.Y - lowerPoint.Y ) > Tolerance ).ToList() ;
         var intersected = lineDown.TryIntersectPoint( allXCheck, out _) ;
 
         if ( intersected ) {
