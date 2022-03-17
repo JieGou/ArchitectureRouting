@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
              xmlns:valueConverters1="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters;assembly=Arent3d.Architecture.Routing.AppBase"
              xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms;assembly=Arent3d.Architecture.Routing.AppBase"
              xmlns:forms1="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
@@ -63,6 +64,7 @@
                       ItemsSource="{Binding  SystemTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       DisplayMemberPath="Name"
                       SelectionChanged="SystemTypeComboBox_SelectionChanged"
+                      SelectedIndex="{Binding SystemTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       VerticalAlignment="Center">
                 <ComboBox.Style>
                     <Style TargetType="{x:Type ComboBox}">
@@ -100,6 +102,7 @@
                       ItemsSource="{Binding CurveTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       DisplayMemberPath="Name"
                       SelectionChanged="CurveTypeComboBox_SelectionChanged"
+                      SelectedIndex="{Binding CurveTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       VerticalAlignment="Center">
                 <ComboBox.Style>
                     <Style TargetType="{x:Type ComboBox}">
@@ -125,6 +128,7 @@
                       Grid.Row="2"
                       ItemsSource="{Binding Diameters, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       SelectionChanged="DiameterComboBox_SelectionChanged"
+                      SelectedIndex="{Binding DiameterIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       VerticalAlignment="Center">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
@@ -174,6 +178,7 @@
                 <ComboBox Name="FromPowerToPassLocationTypeComboBox"
                           ItemsSource="{Binding LocationTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                           SelectionChanged="PowerToPassLocationTypeComboBox_SelectionChanged"
+                          SelectedIndex="{Binding FromPowerToPassLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                           VerticalAlignment="Center"
                           DisplayMemberPath="Value"
                           Margin="5,0,5,0"
@@ -236,6 +241,7 @@
                 <ComboBox Name="FromLocationTypeComboBox"
                           ItemsSource="{Binding LocationTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                           SelectionChanged="LocationTypeComboBox_SelectionChanged"
+                          SelectedIndex="{Binding FromLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                           VerticalAlignment="Center"
                           DisplayMemberPath="Value"
                           Margin="5,0,5,0"
@@ -320,6 +326,7 @@
                 <ComboBox Name="ToLocationTypeComboBox"
                           ItemsSource="{Binding LocationTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                           SelectionChanged="LocationTypeComboBox_SelectionChanged"
+                          SelectedIndex="{Binding ToLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                           VerticalAlignment="Center"
                           DisplayMemberPath="Value"
                           Margin="5,0,5,0"
@@ -378,6 +385,7 @@
                       Grid.Row="7"
                       ItemsSource="{Binding AvoidTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       DisplayMemberPath="Value"
+                      SelectedIndex="{Binding AvoidTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       SelectionChanged="AvoidTypeComboBox_OnSelectionChanged"
                       VerticalAlignment="Center">
             </ComboBox>
@@ -402,6 +410,7 @@
                       Grid.Row="8"
                       ItemsSource="{Binding Shafts, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       SelectionChanged="ShaftComboBox_SelectionChanged"
+                      SelectedIndex="{Binding ShaftIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                       VerticalAlignment="Center">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
