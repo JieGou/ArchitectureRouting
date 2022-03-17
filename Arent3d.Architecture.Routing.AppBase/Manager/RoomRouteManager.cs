@@ -39,7 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       Other
     }
 
-    public static ( List<FamilyInstance>, XYZ, XYZ ) InsertPassPointElement( Document document, string routeName, ElementId? levelId, double radius, Reference room, FixedHeight? fromFixedHeight, bool isOut, string fromConnectorId, string toConnectorId )
+    public static ( List<FamilyInstance>, XYZ ) InsertPassPointElement( Document document, string routeName, ElementId? levelId, double radius, Reference room, FixedHeight? fromFixedHeight, bool isOut, string fromConnectorId, string toConnectorId )
     {
       const string thicknessParam = "Thickness" ;
       const string leftDoorDistanceParam = "Left Door Distance" ;
@@ -228,13 +228,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       passPoint.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromConnectorId ) ;
       passPoints.Add( passPoint ) ;
 
-      if ( ! ( thickness > thicknessDefault ) ) return ( passPoints, position, position ) ;
+      if ( ! ( thickness > thicknessDefault ) ) return ( passPoints, position ) ;
       var passPoint2 = document.AddPassPoint( routeName, isOut ? position2 : position, direction.normalized.ToXYZRaw(), radius, levelId! ) ;
       passPoint2.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toConnectorId ) ;
       passPoint2.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromConnectorId ) ;
       passPoints.Add( passPoint2 ) ;
 
-      return ( passPoints, isOut ? position : position2, isOut ? position2 : position ) ;
+      return ( passPoints, isOut ? position2 : position ) ;
     }
 
     private static ( RoomEdge, XYZ ) GetRoomEdgeInsertPassPoint( XYZ passPoint, double thickness, XYZ p1, XYZ p2, XYZ p3, XYZ p4 )
