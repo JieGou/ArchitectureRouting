@@ -225,9 +225,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           newConstructionItemValue = newConnectorCnsSetting.CategoryName ;
         }
 
-        var parentGroup = _document.GetElement( connector.GroupId ) as Group ;
         // Groupされていないコネクタに対する処理
-        if ( parentGroup == null ) {
+        if ( _document.GetElement( connector.GroupId ) is not Group parentGroup ) {
           updateConnectors.Add( connector, newConstructionItemValue ) ;
         }
         // Groupされているコネクタに対する処理
@@ -241,7 +240,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             group.UngroupMembers() ;
           }
 
-          parentGroup?.UngroupMembers() ;
+          parentGroup.UngroupMembers() ;
           connectorGroups.Add( connector.Id, listTextNoteIds ) ;
           updateConnectors.Add( connector, newConstructionItemValue ) ;
         }
@@ -255,7 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _document.Regenerate() ;
       // create group for updated connector (with new property) and related text note if any
       foreach ( var (key, value) in connectorGroups ) {
-        List<ElementId> groupIds = new List<ElementId> { key } ;
+        List<ElementId> groupIds = new() { key } ;
         groupIds.AddRange( value ) ;
         _document.Create.NewGroup( groupIds ) ;
       }
