@@ -180,7 +180,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       Dictionary<Element, string> updateConnectors = new Dictionary<Element, string>() ;
 
-      if ( IsConduitsHaveConstructionItem() ) {
+      if ( IsConduitsHaveConstructionItemProperty() ) {
         //update Constructions Item for Conduits
         foreach ( var conduit in conduits ) {
           conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? strConduitConstructionItem ) ;
@@ -204,7 +204,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       //Ungroup, Get Connector to Update
-      if ( ! IsConnectorsHaveConstructionItem() ) return ;
+      if ( ! IsConnectorsHaveConstructionItemProperty() ) return ;
       foreach ( var connector in connectors ) {
         connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? strConnectorConstructionItem ) ;
         if ( string.IsNullOrEmpty( strConnectorConstructionItem ) ) continue ;
@@ -261,13 +261,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    public bool IsConnectorsHaveConstructionItem()
+    public bool IsConnectorsHaveConstructionItemProperty()
     {
       var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault() ;
       return connector != null && connector.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) ;
     }
 
-    public bool IsConduitsHaveConstructionItem()
+    public bool IsConduitsHaveConstructionItemProperty()
     {
       var conduit = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).FirstOrDefault() ;
       return conduit != null && conduit.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) ;
