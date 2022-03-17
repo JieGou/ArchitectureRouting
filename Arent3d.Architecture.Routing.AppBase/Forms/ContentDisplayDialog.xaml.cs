@@ -174,7 +174,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       List<string> directionZ = new List<string>() ;
       List<string> constructionItems = new List<string>() ;
 
-      List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
+      List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
       foreach ( var connector in allConnector ) {
         connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem! ) ;

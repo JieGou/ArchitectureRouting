@@ -20,7 +20,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
                BuiltInCategory.OST_ConduitFitting == elem.GetBuiltInCategory() ||
                BuiltInCategory.OST_ConduitRun == elem.GetBuiltInCategory() ||
                BuiltInCategory.OST_MechanicalEquipment == elem.GetBuiltInCategory() ||
-               BuiltInCategory.OST_ElectricalFixtures == elem.GetBuiltInCategory())
+               BuiltInCategory.OST_ElectricalFixtures == elem.GetBuiltInCategory() ||
+               BuiltInCategory.OST_ElectricalEquipment == elem.GetBuiltInCategory())
                && elem is FamilyInstance or Conduit ;
     }
 

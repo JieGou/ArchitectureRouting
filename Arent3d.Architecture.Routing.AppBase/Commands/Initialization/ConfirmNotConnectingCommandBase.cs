@@ -34,7 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var conduitsNotConnected = new List<Element>() ;
       var connectorIdsNotConnected = new List<ElementId>() ;
-      List<Element> elementsNotConnected = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).ToList() ;
+      List<Element> elementsNotConnected = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
       var allConduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
       var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_Conduit ).ToList() ;
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
