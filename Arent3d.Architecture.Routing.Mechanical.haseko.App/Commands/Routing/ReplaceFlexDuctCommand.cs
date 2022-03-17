@@ -34,7 +34,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
         var filter = new ElementMulticategoryFilter( ductCategories ) ;
         var selectedElements = new FilteredElementCollector( document, selection.GetElementIds() ).WherePasses( filter ).ToElements() ;
-        if ( selection.GetElementIds().Count != selectedElements.Count || ! selectedElements.Any() ) {
+        if ( ! selectedElements.Any() ) {
           MessageBox.Show( "Please, select the duct elements!" ) ;
           return Result.Cancelled ;
         }
@@ -67,8 +67,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
       var connectorManagers = GetConnectorManagers( elements ) ;
       if ( connectorManagers.Count <= 1 )
-        if ( ! connectorManagers.Any() || connectorManagers[ 0 ].Connectors.Size != 2 )
+        if ( ! connectorManagers.Any() || connectorManagers[ 0 ].Connectors.Size != 2 ) {
           return ( false, "The number of the connectors is not satisfied!", connectorRefs, points ) ;
+        }
         else {
           var connectors = connectorManagers[ 0 ].Connectors.OfType<Connector>().OrderBy( x => x.Id ).ToList() ;
           foreach ( var connector in connectors ) {
