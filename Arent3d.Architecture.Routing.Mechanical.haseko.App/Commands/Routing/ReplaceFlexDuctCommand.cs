@@ -69,8 +69,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       if ( connectorManagers.Count <= 1 )
         if ( ! connectorManagers.Any() || connectorManagers[ 0 ].Connectors.Size != 2 )
           return ( false, "The number of the connectors is not satisfied!", connectorRefs, points ) ;
-        else
-          return ( true, string.Empty, connectorRefs, new List<(XYZ, XYZ)>() { ( connectorManagers[ 0 ].Lookup( 0 ).Origin, connectorManagers[ 0 ].Lookup( 0 ).CoordinateSystem.BasisZ ), ( connectorManagers[ 0 ].Lookup( 1 ).Origin, connectorManagers[ 0 ].Lookup( 1 ).CoordinateSystem.BasisZ ) } ) ;
+        else {
+          var connectors = connectorManagers[ 0 ].Connectors.OfType<Connector>().OrderBy( x => x.Id ).ToList() ;
+          return ( true, string.Empty, connectorRefs, new List<(XYZ, XYZ)>() { ( connectors[ 0 ].Origin, connectors[ 0 ].CoordinateSystem.BasisZ ), ( connectors[ 1 ].Origin, connectors[ 1 ].CoordinateSystem.BasisZ ) } ) ;
+        }
 
       var endConnectors = new List<(List<Connector> Connecteds, List<Connector> UnConnects)>() ;
       foreach ( var connectorManager in connectorManagers ) {
