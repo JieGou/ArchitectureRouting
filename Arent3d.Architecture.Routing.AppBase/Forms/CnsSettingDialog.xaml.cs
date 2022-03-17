@@ -182,7 +182,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( IsConduitsHaveConstructionItem() ) {
         //update Constructions Item for Conduits
         foreach ( var conduit in conduits ) {
-          var strConduitConstructionItem = conduit.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
+          conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? strConduitConstructionItem ) ;
           if ( string.IsNullOrEmpty( strConduitConstructionItem ) ) continue ;
 
           var conduitCnsSetting = _currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConduitConstructionItem ) ;
@@ -205,7 +205,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       //Ungroup, Get Connector to Update
       if ( ! IsConnectorsHaveConstructionItem() ) return ;
       foreach ( var connector in connectors ) {
-        var strConnectorConstructionItem = connector.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
+        connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? strConnectorConstructionItem ) ;
         if ( string.IsNullOrEmpty( strConnectorConstructionItem ) ) continue ;
 
         var connectorCnsSetting = _currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConnectorConstructionItem ) ;
@@ -261,28 +261,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     public bool IsConnectorsHaveConstructionItem()
     {
-      try {
-        var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault() ;
-        if ( connector == null ) return false ;
-        connector.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
-        return true ;
-      }
-      catch {
-        return false ;
-      }
+      var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault() ;
+      return connector != null && connector.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) ;
     }
 
     public bool IsConduitsHaveConstructionItem()
     {
-      try {
-        var conduit = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).FirstOrDefault() ;
-        if ( conduit == null ) return false ;
-        conduit.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
-        return true ;
-      }
-      catch {
-        return false ;
-      }
+      var conduit = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).FirstOrDefault() ;
+      return conduit != null && conduit.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) ;
     }
 
     public static ObservableCollection<T> CopyCnsSetting<T>( IEnumerable<T>? listCnsSettingData ) where T : ICloneable
