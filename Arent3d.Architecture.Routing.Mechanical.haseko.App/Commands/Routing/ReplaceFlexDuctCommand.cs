@@ -71,7 +71,15 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           return ( false, "The number of the connectors is not satisfied!", connectorRefs, points ) ;
         else {
           var connectors = connectorManagers[ 0 ].Connectors.OfType<Connector>().OrderBy( x => x.Id ).ToList() ;
-          return ( true, string.Empty, connectorRefs, new List<(XYZ, XYZ)>() { ( connectors[ 0 ].Origin, connectors[ 0 ].CoordinateSystem.BasisZ ), ( connectors[ 1 ].Origin, connectors[ 1 ].CoordinateSystem.BasisZ ) } ) ;
+          foreach ( var connector in connectors ) {
+            if ( connector.ConnectorType == ConnectorType.Logical || connector.IsConnected ) {
+              GetEndRefConnector( new List<Connector>(){ connector }, null, ref connectorRefs, ref points ) ;
+            }
+            else {
+              points.Add(( connector.Origin, connector.CoordinateSystem.BasisZ ));
+            }
+          }
+          return ( true, string.Empty, connectorRefs, points ) ;
         }
 
       var endConnectors = new List<(List<Connector> Connecteds, List<Connector> UnConnects)>() ;
@@ -124,14 +132,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
       return insideConnected ;
     }
 
-    private void GetEndRefConnector( IReadOnlyList<Connector> connected, IReadOnlyList<Connector> unConnects, ref List<Connector> connectors, ref List<(XYZ, XYZ)> points )
+    private void GetEndRefConnector( IReadOnlyList<Connector> connected, IReadOnlyList<Connector>? unConnects, ref List<Connector> connectors, ref List<(XYZ, XYZ)> points )
     {
       if ( connected.Count > 0 ) {
         var connectedRefs = GetConnectorRefs( connected[ 0 ] ).Where( x => ( x.ConnectorType == ConnectorType.Logical || x.IsConnected ) ).ToList() ;
         if ( connectedRefs.Count > 0 )
           connectors.Add( connectedRefs[ 0 ] ) ;
       }
-      else if ( unConnects.Count > 0 ) {
+      else if ( unConnects is { Count: > 0 } ) {
         points.Add( ( unConnects[ 0 ].Origin, unConnects[ 0 ].CoordinateSystem.BasisZ ) ) ;
       }
     }
