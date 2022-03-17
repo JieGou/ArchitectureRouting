@@ -119,6 +119,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       IReadOnlyList<FamilyInstance> endPassPoints = new List<FamilyInstance>() ;
       FamilyInstance? endFootPassPoint = null ;
       IReadOnlyList<FamilyInstance> passPointsOnWallRoom = new List<FamilyInstance>() ;
+      var sortEndSensorConnectors = new List<FamilyInstance>() ;
       var startPowerPosition = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
       var endPowerPosition = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
       if ( endSensorConnectors.Any() ) {
@@ -135,10 +136,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       if ( endSensorConnectors.Any() ) {
         var firstSubRouteName = nameBase + "_" + ( nextIndex + 1 ) ;
-        ( endFootPassPoint, endPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( firstSubRouteName, powerConnector, endSensorConnectors, sensorDirection, routeProperty, pipeSpec, endPowerPosition ) ;
+        sortEndSensorConnectors = endSensorConnectors.ToList() ;
+        var endSensorDirection = SelectionRangeRouteManager.SortSensorConnectors( endPowerPosition, ref sortEndSensorConnectors ) ;
+        ( endFootPassPoint, endPassPoints ) = SelectionRangeRouteManager.CreatePassPoints( firstSubRouteName, powerConnector, sortEndSensorConnectors, endSensorDirection, routeProperty, pipeSpec, endPowerPosition ) ;
       }
 
-      CreateRouteSegment( result, document, powerConnector, startSensorConnectors, endSensorConnectors, startFootPassPoint, startPassPoints, endFootPassPoint, endPassPoints,
+      CreateRouteSegment( result, document, powerConnector, startSensorConnectors, sortEndSensorConnectors, startFootPassPoint, startPassPoints, endFootPassPoint, endPassPoints,
         passPointsOnWallRoom, classificationInfo, systemType, curveType, routeProperty, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex, room!, isOutFromConnector ) ;
     }
 
@@ -293,10 +296,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
       else {
-        if ( p1.X < firstPassPointOrigin.X 
-             && firstPassPointOrigin.X < p2.X 
-             && ( ( xDistanceBetweenP1AndFirstPassPointOrigin < yDistanceBetweenP1AndFirstPassPointOrigin && xDistanceBetweenP1AndFirstPassPointOrigin < yDistanceBetweenP4AndFirstPassPointOrigin )
-             || ( xDistanceBetweenP2AndFirstPassPointOrigin < yDistanceBetweenP1AndFirstPassPointOrigin && xDistanceBetweenP2AndFirstPassPointOrigin < yDistanceBetweenP4AndFirstPassPointOrigin ) ) ) {
+        if ( p1.X < firstPassPointOrigin.X && firstPassPointOrigin.X < p2.X ) {
           if ( xDistanceBetweenP1AndFirstPassPointOrigin < xDistanceBetweenP2AndFirstPassPointOrigin ) {
             xDistance = - xDistanceBetweenP1AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
           }
@@ -312,13 +312,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
         if ( p1.Y > firstPassPointOrigin.Y && firstPassPointOrigin.Y > p4.Y ) {
-          if ( xDistance == 0 && p1.X < firstPassPointOrigin.X && firstPassPointOrigin.X < p2.X) {
-            if (yDistanceBetweenP1AndFirstPassPointOrigin < yDistanceBetweenP4AndFirstPassPointOrigin ) {
-              yDistance = yDistanceBetweenP1AndFirstPassPointOrigin + minDistanceBetweenPassPointAndWall ;
-            }
-            else {
-              yDistance = -yDistanceBetweenP4AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
-            }
+          if ( yDistanceBetweenP1AndFirstPassPointOrigin < yDistanceBetweenP4AndFirstPassPointOrigin ) {
+            yDistance = yDistanceBetweenP1AndFirstPassPointOrigin + minDistanceBetweenPassPointAndWall ;
+          }
+          else {
+            yDistance = -yDistanceBetweenP4AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
           }
         }
         else if ( yDistanceBetweenP1AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
@@ -340,37 +338,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var (xNextPassPoint, yNextPassPoint, _) = ( passPoint.Location as LocationPoint )!.Point ;
         var xDistanceBetweenPrevAndNextPassPoint = Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) ;
         var yDistanceBetweenPrevAndNextPassPoint = Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) ;
-        if ( xDistance > 0 ) {
-          if ( xNextPassPoint < prevPassPointOrigin.X ) {
-            xDistanceBetweenPassPoint = minDistanceBetweenPassPoints + xDistanceBetweenPrevAndNextPassPoint ;
+        if ( Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
+          if ( xDistance > 0 ) {
+            if ( xNextPassPoint < prevPassPointOrigin.X ) {
+              xDistanceBetweenPassPoint = minDistanceBetweenPassPoints + xDistanceBetweenPrevAndNextPassPoint ;
+            }
+            else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
+              xDistanceBetweenPassPoint = minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
+            }
           }
-          else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
-            xDistanceBetweenPassPoint = minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
-          }
-        }
-        else if ( xDistance < 0 ) {
-          if ( xNextPassPoint > prevPassPointOrigin.X ) {
-            xDistanceBetweenPassPoint = - minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
-          }
-          else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
-            xDistanceBetweenPassPoint = xDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
+          else if ( xDistance < 0 ) {
+            if ( xNextPassPoint > prevPassPointOrigin.X ) {
+              xDistanceBetweenPassPoint = - minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
+            }
+            else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
+              xDistanceBetweenPassPoint = xDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
+            }
           }
         }
 
-        if ( yDistance > 0 ) {
-          if ( yNextPassPoint < prevPassPointOrigin.Y ) {
-            yDistanceBetweenPassPoint = minDistanceBetweenPassPoints + yDistanceBetweenPrevAndNextPassPoint ;
+        if ( Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) < minDistanceBetweenPassPoints ) {
+          if ( yDistance > 0 ) {
+            if ( yNextPassPoint < prevPassPointOrigin.Y ) {
+              yDistanceBetweenPassPoint = minDistanceBetweenPassPoints + yDistanceBetweenPrevAndNextPassPoint ;
+            }
+            else if ( Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
+              yDistanceBetweenPassPoint = minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
+            }
           }
-          else if ( Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
-            yDistanceBetweenPassPoint = minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
-          }
-        }
-        else if ( yDistance < 0 ) {
-          if ( yNextPassPoint > prevPassPointOrigin.Y ) {
-            yDistanceBetweenPassPoint = - minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
-          }
-          else if ( yDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
-            yDistanceBetweenPassPoint = yDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
+          else if ( yDistance < 0 ) {
+            if ( yNextPassPoint > prevPassPointOrigin.Y ) {
+              yDistanceBetweenPassPoint = -minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
+            }
+            else if ( yDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
+              yDistanceBetweenPassPoint = yDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
+            }
           }
         }
 

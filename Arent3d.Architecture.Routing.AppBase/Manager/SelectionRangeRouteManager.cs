@@ -81,16 +81,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       if ( 0 == sensorConnectors.Count ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageNoSensorConnector ) ;
       if ( 1 == sensorConnectors.Count ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageSensorConnector ) ;
 
-      var sensorDirection = SortSensorConnectors( powerConnector, sensorConnectors ) ;
+      var sensorDirection = SortSensorConnectors( powerConnector.GetTopConnectorOfConnectorFamily().Origin, ref sensorConnectors ) ;
       if ( SensorArrayDirection.Invalid == sensorDirection ) return ( null, Array.Empty<FamilyInstance>(), SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;
 
       return ( powerConnector, sensorConnectors, sensorDirection, null ) ;
     }
 
-    private static SensorArrayDirection SortSensorConnectors( FamilyInstance powerConnector, List<FamilyInstance> sensorConnectors )
+    public static SensorArrayDirection SortSensorConnectors( XYZ powerPoint, ref List<FamilyInstance> sensorConnectors )
     {
-      var powerPoint = powerConnector.GetTopConnectorOfConnectorFamily().Origin ;
-
       double minX = double.MaxValue, minY = double.MaxValue ;
       double maxX = -double.MaxValue, maxY = -double.MaxValue ;
 
