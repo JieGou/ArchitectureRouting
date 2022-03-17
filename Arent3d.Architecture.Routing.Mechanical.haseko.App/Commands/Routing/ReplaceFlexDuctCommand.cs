@@ -7,7 +7,6 @@ using Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Mechanical ;
 using Autodesk.Revit.UI ;
 using MoreLinq.Extensions ;
 
@@ -31,19 +30,18 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
           return Result.Cancelled ;
         }
 
-        var ductCategories = new List<BuiltInCategory>() { BuiltInCategory.OST_DuctAccessory } ;
-        ductCategories.AddRange(BuiltInCategorySets.Ducts);
-        
+        var ductCategories = new List<BuiltInCategory>() { BuiltInCategory.OST_DuctFitting, BuiltInCategory.OST_DuctCurves, BuiltInCategory.OST_DuctAccessory, BuiltInCategory.OST_FlexDuctCurves } ;
+
         var filter = new ElementMulticategoryFilter( ductCategories ) ;
         var selectedElements = new FilteredElementCollector( document, selection.GetElementIds() ).WherePasses( filter ).ToElements() ;
-        if ( ! selectedElements.Any() ) {
+        if ( selection.GetElementIds().Count != selectedElements.Count || ! selectedElements.Any() ) {
           MessageBox.Show( "Please, select the duct elements!" ) ;
           return Result.Cancelled ;
         }
 
-        var (isContinuousConnected, msg  , connectorRefs, points) = IsContinuousConnected( selectedElements ) ;
+        var (isContinuousConnected, msg, connectorRefs, points) = IsContinuousConnected( selectedElements ) ;
         if ( ! isContinuousConnected ) {
-          MessageBox.Show( msg  ) ;
+          MessageBox.Show( msg ) ;
           return Result.Cancelled ;
         }
 
@@ -69,7 +67,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
       var connectorManagers = GetConnectorManagers( elements ) ;
       if ( connectorManagers.Count <= 1 )
-        if ( !connectorManagers.Any() || connectorManagers[ 0 ].Connectors.Size != 2 )
+        if ( ! connectorManagers.Any() || connectorManagers[ 0 ].Connectors.Size != 2 )
           return ( false, "The number of the connectors is not satisfied!", connectorRefs, points ) ;
         else
           return ( true, string.Empty, connectorRefs, new List<(XYZ, XYZ)>() { ( connectorManagers[ 0 ].Lookup( 0 ).Origin, connectorManagers[ 0 ].Lookup( 0 ).CoordinateSystem.BasisZ ), ( connectorManagers[ 0 ].Lookup( 1 ).Origin, connectorManagers[ 0 ].Lookup( 1 ).CoordinateSystem.BasisZ ) } ) ;
@@ -80,7 +78,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
         if ( connected.Count == 0 )
           return ( false, GeneralNotify, connectorRefs, points ) ;
-        
+
         var insideConnected = GetInsideConnected( connected, elements ) ;
 
         switch ( insideConnected.Count ) {
@@ -97,7 +95,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
       if ( endConnectors.Count != 2 )
         return ( false, GeneralNotify, connectorRefs, points ) ;
-      foreach ( var ( connected, unConnects ) in endConnectors )
+      foreach ( var (connected, unConnects) in endConnectors )
         GetEndRefConnector( connected, unConnects, ref connectorRefs, ref points ) ;
 
       if ( ( connectorRefs.Count == 2 && points.Count == 0 ) || ( connectorRefs.Count == 1 && points.Count == 1 ) || ( connectorRefs.Count == 0 && points.Count == 2 ) )
@@ -127,7 +125,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     private void GetEndRefConnector( IReadOnlyList<Connector> connected, IReadOnlyList<Connector> unConnects, ref List<Connector> connectors, ref List<(XYZ, XYZ)> points )
     {
       if ( connected.Count > 0 ) {
-        var connectedRefs = GetConnectorRefs( connected[ 0 ] ).Where( x => x.ConnectorType == ConnectorType.Logical || x.IsConnected ).ToList() ;
+        var connectedRefs = GetConnectorRefs( connected[ 0 ] ).Where( x => ( x.ConnectorType == ConnectorType.Logical || x.IsConnected ) ).ToList() ;
         if ( connectedRefs.Count > 0 )
           connectors.Add( connectedRefs[ 0 ] ) ;
       }
@@ -138,7 +136,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 
     private List<Connector> GetConnectorRefs( Connector connector )
     {
-      var connectorRefs = connector.AllRefs.OfType<Connector>() ;
+      var connectorRefs = connector.AllRefs.OfType<Connector>().Where( x => x.Domain != Domain.DomainUndefined ) ;
       return connectorRefs.Where( x => x.Owner.Id != connector.Owner.Id ).ToList() ;
     }
 
@@ -162,11 +160,11 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
     {
       var connectorManagers = new List<ConnectorManager>() ;
       foreach ( var element in elements ) {
-        if ( element is FamilyInstance familyInstance && familyInstance.MEPModel.ConnectorManager is { }) {
+        if ( element is FamilyInstance familyInstance && familyInstance.MEPModel.ConnectorManager is { } ) {
           connectorManagers.Add( familyInstance.MEPModel.ConnectorManager ) ;
         }
-        else if ( element is Duct { ConnectorManager: { } } duct) {
-          connectorManagers.Add( duct.ConnectorManager ) ;
+        else if ( element is MEPCurve { ConnectorManager: { } } mepCurve ) {
+          connectorManagers.Add( mepCurve.ConnectorManager ) ;
         }
       }
 

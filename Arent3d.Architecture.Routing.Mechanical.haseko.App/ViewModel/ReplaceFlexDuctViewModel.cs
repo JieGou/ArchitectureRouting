@@ -119,16 +119,22 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
                 transaction.Start( "Change Flex Duct" ) ;
 
                 FlexDuct flexDuct ;
-                if ( _data.ConnectorRefs.Count == 2 )
-                  flexDuct = _document.Create.NewFlexDuct( _data.ConnectorRefs[ 0 ], _data.ConnectorRefs[ 1 ], FlexDuctType ) ;
-                else if ( _data.ConnectorRefs.Count == 1 ) {
-                  flexDuct = _document.Create.NewFlexDuct( _data.ConnectorRefs[ 0 ], _data.Points.Select( x => x.Origin ).ToList(), FlexDuctType ) ;
-                  flexDuct.EndTangent = _data.Points[ 0 ].Direction ;
-                }
-                else {
-                  flexDuct = _document.Create.NewFlexDuct( _data.Points.Select( x => x.Origin ).ToList(), FlexDuctType ) ;
-                  flexDuct.StartTangent = _data.Points[ 0 ].Direction.Negate() ;
-                  flexDuct.EndTangent = _data.Points[ 1 ].Direction ;
+                switch ( _data.ConnectorRefs.Count ) {
+                  case 2 :
+                    flexDuct = _document.Create.NewFlexDuct( _data.ConnectorRefs[ 0 ], _data.ConnectorRefs[ 1 ], FlexDuctType ) ;
+                    flexDuct.ConnectorManager.Lookup(0).ConnectTo(_data.ConnectorRefs[ 0 ]);
+                    flexDuct.ConnectorManager.Lookup(1).ConnectTo(_data.ConnectorRefs[ 1 ]);
+                    break ;
+                  case 1 :
+                    flexDuct = _document.Create.NewFlexDuct( _data.ConnectorRefs[ 0 ], _data.Points.Select( x => x.Origin ).ToList(), FlexDuctType ) ;
+                    flexDuct.ConnectorManager.Lookup(0).ConnectTo(_data.ConnectorRefs[ 0 ]);
+                    flexDuct.EndTangent = _data.Points[ 0 ].Direction ;
+                    break ;
+                  default :
+                    flexDuct = _document.Create.NewFlexDuct( _data.Points.Select( x => x.Origin ).ToList(), FlexDuctType ) ;
+                    flexDuct.StartTangent = _data.Points[ 0 ].Direction.Negate() ;
+                    flexDuct.EndTangent = _data.Points[ 1 ].Direction ;
+                    break ;
                 }
 
                 flexDuct.get_Parameter( BuiltInParameter.RBS_CURVE_DIAMETER_PARAM ).Set( diameter ) ;
