@@ -1,8 +1,9 @@
 ﻿using System ;
-using Autodesk.Revit.DB ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.AppBase.Forms
+namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 {
   public interface IRouteWithPassPropertyDialog : IRoutePropertyDialog
   {
@@ -12,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   /// <summary>
   /// SetProperty.xaml の相互作用ロジック
   /// </summary>
-  public partial class RouteWithPassPropertyDialog : Window, IRouteWithPassPropertyDialog
+  public partial class RouteWithPassPropertyDialog : IRouteWithPassPropertyDialog
   {
     public RouteWithPassPropertyDialog()
     {
