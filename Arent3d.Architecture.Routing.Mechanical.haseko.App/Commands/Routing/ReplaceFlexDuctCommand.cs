@@ -13,8 +13,8 @@ using MoreLinq.Extensions ;
 namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.ReplaceFlexDuctCommand", DefaultString = "Change Duct" )]
-  [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
+  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.ReplaceFlexDuctCommand", DefaultString = "Replace Flexible Duct" )]
+  [Image( "resources/MEP.ico", ImageType = Revit.UI.ImageType.Large )]
   public class ReplaceFlexDuctCommand : IExternalCommand
   {
     private const string GeneralNotify = "The selected elements are not continuously connected!" ;
