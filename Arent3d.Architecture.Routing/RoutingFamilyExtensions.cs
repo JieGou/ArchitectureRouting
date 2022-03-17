@@ -1,5 +1,7 @@
 ﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
@@ -295,8 +297,22 @@ namespace Arent3d.Architecture.Routing
     public static void MakeCertainAllRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<RoutingFamilyType>( AssetManager.GetFamilyPath, true ) ;
     public static void EraseAllRoutingFamilies( this Document document ) => document.UnloadAllFamilies<RoutingFamilyType>() ;
 
-    public static void MakeCertainAllConnectorFamilies( this Document document ) => document.MakeCertainAllFamilies<ConnectorOneSideFamilyType>( AssetManager.GetFamilyPath, true ) ;
-    public static void EraseAllConnectorFamilies( this Document document ) => document.UnloadAllFamilies<ConnectorOneSideFamilyType>() ;
+    public static void MakeCertainAllConnectorFamilies( this Document document ) => document.MakeCertainAllFamilies<ConnectorOneSideFamilyType>( AssetManager.GetElectricalFamilyPath, true ) ;
+
+    public static void EraseAllConnectorFamilies( this Document document )
+    {
+      document.UnloadAllFamilies<ConnectorOneSideFamilyType>() ;
+      var connectorFamilyIds = new List<ElementId>() ;
+      var ceedStorable = document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      if ( ceedStorable == null || ! ceedStorable.ConnectorFamilyUploadData.Any() ) return ;
+      foreach ( var connectorFamilyFile in ceedStorable.ConnectorFamilyUploadData ) {
+        var connectorFamilyName = connectorFamilyFile.Replace( ".rfa", "" ) ;
+        if ( new FilteredElementCollector( document ).OfClass( typeof( Family ) ).SingleOrDefault( f => f.Name == connectorFamilyName ) is Family connectorFamily )
+          connectorFamilyIds.Add( connectorFamily.Id ) ;
+      }
+        
+      document.Delete( connectorFamilyIds ) ;
+    } 
 
     public static void MakeCertainAllElectricalRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<ElectricalRoutingFamilyType>( AssetManager.GetElectricalFamilyPath, true ) ;
     public static void EraseAllElectricalRoutingFamilies( this Document document ) => document.UnloadAllFamilies<ElectricalRoutingFamilyType>() ;

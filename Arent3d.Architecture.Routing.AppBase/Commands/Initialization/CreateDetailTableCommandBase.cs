@@ -259,7 +259,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private Dictionary<ElementId, List<ElementId>> UpdateConnectorAndConduitConstructionItem( Document document, Dictionary<string, string> routesChangedConstructionItem )
     {
       Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
-      List<Element> allConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_ElectricalFixtures ).ToList() ;
+      List<Element> allConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
       using Transaction transaction = new Transaction( document, "Group connector" ) ;
       transaction.Start() ;
       foreach ( var (routeName, constructionItem) in routesChangedConstructionItem ) {
