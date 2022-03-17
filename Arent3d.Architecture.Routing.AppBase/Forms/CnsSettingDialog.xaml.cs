@@ -9,6 +9,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using System.ComponentModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -225,36 +226,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
 
         var parentGroup = _document.GetElement( connector.GroupId ) as Group ;
-        if ( parentGroup != null ) {
-          // ungroup before set property
-          var attachedGroup = _document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-          List<ElementId> listTextNoteIds = new List<ElementId>() ;
-          // ungroup textNote before ungroup connector
+        // Groupされていないコネクタに対する処理
+        if ( parentGroup == null ) {
+          updateConnectors.Add( connector, newConstructionItemValue ) ;
+        }
+        // Groupされているコネクタに対する処理
+        else {
+          var attachedGroup = _document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ; // ungroup before set property
+          List<ElementId> listTextNoteIds = new() ;
           foreach ( var group in attachedGroup ) {
-            var ids = @group.GetMemberIds() ;
+            // ungroup textNote before ungroup connector
+            var ids = group.GetMemberIds() ;
             listTextNoteIds.AddRange( ids ) ;
-            @group.UngroupMembers() ;
+            group.UngroupMembers() ;
           }
 
-          parentGroup.UngroupMembers() ;
+          parentGroup?.UngroupMembers() ;
           connectorGroups.Add( connector.Id, listTextNoteIds ) ;
           updateConnectors.Add( connector, newConstructionItemValue ) ;
         }
       }
 
       // update ConstructionItem for connector 
-      foreach ( var updateItem in updateConnectors ) {
-        var e = updateItem.Key ;
-        string value = updateItem.Value ;
+      foreach ( var (e, value) in updateConnectors ) {
         e.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, value ) ;
       }
 
       _document.Regenerate() ;
       // create group for updated connector (with new property) and related text note if any
-      foreach ( var item in connectorGroups ) {
-        List<ElementId> groupIds = new List<ElementId>() ;
-        groupIds.Add( item.Key ) ;
-        groupIds.AddRange( item.Value ) ;
+      foreach ( var (key, value) in connectorGroups ) {
+        List<ElementId> groupIds = new List<ElementId> { key } ;
+        groupIds.AddRange( value ) ;
         _document.Create.NewGroup( groupIds ) ;
       }
     }
