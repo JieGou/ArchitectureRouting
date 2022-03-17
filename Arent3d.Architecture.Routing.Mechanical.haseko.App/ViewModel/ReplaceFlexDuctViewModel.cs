@@ -122,12 +122,19 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
                 switch ( _data.ConnectorRefs.Count ) {
                   case 2 :
                     flexDuct = _document.Create.NewFlexDuct( _data.ConnectorRefs[ 0 ], _data.ConnectorRefs[ 1 ], FlexDuctType ) ;
-                    flexDuct.ConnectorManager.Lookup(0).ConnectTo(_data.ConnectorRefs[ 0 ]);
-                    flexDuct.ConnectorManager.Lookup(1).ConnectTo(_data.ConnectorRefs[ 1 ]);
+                    
+                    if(!flexDuct.ConnectorManager.Lookup(0).IsConnected)
+                      flexDuct.ConnectorManager.Lookup(0).ConnectTo(_data.ConnectorRefs[ 0 ]);
+                    
+                    if(!flexDuct.ConnectorManager.Lookup(1).IsConnected)
+                      flexDuct.ConnectorManager.Lookup(1).ConnectTo(_data.ConnectorRefs[ 1 ]);
                     break ;
                   case 1 :
                     flexDuct = _document.Create.NewFlexDuct( _data.ConnectorRefs[ 0 ], _data.Points.Select( x => x.Origin ).ToList(), FlexDuctType ) ;
-                    flexDuct.ConnectorManager.Lookup(0).ConnectTo(_data.ConnectorRefs[ 0 ]);
+                    
+                    if(!flexDuct.ConnectorManager.Lookup(0).IsConnected)
+                      flexDuct.ConnectorManager.Lookup(0).ConnectTo(_data.ConnectorRefs[ 0 ]);
+                    
                     flexDuct.EndTangent = _data.Points[ 0 ].Direction ;
                     break ;
                   default :
@@ -136,11 +143,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
                     flexDuct.EndTangent = _data.Points[ 1 ].Direction ;
                     break ;
                 }
-
                 flexDuct.get_Parameter( BuiltInParameter.RBS_CURVE_DIAMETER_PARAM ).Set( diameter ) ;
-
                 _document.Delete( _data.DeletedElements.Select( x => x.Id ).ToList() ) ;
-
+                
                 transaction.Commit() ;
               }
             }
@@ -179,7 +184,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
         }
       }
 
-      return values.Min() ;
+      return Math.Round( values.Min() / 5d.MillimetersToRevitUnits() ) * 5d.MillimetersToRevitUnits() ;
     }
 
     private string DisplayDiameter( double diameter )
