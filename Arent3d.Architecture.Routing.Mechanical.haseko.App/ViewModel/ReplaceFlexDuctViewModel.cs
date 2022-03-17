@@ -117,7 +117,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
               else {
                 using Transaction transaction = new Transaction( _document ) ;
                 transaction.Start( "Change Flex Duct" ) ;
-
                 FlexDuct flexDuct ;
                 switch ( _data.ConnectorRefs.Count ) {
                   case 2 :
@@ -145,7 +144,6 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
                 }
                 flexDuct.get_Parameter( BuiltInParameter.RBS_CURVE_DIAMETER_PARAM ).Set( diameter ) ;
                 _document.Delete( _data.DeletedElements.Select( x => x.Id ).ToList() ) ;
-                
                 transaction.Commit() ;
               }
             }
