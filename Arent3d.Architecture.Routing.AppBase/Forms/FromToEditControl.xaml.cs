@@ -241,7 +241,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     //HeightSetting
     private bool? UseFromFixedHeightOrg { get ; set ; }
-    private double? FromFixedHeightOrg { get ; set ; }
+    internal double? FromFixedHeightOrg { get ; set ; }
 
     public bool? UseFromFixedHeight
     {
@@ -395,7 +395,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     } ;
 
     //LocationType
-    private FixedHeightType? FromLocationTypeOrg { get ; set ; }
+    internal FixedHeightType? FromLocationTypeOrg { get ; set ; }
 
     public FixedHeightType? FromLocationType
     {
@@ -709,6 +709,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private double? GetFromDefaultHeight( FixedHeightType newValue )
     {
       return ( FixedHeightType.Ceiling == newValue ) ? FromDefaultHeightAsCeilingLevel : FromDefaultHeightAsFloorLevel ;
+    }
+    internal double? GetFromDefaultHeight( )
+    {
+      return FromLocationTypeOrg is FixedHeightType.Ceiling ? FromDefaultHeightAsCeilingLevel : FromDefaultHeightAsFloorLevel ;
     }
     private double? GetToDefaultHeight( FixedHeightType newValue )
     {

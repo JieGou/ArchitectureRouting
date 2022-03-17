@@ -5,7 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
       mc:Ignorable="d"
-      Height="320" Width="630" Background="White"
+      Height="360" Width="630" Background="White"
       WindowStartupLocation="CenterOwner"      
       Title="RoutePropertyDialog">
 
@@ -18,7 +18,7 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
+                    <RowDefinition Height="70" />
                 </Grid.RowDefinitions>
                 <local:FromToEditControl x:Name="FromToEdit" Grid.Row="0" Width="Auto" />
                 <local:RangeRouteWithPassEditControl x:Name="RangeRouteWithPassEdit" Grid.Row="1" Width="Auto" />

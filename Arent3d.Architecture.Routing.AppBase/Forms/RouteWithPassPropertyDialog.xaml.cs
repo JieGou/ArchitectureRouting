@@ -8,7 +8,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public interface IRouteWithPassPropertyDialog: IRoutePropertyDialog
   {
-    FixedHeight? GetPassToSensorsFromFixedHeight() ;
+    FixedHeight? GetPowerToPassFromFixedHeight() ;
   }
   /// <summary>
   /// SetProperty.xaml の相互作用ロジック
@@ -23,22 +23,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public RouteWithPassPropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
       InitializeComponent() ;
-      FromToEdit.FirstConnectorThroughHeightText.Content = "First connector through height from Power to Pass" ;
+      FromToEdit.FirstConnectorThroughHeightText.Content = "First connector through height from Pass to Sensors" ;
       FromToEdit.FromToEditControlBorder.BorderThickness = new Thickness( 0 ) ;
       WindowStartupLocation = WindowStartupLocation.CenterScreen ;
       FromToEdit.DisplayUnitSystem = document.DisplayUnitSystem ;
-      // FromToEdit.FromFixedHeightNumericUpDown.MaxValue = 50000 ;
       RangeRouteWithPassEdit.DisplayUnitSystem = document.DisplayUnitSystem ;
-      // RangeRouteWithPassEdit.FromFixedHeightNumericUpDown.MaxValue = 50000 ;
       
       UpdateProperties( propertyTypeList, properties ) ;
     }
 
-    private void UpdateProperties( RoutePropertyTypeList powerToPassPropertyTypeList, RouteProperties powerToPassProperties )
+    private void UpdateProperties( RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
-      FromToEdit.SetRouteProperties( powerToPassPropertyTypeList, powerToPassProperties ) ;
+      FromToEdit.SetRouteProperties( propertyTypeList, properties ) ;
+      FromToEdit.FromLocationTypeOrg = properties.FromFixedHeight?.Type ?? FixedHeightType.Floor ;
+      FromToEdit.FromFixedHeightOrg = properties.FromFixedHeight?.Height ?? FromToEdit.GetFromDefaultHeight() ;
       FromToEdit.ResetDialog() ;
-      RangeRouteWithPassEdit.SetRouteProperties( powerToPassPropertyTypeList, powerToPassProperties ) ;
+      RangeRouteWithPassEdit.SetRouteProperties( propertyTypeList, properties ) ;
       RangeRouteWithPassEdit.ResetDialog() ;
     }
 
@@ -55,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.Close() ;
     }
 
-    public FixedHeight? GetPassToSensorsFromFixedHeight()
+    public FixedHeight? GetPowerToPassFromFixedHeight()
     {
       if ( true != RangeRouteWithPassEdit.UseFromFixedHeight ) return null ;
       return FixedHeight.CreateOrNull( RangeRouteWithPassEdit.FromLocationType, RangeRouteWithPassEdit.FromFixedHeight ) ;

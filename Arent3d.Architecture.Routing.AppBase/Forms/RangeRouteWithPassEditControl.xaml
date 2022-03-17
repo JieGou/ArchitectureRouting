@@ -28,7 +28,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" Content="First connector through height from Pass to Sensors"
+            <Label Grid.Row="0" Grid.Column="0" Content="First connector through height from Power to Pass   "
                    Name="FirstConnectorThroughHeightText"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center" />

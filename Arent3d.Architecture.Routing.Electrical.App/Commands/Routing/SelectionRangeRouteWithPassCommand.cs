@@ -62,8 +62,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     private static bool IsGoodHeightSettings( RouteWithPassPropertyDialog property, FamilyInstance passConnector )
     {
-      var firstConnectThroughHeightFromPowerToPass = property.GetFromFixedHeight() ;
-      var firstConnectThroughHeightFromPassToSensors = property.GetPassToSensorsFromFixedHeight() ;
+      var firstConnectThroughHeightFromPowerToPass = property.GetPowerToPassFromFixedHeight() ;
+      var firstConnectThroughHeightFromPassToSensors = property.GetFromFixedHeight() ;
       bool isFromPowerToPassLargerHigherThanPass = false, isPassHigherThanFromPassToSensorsHeight = false ;
       Level? level = passConnector?.Document.GetElement(passConnector.LevelId) as Level;
       var passTopHeight = passConnector?.GetTopConnectorOfConnectorFamily().Origin.Z - level?.Elevation ;
@@ -246,7 +246,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
       var systemType = routeProperty.GetSystemType() ;
       var curveType = routeProperty.GetCurveType() ;
-      var passToSensorsFromFixedHeight = routeProperty.GetPassToSensorsFromFixedHeight() ;
+      var passToSensorsFromFixedHeight = routeProperty.GetFromFixedHeight() ;
       var avoidType = routeProperty.GetAvoidType() ;
       var diameter = routeProperty.GetDiameter() ;
       var radius = diameter * 0.5 ;
@@ -262,7 +262,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       // main route
       var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
       var passConnectorUpEndPoint = new ConnectorEndPoint( passConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
-      result.Add( ( nameBase + "PowerToPass", new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, passConnectorUpEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+      result.Add( ( nameBase + "PowerToPass", new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, passConnectorUpEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetPowerToPassFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
       var passConnectorEndPoint = new ConnectorEndPoint( passConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
       var passConnectorEndPointKey = passConnectorEndPoint.Key ;
 
@@ -270,7 +270,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( sensorConnectors.Last().GetBottomConnectorOfConnectorFamily(), radius ) ) ;
       var firstToEndPoint = secondFromEndPoints[ 0 ] ;
 
-      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, passConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetPassToSensorsFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, passConnectorEndPoint, firstToEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
       result.AddRange( secondFromEndPoints.Zip( secondToEndPoints, ( f, t ) =>
       {
         var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, passToSensorsFromFixedHeight, passToSensorsFromFixedHeight, avoidType, null ) ;

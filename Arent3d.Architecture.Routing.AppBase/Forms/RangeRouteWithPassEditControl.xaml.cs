@@ -260,7 +260,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         FromFixedHeightOrg = null ;
       }
       else {
-        FromLocationTypeOrg = properties.FromFixedHeight?.Type ?? FixedHeightType.Floor ;
+        FromLocationTypeOrg = properties.FromFixedHeight?.Type ?? FixedHeightType.Ceiling ;
         FromFixedHeightOrg = properties.FromFixedHeight?.Height ?? GetFromDefaultHeight( FromLocationTypeOrg.Value ) ;
       }
 
