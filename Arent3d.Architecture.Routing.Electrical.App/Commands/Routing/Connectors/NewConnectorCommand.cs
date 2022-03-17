@@ -9,6 +9,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing.Connector
   [Image( "resources/new_connector_02.png" )]
   public class NewConnectorCommand : NewConnectorCommandBase
   {
-    protected override RoutingFamilyType RoutingFamilyType => RoutingFamilyType.ConnectorOneSide ;
+    protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.ConnectorOneSide ;
   }
 }
