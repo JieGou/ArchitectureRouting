@@ -95,6 +95,10 @@
         </Compile>
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="morelinq" Version="3.3.2" />
+    </ItemGroup>
+
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <!--
             <Exec Command="&quot;$(SolutionDir)lib\tools\ILMerge.exe&quot; /lib:&quot;$(RevitPath.TrimEnd('\'))&quot; /internalize:$(SolutionDir)nointernalize.txt /out:$(TargetPath) /wildcards &quot;$(TargetDir)*.dll&quot;" />

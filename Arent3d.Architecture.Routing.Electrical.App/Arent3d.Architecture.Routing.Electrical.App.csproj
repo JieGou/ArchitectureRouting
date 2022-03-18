@@ -87,6 +87,7 @@
         <Resource Include="resources\new_connector_02.png" />
         <Resource Include="resources\rack.png" />
         <Resource Include="resources\shaft_02.png" />
+        <None Remove="resources\split_schedule_32x32.png" />
     </ItemGroup>
 
     <ItemGroup>
