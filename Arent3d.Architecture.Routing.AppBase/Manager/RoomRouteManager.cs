@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       return element ;
     }
 
-    private enum RoomEdge
+    public enum RoomEdge
     {
       Left,
       Right,
@@ -271,6 +271,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       var p2 = new XYZ( p1.X + lenght, p1.Y, p1.Z ) ;
       var p3 = new XYZ( p2.X, p2.Y - width, p2.Z ) ;
       return ! ( elementEndPoint.X > p1.X ) || ! ( elementEndPoint.X < p2.X ) || ! ( elementEndPoint.Y < p1.Y ) || ! ( elementEndPoint.Y > p3.Y ) ;
+    }
+    
+    public static RoomEdge GetPassPointPositionOutRoom( XYZ passPoint, XYZ p1, XYZ p2, XYZ p4 )
+    {
+      if ( Math.Abs( passPoint.X - p1.X ) < Math.Abs( passPoint.X - p2.X ) 
+           && Math.Abs( passPoint.X - p1.X ) < Math.Abs( passPoint.Y - p1.Y ) 
+           && Math.Abs( passPoint.X - p1.X ) < Math.Abs( passPoint.Y - p4.Y ) )
+        return RoomEdge.Left ;
+      if ( Math.Abs( passPoint.X - p2.X ) < Math.Abs( passPoint.X - p1.X ) 
+           && Math.Abs( passPoint.X - p2.X ) < Math.Abs( passPoint.Y - p1.Y ) 
+           && Math.Abs( passPoint.X - p2.X ) < Math.Abs( passPoint.Y - p4.Y ) )
+        return RoomEdge.Right ;
+      if ( Math.Abs( passPoint.Y - p1.Y ) < Math.Abs( passPoint.Y - p4.Y ) 
+           && Math.Abs( passPoint.Y - p1.Y ) < Math.Abs( passPoint.X - p1.X ) 
+           && Math.Abs( passPoint.Y - p1.Y ) < Math.Abs( passPoint.X - p2.X ) )
+        return RoomEdge.Back ;
+      return RoomEdge.Front ;
     }
 
     private class RoomPickFilter : ISelectionFilter

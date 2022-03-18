@@ -248,8 +248,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private void MovePassPoint( Document document, IReadOnlyCollection<Element> passPoints, Reference reference, bool isOutFromConnector )
     {
-      const double minDistanceBetweenPassPoints = 0.1 ;
+      const double minDistanceBetweenPassPoints = 0.2 ;
       const double minDistanceBetweenPassPointAndWall = 0.8 ;
+      const double minOutDistanceBetweenPassPointAndWall = 0.4 ;
       var room = document.GetElement( reference.ElementId ) ;
       var lenght = room.ParametersMap.get_Item( "Lenght" ).AsDouble() ;
       var width = room.ParametersMap.get_Item( "Width" ).AsDouble() ;
@@ -296,34 +297,103 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
       else {
+        var secondPassPoint = passPoints.ElementAt( 1 ) ;
+        var secondPassPointLocationPoint = (secondPassPoint.Location as LocationPoint ) ! ;
+        var secondPassPointOrigin = secondPassPointLocationPoint.Point ;
+        var firstPassPointPosition = RoomRouteManager.GetPassPointPositionOutRoom( firstPassPointOrigin, p1, p2, p4 ) ;
+        var secondPassPointPosition = RoomRouteManager.GetPassPointPositionOutRoom( secondPassPointOrigin, p1, p2, p4 ) ;
         if ( p1.X < firstPassPointOrigin.X && firstPassPointOrigin.X < p2.X ) {
-          if ( xDistanceBetweenP1AndFirstPassPointOrigin < xDistanceBetweenP2AndFirstPassPointOrigin ) {
-            xDistance = - xDistanceBetweenP1AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+          if ( secondPassPointPosition == RoomRouteManager.RoomEdge.Left ) {
+            if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Right ) {
+              xDistance = xDistanceBetweenP2AndFirstPassPointOrigin + minOutDistanceBetweenPassPointAndWall ;
+            }
+            else {
+              xDistance = -xDistanceBetweenP1AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
+            }
+          }
+          else if ( secondPassPointPosition == RoomRouteManager.RoomEdge.Right ) {
+            if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Left ) {
+              xDistance = -xDistanceBetweenP1AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
+            }
+            else {
+              xDistance = xDistanceBetweenP2AndFirstPassPointOrigin + minOutDistanceBetweenPassPointAndWall ;
+            }
+          }
+          else if ( secondPassPointPosition == RoomRouteManager.RoomEdge.Back ) {
+            if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Left ) {
+              xDistance = -xDistanceBetweenP1AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
+            }
+            else if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Right ) {
+              xDistance = xDistanceBetweenP2AndFirstPassPointOrigin + minOutDistanceBetweenPassPointAndWall ;
+            }
+            else if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Front ){
+
+            }
           }
           else {
-            xDistance = xDistanceBetweenP2AndFirstPassPointOrigin + minDistanceBetweenPassPointAndWall ;
+            if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Left ) {
+              xDistance = -xDistanceBetweenP1AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
+            }
+            else if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Right ) {
+              xDistance = xDistanceBetweenP2AndFirstPassPointOrigin + minOutDistanceBetweenPassPointAndWall ;
+            }
+            else if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Back ){
+              
+            }
           }
         }
-        else if ( xDistanceBetweenP1AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
-          xDistance = xDistanceBetweenP1AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+        else if ( xDistanceBetweenP1AndFirstPassPointOrigin < minOutDistanceBetweenPassPointAndWall ) {
+          xDistance = xDistanceBetweenP1AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
         }
-        else if ( xDistanceBetweenP2AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
-          xDistance = minDistanceBetweenPassPointAndWall - xDistanceBetweenP2AndFirstPassPointOrigin ;
+        else if ( xDistanceBetweenP2AndFirstPassPointOrigin < minOutDistanceBetweenPassPointAndWall ) {
+          xDistance = minDistanceBetweenPassPointAndWall - minOutDistanceBetweenPassPointAndWall ;
         }
 
-        if ( p1.Y > firstPassPointOrigin.Y && firstPassPointOrigin.Y > p4.Y ) {
-          if ( yDistanceBetweenP1AndFirstPassPointOrigin < yDistanceBetweenP4AndFirstPassPointOrigin ) {
-            yDistance = yDistanceBetweenP1AndFirstPassPointOrigin + minDistanceBetweenPassPointAndWall ;
+        if ( p1.Y > firstPassPointOrigin.Y && firstPassPointOrigin.Y > p4.Y && firstPassPointPosition != secondPassPointPosition ) {
+          if ( secondPassPointPosition == RoomRouteManager.RoomEdge.Left ) {
+            if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Back ) {
+              yDistance = yDistanceBetweenP1AndFirstPassPointOrigin + minOutDistanceBetweenPassPointAndWall ;
+            }
+            else if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Front ) {
+              yDistance = -yDistanceBetweenP4AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
+            }
+            else if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Right ) {
+
+            }
+          }
+          else if ( secondPassPointPosition == RoomRouteManager.RoomEdge.Right ) {
+            if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Back ) {
+              yDistance = yDistanceBetweenP1AndFirstPassPointOrigin + minOutDistanceBetweenPassPointAndWall ;
+            }
+            else if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Front ) {
+              yDistance = -yDistanceBetweenP4AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
+            }
+            else if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Left ) {
+
+            }
+          }
+          else if ( secondPassPointPosition == RoomRouteManager.RoomEdge.Back ) {
+            if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Front ){
+              yDistance = -yDistanceBetweenP4AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
+            }
+            else {
+              yDistance = yDistanceBetweenP1AndFirstPassPointOrigin + minOutDistanceBetweenPassPointAndWall ;
+            }
           }
           else {
-            yDistance = -yDistanceBetweenP4AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+            if ( firstPassPointPosition == RoomRouteManager.RoomEdge.Back ){
+              yDistance = yDistanceBetweenP1AndFirstPassPointOrigin + minOutDistanceBetweenPassPointAndWall ;
+            }
+            else {
+              yDistance = -yDistanceBetweenP4AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
+            }
           }
         }
-        else if ( yDistanceBetweenP1AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
-          yDistance = minDistanceBetweenPassPointAndWall - yDistanceBetweenP1AndFirstPassPointOrigin ;
+        else if ( yDistanceBetweenP1AndFirstPassPointOrigin < minOutDistanceBetweenPassPointAndWall ) {
+          yDistance = minOutDistanceBetweenPassPointAndWall - yDistanceBetweenP1AndFirstPassPointOrigin ;
         }
-        else if ( yDistanceBetweenP4AndFirstPassPointOrigin < minDistanceBetweenPassPointAndWall ) {
-          yDistance = yDistanceBetweenP4AndFirstPassPointOrigin - minDistanceBetweenPassPointAndWall ;
+        else if ( yDistanceBetweenP4AndFirstPassPointOrigin < minOutDistanceBetweenPassPointAndWall ) {
+          yDistance = yDistanceBetweenP4AndFirstPassPointOrigin - minOutDistanceBetweenPassPointAndWall ;
         }
       }
 
@@ -338,41 +408,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var (xNextPassPoint, yNextPassPoint, _) = ( passPoint.Location as LocationPoint )!.Point ;
         var xDistanceBetweenPrevAndNextPassPoint = Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) ;
         var yDistanceBetweenPrevAndNextPassPoint = Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) ;
-        if ( Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
-          if ( xDistance > 0 ) {
-            if ( xNextPassPoint < prevPassPointOrigin.X ) {
-              xDistanceBetweenPassPoint = minDistanceBetweenPassPoints + xDistanceBetweenPrevAndNextPassPoint ;
-            }
-            else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
-              xDistanceBetweenPassPoint = minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
-            }
+        if ( xDistance > 0 ) {
+          if ( xNextPassPoint <= prevPassPointOrigin.X ) {
+            xDistanceBetweenPassPoint = minDistanceBetweenPassPoints + xDistanceBetweenPrevAndNextPassPoint ;
           }
-          else if ( xDistance < 0 ) {
-            if ( xNextPassPoint > prevPassPointOrigin.X ) {
-              xDistanceBetweenPassPoint = - minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
-            }
-            else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
-              xDistanceBetweenPassPoint = xDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
-            }
+          else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints && Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
+            xDistanceBetweenPassPoint = minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
+          }
+        }
+        else if ( xDistance < 0 ) {
+          if ( xNextPassPoint >= prevPassPointOrigin.X ) {
+            xDistanceBetweenPassPoint = -minDistanceBetweenPassPoints - xDistanceBetweenPrevAndNextPassPoint ;
+          }
+          else if ( xDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints && Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
+            xDistanceBetweenPassPoint = xDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
           }
         }
 
-        if ( Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) < minDistanceBetweenPassPoints ) {
-          if ( yDistance > 0 ) {
-            if ( yNextPassPoint < prevPassPointOrigin.Y ) {
-              yDistanceBetweenPassPoint = minDistanceBetweenPassPoints + yDistanceBetweenPrevAndNextPassPoint ;
-            }
-            else if ( Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints ) {
-              yDistanceBetweenPassPoint = minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
-            }
+        if ( yDistance > 0 ) {
+          if ( yNextPassPoint <= prevPassPointOrigin.Y ) {
+            yDistanceBetweenPassPoint = minDistanceBetweenPassPoints + yDistanceBetweenPrevAndNextPassPoint ;
           }
-          else if ( yDistance < 0 ) {
-            if ( yNextPassPoint > prevPassPointOrigin.Y ) {
-              yDistanceBetweenPassPoint = -minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
-            }
-            else if ( yDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints ) {
-              yDistanceBetweenPassPoint = yDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
-            }
+          else if ( Math.Abs( yNextPassPoint - prevPassPointOrigin.Y ) < minDistanceBetweenPassPoints && Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) < minDistanceBetweenPassPoints ) {
+            yDistanceBetweenPassPoint = minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
+          }
+        }
+        else if ( yDistance < 0 ) {
+          if ( yNextPassPoint >= prevPassPointOrigin.Y ) {
+            yDistanceBetweenPassPoint = -minDistanceBetweenPassPoints - yDistanceBetweenPrevAndNextPassPoint ;
+          }
+          else if ( yDistanceBetweenPrevAndNextPassPoint < minDistanceBetweenPassPoints && Math.Abs( xNextPassPoint - prevPassPointOrigin.X ) < minDistanceBetweenPassPoints ) {
+            yDistanceBetweenPassPoint = yDistanceBetweenPrevAndNextPassPoint - minDistanceBetweenPassPoints ;
           }
         }
 
