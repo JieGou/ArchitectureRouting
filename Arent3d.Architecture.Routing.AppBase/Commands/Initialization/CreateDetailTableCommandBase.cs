@@ -2,7 +2,6 @@
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
-using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -21,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class CreateDetailTableCommandBase : IExternalCommand
   {
+    private const string DefaultChildPlumbingSymbol = "↑" ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       const string defaultParentPlumbingType = "E" ;
@@ -113,12 +113,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
+    private enum ConstructionClassificationType
+    {
+      天井隠蔽,
+      天井コロガシ,
+      打ち込み,
+      フリーアクセス,
+      露出,
+      地中埋設,
+      ケーブルラック配線,
+      冷媒管共巻配線,
+      漏水帯コロガシ,
+      漏水帯配管巻,
+      導圧管類
+    }
+
     private static void CreateDetailTableSchedule( Document document, IReadOnlyCollection<DetailTableModel> detailTableModels, string level )
     {
       string scheduleName = "Revit.Detail.Table.Name".GetDocumentStringByKeyOrDefault( document, "Detail Table" ) + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
       var detailTable = document.GetAllElements<ViewSchedule>().SingleOrDefault( v => v.Name.Contains( scheduleName ) ) ;
       if ( detailTable == null ) {
-        detailTable = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
+        detailTable = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_Conduit ) ) ;
         detailTable.Name = scheduleName ;
       }
 
@@ -127,12 +142,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static void InsertDetailTableDataIntoSchedule( ViewSchedule viewSchedule, IReadOnlyCollection<DetailTableModel> detailTableModels, string level )
     {
-      const int columnCount = 3 ;
-      const int maxCountOfCell = 4 ;
+      const int maxCharOfCell = 9 ;
       const double minColumnWidth = 0.05 ;
       var rowData = 1 ;
-      var maxCharOfPlumbingTypeCell = 0 ;
-      var maxCharOfRemarkCell = 0 ;
+      var maxCharOfRow = 0 ;
 
       TableCellStyleOverrideOptions tableStyleOverride = new() { HorizontalAlignment = true } ;
       TableCellStyle cellStyle = new() ;
@@ -141,9 +154,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       TableData tableData = viewSchedule.GetTableData() ;
       TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
-      for ( var i = 0 ; i <= columnCount ; i++ ) {
-        if ( i != 1 ) tsdHeader.InsertColumn( i ) ;
-      }
 
       var detailTableModelsGroupByDetailSymbol = detailTableModels.GroupBy( d => d.DetailSymbol ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       var rowCount = detailTableModels.Count + detailTableModelsGroupByDetailSymbol.Count ;
@@ -151,38 +161,58 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
       }
 
-      tsdHeader.MergeCells( new TableMergedCell( 0, 0, 0, columnCount ) ) ;
       tsdHeader.SetCellText( 0, 0, level + "階平面图" ) ;
       tsdHeader.SetCellStyle( 0, 0, cellStyle ) ;
 
       foreach ( var (detailSymbol, detailTableModelsSameWithDetailSymbol) in detailTableModelsGroupByDetailSymbol ) {
-        tsdHeader.MergeCells( new TableMergedCell( rowData, 0, rowData, columnCount ) ) ;
         tsdHeader.SetCellText( rowData, 0, detailSymbol ) ;
         tsdHeader.SetCellStyle( rowData, 0, cellStyle ) ;
         rowData++ ;
         foreach ( var rowDetailTableModel in detailTableModelsSameWithDetailSymbol ) {
-          var wireType = string.IsNullOrEmpty( rowDetailTableModel.WireStrip ) ? $"{rowDetailTableModel.WireType + rowDetailTableModel.WireSize,-15}" : $"{rowDetailTableModel.WireType + rowDetailTableModel.WireSize,-15}{"－" + rowDetailTableModel.WireStrip,5}" ;
-          var plumbingType = rowDetailTableModel.PlumbingType + rowDetailTableModel.PlumbingSize ;
-          tsdHeader.SetCellText( rowData, 0, wireType ) ;
-          tsdHeader.SetCellText( rowData, 1, "x" + rowDetailTableModel.WireBook ) ;
-          tsdHeader.SetCellText( rowData, 2, plumbingType ) ;
-          tsdHeader.SetCellText( rowData, 3, rowDetailTableModel.Remark ) ;
-          if ( plumbingType.Length > maxCharOfPlumbingTypeCell ) maxCharOfPlumbingTypeCell = plumbingType.Length ;
-          if ( rowDetailTableModel.Remark.Length > maxCharOfRemarkCell ) maxCharOfRemarkCell = rowDetailTableModel.Remark.Length ;
+          var wireStrip = string.IsNullOrEmpty( rowDetailTableModel.WireStrip ) ? string.Empty : "－" + rowDetailTableModel.WireStrip ;
+          var plumbingType = GetPlumbingType( rowDetailTableModel.ConstructionClassification, rowDetailTableModel.PlumbingType, rowDetailTableModel.PlumbingSize, rowDetailTableModel.NumberOfPlumbing ) ;
+          var rowText = $"{rowDetailTableModel.WireType + rowDetailTableModel.WireSize,-15}{wireStrip,-10}{"x" + rowDetailTableModel.WireBook,-15}{plumbingType,-25}{rowDetailTableModel.Remark,-15}" ;
+          if ( rowText.Length > maxCharOfRow ) maxCharOfRow = rowText.Length ;
+          tsdHeader.SetCellText( rowData, 0, rowText ) ;
+          tsdHeader.SetCellStyle( rowData, 0, cellStyle ) ;
           rowData++ ;
         }
       }
 
-      for ( var i = 0 ; i <= columnCount ; i++ ) {
-        var columnWidth = i switch
-        {
-          0 => minColumnWidth * 3,
-          2 when maxCharOfPlumbingTypeCell > maxCountOfCell => minColumnWidth * Math.Ceiling( (double) maxCharOfPlumbingTypeCell / maxCountOfCell ),
-          3 when maxCharOfRemarkCell > maxCountOfCell => minColumnWidth * Math.Ceiling( (double) maxCharOfRemarkCell / maxCountOfCell ),
-          _ => minColumnWidth
-        } ;
-        tsdHeader.SetColumnWidth( i, columnWidth ) ;
+      var columnWidth = minColumnWidth * Math.Ceiling( (double) maxCharOfRow / maxCharOfCell ) ;
+      tsdHeader.SetColumnWidth( 0, columnWidth ) ;
+    }
+
+    private static string GetPlumbingType( string constructionClassification, string plumbingType, string plumbingSize, string numberOfPlumbing )
+    {
+      const string korogashi = "コロガシ" ;
+      const string rack = "ラック" ;
+      const string coil = "共巻" ;
+      if ( plumbingType == DefaultChildPlumbingSymbol ) {
+        plumbingSize = string.Empty ;
+        numberOfPlumbing = "1" ;
       }
+
+      if ( constructionClassification == ConstructionClassificationType.天井隠蔽.GetFieldName() || constructionClassification == ConstructionClassificationType.打ち込み.GetFieldName() || constructionClassification == ConstructionClassificationType.露出.GetFieldName() || constructionClassification == ConstructionClassificationType.地中埋設.GetFieldName() ) {
+        plumbingType = $"{"(" + plumbingType + plumbingSize + ")",-15}{"x" + numberOfPlumbing,-10}" ;
+      }
+      else if ( constructionClassification == ConstructionClassificationType.天井コロガシ.GetFieldName() || constructionClassification == ConstructionClassificationType.フリーアクセス.GetFieldName() ) {
+        plumbingType = $"{"(" + korogashi + ")",-25}" ;
+      }
+      else if ( constructionClassification == ConstructionClassificationType.ケーブルラック配線.GetFieldName() ) {
+        plumbingType = $"{"(" + rack + ")",-25}" ;
+      }
+      else if ( constructionClassification == ConstructionClassificationType.冷媒管共巻配線.GetFieldName() ) {
+        plumbingType = $"{"(" + coil + ")",-25}" ;
+      }
+      else if ( constructionClassification == ConstructionClassificationType.漏水帯コロガシ.GetFieldName() || constructionClassification == ConstructionClassificationType.漏水帯配管巻.GetFieldName() ) {
+        plumbingType = $"{"(" + string.Empty + ")",-25}" ;
+      }
+      else if ( constructionClassification == ConstructionClassificationType.導圧管類.GetFieldName() ) {
+        plumbingType = string.IsNullOrEmpty( plumbingType ) ? $"{"(" + string.Empty + ")",-25}" : $"{"(" + plumbingType + plumbingSize + ")",-15}{"x" + numberOfPlumbing,-10}" ;
+      }
+
+      return plumbingType ;
     }
 
     private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels )
@@ -212,7 +242,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     protected internal static void SetPlumbingDataForOneSymbol( List<ConduitsModel> conduitsModelData, ref List<DetailTableModel> detailTableModelsByDetailSymbolId, string plumbingType, bool isPlumbingTypeHasBeenChanged = false )
     {
       const double percentage = 0.32 ;
-      const string defaultChildPlumbingSymbol = "↑" ;
       var plumbingCount = 0 ;
 
       if ( ! isPlumbingTypeHasBeenChanged ) {
@@ -233,7 +262,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
             var plumbing = conduitsModels.Last() ;
-            parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
+            parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
             parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
             parentDetailRow.PlumbingIdentityInfo = parentDetailRow.PlumbingType + parentDetailRow.PlumbingSize + "-" + parentDetailRow.SignalType + "-" + parentDetailRow.RouteName ;
             if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
@@ -247,7 +276,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             currentPlumbingCrossSectionalArea = currentDetailTableRow.WireCrossSectionalArea ;
             if ( currentDetailTableRow != detailTableRows.Last() ) continue ;
             plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableRow.WireCrossSectionalArea ) ;
-            currentDetailTableRow.PlumbingType = currentDetailTableRow == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
+            currentDetailTableRow.PlumbingType = currentDetailTableRow == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
             currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
             currentDetailTableRow.PlumbingIdentityInfo = currentDetailTableRow.PlumbingType + currentDetailTableRow.PlumbingSize + "-" + currentDetailTableRow.SignalType + "-" + currentDetailTableRow.RouteName ;
             plumbingCount++ ;
@@ -255,7 +284,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           else {
             if ( currentDetailTableRow == detailTableRows.Last() ) {
               var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
-              parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + defaultChildPlumbingSymbol ;
+              parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
               parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
               parentDetailRow.PlumbingIdentityInfo = parentDetailRow.PlumbingType + parentDetailRow.PlumbingSize + "-" + parentDetailRow.SignalType + "-" + parentDetailRow.RouteName ;
               if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
@@ -268,9 +297,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
 
             if ( currentDetailTableRow == detailTableRows.First() ) continue ;
-            currentDetailTableRow.PlumbingType = defaultChildPlumbingSymbol ;
-            currentDetailTableRow.PlumbingSize = defaultChildPlumbingSymbol ;
-            currentDetailTableRow.NumberOfPlumbing = defaultChildPlumbingSymbol ;
+            currentDetailTableRow.PlumbingType = DefaultChildPlumbingSymbol ;
+            currentDetailTableRow.PlumbingSize = DefaultChildPlumbingSymbol ;
+            currentDetailTableRow.NumberOfPlumbing = DefaultChildPlumbingSymbol ;
             childDetailRows.Add( currentDetailTableRow ) ;
           }
         }
@@ -283,7 +312,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       foreach ( var detailTableRowsWithSameSignalType in detailTableModelsBySignalType ) {
-        foreach ( var detailTableRow in detailTableRowsWithSameSignalType.Where( d => d.PlumbingSize != defaultChildPlumbingSymbol ).ToList() ) {
+        foreach ( var detailTableRow in detailTableRowsWithSameSignalType.Where( d => d.PlumbingSize != DefaultChildPlumbingSymbol ).ToList() ) {
           detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
         }
       }
