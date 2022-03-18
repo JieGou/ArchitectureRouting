@@ -57,6 +57,7 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_ConduitFitting,
       BuiltInCategory.OST_ConduitRun,
       BuiltInCategory.OST_ElectricalFixtures,
+      BuiltInCategory.OST_ElectricalEquipment,
       BuiltInCategory.OST_CableTray,
       BuiltInCategory.OST_CableTrayFitting
     } ;
@@ -119,7 +120,7 @@ namespace Arent3d.Architecture.Routing
     } ;
     
     public static readonly BuiltInCategory[] ConnectorsAndConduits = CombineArrays(
-      Connectors,
+      OtherElectricalElements,
       Conduits
     ) ;
 

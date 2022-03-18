@@ -13,7 +13,8 @@
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
-                <RowDefinition Height="35"/>
+                <RowDefinition Height="55"/>
+                <RowDefinition Height="55"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
@@ -25,13 +26,28 @@
             <Button Grid.Row="1"  Width="90" Content="行削除" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="2"  Width="90" Content="コピー" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="3"  Width="90" Content="挿入貼付" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="4"  Width="90" Content="配管まとめ" Margin="5,5,5,5" Height="25" Click="BtnPlumbingSummary_Click"/>
-            <Button Grid.Row="5"  Width="90" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="6"  Width="90" Content="上へ" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="7"  Width="90" Content="下へ" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="8"  Width="90" Content="全選択" Margin="5,5,5,5" Height="25" />
-            <Label Grid.Row="9" Content="参照情報" Margin="0,30,5,0"/>
-            <Button Grid.Row="10"  Width="90" Content="▼" Margin="5,0,5,5" Height="25" />
+            <Button Grid.Row="4"  Width="90" Margin="5,5,5,5" Height="45" Click="BtnPlumbingSummary_Click">
+                <Button.Content>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock TextAlignment="Center" Text="配管まとめ" />
+                        <TextBlock TextAlignment="Center" Text="(工事項目毎)" />
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+            <Button Grid.Row="5" Width="90" Margin="5,5,5,5" Height="45" Click="BtnPlumbingSummaryMixConstructionItems_Click">
+                <Button.Content>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock TextAlignment="Center" Text="配管まとめ" />
+                        <TextBlock TextAlignment="Center" Text="(工事項目混在)" />
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+            <Button Grid.Row="6"  Width="90" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" />
+            <Button Grid.Row="7"  Width="90" Content="上へ" Margin="5,5,5,5" Height="25" />
+            <Button Grid.Row="8"  Width="90" Content="下へ" Margin="5,5,5,5" Height="25" />
+            <Button Grid.Row="9"  Width="90" Content="全選択" Margin="5,5,5,5" Height="25" />
+            <Label Grid.Row="10" Content="参照情報" Margin="0,30,5,0"/>
+            <Button Grid.Row="11"  Width="90" Content="▼" Margin="5,0,5,5" Height="25" />
         </Grid>
         <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Width="970" Height="30" Margin="20">
             <Grid.ColumnDefinitions>
@@ -126,7 +142,44 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                <DataGridTextColumn Header="配管工事項目" Width="90" Binding="{Binding PlumbingItems, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridComboBoxColumn Header="配管工事項目" Width="90"
+                                        SelectedValueBinding="{Binding PlumbingItems}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingItems}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding PlumbingItems, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingItems}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="PlumbingItemsSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
                 <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" IsReadOnly="True" />
             </DataGrid.Columns>
         </DataGrid>

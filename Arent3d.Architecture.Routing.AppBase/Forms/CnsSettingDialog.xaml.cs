@@ -175,7 +175,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var newCnsSettingData = _cnsSettingViewModel.CnsSettingStorable.CnsSettingData ;
       var conduits = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
-      var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
+      var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
       Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       Dictionary<Element, string> updateConnectors = new Dictionary<Element, string>() ;
 
@@ -262,7 +262,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public bool IsConnectorsHaveConstructionItem()
     {
       try {
-        var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault() ;
+        var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault() ;
         if ( connector == null ) return false ;
         connector.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
         return true ;
