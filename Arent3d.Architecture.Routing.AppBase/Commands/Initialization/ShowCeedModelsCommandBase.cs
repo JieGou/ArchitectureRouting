@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-        var txtPosition = new XYZ( originX - 2, originY + 3, heightOfConnector ) ;
+        var txtPosition = new XYZ( originX - 2, originY + 4, heightOfConnector ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeedModel.SelectedDeviceSymbol, opts ) ;
 
         // create group of selected element and new text note
@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         groupIds.Add( textNote.Id ) ;
         if ( ! string.IsNullOrEmpty( dlgCeedModel.SelectedCondition ) ) {
           if ( dlgCeedModel.SelectedCondition.Length > 6 ) noteWidth += ( dlgCeedModel.SelectedCondition.Length - 6 ) * 0.007 ;
-          var txtConditionPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
+          var txtConditionPosition = new XYZ( originX - 2, originY + 2.5, heightOfConnector ) ;
           var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeedModel.SelectedCondition, opts ) ;
 
           var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
