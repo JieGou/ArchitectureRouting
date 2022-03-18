@@ -297,9 +297,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       for ( var j = 0 ; j < wiringTypes.Count ; j++ ) {
         if ( ! string.IsNullOrEmpty( floorPlanSymbols.ElementAt( j ) ) ) {
           var pathToImage = GetFloorPlanImagePath( floorPlanSymbols.ElementAt( j ) ) ;
-          var imageType = document.GetAllElements<ImageType>().FirstOrDefault( i => i.Path == pathToImage ) ?? ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
-          tsdHeader.InsertImage( startRowData + j, 0, imageType.Id ) ;
-          tsdHeader.SetCellText( startRowData + j, 1, generalDisplayDeviceSymbols.ElementAt( j ) ) ;
+          var imageType = document.GetAllElements<ImageType>().FirstOrDefault( i => i.Path == pathToImage ) ;
+          if ( imageType == null ) {
+#if REVIT2019
+            imageType = ImageType.Create( document, pathToImage ) ;
+#elif REVIT2020
+            imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false ) ) ;
+#elif REVIT2021
+            imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
+#elif REVIT2022
+            imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
+#endif
+            tsdHeader.InsertImage( startRowData + j, 0, imageType.Id ) ;
+            tsdHeader.SetCellText( startRowData + j, 1, generalDisplayDeviceSymbols.ElementAt( j ) ) ;
+          }
         }
 
         tsdHeader.SetCellText( startRowData + j, 2, wiringTypes.ElementAt( j ) ) ;

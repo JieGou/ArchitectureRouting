@@ -54,6 +54,9 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
         
         [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
         private static class ShowFromToTreeCommandButton { }
+        
+        [Button( typeof( ReplaceFlexDuctCommand ), OnlyInitialized = true )]
+        private static class ReplaceFlexDuctCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.envelope", TitleKey = "Mechanical.haseko.App.Panels.Routing.Envelope" )]
