@@ -171,7 +171,7 @@ namespace Arent3d.Architecture.Routing
       document.UnloadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() ) ;
       document.UnloadAllParametersFromFile<BranchNumberParameter>( AssetManager.GetMechanicalRoutingElementSharedParameterPath() ) ;
       document.UnloadAllParametersFromFile<AHUNumberParameter>( AssetManager.GetMechanicalRoutingElementSharedParameterPath() ) ;
-      document.UnloadAllParametersFromFile<AHUNumberParameter>( AssetManager.GetElectricalRoutingElementSharedParameterPath() ) ;
+      document.UnloadAllParametersFromFile<ElectricalRoutingElementParameter>( AssetManager.GetElectricalRoutingElementSharedParameterPath() ) ;
     }
   }
 }
