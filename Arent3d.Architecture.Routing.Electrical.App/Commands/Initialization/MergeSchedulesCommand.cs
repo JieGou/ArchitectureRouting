@@ -2,7 +2,9 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
+using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
@@ -14,6 +16,31 @@ using ImageType = Autodesk.Revit.DB.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
+  public class SelectionFilter1 : ISelectionFilter
+  {
+    public bool AllowElement( Element elem )
+    {
+      if ( elem is ScheduleSheetInstance ) return true ;
+      // if ( elem.Category.Id.IntegerValue == (int) BuiltInCategory.OST_WallsDefault ) return true ;
+      // if ( elem.Category.Id.IntegerValue == (int) BuiltInCategory.OST_WallsInsulation ) return true ;
+      // if ( elem.Category.Id.IntegerValue == (int) BuiltInCategory.OST_WallsStructure ) return true ;
+
+      return false ;
+
+    }
+
+    public bool AllowReference( Reference refer, XYZ pos )
+    {
+      // if ( refer.GeometryObject == null ) return false ;
+      //
+      // if ( refer.GeometryObject is Edge ) return true ;
+      // if ( refer.GeometryObject is Face ) return true ;
+
+      return true ;
+
+    }
+  }
+
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Initialization.MergeSchedulesCommand", DefaultString = "Merge Schedules" )]
   [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
@@ -26,66 +53,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
       var selection = commandData.Application.ActiveUIDocument.Selection ;
-
       try {
         if ( document.ActiveView is not ViewSheet ) {
           TaskDialog.Show( DialogTitle, "表分割機能はシート上にしか動作しないため、シートへ移動してください。" ) ;
           return Result.Cancelled ;
         }
-        
-        
-        var pickedBox = selection.PickBox( PickBoxStyle.Crossing, "分割範囲を選択してください。" ) ;
-        var min = new XYZ( Math.Min( pickedBox.Min.X, pickedBox.Max.X ), Math.Min( pickedBox.Min.Y, pickedBox.Max.Y ), 0 ) ;
-        var max = new XYZ( Math.Max( pickedBox.Min.X, pickedBox.Max.X ), Math.Max( pickedBox.Min.Y, pickedBox.Max.Y ), 0 ) ;
-        pickedBox.Min = min ;
-        pickedBox.Max = max ;
-
-
-        if ( pickedBox.Max.Y >= boundingBoxXYZ.Max.Y && pickedBox.Min.Y <= boundingBoxXYZ.Min.Y ) {
-          TaskDialog.Show( DialogTitle, "選択された領域は集計表の範囲内です。" ) ;
-          return Result.Cancelled ;
+        var selectedElements = selection.PickElementsByRectangle( new SelectionFilter1(), "ドラックで複数コネクタを選択して下さい。" );
+        if ( selectedElements.Count() > 0 ) {
+          // string str = "ahihi merge thôi" ;
+          // MessageBox.Show( str ) ;
+          var scheduleSheetInstances = new List<ScheduleSheetInstance>() ;
+          foreach ( var element in selectedElements ) {
+            scheduleSheetInstances.Add( (ScheduleSheetInstance)element );
+          }
+          return MergeScheduleSheetInstance( document, scheduleSheetInstances ) ;
         }
-
-        var heightRequest = 0d ;
-        for ( int i = 0 ; i < SplitFromRow ; i++ ) {
-          heightRequest += schedule.GetTableData().GetSectionData( SectionType.Header ).GetRowHeight( i ) ;
-        }
-
-        if ( pickedBox.Max.Y >= boundingBoxXYZ.Max.Y - heightRequest ) {
-          TaskDialog.Show( DialogTitle, "選択された領域は無効です。" ) ;
-          return Result.Cancelled ;
-        }
-
-        using Transaction transaction = new Transaction( document ) ;
-        transaction.Start( "Split Schedule" ) ;
-
-        if ( document.GetElement( schedule.Duplicate( ViewDuplicateOption.Duplicate ) ) is not ViewSchedule cloneSchedule )
-          return Result.Failed ;
-
-        var (newName, oldName) = GetNewScheduleName( document, schedule.Name ) ;
-        cloneSchedule.Name = newName ;
-        schedule.Name = oldName ;
-        
-        var (topIndex, bottomIndex) =
-          GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBoxXYZ, pickedBox ) ;
-
-        var numberOfRows = schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
-        for ( int i = numberOfRows - 1 ; i >= 0 ; i-- ) {
-          if ( i >= topIndex && i <= bottomIndex )
-            schedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
-        }
-
-        numberOfRows = cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
-        for ( int i = numberOfRows - 1 ; i >= SplitFromRow - 1 ; i-- ) {
-          if ( i < topIndex || i > bottomIndex )
-            cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
-        }
-
-        ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id,
-          Transform.CreateTranslation(XYZ.BasisX * 10.0.MillimetersToRevitUnits()).OfPoint(boundingBoxXYZ.Max) ) ;
-
-        transaction.Commit() ;
-
         return Result.Succeeded ;
       }
       catch (Autodesk.Revit.Exceptions.OperationCanceledException)
@@ -98,6 +80,72 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
+    private static int GetHeaderRowCount( TableSectionData splitedTable1, TableSectionData splitedTable2 )
+    {
+      int rowCount = 0 ;
+      int columnCount = splitedTable1.NumberOfColumns ;
+      bool stop = false ;
+      for ( int i = 0 ; i < splitedTable1.NumberOfRows ; i++ ) {
+        for ( int j = 0 ; j < columnCount ; j++ ) {
+          var cellText1 = splitedTable1.GetCellText( i, j ) ;
+          var cellText2 = splitedTable2.GetCellText( i, j ) ;
+          var cellType1 = splitedTable1.GetCellType( i, j ) ;
+          var cellType2 = splitedTable2.GetCellType( i, j ) ;
+          if ( cellText1 != cellText2 ) {
+            stop = true ;
+            break;
+          }
+        }
+        if(stop) break;
+        rowCount++ ;
+      }
+
+      return rowCount ;
+    }
+    private static Result MergeScheduleSheetInstance(Document document, IList<ScheduleSheetInstance> scheduleSheetInstances)
+    {
+      
+      if(scheduleSheetInstances.Count < 2) return Result.Succeeded; 
+      var firstScheduleSheet = scheduleSheetInstances.First() ;
+      if ( document.GetElement( firstScheduleSheet.ScheduleId ) is not ViewSchedule firstSchedule )
+        return Result.Failed ;
+      using Transaction transaction = new Transaction(document,"MergeScheduleSheetInstance") ;
+      transaction.Start() ;
+      
+      var firstSessionData = firstSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
+      var firstSessionDataRowCount = firstSessionData.NumberOfRows ;
+      var firstSessionDataColumnCount = firstSessionData.NumberOfColumns ;
+      // var newSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_Windows ) ) ;
+      // var newSessionData = newSchedule.GetTableData().GetSectionData( SectionType.Body ) ;
+      // firstSessionDataRowCount = 0 ;
+      if ( document.GetElement( scheduleSheetInstances[1].ScheduleId ) is not ViewSchedule secondSchedule )
+        return Result.Failed ;
+      var headerRowCount = GetHeaderRowCount( firstSessionData, secondSchedule.GetTableData().GetSectionData( SectionType.Header ) ) ;
+      for ( int i = 1 ; i < scheduleSheetInstances.Count ; i++ ) {
+        if ( document.GetElement( scheduleSheetInstances[i].ScheduleId ) is not ViewSchedule schedule )
+          return Result.Failed ;
+        var sectionData = schedule.GetTableData().GetSectionData( SectionType.Header ) ;
+        var rowCount = sectionData.NumberOfRows ;
+        var rowDataCount = schedule.GetTableData().GetSectionData( SectionType.Body ).NumberOfRows ;
+        var columnDataCount = schedule.GetTableData().GetSectionData( SectionType.Body ).NumberOfColumns ;
+        var columnCount = Math.Min(sectionData.NumberOfColumns,firstSessionDataColumnCount) ;
+        for ( int row = headerRowCount ; row < rowCount ; row++ ) {
+          firstSessionData.InsertRow( firstSessionDataRowCount );
+          firstSessionData.SetRowHeight( firstSessionDataRowCount, sectionData.GetRowHeight( row ));
+          for ( int column = 0 ; column < columnCount -1 ; column++ ) {
+            firstSessionData.SetCellText( firstSessionDataRowCount, column, sectionData.GetCellText( row, column ));
+            firstSessionData.SetCellStyle( firstSessionDataRowCount, column, sectionData.GetTableCellStyle( row, column ));
+            firstSessionData.SetCellType( firstSessionDataRowCount, column, sectionData.GetCellType( row, column ));
+            
+          }
+          firstSessionDataRowCount++ ;
+        }
+
+        document.Delete( schedule.Id ) ;
+      }
+      transaction.Commit() ;
+      return Result.Succeeded ;
+    }
     private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox )
     {
       var heightTable = boxXYZ.Max.Y ;
