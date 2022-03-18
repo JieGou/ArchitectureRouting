@@ -26,8 +26,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class SelectionRangeRouteWithPassCommand : RoutingCommandBase<SelectionRangeRouteWithPassCommand.SelectState>
   {
-    private const string ErrorMessageNoPowerAndSensorConnector = "No power connectors and sensor connectors are selected." ;
-    private const string ErrorMessageNoPowerConnector = "No power connectors are selected." ;
+    private const string ErrorMessageNoPowerAndPassAndSensorConnector = "No power, pass and sensor connectors are selected." ;
+    private const string ErrorMessageNoPowerAndPassConnector = "No power, pass connectors are selected." ;
+    private const string ErrorMessageNoPowerAndSensorConnector = "No power, sensor connectors are selected." ;
+    private const string ErrorMessageNoPassAndSensorConnector = "No pass, sensor connectors are selected." ;
+    private const string ErrorMessageNoPowerConnector = "No power connector is selected." ;
+    private const string ErrorMessageNoPassConnector = "No pass connector is selected." ;
     private const string ErrorMessageTwoOrMorePowerConnector = "Two or more power connectors are selected." ;
     private const string ErrorMessageTwoOrMorePassConnector = "Two or more pass connectors are selected." ;
     private const string ErrorMessageNoSensorConnector = "No sensor connectors are selected on the power connector level." ;
@@ -149,13 +153,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
       }
 
+      if ( powerConnector == null && passConnector == null && 0 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPowerAndPassAndSensorConnector ) ;
+      if ( powerConnector == null && passConnector == null ) return ( null, null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPowerAndPassConnector ) ;
       if ( powerConnector == null && 0 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPowerAndSensorConnector ) ;
+      if ( passConnector == null && 0 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPassAndSensorConnector ) ;
       if ( powerConnector == null ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageNoPowerConnector ) ;
+      if ( passConnector == null ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageNoPassConnector ) ;
       var powerLevel = powerConnector.LevelId ;
       sensorConnectors.RemoveAll( fi => fi.LevelId != powerLevel ) ;
       if ( 0 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageNoSensorConnector ) ;
       if ( 1 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageSensorConnector ) ;
-      var sensorDirection = SortSensorConnectors( passConnector!, sensorConnectors ) ;
+      var sensorDirection = SortSensorConnectors( passConnector, sensorConnectors ) ;
       if ( SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid == sensorDirection ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;
       return ( powerConnector, passConnector, sensorConnectors, sensorDirection, null ) ;
     }
