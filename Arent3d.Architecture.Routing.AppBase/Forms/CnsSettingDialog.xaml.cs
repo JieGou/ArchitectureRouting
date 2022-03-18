@@ -175,14 +175,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var newCnsSettingData = _cnsSettingViewModel.CnsSettingStorable.CnsSettingData ;
       var conduits = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).ToList() ;
-      var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
+      var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( x => x is FamilyInstance or TextNote ).ToList() ;
       Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       Dictionary<Element, string> updateConnectors = new Dictionary<Element, string>() ;
 
       if ( IsConduitsHaveConstructionItem() ) {
         //update Constructions Item for Conduits
         foreach ( var conduit in conduits ) {
-          var strConduitConstructionItem = conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+          var strConduitConstructionItem = conduit.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
           if ( string.IsNullOrEmpty( strConduitConstructionItem ) ) continue ;
 
           var conduitCnsSetting = _currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConduitConstructionItem ) ;
@@ -191,21 +191,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           }
 
           if ( newCnsSettingData.All( c => c.Position != conduitCnsSetting.Position ) ) {
-            conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, "未設定" ) ;
+            conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, "未設定" ) ;
             continue ;
           }
 
           var newConduitCnsSetting = newCnsSettingData.First( c => c.Position == conduitCnsSetting.Position ) ;
           if ( newConduitCnsSetting == null ) continue ;
           if ( newConduitCnsSetting.CategoryName == strConduitConstructionItem ) continue ;
-          conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, newConduitCnsSetting.CategoryName ) ;
+          conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, newConduitCnsSetting.CategoryName ) ;
         }
       }
 
       //Ungroup, Get Connector to Update
       if ( ! IsConnectorsHaveConstructionItem() ) return ;
       foreach ( var connector in connectors ) {
-        var strConnectorConstructionItem = connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+        var strConnectorConstructionItem = connector.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
         if ( string.IsNullOrEmpty( strConnectorConstructionItem ) ) continue ;
 
         var connectorCnsSetting = _currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConnectorConstructionItem ) ;
@@ -246,7 +246,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       foreach ( var updateItem in updateConnectors ) {
         var e = updateItem.Key ;
         string value = updateItem.Value ;
-        e.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, value ) ;
+        e.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, value ) ;
       }
 
       _document.Regenerate() ;
@@ -262,9 +262,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public bool IsConnectorsHaveConstructionItem()
     {
       try {
-        var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Connectors ).FirstOrDefault() ;
+        var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault() ;
         if ( connector == null ) return false ;
-        connector.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+        connector.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
         return true ;
       }
       catch {
@@ -277,7 +277,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       try {
         var conduit = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).FirstOrDefault() ;
         if ( conduit == null ) return false ;
-        conduit.GetPropertyString( RoutingFamilyLinkedParameter.ConstructionItem ) ;
+        conduit.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
         return true ;
       }
       catch {

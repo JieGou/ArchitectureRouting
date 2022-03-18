@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private const string ConditionTextNoteTypeName = "1.5 mm" ;
     private const string DefaultConstructionItem = "未設定" ;
 
-    protected abstract RoutingFamilyType RoutingFamilyType { get ; }
+    protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -40,8 +40,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeedModel.SelectedFloorPlanType ) ;
         var ceedCode = dlgCeedModel.SelectedCeedCode + "-" + dlgCeedModel.SelectedDeviceSymbol + "-" + dlgCeedModel.SelectedModelNumber ;
         if ( element is FamilyInstance familyInstance ) {
-          element.SetProperty( ConnectorFamilyParameter.CeedCode, ceedCode ) ;
-          element.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, DefaultConstructionItem ) ;
+          element.SetProperty(ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
+          element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
@@ -99,14 +99,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, string floorPlanType )
     {
-      if ( string.IsNullOrEmpty( floorPlanType ) ) {
-        var routingSymbol = ( uiDocument.Document.GetFamilySymbols( RoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
-        return routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+      if ( ! string.IsNullOrEmpty( floorPlanType ) ) {
+        var connectorOneSideFamilyTypeNames = ( (ConnectorOneSideFamilyType[]) Enum.GetValues( typeof( ConnectorOneSideFamilyType ) ) ).Select( f => f.GetFieldName() ).ToHashSet() ;
+        if ( connectorOneSideFamilyTypeNames.Contains( floorPlanType ) ) {
+          var connectorOneSideFamilyType = GetConnectorFamilyType( floorPlanType ) ;
+          var symbol = uiDocument.Document.GetFamilySymbols( connectorOneSideFamilyType ).FirstOrDefault() ?? ( uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
+          return symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+        }
+        else {
+          if ( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == floorPlanType ) is Family family ) {
+            foreach ( ElementId familySymbolId in (IEnumerable<ElementId>) family.GetFamilySymbolIds() ) {
+              var symbol = uiDocument.Document.GetElementById<FamilySymbol>( familySymbolId ) ?? throw new InvalidOperationException() ;
+              return symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+            }
+          }
+        }
       }
 
-      var connectorOneSideFamilyType = GetConnectorFamilyType( floorPlanType ) ;
-      var symbol = uiDocument.Document.GetFamilySymbols( connectorOneSideFamilyType ).FirstOrDefault() ?? ( uiDocument.Document.GetFamilySymbols( RoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
-      return symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+      var routingSymbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      return routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
     }
 
     private ConnectorOneSideFamilyType GetConnectorFamilyType( string floorPlanType )

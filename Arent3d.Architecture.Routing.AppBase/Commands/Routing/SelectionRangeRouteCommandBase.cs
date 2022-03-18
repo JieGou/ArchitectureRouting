@@ -292,8 +292,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var passPoints = new List<FamilyInstance>( passPointPositions.Count + 1 ) ;
       var footPassPoint = CreateFootPassPoint( routeName, powerConnector, passPointPositions[ 0 ], sensorDirection, bendingRadius, diameter * 0.5, levelId ) ;
-      footPassPoint!.SetProperty( PassPointParameter.RelatedConnectorUniqueId, sensorConnectors.Last().UniqueId ) ;
-      footPassPoint!.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, powerConnector.UniqueId ) ;
+      footPassPoint?.SetProperty( PassPointParameter.RelatedConnectorUniqueId, sensorConnectors.Last().UniqueId ) ;
+      footPassPoint?.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, powerConnector.UniqueId ) ;
 
       var lastPos = footPassPoint?.GetTotalTransform().Origin ;
       var lastFamilyInstance = footPassPoint ;
