@@ -39,6 +39,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private const string ErrorMessageCannotDetermineSensorConnectorArrayDirection = "Couldn't determine sensor array direction" ;
     private const string ConfirmMessageHeightSettingNotGood = "First connect through height from Power to Pass need to be larger than height of Pass\nAnd height of Pass need to be larger than first connect through height from Pass to Sensors\nDo you still want to connect with these height settings?" ;
     private const string ConfirmCaptionHeightSettingNotGood = "Height Settings Are Not Good Confirmation" ;
+    private const string PowerToPassName = "PowerToPass" ;
 
     protected override OperationResult<SelectState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
@@ -170,7 +171,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     private static SelectionRangeRouteCommandBase.SensorArrayDirection SortSensorConnectors( FamilyInstance passConnector, List<FamilyInstance> sensorConnectors )
     {
-      var powerPoint = passConnector.GetBottomConnectorOfConnectorFamily().Origin ;
+      var passConnectorPoint = passConnector.GetBottomConnectorOfConnectorFamily().Origin ;
       double minX = double.MaxValue, minY = double.MaxValue ;
       double maxX = -double.MaxValue, maxY = -double.MaxValue ;
       var sensorToOrigin = new Dictionary<FamilyInstance, XYZ>( sensorConnectors.Count ) ;
@@ -184,7 +185,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         if ( maxY < y ) maxY = y ;
       }
 
-      var (powerX, powerY, _) = powerPoint ;
+      var (powerX, powerY, _) = passConnectorPoint ;
       var xRange = GetRange( minX, maxX, powerX ) ;
       var yRange = GetRange( minY, maxY, powerY ) ;
       if ( xRange < 0 && yRange < 0 ) return SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid ;
@@ -251,10 +252,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var (footPassPoint, passPoints) = SelectionRangeRouteCommandBase.CreatePassPoints( routeName, passConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 2 ) ;
+      
       // main route
       var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
       var passConnectorUpEndPoint = new ConnectorEndPoint( passConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
-      result.Add( ( nameBase + "PowerToPass", new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, passConnectorUpEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetPowerToPassFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+      result.Add( ( nameBase + PowerToPassName, new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, passConnectorUpEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetPowerToPassFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
       var passConnectorEndPoint = new ConnectorEndPoint( passConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
       var passConnectorEndPointKey = passConnectorEndPoint.Key ;
       var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
@@ -266,6 +268,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var segment = new RouteSegment( classificationInfo, systemType, curveType, f, t, diameter, false, passToSensorsFromFixedHeight, passToSensorsFromFixedHeight, avoidType, null ) ;
         return ( routeName, segment ) ;
       } ) ) ;
+
       // branch routes
       result.AddRange( passPoints.Zip( sensorConnectors.Take( passPoints.Count ), ( pp, sensor ) =>
       {
@@ -275,6 +278,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, passToSensorsFromFixedHeight, passToSensorsFromFixedHeight, avoidType, null ) ;
         return ( subRouteName, segment ) ;
       } ) ) ;
+      
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
       allConnectors.AddRange( sensorConnectors ) ;
