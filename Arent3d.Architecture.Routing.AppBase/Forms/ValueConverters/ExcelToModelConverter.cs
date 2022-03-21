@@ -455,6 +455,64 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         ModelNumber = modelNumber ?? string.Empty ;
       }
     }
+    
+    public static List<ConnectorFamilyReplacement> GetConnectorFamilyReplacements( string path )
+    {
+      List<ConnectorFamilyReplacement> connectorFamilyReplacements = new() ;
+      var extension = Path.GetExtension( path ) ;
+      using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
+      try {
+        ISheet? workSheet = null ;
+        switch ( string.IsNullOrEmpty( extension ) ) {
+          case false when extension == ".xls" :
+          {
+            HSSFWorkbook wb = new( fs ) ;
+            workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
+            break ;
+          }
+          case false when extension == ".xlsx" :
+          {
+            XSSFWorkbook wb = new( fs ) ;
+            workSheet = wb.GetSheetAt( wb.ActiveSheetIndex ) ;
+            break ;
+          }
+        }
+
+        if ( workSheet == null ) return connectorFamilyReplacements ;
+        const int startRow = 1 ;
+        var endRow = workSheet.LastRowNum ;
+        for ( var i = startRow ; i <= endRow ; i++ ) {
+          var equipmentSymbolsCell = workSheet.GetRow( i ).GetCell( 0 ) ;
+          if ( equipmentSymbolsCell == null || equipmentSymbolsCell.CellStyle.IsHidden ) continue ;
+          var equipmentSymbols = GetCellValue( equipmentSymbolsCell ) ;
+          if ( string.IsNullOrEmpty( equipmentSymbols ) ) continue ;
+          var connectorFamilyFileCell = workSheet.GetRow( i ).GetCell( 1 ) ;
+          var connectorFamilyFile = connectorFamilyFileCell == null ? string.Empty : GetCellValue( connectorFamilyFileCell ) ;
+          connectorFamilyReplacements.Add( new ConnectorFamilyReplacement( equipmentSymbols, connectorFamilyFile ) ) ;
+        }
+      }
+      catch ( Exception ) {
+        return new List<ConnectorFamilyReplacement>() ;
+      }
+      finally {
+        fs.Close() ;
+        fs.Dispose() ;
+      }
+
+      return connectorFamilyReplacements ;
+    }
+
+    public class ConnectorFamilyReplacement
+    {
+      public readonly string DeviceSymbols ;
+      public readonly string ConnectorFamilyFile ;
+
+      public ConnectorFamilyReplacement( string? deviceSymbols, string? connectorFamilyFile )
+      {
+        DeviceSymbols = deviceSymbols ?? string.Empty ;
+        ConnectorFamilyFile = connectorFamilyFile ?? string.Empty ;
+      }
+    }
 
     public static List<string> GetModelNumberToUse( string path )
     {
