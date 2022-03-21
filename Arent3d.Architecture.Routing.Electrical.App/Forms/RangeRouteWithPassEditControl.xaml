@@ -354,7 +354,6 @@
                     </Style>
                 </ComboBox.Style>
             </ComboBox>
-
         </Grid>
     </Border>
 </UserControl>
