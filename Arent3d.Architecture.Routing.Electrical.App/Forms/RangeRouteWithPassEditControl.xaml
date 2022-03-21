@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
              xmlns:valueConverters1="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters;assembly=Arent3d.Architecture.Routing.AppBase"
              xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms;assembly=Arent3d.Architecture.Routing.AppBase"
              xmlns:forms1="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
@@ -233,7 +232,7 @@
             <StackPanel Grid.Row="5" Grid.Column="1" VerticalAlignment="Center"
                         Orientation="Horizontal">
                 <CheckBox x:Name="FromHeightSetting" Margin="0,0,0,0"
-                          IsChecked="{Binding UseFromFixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
+                          IsChecked="{Binding UseFromPassToSensorsFixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                           Checked="Height_OnChecked"
                           Unchecked="Height_OnUnchecked"
                           HorizontalAlignment="Left"
@@ -241,7 +240,7 @@
                 <ComboBox Name="FromLocationTypeComboBox"
                           ItemsSource="{Binding LocationTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                           SelectionChanged="LocationTypeComboBox_SelectionChanged"
-                          SelectedIndex="{Binding FromLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
+                          SelectedIndex="{Binding FromPassToSensorsLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
                           VerticalAlignment="Center"
                           DisplayMemberPath="Value"
                           Margin="5,0,5,0"
@@ -260,8 +259,8 @@
                     </ComboBox.Style>
                 </ComboBox>
                 <!-- Manually update Value because binding is not called -->
-                <forms:NumericUpDownEx x:Name="FromFixedHeightNumericUpDown"
-                                       ValueChanged="FromFixedHeightNumericUpDown_OnValueChanged"
+                <forms:NumericUpDownEx x:Name="FromPassToSensorsFixedHeightNumericUpDown"
+                                       ValueChanged="FromPassToSensorsFixedHeightNumericUpDown_OnValueChanged"
                                        TextAlignment="Right"
                                        Increment="100"
                                        Width="80">
@@ -282,91 +281,6 @@
                             <Setter Property="Visibility" Value="Hidden" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsChecked, ElementName=FromHeightSetting}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Label.Style>
-                </Label>
-            </StackPanel>
-
-            <Label Grid.Row="6" Grid.Column="0" Content="Second connector through height"
-                   HorizontalAlignment="Left"
-                   VerticalAlignment="Center">
-                <Label.Style>
-                    <Style TargetType="Label">
-                        <Setter Property="Visibility" Value="Hidden" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsDifferentLevel, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}" Value="True">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Label.Style>
-            </Label>
-            <StackPanel Grid.Row="6" Grid.Column="1" VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
-                        <Setter Property="Visibility" Value="Hidden" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsDifferentLevel, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}" Value="True">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </StackPanel.Style>
-
-                <CheckBox x:Name="ToHeightSetting" Margin="0,0,0,0"
-                          IsChecked="{Binding UseToFixedHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
-                          Checked="ToHeight_OnChecked"
-                          Unchecked="ToHeight_OnUnchecked"
-                          HorizontalAlignment="Left"
-                          VerticalAlignment="Center" />
-                <ComboBox Name="ToLocationTypeComboBox"
-                          ItemsSource="{Binding LocationTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
-                          SelectionChanged="LocationTypeComboBox_SelectionChanged"
-                          SelectedIndex="{Binding ToLocationTypeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms1:RangeRouteWithPassEditControl}}"
-                          VerticalAlignment="Center"
-                          DisplayMemberPath="Value"
-                          Margin="5,0,5,0"
-                          Padding="5,0,0,4">
-                    <ComboBox.Style>
-                        <Style TargetType="{x:Type ComboBox}">
-                            <Setter Property="Visibility" Value="Hidden" />
-                            <Setter Property="Height" Value="18" />
-                            <Setter Property="FontSize" Value="12" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsChecked, ElementName=ToHeightSetting}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ComboBox.Style>
-                </ComboBox>
-                <!-- Manually update Value because binding is not called -->
-                <forms:NumericUpDownEx x:Name="ToFixedHeightNumericUpDown"
-                                       ValueChanged="ToFixedHeightNumericUpDown_OnValueChanged"
-                                       TextAlignment="Right"
-                                       Increment="100"
-                                       Width="80">
-                    <forms:NumericUpDownEx.Style>
-                        <Style TargetType="{x:Type forms:NumericUpDownEx}">
-                            <Setter Property="Visibility" Value="Hidden" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsChecked, ElementName=ToHeightSetting}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </forms:NumericUpDownEx.Style>
-                </forms:NumericUpDownEx>
-                <Label Margin="0,0,0,0">
-                    <Label.Style>
-                        <Style TargetType="{x:Type Label}" BasedOn="{StaticResource LengthUnit}">
-                            <Setter Property="Visibility" Value="Hidden" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsChecked, ElementName=ToHeightSetting}" Value="True">
                                     <Setter Property="Visibility" Value="Visible" />
                                 </DataTrigger>
                             </Style.Triggers>

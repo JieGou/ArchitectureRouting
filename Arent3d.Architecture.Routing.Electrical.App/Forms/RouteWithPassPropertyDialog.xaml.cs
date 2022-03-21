@@ -5,7 +5,7 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 {
-  public interface IRouteWithPassPropertyDialog : IRoutePropertyDialog
+  public interface IRouteWithPassPropertyDialog : IRouteProperty
   {
     FixedHeight? GetPowerToPassFromFixedHeight() ;
   }
@@ -33,7 +33,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       RangeRouteWithPassEdit.SetRouteProperties( propertyTypeList, properties ) ;
       RangeRouteWithPassEdit.ResetDialog() ;
     }
-
 
     private void Dialog2Buttons_OnLeftOnClick( object sender, RoutedEventArgs e )
     {
@@ -63,14 +62,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     public FixedHeight? GetFromFixedHeight()
     {
-      if ( true != RangeRouteWithPassEdit.UseFromFixedHeight ) return null ;
-      return FixedHeight.CreateOrNull( RangeRouteWithPassEdit.FromLocationType, RangeRouteWithPassEdit.FromFixedHeight ) ;
+      if ( true != RangeRouteWithPassEdit.UseFromPassToSensorsFixedHeight ) return null ;
+      return FixedHeight.CreateOrNull( RangeRouteWithPassEdit.FromPassToSensorsLocationType, RangeRouteWithPassEdit.FromPassToSensorsFixedHeight ) ;
     }
 
     public FixedHeight? GetToFixedHeight()
     {
-      if ( true != RangeRouteWithPassEdit.UseToFixedHeight ) return null ;
-      return FixedHeight.CreateOrNull( RangeRouteWithPassEdit.ToLocationType, RangeRouteWithPassEdit.ToFixedHeight ) ;
+      return null ;
     }
 
     public AvoidType GetAvoidType() => RangeRouteWithPassEdit.AvoidType ?? throw new InvalidOperationException() ;

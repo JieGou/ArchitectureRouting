@@ -252,7 +252,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var (footPassPoint, passPoints) = SelectionRangeRouteCommandBase.CreatePassPoints( routeName, passConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 2 ) ;
-      
+
       // main route
       var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
       var passConnectorUpEndPoint = new ConnectorEndPoint( passConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
@@ -278,7 +278,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, passToSensorsFromFixedHeight, passToSensorsFromFixedHeight, avoidType, null ) ;
         return ( subRouteName, segment ) ;
       } ) ) ;
-      
+
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
       allConnectors.AddRange( sensorConnectors ) ;
