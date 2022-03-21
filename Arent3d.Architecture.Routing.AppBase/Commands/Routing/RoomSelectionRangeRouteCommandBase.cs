@@ -142,14 +142,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       CreateRouteSegment( result, document, powerConnector, startSensorConnectors, sortEndSensorConnectors, startFootPassPoint, startPassPoints, endFootPassPoint, endPassPoints,
-        passPointsOnWallRoom, classificationInfo, systemType, curveType, routeProperty, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex, room!, isOutFromConnector ) ;
+        passPointsOnWallRoom, classificationInfo, systemType, curveType, routeProperty, routeName, radius, diameter, sensorFixedHeight, avoidType, nameBase, nextIndex, room!, isOutFromConnector, pipeSpec ) ;
     }
 
     private void CreateRouteSegment( List<(string RouteName, RouteSegment Segment)> result, Document document, FamilyInstance powerConnector, IReadOnlyList<FamilyInstance> startSensorConnectors,
       IReadOnlyList<FamilyInstance> endSensorConnectors, FamilyInstance? startFootPassPoint, IReadOnlyList<FamilyInstance> startPassPoints, FamilyInstance? endFootPassPoint,
       IReadOnlyList<FamilyInstance> endPassPoints, IReadOnlyList<FamilyInstance> passPointsOnWallRoom, MEPSystemClassificationInfo classificationInfo, MEPSystemType? systemType,
       MEPCurveType? curveType, IRouteProperty routeProperty, string routeName, double radius, double diameter, FixedHeight? sensorFixedHeight, AvoidType avoidType, string nameBase,
-      int nextIndex, Reference room, bool isOutFromConnector )
+      int nextIndex, Reference room, bool isOutFromConnector, MEPSystemPipeSpec pipeSpec)
     {
       // main route
       var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
@@ -176,6 +176,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var endPowerConnectorEndPointKey = powerConnectorEndPoint.Key ;
       {
         if ( endPassPoints.Any() ) {
+          
           var subRouteName = nameBase + "_" + ( ++nextIndex ) ;
           if ( endSensorConnectors.Count == 1 ) {
             var firstEndRouteToEndPoint = new ConnectorEndPoint( endSensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ;
@@ -188,7 +189,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
           else {
             var passPoints = EliminateSamePassPoints( endFootPassPoint, endPassPoints ).ToList() ;
-            MovePassPoint( document, passPoints, room, isOutFromConnector ) ;
+            var bendingRadius = pipeSpec.GetLongElbowSize( diameter.DiameterValueToPipeDiameter() ) ;
+            var passPointOffset = 3 * (bendingRadius + MEPSystemPipeSpec.MinimumShortCurveLength) ;
+            MovePassPoint( document, passPoints, room, isOutFromConnector,passPointOffset ) ;
             var secondEndRouteFromEndPoints = passPoints.Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
             var secondEndRouteToEndPoints = secondEndRouteFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( endSensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
             var firstEndRouteToEndPoint = secondEndRouteFromEndPoints[ 0 ] ;
@@ -246,10 +249,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private void MovePassPoint( Document document, IReadOnlyCollection<Element> passPoints, Reference reference, bool isOutFromConnector )
+    private void MovePassPoint( Document document, IReadOnlyCollection<Element> passPoints, Reference reference, bool isOutFromConnector, double minDistanceByBendingRadius )
     {
       const double minDistanceBetweenPassPoints = 0.2 ;
-      const double minDistanceBetweenPassPointAndWall = 0.8 ;
+      var minDistanceBetweenPassPointAndWall = Math.Max(0.8, minDistanceByBendingRadius) ;
       const double minOutDistanceBetweenPassPointAndWall = 0.4 ;
       var room = document.GetElement( reference.ElementId ) ;
       var lenght = room.ParametersMap.get_Item( "Lenght" ).AsDouble() ;
@@ -400,7 +403,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( xDistance == 0 && yDistance == 0 ) return ;
       firstPassPoint.Location.Move( new XYZ( xDistance, yDistance, 0 ) ) ;
       if ( passPoints.Count <= 1 ) return ;
-      var passPointsWithoutFirst = passPoints.Take( passPoints.Count - 1 ).ToReadOnlyCollection( passPoints.Count - 1 ) ;
+      var passPointsWithoutFirst = passPoints.ToList().GetRange( 1,passPoints.Count - 1 );
       var prevPassPointOrigin = ( firstPassPoint.Location as LocationPoint )!.Point ;
       foreach ( var passPoint in passPointsWithoutFirst ) {
         double xDistanceBetweenPassPoint = 0 ;

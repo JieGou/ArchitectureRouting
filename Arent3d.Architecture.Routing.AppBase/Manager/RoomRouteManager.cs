@@ -124,7 +124,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
             element.ParametersMap.get_Item( frontDoorWidthParam ).Set( widthDoor ) ;
           }
           else {
-            var xPoint = x > 0 ? x + frontDoorDistance + widthDoor / 2 : x - frontDoorDistance - widthDoor / 2 ;
+            var xPoint = x + frontDoorDistance + widthDoor / 2 ;
             position = new XYZ( xPoint, y, height ) ;
             position2 = new XYZ( xPoint, y + thickness, height ) ;
           }
