@@ -143,6 +143,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       InsertDetailTableDataIntoSchedule( detailTable, detailTableModels, level ) ;
+      MessageBox.Show( "集計表 \"" + scheduleName + "\" を作成しました", "Message" ) ;
     }
 
     private static void InsertDetailTableDataIntoSchedule( ViewSchedule viewSchedule, IReadOnlyCollection<DetailTableModel> detailTableModels, string level )
