@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -146,12 +147,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static void InsertDetailTableDataIntoSchedule( ViewSchedule viewSchedule, IReadOnlyCollection<DetailTableModel> detailTableModels, string level )
     {
-      const int maxCharOfCell = 9 ;
+      const int columnCount = 5 ;
+      const int maxCharOfCell = 4 ;
       const double minColumnWidth = 0.05 ;
       var rowData = 1 ;
-      var maxCharOfRow = 0 ;
+      var maxCharOfPlumbingTypeCell = 0 ;
+      var maxCharOfRemarkCell = 0 ;
 
-      TableCellStyleOverrideOptions tableStyleOverride = new() { HorizontalAlignment = true } ;
+      TableCellStyleOverrideOptions tableStyleOverride = new()
+      {
+        HorizontalAlignment = true,
+        BorderLineStyle = true,
+        BorderLeftLineStyle = true,
+        BorderRightLineStyle = true,
+        BorderTopLineStyle = false,
+        BorderBottomLineStyle = false
+      } ;
       TableCellStyle cellStyle = new() ;
       cellStyle.SetCellStyleOverrideOptions( tableStyleOverride ) ;
       cellStyle.FontHorizontalAlignment = HorizontalAlignmentStyle.Left ;
@@ -159,35 +170,56 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       TableData tableData = viewSchedule.GetTableData() ;
       TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
 
+      for ( var i = 0 ; i <= columnCount ; i++ ) {
+        if ( i != 2 ) tsdHeader.InsertColumn( i ) ;
+      }
+
       var detailTableModelsGroupByDetailSymbol = detailTableModels.GroupBy( d => d.DetailSymbol ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       var rowCount = detailTableModels.Count + detailTableModelsGroupByDetailSymbol.Count ;
       for ( var i = 0 ; i < rowCount ; i++ ) {
         tsdHeader.InsertRow( tsdHeader.FirstRowNumber ) ;
       }
 
+      tsdHeader.MergeCells( new TableMergedCell( 0, 0, 0, columnCount ) ) ;
       tsdHeader.SetCellText( 0, 0, level + "階平面图" ) ;
       tsdHeader.SetCellStyle( 0, 0, cellStyle ) ;
 
       foreach ( var (detailSymbol, detailTableModelsSameWithDetailSymbol) in detailTableModelsGroupByDetailSymbol ) {
+        tsdHeader.MergeCells( new TableMergedCell( rowData, 0, rowData, columnCount ) ) ;
         tsdHeader.SetCellText( rowData, 0, detailSymbol ) ;
         tsdHeader.SetCellStyle( rowData, 0, cellStyle ) ;
         rowData++ ;
         foreach ( var rowDetailTableModel in detailTableModelsSameWithDetailSymbol ) {
+          var wireType = rowDetailTableModel.WireType + rowDetailTableModel.WireSize ;
           var wireStrip = string.IsNullOrEmpty( rowDetailTableModel.WireStrip ) ? string.Empty : "－" + rowDetailTableModel.WireStrip ;
-          var plumbingType = GetPlumbingType( rowDetailTableModel.ConstructionClassification, rowDetailTableModel.PlumbingType, rowDetailTableModel.PlumbingSize, rowDetailTableModel.NumberOfPlumbing ) ;
-          var rowText = $"{rowDetailTableModel.WireType + rowDetailTableModel.WireSize,-15}{wireStrip,-10}{"x" + rowDetailTableModel.WireBook,-15}{plumbingType,-25}{rowDetailTableModel.Remark,-15}" ;
-          if ( rowText.Length > maxCharOfRow ) maxCharOfRow = rowText.Length ;
-          tsdHeader.SetCellText( rowData, 0, rowText ) ;
-          tsdHeader.SetCellStyle( rowData, 0, cellStyle ) ;
+          var (plumbingType, numberOfPlumbing) = GetPlumbingType( rowDetailTableModel.ConstructionClassification, rowDetailTableModel.PlumbingType, rowDetailTableModel.PlumbingSize, rowDetailTableModel.NumberOfPlumbing ) ;
+          tsdHeader.SetCellText( rowData, 0, wireType ) ;
+          tsdHeader.SetCellText( rowData, 1, wireStrip ) ;
+          tsdHeader.SetCellText( rowData, 2, "x" + rowDetailTableModel.WireBook ) ;
+          tsdHeader.SetCellText( rowData, 3, plumbingType ) ;
+          tsdHeader.SetCellText( rowData, 4, numberOfPlumbing ) ;
+          tsdHeader.SetCellText( rowData, 5, rowDetailTableModel.Remark ) ;
+
+          if ( plumbingType.Length > maxCharOfPlumbingTypeCell ) maxCharOfPlumbingTypeCell = plumbingType.Length ;
+          if ( rowDetailTableModel.Remark.Length > maxCharOfRemarkCell ) maxCharOfRemarkCell = rowDetailTableModel.Remark.Length ;
           rowData++ ;
         }
       }
 
-      var columnWidth = minColumnWidth * Math.Ceiling( (double) maxCharOfRow / maxCharOfCell ) ;
-      tsdHeader.SetColumnWidth( 0, columnWidth ) ;
+      for ( var i = 0 ; i <= columnCount ; i++ ) {
+        var columnWidth = i switch
+        {
+          0 => minColumnWidth * 2,
+          3 when maxCharOfPlumbingTypeCell > maxCharOfCell => minColumnWidth * Math.Ceiling( (double) maxCharOfPlumbingTypeCell / maxCharOfCell ),
+          5 when maxCharOfRemarkCell > maxCharOfCell => minColumnWidth * Math.Ceiling( (double) maxCharOfRemarkCell / maxCharOfCell ),
+          _ => minColumnWidth
+        } ;
+        tsdHeader.SetColumnWidth( i, columnWidth ) ;
+        tsdHeader.SetCellStyle( i, cellStyle ) ;
+      }
     }
 
-    private static string GetPlumbingType( string constructionClassification, string plumbingType, string plumbingSize, string numberOfPlumbing )
+    private static ( string, string ) GetPlumbingType( string constructionClassification, string plumbingType, string plumbingSize, string numberOfPlumbing )
     {
       const string korogashi = "コロガシ" ;
       const string rack = "ラック" ;
@@ -198,25 +230,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       if ( constructionClassification == ConstructionClassificationType.天井隠蔽.GetFieldName() || constructionClassification == ConstructionClassificationType.打ち込み.GetFieldName() || constructionClassification == ConstructionClassificationType.露出.GetFieldName() || constructionClassification == ConstructionClassificationType.地中埋設.GetFieldName() ) {
-        plumbingType = $"{"(" + plumbingType + plumbingSize + ")",-15}{"x" + numberOfPlumbing,-10}" ;
+        plumbingType = "(" + plumbingType + plumbingSize + ")" ;
+        numberOfPlumbing = "x" + numberOfPlumbing ;
       }
       else if ( constructionClassification == ConstructionClassificationType.天井コロガシ.GetFieldName() || constructionClassification == ConstructionClassificationType.フリーアクセス.GetFieldName() ) {
-        plumbingType = $"{"(" + korogashi + ")",-25}" ;
+        plumbingType = "(" + korogashi + ")" ;
+        numberOfPlumbing = string.Empty ;
       }
       else if ( constructionClassification == ConstructionClassificationType.ケーブルラック配線.GetFieldName() ) {
-        plumbingType = $"{"(" + rack + ")",-25}" ;
+        plumbingType = "(" + rack + ")" ;
+        numberOfPlumbing = string.Empty ;
       }
       else if ( constructionClassification == ConstructionClassificationType.冷媒管共巻配線.GetFieldName() ) {
-        plumbingType = $"{"(" + coil + ")",-25}" ;
+        if ( ! string.IsNullOrEmpty( plumbingType ) ) {
+          MessageBox.Show( "Do not set up piping for this wire", "Error" ) ;
+        }
+        plumbingType = "(" + coil + ")" ;
+        numberOfPlumbing = string.Empty ;
       }
       else if ( constructionClassification == ConstructionClassificationType.漏水帯コロガシ.GetFieldName() || constructionClassification == ConstructionClassificationType.漏水帯配管巻.GetFieldName() ) {
-        plumbingType = $"{"(" + string.Empty + ")",-25}" ;
+        plumbingType = string.Empty ;
+        numberOfPlumbing = string.Empty ;
       }
       else if ( constructionClassification == ConstructionClassificationType.導圧管類.GetFieldName() ) {
-        plumbingType = string.IsNullOrEmpty( plumbingType ) ? $"{"(" + string.Empty + ")",-25}" : $"{"(" + plumbingType + plumbingSize + ")",-15}{"x" + numberOfPlumbing,-10}" ;
+        plumbingType = string.IsNullOrEmpty( plumbingType ) ? string.Empty : "(" + plumbingType + plumbingSize + ")" ;
+        numberOfPlumbing = string.IsNullOrEmpty( plumbingType ) ? string.Empty : "x" + numberOfPlumbing ;
       }
 
-      return plumbingType ;
+      return ( plumbingType, numberOfPlumbing ) ;
     }
 
     private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool mixConstructionItems = false  )
