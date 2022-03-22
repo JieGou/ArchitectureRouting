@@ -82,7 +82,7 @@ FixedBopHeight</string>
     <string>ダクト径
 自動調整</string>
     <key>Mechanical.Haseko.App.Commands.Routing.GenerateStructureEnvelopeCommand</key>
-    <string>障害物生成</string>
+    <string>Generate Obstacles</string>
     <key>TransactionName.Commands.Initialization.Initialize</key>
     <string>自動ルーティングをセットアップ</string>
     <key>TransactionName.Commands.Initialization.CreateRoutingViews</key>
