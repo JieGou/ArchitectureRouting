@@ -109,6 +109,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var firstScheduleSheet = scheduleSheetInstances.First() ;
       if ( document.GetElement( firstScheduleSheet.ScheduleId ) is not ViewSchedule firstSchedule )
         return Result.Failed ;
+      var list = System.Enum.GetValues( typeof( BuiltInCategory ) ) ;
+      foreach ( var j in list ) {
+        if ( (int) j == firstScheduleSheet.Category.Id.IntegerValue )
+          MessageBox.Show(j.ToString()) ;
+      }
       using Transaction transaction = new Transaction(document,"MergeScheduleSheetInstance") ;
       transaction.Start() ;
       
