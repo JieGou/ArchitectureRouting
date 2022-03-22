@@ -49,10 +49,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var existsConnectorFamilies = CheckExistsConnectorFamilies( document, connectorFamilyPaths ) ;
       if ( existsConnectorFamilies.Any() ) {
         var confirmMessage = MessageBox.Show( "モデルがすでに存在していますが、上書きしますか。", "Confirm Message", MessageBoxButton.OKCancel ) ;
-        if ( confirmMessage == MessageBoxResult.OK ) {
-          //override family
-        }
-        else {
+        if ( confirmMessage == MessageBoxResult.Cancel ) {
           connectorFamilyPaths = connectorFamilyPaths.Where( p => ! existsConnectorFamilies.ContainsValue( p ) ).ToList() ;
           connectorFamilyFiles.AddRange( existsConnectorFamilies.Values ) ;
         }
@@ -73,7 +70,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private static Family? LoadFamily( Document document, string filePath )
     {
       try {
-        document.LoadFamily( filePath, out var family ) ;
+        document.LoadFamily( filePath, new FamilyOption( true ), out var family ) ;
+        if ( family == null ) return family ;
         foreach ( ElementId familySymbolId in family.GetFamilySymbolIds() ) {
           document.GetElementById<FamilySymbol>( familySymbolId ) ;
         }
@@ -97,6 +95,30 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       return existsConnectorFamilies ;
+    }
+    
+    private class FamilyOption : IFamilyLoadOptions
+    {
+      private readonly bool _forceUpdate ;
+
+      public FamilyOption( bool forceUpdate ) => _forceUpdate = forceUpdate ;
+
+      public bool OnFamilyFound( bool familyInUse, out bool overwriteParameterValues )
+      {
+        if ( familyInUse && ! _forceUpdate ) {
+          overwriteParameterValues = false ;
+          return false ;
+        }
+
+        overwriteParameterValues = true ;
+        return true ;
+      }
+
+      public bool OnSharedFamilyFound( Family sharedFamily, bool familyInUse, out FamilySource source, out bool overwriteParameterValues )
+      {
+        source = FamilySource.Project ;
+        return OnFamilyFound( familyInUse, out overwriteParameterValues ) ;
+      }
     }
   }
 }
