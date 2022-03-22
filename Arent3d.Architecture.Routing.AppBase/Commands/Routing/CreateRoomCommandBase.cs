@@ -81,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var width = secondPoint.DistanceTo( lastPoint ) ;
         var originPoint = GetOriginPoint( firstPoint, secondPoint, thirdPoint, lastPoint ) ;
 
-        var symbol = document.GetFamilySymbols( RoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+        var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
         var instance = symbol.Instantiate( originPoint, level!, StructuralType.NonStructural ) ;
         // Set room's parameters
         instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 0.0 ) ;

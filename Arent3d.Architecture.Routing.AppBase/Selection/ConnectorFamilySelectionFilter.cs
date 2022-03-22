@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Selection
     
     public bool AllowElement( Element elem )
     {
-      return ( BuiltInCategory.OST_ElectricalFixtures == elem.GetBuiltInCategory() ) && elem is FamilyInstance ;
+      return ( BuiltInCategory.OST_ElectricalFixtures == elem.GetBuiltInCategory() || BuiltInCategory.OST_ElectricalEquipment == elem.GetBuiltInCategory() ) && elem is FamilyInstance ;
     }
 
     public bool AllowReference( Reference reference, XYZ position ) => false ;

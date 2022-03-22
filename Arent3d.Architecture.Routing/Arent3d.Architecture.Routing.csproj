@@ -44,13 +44,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
 
-    <None Update="Assets\Families\2021\Routing Shaft.rfa">
+    <None Update="Assets\Families\$(RevitVersion)\Electrical\*.rfa">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
 
-    <None Update="Assets\Families\2021\Routing Rack Space.rfa">
+    <None Update="Assets\Families\$(RevitVersion)\Mechanical\*.rfa">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    
   </ItemGroup>
 
   <ItemGroup>

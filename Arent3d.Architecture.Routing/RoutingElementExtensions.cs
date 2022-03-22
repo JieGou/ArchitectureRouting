@@ -36,14 +36,6 @@ namespace Arent3d.Architecture.Routing
     {
       document.MakeCertainAllRoutingFamilies() ;
       document.MakeCertainAllRoutingParameters() ;
-      AddArentConduitType( document ) ;
-
-      //Add connector type value
-      var connectorOneSide = document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Connectors ) ;
-      foreach ( var connector in connectorOneSide ) {
-        connector.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
-      }
-
       return document.RoutingSettingsAreInitialized() ;
     }
 
@@ -72,7 +64,7 @@ namespace Arent3d.Architecture.Routing
       return ( 1.0 ).MillimetersToRevitUnits() ;
     }
     
-    private static void AddArentConduitType( Document document )
+    public static void AddArentConduitType( Document document )
     {
       var elbowTypeName = GetElbowTypeName( document ) ;
       var conduitTypeName = GetConduitTypeName( document ) ;
@@ -362,7 +354,8 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddPassPoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.PassPoint, position, direction, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
+      var symbol = document.GetFamilySymbols( RoutingFamilyType.PassPoint ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var instance = document.CreateFamilyInstance( symbol, position, direction, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
@@ -434,13 +427,13 @@ namespace Arent3d.Architecture.Routing
     {
       return document.CreateFamilyInstance( RoutingFamilyType.RackSpace, position, StructuralType.NonStructural, true, level ) ;
     }
-    public static FamilyInstance AddFASU(this Document document, RoutingFamilyType fasuFamilyType, XYZ position, ElementId levelId)
+    public static FamilyInstance AddFASU(this Document document, MechanicalRoutingFamilyType fasuFamilyType, XYZ position, ElementId levelId)
     {
       return document.CreateFamilyInstance( fasuFamilyType, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
     }
     public static FamilyInstance AddVAV(this Document document, XYZ position, ElementId levelId)
     {
-      return document.CreateFamilyInstance( RoutingFamilyType.TTE_VAV_140, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
+      return document.CreateFamilyInstance( MechanicalRoutingFamilyType.SA_VAV, position, StructuralType.NonStructural, true, document.GetElementById<Level>(levelId));
     }
     public static FamilyInstance AddShaft( this Document document, XYZ position, Level? level )
     {
@@ -485,7 +478,8 @@ namespace Arent3d.Architecture.Routing
 
     public static FamilyInstance AddTerminatePoint( this Document document, string routeName, XYZ position, XYZ direction, double? radius, ElementId levelId )
     {
-      var instance = document.CreateFamilyInstance( RoutingFamilyType.TerminatePoint, position, direction, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
+      var symbol = document.GetFamilySymbols( RoutingFamilyType.TerminatePoint ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var instance = document.CreateFamilyInstance( symbol, position, direction, StructuralType.NonStructural, true, document.GetElementById<Level>( levelId ) ) ;
       if ( radius.HasValue ) {
         instance.LookupParameter( "Arent-RoundDuct-Diameter" ).Set( radius.Value * 2.0 ) ;
       }
@@ -788,12 +782,24 @@ namespace Arent3d.Architecture.Routing
 
     private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
     {
-      return document.CreateFamilyInstance( familyType, position, null, structuralType, useLevel, level ) ;
+      var symbol = document.GetFamilySymbols( familyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      return document.CreateFamilyInstance( symbol, position, null, structuralType, useLevel, level ) ;
     }
 
-    private static FamilyInstance CreateFamilyInstance( this Document document, RoutingFamilyType familyType, XYZ position, XYZ? direction, StructuralType structuralType, bool useLevel, Level? level )
+    private static FamilyInstance CreateFamilyInstance( this Document document, ElectricalRoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
     {
       var symbol = document.GetFamilySymbols( familyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      return document.CreateFamilyInstance( symbol, position, null, structuralType, useLevel, level ) ;
+    }
+
+    private static FamilyInstance CreateFamilyInstance( this Document document, MechanicalRoutingFamilyType familyType, XYZ position, StructuralType structuralType, bool useLevel, Level? level )
+    {
+      var symbol = document.GetFamilySymbols( familyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      return document.CreateFamilyInstance( symbol, position, null, structuralType, useLevel, level ) ;
+    }
+
+    private static FamilyInstance CreateFamilyInstance( this Document document, FamilySymbol symbol, XYZ position, XYZ? direction, StructuralType structuralType, bool useLevel, Level? level )
+    {
       if ( false == symbol.IsActive ) {
         symbol.Activate() ;
       }
@@ -819,7 +825,7 @@ namespace Arent3d.Architecture.Routing
 
       return instance ;
     }
-
+    
     private static readonly (BuiltInParameter, BuiltInParameter)[] LevelBuiltInParameterPairs = { ( BuiltInParameter.RBS_START_LEVEL_PARAM, BuiltInParameter.RBS_END_LEVEL_PARAM ) } ;
 
     public static ElementId GetLevelId( this Element element )

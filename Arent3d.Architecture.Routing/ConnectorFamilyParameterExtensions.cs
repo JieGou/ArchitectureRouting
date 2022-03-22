@@ -14,12 +14,12 @@ namespace Arent3d.Architecture.Routing
   {
     public static void SetConnectorFamilyType( this FamilyInstance connectorFamilyInstance, ConnectorFamilyType type )
     {
-      connectorFamilyInstance.SetProperty( ConnectorFamilyParameter.ConnectorType, GetConnectorFamilyTypeName( type ) ) ;
+      connectorFamilyInstance.SetProperty( ElectricalRoutingElementParameter.ConnectorType, GetConnectorFamilyTypeName( type ) ) ;
     }
 
     public static ConnectorFamilyType? GetConnectorFamilyType( this FamilyInstance connectorFamilyInstance )
     {
-      if ( false == connectorFamilyInstance.TryGetProperty( ConnectorFamilyParameter.ConnectorType, out string? typeName ) ) return null ;
+      if ( false == connectorFamilyInstance.TryGetProperty( ElectricalRoutingElementParameter.ConnectorType, out string? typeName ) ) return null ;
       return GetConnectorFamilyTypeFromName( typeName! ) ;
     }
 

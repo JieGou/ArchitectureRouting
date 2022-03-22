@@ -58,6 +58,8 @@ From-To</string>
     <key>Mechanical.haseko.App.Commands.Routing.ReplaceFromToCommand</key>
     <string>Replace
 From-To</string>
+    <key>Mechanical.haseko.App.Commands.Routing.ReplaceFlexDuctCommand</key>
+    <string>Replace&#xA;Flexible Duct</string>
     <key>Mechanical.haseko.App.Commands.Selecting.GetSelectedFromToInfoCommand</key>
     <string>Modify
 From-To</string>

@@ -336,14 +336,14 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
 
     private static IReadOnlyCollection<FamilyInstance> GetAllFASUs( Document document )
     {
-      var fasus = document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_200Phi )
-        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F4_150_250Phi ) )
-        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F5_150_250Phi ) )
-        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F6_150_250Phi ) )
-        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F6_150_300Phi ) )
-        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F7_150_300Phi ) )
-        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_250Phi ) )
-        .Union( document.GetAllFamilyInstances( RoutingFamilyType.FASU_F8_150_300Phi ) ) ;
+      var fasus = document.GetAllFamilyInstances( MechanicalRoutingFamilyType.FASU_F4_150_200Phi )
+        .Union( document.GetAllFamilyInstances( MechanicalRoutingFamilyType.FASU_F4_150_250Phi ) )
+        .Union( document.GetAllFamilyInstances( MechanicalRoutingFamilyType.FASU_F5_150_250Phi ) )
+        .Union( document.GetAllFamilyInstances( MechanicalRoutingFamilyType.FASU_F6_150_250Phi ) )
+        .Union( document.GetAllFamilyInstances( MechanicalRoutingFamilyType.FASU_F6_150_300Phi ) )
+        .Union( document.GetAllFamilyInstances( MechanicalRoutingFamilyType.FASU_F7_150_300Phi ) )
+        .Union( document.GetAllFamilyInstances( MechanicalRoutingFamilyType.FASU_F8_150_250Phi ) )
+        .Union( document.GetAllFamilyInstances( MechanicalRoutingFamilyType.FASU_F8_150_300Phi ) ) ;
       return fasus as FamilyInstance[] ?? fasus.ToArray() ;
     }
 
@@ -442,7 +442,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.App.Commands.Routing
       var (success, multipleInstanceSpaces) = CreateSpaceToFamilyInstanceDictionary( targetSpaces, GetAllFASUs( document ), out var spaceToFASU ) ;
       if ( ! success ) return ( false, CreateErrorMessageAboutElements( "Multiple FASUs exist in the space.", multipleInstanceSpaces ) ) ;
 
-      ( success, multipleInstanceSpaces ) = CreateSpaceToFamilyInstanceDictionary( targetSpaces, document.GetAllFamilyInstances( RoutingFamilyType.TTE_VAV_140 ), out var spaceToVAV ) ;
+      ( success, multipleInstanceSpaces ) = CreateSpaceToFamilyInstanceDictionary( targetSpaces, document.GetAllFamilyInstances( MechanicalRoutingFamilyType.SA_VAV ), out var spaceToVAV ) ;
       if ( ! success ) return ( false, CreateErrorMessageAboutElements( "Multiple VAVs exist in the space.", multipleInstanceSpaces ) ) ;
 
       string errorMessage ;

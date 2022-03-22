@@ -32,10 +32,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           if ( fromConnector != null ) {
-            fromConnector.TryGetProperty( RoutingFamilyLinkedParameter.ConstructionItem, out string? constructionItem ) ;
+            fromConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
             if ( string.IsNullOrEmpty( constructionItem ) ) {
               UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
-              fromConnector.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, DefaultConstructionItem ) ;
+              fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             }
           }
         }
@@ -53,16 +53,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         if ( toConnector == null ) continue ;
         {
-          toConnector.TryGetProperty( RoutingFamilyLinkedParameter.ConstructionItem, out string? constructionItem ) ;
+          toConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
           if ( string.IsNullOrEmpty( constructionItem ) ) {
             UnGroupConnector( document, toConnector, ref connectorGroups ) ;
-            toConnector.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, DefaultConstructionItem ) ;
+            toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             constructionItem = DefaultConstructionItem ;
           }
 
           var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
           foreach ( var conduit in conduits ) {
-            conduit.SetProperty( RoutingFamilyLinkedParameter.ConstructionItem, constructionItem! ) ;
+            conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem! ) ;
           }
         }
       }
