@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private const string ErrorMessageNoSensorConnector = "No sensor connectors are selected on the power connector level." ;
     private const string ErrorMessageSensorConnector = "At least two sensor connectors on the power connector level must be selected." ;
     private const string ErrorMessageCannotDetermineSensorConnectorArrayDirection = "Couldn't determine sensor array direction" ;
-    private const string ConfirmMessageHeightSettingNotGood = "First connect through height from Power to Pass need to be larger than height of Pass\nAnd height of Pass need to be larger than first connect through height from Pass to Sensors\nDo you still want to connect with these height settings?" ;
+    private const string ConfirmMessageHeightSettingNotGood = "The height from Power to Pass need to be larger than height of Pass\nAnd height of Pass need to be larger than height from Pass to Sensors\nDo you still want to connect with these height settings?" ;
     private const string ConfirmCaptionHeightSettingNotGood = "Height Settings Are Not Good Confirmation" ;
     private const string PowerToPassName = "PowerToPass" ;
 
@@ -69,21 +69,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     private static bool IsGoodHeightSettings( RouteWithPassPropertyDialog property, FamilyInstance passConnector )
     {
-      var firstConnectThroughHeightFromPowerToPass = property.GetPowerToPassFromFixedHeight() ;
-      var firstConnectThroughHeightFromPassToSensors = property.GetFromFixedHeight() ;
-      bool isFromPowerToPassLargerHigherThanPass = false, isPassHigherThanFromPassToSensorsHeight = false ;
+      var heightFromPowerToPass = property.GetPowerToPassFromFixedHeight() ;
+      var heightFromPassToSensors = property.GetFromFixedHeight() ;
+      bool isHeightFromPowerToPassLargerThanPassHeight = false, isPassHeightLargerThanFromPassToSensorsHeight = false ;
       var level = passConnector.Document.GetElement( passConnector.LevelId ) as Level ;
       var passTopHeight = passConnector.GetTopConnectorOfConnectorFamily().Origin.Z - level?.Elevation ;
       var passBottomHeight = passConnector.GetBottomConnectorOfConnectorFamily().Origin.Z - level?.Elevation ;
-      if ( firstConnectThroughHeightFromPowerToPass != null ) {
-        isFromPowerToPassLargerHigherThanPass = firstConnectThroughHeightFromPowerToPass.Value.Height > passTopHeight ;
+      if ( heightFromPowerToPass != null ) {
+        isHeightFromPowerToPassLargerThanPassHeight = heightFromPowerToPass.Value.Height > passTopHeight ;
       }
 
-      if ( firstConnectThroughHeightFromPassToSensors != null ) {
-        isPassHigherThanFromPassToSensorsHeight = firstConnectThroughHeightFromPassToSensors.Value.Height < passBottomHeight ;
+      if ( heightFromPassToSensors != null ) {
+        isPassHeightLargerThanFromPassToSensorsHeight = heightFromPassToSensors.Value.Height < passBottomHeight ;
       }
 
-      return isFromPowerToPassLargerHigherThanPass && isPassHigherThanFromPassToSensorsHeight ;
+      return isHeightFromPowerToPassLargerThanPassHeight && isPassHeightLargerThanFromPassToSensorsHeight ;
     }
 
     private MEPSystemClassificationInfo GetMepSystemClassificationInfo( Element fromPickElement, Element toPickElement )
@@ -336,6 +336,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private string GetNameBase( MEPCurveType curveType )
     {
       return curveType.Category.Name ;
+    }
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    {
+      ElectricalCommandUtil.SetConstructionItemForCable( document, executeResultValue ) ;
     }
   }
 }

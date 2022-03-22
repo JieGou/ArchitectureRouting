@@ -6,7 +6,7 @@
         xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms;assembly=Arent3d.Architecture.Routing.AppBase"
         xmlns:forms1="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
         mc:Ignorable="d"
-        Height="350" Width="630" Background="White"
+        Height="350" Width="610" Background="White"
         WindowStartupLocation="CenterOwner"
         Title="RoutePropertyDialog">
 

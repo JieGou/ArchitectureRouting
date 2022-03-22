@@ -163,7 +163,7 @@
                       Unchecked="Direct_OnUnchecked"
                       HorizontalAlignment="Left"
                       VerticalAlignment="Center" />
-            <Label Grid.Row="4" Grid.Column="0" Content="First connector through height from Power to Pass "
+            <Label Grid.Row="4" Grid.Column="0" Content="Height from Power to Pass"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center" />
             <StackPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center"
@@ -226,7 +226,7 @@
                 </Label>
             </StackPanel>
 
-            <Label Grid.Row="5" Grid.Column="0" Content="First connector through height from Pass to Sensors"
+            <Label Grid.Row="5" Grid.Column="0" Content="Height from Pass to Sensors"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center" />
             <StackPanel Grid.Row="5" Grid.Column="1" VerticalAlignment="Center"
