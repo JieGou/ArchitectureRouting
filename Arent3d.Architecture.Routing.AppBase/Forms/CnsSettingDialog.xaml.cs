@@ -9,6 +9,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using System.ComponentModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -179,10 +180,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       Dictionary<Element, string> updateConnectors = new Dictionary<Element, string>() ;
 
-      if ( IsConduitsHaveConstructionItem() ) {
+      if ( IsConduitsHaveConstructionItemProperty() ) {
         //update Constructions Item for Conduits
         foreach ( var conduit in conduits ) {
-          var strConduitConstructionItem = conduit.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
+          conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? strConduitConstructionItem ) ;
           if ( string.IsNullOrEmpty( strConduitConstructionItem ) ) continue ;
 
           var conduitCnsSetting = _currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConduitConstructionItem ) ;
@@ -203,9 +204,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       //Ungroup, Get Connector to Update
-      if ( ! IsConnectorsHaveConstructionItem() ) return ;
+      if ( ! IsConnectorsHaveConstructionItemProperty() ) return ;
       foreach ( var connector in connectors ) {
-        var strConnectorConstructionItem = connector.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
+        connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? strConnectorConstructionItem ) ;
         if ( string.IsNullOrEmpty( strConnectorConstructionItem ) ) continue ;
 
         var connectorCnsSetting = _currentCnsSettingData.FirstOrDefault( c => c.CategoryName == strConnectorConstructionItem ) ;
@@ -224,16 +225,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           newConstructionItemValue = newConnectorCnsSetting.CategoryName ;
         }
 
-        var parentGroup = _document.GetElement( connector.GroupId ) as Group ;
-        if ( parentGroup != null ) {
-          // ungroup before set property
-          var attachedGroup = _document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
-          List<ElementId> listTextNoteIds = new List<ElementId>() ;
-          // ungroup textNote before ungroup connector
+        // Groupされていないコネクタに対する処理
+        if ( _document.GetElement( connector.GroupId ) is not Group parentGroup ) {
+          updateConnectors.Add( connector, newConstructionItemValue ) ;
+        }
+        // Groupされているコネクタに対する処理
+        else {
+          var attachedGroup = _document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ; // ungroup before set property
+          List<ElementId> listTextNoteIds = new() ;
           foreach ( var group in attachedGroup ) {
-            var ids = @group.GetMemberIds() ;
+            // ungroup textNote before ungroup connector
+            var ids = group.GetMemberIds() ;
             listTextNoteIds.AddRange( ids ) ;
-            @group.UngroupMembers() ;
+            group.UngroupMembers() ;
           }
 
           parentGroup.UngroupMembers() ;
@@ -243,46 +247,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       // update ConstructionItem for connector 
-      foreach ( var updateItem in updateConnectors ) {
-        var e = updateItem.Key ;
-        string value = updateItem.Value ;
+      foreach ( var (e, value) in updateConnectors ) {
         e.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, value ) ;
       }
 
       _document.Regenerate() ;
       // create group for updated connector (with new property) and related text note if any
-      foreach ( var item in connectorGroups ) {
-        List<ElementId> groupIds = new List<ElementId>() ;
-        groupIds.Add( item.Key ) ;
-        groupIds.AddRange( item.Value ) ;
+      foreach ( var (key, value) in connectorGroups ) {
+        List<ElementId> groupIds = new() { key } ;
+        groupIds.AddRange( value ) ;
         _document.Create.NewGroup( groupIds ) ;
       }
     }
 
-    public bool IsConnectorsHaveConstructionItem()
+    public bool IsConnectorsHaveConstructionItemProperty()
     {
-      try {
-        var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault() ;
-        if ( connector == null ) return false ;
-        connector.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
-        return true ;
-      }
-      catch {
-        return false ;
-      }
+      var connector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault() ;
+      return connector != null && connector.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) ;
     }
 
-    public bool IsConduitsHaveConstructionItem()
+    public bool IsConduitsHaveConstructionItemProperty()
     {
-      try {
-        var conduit = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).FirstOrDefault() ;
-        if ( conduit == null ) return false ;
-        conduit.GetPropertyString( ElectricalRoutingElementParameter.ConstructionItem ) ;
-        return true ;
-      }
-      catch {
-        return false ;
-      }
+      var conduit = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).FirstOrDefault() ;
+      return conduit != null && conduit.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) ;
     }
 
     public static ObservableCollection<T> CopyCnsSetting<T>( IEnumerable<T>? listCnsSettingData ) where T : ICloneable
