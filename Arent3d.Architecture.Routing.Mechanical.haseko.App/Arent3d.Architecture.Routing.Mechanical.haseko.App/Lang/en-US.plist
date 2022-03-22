@@ -82,8 +82,7 @@ Routing VAVs</string>
     <string>Adjust
 Duct Size</string>
     <key>Mechanical.Haseko.App.Commands.Routing.GenerateStructureEnvelopeCommand</key>
-    <string>Generate
-Structure Envelope</string>
+    <string>Generate Obstacles</string>
     <key>TransactionName.Commands.Initialization.Initialize</key>
     <string>Setup Auto Routing</string>
     <key>TransactionName.Commands.Initialization.CreateRoutingViews</key>
