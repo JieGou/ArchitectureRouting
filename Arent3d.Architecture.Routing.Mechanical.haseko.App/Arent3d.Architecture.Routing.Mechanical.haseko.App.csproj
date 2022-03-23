@@ -3,7 +3,7 @@
 
     <PropertyGroup>
         <UseWPF>true</UseWPF>
-        <RootNamespace>Arent3d.Architecture.Routing.Mechanical.haseko.App</RootNamespace>
+        <RootNamespace>Arent3d.Architecture.Routing.Mechanical.Haseko.App</RootNamespace>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -58,10 +58,10 @@
         <None Update="Arent3d.Architecture.Routing.AppBase\Lang\ja-JP.plist">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Arent3d.Architecture.Routing.Mechanical.haseko.App\Lang\en-US.plist">
+        <None Update="Arent3d.Architecture.Routing.Mechanical.Haseko.App\Lang\en-US.plist">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Arent3d.Architecture.Routing.Mechanical.haseko.App\Lang\ja-JP.plist">
+        <None Update="Arent3d.Architecture.Routing.Mechanical.Haseko.App\Lang\ja-JP.plist">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
@@ -86,12 +86,17 @@
         <Resource Include="resources\Plans.png" />
         <Resource Include="resources\ReplaceFromTo.png" />
         <Resource Include="resources\RerouteAll.png" />
+        <Resource Include="resources\structure_envelope.png" />
     </ItemGroup>
 
     <ItemGroup>
         <Compile Update="RoutingAppUI.Components.cs">
             <DependentUpon>RoutingAppUI.cs</DependentUpon>
         </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="morelinq" Version="3.3.2" />
     </ItemGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">

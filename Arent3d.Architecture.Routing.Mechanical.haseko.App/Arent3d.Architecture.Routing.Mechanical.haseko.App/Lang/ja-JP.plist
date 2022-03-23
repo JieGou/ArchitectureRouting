@@ -1,84 +1,88 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
   <dict>
-    <key>Mechanical.haseko.App.Routing.TabName</key>
+    <key>Mechanical.Haseko.App.Routing.TabName</key>
     <string>設備ルートアシスト(H)</string>
-    <key>Mechanical.haseko.App.Panels.Routing.Initialize</key>
+    <key>Mechanical.Haseko.App.Panels.Routing.Initialize</key>
     <string>Setup</string>
-    <key>Mechanical.haseko.App.Panels.Routing.Routing</key>
+    <key>Mechanical.Haseko.App.Panels.Routing.Routing</key>
     <string>From-To</string>
-    <key>Mechanical.haseko.App.Panels.Routing.TTE</key>
+    <key>Mechanical.Haseko.App.Panels.Routing.TTE</key>
     <string>TTE</string>
-    <key>Mechanical.haseko.App.Panels.Routing.PassPoints</key>
+    <key>Mechanical.Haseko.App.Panels.Routing.PassPoints</key>
     <string>通過点</string>
-    <key>Mechanical.haseko.App.Panels.Routing.Racks</key>
+    <key>Mechanical.Haseko.App.Panels.Routing.Racks</key>
     <string>PS</string>
-    <key>Mechanical.haseko.App.Panels.Routing.Monitor</key>
+    <key>Mechanical.Haseko.App.Panels.Routing.Monitor</key>
     <string>Monitor Selection</string>
-    <key>Mechanical.haseko.App.Commands.BranchPoint.InsertBranchPointCommand</key>
+    <key>Mechanical.Haseko.App.Commands.BranchPoint.InsertBranchPointCommand</key>
     <string>Insert
 Branch Point</string>
-    <key>Mechanical.haseko.App.Commands.Initialization.InitializeCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Initialization.InitializeCommand</key>
     <string>Initialize</string>
-    <key>Mechanical.haseko.App.Commands.Initialization.ShowRoutingViewsCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Initialization.ShowRoutingViewsCommand</key>
     <string>Plans</string>
-    <key>Mechanical.haseko.App.Commands.PassPoint.InsertPassPointCommand</key>
+    <key>Mechanical.Haseko.App.Commands.PassPoint.InsertPassPointCommand</key>
     <string>Insert
 Pass Point</string>
-    <key>Mechanical.haseko.App.Commands.Rack.EraseAllRacksCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Rack.EraseAllRacksCommand</key>
     <string>Delete
 All PS</string>
-    <key>Mechanical.haseko.App.Commands.Rack.ExportRacksCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Rack.ExportRacksCommand</key>
     <string>Export
 PS</string>
-    <key>Mechanical.haseko.App.Commands.Rack.ImportRacksCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Rack.ImportRacksCommand</key>
     <string>Import
 PS</string>
-    <key>Mechanical.haseko.App.Commands.Routing.AllReRouteCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.AllReRouteCommand</key>
     <string>Reroute
 All</string>
-    <key>Mechanical.haseko.App.Commands.Routing.EraseAllRoutesCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.EraseAllRoutesCommand</key>
     <string>Delete
 All From-To</string>
-    <key>Mechanical.haseko.App.Commands.Routing.EraseSelectedRoutesCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.EraseSelectedRoutesCommand</key>
     <string>Delete
 From-To</string>
-    <key>Mechanical.haseko.App.Commands.Routing.ExportRoutingCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.ExportRoutingCommand</key>
     <string>Export
 From-To</string>
-    <key>Mechanical.haseko.App.Commands.Routing.FileRoutingCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.FileRoutingCommand</key>
     <string>Import
 From-To</string>
-    <key>Mechanical.haseko.App.Commands.Routing.PickAndReRouteCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.PickAndReRouteCommand</key>
     <string>Reroute
 Selected</string>
-    <key>Mechanical.haseko.App.Commands.Routing.PickRoutingCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.PickRoutingCommand</key>
     <string>Pick
 From-To</string>
-    <key>Mechanical.haseko.App.Commands.Routing.ReplaceFromToCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.ReplaceFromToCommand</key>
     <string>Replace
 From-To</string>
-    <key>Mechanical.haseko.App.Commands.Selecting.GetSelectedFromToInfoCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.ReplaceFlexDuctCommand</key>
+    <string>Replace&#xA;Flexible Duct</string>
+    <key>Mechanical.Haseko.App.Commands.Selecting.GetSelectedFromToInfoCommand</key>
     <string>Modify
 From-To</string>
-    <key>Mechanical.haseko.App.Commands.Routing.ShowFrom_ToWindowCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.ShowFrom_ToWindowCommand</key>
     <string>From-To
 Window</string>
-    <key>Mechanical.haseko.App.Commands.Routing.ShowFromTreeCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.ShowFromTreeCommand</key>
     <string>From-To
 Tree</string>
-    <key>Mechanical.haseko.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.PickAndChangeFixedBopHeightCommand</key>
     <string>Change
 FixedBopHeight</string>
-    <key>Mechanical.haseko.App.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.CreateFASUAndVAVAutomaticallyCommand</key>
     <string>FASU, VAV
 自動配置</string>
-    <key>Mechanical.haseko.App.Commands.Routing.AutoRoutingVavCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.AutoRoutingVavCommand</key>
     <string>AHU-VAV
 自動ルーティング</string>
-    <key>Mechanical.haseko.App.Commands.Routing.AdjustDuctSizeCommand</key>
+    <key>Mechanical.Haseko.App.Commands.Routing.AdjustDuctSizeCommand</key>
     <string>ダクト径
 自動調整</string>
+    <key>Mechanical.Haseko.App.Commands.Routing.GenerateStructureEnvelopeCommand</key>
+    <string>Generate Obstacles</string>
     <key>TransactionName.Commands.Initialization.Initialize</key>
     <string>自動ルーティングをセットアップ</string>
     <key>TransactionName.Commands.Initialization.CreateRoutingViews</key>
@@ -121,6 +125,10 @@ FixedBopHeight</string>
     <string>Route高さを変更</string>
     <key>TransactionName.Commands.Routing.AutoRoutingVav</key>
     <string>自動VAVsルーティング</string>
+    <key>TransactionName.Commands.Routing.GenerateStructureEnvelopeCommand</key>
+    <string>障害物生成</string>
+    <key>TransactionName.Commands.Routing.CreatePriorityBox</key>
+    <string>PriorityBoxを表示</string>
     <key>Dialog.Commands.Initialization.Dialog.Title.Error</key>
     <string>自動ルーティング初期化エラー</string>
     <key>Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup</key>

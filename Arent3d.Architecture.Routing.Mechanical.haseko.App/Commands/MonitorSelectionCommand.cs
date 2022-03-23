@@ -3,7 +3,7 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayName( "MonitorSelection" )]
