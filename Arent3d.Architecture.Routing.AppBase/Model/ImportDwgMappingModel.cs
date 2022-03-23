@@ -2,10 +2,11 @@
 using System.ComponentModel ;
 using System.IO ;
 using System.Runtime.CompilerServices ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Model
 {
-  public class ImportDwgMappingModel: INotifyPropertyChanged
+  public class ImportDwgMappingModel: NotifyPropertyChanged
   {
     private string _id ;
 
@@ -74,13 +75,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _fileName = !string.IsNullOrEmpty(fileName) ? Path.GetFileName(fileName) : "" ;
       _floorName = floorName ;
       _floorHeight = floorHeight ;
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged ;
-
-    protected virtual void OnPropertyChanged( [CallerMemberName] string propertyName = "" )
-    {
-      PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
     }
   }
 }
