@@ -265,10 +265,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void Button_ReplaceMultipleSymbols( object sender, RoutedEventArgs e )
     {
+      const string successfullyMess = "Replaced multiple floor plan symbols successfully." ;
+      const string failedMess = "Replaced multiple floor plan symbols failed." ;
       string infoPath = string.Empty ;
       List<string> connectorFamilyPaths = new() ;
       MessageBox.Show( "Please select sample model.zip.", "Message" ) ;
-      OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Model files (*.zip)|*.zip", Multiselect = false } ;
+      OpenFileDialog openFileDialog = new() { Filter = "Model files (*.zip)|*.zip", Multiselect = false } ;
       if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
         string zipPath = openFileDialog.FileName ;
         var extractDirectory = Path.GetDirectoryName( zipPath ) ?? string.Empty ;
@@ -288,24 +290,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       
       if ( string.IsNullOrEmpty( infoPath ) ) return ;
       if ( connectorFamilyPaths.Any() ) {
-        var connectorFamilyFiles = CeedViewModel.LoadConnectorFamily( _document, connectorFamilyPaths ) ;
-        var connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;
         using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
         progress.Message = "Processing......." ;
-
-        using ( var progressData = progress?.Reserve( 0.5 ) ) {
-          UpdateCeedStorableAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
-          progressData?.ThrowIfCanceled() ;
+        List<string> connectorFamilyFiles ;
+        List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
+        using ( var progressData = progress.Reserve( 0.3 ) ) {
+          connectorFamilyFiles = CeedViewModel.LoadConnectorFamily( _document, connectorFamilyPaths ) ;
+          connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;
+          progressData.ThrowIfCanceled() ;
         }
 
-        using ( var progressData = progress?.Reserve( 0.9 ) ) {
-          UpdateDataGridAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
-          BtnReplaceSymbol.IsEnabled = false ;
-          progressData?.ThrowIfCanceled() ;
+        if ( connectorFamilyFiles.Any() && connectorFamilyReplacements.Any() ) {
+          bool result ;
+          using ( var progressData = progress.Reserve( 0.6 ) ) {
+            result = UpdateCeedStorableAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
+            progressData.ThrowIfCanceled() ;
+          }
+
+          if ( result ) {
+            using var progressData = progress.Reserve( 0.9 ) ;
+            result = UpdateDataGridAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
+            progressData.ThrowIfCanceled() ;
+          }
+
+          progress.Finish() ;
+          MessageBox.Show( result ? successfullyMess : failedMess, "Message" ) ;
         }
-      
-        progress?.Finish() ;
-        MessageBox.Show( "Replaced multiple floor plan symbols successfully.", "Message" ) ;
+        else {
+          progress.Finish() ;
+          MessageBox.Show( failedMess, "Message" ) ;
+        }
       }
       else {
         MessageBox.Show( NotExistConnectorFamilyInFolderModelWarning, "Message" ) ;
@@ -417,11 +431,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
     }
     
-    private void UpdateCeedStorableAfterReplaceMultipleSymbols( IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
+    private bool UpdateCeedStorableAfterReplaceMultipleSymbols( IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
     {
       List<string> deviceSymbolsNotHaveConnectorFamily = new () ;
       var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
-      if ( ceedStorable == null ) return ;
+      if ( ceedStorable == null ) return false ;
       if ( _allCeedModels != null ) {
         foreach ( var connectorFamilyReplacement in connectorFamilyReplacements ) {
           if ( connectorFamilyFileName.Contains( connectorFamilyReplacement.ConnectorFamilyFile ) ) {
@@ -468,19 +482,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
-        return ;
+        return false;
       }
 
-      if ( ! NotExistConnectorFamilyInFolderModelWarning.Any() ) {
+      if ( deviceSymbolsNotHaveConnectorFamily.Any() ) {
         MessageBox.Show( NotExistConnectorFamilyInFolderModelWarning + "( " + string.Join( ", ", deviceSymbolsNotHaveConnectorFamily ) + " )", "Message" ) ;
       }
+
+      return true ;
     }
     
-    private void UpdateDataGridAfterReplaceMultipleSymbols( IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
+    private bool UpdateDataGridAfterReplaceMultipleSymbols( IEnumerable<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
     {
       if ( DtGrid.ItemsSource is not List<CeedModel> newCeedModels ) {
         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
-        return ;
+        return false ;
       }
       foreach ( var connectorFamilyReplacement in connectorFamilyReplacements ) {
         if ( ! connectorFamilyFileName.Contains( connectorFamilyReplacement.ConnectorFamilyFile ) ) continue ;
@@ -496,6 +512,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
+      return true ;
     }
   }
 }

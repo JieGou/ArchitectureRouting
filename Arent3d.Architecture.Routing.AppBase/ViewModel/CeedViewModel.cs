@@ -51,23 +51,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var confirmMessage = MessageBox.Show( "モデルがすでに存在していますが、上書きしますか。", "Confirm Message", MessageBoxButton.OKCancel ) ;
         if ( confirmMessage == MessageBoxResult.Cancel ) {
           connectorFamilyPaths = connectorFamilyPaths.Where( p => ! existsConnectorFamilies.ContainsValue( p ) ).ToList() ;
-          connectorFamilyFiles.AddRange( existsConnectorFamilies.Values ) ;
+          connectorFamilyFiles.AddRange( existsConnectorFamilies.Keys ) ;
         }
       }
       
       using Transaction loadTransaction = new ( document, "Load connector's family" ) ;
       loadTransaction.Start() ;
       foreach ( var connectorFamilyPath in connectorFamilyPaths ) {
+        var isLoadFamilySuccessfully = true ;
         var connectorFamilyFile = Path.GetFileName( connectorFamilyPath ) ;
-        var connectorFamily = LoadFamily( document, connectorFamilyPath ) ;
-        if ( connectorFamily != null ) connectorFamilyFiles.Add( connectorFamilyFile ) ;
+        var connectorFamily = LoadFamily( document, connectorFamilyPath, ref isLoadFamilySuccessfully ) ;
+        if ( connectorFamily != null || ( connectorFamily == null && isLoadFamilySuccessfully && existsConnectorFamilies.ContainsValue( connectorFamilyPath ) ) ) 
+          connectorFamilyFiles.Add( connectorFamilyFile ) ;
       }
 
       loadTransaction.Commit() ;
       return connectorFamilyFiles ;
     }
 
-    private static Family? LoadFamily( Document document, string filePath )
+    private static Family? LoadFamily( Document document, string filePath, ref bool isLoadFamilySuccessfully )
     {
       try {
         document.LoadFamily( filePath, new FamilyOption( true ), out var family ) ;
@@ -79,6 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         return family ;
       }
       catch {
+        isLoadFamilySuccessfully = false ;
         return null ;
       }
     }
@@ -90,14 +93,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var connectorFamilyFile = Path.GetFileName( connectorFamilyPath ) ;
         var connectorFamilyName = connectorFamilyFile.Replace( ".rfa", "" ) ;
         if ( new FilteredElementCollector( document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == connectorFamilyName ) is Family family ) {
-          existsConnectorFamilies.Add( family.UniqueId, connectorFamilyPath ) ;
+          existsConnectorFamilies.Add( connectorFamilyFile, connectorFamilyPath ) ;
         }
       }
 
       return existsConnectorFamilies ;
     }
     
-    private class FamilyOption : IFamilyLoadOptions
+    public class FamilyOption : IFamilyLoadOptions
     {
       private readonly bool _forceUpdate ;
 
