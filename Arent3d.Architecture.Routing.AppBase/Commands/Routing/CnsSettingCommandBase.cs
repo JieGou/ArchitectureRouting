@@ -40,8 +40,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( dialog.DialogResult ?? false ) {
         var color = new Color( 0, 0, 0 ) ;
         Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
-        var isConnectorsHaveConstructionItem = dialog.IsConnectorsHaveConstructionItem() ;
-        var isConduitsHaveConstructionItem = dialog.IsConduitsHaveConstructionItem() ;
+        var isConnectorsHaveConstructionItem = dialog.IsConnectorsHaveConstructionItemProperty() ;
+        var isConduitsHaveConstructionItem = dialog.IsConduitsHaveConstructionItemProperty() ;
         if ( cnsStorables.ElementType != CnsSettingStorable.UpdateItemType.None ) {
           try {
             if ( ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Connector && ! isConnectorsHaveConstructionItem ) || ( cnsStorables.ElementType == CnsSettingStorable.UpdateItemType.Conduit && ! isConduitsHaveConstructionItem ) ) {

@@ -5,11 +5,11 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [Regeneration( RegenerationOption.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.ShowFromTreeCommand", DefaultString = "From-To\nTree" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.Routing.ShowFromTreeCommand", DefaultString = "From-To\nTree" )]
   [Image( "resources/MEP.ico" )]
   public class ShowFromToTreeCommand : ShowFromToTreeCommandBase
   {
