@@ -20,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     private const string DefaultParentPlumbingType = "E" ;
     private const string DefaultChildPlumbingSymbol = "↑" ;
+    private const string NoPlumping = "配管なし" ;
     private const string IncorrectDataErrorMessage = "Incorrect data." ;
     private const string CaptionErrorMessage = "Error" ;
     private readonly Document _document ;
@@ -105,7 +106,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       else {
         if ( detailTableRow.PlumbingType == plumbingType.ToString() ) return ;
-        if ( plumbingType.ToString() == DefaultChildPlumbingSymbol ) {
+        if ( plumbingType.ToString() == DefaultChildPlumbingSymbol || plumbingType.ToString() == NoPlumping ) {
           comboBox.SelectedValue = detailTableRow.PlumbingType ;
         }
         else {
@@ -113,7 +114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
           List<DetailTableModel> newDetailTableModels = detailTableModels.Select( x => x ).ToList() ;
 
-          CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, newDetailTableModels, plumbingType.ToString(), true, _isMixConstructionItems ) ;
+          CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, newDetailTableModels, plumbingType.ToString(), _isMixConstructionItems, true ) ;
 
           if ( newDetailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null ) {
             if ( _isMixConstructionItems ) {

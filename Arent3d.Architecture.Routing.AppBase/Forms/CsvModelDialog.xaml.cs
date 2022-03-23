@@ -250,7 +250,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 if ( values.Length < hsCdmColCount ) checkFile = false ;
                 else {
                   var constructionClassification = GetConstructionClassification( values[ 3 ] ) ;
-                  HiroiSetCdMasterModel hiroiSetCdMasterEcoModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ] ) ;
+                  HiroiSetCdMasterModel hiroiSetCdMasterEcoModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], constructionClassification ) ;
                   _allHiroiSetCdMasterEcoModels.Add( hiroiSetCdMasterEcoModel ) ;
                 }
 
