@@ -2,9 +2,9 @@
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Architecture.Routing.Mechanical.haseko.App.Forms ;
+using Arent3d.Architecture.Routing.Mechanical.Haseko.App.Forms ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.ViewModel
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.ViewModel
 {
   public class FromToTreeHasekoViewModel : ViewModelBase
   {

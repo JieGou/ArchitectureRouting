@@ -5,7 +5,7 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.AppBase.Updater ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
-using Arent3d.Architecture.Routing.Mechanical.haseko.App.Manager ;
+using Arent3d.Architecture.Routing.Mechanical.Haseko.App.Manager ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
@@ -14,7 +14,7 @@ using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Events ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App
 {
   /// <summary>
   /// Entry point of auto routing application. This class calls UI initializers.
