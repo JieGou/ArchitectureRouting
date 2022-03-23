@@ -64,7 +64,8 @@ namespace Arent3d.Architecture.Routing
 
     private static FilteredElementCollector? GetLinkedDocFilter( Document doc, Application app )
     {
-      var firstLinkDoc = new FilteredElementCollector( doc ).OfCategory( BuiltInCategory.OST_RvtLinks ).ToElements().First() ;
+      var firstLinkDoc = new FilteredElementCollector( doc ).OfCategory( BuiltInCategory.OST_RvtLinks ).ToElements().FirstOrDefault() ;
+      if ( firstLinkDoc == null ) return null ;
       foreach ( Document linkedDoc in app.Documents ) {
         if ( linkedDoc.Title.Equals( firstLinkDoc.Name.Replace( ".rvt", "" ) ) )
           return new FilteredElementCollector( linkedDoc ) ;
