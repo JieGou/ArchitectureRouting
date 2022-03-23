@@ -10,7 +10,7 @@ using MessageBox = System.Windows.Forms.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class ImportDwgMappingDialog : Window
+  public partial class ImportDwgMappingDialog
   {
     private static string ImportDwgMappingNotUnique =
       "Please input unique Floor Name for all floor." ;
@@ -41,34 +41,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void BtnCancel_OnClick( object sender, RoutedEventArgs e )
     {
       DialogResult = false ;
-      this.Close() ;
+      Close() ;
     }
     
     private void DeleteImportDwgMappingItem(object sender, RoutedEventArgs e)
     {
       for ( var visual = sender as Visual ; visual != null ; visual = VisualTreeHelper.GetParent( visual ) as Visual ) {
-        if (visual is DataGridRow)
-        {
-          var dataGridRow = (DataGridRow)visual;
-          var item = dataGridRow.Item as ImportDwgMappingModel;
-          if(item == null) return;;
-          var importDwgMappingViewModel = this.DataContext as ImportDwgMappingViewModel ;
-          if(importDwgMappingViewModel == null) return;;
-          var importDwgMappingModels = importDwgMappingViewModel.ImportDwgMappingModels.Where( x => !x.Id.Equals( item.Id ) ).ToList() ;
-          var newImportDwgMappingViewModel = new ImportDwgMappingViewModel( importDwgMappingModels, importDwgMappingViewModel.FileItems ) ;
-          this.DataContext = newImportDwgMappingViewModel ;
-        }
+        if ( visual is not DataGridRow dataGridRow ) continue ;
+        if(dataGridRow.Item is not ImportDwgMappingModel item) return;
+        if(DataContext is not ImportDwgMappingViewModel importDwgMappingViewModel) return;;
+        var importDwgMappingModels = importDwgMappingViewModel.ImportDwgMappingModels.Where( x => !x.Id.Equals( item.Id ) ).ToList() ;
+        var newImportDwgMappingViewModel = new ImportDwgMappingViewModel( importDwgMappingModels, importDwgMappingViewModel.FileItems ) ;
+        DataContext = newImportDwgMappingViewModel ;
       }
     }
 
     private void BtnAdd_OnClick( object sender, RoutedEventArgs e )
     {
-      var importDwgMappingViewModel = this.DataContext as ImportDwgMappingViewModel ;
-      if(importDwgMappingViewModel == null) return;;
+      const int floorHeightDistance = 3000 ;
+      if(DataContext is not ImportDwgMappingViewModel importDwgMappingViewModel) return;
       var importDwgMappingModels = importDwgMappingViewModel.ImportDwgMappingModels.ToList();
-      importDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, string.Empty, 3000  ) );
+      var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
+      importDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance  ) );
       var newImportDwgMappingViewModel = new ImportDwgMappingViewModel( importDwgMappingModels, importDwgMappingViewModel.FileItems ) ;
-      this.DataContext = newImportDwgMappingViewModel ;
+      DataContext = newImportDwgMappingViewModel ;
     }
   }
 }
