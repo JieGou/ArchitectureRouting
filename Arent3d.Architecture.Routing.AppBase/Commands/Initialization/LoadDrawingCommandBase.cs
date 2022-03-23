@@ -105,7 +105,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var threeDimensionalViewFamilyType = new FilteredElementCollector( doc ).OfClass( typeof( ViewFamilyType ) ).ToElements().Cast<ViewFamilyType>().FirstOrDefault( vft => vft.ViewFamily == ViewFamily.ThreeDimensional ) ;
         if ( threeDimensionalViewFamilyType != null ) {
           var allCurrent3DView = new FilteredElementCollector( doc ).OfClass( typeof( View3D ) ).ToList() ;
-          const string view3DName = "{3D}" ;
+          const string view3DName = "3D ALL" ;
           var current3DView = allCurrent3DView.FirstOrDefault( x => x.Name.Equals( view3DName ) ) ;
           if ( current3DView != null ) doc.Delete( current3DView.Id ) ;
           current3DView = View3D.CreateIsometric( doc, threeDimensionalViewFamilyType.Id ) ;
