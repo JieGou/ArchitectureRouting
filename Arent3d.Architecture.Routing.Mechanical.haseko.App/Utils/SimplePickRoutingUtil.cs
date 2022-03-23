@@ -8,7 +8,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Utils
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Utils
 {
   internal class SimplePickRoutingUtil
   {

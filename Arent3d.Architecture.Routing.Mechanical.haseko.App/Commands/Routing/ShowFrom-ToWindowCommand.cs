@@ -1,16 +1,16 @@
 ﻿using System.Collections.ObjectModel ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.PostCommands ;
+using Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.PostCommands ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.ShowFrom_ToWindowCommand", DefaultString = "From-To\nWindow" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.Routing.ShowFrom_ToWindowCommand", DefaultString = "From-To\nWindow" )]
   [Image( "resources/From-ToWindow.png" )]
   public class ShowFrom_ToWindowCommand : ShowFrom_ToWindowCommandBase
   {
