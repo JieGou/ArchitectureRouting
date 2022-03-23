@@ -5,8 +5,12 @@ using Arent3d.Architecture.Routing.Storable ;
 using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.UI ;
 using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
+using Autodesk.Revit.DB.Electrical ;
+using System.Linq ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 {
@@ -84,38 +88,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           // Set top level is highest level
           shaftOpening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).Set( highestLevel!.Id ) ;
 
-          var lengthOfDirectionCylindricalShaft = radius * 5 ;
+          var lengthOfDirection = radius * 5 ;
 
-          if ( 2 * lengthOfDirectionCylindricalShaft <= document.Application.ShortCurveTolerance ) {
+          if ( 2 * lengthOfDirection <= document.Application.ShortCurveTolerance ) {
             message = $"Direction symbol length must be greater than {document.Application.ShortCurveTolerance.RevitUnitsToMillimeters()}mm!" ;
             return Result.Cancelled ;
           }
 
-          var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.DirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-          if ( ! symbol.IsActive ) symbol.Activate() ;
+          var symbolDirection = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolDirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+          if ( ! symbolDirection.IsActive ) symbolDirection.Activate() ;
 
           if ( document.ActiveView.ViewType != ViewType.FloorPlan ) {
             message = "Only created in floor plan view!" ;
             return Result.Cancelled ;
           }
 
-          //Place symbol family
-          var instance = document.Create.NewFamilyInstance( firstPoint, symbol, document.ActiveView ) ;
-          var axis = Line.CreateBound( firstPoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( firstPoint ) ) ;
-          ElementTransformUtils.RotateElement( document, instance.Id, axis, RotateAngle ) ;
+          var subCategoryForBodyDirection = GetLineStyle( document, "SubCategoryForDirectionCylindricalShaft", new Color( 255, 0, 255 ), 1 ) ;
+          var lineBodyDirection = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ), Transform.CreateTranslation( -XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ) ).CreateTransformed( Transform.CreateRotationAtPoint( document.ActiveView.ViewDirection, RotateAngle, firstPoint ) ) ;
 
-          //Set parameters
-          instance.LookupParameter( "Length End One" ).Set( lengthOfDirectionCylindricalShaft ) ;
-          instance.LookupParameter( "Length End Two" ).Set( lengthOfDirectionCylindricalShaft ) ;
+
+          var detailLineBodyDirection = document.Create.NewDetailCurve( document.ActiveView, lineBodyDirection ) ;
+          detailLineBodyDirection.LineStyle = subCategoryForBodyDirection.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+
 
           //Create green circle on the outer shape of the shaft
-          var subCategory = GetLineStyle( document ) ;
+          var subCategoryForOuterShape = GetLineStyle( document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 7 ) ;
           var allFloorPlanView = document.GetAllElements<ViewPlan>().Where( v => v.GenLevel != null ).ToList() ;
           foreach ( var viewPlan in allFloorPlanView ) {
             var heightCircle = viewPlan.GenLevel.Elevation ;
             var circleCurve = Arc.Create( new XYZ( firstPoint.X, firstPoint.Y, heightCircle ), radius, startAngle, endAngle, xAxis, yAxis ) ;
             var greenCircle = document.Create.NewDetailCurve( viewPlan, circleCurve ) ;
-            greenCircle.LineStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+            greenCircle.LineStyle = subCategoryForOuterShape.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
           }
 
           trans.Commit() ;
@@ -132,22 +135,73 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       }
     }
 
-    private Category GetLineStyle( Document doc )
+    private static Category GetLineStyle( Document document, string subCategoryName, Color color, int lineWeight )
     {
-      const string subCategoryName = "SubCategoryForCylindricalShaft" ;
-      var categories = doc.Settings.Categories ;
-      Category category = doc.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
+      var categories = document.Settings.Categories ;
+      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
       Category subCategory ;
       if ( ! category.SubCategories.Contains( subCategoryName ) ) {
         subCategory = categories.NewSubcategory( category, subCategoryName ) ;
-        var newColor = new Color( 0, 250, 0 ) ;
-        subCategory.LineColor = newColor ;
-        subCategory.SetLineWeight( 7, GraphicsStyleType.Projection ) ;
+        subCategory.LineColor = color ;
+        subCategory.SetLineWeight( lineWeight, GraphicsStyleType.Projection ) ;
       }
-      else
+      else {
         subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+      }
 
       return subCategory ;
+    }
+
+    private static IEnumerable<Curve>? GetCurvesIntersectElement( Document document, Curve bodyDirection )
+    {
+      var curveIntersects = new List<Curve>() { bodyDirection } ;
+
+      var class2DFilters = new ElementMulticlassFilter( new List<Type>()
+      {
+        typeof( Wire ),
+        typeof( TextNote )
+      } ) ;
+      var class3DFilters = new ElementMulticlassFilter( new List<Type>()
+      {
+        typeof( CableTray ),
+        typeof( Conduit ),
+        typeof( FamilyInstance )
+      } ) ;
+      var classFilters = new LogicalOrFilter( class2DFilters, class3DFilters ) ;
+      
+      
+      var elementInViews = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( classFilters ).ToElements() ;
+      if ( ! elementInViews.Any() )
+        return curveIntersects ;
+
+      var wireTextNote = elementInViews.Where( x => x is Wire or TextNote ) ;
+      var elementIntersect = new List<Element>() ;
+
+      var solid = CreateSolidFromCurve( document, bodyDirection ) ;
+      if ( null != solid ) {
+        var filter = new ElementIntersectsSolidFilter( solid ) ;
+        var elementIntersectSolids = new FilteredElementCollector( document, elementInViews.Select( x => x.Id ).ToList() ).WherePasses( filter ).ToElements()
+          .Where( x => x is FamilyInstance familyInstance && ( familyInstance.MEPModel?.ConnectorManager?.Connectors?.Size ?? 0 ) > 0 || true ) ;
+        elementIntersect.AddRange(elementIntersectSolids) ;
+      }
+      else {
+      }
+
+      return null ;
+    }
+
+    private static Solid? CreateSolidFromCurve( Document document, Curve bodyDirection )
+    {
+      try {
+        var offset = 3000d.MillimetersToRevitUnits() ;
+        var tolerance = 50d.MillimetersToRevitUnits() ;
+        var levels = document.GetAllElements<Level>().OrderBy( x => x.Elevation ).EnumerateAll() ;
+        var curveLoop = CurveLoop.CreateViaThicken( bodyDirection, tolerance, document.ActiveView.ViewDirection ) ;
+        return GeometryCreationUtilities.CreateExtrusionGeometry( new List<CurveLoop>() { CurveLoop.CreateViaTransform( curveLoop, Transform.CreateTranslation( -XYZ.BasisZ * ( document.ActiveView.GenLevel.Elevation - levels.First().Elevation - offset ) ) ) }, document.ActiveView.ViewDirection, 2 * offset + levels.Last().Elevation - levels.First().Elevation ) ;
+      }
+      catch {
+        return null ;
+      }
     }
   }
 }
