@@ -4,10 +4,10 @@ using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.AllReRouteCommand", DefaultString = "Reroute\nAll" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.Routing.AllReRouteCommand", DefaultString = "Reroute\nAll" )]
   [Image( "resources/RerouteAll.png" )]
   public class AllReRouteCommand : AllReRouteCommandBase
   {

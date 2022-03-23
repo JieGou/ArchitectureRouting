@@ -2,10 +2,10 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Initialization
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Initialization.UnnitializeCommand", DefaultString = "Erase all addin data" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.Initialization.UnnitializeCommand", DefaultString = "Erase all addin data" )]
   [Image( "resources/Initialize.png", ImageType = ImageType.Large )]
   public class UninitializeCommand : UninitializeCommandBase
   {

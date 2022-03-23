@@ -2,10 +2,10 @@
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.NewEnvelopeCommand", DefaultString = "New Envelope\nPS" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.Routing.NewEnvelopeCommand", DefaultString = "New Envelope\nPS" )]
   [Image( "resources/new_envelope.png" )]
   public class NewEnvelopeCommand : NewEnvelopeCommandBase
   {
