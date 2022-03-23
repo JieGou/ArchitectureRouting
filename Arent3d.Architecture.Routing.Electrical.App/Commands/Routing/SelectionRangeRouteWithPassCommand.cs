@@ -254,9 +254,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 2 ) ;
 
       // main route
-      var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
-      var passConnectorUpEndPoint = new ConnectorEndPoint( passConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
-      result.Add( ( nameBase + PowerToPassName, new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, passConnectorUpEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetPowerToPassFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
+
       var passConnectorEndPoint = new ConnectorEndPoint( passConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
       var passConnectorEndPointKey = passConnectorEndPoint.Key ;
       var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
@@ -278,6 +276,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, passToSensorsFromFixedHeight, passToSensorsFromFixedHeight, avoidType, null ) ;
         return ( subRouteName, segment ) ;
       } ) ) ;
+
+      //power to pass route
+      routeName = nameBase + "_" + ( ++nextIndex ) ;
+      var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetBottomConnectorOfConnectorFamily(), radius ) ;
+      var passConnectorUpEndPoint = new ConnectorEndPoint( passConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
+      result.Add( ( routeName, new RouteSegment( classificationInfo, systemType, curveType, powerConnectorEndPoint, passConnectorUpEndPoint, diameter, routeProperty.GetRouteOnPipeSpace(), routeProperty.GetPowerToPassFromFixedHeight(), passToSensorsFromFixedHeight, avoidType, routeProperty.GetShaft()?.UniqueId ) ) ) ;
 
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
@@ -337,6 +341,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     {
       return curveType.Category.Name ;
     }
+
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
       ElectricalCommandUtil.SetConstructionItemForCable( document, executeResultValue ) ;
