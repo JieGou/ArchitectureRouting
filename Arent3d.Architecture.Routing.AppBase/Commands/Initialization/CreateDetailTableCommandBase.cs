@@ -234,10 +234,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         plumbingSize = string.Empty ;
         numberOfPlumbing = string.Empty ;
       }
+      else {
+        plumbingType = plumbingType.Replace( DefaultChildPlumbingSymbol, "" ) ;
+      }
 
       if ( constructionClassification == ConstructionClassificationType.天井隠蔽.GetFieldName() || constructionClassification == ConstructionClassificationType.打ち込み.GetFieldName() || constructionClassification == ConstructionClassificationType.露出.GetFieldName() || constructionClassification == ConstructionClassificationType.地中埋設.GetFieldName() ) {
         plumbingType = "(" + plumbingType + plumbingSize + ")" ;
-        numberOfPlumbing = string.IsNullOrEmpty( numberOfPlumbing ) ? string.Empty : "x" + numberOfPlumbing ;
+        numberOfPlumbing = string.IsNullOrEmpty( numberOfPlumbing ) || numberOfPlumbing == "1" ? string.Empty : "x" + numberOfPlumbing ;
       }
       else if ( constructionClassification == ConstructionClassificationType.天井コロガシ.GetFieldName() || constructionClassification == ConstructionClassificationType.フリーアクセス.GetFieldName() ) {
         plumbingType = "(" + korogashi + ")" ;
@@ -256,7 +259,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
       else if ( constructionClassification == ConstructionClassificationType.導圧管類.GetFieldName() ) {
         plumbingType = string.IsNullOrEmpty( plumbingType ) ? string.Empty : "(" + plumbingType + plumbingSize + ")" ;
-        numberOfPlumbing = string.IsNullOrEmpty( numberOfPlumbing ) ? string.Empty : "x" + numberOfPlumbing ;
+        numberOfPlumbing = string.IsNullOrEmpty( numberOfPlumbing ) || numberOfPlumbing == "1" ? string.Empty : "x" + numberOfPlumbing ;
       }
       else {
         plumbingType = string.Empty ;
