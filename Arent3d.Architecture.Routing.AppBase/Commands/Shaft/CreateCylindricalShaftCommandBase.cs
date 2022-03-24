@@ -10,7 +10,6 @@ using System.Linq ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB.Electrical ;
-using System.Linq ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 {
@@ -88,7 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           // Set top level is highest level
           shaftOpening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).Set( highestLevel!.Id ) ;
 
-          var lengthOfDirection = radius * 5 ;
+          var lengthOfDirection = radius * 100 ;
 
           if ( 2 * lengthOfDirection <= document.Application.ShortCurveTolerance ) {
             message = $"Direction symbol length must be greater than {document.Application.ShortCurveTolerance.RevitUnitsToMillimeters()}mm!" ;
@@ -103,13 +102,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             return Result.Cancelled ;
           }
 
+          var bodyDirection = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ), Transform.CreateTranslation( -XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ) ).CreateTransformed( Transform.CreateRotationAtPoint( document.ActiveView.ViewDirection, RotateAngle, firstPoint ) ) ;
+
+          var instanceOne = document.Create.NewFamilyInstance( bodyDirection.GetEndPoint( 0 ), symbolDirection, document.ActiveView ) ;
+          var axis = Line.CreateBound( bodyDirection.GetEndPoint( 0 ), Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( bodyDirection.GetEndPoint( 0 ) ) ) ;
+          ElementTransformUtils.RotateElement( document, instanceOne.Id, axis, RotateAngle - Math.PI * 0.5 ) ;
+          var instanceTwo = document.Create.NewFamilyInstance( bodyDirection.GetEndPoint( 1 ), symbolDirection, document.ActiveView ) ;
+          axis = Line.CreateBound( bodyDirection.GetEndPoint( 1 ), Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( bodyDirection.GetEndPoint( 1 ) ) ) ;
+          ElementTransformUtils.RotateElement( document, instanceTwo.Id, axis, Math.PI * 0.5 + RotateAngle ) ;
+
           var subCategoryForBodyDirection = GetLineStyle( document, "SubCategoryForDirectionCylindricalShaft", new Color( 255, 0, 255 ), 1 ) ;
-          var lineBodyDirection = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ), Transform.CreateTranslation( -XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ) ).CreateTransformed( Transform.CreateRotationAtPoint( document.ActiveView.ViewDirection, RotateAngle, firstPoint ) ) ;
-
-
-          var detailLineBodyDirection = document.Create.NewDetailCurve( document.ActiveView, lineBodyDirection ) ;
-          detailLineBodyDirection.LineStyle = subCategoryForBodyDirection.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-
+          var curvesBody = GetCurvesIntersectElement( document, bodyDirection ) ;
+          foreach ( var curveBody in curvesBody ) {
+            var detailLineCurveBody = document.Create.NewDetailCurve( document.ActiveView, curveBody ) ;
+            detailLineCurveBody.LineStyle = subCategoryForBodyDirection.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+          }
 
           //Create green circle on the outer shape of the shaft
           var subCategoryForOuterShape = GetLineStyle( document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 7 ) ;
@@ -152,56 +159,131 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       return subCategory ;
     }
 
-    private static IEnumerable<Curve>? GetCurvesIntersectElement( Document document, Curve bodyDirection )
+    private static IEnumerable<Curve> GetCurvesIntersectElement( Document document, Curve bodyDirection )
     {
-      var curveIntersects = new List<Curve>() { bodyDirection } ;
+      var classFilter2Ds = new ElementMulticlassFilter( new List<Type> { typeof( Wire ), typeof( TextNote ) } ) ;
+      var classFilter3Ds = new ElementMulticlassFilter( new List<Type> { typeof( CableTray ), typeof( Conduit ), typeof( FamilyInstance ) } ) ;
+      var outlineCurve = GetOutlineFromCurve( document, bodyDirection ) ;
+      var boxFilter = new BoundingBoxIntersectsFilter( outlineCurve ) ;
 
-      var class2DFilters = new ElementMulticlassFilter( new List<Type>()
-      {
-        typeof( Wire ),
-        typeof( TextNote )
-      } ) ;
-      var class3DFilters = new ElementMulticlassFilter( new List<Type>()
-      {
-        typeof( CableTray ),
-        typeof( Conduit ),
-        typeof( FamilyInstance )
-      } ) ;
-      var classFilters = new LogicalOrFilter( class2DFilters, class3DFilters ) ;
-      
-      
-      var elementInViews = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( classFilters ).ToElements() ;
-      if ( ! elementInViews.Any() )
-        return curveIntersects ;
+      var element2Ds = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( classFilter2Ds ).ToElements() ;
+      var element3Ds = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( new LogicalAndFilter( classFilter3Ds, boxFilter ) ).ToElements().Where( x => x is FamilyInstance familyInstance && ( familyInstance.MEPModel?.ConnectorManager?.Connectors?.Size ?? 0 ) > 0 || true ) ;
 
-      var wireTextNote = elementInViews.Where( x => x is Wire or TextNote ) ;
-      var elementIntersect = new List<Element>() ;
+      var elevation = document.ActiveView.GenLevel.Elevation ;
+      var viewDirection = document.ActiveView.ViewDirection ;
+      var curveIntersects = new List<Curve> { bodyDirection } ;
 
-      var solid = CreateSolidFromCurve( document, bodyDirection ) ;
-      if ( null != solid ) {
-        var filter = new ElementIntersectsSolidFilter( solid ) ;
-        var elementIntersectSolids = new FilteredElementCollector( document, elementInViews.Select( x => x.Id ).ToList() ).WherePasses( filter ).ToElements()
-          .Where( x => x is FamilyInstance familyInstance && ( familyInstance.MEPModel?.ConnectorManager?.Connectors?.Size ?? 0 ) > 0 || true ) ;
-        elementIntersect.AddRange(elementIntersectSolids) ;
+      CurveLoop? curveLoop ;
+      foreach ( var element2D in element2Ds ) {
+        var boxElement2D = element2D.get_BoundingBox( document.ActiveView ) ;
+        var outlineElement2D = new Outline( new XYZ( boxElement2D.Min.X, boxElement2D.Min.Y, elevation ), new XYZ( boxElement2D.Max.X, boxElement2D.Max.Y, elevation ) ) ;
+        if ( ! outlineCurve.Intersects( outlineElement2D, 0d ) ) continue ;
+
+        switch ( element2D ) {
+          case TextNote textNote :
+            curveLoop = CurveLoop.CreateViaTransform( GeometryHelper.GetOutlineTextNote( textNote ), Transform.CreateTranslation( viewDirection * elevation ) ) ;
+            break ;
+          case Wire wire :
+          {
+            if ( wire.Location is not LocationCurve { Curve: Line line } )
+              continue ;
+            curveLoop = CurveLoop.CreateViaThicken( line.Clone(), 400d.MillimetersToRevitUnits(), viewDirection ) ;
+            break ;
+          }
+          default :
+            curveLoop = null ;
+            break ;
+        }
+
+        if ( null != curveLoop && curveIntersects.Any() )
+          curveIntersects = GetCurvesIntersectSolid( document, curveLoop, curveIntersects ) ;
       }
-      else {
+
+      foreach ( var element3D in element3Ds ) {
+        if ( element3D is FamilyInstance familyInstance ) {
+          curveLoop = CurveLoop.CreateViaOffset( GeometryHelper.GetBoundaryBoundingBox( familyInstance.get_BoundingBox( null ), elevation ), 200d.MillimetersToRevitUnits(), viewDirection ) ;
+        }
+        else {
+          if ( element3D.Location is not LocationCurve { Curve: Line line })
+            continue ;
+          
+          if(line.Length <= document.Application.ShortCurveTolerance)
+            continue;
+
+          var endPointOne =  new XYZ( line.GetEndPoint( 0 ).X, line.GetEndPoint( 0 ).Y, elevation ) ;
+          var endPointTwo = new XYZ( line.GetEndPoint( 1 ).X, line.GetEndPoint( 1 ).Y, elevation ) ;
+          if(endPointOne.DistanceTo(endPointTwo) <= document.Application.ShortCurveTolerance)
+            continue;
+          var location = Line.CreateBound( endPointOne, endPointTwo ) ;
+
+          switch ( element3D ) {
+            case CableTray cableTray :
+              curveLoop = CurveLoop.CreateViaThicken( location, 600d.MillimetersToRevitUnits() + cableTray.Width, viewDirection ) ;
+              break ;
+            case Conduit conduit :
+            {
+              var outSizePara = conduit.get_Parameter( BuiltInParameter.RBS_CONDUIT_OUTER_DIAM_PARAM ) ;
+              if ( null == outSizePara )
+                continue ;
+              curveLoop = CurveLoop.CreateViaThicken( location, 200d.MillimetersToRevitUnits() + outSizePara.AsDouble(), viewDirection ) ;
+              break ;
+            }
+            default :
+              curveLoop = null ;
+              break ;
+          }
+        }
+
+        if ( null != curveLoop && curveIntersects.Any() )
+          curveIntersects = GetCurvesIntersectSolid( document, curveLoop, curveIntersects ) ;
       }
 
-      return null ;
+      return curveIntersects ;
     }
 
-    private static Solid? CreateSolidFromCurve( Document document, Curve bodyDirection )
+    private static Outline GetOutlineFromCurve( Document document, Curve bodyDirection )
     {
+      var endPointOne = bodyDirection.GetEndPoint( 0 ) ;
+      var endPointTwo = bodyDirection.GetEndPoint( 1 ) ;
+      var rangeExtend = 3000d.MillimetersToRevitUnits() ;
+      var minZ = bodyDirection.Evaluate( 0.5, true ).Z - rangeExtend ;
+      var maxZ = bodyDirection.Evaluate( 0.5, true ).Z + rangeExtend ;
+      var levels = document.GetAllElements<Level>().OrderBy( x => x.Elevation ).EnumerateAll() ;
+      if ( levels.Any() ) {
+        minZ = levels.First().Elevation - rangeExtend ;
+        maxZ = levels.Last().Elevation + rangeExtend ;
+      }
+
+      var minPoint = new XYZ( Math.Min( endPointOne.X, endPointTwo.X ), Math.Min( endPointOne.Y, endPointTwo.Y ), minZ ) ;
+      var maxPoint = new XYZ( Math.Max( endPointOne.X, endPointTwo.X ), Math.Max( endPointOne.Y, endPointTwo.Y ), maxZ ) ;
+      return new Outline( minPoint, maxPoint ) ;
+    }
+
+    private static List<Curve> GetCurvesIntersectSolid( Document document, CurveLoop curveLoop, IEnumerable<Curve> curves )
+    {
+      var tolerance = 100d.MillimetersToRevitUnits() ;
+      var curveResult = new List<Curve>() ;
       try {
-        var offset = 3000d.MillimetersToRevitUnits() ;
-        var tolerance = 50d.MillimetersToRevitUnits() ;
-        var levels = document.GetAllElements<Level>().OrderBy( x => x.Elevation ).EnumerateAll() ;
-        var curveLoop = CurveLoop.CreateViaThicken( bodyDirection, tolerance, document.ActiveView.ViewDirection ) ;
-        return GeometryCreationUtilities.CreateExtrusionGeometry( new List<CurveLoop>() { CurveLoop.CreateViaTransform( curveLoop, Transform.CreateTranslation( -XYZ.BasisZ * ( document.ActiveView.GenLevel.Elevation - levels.First().Elevation - offset ) ) ) }, document.ActiveView.ViewDirection, 2 * offset + levels.Last().Elevation - levels.First().Elevation ) ;
+        curveLoop = CurveLoop.CreateViaTransform( curveLoop, Transform.CreateTranslation( document.ActiveView.ViewDirection.Negate() * tolerance ) ) ;
+        var solid = GeometryCreationUtilities.CreateExtrusionGeometry( new List<CurveLoop> { curveLoop }, document.ActiveView.ViewDirection, 2 * tolerance ) ;
+
+        var option = new SolidCurveIntersectionOptions { ResultType = SolidCurveIntersectionMode.CurveSegmentsOutside } ;
+        foreach ( var curve in curves ) {
+          var result = solid.IntersectWithCurve( curve, option ) ;
+          if ( null == result ) continue ;
+
+          for ( var i = 0 ; i < result.SegmentCount ; i++ ) {
+            if ( result.GetCurveSegment( i ).Length > document.Application.ShortCurveTolerance ) {
+              curveResult.Add( result.GetCurveSegment( i ) ) ;
+            }
+          }
+        }
       }
       catch {
-        return null ;
+        // ignore
       }
+
+      return curveResult ;
     }
   }
 }
