@@ -1,11 +1,9 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Text.RegularExpressions ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
-using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -58,25 +56,27 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
           TaskDialog.Show( DialogTitle, "表分割機能はシート上にしか動作しないため、シートへ移動してください。" ) ;
           return Result.Cancelled ;
         }
-        var selectedElements = selection.PickElementsByRectangle( new SelectionFilter1(), "ドラックで複数コネクタを選択して下さい。" );
-        if ( selectedElements.Count() > 0 ) {
-          // string str = "ahihi merge thôi" ;
-          // MessageBox.Show( str ) ;
-          var scheduleSheetInstances = new List<ScheduleSheetInstance>() ;
-          foreach ( var element in selectedElements ) {
-            scheduleSheetInstances.Add( (ScheduleSheetInstance)element );
-          }
-          return MergeScheduleSheetInstance( document, scheduleSheetInstances ) ;
+
+        var selectedElements = selection.PickElementsByRectangle( new SelectionFilter1(), "ドラックで複数コネクタを選択して下さい。" ) ;
+        if ( ! selectedElements.Any() ) return Result.Succeeded ;
+        var scheduleSheetInstances = new List<ScheduleSheetInstance>() ;
+        foreach ( var element in selectedElements ) {
+          scheduleSheetInstances.Add( (ScheduleSheetInstance) element ) ;
         }
+        var scheduleGroups = GetScheduleGroups( document, scheduleSheetInstances ) ;
+        foreach ( var scheduleGroup in scheduleGroups.Values ) {
+          var result = MergeScheduleSheetInstance( document, scheduleSheetInstances ) ;
+          if ( result != Result.Succeeded ) return result ;
+        }
+        
         return Result.Succeeded ;
       }
-      catch (Autodesk.Revit.Exceptions.OperationCanceledException)
-      {
-        return Result.Cancelled;
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        return Result.Cancelled ;
       }
       catch ( Exception exception ) {
-        CommandUtils.DebugAlertException(exception);
-        return Result.Cancelled ;
+        CommandUtils.DebugAlertException( exception ) ;
+        return Result.Failed ;
       }
     }
 
@@ -101,38 +101,48 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
 
       return rowCount ;
+      
+    }
+
+    private static Dictionary<ElementId, IList<ScheduleSheetInstance>> GetScheduleGroups( Document document,IList<ScheduleSheetInstance> scheduleSheetInstances )
+    {
+      var groups = new Dictionary<ElementId, IList<ScheduleSheetInstance>>() ;
+      foreach ( var scheduleSheetInstance in scheduleSheetInstances ) {
+        if ( document.GetElement( scheduleSheetInstance.ScheduleId ) is not ViewSchedule schedule ) continue;
+        if(!schedule.GetSplitStatus()) continue;
+        var groupId = schedule.GetSplitGroupId() ;
+        if(groupId == null) continue;
+        if(groups.ContainsKey( groupId ))
+          groups[groupId].Add( scheduleSheetInstance );
+        else groups.Add( groupId, new List<ScheduleSheetInstance>(){scheduleSheetInstance} );
+      }
+      var groups1 = new Dictionary<ElementId, IList<ScheduleSheetInstance>>() ;
+      foreach ( var groupId in groups.Keys ) {
+        groups1.Add( groupId, groups[ groupId ].OrderBy( s => ( document.GetElement( s.ScheduleId ) as ViewSchedule )?.GetSplitIndex() ).ToList()) ;
+      }
+      return groups1 ;
     }
     private static Result MergeScheduleSheetInstance(Document document, IList<ScheduleSheetInstance> scheduleSheetInstances)
     {
-      
       if(scheduleSheetInstances.Count < 2) return Result.Succeeded; 
       var firstScheduleSheet = scheduleSheetInstances.First() ;
       if ( document.GetElement( firstScheduleSheet.ScheduleId ) is not ViewSchedule firstSchedule )
         return Result.Failed ;
-      var list = System.Enum.GetValues( typeof( BuiltInCategory ) ) ;
-      foreach ( var j in list ) {
-        if ( (int) j == firstScheduleSheet.Category.Id.IntegerValue )
-          MessageBox.Show(j.ToString()) ;
-      }
       using Transaction transaction = new Transaction(document,"MergeScheduleSheetInstance") ;
       transaction.Start() ;
-      
+      var imageMap = firstSchedule.GetImageMap() ;
       var firstSessionData = firstSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
       var firstSessionDataRowCount = firstSessionData.NumberOfRows ;
       var firstSessionDataColumnCount = firstSessionData.NumberOfColumns ;
-      // var newSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_Windows ) ) ;
-      // var newSessionData = newSchedule.GetTableData().GetSectionData( SectionType.Body ) ;
-      // firstSessionDataRowCount = 0 ;
       if ( document.GetElement( scheduleSheetInstances[1].ScheduleId ) is not ViewSchedule secondSchedule )
         return Result.Failed ;
-      var headerRowCount = GetHeaderRowCount( firstSessionData, secondSchedule.GetTableData().GetSectionData( SectionType.Header ) ) ;
+      var headerRowCount = firstSchedule.GetHeaderRowCount() ;
+      if(headerRowCount == -1) headerRowCount = GetHeaderRowCount( firstSessionData, secondSchedule.GetTableData().GetSectionData( SectionType.Header ) ) ;
       for ( int i = 1 ; i < scheduleSheetInstances.Count ; i++ ) {
         if ( document.GetElement( scheduleSheetInstances[i].ScheduleId ) is not ViewSchedule schedule )
           return Result.Failed ;
         var sectionData = schedule.GetTableData().GetSectionData( SectionType.Header ) ;
         var rowCount = sectionData.NumberOfRows ;
-        var rowDataCount = schedule.GetTableData().GetSectionData( SectionType.Body ).NumberOfRows ;
-        var columnDataCount = schedule.GetTableData().GetSectionData( SectionType.Body ).NumberOfColumns ;
         var columnCount = Math.Min(sectionData.NumberOfColumns,firstSessionDataColumnCount) ;
         for ( int row = headerRowCount ; row < rowCount ; row++ ) {
           firstSessionData.InsertRow( firstSessionDataRowCount );
@@ -141,7 +151,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
             firstSessionData.SetCellText( firstSessionDataRowCount, column, sectionData.GetCellText( row, column ));
             firstSessionData.SetCellStyle( firstSessionDataRowCount, column, sectionData.GetTableCellStyle( row, column ));
             firstSessionData.SetCellType( firstSessionDataRowCount, column, sectionData.GetCellType( row, column ));
-            
+            if(imageMap.ContainsKey( (firstSessionDataRowCount, column )))
+              firstSessionData.InsertImage( firstSessionDataRowCount, column,imageMap[(firstSessionDataRowCount, column)] );
           }
           firstSessionDataRowCount++ ;
         }
@@ -150,41 +161,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
       transaction.Commit() ;
       return Result.Succeeded ;
-    }
-    private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox )
-    {
-      var heightTable = boxXYZ.Max.Y ;
-      var topIndex = SplitFromRow - 1 ;
-      var bottomIndex = sectionData.NumberOfRows - 1 ;
-
-      for ( int i = 0 ; i < sectionData.NumberOfRows ; i++ ) {
-        heightTable -= sectionData.GetRowHeight( i ) ;
-
-        var old = heightTable + sectionData.GetRowHeight( i ) ;
-        if ( ( heightTable <= pickedBox.Max.Y ) && ( pickedBox.Max.Y < old ) )
-          topIndex = i ;
-
-        if ( ( heightTable <= pickedBox.Min.Y ) && ( pickedBox.Min.Y < old ) )
-          bottomIndex = i ;
-      }
-
-      return ( topIndex, bottomIndex ) ;
-    }
-
-    private (string NewScheduleName, string OldScheduleName) GetNewScheduleName(Document document, string oldScheduleName)
-    {
-      var prefix = "Splited-" ;
-      var pattern = @$"{prefix}(\d+)$" ;
-      var match = Regex.Match( oldScheduleName, pattern ) ;
-      var scheduleNames = document.GetAllElements<ViewSchedule>().Select( x => x.Name ) ;
-
-      if ( match.Success ) {
-        var start = Regex.Split( oldScheduleName, match.Value ).First() ;
-        var count = scheduleNames.Where( x => Regex.IsMatch( x, $"{start}{pattern}" ) ).Count() ;
-        return ($"{start}{prefix}{count + 1}", oldScheduleName) ;
-      }
-      
-      return ($"{oldScheduleName} {prefix}2", $"{oldScheduleName} {prefix}1");
     }
   }
 }

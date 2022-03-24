@@ -364,7 +364,68 @@ namespace Arent3d.Architecture.Routing
 
       return instance ;
     }
+    public static void AddImageToImageMap( this ViewSchedule viewSchedule, int row, int column, ElementId imageId )
+    {
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ImageCellMap, out string? imageMap ) ) return ;
+      imageMap ??= string.Empty ;
+      imageMap += imageMap == string.Empty?imageMap:"|"+ $"{row},{column},{imageId.IntegerValue}" ;
+      viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.ImageCellMap, imageMap ) ;
+    }
+    public static void SetSplitStatus( this ViewSchedule viewSchedule, bool isSplit )
+    {
+      viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.IsSplit, isSplit ? 1 : 0 ) ;
+    }
+    public static bool GetSplitStatus( this ViewSchedule viewSchedule )
+    {
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.IsSplit, out int status ) ) return false ;
+      return status == 1 ;
+    }
+    public static void SetSplitIndex( this ViewSchedule viewSchedule, int index )
+    {
+      viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.SplitIndex, index ) ;
+    }
+    public static int GetSplitIndex( this ViewSchedule viewSchedule)
+    {
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.SplitIndex, out int index ) ) return -1 ;
+      return index ;
+    }
+    public static void SetSplitGroupId( this ViewSchedule viewSchedule, ElementId elementId )
+    {
+      viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.SplitGroupId, elementId.IntegerValue ) ;
+    }
+    public static ElementId? GetSplitGroupId( this ViewSchedule viewSchedule)
+    {
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.SplitGroupId, out int elementIdValue ) ) return null ;
+      return new ElementId( elementIdValue ) ;
+    }
+    public static void SetHeaderRowCount( this ViewSchedule viewSchedule, int headerRowCount )
+    {
+      viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.HeaderRowCount, headerRowCount ) ;
+    }
+    public static int GetHeaderRowCount( this ViewSchedule viewSchedule)
+    {
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.HeaderRowCount, out int headerRowCount ) ) return -1 ;
+      return headerRowCount ;
+    }
+    public static Dictionary<(int row, int column), ElementId> GetImageMap(this ViewSchedule viewSchedule)
+    {
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ImageCellMap, out string? imageMap ) || string.IsNullOrEmpty( imageMap ) ) return new Dictionary<(int row, int column), ElementId>() ;
+      var imageMapDictionary = new Dictionary<(int row, int column), ElementId>() ;
+      string[]? imageCells = imageMap?.Split( '|' ) ;
+      if ( imageCells == null ) return new Dictionary<(int row, int column), ElementId>() ;
+      foreach ( var cell in imageCells ) {
+        if(string.IsNullOrEmpty( cell )) continue;
+        var cellItems = cell.Split( ',' ) ;
+        if(cellItems.Count() != 3) continue;
+        if(int.TryParse( cellItems[0], out int row )) continue;
+        if(int.TryParse( cellItems[1], out int column )) continue;
+        if(int.TryParse( cellItems[2], out int elementIdValue )) continue;
+        if(imageMapDictionary.ContainsKey( (row,column) )) continue;
+        imageMapDictionary.Add( (row,column), new ElementId( elementIdValue ) );
+      }
 
+      return imageMapDictionary ;
+    }
     public static FamilyInstance AddConnectorFamily( this Document document, Connector conn, string routeName, FlowDirectionType directionType, XYZ position, XYZ direction, double? radius )
     {
       var routingFamilyType = directionType switch

@@ -234,6 +234,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const int defaultColumnCount = 5 ;
 
       TableData tableData = viewSchedule.GetTableData() ;
+      viewSchedule.SetHeaderRowCount( 3 );
       TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
       var rowCount = tsdHeader.NumberOfRows ;
       var columnCount = tsdHeader.NumberOfColumns ;
@@ -299,6 +300,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var pathToImage = GetFloorPlanImagePath( floorPlanSymbols.ElementAt( j ) ) ;
           var imageType = document.GetAllElements<ImageType>().FirstOrDefault( i => i.Path == pathToImage ) ?? ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
           tsdHeader.InsertImage( startRowData + j, 0, imageType.Id ) ;
+          viewSchedule.AddImageToImageMap( startRowData + j, 0, imageType.Id ) ;
           tsdHeader.SetCellText( startRowData + j, 1, generalDisplayDeviceSymbols.ElementAt( j ) ) ;
         }
 

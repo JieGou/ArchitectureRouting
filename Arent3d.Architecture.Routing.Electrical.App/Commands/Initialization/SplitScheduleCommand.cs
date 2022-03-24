@@ -100,9 +100,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id,
           Transform.CreateTranslation(XYZ.BasisX * 10.0.MillimetersToRevitUnits()).OfPoint(boundingBoxXYZ.Max) ) ;
-
+        SetSplitInformation( schedule, cloneSchedule ) ;
         transaction.Commit() ;
-
+        
         return Result.Succeeded ;
       }
       catch (Autodesk.Revit.Exceptions.OperationCanceledException)
@@ -115,6 +115,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
+    private void SetSplitInformation( ViewSchedule schedule, ViewSchedule cloneSchedule )
+    {
+      schedule.SetSplitStatus( true );
+      schedule.SetSplitIndex( 0 );
+      schedule.SetSplitGroupId( schedule.Id );
+      cloneSchedule.SetSplitStatus( true );
+      cloneSchedule.SetSplitIndex( 1 );
+      cloneSchedule.SetSplitGroupId( schedule.Id );
+    }
     private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox )
     {
       var heightTable = boxXYZ.Max.Y ;

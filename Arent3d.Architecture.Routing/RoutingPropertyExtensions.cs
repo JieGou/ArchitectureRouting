@@ -112,6 +112,26 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "302a0b15-ee8b-44a2-98b2-c5eb105a3579" ), NameOnRevit( "IsEcoMode" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConnectorsAndConduits ) )]
     IsEcoMode,
+    
+    [ParameterGuid( "e7505165-3295-442b-b6ec-9372476aa06e" ), NameOnRevit( "Header Row Count" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
+    HeaderRowCount,
+    
+    [ParameterGuid( "3115985b-2f62-40dd-bf77-c1cbe50ebc5f" ), NameOnRevit( "IsSplit" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
+    IsSplit,
+    
+    [ParameterGuid( "59be3208-032a-4a8f-bea8-8437cebec42a" ), NameOnRevit( "Split Index" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
+    SplitIndex,
+    
+    [ParameterGuid( "2affef55-99c9-49de-a088-14c02d8e6dbc" ), NameOnRevit( "Split Group Id" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
+    SplitGroupId,
+    
+    [ParameterGuid( "0897a3f8-b677-45e2-a1e8-9edb995d0d85" ), NameOnRevit( "Image Cell Map" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
+    ImageCellMap,
   }
 
   public enum BranchNumberParameter
