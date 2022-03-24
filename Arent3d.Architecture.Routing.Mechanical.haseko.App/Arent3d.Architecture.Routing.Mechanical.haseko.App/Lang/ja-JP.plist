@@ -83,6 +83,8 @@ FixedBopHeight</string>
 自動調整</string>
     <key>Mechanical.Haseko.App.Commands.Routing.GenerateStructureEnvelopeCommand</key>
     <string>Generate Obstacles</string>
+    <key>Mechanical.Haseko.App.Commands.Routing.CalculateStepHeightCommand</key>
+    <string>Step Height</string>
     <key>TransactionName.Commands.Initialization.Initialize</key>
     <string>自動ルーティングをセットアップ</string>
     <key>TransactionName.Commands.Initialization.CreateRoutingViews</key>
