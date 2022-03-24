@@ -87,7 +87,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           // Set top level is highest level
           shaftOpening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).Set( highestLevel!.Id ) ;
 
-          var lengthOfDirection = radius * 100 ;
+          var lengthOfDirection = radius * 5 ;
 
           if ( 2 * lengthOfDirection <= document.Application.ShortCurveTolerance ) {
             message = $"Direction symbol length must be greater than {document.Application.ShortCurveTolerance.RevitUnitsToMillimeters()}mm!" ;
