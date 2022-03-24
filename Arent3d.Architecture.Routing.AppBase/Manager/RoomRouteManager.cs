@@ -50,18 +50,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
       const string frontDoorWidthParam = "Front Door Width" ;
       const string backDoorDistanceParam = "Back Door Distance" ;
       const string backDoorWidthParam = "Back Door Width" ;
+      const double minDoorWidth = 300 ;
       var maxThickness = ( 400.0 ).MillimetersToRevitUnits() ;
       var thicknessDefault = ( 200.0 ).MillimetersToRevitUnits() ;
-      var widthDoor = ( 300.0 ).MillimetersToRevitUnits() ;
+
       // get room properties
       var element = document.GetElement( room.ElementId ) ;
       var lenght = element.ParametersMap.get_Item( "Lenght" ).AsDouble() ;
       var width = element.ParametersMap.get_Item( "Width" ).AsDouble() ;
       var thickness = element.ParametersMap.get_Item( thicknessParam ).AsDouble() ;
       var leftDoorDistance = element.ParametersMap.get_Item( leftDoorDistanceParam ).AsDouble() ;
+      var leftDoorWidth = Math.Max(minDoorWidth, element.ParametersMap.get_Item( leftDoorWidthParam ).AsDouble()).MillimetersToRevitUnits() ;
       var rightDoorDistance = element.ParametersMap.get_Item( rightDoorDistanceParam ).AsDouble() ;
+      var rightDoorWidth = Math.Max(minDoorWidth,element.ParametersMap.get_Item( rightDoorWidthParam ).AsDouble()).MillimetersToRevitUnits() ;
       var frontDoorDistance = element.ParametersMap.get_Item( frontDoorDistanceParam ).AsDouble() ;
+      var frontDoorWidth = Math.Max(minDoorWidth,element.ParametersMap.get_Item( frontDoorWidthParam ).AsDouble()).MillimetersToRevitUnits() ;
       var backDoorDistance = element.ParametersMap.get_Item( backDoorDistanceParam ).AsDouble() ;
+      var backDoorWidth = Math.Max(minDoorWidth,element.ParametersMap.get_Item( backDoorWidthParam ).AsDouble()).MillimetersToRevitUnits() ;
       var locationPoint = ( element.Location as LocationPoint ) ! ;
       var p1 = locationPoint.Point ;
       var p2 = new XYZ( p1.X + lenght, p1.Y, p1.Z ) ;
@@ -90,13 +95,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( leftDoorDistance == 0 ) {
             position = new XYZ( x, room.GlobalPoint.Y, height ) ;
             position2 = new XYZ( x + thickness, room.GlobalPoint.Y, height ) ;
-            element.ParametersMap.get_Item( leftDoorDistanceParam ).Set( Math.Abs( room.GlobalPoint.Y - y ) - widthDoor / 2 ) ;
-            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( widthDoor ) ;
+            element.ParametersMap.get_Item( leftDoorDistanceParam ).Set( Math.Abs( room.GlobalPoint.Y - y ) - leftDoorWidth / 2 ) ;
+            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( leftDoorWidth ) ;
           }
           else {
-            var yPoint = y < 0 ? y + leftDoorDistance + widthDoor / 2 : y - leftDoorDistance - widthDoor / 2 ;
+            var yPoint = y - leftDoorDistance - leftDoorWidth / 2 ;
             position = new XYZ( x, yPoint, height ) ;
             position2 = new XYZ( x + thickness, yPoint, height ) ;
+            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( leftDoorWidth ) ;
           }
 
           break ;
@@ -105,13 +111,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( rightDoorDistance == 0 ) {
             position = new XYZ( x, room.GlobalPoint.Y, height ) ;
             position2 = new XYZ( x - thickness, room.GlobalPoint.Y, height ) ;
-            element.ParametersMap.get_Item( rightDoorDistanceParam ).Set( Math.Abs( room.GlobalPoint.Y - y ) - widthDoor / 2 ) ;
-            element.ParametersMap.get_Item( rightDoorWidthParam ).Set( widthDoor ) ;
+            element.ParametersMap.get_Item( rightDoorDistanceParam ).Set( Math.Abs( room.GlobalPoint.Y - y ) - rightDoorWidth / 2 ) ;
+            element.ParametersMap.get_Item( rightDoorWidthParam ).Set( rightDoorWidth ) ;
           }
           else {
-            var yPoint = y < 0 ? y + rightDoorDistance + widthDoor / 2 : y - rightDoorDistance - widthDoor / 2 ;
+            var yPoint = y - rightDoorDistance - rightDoorWidth / 2 ;
             position = new XYZ( x, yPoint, height ) ;
             position2 = new XYZ( x - thickness, yPoint, height ) ;
+            element.ParametersMap.get_Item( rightDoorWidthParam ).Set( rightDoorWidth ) ;
           }
 
           break ;
@@ -120,13 +127,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( frontDoorDistance == 0 ) {
             position = new XYZ( room.GlobalPoint.X, y, height ) ;
             position2 = new XYZ( room.GlobalPoint.X, y + thickness, height ) ;
-            element.ParametersMap.get_Item( frontDoorDistanceParam ).Set( Math.Abs( room.GlobalPoint.X - x ) - widthDoor / 2 ) ;
-            element.ParametersMap.get_Item( frontDoorWidthParam ).Set( widthDoor ) ;
+            element.ParametersMap.get_Item( frontDoorDistanceParam ).Set( Math.Abs( room.GlobalPoint.X - x ) - frontDoorWidth / 2 ) ;
+            element.ParametersMap.get_Item( frontDoorWidthParam ).Set( frontDoorWidth ) ;
           }
           else {
-            var xPoint = x > 0 ? x + frontDoorDistance + widthDoor / 2 : x - frontDoorDistance - widthDoor / 2 ;
+            var xPoint = x + frontDoorDistance + frontDoorWidth / 2 ;
             position = new XYZ( xPoint, y, height ) ;
             position2 = new XYZ( xPoint, y + thickness, height ) ;
+            element.ParametersMap.get_Item( frontDoorWidthParam ).Set( frontDoorWidth ) ;
           }
 
           break ;
@@ -135,90 +143,115 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
           if ( backDoorDistance == 0 ) {
             position = new XYZ( room.GlobalPoint.X, y, height ) ;
             position2 = new XYZ( room.GlobalPoint.X, y - thickness, height ) ;
-            element.ParametersMap.get_Item( backDoorDistanceParam ).Set( Math.Abs( room.GlobalPoint.X - x ) - widthDoor / 2 ) ;
-            element.ParametersMap.get_Item( backDoorWidthParam ).Set( widthDoor ) ;
+            element.ParametersMap.get_Item( backDoorDistanceParam ).Set( Math.Abs( room.GlobalPoint.X - x ) - backDoorWidth / 2 ) ;
+            element.ParametersMap.get_Item( backDoorWidthParam ).Set( backDoorWidth ) ;
           }
           else {
-            var xPoint = x > 0 ? x + backDoorDistance + widthDoor / 2 : x - backDoorDistance - widthDoor / 2 ;
+            var xPoint = x + backDoorDistance + backDoorWidth / 2 ;
             position = new XYZ( xPoint, y, height ) ;
             position2 = new XYZ( xPoint, y - thickness, height ) ;
+            element.ParametersMap.get_Item( backDoorWidthParam ).Set( backDoorWidth ) ;
           }
 
           break ;
         case RoomEdge.LeftFrontCorner :
           direction = isOut ? new Vector3d( 1, 0, 0 ) : new Vector3d( -1, 0, 0 ) ;
-          if ( leftDoorDistance == 0 ) {
-            position = new XYZ( x, y + widthDoor / 2, height ) ;
-            position2 = new XYZ( x + thickness, y + widthDoor / 2, height ) ;
-            element.ParametersMap.get_Item( leftDoorDistanceParam ).Set( width - thickness - widthDoor ) ;
-            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( widthDoor ) ;
+          if ( leftDoorDistance == 0 && frontDoorDistance == 0) {
+            position = new XYZ( x, y + leftDoorWidth / 2, height ) ;
+            position2 = new XYZ( x + thickness, y + leftDoorWidth / 2, height ) ;
+            element.ParametersMap.get_Item( leftDoorDistanceParam ).Set( width - thickness - leftDoorWidth ) ;
+            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( leftDoorWidth ) ;
           }
-          else {
-            var yPoint = p1.Y < 0 ? p1.Y +leftDoorDistance + widthDoor / 2 : p1.Y - leftDoorDistance - widthDoor / 2 ;
+          else if(leftDoorDistance > 0){
+            var yPoint = p1.Y + leftDoorDistance + leftDoorWidth / 2 ;
             position = new XYZ( x, yPoint, height ) ;
             position2 = new XYZ( x + thickness, yPoint, height ) ;
+            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( leftDoorWidth ) ;
           }
-
+          else {
+            var xPoint = p4.Y + frontDoorDistance + frontDoorWidth / 2 ;
+            position = new XYZ( xPoint, y, height ) ;
+            position2 = new XYZ( xPoint, y + thickness, height ) ;
+            element.ParametersMap.get_Item( frontDoorWidthParam ).Set( frontDoorWidth ) ;
+          }
           break ;
         case RoomEdge.RightFrontCorner :
           direction = isOut ? new Vector3d( -1, 0, 0 ) : new Vector3d( 1, 0, 0 ) ;
-          if ( rightDoorDistance == 0 ) {
-            position = new XYZ( x, y + widthDoor / 2, height ) ;
-            position2 = new XYZ( x - thickness, y + widthDoor / 2, height ) ;
-            element.ParametersMap.get_Item( rightDoorDistanceParam ).Set( width - thickness - widthDoor ) ;
-            element.ParametersMap.get_Item( rightDoorWidthParam ).Set( widthDoor ) ;
+          if ( rightDoorDistance == 0  && frontDoorDistance == 0) {
+            position = new XYZ( x, y + rightDoorWidth / 2, height ) ;
+            position2 = new XYZ( x - thickness, y + rightDoorWidth / 2, height ) ;
+            element.ParametersMap.get_Item( rightDoorDistanceParam ).Set( width - thickness - rightDoorWidth ) ;
+            element.ParametersMap.get_Item( rightDoorWidthParam ).Set( rightDoorWidth ) ;
           }
-          else {
-            var yPoint = p2.Y < 0 ? p2.Y + rightDoorDistance + widthDoor / 2 : p2.Y - rightDoorDistance - widthDoor / 2 ;
+          else if(rightDoorDistance == 0){
+            var yPoint = p2.Y - rightDoorDistance - rightDoorWidth / 2 ;
             position = new XYZ( x, yPoint, height ) ;
             position2 = new XYZ( x - thickness, yPoint, height ) ;
+            element.ParametersMap.get_Item( rightDoorWidthParam ).Set( rightDoorWidth ) ;
           }
-
+          else {
+            var xPoint = p4.Y + frontDoorDistance + frontDoorWidth / 2 ;
+            position = new XYZ( xPoint, y, height ) ;
+            position2 = new XYZ( xPoint, y + thickness, height ) ;
+            element.ParametersMap.get_Item( frontDoorWidthParam ).Set( frontDoorWidth ) ;
+          }
           break ;
         case RoomEdge.LeftBackCorner :
           direction = isOut ? new Vector3d( 1, 0, 0 ) : new Vector3d( -1, 0, 0 ) ;
-          if ( leftDoorDistance == 0 ) {
-            position = new XYZ( x, y - widthDoor / 2, height ) ;
-            position2 = new XYZ( x + thickness, y - widthDoor / 2, height ) ;
+          if ( leftDoorDistance == 0 && backDoorDistance == 0) {
+            position = new XYZ( x, y - leftDoorWidth / 2, height ) ;
+            position2 = new XYZ( x + thickness, y - leftDoorWidth / 2, height ) ;
             element.ParametersMap.get_Item( leftDoorDistanceParam ).Set( thickness ) ;
-            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( widthDoor ) ;
+            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( leftDoorWidth ) ;
           }
-          else {
-            var yPoint = p1.Y < 0 ? p1.Y + leftDoorDistance + widthDoor / 2 : p1.Y - leftDoorDistance - widthDoor / 2 ;
+          else if(leftDoorDistance > 0){
+            var yPoint = p1.Y + leftDoorDistance + leftDoorWidth / 2 ;
             position = new XYZ( x, yPoint, height ) ;
             position2 = new XYZ( x + thickness, yPoint, height ) ;
+            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( leftDoorWidth ) ;
           }
-
+          else {
+            var xPoint = p1.X + backDoorDistance + backDoorWidth / 2 ;
+            position = new XYZ( xPoint, y, height ) ;
+            position2 = new XYZ( xPoint, y - thickness, height ) ;
+            element.ParametersMap.get_Item( backDoorWidthParam ).Set( backDoorWidth ) ;
+          }
           break ;
         case RoomEdge.RightBackCorner :
           direction = isOut ? new Vector3d( -1, 0, 0 ) : new Vector3d( 1, 0, 0 ) ;
-          if ( rightDoorDistance == 0 ) {
-            position = new XYZ( x, y - widthDoor / 2, height ) ;
-            position2 = new XYZ( x - thickness, y - widthDoor / 2, height ) ;
+          if ( rightDoorDistance == 0 && backDoorDistance == 0) {
+            position = new XYZ( x, y - rightDoorWidth / 2, height ) ;
+            position2 = new XYZ( x - thickness, y - rightDoorWidth / 2, height ) ;
             element.ParametersMap.get_Item( rightDoorDistanceParam ).Set( thickness ) ;
-            element.ParametersMap.get_Item( rightDoorWidthParam ).Set( widthDoor ) ;
+            element.ParametersMap.get_Item( rightDoorWidthParam ).Set( rightDoorWidth ) ;
           }
-          else {
-            var yPoint = p2.Y < 0 ? p2.Y + rightDoorDistance + widthDoor / 2 : p2.Y - rightDoorDistance - widthDoor / 2 ;
+          else if(rightDoorDistance > 0){
+            var yPoint = p2.Y - rightDoorDistance - rightDoorWidth / 2 ;
             position = new XYZ( x, yPoint, height ) ;
             position2 = new XYZ( x - thickness, yPoint, height ) ;
+            element.ParametersMap.get_Item( rightDoorWidthParam ).Set( rightDoorWidth ) ;
           }
-
+          else {
+            var xPoint = p1.X + backDoorDistance + backDoorWidth / 2 ;
+            position = new XYZ( xPoint, y, height ) ;
+            position2 = new XYZ( xPoint, y - thickness, height ) ;
+            element.ParametersMap.get_Item( backDoorWidthParam ).Set( backDoorWidth ) ;
+          }
           break ;
         case RoomEdge.Other :
           direction = isOut ? new Vector3d( 1, 0, 0 ) : new Vector3d( -1, 0, 0 ) ;
           if ( leftDoorDistance == 0 ) {
-            position = new XYZ( x, y - widthDoor / 2, height ) ;
-            position2 = new XYZ( x + thickness, y - widthDoor / 2, height ) ;
+            position = new XYZ( x, y - leftDoorWidth / 2, height ) ;
+            position2 = new XYZ( x + thickness, y - leftDoorWidth / 2, height ) ;
             element.ParametersMap.get_Item( leftDoorDistanceParam ).Set( thickness ) ;
-            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( widthDoor ) ;
+            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( leftDoorWidth ) ;
           }
           else {
-            var yPoint = p1.Y < 0 ? p1.Y + leftDoorDistance + widthDoor / 2 : p1.Y - leftDoorDistance - widthDoor / 2 ;
+            var yPoint = p1.Y + leftDoorDistance + leftDoorWidth / 2 ;
             position = new XYZ( x, yPoint, height ) ;
             position2 = new XYZ( x + thickness, yPoint, height ) ;
+            element.ParametersMap.get_Item( leftDoorWidthParam ).Set( leftDoorWidth ) ;
           }
-
           break ;
       }
 

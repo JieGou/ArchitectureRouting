@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
     private const string ErrorMessageTwoOrMorePowerConnector = "Two or more power connectors are selected." ;
     private const string ErrorMessageNoSensorConnector = "No sensor connectors are selected on the power connector level." ;
     private const string ErrorMessageSensorConnector = "At least two sensor connectors on the power connector level must be selected." ;
-    private const string ErrorMessageCannotDetermineSensorConnectorArrayDirection = "Couldn't determine sensor array direction" ;
+    private const string ErrorMessageCannotDetermineSensorConnectorArrayDirection = "The power need to be placed outside the bounding rectangle of all sensors." ;
 
     public enum SensorArrayDirection
     {
