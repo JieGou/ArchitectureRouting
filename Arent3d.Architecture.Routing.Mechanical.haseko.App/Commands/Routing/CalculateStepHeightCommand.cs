@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing
         height = Math.Abs( firstBtnElevation.Z - secondBtnElevation.Z ) * 304.8 ;
       }
 
-      MessageBox.Show( $"Step Height is {Math.Round( height )} mm.\nステップの高さは{Math.Round( height )}mmです。", "Notification", MessageBoxButton.OK, MessageBoxImage.Information ) ;
+      MessageBox.Show( $"Step Height is {Math.Round( height )} mm.", "Notification", MessageBoxButton.OK, MessageBoxImage.Information ) ;
       return Result.Succeeded ;
     }
   }
