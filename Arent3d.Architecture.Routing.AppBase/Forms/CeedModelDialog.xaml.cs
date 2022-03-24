@@ -473,6 +473,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
         ceedStorable.CeedModelData = _usingCeedModel.CeedModels ;
       }
+      
+      var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! ceedStorable.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
+      ceedStorable.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
 
       try {
         using Transaction t = new( _document, "Save CeeD data" ) ;
