@@ -102,7 +102,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
             return Result.Cancelled ;
           }
 
-          var bodyDirection = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ), Transform.CreateTranslation( -XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ) ).CreateTransformed( Transform.CreateRotationAtPoint( document.ActiveView.ViewDirection, RotateAngle, firstPoint ) ) ;
+          var bodyDirection = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ), Transform.CreateTranslation( -XYZ.BasisX * lengthOfDirection ).OfPoint( firstPoint ) )
+            .CreateTransformed( Transform.CreateRotationAtPoint( document.ActiveView.ViewDirection, RotateAngle, firstPoint ) ) ;
 
           var instanceOne = document.Create.NewFamilyInstance( bodyDirection.GetEndPoint( 0 ), symbolDirection, document.ActiveView ) ;
           var axis = Line.CreateBound( bodyDirection.GetEndPoint( 0 ), Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( bodyDirection.GetEndPoint( 0 ) ) ) ;
@@ -167,7 +168,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       var boxFilter = new BoundingBoxIntersectsFilter( outlineCurve ) ;
 
       var element2Ds = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( classFilter2Ds ).ToElements() ;
-      var element3Ds = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( new LogicalAndFilter( classFilter3Ds, boxFilter ) ).ToElements().Where( x => x is FamilyInstance familyInstance && ( familyInstance.MEPModel?.ConnectorManager?.Connectors?.Size ?? 0 ) > 0 || true ) ;
+      var element3Ds = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( new LogicalAndFilter( classFilter3Ds, boxFilter ) )
+        .ToElements().Where( x => x is FamilyInstance familyInstance && ( familyInstance.MEPModel?.ConnectorManager?.Connectors?.Size ?? 0 ) > 0 || true ) ;
 
       var elevation = document.ActiveView.GenLevel.Elevation ;
       var viewDirection = document.ActiveView.ViewDirection ;
