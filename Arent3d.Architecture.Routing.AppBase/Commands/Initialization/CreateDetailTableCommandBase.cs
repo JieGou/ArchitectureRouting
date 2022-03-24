@@ -322,7 +322,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       foreach ( var detailTableRows in detailTableModelsBySignalType ) {
         Dictionary<string, List<DetailTableModel>> detailTableRowsGroupByPlumbingType = new() ;
         List<DetailTableModel> childDetailRows = new() ;
-        parentDetailRow = detailTableRows.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ;
+        parentDetailRow = detailTableRows.FirstOrDefault( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ;
+        if ( parentDetailRow == null ) continue ;
         var currentPlumbingCrossSectionalArea = 0.0 ;
         foreach ( var currentDetailTableRow in detailTableRows ) {
           if ( currentDetailTableRow.ConstructionClassification != noPlumpingConstructionClassification ) {
