@@ -112,12 +112,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( RoomPickRoutingCommand ), OnlyInitialized = true )]
           private static class RoomPickRoutingCommandButton { }
         }
-
-        [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
-        private static class SelectionRangeRouteCommandButton { }
+        [SplitButton( "arent3d.architecture.routing.routing.range", TitleKey = "Electrical.App.Commands.Routing.SelectionRangeRouteCommand" )]
+        private static class SelectionRangeRouteSplitButton
+        {
+          [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
+          private static class SelectionRangeRouteCommandButton { }
         
-        [Button( typeof( SelectionRangeRouteWithPassCommand ), OnlyInitialized = true )]
-        private static class SelectionRangeRouteWithPassCommandButton { }
+          [Button( typeof( SelectionRangeRouteWithHeightAdjustmentCommand ), OnlyInitialized = true )]
+          private static class SelectionRangeRouteWithPassCommandButton { }
+        }
 
         [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]
         private static class InsertPassPointCommandButton { }

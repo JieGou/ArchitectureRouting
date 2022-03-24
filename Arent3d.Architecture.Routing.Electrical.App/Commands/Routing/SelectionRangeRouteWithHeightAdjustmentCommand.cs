@@ -21,10 +21,10 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.SelectionRangeRouteWithPassCommand", DefaultString = "Selection Range \nRoute With Pass" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.SelectionRangeRouteWithHeightAdjustmentCommand", DefaultString = "Selection Range \nRoute With Height Adjustment" )]
   [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class SelectionRangeRouteWithPassCommand : RoutingCommandBase<SelectionRangeRouteWithPassCommand.SelectState>
+  public class SelectionRangeRouteWithHeightAdjustmentCommand : RoutingCommandBase<SelectionRangeRouteWithHeightAdjustmentCommand.SelectState>
   {
     private const string ErrorMessageNoPowerAndPassAndSensorConnector = "No power, pass and sensor connectors are selected." ;
     private const string ErrorMessageNoPowerAndPassConnector = "No power, pass connectors are selected." ;
@@ -39,7 +39,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private const string ErrorMessageCannotDetermineSensorConnectorArrayDirection = "Couldn't determine sensor array direction" ;
     private const string ConfirmMessageHeightSettingNotGood = "The height from Power to Pass need to be larger than height of Pass\nAnd height of Pass need to be larger than height from Pass to Sensors\nDo you still want to connect with these height settings?" ;
     private const string ConfirmCaptionHeightSettingNotGood = "Height Settings Are Not Good Confirmation" ;
-    private const string PowerToPassName = "PowerToPass" ;
 
     protected override OperationResult<SelectState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
@@ -67,7 +66,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return new OperationResult<SelectState>( new SelectState( powerConnector!, passConnector!, sensorConnectors, sensorDirection, property, classificationInfo, pipeSpec ) ) ;
     }
 
-    private static bool IsGoodHeightSettings( RouteWithPassPropertyDialog property, FamilyInstance passConnector )
+    private static bool IsGoodHeightSettings( RangeRangeRouteWithHeightAdjustmentPropertyDialog property, FamilyInstance passConnector )
     {
       var heightFromPowerToPass = property.GetPowerToPassFromFixedHeight() ;
       var heightFromPassToSensors = property.GetFromFixedHeight() ;
@@ -93,9 +92,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return GetMEPSystemClassificationInfoFromSystemType() ;
     }
 
-    public record SelectState( FamilyInstance PowerConnector, FamilyInstance PassConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteCommandBase.SensorArrayDirection SensorDirection, IRouteWithPassPropertyDialog PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
+    public record SelectState( FamilyInstance PowerConnector, FamilyInstance PassConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteCommandBase.SensorArrayDirection SensorDirection, IRangeRouteWithHeightAdjustmentProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
 
-    private RouteWithPassPropertyDialog? ShowPropertyDialog( Document document, Element powerElement, Element passElement, Element sensorElement )
+    private RangeRangeRouteWithHeightAdjustmentPropertyDialog? ShowPropertyDialog( Document document, Element powerElement, Element passElement, Element sensorElement )
     {
       var fromLevelId = powerElement.LevelId ;
       var toLevelId = sensorElement.LevelId ;
@@ -113,20 +112,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
-    private static RouteWithPassPropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
+    private static RangeRangeRouteWithHeightAdjustmentPropertyDialog ShowDialog( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, initValues.ClassificationInfo, fromLevelId, toLevelId ) ;
-      var sv = new RouteWithPassPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ) ;
+      var sv = new RangeRangeRouteWithHeightAdjustmentPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, initValues.ClassificationInfo, initValues.SystemType, initValues.CurveType, routeChoiceSpec.StandardTypes?.FirstOrDefault(), initValues.Diameter ) ) ;
 
       sv.ShowDialog() ;
 
       return sv ;
     }
 
-    private static RouteWithPassPropertyDialog ShowDialog( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
+    private static RangeRangeRouteWithHeightAdjustmentPropertyDialog ShowDialog( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, addInType, fromLevelId, toLevelId ) ;
-      var sv = new RouteWithPassPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ) ) ;
+      var sv = new RangeRangeRouteWithHeightAdjustmentPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ) ) ;
       sv.ShowDialog() ;
 
       return sv ;
@@ -224,7 +223,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     protected override string GetTransactionNameKey()
     {
-      return "TransactionName.Commands.Routing.SelectionRangeRouteWithPassCommand" ;
+      return "TransactionName.Commands.Routing.SelectionRangeRouteWithHeightAdjustmentCommand" ;
     }
 
     private static int GetRouteNameIndex( RouteCache routes, string? targetName )

@@ -15,39 +15,39 @@ using LengthConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverte
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 {
-  public partial class RangeRouteWithPassEditControl : UserControl
+  public partial class RangeRouteWithHeightAdjustmentEditControl : UserControl
   {
-    public static readonly DependencyProperty UseFromPowerToPassFixedHeightProperty = DependencyProperty.Register( "UseFromPowerToPassFixedHeight", typeof( bool? ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( (bool?) false ) ) ;
-    public static readonly DependencyProperty FromPowerToPassFixedHeightProperty = DependencyProperty.Register( "FromPowerToPassFixedHeight", typeof( double? ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0.0, FromPowerToPassFixedHeight_Changed ) ) ;
-    public static readonly DependencyProperty FromPowerToPassLocationTypeIndexProperty = DependencyProperty.Register( "FromPowerToPassLocationTypeIndex", typeof( int ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0, FromPowerToPassLocationTypeIndex_PropertyChanged ) ) ;
-    public static readonly DependencyProperty SystemTypeEditableProperty = DependencyProperty.Register( "SystemTypeEditable", typeof( bool ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty ShaftEditableProperty = DependencyProperty.Register( "ShaftEditable", typeof( bool ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty CurveTypeEditableProperty = DependencyProperty.Register( "CurveTypeEditable", typeof( bool ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty UseSystemTypeProperty = DependencyProperty.Register( "UseSystemType", typeof( bool ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty UseShaftProperty = DependencyProperty.Register( "UseShaft", typeof( bool ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty UseCurveTypeProperty = DependencyProperty.Register( "UseCurveType", typeof( bool ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( true ) ) ;
-    public static readonly DependencyProperty DiameterIndexProperty = DependencyProperty.Register( "DiameterIndex", typeof( int ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( -1 ) ) ;
-    public static readonly DependencyProperty SystemTypeIndexProperty = DependencyProperty.Register( "SystemTypeIndex", typeof( int ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( -1 ) ) ;
-    public static readonly DependencyProperty ShaftIndexProperty = DependencyProperty.Register( "ShaftIndex", typeof( int ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( -1 ) ) ;
-    public static readonly DependencyProperty CurveTypeIndexProperty = DependencyProperty.Register( "CurveTypeIndex", typeof( int ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( -1 ) ) ;
-    public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
-    public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( (bool?) true ) ) ;
-    public static readonly DependencyProperty UseFromPassToSensorsFixedHeightProperty = DependencyProperty.Register( "UsePassFixedHeight", typeof( bool? ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( (bool?) false ) ) ;
-    public static readonly DependencyProperty FromPassToSensorsFixedHeightProperty = DependencyProperty.Register( "FromPassToSensorsFixedHeight", typeof( double? ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0.0, FromPassToSensorsFixedHeight_Changed ) ) ;
-    public static readonly DependencyProperty FromPassToSensorsLocationTypeIndexProperty = DependencyProperty.Register( "FromPassToSensorsLocationTypeIndex", typeof( int ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0, FromPassToSensorsLocationTypeIndex_PropertyChanged ) ) ;
-    public static readonly DependencyProperty AvoidTypeIndexProperty = DependencyProperty.Register( "AvoidTypeIndex", typeof( int ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0 ) ) ;
-    private static readonly DependencyPropertyKey CanApplyPropertyKey = DependencyProperty.RegisterReadOnly( "CanApply", typeof( bool ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( false ) ) ;
-    private static readonly DependencyPropertyKey IsChangedPropertyKey = DependencyProperty.RegisterReadOnly( "IsChanged", typeof( bool ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( false ) ) ;
-    public static readonly DependencyProperty AllowIndeterminateProperty = DependencyProperty.Register( "AllowIndeterminate", typeof( bool ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( default( bool ) ) ) ;
-    public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
-    private static readonly DependencyPropertyKey FromMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsFloorLevel", typeof( double ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsFloorLevel", typeof( double ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsCeilingLevel", typeof( double ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsCeilingLevel", typeof( double ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsFloorLevel", typeof( double ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0.0 ) ) ;
-    private static readonly DependencyPropertyKey FromDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsCeilingLevel", typeof( double ), typeof( RangeRouteWithPassEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    public static readonly DependencyProperty UseFromPowerToPassFixedHeightProperty = DependencyProperty.Register( "UseFromPowerToPassFixedHeight", typeof( bool? ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( (bool?) false ) ) ;
+    public static readonly DependencyProperty FromPowerToPassFixedHeightProperty = DependencyProperty.Register( "FromPowerToPassFixedHeight", typeof( double? ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0.0, FromPowerToPassFixedHeight_Changed ) ) ;
+    public static readonly DependencyProperty FromPowerToPassLocationTypeIndexProperty = DependencyProperty.Register( "FromPowerToPassLocationTypeIndex", typeof( int ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0, FromPowerToPassLocationTypeIndex_PropertyChanged ) ) ;
+    public static readonly DependencyProperty SystemTypeEditableProperty = DependencyProperty.Register( "SystemTypeEditable", typeof( bool ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty ShaftEditableProperty = DependencyProperty.Register( "ShaftEditable", typeof( bool ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty CurveTypeEditableProperty = DependencyProperty.Register( "CurveTypeEditable", typeof( bool ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty UseSystemTypeProperty = DependencyProperty.Register( "UseSystemType", typeof( bool ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty UseShaftProperty = DependencyProperty.Register( "UseShaft", typeof( bool ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty UseCurveTypeProperty = DependencyProperty.Register( "UseCurveType", typeof( bool ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( true ) ) ;
+    public static readonly DependencyProperty DiameterIndexProperty = DependencyProperty.Register( "DiameterIndex", typeof( int ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty SystemTypeIndexProperty = DependencyProperty.Register( "SystemTypeIndex", typeof( int ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty ShaftIndexProperty = DependencyProperty.Register( "ShaftIndex", typeof( int ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty CurveTypeIndexProperty = DependencyProperty.Register( "CurveTypeIndex", typeof( int ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( -1 ) ) ;
+    public static readonly DependencyProperty CurveTypeLabelProperty = DependencyProperty.Register( "CurveTypeLabel", typeof( string ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( DefaultCurveTypeLabel ) ) ;
+    public static readonly DependencyProperty IsRouteOnPipeSpaceProperty = DependencyProperty.Register( "IsRouteOnPipeSpace", typeof( bool? ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( (bool?) true ) ) ;
+    public static readonly DependencyProperty UseFromPassToSensorsFixedHeightProperty = DependencyProperty.Register( "UsePassFixedHeight", typeof( bool? ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( (bool?) false ) ) ;
+    public static readonly DependencyProperty FromPassToSensorsFixedHeightProperty = DependencyProperty.Register( "FromPassToSensorsFixedHeight", typeof( double? ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0.0, FromPassToSensorsFixedHeight_Changed ) ) ;
+    public static readonly DependencyProperty FromPassToSensorsLocationTypeIndexProperty = DependencyProperty.Register( "FromPassToSensorsLocationTypeIndex", typeof( int ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0, FromPassToSensorsLocationTypeIndex_PropertyChanged ) ) ;
+    public static readonly DependencyProperty AvoidTypeIndexProperty = DependencyProperty.Register( "AvoidTypeIndex", typeof( int ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0 ) ) ;
+    private static readonly DependencyPropertyKey CanApplyPropertyKey = DependencyProperty.RegisterReadOnly( "CanApply", typeof( bool ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( false ) ) ;
+    private static readonly DependencyPropertyKey IsChangedPropertyKey = DependencyProperty.RegisterReadOnly( "IsChanged", typeof( bool ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( false ) ) ;
+    public static readonly DependencyProperty AllowIndeterminateProperty = DependencyProperty.Register( "AllowIndeterminate", typeof( bool ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( default( bool ) ) ) ;
+    public static readonly DependencyProperty DisplayUnitSystemProperty = DependencyProperty.Register( "DisplayUnitSystem", typeof( DisplayUnit ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( DisplayUnit.IMPERIAL ) ) ;
+    private static readonly DependencyPropertyKey FromMinimumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsFloorLevel", typeof( double ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMaximumHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsFloorLevel", typeof( double ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMinimumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMinimumHeightAsCeilingLevel", typeof( double ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromMaximumHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromMaximumHeightAsCeilingLevel", typeof( double ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromDefaultHeightAsFloorLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsFloorLevel", typeof( double ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0.0 ) ) ;
+    private static readonly DependencyPropertyKey FromDefaultHeightAsCeilingLevelPropertyKey = DependencyProperty.RegisterReadOnly( "FromDefaultHeightAsCeilingLevel", typeof( double ), typeof( RangeRouteWithHeightAdjustmentEditControl ), new PropertyMetadata( 0.0 ) ) ;
 
-    public RangeRouteWithPassEditControl()
+    public RangeRouteWithHeightAdjustmentEditControl()
     {
       InitializeComponent() ;
     }
@@ -288,7 +288,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     private static void FromPassToSensorsLocationTypeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
-      ( d as RangeRouteWithPassEditControl )?.OnFromPassToSensorsLocationTypeChanged() ;
+      ( d as RangeRouteWithHeightAdjustmentEditControl )?.OnFromPassToSensorsLocationTypeChanged() ;
     }
 
     private void OnFromPassToSensorsLocationTypeChanged()
@@ -331,7 +331,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     public IReadOnlyDictionary<AvoidType, string> AvoidTypes { get ; } = new Dictionary<AvoidType, string>
     {
-      [ Routing.AvoidType.Whichever ] = "Dialog.Forms.RangeRouteWithPassEditControl.ProcessConstraints.None".GetAppStringByKeyOrDefault( "Whichever" ), [ Routing.AvoidType.NoAvoid ] = "Dialog.Forms.RangeRouteWithPassEditControl.ProcessConstraints.NoPocket".GetAppStringByKeyOrDefault( "Don't avoid From-To" ), [ Routing.AvoidType.AvoidAbove ] = "Dialog.Forms.RangeRouteWithPassEditControl.ProcessConstraints.NoDrainPocket".GetAppStringByKeyOrDefault( "Avoid on From-To" ), [ Routing.AvoidType.AvoidBelow ] = "Dialog.Forms.RangeRouteWithPassEditControl.ProcessConstraints.NoVentPocket".GetAppStringByKeyOrDefault( "Avoid below From-To" ),
+      [ Routing.AvoidType.Whichever ] = "Dialog.Forms.RangeRouteWithHeightAdjustmentEditControl.ProcessConstraints.None".GetAppStringByKeyOrDefault( "Whichever" ), [ Routing.AvoidType.NoAvoid ] = "Dialog.Forms.RangeRouteWithHeightAdjustmentEditControl.ProcessConstraints.NoPocket".GetAppStringByKeyOrDefault( "Don't avoid From-To" ), [ Routing.AvoidType.AvoidAbove ] = "Dialog.Forms.RangeRouteWithHeightAdjustmentEditControl.ProcessConstraints.NoDrainPocket".GetAppStringByKeyOrDefault( "Avoid on From-To" ), [ Routing.AvoidType.AvoidBelow ] = "Dialog.Forms.RangeRouteWithHeightAdjustmentEditControl.ProcessConstraints.NoVentPocket".GetAppStringByKeyOrDefault( "Avoid below From-To" ),
     } ;
 
     //LocationType
@@ -581,15 +581,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     private static void FromPassToSensorsFixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
-      if ( d is not RangeRouteWithPassEditControl rangeRouteWithPassEditControl ) return ;
+      if ( d is not RangeRouteWithHeightAdjustmentEditControl rangeRouteWithHeightAdjustmentEditControl ) return ;
 
       if ( e.NewValue is not double newValue ) {
-        rangeRouteWithPassEditControl.FromPassToSensorsFixedHeightNumericUpDown.CanHaveNull = true ;
-        rangeRouteWithPassEditControl.FromPassToSensorsFixedHeightNumericUpDown.HasValidValue = false ;
+        rangeRouteWithHeightAdjustmentEditControl.FromPassToSensorsFixedHeightNumericUpDown.CanHaveNull = true ;
+        rangeRouteWithHeightAdjustmentEditControl.FromPassToSensorsFixedHeightNumericUpDown.HasValidValue = false ;
       }
       else {
-        rangeRouteWithPassEditControl.FromPassToSensorsFixedHeightNumericUpDown.CanHaveNull = false ;
-        rangeRouteWithPassEditControl.FromPassToSensorsFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( rangeRouteWithPassEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+        rangeRouteWithHeightAdjustmentEditControl.FromPassToSensorsFixedHeightNumericUpDown.CanHaveNull = false ;
+        rangeRouteWithHeightAdjustmentEditControl.FromPassToSensorsFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( rangeRouteWithHeightAdjustmentEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
       }
     }
 
@@ -615,7 +615,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     private static void FromPowerToPassLocationTypeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
-      ( d as RangeRouteWithPassEditControl )?.OnFromPowerToPassLocationTypeChanged() ;
+      ( d as RangeRouteWithHeightAdjustmentEditControl )?.OnFromPowerToPassLocationTypeChanged() ;
     }
 
     private bool? UseFromPowerToPassFixedHeightOrg { get ; set ; }
@@ -676,15 +676,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     private static void FromPowerToPassFixedHeight_Changed( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
-      if ( d is not RangeRouteWithPassEditControl rangeRouteWithPassEditControl ) return ;
+      if ( d is not RangeRouteWithHeightAdjustmentEditControl rangeRouteWithHeightAdjustmentEditControl ) return ;
 
       if ( e.NewValue is not double newValue ) {
-        rangeRouteWithPassEditControl.FromPowerToPassFixedHeightNumericUpDown.CanHaveNull = true ;
-        rangeRouteWithPassEditControl.FromPowerToPassFixedHeightNumericUpDown.HasValidValue = false ;
+        rangeRouteWithHeightAdjustmentEditControl.FromPowerToPassFixedHeightNumericUpDown.CanHaveNull = true ;
+        rangeRouteWithHeightAdjustmentEditControl.FromPowerToPassFixedHeightNumericUpDown.HasValidValue = false ;
       }
       else {
-        rangeRouteWithPassEditControl.FromPowerToPassFixedHeightNumericUpDown.CanHaveNull = false ;
-        rangeRouteWithPassEditControl.FromPowerToPassFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( rangeRouteWithPassEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
+        rangeRouteWithHeightAdjustmentEditControl.FromPowerToPassFixedHeightNumericUpDown.CanHaveNull = false ;
+        rangeRouteWithHeightAdjustmentEditControl.FromPowerToPassFixedHeightNumericUpDown.Value = Math.Round( GetLengthConverter( rangeRouteWithHeightAdjustmentEditControl.DisplayUnitSystem ).ConvertUnit( newValue ), 5, MidpointRounding.AwayFromZero ) ;
       }
     }
   }

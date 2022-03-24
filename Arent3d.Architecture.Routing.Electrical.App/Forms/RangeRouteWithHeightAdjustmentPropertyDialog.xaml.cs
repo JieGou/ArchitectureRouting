@@ -5,7 +5,7 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 {
-  public interface IRouteWithPassPropertyDialog : IRouteProperty
+  public interface IRangeRouteWithHeightAdjustmentProperty : IRouteProperty
   {
     FixedHeight? GetPowerToPassFromFixedHeight() ;
   }
@@ -13,14 +13,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
   /// <summary>
   /// SetProperty.xaml の相互作用ロジック
   /// </summary>
-  public partial class RouteWithPassPropertyDialog : IRouteWithPassPropertyDialog
+  public partial class RangeRangeRouteWithHeightAdjustmentPropertyDialog : IRangeRouteWithHeightAdjustmentProperty
   {
-    public RouteWithPassPropertyDialog()
+    public RangeRangeRouteWithHeightAdjustmentPropertyDialog()
     {
       InitializeComponent() ;
     }
 
-    public RouteWithPassPropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
+    public RangeRangeRouteWithHeightAdjustmentPropertyDialog( Document document, RoutePropertyTypeList propertyTypeList, RouteProperties properties )
     {
       InitializeComponent() ;
       WindowStartupLocation = WindowStartupLocation.CenterScreen ;
