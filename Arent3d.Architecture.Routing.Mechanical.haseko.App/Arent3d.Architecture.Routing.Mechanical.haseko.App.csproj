@@ -87,6 +87,7 @@
         <Resource Include="resources\ReplaceFromTo.png" />
         <Resource Include="resources\RerouteAll.png" />
         <Resource Include="resources\structure_envelope.png" />
+        <Resource Include="resources\step_height.png" />
     </ItemGroup>
 
     <ItemGroup>

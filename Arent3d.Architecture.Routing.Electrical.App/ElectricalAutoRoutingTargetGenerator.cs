@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       if ( 1 != subRoutes.Count ) throw new NotSupportedException() ; // subRoutes.Count must be 1 on electrical routing
 
       var subRoute = subRoutes.First() ;
-      if ( false == string.IsNullOrEmpty( subRoute.ShaftElementUniqueId ) || Document.GetElementById<Opening>( subRoute.ShaftElementUniqueId! ) is not {} opening ) {
+      if ( true == string.IsNullOrEmpty( subRoute.ShaftElementUniqueId ) || Document.GetElementById<Opening>( subRoute.ShaftElementUniqueId! ) is not {} opening ) {
         return GenerateNormalAutoRoutingTarget( subRoutes, priorities, routeConditionDictionary ) ;
       }
 
