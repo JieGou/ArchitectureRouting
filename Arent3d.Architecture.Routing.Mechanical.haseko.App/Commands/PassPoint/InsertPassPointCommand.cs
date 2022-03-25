@@ -5,10 +5,10 @@ using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.PassPoint
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.PassPoint
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.PassPoint.InsertPassPointCommand", DefaultString = "Insert\nPass Point" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.PassPoint.InsertPassPointCommand", DefaultString = "Insert\nPass Point" )]
   [Image( "resources/InsertPassPoint.png", ImageType = ImageType.Large )]
   public class InsertPassPointCommand : InsertPassPointCommandBase
   {

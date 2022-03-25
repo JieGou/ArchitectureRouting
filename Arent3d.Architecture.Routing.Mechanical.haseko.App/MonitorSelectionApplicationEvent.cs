@@ -4,7 +4,7 @@ using Autodesk.Revit.DB.Events ;
 using Autodesk.Windows ;
 using RibbonTab = Autodesk.Windows.RibbonTab ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App
 {
   internal static class MonitorSelectionApplicationEvent
   {
@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
       RibbonTab? selectionTab = null ;
       RibbonPanel? selectionPanel = null ;
       RibbonItem? selectionButton = null ;
-      string? targetTabName = "Mechanical.haseko.App.Routing.TabName".GetAppStringByKey() ;
+      string? targetTabName = "Mechanical.Haseko.App.Routing.TabName".GetAppStringByKey() ;
 
 
       selectionTab = UIHelper.GetRibbonTabFromName( targetTabName ) ;
@@ -22,10 +22,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
       }
       else {
         foreach ( var panel in selectionTab.Panels ) {
-          if ( panel.Source.Title == "Mechanical.haseko.App.Panels.Routing.Monitor".GetAppStringByKeyOrDefault("Monitor Selection") ) {
+          if ( panel.Source.Title == "Mechanical.Haseko.App.Panels.Routing.Monitor".GetAppStringByKeyOrDefault("Monitor Selection") ) {
             selectionPanel = panel ;
             foreach ( var item in panel.Source.Items ) {
-              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.monitor%Arent3d.Architecture.Routing.Mechanical.haseko.App.commands.monitor_selection_command" ) {
+              if ( item.Id == "CustomCtrl_%CustomCtrl_%" + targetTabName + "%arent3d.architecture.routing.monitor%Arent3d.Architecture.Routing.Mechanical.Haseko.App.commands.monitor_selection_command") {
                 selectionButton = item ;
                 break ;
               }

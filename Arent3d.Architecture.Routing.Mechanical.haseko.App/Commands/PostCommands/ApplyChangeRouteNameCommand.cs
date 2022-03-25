@@ -3,7 +3,7 @@ using Arent3d.Revit;
 using Autodesk.Revit.Attributes ;
 using Arent3d.Architecture.Routing.AppBase.Commands.PostCommands ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.PostCommands
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.PostCommands
 {
     [RevitAddin( Guid )]
     [DisplayName( "Change RouteName of Mechanical Route" )]
