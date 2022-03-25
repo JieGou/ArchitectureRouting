@@ -50,7 +50,11 @@ namespace Arent3d.Architecture.Routing
 
     [ParameterGuid( "9e825887-84fe-474d-ac2e-c683f7376647" ), NameOnRevit( "Representative SubRoute Index" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.RoutingElements ) )]
-    RepresentativeSubRouteIndex
+    RepresentativeSubRouteIndex,
+    
+    [ParameterGuid( "1957C74A-9BDA-4850-959A-796DF6BF43A9" ), NameOnRevit( "Obstacle Name" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.CommonRoutingElement ) )]
+    ObstacleName,
   }
 
   public enum PassPointParameter
@@ -195,7 +199,7 @@ namespace Arent3d.Architecture.Routing
       document.UnloadAllParametersFromFile<RoutingFamilyLinkedParameter>( AssetManager.GetRoutingElementSharedParameterPath() ) ;
       document.UnloadAllParametersFromFile<BranchNumberParameter>( AssetManager.GetMechanicalRoutingElementSharedParameterPath() ) ;
       document.UnloadAllParametersFromFile<AHUNumberParameter>( AssetManager.GetMechanicalRoutingElementSharedParameterPath() ) ;
-      document.UnloadAllParametersFromFile<AHUNumberParameter>( AssetManager.GetElectricalRoutingElementSharedParameterPath() ) ;
+      document.UnloadAllParametersFromFile<ElectricalRoutingElementParameter>( AssetManager.GetElectricalRoutingElementSharedParameterPath() ) ;
     }
   }
 }

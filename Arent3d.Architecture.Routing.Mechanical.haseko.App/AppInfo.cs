@@ -1,4 +1,4 @@
-﻿namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
+﻿namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App
 {
   public class AppInfo
   {

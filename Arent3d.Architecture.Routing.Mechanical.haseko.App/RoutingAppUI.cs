@@ -1,12 +1,12 @@
 using System ;
-using Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing ;
+using Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Events ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App
 {
   /// <summary>
   /// Registers UI components of auto routing application.
