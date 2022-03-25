@@ -267,28 +267,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       const string successfullyMess = "Replaced multiple floor plan symbols successfully." ;
       const string failedMess = "Replaced multiple floor plan symbols failed." ;
-      string infoPath = string.Empty ;
+      var infoPath = string.Empty ;
       List<string> connectorFamilyPaths = new() ;
-      MessageBox.Show( "Please select sample model.zip.", "Message" ) ;
-      OpenFileDialog openFileDialog = new() { Filter = "Model files (*.zip)|*.zip", Multiselect = false } ;
-      if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
-        string zipPath = openFileDialog.FileName ;
-        var extractDirectory = Path.GetDirectoryName( zipPath ) ?? string.Empty ;
-        var extractFolder = Path.GetFileName( zipPath ).Replace( ".zip", "" ) + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
-        var extractPath = Path.Combine( extractDirectory, extractFolder ) ;
-        if ( ! Path.HasExtension( extractPath ) ) {
-          ZipFile.ExtractToDirectory( zipPath, extractPath ) ;
+      MessageBox.Show( "Please select sample model folder.", "Message" ) ;
+      FolderBrowserDialog folderBrowserDialog = new() ;
+      if ( folderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+        string folderPath = folderBrowserDialog.SelectedPath ;
+        infoPath = Directory.GetFiles( folderPath ).FirstOrDefault( f => Path.GetExtension( f ) is ".xls" or ".xlsx" ) ;
+        if ( string.IsNullOrEmpty( infoPath ) ) {
+          MessageBox.Show( "No info file in selected folder.", "Error" ) ;
+          return ;
         }
 
-        infoPath = Directory.GetFiles( extractPath ).First( f => Path.GetExtension( f ) is ".xls" or ".xlsx" ) ;
-        DirectoryInfo dirInfo = new( extractPath ) ;
-        var familyFolder = dirInfo.GetDirectories().First() ;
+        DirectoryInfo dirInfo = new( folderPath ) ;
+        var familyFolder = dirInfo.GetDirectories().FirstOrDefault() ;
         if ( familyFolder != null ) {
           connectorFamilyPaths = Directory.GetFiles( familyFolder.FullName ).ToList() ;
         }
+        else {
+          MessageBox.Show( "No family folder in selected folder.", "Error" ) ;
+          return ;
+        }
       }
-      
-      if ( string.IsNullOrEmpty( infoPath ) ) return ;
+
       if ( connectorFamilyPaths.Any() ) {
         using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
         progress.Message = "Processing......." ;
@@ -296,7 +297,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
         using ( var progressData = progress.Reserve( 0.3 ) ) {
           connectorFamilyFiles = CeedViewModel.LoadConnectorFamily( _document, connectorFamilyPaths ) ;
-          connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;
+          connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath! ) ;
           progressData.ThrowIfCanceled() ;
         }
 
