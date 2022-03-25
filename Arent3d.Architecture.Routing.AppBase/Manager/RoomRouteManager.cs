@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -14,13 +15,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
   {
     public static Reference? PickRoom( UIDocument uiDocument )
     {
-      RoomPickFilter roomPickFilter = new() ;
+      var familySymbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.Room ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      RoomPickFilter roomPickFilter = new(familySymbol.Family.Name) ;
       Reference? element = null ;
-      FamilyInstance? room = null ;
-      while ( room == null ) {
+      while ( element == null ) {
         MessageBox.Show( "Please select door position", "Message" ) ;
         element = uiDocument.Selection.PickObject( ObjectType.Element, roomPickFilter, "Select room." ) ;
-        room = uiDocument.Document.GetAllFamilyInstances( ElectricalRoutingFamilyType.Room ).FirstOrDefault( r => r.Id == element.ElementId ) ;
       }
 
       return element ;
@@ -321,19 +321,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Manager
            && Math.Abs( passPoint.Y - p1.Y ) < Math.Abs( passPoint.X - p2.X ) )
         return RoomEdge.Back ;
       return RoomEdge.Front ;
-    }
-
-    private class RoomPickFilter : ISelectionFilter
-    {
-      public bool AllowElement( Element e )
-      {
-        return ( e.GetBuiltInCategory() == BuiltInCategory.OST_GenericModel ) ;
-      }
-
-      public bool AllowReference( Reference r, XYZ p )
-      {
-        return false ;
-      }
     }
   }
 }
