@@ -6,10 +6,10 @@ using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.ReplaceFromToCommand", DefaultString = "Replace\nFrom-To" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.Routing.ReplaceFromToCommand", DefaultString = "Replace\nFrom-To" )]
   [Image( "resources/ReplaceFromTo.png" )]
   public class ReplaceFromToCommand : ReplaceFromToCommandBase
   {

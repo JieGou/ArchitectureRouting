@@ -6,7 +6,7 @@ using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App
 {
   public class MechanicalRoutingExecutor : RoutingExecutor
   {
