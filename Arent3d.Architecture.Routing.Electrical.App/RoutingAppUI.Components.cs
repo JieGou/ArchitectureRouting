@@ -53,6 +53,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( SplitScheduleCommand ), OnlyInitialized = true )]
           private static class SplitScheduleCommandButton { }
+          
+          [Button( typeof( ShowFallMarkCommand ), OnlyInitialized = true )]
+          private static class ShowFallMarkCommandButton { }
+          
+          [Button( typeof( ShowOpenEndPointMarkCommand ), OnlyInitialized = true )]
+          private static class ShowOpenEndPointMarkCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
