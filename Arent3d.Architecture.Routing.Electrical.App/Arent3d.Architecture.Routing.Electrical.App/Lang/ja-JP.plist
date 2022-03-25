@@ -379,6 +379,8 @@
         <!-- Schedule Names -->
         <key>Revit.Electrical.Schedule.Name</key>
         <string>電気シンボル表</string>
+        <key>Revit.Detail.Table.Name</key>
+        <string>明細表</string>
     </dict>
 </plist>
 
