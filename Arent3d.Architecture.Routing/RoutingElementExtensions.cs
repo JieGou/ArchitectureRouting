@@ -407,6 +407,15 @@ namespace Arent3d.Architecture.Routing
       if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.HeaderRowCount, out int headerRowCount ) ) return -1 ;
       return headerRowCount ;
     }
+    public static void SetOriginalTableName( this ViewSchedule viewSchedule, string originalTableName )
+    {
+      viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.OriginalTableName, originalTableName ) ;
+    }
+    public static string GetOriginalTableName( this ViewSchedule viewSchedule)
+    {
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.OriginalTableName, out string? originalTableName ) ) return string.Empty ;
+      return originalTableName?? string.Empty ;
+    }
     public static Dictionary<(int row, int column), ElementId> GetImageMap(this ViewSchedule viewSchedule)
     {
       if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ImageCellMap, out string? imageMap ) || string.IsNullOrEmpty( imageMap ) ) return new Dictionary<(int row, int column), ElementId>() ;

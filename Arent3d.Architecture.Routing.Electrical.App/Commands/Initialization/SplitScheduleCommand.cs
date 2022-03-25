@@ -1,5 +1,4 @@
 ﻿using System ;
-using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
@@ -7,10 +6,8 @@ using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using ImageType = Autodesk.Revit.DB.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
@@ -78,7 +75,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         if ( document.GetElement( schedule.Duplicate( ViewDuplicateOption.Duplicate ) ) is not ViewSchedule cloneSchedule )
           return Result.Failed ;
-
+        var originalName = schedule.Name ;
         var (newName, oldName) = GetNewScheduleName( document, schedule.Name ) ;
         cloneSchedule.Name = newName ;
         schedule.Name = oldName ;
@@ -100,7 +97,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id,
           Transform.CreateTranslation(XYZ.BasisX * 10.0.MillimetersToRevitUnits()).OfPoint(boundingBoxXYZ.Max) ) ;
-        SetSplitInformation( schedule, cloneSchedule ) ;
+        SetSplitInformation( schedule, cloneSchedule, originalName ) ;
         transaction.Commit() ;
         
         return Result.Succeeded ;
@@ -115,8 +112,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
-    private void SetSplitInformation( ViewSchedule schedule, ViewSchedule cloneSchedule )
+    private static void SetSplitInformation( ViewSchedule schedule, ViewSchedule cloneSchedule, string originalName )
     {
+      schedule.SetOriginalTableName( originalName );
       schedule.SetSplitStatus( true );
       schedule.SetSplitIndex( 0 );
       schedule.SetSplitGroupId( schedule.Id );

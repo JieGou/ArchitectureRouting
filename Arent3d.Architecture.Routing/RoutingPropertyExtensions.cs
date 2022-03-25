@@ -132,6 +132,10 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "0897a3f8-b677-45e2-a1e8-9edb995d0d85" ), NameOnRevit( "Image Cell Map" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     ImageCellMap,
+    
+    [ParameterGuid( "c8cef9b9-ea78-4048-8a89-d0792efb0f8c" ), NameOnRevit( "Original Table Name" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
+    OriginalTableName,
   }
 
   public enum BranchNumberParameter
