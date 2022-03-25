@@ -170,6 +170,9 @@
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>表分割</string>
 
+        <key>Electrical.App.Commands.Initialization.MergeSchedulesCommand</key>
+        <string>表結合</string>
+
         <key>Electrical.App.Commands.Routing.CreateRoomCommand</key>
         <string>部屋作成</string>
 
