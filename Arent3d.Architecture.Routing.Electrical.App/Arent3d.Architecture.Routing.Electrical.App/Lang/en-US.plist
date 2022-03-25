@@ -388,5 +388,7 @@
         <!-- Schedule Names -->
         <key>Revit.Electrical.Schedule.Name</key>
         <string>Electrical Symbol Table</string>
+        <key>Revit.Detail.Table.Name</key>
+        <string>Detail Table</string>
     </dict>
 </plist>
