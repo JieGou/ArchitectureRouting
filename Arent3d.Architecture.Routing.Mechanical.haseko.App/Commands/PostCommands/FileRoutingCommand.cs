@@ -4,7 +4,7 @@ using Arent3d.Revit ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.PostCommands
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.PostCommands
 {
   [RevitAddin( Guid )]
   [Transaction( TransactionMode.Manual )]

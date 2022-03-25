@@ -22,6 +22,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
+      const string switch2DSymbol = "2Dシンボル切り替え" ;
+      const string symbolMagnification = "シンボル倍率" ;
+      const double defaultSymbolMagnification = 100.0 ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
 
       var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
@@ -30,6 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( ! ( dlgCeedModel.DialogResult ?? false ) ) return Result.Cancelled ;
       ICollection<ElementId> groupIds = new List<ElementId>() ;
       if ( string.IsNullOrEmpty( dlgCeedModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
+      Element? element = null ;
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
         var uiDoc = commandData.Application.ActiveUIDocument ;
@@ -37,10 +41,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        var element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeedModel.SelectedFloorPlanType ) ;
+        element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeedModel.SelectedFloorPlanType ) ;
         var ceedCode = dlgCeedModel.SelectedCeedCode + "-" + dlgCeedModel.SelectedDeviceSymbol + "-" + dlgCeedModel.SelectedModelNumber ;
         if ( element is FamilyInstance familyInstance ) {
-          element.SetProperty(ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
+          element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
@@ -60,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-        var txtPosition = new XYZ( originX - 2, originY + 3, heightOfConnector ) ;
+        var txtPosition = new XYZ( originX - 2, originY + 4, heightOfConnector ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeedModel.SelectedDeviceSymbol, opts ) ;
 
         // create group of selected element and new text note
@@ -68,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         groupIds.Add( textNote.Id ) ;
         if ( ! string.IsNullOrEmpty( dlgCeedModel.SelectedCondition ) ) {
           if ( dlgCeedModel.SelectedCondition.Length > 6 ) noteWidth += ( dlgCeedModel.SelectedCondition.Length - 6 ) * 0.007 ;
-          var txtConditionPosition = new XYZ( originX - 2, originY + 1.5, heightOfConnector ) ;
+          var txtConditionPosition = new XYZ( originX - 2, originY + 2.5, heightOfConnector ) ;
           var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeedModel.SelectedCondition, opts ) ;
 
           var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
@@ -89,8 +93,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       } ) ;
 
       if ( ! groupIds.Any() ) return result ;
-      using Transaction t = new Transaction( doc, "Create connector group." ) ;
+      using Transaction t = new ( doc, "Create connector group." ) ;
       t.Start() ;
+      if ( element != null ) {
+        var isHasParameterSwitch2DSymbol = element.HasParameter( switch2DSymbol ) ;
+        if ( isHasParameterSwitch2DSymbol ) element.SetProperty( switch2DSymbol, true ) ;
+        var isHasParameterSymbolMagnification = element.HasParameter( symbolMagnification ) ;
+        if ( isHasParameterSymbolMagnification ) element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
+      }
       doc.Create.NewGroup( groupIds ) ;
       t.Commit() ;
 
