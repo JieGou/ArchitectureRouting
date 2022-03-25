@@ -368,7 +368,7 @@ namespace Arent3d.Architecture.Routing
     {
       if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ImageCellMap, out string? imageMap ) ) return ;
       imageMap ??= string.Empty ;
-      imageMap += imageMap == string.Empty?imageMap:"|"+ $"{row},{column},{imageId.IntegerValue}" ;
+      imageMap += (imageMap == string.Empty?imageMap:"|")+ $"{row},{column},{imageId.IntegerValue}" ;
       viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.ImageCellMap, imageMap ) ;
     }
     public static void SetSplitStatus( this ViewSchedule viewSchedule, bool isSplit )
@@ -417,9 +417,9 @@ namespace Arent3d.Architecture.Routing
         if(string.IsNullOrEmpty( cell )) continue;
         var cellItems = cell.Split( ',' ) ;
         if(cellItems.Count() != 3) continue;
-        if(int.TryParse( cellItems[0], out int row )) continue;
-        if(int.TryParse( cellItems[1], out int column )) continue;
-        if(int.TryParse( cellItems[2], out int elementIdValue )) continue;
+        if(!int.TryParse( cellItems[0], out int row )) continue;
+        if(!int.TryParse( cellItems[1], out int column )) continue;
+        if(!int.TryParse( cellItems[2], out int elementIdValue )) continue;
         if(imageMapDictionary.ContainsKey( (row,column) )) continue;
         imageMapDictionary.Add( (row,column), new ElementId( elementIdValue ) );
       }
