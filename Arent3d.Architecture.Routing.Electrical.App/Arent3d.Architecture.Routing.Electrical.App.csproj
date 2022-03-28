@@ -52,6 +52,7 @@
             <HintPath>$(RevitPath)AdWindows.dll</HintPath>
             <Private>false</Private>
         </Reference>
+        <Reference Include="System.Windows.Forms" />
     </ItemGroup>
 
     <ItemGroup>
