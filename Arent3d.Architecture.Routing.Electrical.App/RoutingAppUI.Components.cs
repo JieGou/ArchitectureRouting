@@ -139,23 +139,23 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button(typeof(NewConnectorCommand), OnlyInitialized = true)]
           private static class NewConnectorCommandButton { }
         
-          [Button(typeof(NewPowerConnectorCommand), OnlyInitialized = true)]
-          private static class NewPowerConnectorCommandButton { }
+          [Button(typeof(NewConnectorTypePowerCommand), OnlyInitialized = true)]
+          private static class NewConnectorTypePowerCommandButton { }
           
-          [Button(typeof(NewOneSideSensorConnectorCommand), OnlyInitialized = true)]
-          private static class NewOneSideSensorConnectorCommandButton { }
+          [Button(typeof(NewConnectorTypeSensorCommand), OnlyInitialized = true)]
+          private static class NewConnectorTypeSensorCommandButton { }
         }
-        [SplitButton( "arent3d.architecture.routing.connectors.two.side", TitleKey = "Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand" )]
+        [SplitButton( "arent3d.architecture.routing.connectors.two.side", TitleKey = "Electrical.App.Commands.Routing.Connectors.NewConnectorTwoSideCommand" )]
         private static class NewTwoSideConnectorButton
         {
-          [Button(typeof(NewConnectorBsCommand), OnlyInitialized = true)]
+          [Button(typeof(NewTwoSideConnectorCommand), OnlyInitialized = true)]
           private static class NewConnectorBsCommandButton { }
           
-          [Button(typeof(NewPassConnectorCommand), OnlyInitialized = true)]
-          private static class NewPassConnectorCommandButton { }
+          [Button(typeof(NewTwoSideConnectorTypePassCommand), OnlyInitialized = true)]
+          private static class NewTwoSideConnectorTypePassCommandButton { }
           
-          [Button(typeof(NewTwoSideSensorConnectorCommand), OnlyInitialized = true)]
-          private static class NewTwoSideSensorConnectorCommandButton { }
+          [Button(typeof(NewTwoSideConnectorTypeSensorCommand), OnlyInitialized = true)]
+          private static class NewTwoSideConnectorTypeSensorCommandButton { }
         }
         [SplitButton( "arent3d.architecture.routing.connectors.dumper", TitleKey = "Electrical.App.Panels.Routing.Connectors.Dumper" )]
         private static class EraseSplitButton

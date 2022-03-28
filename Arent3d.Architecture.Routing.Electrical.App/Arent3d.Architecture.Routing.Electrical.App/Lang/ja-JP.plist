@@ -125,8 +125,8 @@
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
 
-        <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
-        <string>コネクターを追加する&#xA;( 両方 )</string>
+        <key>Electrical.App.Commands.Routing.Connectors.NewConnectorTwoSideCommand</key>
+        <string>両方コネクタ</string>
 
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>円柱シャフト作成</string>
@@ -170,17 +170,17 @@
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>表分割</string>
 
-        <key>Electrical.App.Commands.Routing.NewPowerConnectorCommand</key>
-        <string>新しい電源コネクタ</string>
+        <key>Electrical.App.Commands.Routing.NewConnectorTypePowerCommand</key>
+        <string>コネクタ（電源）</string>
 
-        <key>Electrical.App.Commands.Routing.NewOneSideSensorConnectorCommand</key>
-        <string>新しい片側センサーコネクタ</string>
+        <key>Electrical.App.Commands.Routing.NewConnectorTypeSensorCommand</key>
+        <string>コネクタ（センサー）</string>
 
-        <key>Electrical.App.Commands.Routing.NewPassConnectorCommand</key>
-        <string>新しいパスコネクタ</string>
+        <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypePassCommand</key>
+        <string>両方コネクタ（パス）</string>
 
-        <key>Electrical.App.Commands.Routing.NewTwoSideSensorConnectorCommand</key>
-        <string>新しい両面センサーコネクタ</string>
+        <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypeSensorCommand</key>
+        <string>両方コネクタ（センサー）</string>
 
         <key>Electrical.App.Commands.Routing.CreateRoomCommand</key>
         <string>部屋作成</string>

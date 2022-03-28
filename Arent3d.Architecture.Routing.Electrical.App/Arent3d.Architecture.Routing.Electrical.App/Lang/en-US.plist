@@ -125,7 +125,7 @@
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
-        <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
+        <key>Electrical.App.Commands.Routing.Connectors.NewConnectorTwoSideCommand</key>
         <string>New Connector&#xA;(Both Sides)</string>
 
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
@@ -152,17 +152,17 @@
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>Split Schedule</string>
 
-        <key>Electrical.App.Commands.Routing.NewPowerConnectorCommand</key>
-        <string>New Power Connector</string>
+        <key>Electrical.App.Commands.Routing.NewConnectorTypePowerCommand</key>
+        <string>New Connector (Power)</string>
 
-        <key>Electrical.App.Commands.Routing.NewOneSideSensorConnectorCommand</key>
-        <string>New One Side Sensor Connector</string>
+        <key>Electrical.App.Commands.Routing.NewConnectorTypeSensorCommand</key>
+        <string>New Connector (Sensor)</string>
 
-        <key>Electrical.App.Commands.Routing.NewPassConnectorCommand</key>
-        <string>New Pass Connector</string>
+        <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypePassCommand</key>
+        <string>New Both Side Connector (Pass)</string>
 
-        <key>Electrical.App.Commands.Routing.NewTwoSideSensorConnectorCommand</key>
-        <string>New Two Side Sensor Connector</string>
+        <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypeSensorCommand</key>
+        <string>New Both Side Connector (Sensor)</string>
         
         <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
         <string>Electrical Symbol Table</string>

@@ -5,9 +5,10 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing.Connectors
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.NewPassConnectorCommand", DefaultString = "New Pass Connector" )]
-  [Image( "resources/new_connector_02.png" )]
-  public class NewPassConnectorCommand : NewConnectorCommandBase
+  [DisplayNameKey( "Electrical.App.Commands.Routing.NewTwoSideConnectorTypePassCommand", DefaultString = "New Pass Connector" )]
+  [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
+  [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
+  public class NewTwoSideConnectorTypePassCommand : NewConnectorCommandBase
   {
     protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.ConnectorTwoSide ;
     protected override ConnectorFamilyType? ConnectorType => ConnectorFamilyType.Pass ;

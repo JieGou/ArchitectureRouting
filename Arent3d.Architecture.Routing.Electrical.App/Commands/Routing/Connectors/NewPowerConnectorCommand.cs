@@ -13,9 +13,9 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing.Connectors
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.NewPowerConnectorCommand", DefaultString = "New Power Connector" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.NewConnectorTypePowerCommand", DefaultString = "New Power Connector" )]
   [Image( "resources/new_connector_02.png" )]
-  public class NewPowerConnectorCommand : NewConnectorCommandBase
+  public class NewConnectorTypePowerCommand : NewConnectorCommandBase
   {
     protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.ConnectorOneSide ;
     protected override ConnectorFamilyType? ConnectorType => ConnectorFamilyType.Power ;
