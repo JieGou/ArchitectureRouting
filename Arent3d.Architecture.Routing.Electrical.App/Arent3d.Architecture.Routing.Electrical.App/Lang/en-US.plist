@@ -151,6 +151,9 @@
 
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>Split Schedule</string>
+
+        <key>Electrical.App.Commands.Routing.NewPowerConnectorCommand</key>
+        <string>New Power Connector</string>
         
         <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
         <string>Electrical Symbol Table</string>

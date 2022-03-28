@@ -135,6 +135,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button(typeof(NewConnectorCommand), OnlyInitialized = true)]
         private static class NewConnectorCommandButton { }
+        
+        [Button(typeof(NewPowerConnectorCommand), OnlyInitialized = true)]
+        private static class NewPowerConnectorCommandButton { }
 
         [Button(typeof(NewConnectorBsCommand), OnlyInitialized = true)]
         private static class NewConnectorBsCommandButton { }
