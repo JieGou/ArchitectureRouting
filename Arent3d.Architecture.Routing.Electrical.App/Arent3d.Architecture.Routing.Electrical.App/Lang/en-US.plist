@@ -154,6 +154,15 @@
 
         <key>Electrical.App.Commands.Routing.NewPowerConnectorCommand</key>
         <string>New Power Connector</string>
+
+        <key>Electrical.App.Commands.Routing.NewOneSideSensorConnectorCommand</key>
+        <string>New One Side Sensor Connector</string>
+
+        <key>Electrical.App.Commands.Routing.NewPassConnectorCommand</key>
+        <string>New Pass Connector</string>
+
+        <key>Electrical.App.Commands.Routing.NewTwoSideSensorConnectorCommand</key>
+        <string>New Two Side Sensor Connector</string>
         
         <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
         <string>Electrical Symbol Table</string>

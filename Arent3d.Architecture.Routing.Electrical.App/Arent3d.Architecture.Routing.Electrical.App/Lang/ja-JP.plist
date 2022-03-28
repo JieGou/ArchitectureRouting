@@ -173,6 +173,15 @@
         <key>Electrical.App.Commands.Routing.NewPowerConnectorCommand</key>
         <string>新しい電源コネクタ</string>
 
+        <key>Electrical.App.Commands.Routing.NewOneSideSensorConnectorCommand</key>
+        <string>新しい片側センサーコネクタ</string>
+
+        <key>Electrical.App.Commands.Routing.NewPassConnectorCommand</key>
+        <string>新しいパスコネクタ</string>
+
+        <key>Electrical.App.Commands.Routing.NewTwoSideSensorConnectorCommand</key>
+        <string>新しい両面センサーコネクタ</string>
+
         <key>Electrical.App.Commands.Routing.CreateRoomCommand</key>
         <string>部屋作成</string>
 
