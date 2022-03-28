@@ -183,7 +183,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       tsdHeader.MergeCells( new TableMergedCell( 0, 0, 0, columnCount ) ) ;
-      tsdHeader.SetCellText( 0, 0, level + "階平面图" ) ;
+      tsdHeader.SetCellText( 0, 0, level + "階平面図" ) ;
       tsdHeader.SetCellStyle( 0, 0, cellStyle ) ;
 
       var isSetPipeForCoWindingWiring = false ;
