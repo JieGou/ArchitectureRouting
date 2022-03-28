@@ -46,7 +46,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
         var lengthDirection = 12000d.MillimetersToRevitUnits() ;
         var transformRotation = Transform.CreateRotationAtPoint( document.ActiveView.ViewDirection, RotateAngle, centerPoint ) ;
-        var bodyDirections = new List<Curve> { Line.CreateBound( centerPoint, Transform.CreateTranslation( XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation ), Line.CreateBound( centerPoint, Transform.CreateTranslation( -XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation ) } ;
+        var bodyDirections = new List<Curve>
+        {
+          Line.CreateBound( centerPoint, Transform.CreateTranslation( XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation ), 
+          Line.CreateBound( centerPoint, Transform.CreateTranslation( -XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation )
+        } ;
 
         var subCategoryForBodyDirection = GetLineStyle( document, "SubCategoryForDirectionCylindricalShaft", new Color( 255, 0, 255 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         var subCategoryForOuterShape = GetLineStyle( document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
@@ -54,6 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && ! x.Name.StartsWith( "PH" ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
         foreach ( var viewPlan in viewPlans ) {
           var transformTranslation = Transform.CreateTranslation( XYZ.BasisZ * ( viewPlan.GenLevel.Elevation - centerPoint.Z ) ) ;
+          
           IEnumerable<Curve> curvesBody ;
           if ( viewPlans.IndexOf( viewPlan ) == 0 ) {
             PlaceInstance( viewPlan, symbolDirection, bodyDirections[ 0 ], RotateAngle - Math.PI * 0.5 ) ;
@@ -73,6 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
           var circle = Arc.Create( new XYZ( centerPoint.X, centerPoint.Y, viewPlan.GenLevel.Elevation ), radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
           CreateDetailLine( viewPlan, subCategoryForOuterShape, circle ) ;
+          
           CreateSymbolCenter( viewPlan, subCategoryForOuterShape, centerPoint ) ;
         }
 
@@ -149,9 +155,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         var outlineElement2D = new Outline( new XYZ( boxElement2D.Min.X, boxElement2D.Min.Y, elevation ), new XYZ( boxElement2D.Max.X, boxElement2D.Max.Y, elevation ) ) ;
         if ( ! outlineCurve.Intersects( outlineElement2D, 0d ) ) continue ;
 
-        CurveLoop? curveLoopOrigin = null ;
-        CurveLoop? curveLoopOffset = null ;
-        Line? locationElement = null ;
+        CurveLoop? curveLoopOrigin = null ; CurveLoop? curveLoopOffset = null ; Line? locationElement = null ;
         switch ( element2D ) {
           case TextNote textNote :
             var outline = GeometryHelper.GetOutlineTextNote( textNote ) ;
@@ -160,6 +164,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
           case Wire wire :
             if ( wire.Location is not LocationCurve { Curve: Line line } )
               continue ;
+            
+            if ( line.Length <= viewPlan.Document.Application.ShortCurveTolerance )
+              continue ;
+            
             locationElement = line.Clone() as Line ;
             curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 400d.MillimetersToRevitUnits(), viewDirection ) ;
             break ;
@@ -170,9 +178,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       }
 
       foreach ( var element3D in element3Ds ) {
-        CurveLoop? curveLoopOrigin = null ;
-        CurveLoop? curveLoopOffset = null ;
-        Line? locationElement = null ;
+        CurveLoop? curveLoopOrigin = null ; CurveLoop? curveLoopOffset = null ; Line? locationElement = null ;
+        
         if ( element3D is FamilyInstance familyInstance ) {
           curveLoopOrigin = GeometryHelper.GetBoundaryBoundingBox( familyInstance.get_BoundingBox( null ), elevation ) ;
           curveLoopOffset = CurveLoop.CreateViaOffset( curveLoopOrigin, 200d.MillimetersToRevitUnits(), viewDirection ) ;
