@@ -302,7 +302,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       const string noPlumpingConstructionClassification = "冷媒管共巻配線" ;
       const double percentage = 0.32 ;
-      var plumbingCount = 0 ;
       var isParentDetailRowHasTypeNoPlumbing = false ;
 
       var parentDetailRow = detailTableModelsByDetailSymbolId.First() ;
@@ -320,10 +319,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableModelsBySignalType = mixConstructionItems ? detailTableModelsByDetailSymbolId.GroupBy( d => d.SignalType ).Select( g =>  g.ToList()).ToList() : detailTableModelsByDetailSymbolId.GroupBy( d => new {d.SignalType, d.ConstructionItems} ).Select( g =>  g.ToList()).ToList();
 
       foreach ( var detailTableRows in detailTableModelsBySignalType ) {
+        var plumbingCount = 0 ;
         Dictionary<string, List<DetailTableModel>> detailTableRowsGroupByPlumbingType = new() ;
         List<DetailTableModel> childDetailRows = new() ;
         parentDetailRow = detailTableRows.FirstOrDefault( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ;
         if ( parentDetailRow == null ) continue ;
+        parentDetailRow.IsParentRoute = true ;
+        parentDetailRow.IsReadOnly = false ;
         var currentPlumbingCrossSectionalArea = 0.0 ;
         foreach ( var currentDetailTableRow in detailTableRows ) {
           if ( currentDetailTableRow.ConstructionClassification != noPlumpingConstructionClassification ) {
@@ -331,13 +333,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
             if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
               var plumbing = conduitsModels.Last() ;
-              if ( isParentDetailRowHasTypeNoPlumbing && parentDetailRow == detailTableModelsByDetailSymbolId.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
+              if ( parentDetailRow != detailTableRows.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
+                parentDetailRow.IsParentRoute = false ;
+                parentDetailRow.IsReadOnly = true ;
+              }
+              if ( isParentDetailRowHasTypeNoPlumbing && parentDetailRow == detailTableRows.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
                 parentDetailRow.PlumbingType = plumbingType ;
-                parentDetailRow.IsReadOnly = false ;
               }
               else {
                 parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
-                parentDetailRow.IsReadOnly = ! parentDetailRow.IsParentRoute ;
               }
               parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
               parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, mixConstructionItems ) ;
@@ -354,13 +358,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               currentPlumbingCrossSectionalArea = currentDetailTableRow.WireCrossSectionalArea ;
               if ( currentDetailTableRow != detailTableRows.Last(  d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) continue ;
               plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableRow.WireCrossSectionalArea ) ;
-              if ( isParentDetailRowHasTypeNoPlumbing && currentDetailTableRow == detailTableModelsByDetailSymbolId.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
+              if ( currentDetailTableRow != detailTableRows.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
+                parentDetailRow.IsParentRoute = false ;
+                parentDetailRow.IsReadOnly = true ;
+              }
+              if ( isParentDetailRowHasTypeNoPlumbing && currentDetailTableRow == detailTableRows.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
                 currentDetailTableRow.PlumbingType = plumbingType ;
-                currentDetailTableRow.IsReadOnly = false ;
               }
               else {
-                currentDetailTableRow.PlumbingType = currentDetailTableRow == detailTableModelsByDetailSymbolId.First() ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
-                currentDetailTableRow.IsReadOnly = ! parentDetailRow.IsParentRoute ;
+                currentDetailTableRow.PlumbingType = currentDetailTableRow == detailTableRows.First() ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
               }
               currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
               currentDetailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( currentDetailTableRow, mixConstructionItems ) ;
@@ -370,19 +376,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             else {
               if ( currentDetailTableRow == detailTableRows.Last( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
                 var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
-                if ( isParentDetailRowHasTypeNoPlumbing && parentDetailRow == detailTableModelsByDetailSymbolId.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
+                if ( parentDetailRow != detailTableRows.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
+                  parentDetailRow.IsParentRoute = false ;
+                  parentDetailRow.IsReadOnly = true ;
+                }
+                if ( isParentDetailRowHasTypeNoPlumbing && parentDetailRow == detailTableRows.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
                   parentDetailRow.PlumbingType = plumbingType ;
-                  parentDetailRow.IsReadOnly = false ;
                 }
                 else {
                   parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
-                  parentDetailRow.IsReadOnly = ! parentDetailRow.IsParentRoute ;
                 }
                 parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
                 parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, mixConstructionItems ) ;
                 parentDetailRow.IsReadOnlyPlumbingItems = ! mixConstructionItems ;
-                if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
+                if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) ) {
                   detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
+                }
                 else {
                   detailTableRowsGroupByPlumbingType[ parentDetailRow.PlumbingIdentityInfo ].AddRange( childDetailRows ) ;
                   detailTableRowsGroupByPlumbingType[ parentDetailRow.PlumbingIdentityInfo ].Add( currentDetailTableRow ) ;
@@ -391,11 +400,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                 plumbingCount++ ;
               }
 
-              if ( currentDetailTableRow == detailTableRows.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) continue ;
+              if ( currentDetailTableRow == detailTableRows.FirstOrDefault( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) continue ;
               currentDetailTableRow.PlumbingType = DefaultChildPlumbingSymbol ;
               currentDetailTableRow.PlumbingSize = DefaultChildPlumbingSymbol ;
               currentDetailTableRow.NumberOfPlumbing = DefaultChildPlumbingSymbol ;
               currentDetailTableRow.IsReadOnlyPlumbingItems = true ;
+              currentDetailTableRow.IsParentRoute = false ;
+              currentDetailTableRow.IsReadOnly = true ;
               childDetailRows.Add( currentDetailTableRow ) ;
             }
           }
@@ -413,10 +424,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             detailTableRow.PlumbingIdentityInfo = plumbingIdentityInfo ;
           }
         }
-      }
 
-      foreach ( var detailTableRowsWithSameSignalType in detailTableModelsBySignalType ) {
-        foreach ( var detailTableRow in detailTableRowsWithSameSignalType.Where( d => d.PlumbingSize != DefaultChildPlumbingSymbol && d.ConstructionClassification != noPlumpingConstructionClassification ).ToList() ) {
+        foreach ( var detailTableRow in detailTableRows.Where( d => d.PlumbingSize != DefaultChildPlumbingSymbol ).ToList() ) {
           detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
         }
       }
