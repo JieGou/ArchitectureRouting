@@ -126,7 +126,7 @@
         <string>Height Setting</string>
 
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorTwoSideCommand</key>
-        <string>New Connector&#xA;(Both Sides)</string>
+        <string>Both Side Connector</string>
 
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>Create&#xA;Cylindrical Shaft</string>
@@ -153,16 +153,16 @@
         <string>Split Schedule</string>
 
         <key>Electrical.App.Commands.Routing.NewConnectorTypePowerCommand</key>
-        <string>New Connector (Power)</string>
+        <string>Connector (Power)</string>
 
         <key>Electrical.App.Commands.Routing.NewConnectorTypeSensorCommand</key>
-        <string>New Connector (Sensor)</string>
+        <string>Connector (Sensor)</string>
 
         <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypePassCommand</key>
-        <string>New Both Side Connector (Pass)</string>
+        <string>Both Side Connector&#xA;(Pass)</string>
 
         <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypeSensorCommand</key>
-        <string>New Both Side Connector (Sensor)</string>
+        <string>Both Side Connector&#xA;(Sensor)</string>
         
         <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
         <string>Electrical Symbol Table</string>
