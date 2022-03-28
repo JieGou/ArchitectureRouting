@@ -78,6 +78,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
           [Button( typeof( CreateDetailSymbolCommand ), OnlyInitialized = true )]
           private static class CreateDetailSymbolCommandButton { }
+
+          [Button(typeof(ShowDialogCreateTableByFloorCommand), OnlyInitialized = true)]
+          private static class ShowDialogCreateTableByFloorCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
