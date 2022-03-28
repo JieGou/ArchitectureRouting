@@ -1,0 +1,10 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.Electrical.App.Forms.RegisterSymbolView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Register Symbol View" SizeToContent="WidthAndHeight"
+    Height="Auto" Width="Auto" x:Name="WdRegisterSymbolView" Topmost="True"
+    WindowStartupLocation="CenterScreen" UseLayoutRounding="True" ResizeMode="NoResize">
+    <Grid>
+        
+    </Grid>
+</Window>
