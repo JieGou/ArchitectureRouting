@@ -2,12 +2,14 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -23,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private const string ErrorMessageNoSensorConnector = "No sensor connectors are selected on the power connector level." ;
     private const string ErrorMessageSensorConnector = "At least two sensor connectors on the power connector level must be selected." ;
     private const string ErrorMessageCannotDetermineSensorConnectorArrayDirection = "Couldn't determine sensor array direction" ;
+    private const string ErrorMessageUnableToRouteDueToEnvelope = "Unable to route due to envelope" ;
 
     public enum SensorArrayDirection
     {
@@ -222,6 +225,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var (footPassPoint, passPoints) = CreatePassPoints( routeName, powerConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
 
+      var allPassPoints = new List<FamilyInstance>() ;
+      if ( footPassPoint != null ) allPassPoints.Add( footPassPoint ) ;
+      allPassPoints.AddRange( passPoints ) ;
+      var isPassPointInEnvelope = CheckPassPointsPositionInEnvelops( document, allPassPoints ) ;
+      if ( isPassPointInEnvelope ) {
+        var allPassPointIds = allPassPoints.Select( p => p.UniqueId ).ToList() ;
+        document.Delete( allPassPointIds ) ;
+        MessageBox.Show( ErrorMessageUnableToRouteDueToEnvelope, "Error" ) ;
+        return new List<(string RouteName, RouteSegment Segment)>() ;
+      }
+      
       var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 1 ) ;
 
       // main route
@@ -486,6 +500,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
       }
+    }
+
+    private bool CheckPassPointsPositionInEnvelops( Document document, IReadOnlyCollection<FamilyInstance> passPoints )
+    {
+      var envelopes = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ).ToList() ;
+      if ( ! envelopes.Any() ) return false ;
+      foreach ( var envelope in envelopes ) {
+        var envelopLocation = ( envelope.Location as LocationPoint ) ! ;
+        var (xEnvelope, yEnvelope, zEnvelope) = envelopLocation.Point ;
+        var lenghtEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() / 2 ;
+        var widthEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() / 2 ;
+        var heightEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() ;
+        foreach ( var passPoint in passPoints ) {
+          var passPointLocation = ( passPoint.Location as LocationPoint ) ! ;
+          var (xPassPoint, yPassPoint, zPassPoint) = passPointLocation.Point ;
+          if ( ( xPassPoint > xEnvelope - widthEnvelope && xPassPoint < xEnvelope + widthEnvelope ) 
+               && ( yPassPoint > yEnvelope - lenghtEnvelope && yPassPoint < yEnvelope + lenghtEnvelope ) 
+               && ( zPassPoint > zEnvelope && zPassPoint < zEnvelope + heightEnvelope ) ) {
+            return true ;
+          }
+        }
+      }
+
+      return false ;
     }
 
     private class SensorRangeComparer : IComparer<(double Min, double Max)>
