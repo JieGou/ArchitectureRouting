@@ -12,12 +12,13 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using MathLib ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class SelectionRangeRouteCommandBase : RoutingCommandBase<SelectionRangeRouteCommandBase.SelectState>
   {
-    private const string ErrorMessageUnableToRouteDueToEnvelope = "Unable to route due to envelope" ;
+    private const string ErrorMessageUnableToRouteDueToEnvelope = "選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。" ;
     
     public record SelectState( FamilyInstance PowerConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteManager.SensorArrayDirection SensorDirection, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
 
@@ -95,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var allPassPoints = new List<FamilyInstance>() ;
       if ( footPassPoint != null ) allPassPoints.Add( footPassPoint ) ;
       allPassPoints.AddRange( passPoints ) ;
-      var isPassPointInEnvelope = CheckPassPointsPositionInEnvelops( document, allPassPoints ) ;
+      var isPassPointInEnvelope = AnyPassPointsInsideEnvelope( document, allPassPoints ) ;
       if ( isPassPointInEnvelope ) {
         var allPassPointIds = allPassPoints.Select( p => p.UniqueId ).ToList() ;
         document.Delete( allPassPointIds ) ;
@@ -152,22 +153,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static bool CheckPassPointsPositionInEnvelops( Document document, IReadOnlyCollection<FamilyInstance> passPoints )
+    private static bool AnyPassPointsInsideEnvelope( Document document, IReadOnlyCollection<FamilyInstance> passPoints )
     {
       var envelopes = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ).ToList() ;
       if ( ! envelopes.Any() ) return false ;
       foreach ( var envelope in envelopes ) {
         var envelopLocation = ( envelope.Location as LocationPoint ) ! ;
         var (xEnvelope, yEnvelope, zEnvelope) = envelopLocation.Point ;
-        var lenghtEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() / 2 ;
-        var widthEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() / 2 ;
+        var lenghtEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() ;
+        var widthEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() ;
         var heightEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() ;
+        var center = new Vector3d( xEnvelope, yEnvelope, zEnvelope + heightEnvelope / 2 ) ;
+        var size = new Vector3d( widthEnvelope, lenghtEnvelope, heightEnvelope ) ;
+        var envelopeBox = Box3d.ConstructFromCenterSize( center, size ) ;
         foreach ( var passPoint in passPoints ) {
           var passPointLocation = ( passPoint.Location as LocationPoint ) ! ;
           var (xPassPoint, yPassPoint, zPassPoint) = passPointLocation.Point ;
-          if ( ( xPassPoint > xEnvelope - widthEnvelope && xPassPoint < xEnvelope + widthEnvelope ) 
-               && ( yPassPoint > yEnvelope - lenghtEnvelope && yPassPoint < yEnvelope + lenghtEnvelope ) 
-               && ( zPassPoint > zEnvelope && zPassPoint < zEnvelope + heightEnvelope ) ) {
+          if ( envelopeBox.Contains( new Vector3d( xPassPoint, yPassPoint, zPassPoint ), 0 ) ) {
             return true ;
           }
         }
