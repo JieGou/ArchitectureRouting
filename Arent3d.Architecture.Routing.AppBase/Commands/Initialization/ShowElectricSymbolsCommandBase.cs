@@ -309,10 +309,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 #elif REVIT2022
             imageType = ImageType.Create( document, new ImageTypeOptions( pathToImage, false, ImageTypeSource.Import ) ) ;
 #endif
+          }
+
+          if ( imageType != null ) {
             tsdHeader.InsertImage( startRowData + j, 0, imageType.Id ) ;
 			viewSchedule.AddImageToImageMap( startRowData + j, 0, imageType.Id ) ;
-            tsdHeader.SetCellText( startRowData + j, 1, generalDisplayDeviceSymbols.ElementAt( j ) ) ;
           }
+          tsdHeader.SetCellText( startRowData + j, 1, generalDisplayDeviceSymbols.ElementAt( j ) ) ;
         }
 
         tsdHeader.SetCellText( startRowData + j, 2, wiringTypes.ElementAt( j ) ) ;
