@@ -12,16 +12,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ChangeConduitModeCommandBase: IExternalCommand
   {
-    private static string SELECT_RANGE_MESSAGE = "Please select a range." ;
-    private static string DIALOG_MESSAGE_TITLE = "Message" ;
-    private static string NO_ITEM_SELECTED_MESSAGE = "No items are selected.";
-    private static string UPDATE_DATA_SUCCESS_MESSAGE = "Update data success.";
-    private static string ELECTRICAL_CHANGE_MODE_TITLE = "Change mode result";
+    protected static string SELECT_RANGE_MESSAGE = "Please select a range." ;
+    protected static string DIALOG_MESSAGE_TITLE = "Message" ;
+    protected static string NO_ITEM_SELECTED_MESSAGE = "No items are selected.";
+    protected static string UPDATE_DATA_SUCCESS_MESSAGE = "Update data success.";
+    protected static string ELECTRICAL_CHANGE_MODE_TITLE = "Change mode result";
     
     protected bool IsEcoMode ;
-    private UIDocument UiDocument { get ; set ; } = null! ;
+    protected UIDocument UiDocument { get ; set ; } = null! ;
     
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
+    public virtual Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       UiDocument = commandData.Application.ActiveUIDocument ;
       Document document = UiDocument.Document ;
@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     #region Private Method
 
-    private static void SetModeForConduit( List<Element> elements, bool isEcoMode, Document document )
+    protected static void SetModeForConduit( List<Element> elements, bool isEcoMode, Document document )
     {
       if ( elements.Count == 0 ) return ;
       using var transaction = new Transaction( document ) ;
@@ -57,7 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       transaction.Commit() ;
     }
     
-    private static void SetModeForConnector( List<Element> elements, bool isEcoMode, Document document )
+    protected static void SetModeForConnector( List<Element> elements, bool isEcoMode, Document document )
     {
       if ( elements.Count == 0 ) return ;
       using var transaction = new Transaction( document ) ;
