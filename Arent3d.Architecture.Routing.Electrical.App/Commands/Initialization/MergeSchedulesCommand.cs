@@ -137,7 +137,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         for ( int row = headerRowCount ; row < rowCount ; row++ ) {
           firstSessionData.InsertRow( firstSessionDataRowCount ) ;
           firstSessionData.SetRowHeight( firstSessionDataRowCount, sectionData.GetRowHeight( row ) ) ;
-          for ( int column = 0 ; column < columnCount - 1 ; column++ ) {
+          for ( int column = 0 ; column < columnCount ; column++ ) {
             firstSessionData.SetCellText( firstSessionDataRowCount, column, sectionData.GetCellText( row, column ) ) ;
             firstSessionData.SetCellStyle( firstSessionDataRowCount, column, sectionData.GetTableCellStyle( row, column ) ) ;
             firstSessionData.SetCellType( firstSessionDataRowCount, column, sectionData.GetCellType( row, column ) ) ;
