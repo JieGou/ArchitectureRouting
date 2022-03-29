@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           if ( fromConnector != null ) {
             fromConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
-            if ( string.IsNullOrEmpty( constructionItem ) ) {
+            if ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) {
               UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
               fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             }
@@ -54,7 +54,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( toConnector == null ) continue ;
         {
           toConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
-          if ( string.IsNullOrEmpty( constructionItem ) ) {
+          if ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) {
             UnGroupConnector( document, toConnector, ref connectorGroups ) ;
             toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             constructionItem = DefaultConstructionItem ;

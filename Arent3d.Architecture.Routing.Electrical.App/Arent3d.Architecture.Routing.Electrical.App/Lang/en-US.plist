@@ -191,6 +191,9 @@
         <key>Electrical.App.Commands.Routing.RoomPickRoutingCommand</key>
         <string>Room Wiring</string>
 
+        <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
+        <string>Room Range Wiring</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
