@@ -13,12 +13,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     /// </summary>
     public partial class CreateTableByFloors : Window
     {
+        public ObservableCollection<string> TableTypes { get; set; }
         public ObservableCollection<LevelInfo> LevelList { get; }
 
         public CreateTableByFloors(Document doc)
         {
             InitializeComponent();
             LevelList = new ObservableCollection<LevelInfo>(doc.GetAllElements<Level>().OfCategory(BuiltInCategory.OST_Levels).Select(ToLevelInfo).OrderBy(l => l.Elevation));
+            TableTypes = new ObservableCollection<string>();
+            TableTypes.Add("Detail Table");
+            TableTypes.Add("Electrical Symbol Table");
         }
 
         private static LevelInfo ToLevelInfo(Level level)
@@ -43,8 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         private void SelectButton_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = true;
-            this.Close();
+            
         }
 
         private void SelectAll(bool select)
