@@ -4,6 +4,7 @@
     <PropertyGroup>
         <UseWPF>true</UseWPF>
         <RootNamespace>Arent3d.Architecture.Routing.Electrical.App</RootNamespace>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -89,12 +90,18 @@
         <Resource Include="resources\rack.png" />
         <Resource Include="resources\shaft_02.png" />
         <None Remove="resources\split_schedule_32x32.png" />
+        <None Remove="resources\folder_16x16.png" />
+        <Resource Include="resources\icon_folder_16x16.png" />
     </ItemGroup>
 
     <ItemGroup>
         <Compile Update="RoutingAppUI.Components.cs">
             <DependentUpon>RoutingAppUI.cs</DependentUpon>
         </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.39" />
     </ItemGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
