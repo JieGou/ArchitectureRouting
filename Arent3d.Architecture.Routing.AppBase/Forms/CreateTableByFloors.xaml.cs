@@ -15,6 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
         public ObservableCollection<string> TableTypes { get; set; }
         public ObservableCollection<LevelInfo> LevelList { get; }
+        public string SelectedTableType { get; set; } = string.Empty;
 
         public CreateTableByFloors(Document doc)
         {
@@ -47,7 +48,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         private void SelectButton_Click(object sender, RoutedEventArgs e)
         {
-            
+            string tableType = SelectedTableType;
+            if( tableType == "Detail Table")
+            {
+            }
         }
 
         private void SelectAll(bool select)

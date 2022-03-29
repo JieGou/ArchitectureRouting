@@ -36,6 +36,7 @@
                   Margin="10 0 0 0"
                   VerticalAlignment="Top" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                   ItemsSource="{Binding  TableTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                  SelectedItem="{Binding  SelectedTableType, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
                   IsSynchronizedWithCurrentItem="True"
                   SelectedIndex="0">
             </ComboBox>
