@@ -19,6 +19,8 @@
         <string>From-To</string>
         <key>Electrical.App.Panels.Routing.Routing.Routing</key>
         <string>ルーティング</string>
+        <key>Electrical.App.Panels.Routing.Routing.SelectionRangeRouting</key>
+        <string>選択範囲配線</string>
         <key>Electrical.App.Panels.Routing.Routing.Erase</key>
         <string>削除</string>
 
@@ -189,7 +191,7 @@
         <string>部屋の配線</string>
 
         <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
-        <string>部屋の範囲配線</string>
+        <string>部屋の選択範囲配線</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

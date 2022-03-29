@@ -19,6 +19,8 @@
         <string>Routing</string>
         <key>Electrical.App.Panels.Routing.Routing.Routing</key>
         <string>Routing</string>
+        <key>Electrical.App.Panels.Routing.Routing.SelectionRangeRouting</key>
+        <string>Selection Range Routing</string>
         <key>Electrical.App.Panels.Routing.Routing.Erase</key>
         <string>Erase</string>
 
