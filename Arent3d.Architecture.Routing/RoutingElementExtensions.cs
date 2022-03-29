@@ -404,7 +404,7 @@ namespace Arent3d.Architecture.Routing
     }
     public static int GetHeaderRowCount( this ViewSchedule viewSchedule)
     {
-      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.HeaderRowCount, out int headerRowCount ) ) return -1 ;
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.HeaderRowCount, out int headerRowCount ) ) return 0 ;
       return headerRowCount ;
     }
     public static void SetOriginalTableName( this ViewSchedule viewSchedule, string originalTableName )

@@ -17,8 +17,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   public class SplitScheduleCommand : IExternalCommand
   {
     private const string DialogTitle = "Arent Notification" ;
-    private const int SplitFromRow = 4 ;
-
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
@@ -38,8 +36,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         if ( document.GetElement( sheetInstance.ScheduleId ) is not ViewSchedule schedule )
           return Result.Failed ;
-        
-        if ( schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows < SplitFromRow
+        int splitFromRow = schedule.GetHeaderRowCount() + 1 ;
+        if ( schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows < splitFromRow
             && schedule.GetTableData().GetSectionData( SectionType.Body ).LastColumnNumber != -1)
           return Result.Cancelled ;
 
@@ -61,7 +59,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         }
 
         var heightRequest = 0d ;
-        for ( int i = 0 ; i < SplitFromRow ; i++ ) {
+        for ( int i = 0 ; i < splitFromRow ; i++ ) {
           heightRequest += schedule.GetTableData().GetSectionData( SectionType.Header ).GetRowHeight( i ) ;
         }
 
@@ -81,7 +79,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         schedule.Name = oldName ;
         
         var (topIndex, bottomIndex) =
-          GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBoxXYZ, pickedBox ) ;
+          GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBoxXYZ, pickedBox, splitFromRow ) ;
 
         var numberOfRows = schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
         for ( int i = numberOfRows - 1 ; i >= 0 ; i-- ) {
@@ -90,7 +88,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         }
 
         numberOfRows = cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
-        for ( int i = numberOfRows - 1 ; i >= SplitFromRow - 1 ; i-- ) {
+        for ( int i = numberOfRows - 1 ; i >= splitFromRow - 1 ; i-- ) {
           if ( i < topIndex || i > bottomIndex )
             cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
         }
@@ -122,10 +120,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       cloneSchedule.SetSplitIndex( 1 );
       cloneSchedule.SetSplitGroupId( schedule.Id );
     }
-    private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox )
+    private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox, int splitFromRow )
     {
       var heightTable = boxXYZ.Max.Y ;
-      var topIndex = SplitFromRow - 1 ;
+      var topIndex = splitFromRow - 1 ;
       var bottomIndex = sectionData.NumberOfRows - 1 ;
 
       for ( int i = 0 ; i < sectionData.NumberOfRows ; i++ ) {
