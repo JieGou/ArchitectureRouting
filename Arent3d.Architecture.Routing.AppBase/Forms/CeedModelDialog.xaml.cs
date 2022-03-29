@@ -291,35 +291,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       if ( connectorFamilyPaths.Any() ) {
-        using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
-        progress.Message = "Processing......." ;
-        List<string> connectorFamilyFiles ;
-        List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
-        using ( var progressData = progress.Reserve( 0.3 ) ) {
-          connectorFamilyFiles = CeedViewModel.LoadConnectorFamily( _document, connectorFamilyPaths ) ;
-          connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath! ) ;
-          progressData.ThrowIfCanceled() ;
-        }
-
-        if ( connectorFamilyFiles.Any() && connectorFamilyReplacements.Any() ) {
-          bool result ;
-          using ( var progressData = progress.Reserve( 0.6 ) ) {
-            result = UpdateCeedStorableAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
+        try {
+          using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
+          progress.Message = "Processing......." ;
+          List<string> connectorFamilyFiles ;
+          List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
+          using ( var progressData = progress.Reserve( 0.3 ) ) {
+            connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath! ) ;
+            connectorFamilyFiles = CeedViewModel.LoadConnectorFamily( _document, connectorFamilyPaths ) ;
             progressData.ThrowIfCanceled() ;
           }
 
-          if ( result ) {
-            using var progressData = progress.Reserve( 0.9 ) ;
-            result = UpdateDataGridAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
-            progressData.ThrowIfCanceled() ;
-          }
+          if ( connectorFamilyFiles.Any() && connectorFamilyReplacements.Any() ) {
+            bool result ;
+            using ( var progressData = progress.Reserve( 0.6 ) ) {
+              result = UpdateCeedStorableAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
+              progressData.ThrowIfCanceled() ;
+            }
 
-          progress.Finish() ;
-          MessageBox.Show( result ? successfullyMess : failedMess, "Message" ) ;
+            if ( result ) {
+              using var progressData = progress.Reserve( 0.9 ) ;
+              result = UpdateDataGridAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
+              progressData.ThrowIfCanceled() ;
+            }
+
+            progress.Finish() ;
+            MessageBox.Show( result ? successfullyMess : failedMess, "Message" ) ;
+          }
+          else {
+            progress.Finish() ;
+            MessageBox.Show( failedMess, "Message" ) ;
+          }
         }
-        else {
-          progress.Finish() ;
-          MessageBox.Show( failedMess, "Message" ) ;
+        catch ( Exception exception ) {
+          MessageBox.Show( exception.Message, "Error" ) ;
         }
       }
       else {
