@@ -70,28 +70,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
-    private static int GetHeaderRowCount( TableSectionData splitTable1, TableSectionData splitTable2 )
-    {
-      int rowCount = 0 ;
-      int columnCount = splitTable1.NumberOfColumns ;
-      bool stop = false ;
-      for ( int i = 0 ; i < splitTable1.NumberOfRows ; i++ ) {
-        for ( int j = 0 ; j < columnCount ; j++ ) {
-          var cellText1 = splitTable1.GetCellText( i, j ) ;
-          var cellText2 = splitTable2.GetCellText( i, j ) ;
-          if ( cellText1 != cellText2 ) {
-            stop = true ;
-            break ;
-          }
-        }
-
-        if ( stop ) break ;
-        rowCount++ ;
-      }
-
-      return rowCount ;
-    }
-
     private static Dictionary<ElementId, IList<ScheduleSheetInstance>> GetScheduleGroups( Document document, IList<ScheduleSheetInstance> scheduleSheetInstances )
     {
       var groups = new Dictionary<ElementId, IList<ScheduleSheetInstance>>() ;
@@ -124,10 +102,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var firstSessionData = firstSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
       var firstSessionDataRowCount = firstSessionData.NumberOfRows ;
       var firstSessionDataColumnCount = firstSessionData.NumberOfColumns ;
-      if ( document.GetElement( scheduleSheetInstances[ 1 ].ScheduleId ) is not ViewSchedule secondSchedule )
-        return Result.Failed ;
       var headerRowCount = firstSchedule.GetHeaderRowCount() ;
-      if ( headerRowCount == -1 ) headerRowCount = GetHeaderRowCount( firstSessionData, secondSchedule.GetTableData().GetSectionData( SectionType.Header ) ) ;
       for ( int i = 1 ; i < scheduleSheetInstances.Count ; i++ ) {
         if ( document.GetElement( scheduleSheetInstances[ i ].ScheduleId ) is not ViewSchedule schedule )
           return Result.Failed ;
