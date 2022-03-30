@@ -25,7 +25,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class CeedModelDialog
   {
-    private const string NotExistConnectorFamilyInFolderModelWarning = "excelで指定したモデルはmodelフォルダーに存在していませんので、既存のモデルを使用します。" ;
     private const string HeaderCeedModelNumberColumn = "CeeD型番" ;
     private readonly DataGridColumn? _ceedModelNumberColumn ;
     private readonly Document _document ;
@@ -265,71 +264,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void Button_ReplaceMultipleSymbols( object sender, RoutedEventArgs e )
     {
-      const string successfullyMess = "Replaced multiple floor plan symbols successfully." ;
-      const string failedMess = "Replaced multiple floor plan symbols failed." ;
-      var infoPath = string.Empty ;
-      List<string> connectorFamilyPaths = new() ;
-      MessageBox.Show( "Please select sample model folder.", "Message" ) ;
-      FolderBrowserDialog folderBrowserDialog = new() ;
-      if ( folderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
-        string folderPath = folderBrowserDialog.SelectedPath ;
-        infoPath = Directory.GetFiles( folderPath ).FirstOrDefault( f => Path.GetExtension( f ) is ".xls" or ".xlsx" ) ;
-        if ( string.IsNullOrEmpty( infoPath ) ) {
-          MessageBox.Show( "No info file in selected folder.", "Error" ) ;
-          return ;
-        }
-
-        DirectoryInfo dirInfo = new( folderPath ) ;
-        var familyFolder = dirInfo.GetDirectories().FirstOrDefault() ;
-        if ( familyFolder != null ) {
-          connectorFamilyPaths = Directory.GetFiles( familyFolder.FullName ).ToList() ;
-        }
-        else {
-          MessageBox.Show( "No family folder in selected folder.", "Error" ) ;
-          return ;
-        }
-      }
-
-      if ( connectorFamilyPaths.Any() ) {
-        try {
-          using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
-          progress.Message = "Processing......." ;
-          List<string> connectorFamilyFiles ;
-          List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
-          using ( var progressData = progress.Reserve( 0.3 ) ) {
-            connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath! ) ;
-            connectorFamilyFiles = CeedViewModel.LoadConnectorFamily( _document, connectorFamilyPaths ) ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          if ( connectorFamilyFiles.Any() && connectorFamilyReplacements.Any() ) {
-            bool result ;
-            using ( var progressData = progress.Reserve( 0.6 ) ) {
-              result = UpdateCeedStorableAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
-              progressData.ThrowIfCanceled() ;
-            }
-
-            if ( result ) {
-              using var progressData = progress.Reserve( 0.9 ) ;
-              result = UpdateDataGridAfterReplaceMultipleSymbols( connectorFamilyReplacements, connectorFamilyFiles ) ;
-              progressData.ThrowIfCanceled() ;
-            }
-
-            progress.Finish() ;
-            MessageBox.Show( result ? successfullyMess : failedMess, "Message" ) ;
-          }
-          else {
-            progress.Finish() ;
-            MessageBox.Show( failedMess, "Message" ) ;
-          }
-        }
-        catch ( Exception exception ) {
-          MessageBox.Show( exception.Message, "Error" ) ;
-        }
-      }
-      else {
-        MessageBox.Show( NotExistConnectorFamilyInFolderModelWarning, "Message" ) ;
-      }
+      using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
+      progress.Message = "Processing......." ;
+      CeedViewModel.ReplaceMultipleSymbols( _document, progress, ref _allCeedModels, ref _usingCeedModel, ref DtGrid ) ;
     }
 
     private void LoadData( CeedStorable ceedStorable )
@@ -435,93 +372,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ceedModel == null ) return ;
       ceedModel.FloorPlanType = floorPlanType ;
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
-    }
-    
-    private bool UpdateCeedStorableAfterReplaceMultipleSymbols( IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
-    {
-      List<string> deviceSymbolsNotHaveConnectorFamily = new () ;
-      var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
-      if ( ceedStorable == null ) return false ;
-      if ( _allCeedModels != null ) {
-        foreach ( var connectorFamilyReplacement in connectorFamilyReplacements ) {
-          if ( connectorFamilyFileName.Contains( connectorFamilyReplacement.ConnectorFamilyFile ) ) {
-            var deviceSymbols = connectorFamilyReplacement.DeviceSymbols.Split( '\n' ) ;
-            foreach ( var deviceSymbol in deviceSymbols ) {
-              var generalDisplayDeviceSymbol = deviceSymbol.Normalize( NormalizationForm.FormKC ) ;
-              var ceedModels = _allCeedModels.CeedModels.Where( c => c.GeneralDisplayDeviceSymbol == generalDisplayDeviceSymbol ).ToList() ;
-              if ( ! ceedModels.Any() ) continue ;
-              var connectorFamilyName = connectorFamilyReplacement.ConnectorFamilyFile.Replace( ".rfa", "" ) ;
-              foreach ( var ceedModel in ceedModels ) {
-                ceedModel.FloorPlanType = connectorFamilyName ;
-              }
-            }
-          }
-          else {
-            deviceSymbolsNotHaveConnectorFamily.AddRange( connectorFamilyReplacement.DeviceSymbols.Split( '\n' ) ) ;
-          }
-        }
-
-        ceedStorable.CeedModelData = _allCeedModels.CeedModels ;
-      }
-
-      if ( _usingCeedModel != null ) {
-        foreach ( var connectorFamilyReplacement in connectorFamilyReplacements ) {
-          if ( ! connectorFamilyFileName.Contains( connectorFamilyReplacement.ConnectorFamilyFile ) ) continue ;
-          var deviceSymbols = connectorFamilyReplacement.DeviceSymbols.Split( '\n' ) ;
-          foreach ( var deviceSymbol in deviceSymbols ) {
-            var ceedModels = _usingCeedModel.CeedModels.Where( c => c.GeneralDisplayDeviceSymbol == deviceSymbol ).ToList() ;
-            if ( ! ceedModels.Any() ) continue ;
-            var connectorFamilyName = connectorFamilyReplacement.ConnectorFamilyFile.Replace( ".rfa", "" ) ;
-            foreach ( var ceedModel in ceedModels ) {
-              ceedModel.FloorPlanType = connectorFamilyName ;
-            }
-          }
-        }
-        ceedStorable.CeedModelData = _usingCeedModel.CeedModels ;
-      }
-      
-      var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! ceedStorable.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
-      ceedStorable.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
-
-      try {
-        using Transaction t = new( _document, "Save CeeD data" ) ;
-        t.Start() ;
-        ceedStorable.Save() ;
-        t.Commit() ;
-      }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-        MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
-        return false;
-      }
-
-      if ( deviceSymbolsNotHaveConnectorFamily.Any() ) {
-        MessageBox.Show( NotExistConnectorFamilyInFolderModelWarning + "( " + string.Join( ", ", deviceSymbolsNotHaveConnectorFamily ) + " )", "Message" ) ;
-      }
-
-      return true ;
-    }
-    
-    private bool UpdateDataGridAfterReplaceMultipleSymbols( IEnumerable<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
-    {
-      if ( DtGrid.ItemsSource is not List<CeedModel> newCeedModels ) {
-        MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
-        return false ;
-      }
-      foreach ( var connectorFamilyReplacement in connectorFamilyReplacements ) {
-        if ( ! connectorFamilyFileName.Contains( connectorFamilyReplacement.ConnectorFamilyFile ) ) continue ;
-        var deviceSymbols = connectorFamilyReplacement.DeviceSymbols.Split( '\n' ) ;
-        foreach ( var deviceSymbol in deviceSymbols ) {
-          var ceedModels = newCeedModels.Where( c => c.GeneralDisplayDeviceSymbol == deviceSymbol ).ToList() ;
-          if ( ! ceedModels.Any() ) continue ;
-          var connectorFamilyName = connectorFamilyReplacement.ConnectorFamilyFile.Replace( ".rfa", "" ) ;
-          foreach ( var ceedModel in ceedModels ) {
-            ceedModel.FloorPlanType = connectorFamilyName ;
-          }
-        }
-      }
-
-      DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
-      return true ;
     }
   }
 }
