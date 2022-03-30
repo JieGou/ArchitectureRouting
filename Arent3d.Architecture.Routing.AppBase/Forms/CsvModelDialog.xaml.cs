@@ -11,6 +11,7 @@ using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using MessageBox = System.Windows.MessageBox ;
@@ -171,6 +172,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       return filePath ;
     }
+    
+    private enum OldConstructionClassificationType
+    {
+      天井ふところ,
+      床隠蔽,
+      二重床
+    }
+    
+    private enum NewConstructionClassificationType
+    {
+      天井コロガシ,
+      打ち込み,
+      フリーアクセス
+    }
 
     private bool GetData( string path, int startLine, ModelName modelName, bool showMessageFlag )
     {
@@ -225,7 +240,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               case ModelName.HiroiSetCdMasterNormal :
                 if ( values.Length < hsCdmColCount ) checkFile = false ;
                 else {
-                  HiroiSetCdMasterModel hiroiSetCdMasterNormalModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ] ) ;
+                  var constructionClassification = GetConstructionClassification( values[ 3 ] ) ;
+                  HiroiSetCdMasterModel hiroiSetCdMasterNormalModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], constructionClassification ) ;
                   _allHiroiSetCdMasterNormalModels.Add( hiroiSetCdMasterNormalModel ) ;
                 }
 
@@ -233,7 +249,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               case ModelName.HiroiSetCdMasterEco :
                 if ( values.Length < hsCdmColCount ) checkFile = false ;
                 else {
-                  HiroiSetCdMasterModel hiroiSetCdMasterEcoModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ] ) ;
+                  var constructionClassification = GetConstructionClassification( values[ 3 ] ) ;
+                  HiroiSetCdMasterModel hiroiSetCdMasterEcoModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], constructionClassification ) ;
                   _allHiroiSetCdMasterEcoModels.Add( hiroiSetCdMasterEcoModel ) ;
                 }
 
@@ -282,6 +299,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         return false ;
       }
+    }
+
+    private string GetConstructionClassification( string oldConstructionClassification )
+    {
+      string newConstructionClassification ;
+      if ( oldConstructionClassification == OldConstructionClassificationType.天井ふところ.GetFieldName() ) {
+        newConstructionClassification = NewConstructionClassificationType.天井コロガシ.GetFieldName() ;
+      }
+      else if ( oldConstructionClassification == OldConstructionClassificationType.床隠蔽.GetFieldName() ) {
+        newConstructionClassification = NewConstructionClassificationType.打ち込み.GetFieldName() ;
+      }
+      else if ( oldConstructionClassification == OldConstructionClassificationType.二重床.GetFieldName() ) {
+        newConstructionClassification = NewConstructionClassificationType.フリーアクセス.GetFieldName() ;
+      }
+      else {
+        newConstructionClassification = oldConstructionClassification ;
+      }
+
+      return newConstructionClassification ;
     }
 
     private enum ModelName
