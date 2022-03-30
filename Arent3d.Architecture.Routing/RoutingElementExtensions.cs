@@ -393,10 +393,19 @@ namespace Arent3d.Architecture.Routing
 
     public static int GetSplitIndex( this ViewSchedule viewSchedule )
     {
-      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.SplitIndex, out int index ) ) return -1 ;
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.SplitIndex, out int index ) ) return 0 ;
       return index ;
     }
+    public static void SetSplitLevel( this ViewSchedule viewSchedule, int index )
+    {
+      viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.SplitLevel, index ) ;
+    }
 
+    public static int GetSplitLevel( this ViewSchedule viewSchedule )
+    {
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.SplitLevel, out int index ) ) return 0 ;
+      return index ;
+    }
     public static void SetParentScheduleId( this ViewSchedule viewSchedule, ElementId elementId )
     {
       viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.ParentScheduleId, elementId.IntegerValue ) ;

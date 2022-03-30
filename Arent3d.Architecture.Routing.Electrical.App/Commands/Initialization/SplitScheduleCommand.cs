@@ -112,13 +112,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
     private static void SetSplitInformation( ViewSchedule schedule, ViewSchedule cloneSchedule, string originalName )
     {
+      var currentSplitIndex = schedule.GetSplitIndex() ;
+      var splitLevel = schedule.GetSplitLevel() + 1;
+      var parentScheduleId = schedule.GetParentScheduleId() ?? schedule.Id;
       schedule.SetParentScheduleName( originalName );
       schedule.SetSplitStatus( true );
-      schedule.SetSplitIndex( 0 );
-      schedule.SetParentScheduleId( schedule.Id );
+      schedule.SetSplitIndex( 2 * currentSplitIndex + 1);
+      schedule.SetParentScheduleId( parentScheduleId );
+      schedule.SetSplitLevel( splitLevel );
+      
+      cloneSchedule.SetParentScheduleName( originalName );
       cloneSchedule.SetSplitStatus( true );
-      cloneSchedule.SetSplitIndex( 1 );
-      cloneSchedule.SetParentScheduleId( schedule.Id );
+      cloneSchedule.SetSplitIndex( 2 * currentSplitIndex + 2 );
+      cloneSchedule.SetParentScheduleId( parentScheduleId );
+      cloneSchedule.SetSplitLevel( splitLevel );
     }
     private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox, int splitFromRow )
     {
