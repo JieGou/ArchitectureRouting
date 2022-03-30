@@ -9,38 +9,36 @@
         Height="Auto" Width="620">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="25"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="55"/>
+            <RowDefinition Height="25" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="55" />
         </Grid.RowDefinitions>
-        <Grid Grid.Row="1" >
+        <Grid Grid.Row="1">
             <Grid DockPanel.Dock="Top" HorizontalAlignment="Left" Width="620">
-                <DataGrid x:Name="grdMappings" Height="Auto" Background="White"
+                <DataGrid Height="Auto" Background="White"
                           ItemsSource="{Binding ImportDwgMappingModels}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
-                          IsReadOnly="False" 
+                          IsReadOnly="False"
                           CanUserResizeColumns="False">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="" Width="50" CanUserSort="False">
-                            <DataGridTemplateColumn.CellTemplate> 
-                                <DataTemplate> 
-                                    <Button Click="DeleteImportDwgMappingItem">Delete</Button> 
-                                </DataTemplate> 
-                            </DataGridTemplateColumn.CellTemplate> 
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Click="DeleteImportDwgMappingItem">Delete</Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="階" Width="100" CanUserSort="False">
                             <DataGridTextColumn.Binding>
                                 <Binding Path="FloorName" NotifyOnTargetUpdated="True"
-                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay">
-                                </Binding>
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
                         <DataGridTextColumn Header="階の高" Width="100" CanUserSort="False">
                             <DataGridTextColumn.Binding>
                                 <Binding Path="FloorHeight" NotifyOnTargetUpdated="True"
-                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay">
-                                </Binding>
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
                         <DataGridComboBoxColumn Header="DWGファイル" Width="350"
@@ -72,7 +70,7 @@
                     <ColumnDefinition Width="130" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="2" x:Name="btnSave"
+                <Button Grid.Column="2"
                         Content="OK"
                         Margin="5,5,5,5"
                         HorizontalAlignment="Right"
@@ -80,7 +78,7 @@
                         Click="BtnSave_OnClick"
                         Height="27"
                         Width="110" />
-                <Button Grid.Column="1" x:Name="btnCancel"
+                <Button Grid.Column="1"
                         Content="Cancel"
                         Margin="5,5,5,5"
                         HorizontalAlignment="Right"
@@ -88,7 +86,7 @@
                         Click="BtnCancel_OnClick"
                         Height="27"
                         Width="110" />
-                <Button Grid.Column="0" x:Name="btnAdd"
+                <Button Grid.Column="0"
                         Content="階追加"
                         Margin="5,5,5,5"
                         HorizontalAlignment="Right"
