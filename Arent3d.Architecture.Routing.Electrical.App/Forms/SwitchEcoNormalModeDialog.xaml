@@ -1,0 +1,66 @@
+﻿<ui:RevitDialog x:Class="Arent3d.Architecture.Routing.Electrical.App.Forms.SwitchEcoNormalModeDialog"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
+                xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
+                mc:Ignorable="d"
+                WindowStartupLocation="CenterScreen"
+                Title="エコモード切替設定" Height="200" Width="300">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="40" />
+        </Grid.RowDefinitions>
+
+        <ComboBox Grid.Column="0"
+                  Grid.Row="0"
+                  Margin="10,15,0,5"
+                  Name="EcoNormalModeComboBox"
+                  ItemsSource="{Binding  EcoNormalModes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}"
+                  DisplayMemberPath="Name"
+                  SelectionChanged="EcoNormalModeComboBox_SelectionChanged"
+                  SelectedIndex="{Binding EcoNormalModeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}"
+                  VerticalAlignment="Center">
+            <ComboBox.Style>
+                <Style TargetType="{x:Type ComboBox}">
+                    <Setter Property="IsEnabled" Value="True" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding EcoNormalModeEditable, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}" Value="False">
+                            <Setter Property="IsEnabled" Value="False" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding UseEcoNormalMode, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}" Value="False">
+                            <Setter Property="IsEnabled" Value="False" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ComboBox.Style>
+        </ComboBox>
+        <Button Grid.Row="0" Grid.Column="1" x:Name="BtnApplyForProject"
+                Content="プロジェクト変更"
+                Click="Button_BtnApplyForProject_Click"
+                Margin="10,15,0,5"
+                HorizontalAlignment="Left"
+                Width="100" />
+
+        <Button Grid.Row="1" Grid.Column="1" x:Name="BtnApplyForARange"
+                Content="範囲選択変更"
+                Click="Button_BtnApplyForARange_Click"
+                Margin="10,5,0,5"
+                HorizontalAlignment="Left"
+                Width="100" />
+
+        <Button Grid.Row="2" Grid.Column="1" x:Name="BtnCancel"
+                Content="Cancel"
+                Click="Button_Cancel_Click"
+                Margin="10,5,0,5"
+                HorizontalAlignment="Left"
+                Width="100" />
+    </Grid>
+</ui:RevitDialog>
