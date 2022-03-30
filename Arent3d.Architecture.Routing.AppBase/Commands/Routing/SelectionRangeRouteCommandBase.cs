@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
-using System.Text.RegularExpressions ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
@@ -18,8 +17,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class SelectionRangeRouteCommandBase : RoutingCommandBase<SelectionRangeRouteCommandBase.SelectState>
   {
-    private const string ErrorMessageUnableToRouteDueToEnvelope = "選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。" ;
-    
     public record SelectState( FamilyInstance PowerConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteManager.SensorArrayDirection SensorDirection, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
 
     public record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
@@ -96,11 +93,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var allPassPoints = new List<FamilyInstance>() ;
       if ( footPassPoint != null ) allPassPoints.Add( footPassPoint ) ;
       allPassPoints.AddRange( passPoints ) ;
-      var isPassPointInEnvelope = AnyPassPointsInsideEnvelope( document, allPassPoints ) ;
-      if ( isPassPointInEnvelope ) {
+      if ( IsAnyPassPointsInsideEnvelope( document, allPassPoints ) ) {
         var allPassPointIds = allPassPoints.Select( p => p.UniqueId ).ToList() ;
         document.Delete( allPassPointIds ) ;
-        MessageBox.Show( ErrorMessageUnableToRouteDueToEnvelope, "Error" ) ;
+        MessageBox.Show( "Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope".GetDocumentStringByKeyOrDefault( document, "選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。" ), "Error" ) ;
         return new List<(string RouteName, RouteSegment Segment)>() ;
       }
       
@@ -153,7 +149,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    private static bool AnyPassPointsInsideEnvelope( Document document, IReadOnlyCollection<FamilyInstance> passPoints )
+    private static bool IsAnyPassPointsInsideEnvelope( Document document, IReadOnlyCollection<FamilyInstance> passPoints )
     {
       var envelopes = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ).ToList() ;
       if ( ! envelopes.Any() ) return false ;
