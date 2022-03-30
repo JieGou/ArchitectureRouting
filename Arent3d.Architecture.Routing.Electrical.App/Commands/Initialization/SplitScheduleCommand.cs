@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         if ( document.GetElement( sheetInstance.ScheduleId ) is not ViewSchedule schedule )
           return Result.Failed ;
-        int splitFromRow = schedule.GetHeaderRowCount() + 1 ;
+        int splitFromRow = schedule.GetScheduleHeaderRowCount() + 1 ;
         if ( schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows < splitFromRow
             && schedule.GetTableData().GetSectionData( SectionType.Body ).LastColumnNumber != -1)
           return Result.Cancelled ;
@@ -112,13 +112,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
     private static void SetSplitInformation( ViewSchedule schedule, ViewSchedule cloneSchedule, string originalName )
     {
-      schedule.SetOriginalTableName( originalName );
+      schedule.SetParentScheduleName( originalName );
       schedule.SetSplitStatus( true );
       schedule.SetSplitIndex( 0 );
-      schedule.SetSplitGroupId( schedule.Id );
+      schedule.SetParentScheduleId( schedule.Id );
       cloneSchedule.SetSplitStatus( true );
       cloneSchedule.SetSplitIndex( 1 );
-      cloneSchedule.SetSplitGroupId( schedule.Id );
+      cloneSchedule.SetParentScheduleId( schedule.Id );
     }
     private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox, int splitFromRow )
     {

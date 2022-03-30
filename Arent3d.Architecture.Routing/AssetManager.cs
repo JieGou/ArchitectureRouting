@@ -21,7 +21,6 @@ namespace Arent3d.Architecture.Routing
     private const string RoutingElementSharedParameterFileName = "RoutingElementSharedParameters.txt" ;
     private const string MechanicalRoutingElementSharedParameterFileName = "MechanicalRoutingElementSharedParameters.txt" ;
     private const string ElectricalRoutingElementSharedParameterFileName = "ElectricalRoutingElementSharedParameters.txt" ;
-    private const string ScheduleElementSharedParameterFileName = "ScheduleElementSharedParameters.txt" ;
 
     private static readonly string AssetPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "Assets" ) ;
 

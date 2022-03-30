@@ -230,7 +230,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const int defaultColumnCount = 5 ;
 
       TableData tableData = viewSchedule.GetTableData() ;
-      viewSchedule.SetHeaderRowCount( HeaderRowCount ) ;
+      viewSchedule.SetScheduleHeaderRowCount( HeaderRowCount ) ;
       TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
       var rowCount = tsdHeader.NumberOfRows ;
       var columnCount = tsdHeader.NumberOfColumns ;

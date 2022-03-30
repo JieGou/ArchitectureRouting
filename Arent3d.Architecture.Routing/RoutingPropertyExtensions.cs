@@ -129,17 +129,17 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     SplitIndex,
     
-    [ParameterGuid( "2affef55-99c9-49de-a088-14c02d8e6dbc" ), NameOnRevit( "Split Group Id" )]
+    [ParameterGuid( "2affef55-99c9-49de-a088-14c02d8e6dbc" ), NameOnRevit( "Parent Schedule Id" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
-    SplitGroupId,
+    ParentScheduleId,
     
     [ParameterGuid( "0897a3f8-b677-45e2-a1e8-9edb995d0d85" ), NameOnRevit( "Image Cell Map" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     ImageCellMap,
     
-    [ParameterGuid( "c8cef9b9-ea78-4048-8a89-d0792efb0f8c" ), NameOnRevit( "Original Table Name" )]
+    [ParameterGuid( "c8cef9b9-ea78-4048-8a89-d0792efb0f8c" ), NameOnRevit( "Parent Schedule Name" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
-    OriginalTableName,
+    ParentScheduleName,
   }
 
   public enum BranchNumberParameter

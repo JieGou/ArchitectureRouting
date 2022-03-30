@@ -76,7 +76,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       foreach ( var scheduleSheetInstance in scheduleSheetInstances ) {
         if ( document.GetElement( scheduleSheetInstance.ScheduleId ) is not ViewSchedule schedule ) continue ;
         if ( ! schedule.GetSplitStatus() ) continue ;
-        var groupId = schedule.GetSplitGroupId() ;
+        var groupId = schedule.GetParentScheduleId() ;
         if ( groupId == null ) continue ;
         if ( groups.ContainsKey( groupId ) )
           groups[ groupId ].Add( scheduleSheetInstance ) ;
@@ -102,7 +102,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var firstSessionData = firstSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
       var firstSessionDataRowCount = firstSessionData.NumberOfRows ;
       var firstSessionDataColumnCount = firstSessionData.NumberOfColumns ;
-      var headerRowCount = firstSchedule.GetHeaderRowCount() ;
+      var headerRowCount = firstSchedule.GetScheduleHeaderRowCount() ;
       for ( int i = 1 ; i < scheduleSheetInstances.Count ; i++ ) {
         if ( document.GetElement( scheduleSheetInstances[ i ].ScheduleId ) is not ViewSchedule schedule )
           return Result.Failed ;
@@ -126,7 +126,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         document.Delete( schedule.Id ) ;
       }
 
-      firstSchedule.Name = firstSchedule.GetOriginalTableName() ;
+      firstSchedule.Name = firstSchedule.GetParentScheduleName() ;
       return Result.Succeeded ;
     }
   }
