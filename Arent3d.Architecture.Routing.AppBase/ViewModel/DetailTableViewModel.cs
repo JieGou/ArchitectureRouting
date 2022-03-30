@@ -195,5 +195,32 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
     }
+    
+    public static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels, bool mixConstructionItems )
+    {
+      if ( mixConstructionItems ) {
+        detailTableModels = 
+          detailTableModels
+            .OrderBy( x => x.DetailSymbol )
+            .ThenByDescending( x => x.DetailSymbolId )
+            .ThenByDescending( x => x.SignalType )
+            .ThenByDescending( x => x.GroupId )
+            .ThenByDescending( x => x.IsParentRoute )
+            .GroupBy( x => x.DetailSymbolId )
+            .SelectMany( x => x ).ToList() ;
+      }
+      else {
+        detailTableModels = 
+          detailTableModels
+            .OrderBy( x => x.DetailSymbol )
+            .ThenByDescending( x => x.DetailSymbolId )
+            .ThenByDescending( x => x.SignalType )
+            .ThenByDescending( x => x.ConstructionItems )
+            .ThenByDescending( x => x.GroupId )
+            .ThenByDescending( x => x.IsParentRoute )
+            .GroupBy( x => x.DetailSymbolId )
+            .SelectMany( x => x ).ToList() ;
+      }
+    }
   }
 }
