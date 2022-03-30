@@ -117,9 +117,9 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConnectorsAndConduits ) )]
     IsEcoMode,
     
-    [ParameterGuid( "e7505165-3295-442b-b6ec-9372476aa06e" ), NameOnRevit( "Header Row Count" )]
+    [ParameterGuid( "e7505165-3295-442b-b6ec-9372476aa06e" ), NameOnRevit( "Schedule Header Row Count" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
-    HeaderRowCount,
+    ScheduleHeaderRowCount,
     
     [ParameterGuid( "3115985b-2f62-40dd-bf77-c1cbe50ebc5f" ), NameOnRevit( "IsSplit" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
