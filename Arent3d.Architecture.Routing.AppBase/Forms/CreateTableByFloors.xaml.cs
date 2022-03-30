@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using Arent3d.Revit;
 using Arent3d.Utility;
 using static Arent3d.Architecture.Routing.AppBase.Forms.GetLevel;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -15,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
         public ObservableCollection<string> TableTypes { get; set; }
         public ObservableCollection<LevelInfo> LevelList { get; }
-        public string SelectedTableType { get; set; } = string.Empty;
+        public string SelectedTableType { get; set; } = "Detail Table";
 
         public CreateTableByFloors(Document doc)
         {
@@ -48,10 +49,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         private void SelectButton_Click(object sender, RoutedEventArgs e)
         {
-            string tableType = SelectedTableType;
-            if( tableType == "Detail Table")
-            {
-            }
+            this.DialogResult = true;
+            this.Close();
         }
 
         private void SelectAll(bool select)

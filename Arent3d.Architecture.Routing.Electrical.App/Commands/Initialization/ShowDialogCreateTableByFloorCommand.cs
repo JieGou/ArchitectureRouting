@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     [DisplayNameKey("Electrical.App.Commands.Routing.ShowCreateTableByFloorDialogCommand", DefaultString = "Create table by floors")]
     [Image("resources/Initialize-16.bmp", ImageType = ImageType.Normal)]
     [Image("resources/Initialize-32.bmp", ImageType = ImageType.Large)]
-    internal class ShowDialogCreateTableByFloorCommand : ShowDialogCreateTableCommandBase
+    internal class ShowDialogCreateTableByFloorCommand : ShowDialogCreateTableByFloorCommandBase
     {
     }
 }
