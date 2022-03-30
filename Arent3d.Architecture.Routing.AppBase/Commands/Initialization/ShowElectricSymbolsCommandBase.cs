@@ -21,6 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public class ShowElectricSymbolsCommandBase : IExternalCommand
   {
+    private const int HeaderRowCount = 3 ;
     private readonly struct ConnectorInfo
     {
       public ConnectorInfo( string ceedSetCode, string deviceSymbol, string modelNumber )
@@ -29,11 +30,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         DeviceSymbol = deviceSymbol ;
         ModelNumber = modelNumber ;
       }
-
+      
       public string CeedSetCode { get ; }
       public string DeviceSymbol { get ; }
       public string ModelNumber { get ; }
     }
+    
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
@@ -227,14 +229,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       [DisplayStringKey( "（屋外）" )]
       OutPlumbingType,
     }
-
+    
     private static void CreateScheduleData( Document document, ViewSchedule viewSchedule, List<ElectricalSymbolModel> electricalSymbolModels )
     {
       const int startRowData = 3 ;
       const int defaultColumnCount = 5 ;
 
       TableData tableData = viewSchedule.GetTableData() ;
-      viewSchedule.SetHeaderRowCount( 3 );
+      viewSchedule.SetHeaderRowCount( HeaderRowCount );
       TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
       var rowCount = tsdHeader.NumberOfRows ;
       var columnCount = tsdHeader.NumberOfColumns ;
