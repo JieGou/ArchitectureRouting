@@ -51,12 +51,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var parentRouteName = firstDetailSymbolModelByDetailSymbolId!.CountCableSamePosition == 1 ? firstDetailSymbolModelByDetailSymbolId.RouteName : GetParentRouteName( doc, routeNames ) ;
           if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
             var parentDetailSymbolModel = detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == parentRouteName ) ;
-            AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, conduitsModelData, wiresAndCablesModelData, detailTableModelsData, detailTableModels, pickedObjects, parentDetailSymbolModel!, true, mixConstructionItems ) ;
+            AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, detailTableModelsData, detailTableModels, pickedObjects, parentDetailSymbolModel!, true, mixConstructionItems ) ;
             routeNames = routeNames.Where( n => n != parentRouteName ).OrderByDescending( n => n ).ToList() ;
           }
 
           foreach ( var childDetailSymbolModel in from routeName in routeNames select detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == routeName ) ) {
-            AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, conduitsModelData, wiresAndCablesModelData, detailTableModelsData, detailTableModels, pickedObjects, childDetailSymbolModel, false, mixConstructionItems ) ;
+            AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, detailTableModelsData, detailTableModels, pickedObjects, childDetailSymbolModel, false, mixConstructionItems ) ;
           }
         }
 
@@ -263,6 +263,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
             parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, mixConstructionItems ) ;
             parentDetailRow.IsReadOnlyPlumbingItems = ! mixConstructionItems ;
+            parentDetailRow.IsMixConstructionItems = mixConstructionItems ;
             if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
               detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
             else {
@@ -282,6 +283,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
             currentDetailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( currentDetailTableRow, mixConstructionItems ) ;
             currentDetailTableRow.IsReadOnlyPlumbingItems = ! mixConstructionItems ;
+            currentDetailTableRow.IsMixConstructionItems = mixConstructionItems ;
             plumbingCount++ ;
           }
           else {
@@ -295,6 +297,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
               parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, mixConstructionItems ) ;
               parentDetailRow.IsReadOnlyPlumbingItems = ! mixConstructionItems ;
+              parentDetailRow.IsMixConstructionItems = mixConstructionItems ;
               if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
                 detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
               else {
@@ -311,6 +314,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             currentDetailTableRow.IsReadOnlyPlumbingItems = true ;
             currentDetailTableRow.IsParentRoute = false ;
             currentDetailTableRow.IsReadOnly = true ;
+            currentDetailTableRow.IsMixConstructionItems = mixConstructionItems ;
             childDetailRows.Add( currentDetailTableRow ) ;
           }
         }
@@ -415,7 +419,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return string.Empty ;
     }
 
-    private void AddDetailTableModelRow( Document doc, CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailTableModel> detailTableModelsData, ICollection<DetailTableModel> detailTableModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute, bool mixConstructionItems )
+    private void AddDetailTableModelRow( Document doc, CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailTableModel> detailTableModelsData, ICollection<DetailTableModel> detailTableModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute, bool mixConstructionItems )
     {
       var ceedCode = string.Empty ;
       var constructionClassification = string.Empty ;
@@ -468,7 +472,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, constructionItem, plumbingItems, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, string.Empty, groupId, true ) ;
+      var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, constructionItem, plumbingItems, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, string.Empty, groupId, true, mixConstructionItems ) ;
       detailTableModels.Add( detailTableRow ) ;
     }
 

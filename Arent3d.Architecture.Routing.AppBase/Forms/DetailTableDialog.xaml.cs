@@ -9,6 +9,7 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -104,6 +105,70 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
         selectedItem.CalculationExclusion = false ;
       }
+    }
+    
+    private void BtnDeleteLine_Click( object sender, RoutedEventArgs e )
+    {
+      if ( ! _selectedDetailTableModels.Any() ) return ;
+      var detailSymbolStorable = _document.GetDetailSymbolStorable() ;
+      var detailTableRowDeleted = new List<DetailTableModel>() ;
+      var parentDetailRowDeletedInfo = new Dictionary<string, string>() ;
+      foreach ( var selectedItem in _selectedDetailTableModels ) {
+        if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
+          var selectedItems = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
+          foreach ( var item in selectedItems ) {
+            var detailSymbolModels = detailSymbolStorable.DetailSymbolModelData.Where( s => s.DetailSymbolId == item.DetailSymbolId && s.RouteName == item.RouteName ).ToList() ;
+            foreach ( var detailSymbolModel in detailSymbolModels ) {
+              detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+            }
+           
+            detailTableRowDeleted.AddRange(_selectedDetailTableModels.Where( d => d.DetailSymbolId == item.DetailSymbolId && d.RouteName == item.RouteName ) ) ;
+            if ( item.IsParentRoute && ! parentDetailRowDeletedInfo.ContainsKey( item.PlumbingIdentityInfo ) ) {
+              parentDetailRowDeletedInfo.Add( item.PlumbingIdentityInfo, item.PlumbingType ) ;
+            }
+            _detailTableViewModel.DetailTableModels.Remove( item ) ;
+          }
+        }
+        else {
+          var detailSymbolModels = detailSymbolStorable.DetailSymbolModelData.Where( s => s.DetailSymbolId == selectedItem.DetailSymbolId && s.RouteName == selectedItem.RouteName ).ToList() ;
+          foreach ( var detailSymbolModel in detailSymbolModels ) {
+            detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+          }
+          
+          detailTableRowDeleted.AddRange(_selectedDetailTableModels.Where( d => d.DetailSymbolId == selectedItem.DetailSymbolId && d.RouteName == selectedItem.RouteName ) ) ;
+          var detailTableRow = _detailTableViewModel.DetailTableModels.SingleOrDefault( d => d.DetailSymbolId == selectedItem.DetailSymbolId && d.RouteName == selectedItem.RouteName ) ;
+          if ( selectedItem.IsParentRoute && ! parentDetailRowDeletedInfo.ContainsKey( selectedItem.PlumbingIdentityInfo ) ) {
+            parentDetailRowDeletedInfo.Add( selectedItem.PlumbingIdentityInfo, selectedItem.PlumbingType ) ;
+          }
+          _detailTableViewModel.DetailTableModels.Remove( detailTableRow ) ;
+        }
+      }
+
+      foreach ( var detailTableRow in detailTableRowDeleted ) {
+        _selectedDetailTableModels.Remove( detailTableRow ) ;
+      }
+
+      foreach ( var ( plumbingIdentityInfo, plumbingType) in parentDetailRowDeletedInfo ) {
+        var detailTableRowsWithSamePlumbingIdentityInfo = _detailTableViewModel.DetailTableModels.Where( d => d.PlumbingIdentityInfo == plumbingIdentityInfo ).ToList() ;
+        if ( ! detailTableRowsWithSamePlumbingIdentityInfo.Any() ) continue ;
+        var isMixConstructionItems = detailTableRowsWithSamePlumbingIdentityInfo.First().IsMixConstructionItems ;
+        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, detailTableRowsWithSamePlumbingIdentityInfo, plumbingType, true, isMixConstructionItems ) ;
+      }
+      
+      DetailTableViewModel newDetailTableViewModel = new( _detailTableViewModel.DetailTableModels, _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems ) ;
+      DataContext = newDetailTableViewModel ;
+      DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
+      DetailTableViewModelSummary = newDetailTableViewModel ;
+      SaveData( _detailTableViewModel.DetailTableModels ) ;
+      SaveDetailSymbolData( detailSymbolStorable ) ;
+    }
+    
+    private void BtnCopyLine_Click( object sender, RoutedEventArgs e )
+    {
+    }
+    
+    private void BtnPasteLine_Click( object sender, RoutedEventArgs e )
+    {
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
@@ -230,7 +295,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               oldDetailTableRow.EarthSize, oldDetailTableRow.NumberOfGrounds, oldDetailTableRow.PlumbingType, oldDetailTableRow.PlumbingSize, oldDetailTableRow.NumberOfPlumbing, 
               oldDetailTableRow.ConstructionClassification, oldDetailTableRow.SignalType, constructionItem.ToString(), plumbingItems, oldDetailTableRow.Remark, 
               oldDetailTableRow.WireCrossSectionalArea, oldDetailTableRow.CountCableSamePosition, oldDetailTableRow.RouteName, oldDetailTableRow.IsEcoMode, oldDetailTableRow.IsParentRoute, 
-              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems ) ;
+              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems, oldDetailTableRow.IsMixConstructionItems ) ;
             newDetailTableModels.Add( newDetailTableRow ) ;
           }
           else {
@@ -288,7 +353,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               oldDetailTableRow.EarthSize, oldDetailTableRow.NumberOfGrounds, oldDetailTableRow.PlumbingType, oldDetailTableRow.PlumbingSize, oldDetailTableRow.NumberOfPlumbing, 
               oldDetailTableRow.ConstructionClassification, oldDetailTableRow.SignalType, oldDetailTableRow.ConstructionItems, plumbingItem.ToString(), oldDetailTableRow.Remark, 
               oldDetailTableRow.WireCrossSectionalArea, oldDetailTableRow.CountCableSamePosition, oldDetailTableRow.RouteName, oldDetailTableRow.IsEcoMode, oldDetailTableRow.IsParentRoute, 
-              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems ) ;
+              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems, oldDetailTableRow.IsMixConstructionItems ) ;
             newDetailTableModels.Add( newDetailTableRow ) ;
           }
           else {
@@ -316,6 +381,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         using Transaction t = new( _document, "Save data" ) ;
         t.Start() ;
         detailTableStorable.Save() ;
+        t.Commit() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      }
+    }
+    
+    private void SaveDetailSymbolData( StorableBase detailSymbolStorable )
+    {
+      try {
+        using Transaction t = new( _document, "Save data" ) ;
+        t.Start() ;
+        detailSymbolStorable.Save() ;
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -401,7 +478,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             detailTableRow.EarthSize, detailTableRow.NumberOfGrounds, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
             detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
             detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
-            detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems ) ;
+            detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsMixConstructionItems ) ;
           newDetailTableModels.Add( newDetailTableRow ) ;
           existedGroupIds.Add( detailTableRow.GroupId ) ;
         }
