@@ -28,5 +28,29 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models
         OnPropertyChanged();
       }
     }
+
+    private string? _path ;
+
+    public string Path
+    {
+      get { return _path ??= string.Empty ; }
+      set
+      {
+        _path = value ;
+        OnPropertyChanged();
+      }
+    }
+
+    private bool? _isSelected ;
+
+    public bool IsSelected
+    {
+      get { return _isSelected ??= false ; }
+      set
+      {
+        _isSelected = value ;
+        OnPropertyChanged();
+      }
+    }
   }
 }

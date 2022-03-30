@@ -8,10 +8,13 @@ using System.Windows.Forms ;
 using System.Windows.Input ;
 using System.Windows.Interop ;
 using System.Windows.Media.Imaging ;
+using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
-using Arent3d.Utility ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
@@ -20,20 +23,49 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
   {
     private readonly UIDocument _uiDocument ;
     private string? _browseFolderPath ;
+    private readonly RegisterSymbolStorable _settingStorable ;
+    private readonly bool _isExistBrowseFolderPath ;
+    private readonly bool _isExistFolderSelectedPath ;
 
-    public readonly string[] AllowedExtensions = { "*.dwg", "*.png", "*.jpg" } ;
+    public const string DwgExtension = ".dwg" ;
+    public const string PngExtension = ".png" ;
+    public readonly string[] PatternSearchings = { $"*{DwgExtension}", $"*{PngExtension}" } ;
 
     private ObservableCollection<FolderModel>? _folders ;
 
     public ObservableCollection<FolderModel> Folders
     {
-      get { return _folders ??= new ObservableCollection<FolderModel>() ; }
+      get
+      {
+        if ( ! _isExistBrowseFolderPath )
+          return _folders ??= new ObservableCollection<FolderModel>() ;
+
+        if ( null != _folders ) 
+          return _folders ;
+        
+        var folders = GetFolders( _settingStorable.BrowseFolderPath ) ;
+        _folders = new ObservableCollection<FolderModel>( folders ) ;
+        
+        FolderSelected = FindSelectedFolder( _folders ) ;
+        Previews = new ObservableCollection<PreviewModel>( GetPreviewFiles( FolderSelected?.Path ) ) ;
+
+        return _folders ;
+      }
       set
       {
         _folders = value ;
-        Previews = new ObservableCollection<PreviewModel>() ;
+        FolderSelected = FindSelectedFolder( _folders ) ;
+        Previews = new ObservableCollection<PreviewModel>( GetPreviewFiles( FolderSelected?.Path ) ) ;
         OnPropertyChanged() ;
       }
+    }
+
+    private FolderModel? _folderSelected ;
+
+    private FolderModel? FolderSelected
+    {
+      get { return _folderSelected ??= FindSelectedFolder( Folders ) ; }
+      set => _folderSelected = value ;
     }
 
     private ObservableCollection<PreviewModel>? _previews ;
@@ -48,9 +80,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
     }
 
+    public ExternalEventHandler? ExternalEventHandler { get ; set ; }
+
     public RegisterSymbolViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
+      _settingStorable = _uiDocument.Document.GetRegisterSymbolStorable() ;
+      _browseFolderPath = _settingStorable.BrowseFolderPath ;
+      _isExistBrowseFolderPath = Directory.Exists( _settingStorable.BrowseFolderPath ) ;
+      _isExistFolderSelectedPath = Directory.Exists( _settingStorable.FolderSelectedPath ) ;
     }
 
     #region Commands
@@ -67,7 +105,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             using var folderBrowserDialog = new FolderBrowserDialog { ShowNewFolderButton = true } ;
             folderBrowserDialog.Reset() ;
             folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer ;
-            folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", AllowedExtensions )} file extension." ;
+            folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", PatternSearchings )} file extension." ;
             if ( folderBrowserDialog.ShowDialog() == DialogResult.OK && ! string.IsNullOrWhiteSpace( folderBrowserDialog.SelectedPath ) ) {
               _browseFolderPath = folderBrowserDialog.SelectedPath ;
               Folders = new ObservableCollection<FolderModel>( GetFolders( _browseFolderPath ) ) ;
@@ -82,16 +120,61 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
     }
 
+    public ICommand OkCommand
+    {
+      get
+      {
+        return new RelayCommand<Window>( wd => null != wd, wd =>
+        {
+          var previewSelected = Previews.SingleOrDefault( x => x.IsSelected ) ;
+          if ( null != previewSelected ) {
+            switch ( Path.GetExtension( previewSelected.FileName ) ) {
+              case DwgExtension :
+                ImportDwgFile( previewSelected ) ;
+                break ;
+              case PngExtension :
+
+                break ;
+            }
+          }
+          else {
+            System.Windows.MessageBox.Show( "Please, select a file at the preview!", "Arent Notification" ) ;
+          }
+
+          wd.Close() ;
+        } ) ;
+      }
+    }
+
+    public ICommand SaveCommand
+    {
+      get
+      {
+        return new RelayCommand<Window>( wd => null != wd, wd =>
+        {
+          ExternalEventHandler?.AddAction( () =>
+          {
+            using var transaction = new Transaction( _uiDocument.Document ) ;
+            transaction.Start( "Save Setting" ) ;
+            _settingStorable.BrowseFolderPath = _browseFolderPath ?? string.Empty ;
+            _settingStorable.FolderSelectedPath = FolderSelected?.Path ?? string.Empty ;
+            _settingStorable.Save() ;
+            transaction.Commit() ;
+          } )?.Raise() ;
+
+          wd.Close() ;
+        } ) ;
+      }
+    }
+
     public ICommand SelectedItemCommand
     {
       get
       {
-        return new RelayCommand<System.Windows.Controls.TreeView>( tv => null != tv, tv =>
+        return new RelayCommand<System.Windows.Controls.TreeView>( tv => null != tv, _ =>
         {
-          var folder = FindSelectedFolder( Folders ) ;
-          if ( null == folder ) return ;
-
-          Previews = new ObservableCollection<PreviewModel>( GetPreviewFiles( folder.Path ) ) ;
+          FolderSelected = FindSelectedFolder( Folders ) ;
+          Previews = new ObservableCollection<PreviewModel>( GetPreviewFiles( FolderSelected?.Path ) ) ;
         } ) ;
       }
     }
@@ -107,7 +190,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if ( null != browseFolderPath && Directory.Exists( browseFolderPath ) ) {
         var directoryInfo = new DirectoryInfo( browseFolderPath ) ;
         if ( ! directoryInfo.Attributes.HasFlag( FileAttributes.Hidden ) ) {
-          folders.Add( new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = false } ) ;
+          var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
+          folders.Add(
+            new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ) ;
         }
 
         foreach ( var path in Directory.GetDirectories( browseFolderPath ) ) {
@@ -115,7 +200,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           if ( directoryInfo.Attributes.HasFlag( FileAttributes.Hidden ) )
             continue ;
 
-          var folder = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = false } ;
+          var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
+          var folder = new FolderModel
+          {
+            Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected
+          } ;
           var subPaths = Directory.GetDirectories( folder.Path ) ;
           if ( subPaths.Length > 0 ) {
             RecursiveFolder( subPaths, ref folder ) ;
@@ -138,7 +227,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if ( directoryInfo.Attributes.HasFlag( FileAttributes.Hidden ) )
           continue ;
 
-        var subFolderModel = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = false } ;
+        var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
+        var subFolderModel = new FolderModel
+        {
+          Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected
+        } ;
         var subPaths = Directory.GetDirectories( directoryInfo.FullName ) ;
         if ( subPaths.Length > 0 ) {
           RecursiveFolder( subPaths, ref subFolderModel ) ;
@@ -146,6 +239,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
         folderModel.Folders.Add( subFolderModel ) ;
       }
+    }
+
+    private (bool IsExpanded, bool IsSelected) IsNodeSelected( FileSystemInfo directoryInfo )
+    {
+      if ( ! _isExistFolderSelectedPath )
+        return ( false, false ) ;
+
+      if ( directoryInfo.FullName.Length > _settingStorable.FolderSelectedPath.Length ||
+           ! _settingStorable.FolderSelectedPath.StartsWith( directoryInfo.FullName ) )
+        return ( false, false ) ;
+
+      return directoryInfo.FullName.Length < _settingStorable.FolderSelectedPath.Length ? ( true, false ) : ( true, true ) ;
     }
 
     private FolderModel? FindSelectedFolder( IEnumerable<FolderModel> folders )
@@ -165,24 +270,39 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       return null ;
     }
 
-    public IEnumerable<PreviewModel> GetPreviewFiles( string? folderPath )
+    private IEnumerable<PreviewModel> GetPreviewFiles( string? folderPath )
     {
       var previewModels = new List<PreviewModel>() ;
       if ( string.IsNullOrEmpty( folderPath ) || ! Directory.Exists( folderPath ) )
         return previewModels ;
 
-      foreach ( var allowedExtension in AllowedExtensions ) {
+      foreach ( var allowedExtension in PatternSearchings ) {
         var filePaths = Directory.GetFiles( folderPath, allowedExtension, SearchOption.TopDirectoryOnly ) ;
 
         foreach ( var filePath in filePaths ) {
           var fileInfo = new FileInfo( filePath ) ;
-          var bitmap = ThumbnailProvider.GetThumbnail( fileInfo.FullName, 75, 75, ThumbnailOptions.ThumbnailOnly ) ;
+          var bitmap = ThumbnailProvider.GetThumbnail( fileInfo.FullName, 125, 125, ThumbnailOptions.ThumbnailOnly ) ;
 
-          previewModels.Add( new PreviewModel() { FileName = fileInfo.Name, Thumbnail = Imaging.CreateBitmapSourceFromHBitmap( bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions() ) } ) ;
+          previewModels.Add( new PreviewModel
+          {
+            FileName = fileInfo.Name,
+            Thumbnail = Imaging.CreateBitmapSourceFromHBitmap( bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty,
+              BitmapSizeOptions.FromEmptyOptions() ),
+            Path = fileInfo.FullName
+          } ) ;
         }
       }
 
       return previewModels.OrderBy( x => x.FileName ) ;
+    }
+
+    private void ImportDwgFile( PreviewModel? previewFile )
+    {
+      if ( null == previewFile )
+        return ;
+
+      var filter = new FilteredElementCollector( _uiDocument.Document ) ;
+      var cadLinkType = filter.OfType<CADLinkType>().SingleOrDefault( x => x.Name == previewFile.FileName ) ;
     }
 
     #endregion
