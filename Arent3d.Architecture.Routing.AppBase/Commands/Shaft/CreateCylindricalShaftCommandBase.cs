@@ -78,8 +78,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
           var circle = Arc.Create( new XYZ( centerPoint.X, centerPoint.Y, viewPlan.GenLevel.Elevation ), radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
           CreateDetailLine( viewPlan, subCategoryForOuterShape, circle ) ;
-          
-          CreateSymbolCenter( viewPlan, subCategoryForOuterShape, centerPoint ) ;
         }
 
         trans.Commit() ;
@@ -93,16 +91,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         message = e.Message ;
         return Result.Failed ;
       }
-    }
-
-    private static void CreateSymbolCenter( View viewPlan, Element lineStyle, XYZ centerPoint )
-    {
-      var lineOne = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * 200d.MillimetersToRevitUnits() ).OfPoint( centerPoint ), Transform.CreateTranslation( -XYZ.BasisX * 200d.MillimetersToRevitUnits() ).OfPoint( centerPoint ) ) ;
-      CreateDetailLine( viewPlan, lineStyle, lineOne ) ;
-      var lineTwo = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 1 ) ), Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 1 ) ) ) ;
-      CreateDetailLine( viewPlan, lineStyle, lineTwo ) ;
-      var lineThree = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 0 ) ), Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 0 ) ) ) ;
-      CreateDetailLine( viewPlan, lineStyle, lineThree ) ;
     }
 
     private static void CreateDetailLine( View viewPlan, Element lineStyle, Curve curve )
