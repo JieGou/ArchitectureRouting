@@ -18,18 +18,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
   {
     private const string RequiredEcoNormalMode = "Please select Eco or Normal mode from combo box" ;
     public static readonly DependencyProperty EcoNormalModeComboBoxIndexProperty = DependencyProperty.Register( "EcoNormalModeComboBoxIndex", typeof( int ), typeof( SwitchEcoNormalModeDialog ), new PropertyMetadata( 0, EcoNormalModeIndex_PropertyChanged ) ) ;
+
     public SwitchEcoNormalModeDialog( UIApplication uiApplication, bool? isProjectInEcoMode ) : base( uiApplication )
     {
       InitializeComponent() ;
-      if(isProjectInEcoMode != null)
+      if ( isProjectInEcoMode != null )
         EcoNormalModeComboBox.SelectedIndex = isProjectInEcoMode == true ? 0 : 1 ;
     }
 
-    public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string>
-    {
-      [ EcoNormalMode.EcoMode ] = "エコモード", 
-      [ EcoNormalMode.NormalMode ] = "ノーマル",
-    } ;
+    public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string> { [ EcoNormalMode.EcoMode ] = "エコモード", [ EcoNormalMode.NormalMode ] = "ノーマル", } ;
 
     public bool? ApplyForProject ;
 
@@ -37,8 +34,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     {
       if ( EcoNormalModeComboBox.SelectedIndex == -1 ) {
         MessageBox.Show( RequiredEcoNormalMode ) ;
-        return;
+        return ;
       }
+
       ApplyForProject = true ;
       DialogResult = true ;
     }
@@ -47,8 +45,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     {
       if ( EcoNormalModeComboBox.SelectedIndex == -1 ) {
         MessageBox.Show( RequiredEcoNormalMode ) ;
-        return;
+        return ;
       }
+
       ApplyForProject = false ;
       DialogResult = true ;
     }
@@ -60,19 +59,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     public EcoNormalMode? SelectedMode
     {
-      get => GetLocationTypeOnIndex( EcoNormalModes.Keys, (int)GetValue( EcoNormalModeComboBoxIndexProperty ) ) ;
-      private set => SetValue( EcoNormalModeComboBoxIndexProperty, GetLocationTypeIndex( EcoNormalModes.Keys, value ) ) ;
+      get => GetEcoNormalModeOnIndex( EcoNormalModes.Keys, (int) GetValue( EcoNormalModeComboBoxIndexProperty ) ) ;
+      private set => SetValue( EcoNormalModeComboBoxIndexProperty, GetEcoNormalModeIndex( EcoNormalModes.Keys, value ) ) ;
     }
-    private static EcoNormalMode? GetLocationTypeOnIndex( IEnumerable<EcoNormalMode> ecoNormalModes, int index )
+
+    private static EcoNormalMode? GetEcoNormalModeOnIndex( IEnumerable<EcoNormalMode> ecoNormalModes, int index )
     {
       if ( index < 0 ) return null ;
       return ecoNormalModes.ElementAtOrDefault( index ) ;
     }
 
-    private static int GetLocationTypeIndex( IEnumerable<EcoNormalMode> ecoNormalModes, EcoNormalMode? ecoNormalMode )
+    private static int GetEcoNormalModeIndex( IEnumerable<EcoNormalMode> ecoNormalModes, EcoNormalMode? ecoNormalMode )
     {
       return ( ecoNormalMode is { } type ? ecoNormalModes.IndexOf( type ) : -1 ) ;
     }
+
     private void EcoNormalModeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       OnValueChanged( EventArgs.Empty ) ;
@@ -86,11 +87,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     {
       ValueChanged?.Invoke( this, e ) ;
     }
+
     private static void EcoNormalModeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
     {
       ( d as SwitchEcoNormalModeDialog )?.OnEcoNormalModeChanged() ;
     }
+
     public event EventHandler? ValueChanged ;
+
     private void OnEcoNormalModeChanged()
     {
       // if ( SwitchEcoNormalModeDialog is not { } ecoNormalMode ) return ;
