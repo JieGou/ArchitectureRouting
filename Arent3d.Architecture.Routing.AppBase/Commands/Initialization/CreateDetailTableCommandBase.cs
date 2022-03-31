@@ -155,7 +155,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return str ;
     }
 
-    private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool mixConstructionItems = false  )
+    public static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool mixConstructionItems = false  )
     {
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       List<DetailTableModel> sortedDetailTableModelsList = new() ;
@@ -175,7 +175,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
     }
 
-    protected internal static void SetPlumbingData( List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType, bool mixConstructionItems = false )
+    public static void SetPlumbingData( List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType, bool mixConstructionItems = false )
     {
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       foreach ( var detailSymbolId in detailTableModelsGroupByDetailSymbolId.Keys ) {
@@ -356,7 +356,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return string.Empty ;
     }
 
-    private void AddDetailTableModelRow( Document doc, CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailTableModel> detailTableModelsData, ICollection<DetailTableModel> detailTableModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute, bool mixConstructionItems )
+    public static void AddDetailTableModelRow( Document doc, CeedStorable ceedStorable, List<HiroiSetCdMasterModel> hiroiSetCdMasterNormalModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiSetCdMasterModel> hiroiSetCdMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiMasterModel> hiroiMasterModelData, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, List<DetailTableModel> detailTableModelsData, ICollection<DetailTableModel> detailTableModels, List<Element> pickedObjects, DetailSymbolModel detailSymbolModel, bool isParentRoute, bool mixConstructionItems )
     {
       var ceedCode = string.Empty ;
       var constructionClassification = string.Empty ;
