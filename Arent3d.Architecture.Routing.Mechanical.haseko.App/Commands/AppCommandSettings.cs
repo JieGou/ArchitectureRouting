@@ -2,7 +2,7 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.FittingSizeCalculators ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands
 {
   public static class AppCommandSettings
   {

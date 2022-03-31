@@ -6,10 +6,10 @@ using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 
-namespace Arent3d.Architecture.Routing.Mechanical.haseko.App.Commands.Routing
+namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Mechanical.haseko.App.Commands.Routing.PickRoutingCommand", DefaultString = "Pick\nFrom-To" )]
+  [DisplayNameKey( "Mechanical.Haseko.App.Commands.Routing.PickRoutingCommand", DefaultString = "Pick\nFrom-To" )]
   [Image( "resources/PickFrom-To.png" )]
   public class PickRoutingCommand : PickRoutingCommandBase
   {
