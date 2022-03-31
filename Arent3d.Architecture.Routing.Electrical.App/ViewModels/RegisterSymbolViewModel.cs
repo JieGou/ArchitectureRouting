@@ -12,6 +12,7 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -84,11 +85,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public RegisterSymbolViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      // _settingStorable = _uiDocument.Document.GetRegisterSymbolStorable() ;
-      _settingStorable = new RegisterSymbolStorable( _uiDocument.Document )
-      {
-        BrowseFolderPath = @"C:\Nhu.Truong\Arent", FolderSelectedPath = @"C:\Nhu.Truong\Arent\Files\Drafts"
-      } ;
+      _settingStorable = _uiDocument.Document.GetRegisterSymbolStorable() ;
       _isExistBrowseFolderPath = Directory.Exists( _settingStorable.BrowseFolderPath ) ;
       _isExistFolderSelectedPath = Directory.Exists( _settingStorable.FolderSelectedPath ) ;
     }
