@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Arent3d.Revit;
 using Autodesk.Revit.DB;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
@@ -18,13 +19,15 @@ public class ViewUpdater : IUpdater
     {
       var document = data.GetDocument();
       if(document is null) return;
-      var listLines = TextNoteArent.StorageLines.SelectMany(x => x.Value).ToList();
-      document.Delete(listLines);
+      var listLines = TextNoteArent.StorageLines.Where(x=>TextNoteArent.CheckIdIsDeleted(document, x.Key))
+        .SelectMany(x => x.Value).ToList();
+      document.Delete(listLines.Where(x=>TextNoteArent.CheckIdIsDeleted(document, x)).ToList());
 
       TextNoteArent.StorageLines = new Dictionary<ElementId, List<ElementId>>();
 
-      var allText = new FilteredElementCollector(document, document.ActiveView.Id).WhereElementIsNotElementType().OfClass(typeof(TextNote)).Cast<TextNote>().ToList();
-      allText.ForEach(TextNoteArent.CreateSingleBoxText);
+      var allText = new FilteredElementCollector(document, document.ActiveView.Id).WhereElementIsNotElementType().OfClass(typeof(TextNote)).Cast<TextNote>();
+      var filterText = allText.Where(t => t.TextNoteType.Name == TextNoteArent.ArentTextNoteType).ToList();
+      filterText.ForEach(TextNoteArent.CreateSingleBoxText);
     }
 
   
@@ -40,7 +43,7 @@ public class ViewUpdater : IUpdater
 
     public string GetUpdaterName()
     {
-      return "TextNoteChangeUpdater" ;
+      return "ViewUpdater" ;
     }
 
     public string GetAdditionalInformation()

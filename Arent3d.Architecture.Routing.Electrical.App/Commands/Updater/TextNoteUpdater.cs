@@ -35,6 +35,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       var listCurves = (from DetailCurve curve in curveArray select curve.Id).ToList();
       StorageLines[text.Id] = listCurves;
     }
+
+    public static bool CheckIdIsDeleted(Document doc, ElementId id)
+    {
+      return doc.GetElement(id) != null;
+    }
   }
   public class TextNoteUpdaterChanged : IUpdater
   {
@@ -53,7 +58,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       if(doc.GetElement(modifiedId) is not TextNote text) return;
       if(text.TextNoteType.Name != TextNoteArent.ArentTextNoteType) return;
 
-      doc.Delete( TextNoteArent.StorageLines[text.Id] ) ;
+      doc.Delete( TextNoteArent.StorageLines[text.Id].Where(x=>TextNoteArent.CheckIdIsDeleted(doc, x)).ToList() ) ;
       TextNoteArent.CreateSingleBoxText( text ) ;
 
     }
@@ -149,7 +154,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
 
     public string GetUpdaterName()
     {
-      return "TextNoteChangeUpdater" ;
+      return "TextNoteCreateUpdater" ;
     }
 
     public string GetAdditionalInformation()
