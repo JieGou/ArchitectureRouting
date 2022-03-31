@@ -1,4 +1,5 @@
 using Arent3d.Architecture.Routing.Electrical.App.Commands ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Demo ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint ;
@@ -268,6 +269,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       {
         [Button( typeof( UninitializeCommand ), OnlyInitialized = true )]
         private static class UnInitializeCommandButton
+        {
+        }
+      }
+      [Panel( "arent3d.architecture.rc.Annotation", TitleKey = "App.Panels.Rc.TextNote" )]
+      private static class AnnotationPanel
+      {
+        [Button( typeof( UpdateAnnotationTextNote ), OnlyInitialized = true )]
+        private static class UpdaterAnnotationButton
         {
         }
       }
