@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     public SwitchEcoNormalModeDialog( UIApplication uiApplication, bool? isProjectInEcoMode ) : base( uiApplication )
     {
       InitializeComponent() ;
-      EcoNormalModeComboBox.SelectedIndex = isProjectInEcoMode == true ? 1 : 0 ;
+      EcoNormalModeComboBox.SelectedIndex = isProjectInEcoMode == true ? 0 : 1 ;
     }
 
     public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string>

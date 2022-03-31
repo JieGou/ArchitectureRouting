@@ -82,9 +82,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
           MessageBox.Show( string.IsNullOrEmpty( message ) ? "Dialog.Electrical.ChangeMode.Success".GetAppStringByKeyOrDefault( UPDATE_DATA_SUCCESS_MESSAGE ) : message, "Dialog.Electrical.ChangeMode.Title".GetAppStringByKeyOrDefault( ELECTRICAL_CHANGE_MODE_TITLE ), MessageBoxButtons.OK ) ;
           return Result.Succeeded ;
         }
-        else {
-          return base.Execute( commandData, ref message, elements ) ;
-        }
+
+        return base.Execute( commandData, ref message, elements ) ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
