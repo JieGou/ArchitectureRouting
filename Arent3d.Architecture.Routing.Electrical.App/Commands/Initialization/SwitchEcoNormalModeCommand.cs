@@ -56,12 +56,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       try {
         UiDocument = commandData.Application.ActiveUIDocument ;
         Document document = UiDocument.Document ;
-        var isProjectInEcoMode = IsProjectInEcoMode( document ) ;
-        var dialog = new SwitchEcoNormalModeDialog( commandData.Application, isProjectInEcoMode ) ;
+        var isEcoMode = IsProjectInEcoMode( document ) ;
+        var dialog = new SwitchEcoNormalModeDialog( commandData.Application, isEcoMode ) ;
         dialog.ShowDialog() ;
         if ( dialog.DialogResult == false ) return Result.Cancelled ;
+        isEcoMode = dialog.SelectedMode == EcoNormalMode.EcoMode ;
         if ( dialog.ApplyForProject == true ) {
-          isProjectInEcoMode = dialog.SelectedMode == EcoNormalMode.EcoMode ;
           FilteredElementCollector collector = new FilteredElementCollector( document ) ;
           collector = collector.OfClass( typeof( FamilyInstance ) ) ;
           var conduitList = collector.ToElements().ToList() ;
@@ -76,13 +76,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
           connectorList = connectorList.Where( elem => ( elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ) ).ToList() ;
 
           var listApplyConduit = ConduitUtil.GetConduitRelated( document, conduitList ) ;
-          SetModeForConduit( listApplyConduit, (bool) isProjectInEcoMode, document ) ;
-          SetModeForConnector( connectorList, (bool) isProjectInEcoMode, document ) ;
-          SetEcoNormalModeForProject( document, (bool) isProjectInEcoMode ) ;
+          SetModeForConduit( listApplyConduit, (bool) isEcoMode, document ) ;
+          SetModeForConnector( connectorList, (bool) isEcoMode, document ) ;
+          SetEcoNormalModeForProject( document, (bool) isEcoMode ) ;
           MessageBox.Show( string.IsNullOrEmpty( message ) ? "Dialog.Electrical.ChangeMode.Success".GetAppStringByKeyOrDefault( UPDATE_DATA_SUCCESS_MESSAGE ) : message, "Dialog.Electrical.ChangeMode.Title".GetAppStringByKeyOrDefault( ELECTRICAL_CHANGE_MODE_TITLE ), MessageBoxButtons.OK ) ;
           return Result.Succeeded ;
         }
 
+        IsEcoMode = isEcoMode??false ;
         return base.Execute( commandData, ref message, elements ) ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
