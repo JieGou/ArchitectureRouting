@@ -12,28 +12,35 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     EcoMode,
     NormalMode
   }
+
   public partial class SwitchEcoNormalModeDialog
   {
-    public SwitchEcoNormalModeDialog( UIApplication uiApplication, bool? isEcoMode ) : base( uiApplication )
+    private const string RequiredEcoNormalMode = "Please select Eco or Normal mode from combo box" ;
+    public SwitchEcoNormalModeDialog( UIApplication uiApplication ) : base( uiApplication )
     {
       InitializeComponent() ;
-      EcoNormalModeComboBox.SelectedItem = isEcoMode is null or true ? EcoNormalMode.EcoMode : EcoNormalMode.NormalMode ;
     }
-    public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string>
-    {
-      [ EcoNormalMode.EcoMode ] = "エコモード",
-      [ EcoNormalMode.NormalMode] = "ノーマル",
-    } ;
 
-    public bool? ApplyForProject = null ;
+    public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string> { [ EcoNormalMode.EcoMode ] = "エコモード", [ EcoNormalMode.NormalMode ] = "ノーマル", } ;
+
+    public bool? ApplyForProject ;
+
     private void Button_BtnApplyForProject_Click( object sender, RoutedEventArgs e )
     {
+      if ( EcoNormalModeComboBox.SelectedIndex == -1 ) {
+        MessageBox.Show( RequiredEcoNormalMode ) ;
+        return;
+      }
       ApplyForProject = true ;
       DialogResult = true ;
     }
 
     private void Button_BtnApplyForARange_Click( object sender, RoutedEventArgs e )
     {
+      if ( EcoNormalModeComboBox.SelectedIndex == -1 ) {
+        MessageBox.Show( RequiredEcoNormalMode ) ;
+        return;
+      }
       ApplyForProject = false ;
       DialogResult = true ;
     }
@@ -43,18 +50,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       DialogResult = false ;
     }
 
-    private EcoNormalMode EcoNormalMode = EcoNormalMode.NormalMode;
+    public EcoNormalMode EcoNormalMode ;
+
     private void EcoNormalModeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       OnValueChanged( EventArgs.Empty ) ;
-      if ( e.RemovedItems.OfType<KeyValuePair<EcoNormalMode, string>?>().FirstOrDefault() is not { } oldValue || e.AddedItems.OfType<KeyValuePair<EcoNormalMode, string>?>().FirstOrDefault() is not { } newValue ) return ;
+      var oldValue = e.RemovedItems.OfType<KeyValuePair<EcoNormalMode, string>>().FirstOrDefault() ;
+      var newValue = e.AddedItems.OfType<KeyValuePair<EcoNormalMode, string>>().FirstOrDefault() ;
       if ( oldValue.Key == newValue.Key ) return ;
       EcoNormalMode = newValue.Key ;
     }
+
     private void OnValueChanged( EventArgs e )
     {
       ValueChanged?.Invoke( this, e ) ;
     }
+
     public event EventHandler? ValueChanged ;
   }
 }

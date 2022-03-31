@@ -7,7 +7,7 @@
                 xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
                 mc:Ignorable="d"
                 WindowStartupLocation="CenterScreen"
-                Title="エコモード切替設定" Height="200" Width="300">
+                Title="エコモード切替設定" Height="170" Width="280">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150" />
@@ -19,44 +19,37 @@
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
 
-        <ComboBox Grid.Column="0"
-                  Grid.Row="0"
-                  Margin="10,15,0,5"
-                  Name="EcoNormalModeComboBox"
-                  ItemsSource="{Binding  EcoNormalModes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}"
-                  DisplayMemberPath="Name"
+        <ComboBox Name="EcoNormalModeComboBox"
+                  ItemsSource="{Binding EcoNormalModes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}"
                   SelectionChanged="EcoNormalModeComboBox_SelectionChanged"
-                  SelectedIndex="{Binding EcoNormalModeIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}"
-                  VerticalAlignment="Center">
+                  SelectedIndex="{Binding EcoNormalModeComboBoxIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}"
+                  VerticalAlignment="Center"
+                  DisplayMemberPath="Value"
+                  Margin="10,15,0,5"
+                  Padding="5,0,0,4">
             <ComboBox.Style>
                 <Style TargetType="{x:Type ComboBox}">
-                    <Setter Property="IsEnabled" Value="True" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding EcoNormalModeEditable, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}" Value="False">
-                            <Setter Property="IsEnabled" Value="False" />
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding UseEcoNormalMode, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}" Value="False">
-                            <Setter Property="IsEnabled" Value="False" />
-                        </DataTrigger>
-                    </Style.Triggers>
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Setter Property="Height" Value="20"/>
+                    <Setter Property="FontSize" Value="12"/>
                 </Style>
             </ComboBox.Style>
         </ComboBox>
-        <Button Grid.Row="0" Grid.Column="1" x:Name="BtnApplyForProject"
+        <Button Grid.Row="0" Grid.Column="1"
                 Content="プロジェクト変更"
                 Click="Button_BtnApplyForProject_Click"
                 Margin="10,15,0,5"
                 HorizontalAlignment="Left"
                 Width="100" />
 
-        <Button Grid.Row="1" Grid.Column="1" x:Name="BtnApplyForARange"
+        <Button Grid.Row="1" Grid.Column="1"
                 Content="範囲選択変更"
                 Click="Button_BtnApplyForARange_Click"
                 Margin="10,5,0,5"
                 HorizontalAlignment="Left"
                 Width="100" />
 
-        <Button Grid.Row="2" Grid.Column="1" x:Name="BtnCancel"
+        <Button Grid.Row="2" Grid.Column="1"
                 Content="Cancel"
                 Click="Button_Cancel_Click"
                 Margin="10,5,0,5"

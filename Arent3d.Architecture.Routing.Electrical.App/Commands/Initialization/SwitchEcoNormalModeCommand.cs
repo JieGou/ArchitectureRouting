@@ -1,13 +1,15 @@
 ﻿using System.Linq ;
-using System.Windows ;
+using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
+using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
@@ -17,14 +19,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
   public class SwitchEcoNormalModeCommand: ChangeConduitModeCommandBase
   {
-    private static bool? IsProjectInEcoMode = null;
+    private static bool? _isProjectInEcoMode = null;
     public override Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       UiDocument = commandData.Application.ActiveUIDocument ;
       Document document = UiDocument.Document ;
-      var dialog = new SwitchEcoNormalModeDialog( commandData.Application, IsProjectInEcoMode ) ;
+      var dialog = new SwitchEcoNormalModeDialog( commandData.Application ) ;
       dialog.ShowDialog() ;
       if ( dialog.DialogResult == false ) return Result.Cancelled ;
+      _isProjectInEcoMode = dialog.EcoNormalMode == EcoNormalMode.EcoMode ;
       if ( dialog.ApplyForProject == true ) {
         FilteredElementCollector collector = new FilteredElementCollector(document);
         collector = collector.OfClass(typeof(FamilyInstance)) ;
@@ -38,13 +41,19 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         collector = new FilteredElementCollector(document);
         connectorList.AddRange( collector.OfClass(typeof( TextNote )).ToElements()) ;
         connectorList = connectorList.Where( elem => ( elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment )).ToList() ;
-        IsProjectInEcoMode = false ;
+        
         var listApplyConduit = ConduitUtil.GetConduitRelated(document, conduitList) ;
-        SetModeForConduit( listApplyConduit, (bool) IsProjectInEcoMode, document ) ;
-        SetModeForConnector( connectorList, (bool) IsProjectInEcoMode, document ) ;
+        SetModeForConduit( listApplyConduit, (bool) _isProjectInEcoMode, document ) ;
+        SetModeForConnector( connectorList, (bool) _isProjectInEcoMode, document ) ;
+        MessageBox.Show(
+          string.IsNullOrEmpty( message )
+            ? "Dialog.Electrical.ChangeMode.Success".GetAppStringByKeyOrDefault( UPDATE_DATA_SUCCESS_MESSAGE )
+            : message,
+          "Dialog.Electrical.ChangeMode.Title".GetAppStringByKeyOrDefault( ELECTRICAL_CHANGE_MODE_TITLE ),
+          MessageBoxButtons.OK ) ;
       }
       else {
-        MessageBox.Show( "Select a range đi ông ei" ) ;
+        return base.Execute( commandData, ref message, elements );
       }
       return Result.Succeeded ;
     }
