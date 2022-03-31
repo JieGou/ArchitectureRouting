@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public class ShowElectricSymbolsCommandBase : IExternalCommand
   {
-    private readonly struct ConnectorInfo
+    public readonly struct ConnectorInfo
     {
       public ConnectorInfo( string ceedSetCode, string deviceSymbol, string modelNumber )
       {
@@ -85,7 +85,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       } ) ;
     }
 
-    private void InsertDataFromDetailTableModelIntoElectricalSymbolModel( List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
+    public static void InsertDataFromDetailTableModelIntoElectricalSymbolModel( List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
     {
       const string defaultChildPlumbingSymbol = "↑" ;
       foreach ( var element in detailTableModelsByRouteName ) {
@@ -113,7 +113,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void InsertDataFromRegularDatabaseIntoElectricalSymbolModel( List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<Element> allConnectors, List<ElectricalSymbolModel> electricalSymbolModels, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
+    public static void InsertDataFromRegularDatabaseIntoElectricalSymbolModel( List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<Element> allConnectors, List<ElectricalSymbolModel> electricalSymbolModels, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
     {
       const string defaultPlumbingType = "配管なし" ;
       if ( toConnectorCeedModel == null ) return ;
@@ -151,7 +151,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       electricalSymbolModels.Add( endElectricalSymbolModel ) ;
     }
 
-    private static ( string fromConnectorUniqueId, ConnectorInfo fromConnectorInfo , string toConnectorUniqueId, ConnectorInfo toConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
+    public static ( string fromConnectorUniqueId, ConnectorInfo fromConnectorInfo , string toConnectorUniqueId, ConnectorInfo toConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
     {
       var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ) ;
       Element? fromConnector = null ;
@@ -197,7 +197,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return new ConnectorInfo( ceedSetCode, deviceSymbol, modelNumber ) ;
     }
 
-    private static void CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels )
+    public static void CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels )
     {
       string scheduleName = "Revit.Electrical.Schedule.Name".GetDocumentStringByKeyOrDefault( document, "Electrical Symbol Table" ) + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
       var electricalSchedule = document.GetAllElements<ViewSchedule>().SingleOrDefault( v => v.Name.Contains( scheduleName ) ) ;
@@ -228,7 +228,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       OutPlumbingType,
     }
 
-    private static void CreateScheduleData( Document document, ViewSchedule viewSchedule, List<ElectricalSymbolModel> electricalSymbolModels )
+    public static void CreateScheduleData( Document document, ViewSchedule viewSchedule, List<ElectricalSymbolModel> electricalSymbolModels )
     {
       const int startRowData = 3 ;
       const int defaultColumnCount = 5 ;
