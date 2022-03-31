@@ -210,7 +210,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             RecursiveFolder( subPaths, ref folder ) ;
           }
 
-          folders.Add( folder ) ;
+          folders[0].Folders.Add( folder ) ;
         }
       }
       else {
