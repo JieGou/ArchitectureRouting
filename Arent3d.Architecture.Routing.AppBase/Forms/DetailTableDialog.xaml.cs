@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly Document _document ;
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly DetailTableViewModel _detailTableViewModel ;
-    private readonly List<DetailTableModel> _selectedDetailTableModels ;
+    private List<DetailTableModel> _selectedDetailTableModels ;
     public DetailTableViewModel DetailTableViewModelSummary ;
     public readonly Dictionary<string, string> RoutesWithConstructionItemHasChanged ;
     public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
@@ -122,6 +122,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void BtnPasteLine_Click( object sender, RoutedEventArgs e )
     {
+    }
+    
+    private void BtnSelectAll_Click( object sender, RoutedEventArgs e )
+    {
+      foreach ( var detailTableRow in _detailTableViewModel.DetailTableModels ) {
+        detailTableRow.CalculationExclusion = true ;
+      }
+
+      _selectedDetailTableModels = _detailTableViewModel.DetailTableModels.ToList() ;
+      CreateDetailTableViewModelByGroupId() ;
+      SaveData( _detailTableViewModel.DetailTableModels ) ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
