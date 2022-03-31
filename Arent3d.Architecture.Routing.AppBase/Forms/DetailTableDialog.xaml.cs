@@ -24,7 +24,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly Document _document ;
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly DetailTableViewModel _detailTableViewModel ;
-    private List<DetailTableModel> _selectedDetailTableModels ;
+    private List<DetailTableModel> _selectedDetailTableRows ;
+    private DetailTableModel? _copyDetailTableRow ;
     public DetailTableViewModel DetailTableViewModelSummary ;
     public readonly Dictionary<string, string> RoutesWithConstructionItemHasChanged ;
     public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
@@ -44,7 +45,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _isMixConstructionItems = mixConstructionItems ;
       RoutesWithConstructionItemHasChanged = new Dictionary<string, string>() ;
       DetailSymbolIdsWithPlumbingTypeHasChanged = new Dictionary<string, string>() ;
-      _selectedDetailTableModels = new List<DetailTableModel>() ;
+      _selectedDetailTableRows = new List<DetailTableModel>() ;
+      _copyDetailTableRow = null ;
 
       var isGrouped = viewModel.DetailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null ;
       if ( isGrouped ) SetGroupIdForNewDetailTableRows() ;
@@ -61,7 +63,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( string.IsNullOrEmpty( selectedItem.GroupId ) ) return ;
       UnGroupDetailTableRows( selectedItem.GroupId ) ;
       CreateDetailTableViewModelByGroupId() ;
-      SaveData( _detailTableViewModel.DetailTableModels ) ;
+      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
     }
 
     private void CbCalculationExclusion_Checked( object sender, RoutedEventArgs e )
@@ -69,14 +71,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( DtGrid.SelectedValue is not DetailTableModel selectedItem ) return ;
       if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
         var selectedItems = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
-        foreach ( var item in selectedItems.Where( item => ! _selectedDetailTableModels.Contains( item ) ) ) {
-          _selectedDetailTableModels.Add( item ) ;
+        foreach ( var item in selectedItems ) {
+          item.CalculationExclusion = true ;
         }
       }
       else {
-        if ( ! _selectedDetailTableModels.Contains( selectedItem ) ) {
-          _selectedDetailTableModels.Add( selectedItem ) ;
-        }
+        selectedItem.CalculationExclusion = true ;
       }
     }
 
@@ -86,42 +86,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
         var selectedItems = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
         foreach ( var item in selectedItems ) {
-          var items = _selectedDetailTableModels.Where( d => d.DetailSymbolId == item.DetailSymbolId && d.RouteName == item.RouteName ).ToList() ;
-          if ( items.Any() ) {
-            foreach ( var detailTableRow in items ) {
-              _selectedDetailTableModels.Remove( detailTableRow ) ;
-            }
-          }
           item.CalculationExclusion = false ;
         }
       }
       else {
-        var items = _selectedDetailTableModels.Where( d => d.DetailSymbolId == selectedItem.DetailSymbolId && d.RouteName == selectedItem.RouteName ).ToList() ;
-        if ( items.Any() ) {
-          foreach ( var detailTableRow in items ) {
-            _selectedDetailTableModels.Remove( detailTableRow ) ;
-          }
-        }
         selectedItem.CalculationExclusion = false ;
       }
     }
     
     private void BtnDeleteLine_Click( object sender, RoutedEventArgs e )
     {
-      if ( ! _selectedDetailTableModels.Any() ) return ;
+      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
+      if ( ! _selectedDetailTableRows.Any() ) return ;
       var detailSymbolStorable = _document.GetDetailSymbolStorable() ;
-      DetailTableViewModel.DeleteDetailTableRows( _conduitsModelData, _detailTableViewModel, _selectedDetailTableModels, detailSymbolStorable ) ;
+      DetailTableViewModel.DeleteDetailTableRows( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, detailSymbolStorable ) ;
       CreateDetailTableViewModelByGroupId() ;
-      SaveData( _detailTableViewModel.DetailTableModels ) ;
+      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
       DetailTableViewModel.SaveDetailSymbolData( _document, detailSymbolStorable ) ;
     }
     
     private void BtnCopyLine_Click( object sender, RoutedEventArgs e )
     {
+      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
+      if ( ! _selectedDetailTableRows.Any() ) return ;
+      _copyDetailTableRow = _selectedDetailTableRows.First() ;
     }
     
     private void BtnPasteLine_Click( object sender, RoutedEventArgs e )
     {
+      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
+      if ( ! _selectedDetailTableRows.Any() || _copyDetailTableRow == null ) return ;
+      var newDetailTableModels = DetailTableViewModel.PasteDetailTableRow( _detailTableViewModel, _copyDetailTableRow, _isMixConstructionItems ) ;
+      _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+      CreateDetailTableViewModelByGroupId() ;
+      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
     }
     
     private void BtnSelectAll_Click( object sender, RoutedEventArgs e )
@@ -130,14 +128,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         detailTableRow.CalculationExclusion = true ;
       }
 
-      _selectedDetailTableModels = _detailTableViewModel.DetailTableModels.ToList() ;
+      _selectedDetailTableRows = _detailTableViewModel.DetailTableModels.ToList() ;
       CreateDetailTableViewModelByGroupId() ;
-      SaveData( _detailTableViewModel.DetailTableModels ) ;
+      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
     {
-      SaveData( _detailTableViewModel.DetailTableModels ) ;
+      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
       DialogResult = true ;
       this.Close() ;
     }
@@ -150,7 +148,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         confirmResult = MessageBox.Show( string.Format( "Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning".GetAppStringByKeyOrDefault( MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage ), 
             mixtureOfMultipleConstructionClassificationsInDetailSymbol ), "Warning", MessageBoxButton.OKCancel ) ;
       if ( confirmResult == MessageBoxResult.OK ) {
-        SaveData( _detailTableViewModel.DetailTableModels ) ;
+        DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
         DialogResult = true ;
         this.Close() ;
       }
@@ -162,7 +160,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void BtnCompleted_OnClick( object sender, RoutedEventArgs e )
     {
-      SaveData( _detailTableViewModel.DetailTableModels ) ;
+      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
       DialogResult = true ;
       this.Close() ;
     }
@@ -228,7 +226,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               .ToList() ;
           _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModelList ) ;
           CreateDetailTableViewModelByGroupId() ;
-          SaveData( _detailTableViewModel.DetailTableModels ) ;
+          DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
         }
       }
     }
@@ -283,7 +281,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
         CreateDetailTableViewModelByGroupId() ;
-        SaveData( _detailTableViewModel.DetailTableModels ) ;
+        DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
       }
     }
 
@@ -327,69 +325,57 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
         CreateDetailTableViewModelByGroupId() ;
-        SaveData( _detailTableViewModel.DetailTableModels ) ;
+        DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
       }
     }
 
-    private void SaveData( IReadOnlyCollection<DetailTableModel> detailTableRowsBySelectedDetailSymbols )
-    {
-      try {
-        DetailTableStorable detailTableStorable = _document.GetDetailTableStorable() ;
-        {
-          if ( ! detailTableRowsBySelectedDetailSymbols.Any() ) return ;
-          var selectedDetailSymbolIds = detailTableRowsBySelectedDetailSymbols.Select( d => d.DetailSymbolId ).Distinct().ToHashSet() ;
-          var detailTableRowsByOtherDetailSymbols = detailTableStorable.DetailTableModelData.Where( d => ! selectedDetailSymbolIds.Contains( d.DetailSymbolId ) ).ToList() ;
-          detailTableStorable.DetailTableModelData = detailTableRowsBySelectedDetailSymbols.ToList() ;
-          if ( detailTableRowsByOtherDetailSymbols.Any() ) detailTableStorable.DetailTableModelData.AddRange( detailTableRowsByOtherDetailSymbols ) ;
-        }
-        using Transaction t = new( _document, "Save data" ) ;
-        t.Start() ;
-        detailTableStorable.Save() ;
-        t.Commit() ;
-      }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-      }
-    }
+    
 
     private void BtnPlumbingSummary_Click( object sender, RoutedEventArgs e )
     {
-      if ( ! _selectedDetailTableModels.Any() ) return ;
+      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
+      if ( ! _selectedDetailTableRows.Any() ) return ;
       _isMixConstructionItems = false ;
       var detailTableModelsGroupByDetailSymbolId = 
         _detailTableViewModel.DetailTableModels
-          .Where( c => _selectedDetailTableModels.Contains( c ) )
+          .Where( c => _selectedDetailTableRows.Contains( c ) )
           .GroupBy( d => d.DetailSymbolId )
           .Select( g => g.ToList() ) ;
       foreach ( var detailTableRowsWithSameDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
-        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, detailTableRowsWithSameDetailSymbolId, DefaultParentPlumbingType, false, _isMixConstructionItems ) ;
+        var parentDetailRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.IsParentRoute && d.DetailSymbolId == detailTableRowsWithSameDetailSymbolId.First().DetailSymbolId ) ;
+        var plumbingType = parentDetailRow == null ? DefaultParentPlumbingType : parentDetailRow.PlumbingType ;
+        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType, true, _isMixConstructionItems ) ;
         DetailTableViewModel.SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
       }
 
       var newDetailTableModels = _detailTableViewModel.DetailTableModels.ToList() ;
-      DetailTableViewModel.SortDetailTableModel( ref newDetailTableModels, _isMixConstructionItems ) ;
+      DetailTableViewModel.SortDetailTableModel( ref newDetailTableModels ) ;
       _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
       CreateDetailTableViewModelByGroupId() ;
-      SaveData( _detailTableViewModel.DetailTableModels ) ;
+      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
     }
     
     private void BtnPlumbingSummaryMixConstructionItems_Click( object sender, RoutedEventArgs e )
     {
-      if ( ! _selectedDetailTableModels.Any() ) return ;
+      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
+      if ( ! _selectedDetailTableRows.Any() ) return ;
       _isMixConstructionItems = true ;
       var detailTableModelsGroupByDetailSymbolId = 
         _detailTableViewModel.DetailTableModels
-          .Where( c => _selectedDetailTableModels.Contains( c ) )
+          .Where( c => _selectedDetailTableRows.Contains( c ) )
           .GroupBy( d => d.DetailSymbolId )
           .Select( g => g.ToList() ) ;
       foreach ( var detailTableRowsWithSameDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
-        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, detailTableRowsWithSameDetailSymbolId, DefaultParentPlumbingType, false, _isMixConstructionItems ) ;
+        var parentDetailRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.IsParentRoute && d.DetailSymbolId == detailTableRowsWithSameDetailSymbolId.First().DetailSymbolId ) ;
+        var plumbingType = parentDetailRow == null ? DefaultParentPlumbingType : parentDetailRow.PlumbingType ;
+        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType, true, _isMixConstructionItems ) ;
         DetailTableViewModel.SetGroupIdForDetailTableRowsMixConstructionItems( detailTableRowsWithSameDetailSymbolId ) ;
       }
 
       var newDetailTableModels = _detailTableViewModel.DetailTableModels.ToList() ;
-      DetailTableViewModel.SortDetailTableModel( ref newDetailTableModels, _isMixConstructionItems ) ;
+      DetailTableViewModel.SortDetailTableModel( ref newDetailTableModels ) ;
       CreateDetailTableViewModelByGroupId() ;
-      SaveData( _detailTableViewModel.DetailTableModels ) ;
+      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
     }
 
     private void CreateDetailTableViewModelByGroupId()

@@ -7,6 +7,7 @@ using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
@@ -200,31 +201,39 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
     }
-    
-    public static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels, bool mixConstructionItems )
+
+    public static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels )
     {
-      if ( mixConstructionItems ) {
-        detailTableModels = 
-          detailTableModels
-            .OrderBy( x => x.DetailSymbol )
-            .ThenByDescending( x => x.DetailSymbolId )
-            .ThenByDescending( x => x.SignalType )
-            .ThenByDescending( x => x.GroupId )
-            .ThenByDescending( x => x.IsParentRoute )
-            .GroupBy( x => x.DetailSymbolId )
-            .SelectMany( x => x ).ToList() ;
+      detailTableModels = 
+        detailTableModels
+        .OrderBy( x => x.DetailSymbol )
+        .ThenByDescending( x => x.DetailSymbolId )
+        .ThenByDescending( x => x.PlumbingIdentityInfo )
+        .ThenByDescending( x => x.GroupId )
+        .ThenByDescending( x => x.SignalType )
+        .ThenByDescending( x => x.ConstructionItems )
+        .ThenByDescending( x => x.IsParentRoute )
+        .GroupBy( x => x.DetailSymbolId )
+        .SelectMany( x => x ).ToList() ;
+    }
+    
+    public static void SaveData( Document document, IReadOnlyCollection<DetailTableModel> detailTableRowsBySelectedDetailSymbols )
+    {
+      try {
+        DetailTableStorable detailTableStorable = document.GetDetailTableStorable() ;
+        {
+          if ( ! detailTableRowsBySelectedDetailSymbols.Any() ) return ;
+          var selectedDetailSymbolIds = detailTableRowsBySelectedDetailSymbols.Select( d => d.DetailSymbolId ).Distinct().ToHashSet() ;
+          var detailTableRowsByOtherDetailSymbols = detailTableStorable.DetailTableModelData.Where( d => ! selectedDetailSymbolIds.Contains( d.DetailSymbolId ) ).ToList() ;
+          detailTableStorable.DetailTableModelData = detailTableRowsBySelectedDetailSymbols.ToList() ;
+          if ( detailTableRowsByOtherDetailSymbols.Any() ) detailTableStorable.DetailTableModelData.AddRange( detailTableRowsByOtherDetailSymbols ) ;
+        }
+        using Transaction t = new( document, "Save data" ) ;
+        t.Start() ;
+        detailTableStorable.Save() ;
+        t.Commit() ;
       }
-      else {
-        detailTableModels = 
-          detailTableModels
-            .OrderBy( x => x.DetailSymbol )
-            .ThenByDescending( x => x.DetailSymbolId )
-            .ThenByDescending( x => x.SignalType )
-            .ThenByDescending( x => x.ConstructionItems )
-            .ThenByDescending( x => x.GroupId )
-            .ThenByDescending( x => x.IsParentRoute )
-            .GroupBy( x => x.DetailSymbolId )
-            .SelectMany( x => x ).ToList() ;
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
       }
     }
     
@@ -273,7 +282,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
 
           detailTableRowDeleted.AddRange( selectedDetailTableModels.Where( d => d.DetailSymbolId == selectedItem.DetailSymbolId && d.RouteName == selectedItem.RouteName ) ) ;
-          var detailTableRow = detailTableViewModel.DetailTableModels.SingleOrDefault( d => d.DetailSymbolId == selectedItem.DetailSymbolId && d.RouteName == selectedItem.RouteName ) ;
           if ( selectedItem.IsParentRoute && ! parentDetailRowDeletedInfo.ContainsKey( selectedItem.PlumbingIdentityInfo ) ) {
             parentDetailRowDeletedInfo.Add( selectedItem.PlumbingIdentityInfo, selectedItem.PlumbingType ) ;
           }
@@ -282,6 +290,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             childDetailRowDeletedPlumbingIdentityInfo.Add( selectedItem.PlumbingIdentityInfo ) ;
           }
 
+          var detailTableRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == selectedItem ) ;
           detailTableViewModel.DetailTableModels.Remove( detailTableRow ) ;
         }
       }
@@ -305,6 +314,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var isMixConstructionItems = detailTableRowsWithSamePlumbingIdentityInfo.First().IsMixConstructionItems ;
         CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSamePlumbingIdentityInfo, plumbingType, true, isMixConstructionItems ) ;
       }
+    }
+
+    public static List<DetailTableModel> PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow, bool isMixConstructionItems )
+    {
+      var newDetailTableRow = new DetailTableModel( false, copyDetailTableRow.Floor, copyDetailTableRow.CeedCode, copyDetailTableRow.DetailSymbol, 
+        copyDetailTableRow.DetailSymbolId, copyDetailTableRow.WireType, copyDetailTableRow.WireSize, copyDetailTableRow.WireStrip, copyDetailTableRow.WireBook, copyDetailTableRow.EarthType, 
+        copyDetailTableRow.EarthSize, copyDetailTableRow.NumberOfGrounds, copyDetailTableRow.PlumbingType, copyDetailTableRow.PlumbingSize, copyDetailTableRow.NumberOfPlumbing, 
+        copyDetailTableRow.ConstructionClassification, copyDetailTableRow.SignalType, copyDetailTableRow.ConstructionItems, copyDetailTableRow.PlumbingItems, copyDetailTableRow.Remark, 
+        copyDetailTableRow.WireCrossSectionalArea, copyDetailTableRow.CountCableSamePosition, copyDetailTableRow.RouteName, copyDetailTableRow.IsEcoMode, copyDetailTableRow.IsParentRoute, 
+        copyDetailTableRow.IsReadOnly, copyDetailTableRow.PlumbingIdentityInfo, copyDetailTableRow.GroupId, copyDetailTableRow.IsReadOnlyPlumbingItems, copyDetailTableRow.IsMixConstructionItems ) ;
+      detailTableViewModel.DetailTableModels.Add( newDetailTableRow ) ;
+      var newDetailTableModels = detailTableViewModel.DetailTableModels.ToList() ;
+      SortDetailTableModel( ref newDetailTableModels ) ;
+      return newDetailTableModels ;
+    }
+
+    public static List<DetailTableModel> GetSelectedDetailTableRows( DetailTableViewModel detailTableViewModel )
+    {
+      return detailTableViewModel.DetailTableModels.Where( d => d.CalculationExclusion ).ToList() ;
     }
   }
 }

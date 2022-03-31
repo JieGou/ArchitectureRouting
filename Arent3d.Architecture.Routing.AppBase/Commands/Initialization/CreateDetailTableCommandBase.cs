@@ -194,10 +194,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const double percentage = 0.32 ;
       foreach ( var detailTableRow in detailTableModels ) {
         const int plumbingCount = 1 ;
-        var oldDetailTableRow = detailTableModelData.FirstOrDefault( d => d.DetailSymbolId == detailTableRow.DetailSymbolId && d.RouteName == detailTableRow.RouteName ) ;
-        if ( oldDetailTableRow == null ) {
-          oldDetailTableRow = detailTableModelData.FirstOrDefault( d => d.DetailSymbolId == detailTableRow.DetailSymbolId ) ;
-          if ( oldDetailTableRow != null ) plumbingType = oldDetailTableRow.PlumbingType ;
+        var oldDetailTableRows = detailTableModelData.Where( d => d.DetailSymbolId == detailTableRow.DetailSymbolId && d.RouteName == detailTableRow.RouteName ).ToList() ;
+        if ( ! oldDetailTableRows.Any() ) {
+          var parentDetailTableRow = detailTableModelData.FirstOrDefault( d => d.DetailSymbolId == detailTableRow.DetailSymbolId ) ;
+          if ( parentDetailTableRow != null ) plumbingType = parentDetailTableRow.PlumbingType ;
           var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
           var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
           var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage ;
@@ -218,13 +218,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           detailTableRow.IsReadOnlyPlumbingItems = true ;
         }
         else {
-          detailTableRow.PlumbingType = oldDetailTableRow.PlumbingType ;
-          detailTableRow.PlumbingSize = oldDetailTableRow.PlumbingSize ;
-          detailTableRow.NumberOfPlumbing = oldDetailTableRow.NumberOfPlumbing ;
-          detailTableRow.PlumbingIdentityInfo = oldDetailTableRow.PlumbingIdentityInfo ;
-          detailTableRow.IsParentRoute = oldDetailTableRow.IsParentRoute ;
-          detailTableRow.IsReadOnly = oldDetailTableRow.IsReadOnly ;
-          detailTableRow.IsReadOnlyPlumbingItems = oldDetailTableRow.IsReadOnlyPlumbingItems ;
+          foreach ( var oldDetailTableRow in oldDetailTableRows ) {
+            detailTableRow.PlumbingType = oldDetailTableRow.PlumbingType ;
+            detailTableRow.PlumbingSize = oldDetailTableRow.PlumbingSize ;
+            detailTableRow.NumberOfPlumbing = oldDetailTableRow.NumberOfPlumbing ;
+            detailTableRow.PlumbingIdentityInfo = oldDetailTableRow.PlumbingIdentityInfo ;
+            detailTableRow.IsParentRoute = oldDetailTableRow.IsParentRoute ;
+            detailTableRow.IsReadOnly = oldDetailTableRow.IsReadOnly ;
+            detailTableRow.IsReadOnlyPlumbingItems = oldDetailTableRow.IsReadOnlyPlumbingItems ;
+          }
         }
       }
     }
