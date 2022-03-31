@@ -57,8 +57,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var envelops = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ) ;
       var familyInstances = envelops as FamilyInstance[] ?? envelops.ToArray() ;
       foreach ( var envelop in familyInstances ) {
-        if ( string.IsNullOrEmpty( envelop.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ) {
-          var childrenEnvelope = familyInstances.FirstOrDefault( f => f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() == envelop.Id.ToString() ) ;
+        if ( string.IsNullOrEmpty( envelop.GetParentEnvelopeId() ) ) {
+          var childrenEnvelope = familyInstances.FirstOrDefault( f => f.GetParentEnvelopeId() == envelop.UniqueId ) ;
           // Create new envelop
           GenerateEnvelope( document, envelop, uiDocument.ActiveView.GenLevel, settingStorable.OffsetSettingsData.Offset.MillimetersToRevitUnits(), childrenEnvelope ) ;
         }
@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var backSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() + 2 * offset ;
       var widthSize = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() + 2 * offset ;
       var height = envelope == null ? 0 : envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() + 2 * offset ;
-      var parentEnvelopeId = envelope == null ? string.Empty : envelope!.Id.ToString() ;
+      var parentEnvelopeId = envelope == null ? string.Empty : envelope.UniqueId ;
 
       // Create new envelope
       if ( childrenEnvelop == null ) {
