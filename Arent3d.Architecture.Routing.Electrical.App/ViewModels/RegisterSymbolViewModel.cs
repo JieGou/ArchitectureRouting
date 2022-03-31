@@ -12,17 +12,16 @@ using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
-using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 {
   public class RegisterSymbolViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private string? _browseFolderPath ;
     private readonly RegisterSymbolStorable _settingStorable ;
     private readonly bool _isExistBrowseFolderPath ;
     private readonly bool _isExistFolderSelectedPath ;
@@ -40,12 +39,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if ( ! _isExistBrowseFolderPath )
           return _folders ??= new ObservableCollection<FolderModel>() ;
 
-        if ( null != _folders ) 
+        if ( null != _folders )
           return _folders ;
-        
+
         var folders = GetFolders( _settingStorable.BrowseFolderPath ) ;
         _folders = new ObservableCollection<FolderModel>( folders ) ;
-        
+
         FolderSelected = FindSelectedFolder( _folders ) ;
         Previews = new ObservableCollection<PreviewModel>( GetPreviewFiles( FolderSelected?.Path ) ) ;
 
@@ -85,8 +84,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     public RegisterSymbolViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _settingStorable = _uiDocument.Document.GetRegisterSymbolStorable() ;
-      _browseFolderPath = _settingStorable.BrowseFolderPath ;
+      // _settingStorable = _uiDocument.Document.GetRegisterSymbolStorable() ;
+      _settingStorable = new RegisterSymbolStorable( _uiDocument.Document )
+      {
+        BrowseFolderPath = @"C:\Nhu.Truong\Arent", FolderSelectedPath = @"C:\Nhu.Truong\Arent\Files\Drafts"
+      } ;
       _isExistBrowseFolderPath = Directory.Exists( _settingStorable.BrowseFolderPath ) ;
       _isExistFolderSelectedPath = Directory.Exists( _settingStorable.FolderSelectedPath ) ;
     }
@@ -107,8 +109,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer ;
             folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", PatternSearchings )} file extension." ;
             if ( folderBrowserDialog.ShowDialog() == DialogResult.OK && ! string.IsNullOrWhiteSpace( folderBrowserDialog.SelectedPath ) ) {
-              _browseFolderPath = folderBrowserDialog.SelectedPath ;
-              Folders = new ObservableCollection<FolderModel>( GetFolders( _browseFolderPath ) ) ;
+              _settingStorable.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
+              Folders = new ObservableCollection<FolderModel>( GetFolders( _settingStorable.BrowseFolderPath ) ) ;
             }
           }
           catch ( Exception exception ) {
@@ -126,21 +128,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       {
         return new RelayCommand<Window>( wd => null != wd, wd =>
         {
-          var previewSelected = Previews.SingleOrDefault( x => x.IsSelected ) ;
-          if ( null != previewSelected ) {
-            switch ( Path.GetExtension( previewSelected.FileName ) ) {
-              case DwgExtension :
-                ImportDwgFile( previewSelected ) ;
-                break ;
-              case PngExtension :
-
-                break ;
-            }
-          }
-          else {
-            System.Windows.MessageBox.Show( "Please, select a file at the preview!", "Arent Notification" ) ;
-          }
-
+          ExternalEventHandler?.AddAction( Import )?.Raise() ;
           wd.Close() ;
         } ) ;
       }
@@ -152,16 +140,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       {
         return new RelayCommand<Window>( wd => null != wd, wd =>
         {
-          ExternalEventHandler?.AddAction( () =>
-          {
-            using var transaction = new Transaction( _uiDocument.Document ) ;
-            transaction.Start( "Save Setting" ) ;
-            _settingStorable.BrowseFolderPath = _browseFolderPath ?? string.Empty ;
-            _settingStorable.FolderSelectedPath = FolderSelected?.Path ?? string.Empty ;
-            _settingStorable.Save() ;
-            transaction.Commit() ;
-          } )?.Raise() ;
-
+          ExternalEventHandler?.AddAction( SaveSettingData )?.Raise() ;
           wd.Close() ;
         } ) ;
       }
@@ -191,8 +170,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         var directoryInfo = new DirectoryInfo( browseFolderPath ) ;
         if ( ! directoryInfo.Attributes.HasFlag( FileAttributes.Hidden ) ) {
           var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-          folders.Add(
-            new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ) ;
+          folders.Add( new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ) ;
         }
 
         foreach ( var path in Directory.GetDirectories( browseFolderPath ) ) {
@@ -201,16 +179,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             continue ;
 
           var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-          var folder = new FolderModel
-          {
-            Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected
-          } ;
+          var folder = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ;
           var subPaths = Directory.GetDirectories( folder.Path ) ;
           if ( subPaths.Length > 0 ) {
             RecursiveFolder( subPaths, ref folder ) ;
           }
 
-          folders[0].Folders.Add( folder ) ;
+          folders[ 0 ].Folders.Add( folder ) ;
         }
       }
       else {
@@ -228,10 +203,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           continue ;
 
         var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-        var subFolderModel = new FolderModel
-        {
-          Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected
-        } ;
+        var subFolderModel = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ;
         var subPaths = Directory.GetDirectories( directoryInfo.FullName ) ;
         if ( subPaths.Length > 0 ) {
           RecursiveFolder( subPaths, ref subFolderModel ) ;
@@ -286,8 +258,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           previewModels.Add( new PreviewModel
           {
             FileName = fileInfo.Name,
-            Thumbnail = Imaging.CreateBitmapSourceFromHBitmap( bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty,
-              BitmapSizeOptions.FromEmptyOptions() ),
+            Thumbnail = Imaging.CreateBitmapSourceFromHBitmap( bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions() ),
             Path = fileInfo.FullName
           } ) ;
         }
@@ -296,13 +267,92 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       return previewModels.OrderBy( x => x.FileName ) ;
     }
 
-    private void ImportDwgFile( PreviewModel? previewFile )
+    private void SaveSettingData()
     {
-      if ( null == previewFile )
-        return ;
+      using var transaction = new Transaction( _uiDocument.Document ) ;
+      transaction.Start( "Save Setting Data" ) ;
+      _settingStorable.FolderSelectedPath = FolderSelected?.Path ?? string.Empty ;
+      _settingStorable.Save() ;
+      transaction.Commit() ;
+    }
+
+    private void Import()
+    {
+      var previewSelected = Previews.SingleOrDefault( x => x.IsSelected ) ;
+      if ( null != previewSelected ) {
+        switch ( Path.GetExtension( previewSelected.FileName ) ) {
+          case DwgExtension :
+            ImportDwgFile( previewSelected ) ;
+            break ;
+          case PngExtension :
+            ImportImageFile( previewSelected ) ;
+            break ;
+        }
+      }
+      else {
+        System.Windows.MessageBox.Show( "Please, select a file at the preview!", "Arent Notification" ) ;
+      }
+    }
+
+    private void ImportDwgFile( PreviewModel previewFile )
+    {
+      using var transaction = new Transaction( _uiDocument.Document ) ;
+      transaction.Start( "Import DWG File" ) ;
 
       var filter = new FilteredElementCollector( _uiDocument.Document ) ;
-      var cadLinkType = filter.OfType<CADLinkType>().SingleOrDefault( x => x.Name == previewFile.FileName ) ;
+      var cadLinkType = filter.OfClass( typeof( CADLinkType ) ).OfType<CADLinkType>().SingleOrDefault( x => x.Name == previewFile.FileName ) ;
+
+      var pickPoint = _uiDocument.Selection.PickPoint( ObjectSnapTypes.Points, "Pick a point to place instance!" ) ;
+      if ( null != cadLinkType ) {
+        var importInstance = ImportInstance.Create( _uiDocument.Document, cadLinkType.Id, _uiDocument.ActiveView ) ;
+        if ( importInstance.Pinned ) importInstance.Pinned = false ;
+        var boundingBox = importInstance.get_BoundingBox( _uiDocument.ActiveView ) ;
+        var centerPoint = ( boundingBox.Min + boundingBox.Max ) * 0.5 ;
+        ElementTransformUtils.MoveElement( _uiDocument.Document, importInstance.Id, pickPoint - centerPoint ) ;
+      }
+      else {
+        var options = new DWGImportOptions
+        {
+          ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default
+        } ;
+        var result = _uiDocument.Document.Import( previewFile.Path, options, _uiDocument.ActiveView, out _ ) ;
+        if ( ! result ) {
+          System.Windows.MessageBox.Show( "The import file failed!", "Arent Notification" ) ;
+        }
+      }
+
+      transaction.Commit() ;
+    }
+
+    private void ImportImageFile( PreviewModel previewFile )
+    {
+      using var transaction = new Transaction( _uiDocument.Document ) ;
+      transaction.Start( "Import Image File" ) ;
+
+      var filter = new FilteredElementCollector( _uiDocument.Document ) ;
+      var imageType = filter.OfClass( typeof( ImageType ) ).OfType<ImageType>().SingleOrDefault( x => x.Name == previewFile.FileName ) ;
+
+      var pickPoint = _uiDocument.Selection.PickPoint( ObjectSnapTypes.Points, "Pick a point to place instance!" ) ;
+#if REVIT2020_OR_GREATER
+      var optionInstance = new ImagePlacementOptions { PlacementPoint = BoxPlacement.Center, Location = pickPoint } ;
+      if ( null == imageType ) {
+#if REVIT2021_OR_GREATER
+        var optionType = new ImageTypeOptions( previewFile.Path, false, ImageTypeSource.Import ) ;
+#elif REVIT2020
+        var optionType = new ImageTypeOptions( previewFile.Path, false ) ;
+#endif
+        imageType = ImageType.Create( _uiDocument.Document, optionType ) ;
+      }
+#endif
+      
+#if REVIT2020_OR_GREATER
+      if ( ! ImageInstance.IsValidView( _uiDocument.ActiveView ) ) return ;
+      ImageInstance.Create( _uiDocument.Document, _uiDocument.ActiveView, imageType.Id, optionInstance ) ;
+#elif REVIT2019
+      _uiDocument.Document.Import( previewFile.Path, new ImageImportOptions { RefPoint = pickPoint, Placement = BoxPlacement.Center }, _uiDocument.ActiveView, out _ ) ;
+#endif
+      
+      transaction.Commit() ;
     }
 
     #endregion
