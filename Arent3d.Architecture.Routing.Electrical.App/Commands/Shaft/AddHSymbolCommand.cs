@@ -15,19 +15,15 @@ using Autodesk.Revit.UI.Selection ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Shaft.CreateSignCylindricalShaftCommand", DefaultString = "Create Sign\nCylindrical Shaft" )]
+  [DisplayNameKey( "Electrical.App.Commands.Shaft.AddHSymbolCommand", DefaultString = "Add H Symbol" )]
   [Image( "resources/Initialize-16.bmp", ImageType = Revit.UI.ImageType.Normal )]
   [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
-  public class CreateSignCylindricalShaftCommand : IExternalCommand
+  public class AddHSymbolCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
       var selection = commandData.Application.ActiveUIDocument.Selection ;
-
-      var dialog = new GetLevel( document ) ;
-      if ( false == dialog.ShowDialog() )
-        return Result.Succeeded ;
 
       try {
         var cylindricalShaftReference = selection.PickObject( ObjectType.Element, SelectionFilter.GetElementFilter( x =>
@@ -44,6 +40,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
         var cylindricalShaft = null != cylindricalShaftReference ? document.GetElement( cylindricalShaftReference ) as Opening : null ;
         if ( null == cylindricalShaft )
           return Result.Failed ;
+        
+        var dialog = new GetLevel( document, "Add H Symbol" ) ;
+        if ( false == dialog.ShowDialog() )
+          return Result.Succeeded ;
 
         var baseLevel = document.GetElement( cylindricalShaft.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT ).AsElementId() ) as Level ;
         var baseElevation = cylindricalShaft.get_Parameter( BuiltInParameter.WALL_BASE_OFFSET ).AsDouble() + baseLevel!.Elevation ;
@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
           .Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y!.Id == x.GenLevel.Id ) ) ;
 
         using var transaction = new Transaction( document ) ;
-        transaction.Start( "Electrical.App.Commands.Shaft.CreateSignCylindricalShaftCommand".GetAppStringByKeyOrDefault( "Create Sign Cylindrical Shaft" ) ) ;
+        transaction.Start( "Electrical.App.Commands.Shaft.AddHSymbolCommand".GetAppStringByKeyOrDefault( "Create Sign Cylindrical Shaft" ) ) ;
 
         foreach ( var viewPlan in viewPlans ) {
           CreateSymbolCenter( viewPlan, centerPoint ) ;
