@@ -134,8 +134,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       var element2Ds = new FilteredElementCollector( viewPlan.Document, viewPlan.Id ).WherePasses( classFilter2Ds ).ToElements() ;
       var element3Ds = new FilteredElementCollector( viewPlan.Document, viewPlan.Id ).WherePasses( new LogicalAndFilter( classFilter3Ds, boxFilter ) ).ToElements().Where( x => x is FamilyInstance familyInstance && ( familyInstance.MEPModel?.ConnectorManager?.Connectors?.Size ?? 0 ) > 0 || true ) ;
 
-      var elevation = viewPlan.Document.ActiveView.GenLevel.Elevation ;
-      var viewDirection = viewPlan.Document.ActiveView.ViewDirection ;
+      var elevation = viewPlan.GenLevel.Elevation ;
+      var viewDirection = viewPlan.ViewDirection ;
       var curveIntersects = new List<Curve>( bodyDirections ) ;
 
       foreach ( var element2D in element2Ds ) {
@@ -147,7 +147,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         switch ( element2D ) {
           case TextNote textNote :
             var outline = GeometryHelper.GetOutlineTextNote( textNote ) ;
-            curveLoopOffset = CurveLoop.CreateViaTransform( outline, Transform.CreateTranslation( viewDirection * elevation ) ) ;
+            curveLoopOffset = CurveLoop.CreateViaTransform( outline, Transform.CreateTranslation( viewDirection * (elevation - textNote.Coord.Z) ) ) ;
             break ;
           case Wire wire :
             if ( wire.Location is not LocationCurve { Curve: Line line } )
