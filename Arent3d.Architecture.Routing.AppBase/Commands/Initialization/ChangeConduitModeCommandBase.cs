@@ -12,9 +12,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ChangeConduitModeCommandBase: IExternalCommand
   {
-    protected static string SELECT_RANGE_MESSAGE = "Please select a range." ;
-    protected static string DIALOG_MESSAGE_TITLE = "Message" ;
-    protected static string NO_ITEM_SELECTED_MESSAGE = "No items are selected.";
+    private static string SELECT_RANGE_MESSAGE = "Please select a range." ;
+    private static string DIALOG_MESSAGE_TITLE = "Message" ;
+    private static string NO_ITEM_SELECTED_MESSAGE = "No items are selected.";
     protected static string UPDATE_DATA_SUCCESS_MESSAGE = "Update data success.";
     protected static string ELECTRICAL_CHANGE_MODE_TITLE = "Change mode result";
     
