@@ -288,9 +288,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void Button_ReplaceMultipleSymbols( object sender, RoutedEventArgs e )
     {
-      using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
-      progress.Message = "Processing......." ;
-      CeedViewModel.ReplaceMultipleSymbols( _document, progress, ref _allCeedModels, ref _usingCeedModel, ref DtGrid ) ;
+      CeedViewModel.ReplaceMultipleSymbols( _document, UIApplication, ref _allCeedModels, ref _usingCeedModel, ref DtGrid ) ;
     }
 
     private void LoadData( CeedStorable ceedStorable )

@@ -10,10 +10,11 @@ using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 using DataGrid = System.Windows.Controls.DataGrid ;
 using MessageBox = System.Windows.MessageBox ;
+using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -52,7 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static List<string> LoadConnectorFamily( Document document, List<string> connectorFamilyPaths )
+    private static List<string> LoadConnectorFamily( Document document, List<string> connectorFamilyPaths )
     {
       List<string> connectorFamilyFiles = new() ;
 
@@ -110,7 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return existsConnectorFamilies ;
     }
 
-    public static void ReplaceMultipleSymbols( Document document, ProgressData progress, ref CeedViewModel? allCeedModels, ref CeedViewModel? usingCeedModel, ref DataGrid dtGrid )
+    public static void ReplaceMultipleSymbols( Document document, UIApplication uiApplication, ref CeedViewModel? allCeedModels, ref CeedViewModel? usingCeedModel, ref DataGrid dtGrid )
     {
       const string successfullyMess = "Replaced multiple floor plan symbols successfully." ;
       const string failedMess = "Replaced multiple floor plan symbols failed." ;
@@ -141,6 +142,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         try {
           List<string> connectorFamilyFiles ;
           List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
+          using var progress = ProgressBar.ShowWithNewThread( uiApplication ) ;
+          progress.Message = "Processing......." ;
           using ( var progressData = progress.Reserve( 0.3 ) ) {
             connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath! ) ;
             connectorFamilyFiles = LoadConnectorFamily( document, connectorFamilyPaths ) ;
