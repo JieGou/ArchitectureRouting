@@ -131,6 +131,9 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>円柱シャフト作成</string>
 
+        <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
+        <string>Create Sign&#xA;Cylindrical Shaft</string>
+
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>選択範囲配線</string>
 

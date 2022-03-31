@@ -5,6 +5,7 @@ using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
+using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -14,6 +15,9 @@ using Autodesk.Revit.UI.Selection ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
 {
   [Transaction( TransactionMode.Manual )]
+  [DisplayNameKey( "Electrical.App.Commands.Shaft.CreateSignCylindricalShaftCommand", DefaultString = "Create Sign\nCylindrical Shaft" )]
+  [Image( "resources/Initialize-16.bmp", ImageType = Revit.UI.ImageType.Normal )]
+  [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
   public class CreateSignCylindricalShaftCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
