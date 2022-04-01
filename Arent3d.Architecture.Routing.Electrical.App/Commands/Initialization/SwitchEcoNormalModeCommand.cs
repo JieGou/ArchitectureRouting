@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand", DefaultString = "Switch EcoNormal Mode" )]
   [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
-  public class SwitchEcoNormalModeCommand: IExternalCommand
+  public class SwitchEcoNormalModeCommand : IExternalCommand
   {
     private const string SchemaGuid = "DA4AAE5A-4EE1-45A8-B3E8-F790C84CC44F" ;
     private const string IsEcoFieldName = "IsEco" ;
@@ -98,7 +98,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       return ( listApplyConduit, connectorList ) ;
     }
 
-    private Result SwitchModeForProject(Document document, ref string message, bool isEcoMode)
+    private Result SwitchModeForProject( Document document, ref string message, bool isEcoMode )
     {
       var (conduitList, connectorList) = GetAllConduitAndConnectorInProject( document ) ;
       using var transaction = new Transaction( document, TransactionName ) ;
@@ -110,6 +110,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       MessageBox.Show( string.IsNullOrEmpty( message ) ? DialogResultSuccessKey.GetAppStringByKeyOrDefault( UpdateDataSuccessMessage ) : message, DialogResultTitleKey.GetAppStringByKeyOrDefault( ElectricalChangeModeTitle ), MessageBoxButtons.OK ) ;
       return Result.Succeeded ;
     }
+
     private Result SwitchModeForRange( ExternalCommandData commandData, ref string message, bool isEcoMode )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
