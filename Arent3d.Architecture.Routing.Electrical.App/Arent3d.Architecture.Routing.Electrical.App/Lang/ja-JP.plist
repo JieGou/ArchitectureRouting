@@ -125,8 +125,8 @@
         <key>Electrical.App.Commands.Routing.NewRackFromToCommand</key>
         <string>Create Rack&#xA;From-To</string>
 
-        <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
-        <string>コネクターを追加する&#xA;( 両方 )</string>
+        <key>Electrical.App.Commands.Routing.Connectors.NewConnectorTwoSideCommand</key>
+        <string>両方コネクタ</string>
 
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>円柱シャフト作成</string>
@@ -173,11 +173,26 @@
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>表分割</string>
 
+        <key>Electrical.App.Commands.Routing.NewConnectorTypePowerCommand</key>
+        <string>コネクタ（電源）</string>
+
+        <key>Electrical.App.Commands.Routing.NewConnectorTypeSensorCommand</key>
+        <string>コネクタ（センサー）</string>
+
+        <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypePassCommand</key>
+        <string>両方コネクタ（パス）</string>
+
+        <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypeSensorCommand</key>
+        <string>両方コネクタ（センサー）</string>
+
         <key>Electrical.App.Commands.Routing.CreateRoomCommand</key>
         <string>部屋作成</string>
 
         <key>Electrical.App.Commands.Routing.RoomPickRoutingCommand</key>
         <string>部屋の配線</string>
+
+        <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
+        <string>部屋の範囲配線</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -382,6 +397,12 @@
         <!-- Schedule Names -->
         <key>Revit.Electrical.Schedule.Name</key>
         <string>電気シンボル表</string>
+        <key>Revit.Detail.Table.Name</key>
+        <string>明細表</string>
+        
+        <!-- Message -->
+        <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
+        <string>選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。</string>
     </dict>
 </plist>
 

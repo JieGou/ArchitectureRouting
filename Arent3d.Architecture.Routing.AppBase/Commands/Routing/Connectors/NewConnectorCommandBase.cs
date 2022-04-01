@@ -4,7 +4,6 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
@@ -15,6 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
   {
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
     private const string DefaultConstructionItem = "未設定" ;
+    protected virtual ConnectorFamilyType? ConnectorType => null ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -49,21 +49,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? _ ) ) return ;
       instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
-    }
-
-    private static Level? GetUpperLevel( Level refRevel )
-    {
-      var minElevation = refRevel.Elevation + refRevel.Document.Application.ShortCurveTolerance ;
-      return refRevel.Document.GetAllElements<Level>().Where( level => minElevation < level.Elevation ).MinBy( level => level.Elevation ) ;
-    }
-
-    private static void SetParameter( FamilyInstance instance, string parameterName, double value )
-    {
-      instance.ParametersMap.get_Item( parameterName )?.Set( value ) ;
-    }
-    private static void SetParameter( FamilyInstance instance, BuiltInParameter parameter, double value )
-    {
-      instance.get_Parameter( parameter )?.Set( value ) ;
+      if ( ConnectorType == null ) return ;
+      instance.SetConnectorFamilyType( ConnectorType ?? ConnectorFamilyType.Sensor ) ;
     }
   }
 }

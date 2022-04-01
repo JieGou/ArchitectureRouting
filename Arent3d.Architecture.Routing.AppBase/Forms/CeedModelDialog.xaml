@@ -33,9 +33,9 @@
     
       <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right">
         <Label Content="CeeD型番" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5" Visibility="Hidden"/>
-        <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" Visibility="Hidden"/>
+        <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" KeyDown="CmbModelNumbers_KeyDown" Visibility="Hidden"/>
         <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-        <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" />        
+        <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" KeyDown="CmbModelNumbers_KeyDown"/>        
         <Button Content="Search"
                 Click="Button_Search"
                 Margin="20,5,5,5"

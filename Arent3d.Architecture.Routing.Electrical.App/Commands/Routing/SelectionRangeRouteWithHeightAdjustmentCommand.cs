@@ -93,7 +93,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return GetMEPSystemClassificationInfoFromSystemType() ;
     }
 
-    public record SelectState( FamilyInstance PowerConnector, FamilyInstance PassConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteCommandBase.SensorArrayDirection SensorDirection, IRangeRouteWithHeightAdjustmentProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
+    public record SelectState( FamilyInstance PowerConnector, FamilyInstance PassConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteManager.SensorArrayDirection SensorDirection, IRangeRouteWithHeightAdjustmentProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo, MEPSystemPipeSpec PipeSpec ) ;
 
     private RangeRangeRouteWithHeightAdjustmentPropertyDialog? ShowPropertyDialog( Document document, Element powerElement, Element passElement, Element sensorElement )
     {
@@ -132,7 +132,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return sv ;
     }
 
-    private static ( FamilyInstance? PowerConnector, FamilyInstance? PassConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteCommandBase.SensorArrayDirection SensorDirection, string? ErrorMessage ) SelectionRangeRoute( UIDocument iuDocument )
+    private static ( FamilyInstance? PowerConnector, FamilyInstance? PassConnector, IReadOnlyList<FamilyInstance> SensorConnectors, SelectionRangeRouteManager.SensorArrayDirection SensorDirection, string? ErrorMessage ) SelectionRangeRoute( UIDocument iuDocument )
     {
       var selectedElements = iuDocument.Selection.PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コネクタを選択して下さい。" ).OfType<FamilyInstance>() ;
 
@@ -142,11 +142,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         if ( element.GetConnectorFamilyType() is not { } connectorFamilyType ) continue ;
 
         if ( connectorFamilyType == ConnectorFamilyType.Power ) {
-          if ( null != powerConnector ) return ( null!, null!, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageTwoOrMorePowerConnector ) ;
+          if ( null != powerConnector ) return ( null!, null!, Array.Empty<FamilyInstance>(), SelectionRangeRouteManager.SensorArrayDirection.Invalid, ErrorMessageTwoOrMorePowerConnector ) ;
           powerConnector = element ;
         }
         else if ( connectorFamilyType == ConnectorFamilyType.Pass ) {
-          if ( null != passConnector ) return ( null!, null!, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageTwoOrMorePassConnector ) ;
+          if ( null != passConnector ) return ( null!, null!, Array.Empty<FamilyInstance>(), SelectionRangeRouteManager.SensorArrayDirection.Invalid, ErrorMessageTwoOrMorePassConnector ) ;
           passConnector = element ;
         }
         else if ( connectorFamilyType == ConnectorFamilyType.Sensor ) {
@@ -158,18 +158,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       if ( powerConnector == null && passConnector == null ) return ( null, null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPowerAndPassConnector ) ;
       if ( powerConnector == null && 0 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPowerAndSensorConnector ) ;
       if ( passConnector == null && 0 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), default, ErrorMessageNoPassAndSensorConnector ) ;
-      if ( powerConnector == null ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageNoPowerConnector ) ;
-      if ( passConnector == null ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageNoPassConnector ) ;
+      if ( powerConnector == null ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteManager.SensorArrayDirection.Invalid, ErrorMessageNoPowerConnector ) ;
+      if ( passConnector == null ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteManager.SensorArrayDirection.Invalid, ErrorMessageNoPassConnector ) ;
       var powerLevel = powerConnector.LevelId ;
       sensorConnectors.RemoveAll( fi => fi.LevelId != powerLevel ) ;
-      if ( 0 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageNoSensorConnector ) ;
-      if ( 1 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageSensorConnector ) ;
+      if ( 0 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteManager.SensorArrayDirection.Invalid, ErrorMessageNoSensorConnector ) ;
+      if ( 1 == sensorConnectors.Count ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteManager.SensorArrayDirection.Invalid, ErrorMessageSensorConnector ) ;
       var sensorDirection = SortSensorConnectors( passConnector, sensorConnectors ) ;
-      if ( SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid == sensorDirection ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;
+      if ( SelectionRangeRouteManager.SensorArrayDirection.Invalid == sensorDirection ) return ( null, null, Array.Empty<FamilyInstance>(), SelectionRangeRouteManager.SensorArrayDirection.Invalid, ErrorMessageCannotDetermineSensorConnectorArrayDirection ) ;
       return ( powerConnector, passConnector, sensorConnectors, sensorDirection, null ) ;
     }
 
-    private static SelectionRangeRouteCommandBase.SensorArrayDirection SortSensorConnectors( FamilyInstance passConnector, List<FamilyInstance> sensorConnectors )
+    private static SelectionRangeRouteManager.SensorArrayDirection SortSensorConnectors( FamilyInstance passConnector, List<FamilyInstance> sensorConnectors )
     {
       var passConnectorPoint = passConnector.GetBottomConnectorOfConnectorFamily().Origin ;
       double minX = double.MaxValue, minY = double.MaxValue ;
@@ -188,13 +188,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var (powerX, powerY, _) = passConnectorPoint ;
       var xRange = GetRange( minX, maxX, powerX ) ;
       var yRange = GetRange( minY, maxY, powerY ) ;
-      if ( xRange < 0 && yRange < 0 ) return SelectionRangeRouteCommandBase.SensorArrayDirection.Invalid ;
-      SelectionRangeRouteCommandBase.SensorArrayDirection dir ;
+      if ( xRange < 0 && yRange < 0 ) return SelectionRangeRouteManager.SensorArrayDirection.Invalid ;
+      SelectionRangeRouteManager.SensorArrayDirection dir ;
       if ( yRange <= xRange ) {
-        dir = ( maxX < powerX ) ? SelectionRangeRouteCommandBase.SensorArrayDirection.XMinus : SelectionRangeRouteCommandBase.SensorArrayDirection.XPlus ;
+        dir = ( maxX < powerX ) ? SelectionRangeRouteManager.SensorArrayDirection.XMinus : SelectionRangeRouteManager.SensorArrayDirection.XPlus ;
       }
       else {
-        dir = ( maxY < powerY ) ? SelectionRangeRouteCommandBase.SensorArrayDirection.YMinus : SelectionRangeRouteCommandBase.SensorArrayDirection.YPlus ;
+        dir = ( maxY < powerY ) ? SelectionRangeRouteManager.SensorArrayDirection.YMinus : SelectionRangeRouteManager.SensorArrayDirection.YPlus ;
       }
 
       sensorConnectors.Sort( ( a, b ) => Compare( sensorToOrigin, a, b, dir ) ) ;
@@ -206,13 +206,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         return max - min ;
       }
 
-      static int Compare( Dictionary<FamilyInstance, XYZ> sensorToOrigin, FamilyInstance a, FamilyInstance b, SelectionRangeRouteCommandBase.SensorArrayDirection dir ) =>
+      static int Compare( Dictionary<FamilyInstance, XYZ> sensorToOrigin, FamilyInstance a, FamilyInstance b, SelectionRangeRouteManager.SensorArrayDirection dir ) =>
         dir switch
         {
-          SelectionRangeRouteCommandBase.SensorArrayDirection.XMinus => sensorToOrigin[ b ].X.CompareTo( sensorToOrigin[ a ].X ),
-          SelectionRangeRouteCommandBase.SensorArrayDirection.YMinus => sensorToOrigin[ b ].Y.CompareTo( sensorToOrigin[ a ].Y ),
-          SelectionRangeRouteCommandBase.SensorArrayDirection.XPlus => sensorToOrigin[ a ].X.CompareTo( sensorToOrigin[ b ].X ),
-          SelectionRangeRouteCommandBase.SensorArrayDirection.YPlus => sensorToOrigin[ a ].Y.CompareTo( sensorToOrigin[ b ].Y ),
+          SelectionRangeRouteManager.SensorArrayDirection.XMinus => sensorToOrigin[ b ].X.CompareTo( sensorToOrigin[ a ].X ),
+          SelectionRangeRouteManager.SensorArrayDirection.YMinus => sensorToOrigin[ b ].Y.CompareTo( sensorToOrigin[ a ].Y ),
+          SelectionRangeRouteManager.SensorArrayDirection.XPlus => sensorToOrigin[ a ].X.CompareTo( sensorToOrigin[ b ].X ),
+          SelectionRangeRouteManager.SensorArrayDirection.YPlus => sensorToOrigin[ a ].Y.CompareTo( sensorToOrigin[ b ].Y ),
           _ => throw new ArgumentOutOfRangeException( nameof( dir ), dir, null )
         } ;
     }
@@ -249,7 +249,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var nameBase = GetNameBase( curveType ) ;
       var nextIndex = GetRouteNameIndex( RouteCache.Get( DocumentKey.Get( document ) ), nameBase ) ;
       var routeName = nameBase + "_" + nextIndex ;
-      var (footPassPoint, passPoints) = SelectionRangeRouteManager.CreatePassPoints( routeName, passConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
+      var (footPassPoint, passPoints) = SelectionRangeRouteManager.CreatePassPoints( routeName, passConnector, sensorConnectors, sensorDirection, routeProperty, pipeSpec, passConnector.GetBottomConnectorOfConnectorFamily().Origin ) ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 2 ) ;
 

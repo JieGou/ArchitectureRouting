@@ -69,6 +69,10 @@ namespace Arent3d.Architecture.Routing.Mechanical.Haseko.App
         [Button( typeof( GenerateStructureEnvelopeCommand ), OnlyInitialized = true )]
         private static class GenerateStructureEnvelopeButton
         {
+        }        
+        [Button( typeof( CalculateStepHeightCommand ), OnlyInitialized = true )]
+        private static class CalculateStepHeightButton
+        {
         }
       }
 

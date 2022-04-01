@@ -898,5 +898,15 @@ namespace Arent3d.Architecture.Routing
     }
 
     #endregion
+
+    #region Envelope
+
+    public static string? GetParentEnvelopeId( this FamilyInstance familyInstance )
+    {
+      if ( false == familyInstance.TryGetProperty( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( familyInstance.Document, "Parent Envelope Id" ), out string? envelopeUniqueId ) || string.IsNullOrEmpty( envelopeUniqueId ) ) return null ;
+      return envelopeUniqueId ;
+    }
+
+    #endregion
   }
 }
