@@ -349,7 +349,12 @@
 		<key>Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning</key>
         <string>明細記号 {0} には施工区分が混在しています。そのまま明細表作成に進めますか。</string>
 
+        <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.EcoMode</key>
+        <string>エコモード</string>
 
+        <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.NormalMode</key>
+        <string>ノーマル</string>
+        
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
         <string>M_電線管エルボ - 鉄鋼</string>

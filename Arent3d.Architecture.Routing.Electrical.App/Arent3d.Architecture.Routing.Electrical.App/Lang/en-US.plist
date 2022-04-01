@@ -360,6 +360,12 @@
 		<key>Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning</key>
         <string>Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?</string>
 
+        <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.EcoMode</key>
+        <string>Eco Mode</string>
+
+        <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.NormalMode</key>
+        <string>Normal Mode</string>
+
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
         <string>M_電線管エルボ - 鉄鋼</string>

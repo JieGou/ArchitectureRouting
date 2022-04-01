@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.UI ;
 
@@ -16,8 +17,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
   public partial class SwitchEcoNormalModeDialog
   {
-    private const string RequiredEcoNormalMode = "Please select Eco or Normal mode from combo box" ;
-    public static readonly DependencyProperty EcoNormalModeComboBoxIndexProperty = DependencyProperty.Register( "EcoNormalModeComboBoxIndex", typeof( int ), typeof( SwitchEcoNormalModeDialog ), new PropertyMetadata( 0, EcoNormalModeIndex_PropertyChanged ) ) ;
+    private const string EcoModeKey = "Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.EcoMode" ;
+    private const string EcoModeDefaultString = "Eco Mode" ;
+    private const string NormalModeKey = "Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.NormalMode" ;
+    private const string NormalModeDefaultString = "Normal Mode" ;
+    public static readonly DependencyProperty EcoNormalModeComboBoxIndexProperty = DependencyProperty.Register( "EcoNormalModeComboBoxIndex", typeof( int ), typeof( SwitchEcoNormalModeDialog ), new PropertyMetadata( 1 ) ) ;
 
     public SwitchEcoNormalModeDialog( UIApplication uiApplication, bool? isProjectInEcoMode ) : base( uiApplication )
     {
@@ -26,28 +30,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
         EcoNormalModeComboBox.SelectedIndex = isProjectInEcoMode == true ? 0 : 1 ;
     }
 
-    public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string> { [ EcoNormalMode.EcoMode ] = "エコモード", [ EcoNormalMode.NormalMode ] = "ノーマル", } ;
+    public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string>
+    {
+      [ EcoNormalMode.EcoMode ] = EcoModeKey.GetAppStringByKeyOrDefault(EcoModeDefaultString), 
+      [ EcoNormalMode.NormalMode ] = NormalModeKey.GetAppStringByKeyOrDefault(NormalModeDefaultString),
+    } ;
 
     public bool? ApplyForProject ;
 
     private void Button_BtnApplyForProject_Click( object sender, RoutedEventArgs e )
     {
-      if ( EcoNormalModeComboBox.SelectedIndex == -1 ) {
-        MessageBox.Show( RequiredEcoNormalMode ) ;
-        return ;
-      }
-
       ApplyForProject = true ;
       DialogResult = true ;
     }
 
     private void Button_BtnApplyForARange_Click( object sender, RoutedEventArgs e )
     {
-      if ( EcoNormalModeComboBox.SelectedIndex == -1 ) {
-        MessageBox.Show( RequiredEcoNormalMode ) ;
-        return ;
-      }
-
       ApplyForProject = false ;
       DialogResult = true ;
     }
@@ -87,21 +85,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     {
       ValueChanged?.Invoke( this, e ) ;
     }
-
-    private static void EcoNormalModeIndex_PropertyChanged( DependencyObject d, DependencyPropertyChangedEventArgs e )
-    {
-      ( d as SwitchEcoNormalModeDialog )?.OnEcoNormalModeChanged() ;
-    }
-
     public event EventHandler? ValueChanged ;
-
-    private void OnEcoNormalModeChanged()
-    {
-      // if ( SwitchEcoNormalModeDialog is not { } ecoNormalMode ) return ;
-      //
-      // var minimumValue = ( ecoNormalMode == FixedHeightType.Ceiling ? FromMinimumHeightAsCeilingLevel : FromMinimumHeightAsFloorLevel ) ;
-      // var maximumValue = ( ecoNormalMode == FixedHeightType.Ceiling ? FromMaximumHeightAsCeilingLevel : FromMaximumHeightAsFloorLevel ) ;
-      // SetMinMax( FromFixedHeightNumericUpDown, ecoNormalMode, minimumValue, maximumValue ) ;
-    }
   }
 }

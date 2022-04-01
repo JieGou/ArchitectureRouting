@@ -24,7 +24,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     private const string IsEcoFieldName = "IsEco" ;
     private const string EcoNormalModeSchema = "EcoNormalModeSchema" ;
     private const string TransactionName = "Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand" ;
-
+    private const string DialogResultSuccessKey = "Dialog.Electrical.ChangeMode.Success" ;
+    private const string DialogResultTitleKey = "Dialog.Electrical.ChangeMode.Title" ;
     private void SetEcoNormalModeForProject( Document document, bool isEco )
     {
       using var transaction = new Transaction( document, TransactionName ) ;
@@ -79,7 +80,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
           SetModeForConduit( listApplyConduit, (bool) isEcoMode, document ) ;
           SetModeForConnector( connectorList, (bool) isEcoMode, document ) ;
           SetEcoNormalModeForProject( document, (bool) isEcoMode ) ;
-          MessageBox.Show( string.IsNullOrEmpty( message ) ? "Dialog.Electrical.ChangeMode.Success".GetAppStringByKeyOrDefault( UPDATE_DATA_SUCCESS_MESSAGE ) : message, "Dialog.Electrical.ChangeMode.Title".GetAppStringByKeyOrDefault( ELECTRICAL_CHANGE_MODE_TITLE ), MessageBoxButtons.OK ) ;
+          MessageBox.Show( string.IsNullOrEmpty( message ) ? DialogResultSuccessKey.GetAppStringByKeyOrDefault( UPDATE_DATA_SUCCESS_MESSAGE ) : message, DialogResultTitleKey.GetAppStringByKeyOrDefault( ELECTRICAL_CHANGE_MODE_TITLE ), MessageBoxButtons.OK ) ;
           return Result.Succeeded ;
         }
 
