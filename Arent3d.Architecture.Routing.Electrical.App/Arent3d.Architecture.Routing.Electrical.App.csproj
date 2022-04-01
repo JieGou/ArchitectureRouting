@@ -4,7 +4,6 @@
     <PropertyGroup>
         <UseWPF>true</UseWPF>
         <RootNamespace>Arent3d.Architecture.Routing.Electrical.App</RootNamespace>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <PropertyGroup>
