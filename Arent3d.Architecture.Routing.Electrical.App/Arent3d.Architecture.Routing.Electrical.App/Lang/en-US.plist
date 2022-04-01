@@ -405,5 +405,9 @@
         <string>Electrical Symbol Table</string>
         <key>Revit.Detail.Table.Name</key>
         <string>Detail Table</string>
+
+        <!-- Message -->
+        <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
+        <string>Since it is impossible to avoid the interference of the envelope in the selection range, adjust the position of the envelope or the position of the connector.</string>
     </dict>
 </plist>
