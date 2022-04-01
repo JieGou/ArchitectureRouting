@@ -75,9 +75,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     private void EcoNormalModeComboBox_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       OnValueChanged( EventArgs.Empty ) ;
-      var oldValue = e.RemovedItems.OfType<KeyValuePair<EcoNormalMode, string>>().FirstOrDefault() ;
       var newValue = e.AddedItems.OfType<KeyValuePair<EcoNormalMode, string>>().FirstOrDefault() ;
-      if ( oldValue.Key == newValue.Key ) return ;
       SelectedMode = newValue.Key ;
     }
 

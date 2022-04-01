@@ -107,12 +107,6 @@
         <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>CNS Setting</string>
 
-        <key>Electrical.App.Commands.Initialization.ChangeToEcoCommand</key>
-        <string>Change to&#xA;Eco</string>
-
-        <key>Electrical.App.Commands.Initialization.ChangeToNormalCommand</key>
-        <string>Change to&#xA;Normal</string>
-
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>Create Rack&#xA;For All</string>
 

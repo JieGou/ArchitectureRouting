@@ -45,12 +45,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( ConfirmNotConnectingCommand ), OnlyInitialized = true )]
           private static class ConfirmNotConnectingCommandButton { }
           
-          [Button( typeof( ChangeToEcoCommand ), OnlyInitialized = true )]
-          private static class ChangeToEcoCommandButton { }
-          
-          [Button( typeof( ChangeToNormalCommand ), OnlyInitialized = true )]
-          private static class ChangeToNormalCommandButton { }
-          
           [Button( typeof( SplitScheduleCommand ), OnlyInitialized = true )]
           private static class SplitScheduleCommandButton { }
           
