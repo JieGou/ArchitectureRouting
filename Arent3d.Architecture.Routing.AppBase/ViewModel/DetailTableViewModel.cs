@@ -19,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   public class DetailTableViewModel : ViewModelBase
   {
     private const string DefaultParentPlumbingType = "E" ;
+
     public ObservableCollection<DetailTableModel> DetailTableModels { get ; set ; }
 
     public bool IsCreateDetailTableOnFloorPlanView { get ; set ; }

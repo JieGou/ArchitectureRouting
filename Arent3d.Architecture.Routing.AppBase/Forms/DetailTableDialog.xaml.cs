@@ -19,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     private const string DefaultParentPlumbingType = "E" ;
     private const string DefaultChildPlumbingSymbol = "↑" ;
+    private const string NoPlumping = "配管なし" ;
     private const string IncorrectDataErrorMessage = "Incorrect data." ;
     private const string CaptionErrorMessage = "Error" ;
     private readonly Document _document ;
@@ -26,9 +27,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly DetailTableViewModel _detailTableViewModel ;
     private List<DetailTableModel> _selectedDetailTableRows ;
     private DetailTableModel? _copyDetailTableRow ;
-    public DetailTableViewModel DetailTableViewModelSummary ;
-    public readonly Dictionary<string, string> RoutesWithConstructionItemHasChanged ;
-    public readonly Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged ;
+    public DetailTableViewModel DetailTableViewModelSummary { get ; set ; }
+    public Dictionary<string, string> RoutesWithConstructionItemHasChanged { get ; }
+    public Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged { get ; }
     private bool _isMixConstructionItems ;
     
     private static string MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage =
@@ -175,7 +176,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       else {
         if ( detailTableRow.PlumbingType == plumbingType.ToString() ) return ;
-        if ( plumbingType.ToString() == DefaultChildPlumbingSymbol ) {
+        if ( plumbingType.ToString() == DefaultChildPlumbingSymbol || plumbingType.ToString() == NoPlumping ) {
           comboBox.SelectedValue = detailTableRow.PlumbingType ;
         }
         else {
@@ -268,8 +269,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         var routesWithConstructionItemHasChanged = detailTableRowsChangeConstructionItems.Select( d => d.RouteName ).Distinct().ToList() ;
         if ( _isMixConstructionItems )
           DetailTableViewModel.UpdatePlumbingItemsAfterChangeConstructionItems( ref newDetailTableModels, detailTableRow.RouteName, constructionItem.ToString() ) ;
-        else
+        else {
+          #region Update Plumbing Type (Comment out)
+          // var detailTableRowsWithSameRouteName = newDetailTableModels.Where( c => c.RouteName == detailTableRow.RouteName ).ToList() ;
+          // foreach ( var detailTableRowWithSameRouteName in detailTableRowsWithSameRouteName ) {
+          //   var detailTableRowsWithSameDetailSymbolId = newDetailTableModels.Where( c => c.DetailSymbolId == detailTableRowWithSameRouteName.DetailSymbolId ).ToList() ;
+          //   CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( _conduitsModelData, detailTableRowsWithSameDetailSymbolId, detailTableRow.PlumbingType, false, _isMixConstructionItems ) ;
+          // }
+          #endregion
           DetailTableViewModel.UnGroupDetailTableRowsAfterChangeConstructionItems( ref newDetailTableModels, routesWithConstructionItemHasChanged, constructionItem.ToString() ) ;
+        }
         foreach ( var routeName in routesWithConstructionItemHasChanged ) {
           if ( ! RoutesWithConstructionItemHasChanged.ContainsKey( routeName ) ) {
             RoutesWithConstructionItemHasChanged.Add( routeName, constructionItem.ToString() ) ;
@@ -279,6 +288,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           }
         }
 
+        #region Update Plumbing Type (Comment out)
+        //DetailTableViewModel.SortDetailTableModel( ref newDetailTableModels, _isMixConstructionItems ) ;
+        #endregion
         _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
         CreateDetailTableViewModelByGroupId() ;
         DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
@@ -340,7 +352,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
     }
-    
+
     private void BtnPlumbingSummaryMixConstructionItems_Click( object sender, RoutedEventArgs e )
     {
       _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
