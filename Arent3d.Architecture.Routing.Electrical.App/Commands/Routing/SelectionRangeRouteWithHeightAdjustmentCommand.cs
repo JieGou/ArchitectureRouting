@@ -248,7 +248,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var nameBase = GetNameBase( curveType ) ;
       var nextIndex = GetRouteNameIndex( RouteCache.Get( DocumentKey.Get( document ) ), nameBase ) ;
       var routeName = nameBase + "_" + nextIndex ;
-      var (footPassPoint, passPoints) = SelectionRangeRouteCommandBase.CreatePassPoints( routeName, passConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
+      var (footPassPoint, passPoints) = SelectionRangeRouteManager.CreatePassPoints( routeName, passConnector, sensorConnectors, sensorDirection, routeProperty, classificationInfo, pipeSpec ) ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
       var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 2 ) ;
 
