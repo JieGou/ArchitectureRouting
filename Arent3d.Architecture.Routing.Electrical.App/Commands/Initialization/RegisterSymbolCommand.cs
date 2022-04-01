@@ -15,8 +15,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
     {
+      var uiDocument = commandData.Application.ActiveUIDocument ;
+      if ( uiDocument.ActiveView.ViewType != ViewType.FloorPlan )
+        return Result.Cancelled ;
+      
       var externalEventHandler = new ExternalEventHandler() ;
-      var dataContext = new RegisterSymbolViewModel( commandData.Application.ActiveUIDocument ) { ExternalEventHandler = externalEventHandler } ;
+      var dataContext = new RegisterSymbolViewModel( uiDocument ) { ExternalEventHandler = externalEventHandler } ;
       externalEventHandler.ExternalEvent = ExternalEvent.Create( dataContext.ExternalEventHandler ) ;
       var registerSymbolView = new RegisterSymbolView { DataContext = dataContext } ;
       registerSymbolView.Show() ;

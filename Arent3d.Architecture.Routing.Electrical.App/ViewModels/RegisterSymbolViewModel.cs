@@ -167,7 +167,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         var directoryInfo = new DirectoryInfo( browseFolderPath ) ;
         if ( ! directoryInfo.Attributes.HasFlag( FileAttributes.Hidden ) ) {
           var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-          folders.Add( new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ) ;
+          folders.Add(
+            new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ) ;
         }
 
         foreach ( var path in Directory.GetDirectories( browseFolderPath ) ) {
@@ -176,7 +177,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             continue ;
 
           var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-          var folder = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ;
+          var folder = new FolderModel
+          {
+            Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected
+          } ;
           var subPaths = Directory.GetDirectories( folder.Path ) ;
           if ( subPaths.Length > 0 ) {
             RecursiveFolder( subPaths, ref folder ) ;
@@ -200,7 +204,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           continue ;
 
         var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-        var subFolderModel = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ;
+        var subFolderModel = new FolderModel
+        {
+          Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected
+        } ;
         var subPaths = Directory.GetDirectories( directoryInfo.FullName ) ;
         if ( subPaths.Length > 0 ) {
           RecursiveFolder( subPaths, ref subFolderModel ) ;
@@ -255,7 +262,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           previewModels.Add( new PreviewModel
           {
             FileName = fileInfo.Name,
-            Thumbnail = Imaging.CreateBitmapSourceFromHBitmap( bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions() ),
+            Thumbnail = Imaging.CreateBitmapSourceFromHBitmap( bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty,
+              BitmapSizeOptions.FromEmptyOptions() ),
             Path = fileInfo.FullName
           } ) ;
         }
@@ -299,7 +307,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       var filter = new FilteredElementCollector( _uiDocument.Document ) ;
       var cadLinkType = filter.OfClass( typeof( CADLinkType ) ).OfType<CADLinkType>().SingleOrDefault( x => x.Name == previewFile.FileName ) ;
 
-      var pickPoint = _uiDocument.Selection.PickPoint( ObjectSnapTypes.Points, "Pick a point to place instance!" ) ;
+      var pickPoint = _uiDocument.Selection.PickPoint( ObjectSnapTypes.Points, "図形の配置位置を指定してください。" ) ;
       if ( null != cadLinkType ) {
         var importInstance = ImportInstance.Create( _uiDocument.Document, cadLinkType.Id, _uiDocument.ActiveView ) ;
         if ( importInstance.Pinned ) importInstance.Pinned = false ;
@@ -329,26 +337,32 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       var filter = new FilteredElementCollector( _uiDocument.Document ) ;
       var imageType = filter.OfClass( typeof( ImageType ) ).OfType<ImageType>().SingleOrDefault( x => x.Name == previewFile.FileName ) ;
 
-      var pickPoint = _uiDocument.Selection.PickPoint( ObjectSnapTypes.Points, "Pick a point to place instance!" ) ;
-#if REVIT2020_OR_GREATER
+      var pickPoint = _uiDocument.Selection.PickPoint( ObjectSnapTypes.Points, "図形の配置位置を指定してください。" ) ;
+
+#if REVIT2021_OR_GREATER
       var optionInstance = new ImagePlacementOptions { PlacementPoint = BoxPlacement.Center, Location = pickPoint } ;
       if ( null == imageType ) {
-#if REVIT2021_OR_GREATER
         var optionType = new ImageTypeOptions( previewFile.Path, false, ImageTypeSource.Import ) ;
-#elif REVIT2020
-        var optionType = new ImageTypeOptions( previewFile.Path, false ) ;
-#endif
         imageType = ImageType.Create( _uiDocument.Document, optionType ) ;
       }
 #endif
-      
+
+#if REVIT2020
+      var optionInstance = new ImagePlacementOptions { PlacementPoint = BoxPlacement.Center, Location = pickPoint } ;
+      if ( null == imageType ) {
+        var optionType = new ImageTypeOptions( previewFile.Path, false ) ;
+        imageType = ImageType.Create( _uiDocument.Document, optionType ) ;
+      }
+#endif
+
 #if REVIT2020_OR_GREATER
       if ( ! ImageInstance.IsValidView( _uiDocument.ActiveView ) ) return ;
       ImageInstance.Create( _uiDocument.Document, _uiDocument.ActiveView, imageType.Id, optionInstance ) ;
 #elif REVIT2019
-      _uiDocument.Document.Import( previewFile.Path, new ImageImportOptions { RefPoint = pickPoint, Placement = BoxPlacement.Center }, _uiDocument.ActiveView, out _ ) ;
+      _uiDocument.Document.Import( previewFile.Path, new ImageImportOptions { RefPoint = pickPoint, Placement =
+ BoxPlacement.Center }, _uiDocument.ActiveView, out _ ) ;
 #endif
-      
+
       transaction.Commit() ;
     }
 
