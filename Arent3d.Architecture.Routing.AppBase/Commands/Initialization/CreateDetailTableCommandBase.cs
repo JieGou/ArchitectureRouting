@@ -60,7 +60,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
         }
 
-        SortDetailTableModel( ref detailTableModels ) ;
         SetPlumbingDataForEachWiring( detailTableModelsData, conduitsModelData, ref detailTableModels, defaultParentPlumbingType ) ;
       }
       catch {
@@ -155,22 +154,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return str ;
     }
 
-    private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool mixConstructionItems = false  )
+    private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels )
     {
-      var detailTableModelsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-      List<DetailTableModel> sortedDetailTableModelsList = new() ;
-      foreach ( var detailSymbolId in detailTableModelsGroupByDetailSymbolId.Keys ) {
-        List<DetailTableModel> detailTableRowsByDetailSymbolId = detailTableModelsGroupByDetailSymbolId[ detailSymbolId ]!.OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.SignalType ).ToList() ;
-        var detailTableRowsBySignalTypes = detailTableRowsByDetailSymbolId.GroupBy( d => d.SignalType ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).Select( g => g.ToList() ).ToList() ;
-        foreach ( var detailTableRowsBySignalType in detailTableRowsBySignalTypes ) {
-          if ( mixConstructionItems )
-            sortedDetailTableModelsList.AddRange( detailTableRowsBySignalType ) ;
-          else {
-            var orderedDetailTableRowsBySignalType = detailTableRowsBySignalType.GroupBy( d => d.ConstructionItems ).OrderByDescending( g => g.ToList().Any( d => d.IsParentRoute ) ).SelectMany( g => g.ToList() ).ToList() ;
-            sortedDetailTableModelsList.AddRange( orderedDetailTableRowsBySignalType ) ;
-          }
-        }
-      }
+      var sortedDetailTableModelsList = detailTableModels
+        .OrderBy( x => x.DetailSymbol )
+        .ThenByDescending( x => x.DetailSymbolId )
+        .ThenByDescending( x => x.SignalType )
+        .ThenByDescending( x => x.ConstructionItems )
+        .ThenByDescending( x => x.PlumbingIdentityInfo )
+        .ThenByDescending( x => x.IsParentRoute )
+        .ThenByDescending( x => x.GroupId )
+        .GroupBy( x => x.DetailSymbolId )
+        .SelectMany( x => x ).ToList() ;
 
       detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
     }
@@ -192,6 +187,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private static void SetPlumbingDataForEachWiring( List<DetailTableModel> detailTableModelData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType )
     {
       const double percentage = 0.32 ;
+      var newDetailTableRows = new List<DetailTableModel>() ;
       foreach ( var detailTableRow in detailTableModels ) {
         const int plumbingCount = 1 ;
         var oldDetailTableRows = detailTableModelData.Where( d => d.DetailSymbolId == detailTableRow.DetailSymbolId && d.RouteName == detailTableRow.RouteName ).ToList() ;
@@ -211,6 +207,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             detailTableRow.PlumbingType = plumbingType ;
             detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
           }
+
           detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
           detailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( detailTableRow, false ) ;
           detailTableRow.IsParentRoute = true ;
@@ -218,17 +215,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           detailTableRow.IsReadOnlyPlumbingItems = true ;
         }
         else {
-          foreach ( var oldDetailTableRow in oldDetailTableRows ) {
-            detailTableRow.PlumbingType = oldDetailTableRow.PlumbingType ;
-            detailTableRow.PlumbingSize = oldDetailTableRow.PlumbingSize ;
-            detailTableRow.NumberOfPlumbing = oldDetailTableRow.NumberOfPlumbing ;
-            detailTableRow.PlumbingIdentityInfo = oldDetailTableRow.PlumbingIdentityInfo ;
-            detailTableRow.IsParentRoute = oldDetailTableRow.IsParentRoute ;
-            detailTableRow.IsReadOnly = oldDetailTableRow.IsReadOnly ;
-            detailTableRow.IsReadOnlyPlumbingItems = oldDetailTableRow.IsReadOnlyPlumbingItems ;
-          }
+          var oldDetailTableRow = oldDetailTableRows.First() ;
+          detailTableRow.PlumbingType = oldDetailTableRow.PlumbingType ;
+          detailTableRow.PlumbingSize = oldDetailTableRow.PlumbingSize ;
+          detailTableRow.NumberOfPlumbing = oldDetailTableRow.NumberOfPlumbing ;
+          detailTableRow.PlumbingIdentityInfo = oldDetailTableRow.PlumbingIdentityInfo ;
+          detailTableRow.IsParentRoute = oldDetailTableRow.IsParentRoute ;
+          detailTableRow.IsReadOnly = oldDetailTableRow.IsReadOnly ;
+          detailTableRow.IsReadOnlyPlumbingItems = oldDetailTableRow.IsReadOnlyPlumbingItems ;
+          if ( oldDetailTableRows.Count <= 1 ) continue ;
+          oldDetailTableRows.Remove( oldDetailTableRow ) ;
+          newDetailTableRows.AddRange( oldDetailTableRows ) ;
         }
       }
+
+      foreach ( var newDetailTableRow in newDetailTableRows ) {
+        detailTableModels.Add( newDetailTableRow ) ;
+      }
+
+      SortDetailTableModel( ref detailTableModels ) ;
     }
     
     protected internal static void SetPlumbingDataForOneSymbol( List<ConduitsModel> conduitsModelData, List<DetailTableModel> detailTableModelsByDetailSymbolId, string plumbingType, bool isPlumbingTypeHasBeenChanged, bool mixConstructionItems)
