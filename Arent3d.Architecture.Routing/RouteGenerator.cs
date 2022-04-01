@@ -186,7 +186,7 @@ namespace Arent3d.Architecture.Routing
       // get all envelope
       var envelopes = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ).ToList() ;
       if ( ! envelopes.Any() ) return ;
-      var parentEnvelopes = envelopes.Where( f => string.IsNullOrEmpty( f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() ) ).ToList() ;
+      var parentEnvelopes = envelopes.Where( f => string.IsNullOrEmpty( f.GetParentEnvelopeId() ) ).ToList() ;
       if ( ! parentEnvelopes.Any() ) return ;
       
       // get offset value
@@ -194,7 +194,7 @@ namespace Arent3d.Architecture.Routing
       var offset = settingStorable.OffsetSettingsData.Offset.MillimetersToRevitUnits() ;
       foreach ( var parentEnvelope in parentEnvelopes ) {
         var parentLocation = parentEnvelope.Location as LocationPoint ;
-        var childrenEnvelope = envelopes.FirstOrDefault( f => f.ParametersMap.get_Item( "Revit.Property.Builtin.ParentEnvelopeId".GetDocumentStringByKeyOrDefault( document, "Parent Envelope Id" ) ).AsString() == parentEnvelope.Id.ToString() ) ;
+        var childrenEnvelope = envelopes.FirstOrDefault( f => f.GetParentEnvelopeId() == parentEnvelope.UniqueId ) ;
         if ( childrenEnvelope == null ) continue ;
         var childrenLocation = childrenEnvelope.Location as LocationPoint ;
         childrenLocation!.Point = new XYZ( parentLocation!.Point.X, parentLocation!.Point.Y, parentLocation!.Point.Z - offset ) ;

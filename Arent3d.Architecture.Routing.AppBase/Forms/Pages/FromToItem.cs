@@ -140,7 +140,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         routeItem.ItemFloor = "(" + levelName?.AsValueString() + ")" ;
 
         if ( false == is3DView ) {
-          string viewLevelName = routeItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL ).AsString() ;
+          var viewLevelName = routeItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL )?.AsString() ;
           if ( viewLevelName != levelName?.AsValueString() ) {
             routeItem.NormalTextColor = SystemColors.GrayTextBrush ;
           }
@@ -207,8 +207,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             var connectorItem = new ConnectorItem( routeItem.Doc, routeItem.UiDoc, routeItem.AllRoutes, connector, fromToItemsUiBase.FromToTreeIcons?[ "ConnectorItem" ] ) { ItemTypeName = familyInstance.Symbol.Family.Name + ":" + connector.Owner.Name, ElementUniqueId = connectorEndPoint.EquipmentUniqueId, ItemTag = "Connector", } ;
             var level = routeItem.Doc.GetElementById<Level>( familyInstance.GetLevelId() ) ;
             connectorItem.ItemFloor = "(" + level?.Name + ")" ;
-            if ( routeItem.Doc.GetElementById<ViewFamilyType>( routeItem.Doc.ActiveView.GetTypeId() ) is { } vft && ! vft.Name.Contains( "3D" ) ) {
-              string viewLevelName = routeItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL ).AsString() ;
+            if ( routeItem.Doc.ActiveView is not View3D ) {
+              var viewLevelName = routeItem.Doc.ActiveView.get_Parameter( BuiltInParameter.PLAN_VIEW_LEVEL )?.AsString() ;
               if ( viewLevelName != level?.Name ) {
                 connectorItem.NormalTextColor = SystemColors.GrayTextBrush ;
               }

@@ -125,8 +125,8 @@
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
-        <key>Electrical.App.Commands.Routing.Connectors.NewConnectorBsCommand</key>
-        <string>New Connector&#xA;(Both Sides)</string>
+        <key>Electrical.App.Commands.Routing.Connectors.NewConnectorTwoSideCommand</key>
+        <string>Both Side Connector</string>
 
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>Create&#xA;Cylindrical Shaft</string>
@@ -151,6 +151,18 @@
 
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>Split Schedule</string>
+
+        <key>Electrical.App.Commands.Routing.NewConnectorTypePowerCommand</key>
+        <string>Connector (Power)</string>
+
+        <key>Electrical.App.Commands.Routing.NewConnectorTypeSensorCommand</key>
+        <string>Connector (Sensor)</string>
+
+        <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypePassCommand</key>
+        <string>Both Side Connector&#xA;(Pass)</string>
+
+        <key>Electrical.App.Commands.Routing.NewTwoSideConnectorTypeSensorCommand</key>
+        <string>Both Side Connector&#xA;(Sensor)</string>
         
         <key>Electrical.App.Commands.Initialization.ShowElectricSymbolsCommand</key>
         <string>Electrical Symbol Table</string>
@@ -175,6 +187,9 @@
 
         <key>Electrical.App.Commands.Routing.RoomPickRoutingCommand</key>
         <string>Room Wiring</string>
+
+        <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
+        <string>Room Range Wiring</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -388,5 +403,7 @@
         <!-- Schedule Names -->
         <key>Revit.Electrical.Schedule.Name</key>
         <string>Electrical Symbol Table</string>
+        <key>Revit.Detail.Table.Name</key>
+        <string>Detail Table</string>
     </dict>
 </plist>
