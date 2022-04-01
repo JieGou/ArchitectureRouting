@@ -116,34 +116,39 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "302a0b15-ee8b-44a2-98b2-c5eb105a3579" ), NameOnRevit( "IsEcoMode" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConnectorsAndConduits ) )]
     IsEcoMode,
-    
-    [ParameterGuid( "f2b9856a-0d0d-4e2f-95a0-25402cd28a0d" ), NameOnRevit( "Schedule Header Row Count" )]
+
+    #region Schedules
+
+    [ParameterGuid( "ff5d3b79-2b6c-48cf-9627-e09c4d64a91d" ), NameOnRevit( "Schedule Header Row Count" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     ScheduleHeaderRowCount,
-    
-    [ParameterGuid( "02ef2f8d-44ca-4bc8-9280-36909676df2b" ), NameOnRevit( "IsSplit" )]
+
+    [ParameterGuid( "4472b8cf-167c-4ad9-8bb1-99a96decc3d1" ), NameOnRevit( "IsSplit" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     IsSplit,
-    
-    [ParameterGuid( "5b2ff11b-5f6f-404c-897e-f9d534ffdcdf" ), NameOnRevit( "Split Index" )]
+
+    [ParameterGuid( "d7ec6828-0b7a-4768-a1f8-3199d0c9d54b" ), NameOnRevit( "Split Index" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     SplitIndex,
-    
-    [ParameterGuid( "0d7c2706-588c-43b8-af46-4bd580ddb061" ), NameOnRevit( "Parent Schedule Id" )]
+
+    [ParameterGuid( "24dcc21e-807b-4562-9e65-a8289a6599d4" ), NameOnRevit( "Parent Schedule Id" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     ParentScheduleId,
-    
-    [ParameterGuid( "56ab2ade-a2f7-47ef-b6af-93c805967b18" ), NameOnRevit( "Image Cell Map" )]
+
+    [ParameterGuid( "63c05fcb-fba0-4502-903a-4f713c0e6cb8" ), NameOnRevit( "Image Cell Map" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     ImageCellMap,
-    
-    [ParameterGuid( "3543a91a-40bd-473e-8789-cd2c5686b2da" ), NameOnRevit( "Parent Schedule Name" )]
+
+    [ParameterGuid( "25b74701-a8f1-469a-88b2-2ecba55e6955" ), NameOnRevit( "Parent Schedule Name" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     ParentScheduleName,
-    
-    [ParameterGuid( "7b92e479-f5e2-4a1e-80e0-06fc41cf38ae" ), NameOnRevit( "Split Level" )]
+
+    [ParameterGuid( "268a73c8-acca-491e-87b4-0b1a0a627fc4" ), NameOnRevit( "Split Level" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     SplitLevel,
+
+    #endregion
+    
   }
 
   public enum BranchNumberParameter
