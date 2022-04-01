@@ -231,6 +231,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       TableData tableData = viewSchedule.GetTableData() ;
       viewSchedule.SetScheduleHeaderRowCount( HeaderRowCount ) ;
+      viewSchedule.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, "Test old prop") ;
       TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
       var rowCount = tsdHeader.NumberOfRows ;
       var columnCount = tsdHeader.NumberOfColumns ;
