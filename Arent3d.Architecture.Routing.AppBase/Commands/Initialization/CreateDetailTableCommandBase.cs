@@ -286,16 +286,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     protected internal static void SetPlumbingData( List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType, bool mixConstructionItems = false )
     {
-      var detailTableRowsNotHaveGroupId = detailTableModels.Where( d => string.IsNullOrEmpty( d.GroupId ) ).ToList() ;
-      var detailTableRowsHaveGroupId = detailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) ).GroupBy( d => d.GroupId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-      if ( detailTableRowsNotHaveGroupId.Any() ) {
-        SetPlumbingDataForEachWiring( new List<DetailTableModel>(), conduitsModelData, ref detailTableModels, plumbingType ) ;
+      var detailTableRowsGroupByPlumbingIdentityInfo = detailTableModels.GroupBy( d => d.PlumbingIdentityInfo ).Select( g => g.ToList() ) ;
+      var detailTableRowsSinglePlumbing = new ObservableCollection<DetailTableModel>() ;
+      foreach ( var detailTableRowsWithSamePlumbing in detailTableRowsGroupByPlumbingIdentityInfo ) {
+        if ( detailTableRowsWithSamePlumbing.Count == 1 ) {
+          detailTableRowsSinglePlumbing.Add( detailTableRowsWithSamePlumbing.First() ) ;
+        }
+        else {
+          SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSamePlumbing, plumbingType, true, mixConstructionItems ) ;
+        }
       }
 
-      if ( ! detailTableRowsHaveGroupId.Any() ) return ;
-      foreach ( var detailTableRows in detailTableRowsHaveGroupId.Values ) {
-        SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRows, plumbingType, true, mixConstructionItems ) ;
-      }
+      SetPlumbingDataForEachWiring( new List<DetailTableModel>(), conduitsModelData, ref detailTableRowsSinglePlumbing, plumbingType ) ;
     }
 
     private static void SetPlumbingDataForEachWiring( List<DetailTableModel> detailTableModelData, List<ConduitsModel> conduitsModelData, ref ObservableCollection<DetailTableModel> detailTableModels, string plumbingType )
