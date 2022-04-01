@@ -208,11 +208,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         detailTableModels
         .OrderBy( x => x.DetailSymbol )
         .ThenByDescending( x => x.DetailSymbolId )
-        .ThenByDescending( x => x.PlumbingIdentityInfo )
-        .ThenByDescending( x => x.GroupId )
         .ThenByDescending( x => x.SignalType )
         .ThenByDescending( x => x.ConstructionItems )
+        .ThenByDescending( x => x.PlumbingIdentityInfo )
         .ThenByDescending( x => x.IsParentRoute )
+        .ThenByDescending( x => x.GroupId )
         .GroupBy( x => x.DetailSymbolId )
         .SelectMany( x => x ).ToList() ;
     }
@@ -258,9 +258,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
           var selectedItems = detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
           foreach ( var item in selectedItems ) {
-            var detailSymbolModels = detailSymbolStorable.DetailSymbolModelData.Where( s => s.DetailSymbolId == item.DetailSymbolId && s.RouteName == item.RouteName ).ToList() ;
-            foreach ( var detailSymbolModel in detailSymbolModels ) {
-              detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+            var countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName = detailTableViewModel.DetailTableModels.Count( d => d.DetailSymbolId == item.DetailSymbolId && d.RouteName == item.RouteName && d != item ) ;
+            if ( countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName > 0 ) {
+              var detailSymbolModels = detailSymbolStorable.DetailSymbolModelData.Where( s => s.DetailSymbolId == item.DetailSymbolId && s.RouteName == item.RouteName ).ToList() ;
+              foreach ( var detailSymbolModel in detailSymbolModels ) {
+                detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+              }
             }
 
             detailTableRowDeleted.AddRange( selectedDetailTableModels.Where( d => d.DetailSymbolId == item.DetailSymbolId && d.RouteName == item.RouteName ) ) ;
@@ -276,9 +279,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
         }
         else {
-          var detailSymbolModels = detailSymbolStorable.DetailSymbolModelData.Where( s => s.DetailSymbolId == selectedItem.DetailSymbolId && s.RouteName == selectedItem.RouteName ).ToList() ;
-          foreach ( var detailSymbolModel in detailSymbolModels ) {
-            detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+          var countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName = detailTableViewModel.DetailTableModels.Count( d => d.DetailSymbolId == selectedItem.DetailSymbolId && d.RouteName == selectedItem.RouteName && d != selectedItem ) ;
+          if ( countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName > 0 ) {
+            var detailSymbolModels = detailSymbolStorable.DetailSymbolModelData.Where( s => s.DetailSymbolId == selectedItem.DetailSymbolId && s.RouteName == selectedItem.RouteName ).ToList() ;
+            foreach ( var detailSymbolModel in detailSymbolModels ) {
+              detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
+            }
           }
 
           detailTableRowDeleted.AddRange( selectedDetailTableModels.Where( d => d.DetailSymbolId == selectedItem.DetailSymbolId && d.RouteName == selectedItem.RouteName ) ) ;
@@ -309,7 +315,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var plumbingIdentityInfo in childDetailRowDeletedPlumbingIdentityInfo ) {
         var detailTableRowsWithSamePlumbingIdentityInfo = detailTableViewModel.DetailTableModels.Where( d => d.PlumbingIdentityInfo == plumbingIdentityInfo ).ToList() ;
         if ( ! detailTableRowsWithSamePlumbingIdentityInfo.Any() ) continue ;
-        var parentDetailRow = detailTableRowsWithSamePlumbingIdentityInfo.SingleOrDefault( d => d.IsParentRoute ) ;
+        var parentDetailRow = detailTableRowsWithSamePlumbingIdentityInfo.FirstOrDefault( d => d.IsParentRoute ) ;
         var plumbingType = parentDetailRow == null ? DefaultParentPlumbingType : parentDetailRow.PlumbingType ;
         var isMixConstructionItems = detailTableRowsWithSamePlumbingIdentityInfo.First().IsMixConstructionItems ;
         CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSamePlumbingIdentityInfo, plumbingType, true, isMixConstructionItems ) ;
@@ -333,6 +339,45 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public static List<DetailTableModel> GetSelectedDetailTableRows( DetailTableViewModel detailTableViewModel )
     {
       return detailTableViewModel.DetailTableModels.Where( d => d.CalculationExclusion ).ToList() ;
+    }
+
+    public static void PlumbingSummary( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems )
+    {
+      var detailTableModelsGroupByDetailSymbolId = 
+        detailTableViewModel.DetailTableModels
+          .Where( selectedDetailTableRows.Contains )
+          .GroupBy( d => d.DetailSymbolId )
+          .Select( g => g.ToList() ) ;
+      foreach ( var detailTableRowsWithSameDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
+        var plumbingIdentityInfos = detailTableRowsWithSameDetailSymbolId.Select( d => d.PlumbingIdentityInfo ).Distinct().ToHashSet() ;
+        var otherDetailTableRowsWithSamePlumbingIdentityInfo = detailTableViewModel.DetailTableModels
+          .Where( d => plumbingIdentityInfos.Contains( d.PlumbingIdentityInfo ) && ! detailTableRowsWithSameDetailSymbolId.Contains( d ) )
+          .GroupBy( d => d.PlumbingIdentityInfo )
+          .Select( g => g.ToList() ) ;
+        var parentDetailRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.IsParentRoute && d.DetailSymbolId == detailTableRowsWithSameDetailSymbolId.First().DetailSymbolId ) ;
+        var plumbingType = parentDetailRow == null ? DefaultParentPlumbingType : parentDetailRow.PlumbingType ;
+        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType, true, isMixConstructionItems ) ;
+        if ( isMixConstructionItems ) {
+          SetGroupIdForDetailTableRowsMixConstructionItems( detailTableRowsWithSameDetailSymbolId ) ;
+        }
+        else {
+          SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
+        }
+
+        foreach ( var otherDetailTableRows in otherDetailTableRowsWithSamePlumbingIdentityInfo ) {
+          CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, otherDetailTableRows, plumbingType, true, otherDetailTableRows.First().IsMixConstructionItems ) ;
+          if ( isMixConstructionItems ) {
+            SetGroupIdForDetailTableRowsMixConstructionItems( otherDetailTableRows ) ;
+          }
+          else {
+            SetGroupIdForDetailTableRows( otherDetailTableRows ) ;
+          }
+        }
+      }
+
+      var newDetailTableModels = detailTableViewModel.DetailTableModels.ToList() ;
+      SortDetailTableModel( ref newDetailTableModels ) ;
+      detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
   }
 }
