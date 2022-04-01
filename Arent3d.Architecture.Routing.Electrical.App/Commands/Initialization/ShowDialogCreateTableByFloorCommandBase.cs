@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
             {
                 var allConduits = new FilteredElementCollector(doc).OfClass(typeof(Conduit)).OfCategory(BuiltInCategory.OST_Conduit).AsEnumerable().OfType<Conduit>();
                 var conduitsByFloors = allConduits.Where(x => levelIds.Contains(x.ReferenceLevel.Id)).ToList();
-                var routePicked = conduitsByFloors.Select(e => e.GetRouteName()).Distinct().ToList();
+                var routePicked = conduitsByFloors.Where(x => x.GetRouteName() != null).Select(x => x.GetRouteName()).Distinct().ToList();
 
                 foreach (var routeName in routePicked)
                 {
