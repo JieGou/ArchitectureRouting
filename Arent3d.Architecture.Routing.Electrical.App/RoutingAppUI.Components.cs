@@ -78,6 +78,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
           [Button( typeof( CreateDetailSymbolCommand ), OnlyInitialized = true )]
           private static class CreateDetailSymbolCommandButton { }
+          
+          [Button( typeof( LoadDrawingCommand ), OnlyInitialized = true )]
+          private static class LoadDrawingCommandButton { }
 
           [Button(typeof(ShowDialogCreateTableByFloorCommand), OnlyInitialized = true)]
           private static class ShowDialogCreateTableByFloorCommandButton { }
