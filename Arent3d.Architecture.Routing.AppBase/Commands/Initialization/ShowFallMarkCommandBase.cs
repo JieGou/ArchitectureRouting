@@ -17,22 +17,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       Document document = commandData.Application.ActiveUIDocument.Document ;
       try {
-        return document.Transaction( "TransactionName.Commands.Routing.ConfirmUnset".GetAppStringByKeyOrDefault( "Confirm Not Connect" ), _ =>
-        {
-          CreateFallMarkForConduitWithZDirection( document ) ;
-
-          return Result.Succeeded ;
-        } ) ;
+        return document.Transaction(
+          "TransactionName.Commands.Routing.ConfirmUnset".GetAppStringByKeyOrDefault( "Confirm Not Connect" ), _ =>
+          {
+            if ( ! HideFallMarks( document ) )
+              CreateFallMarkForConduitWithZDirection( document ) ;
+            return Result.Succeeded ;
+          } ) ;
       }
       catch ( Exception e ) {
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
     }
-    
+
     private void CreateFallMarkForConduitWithZDirection( Document document )
     {
-      var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) ).OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
+      var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
+        .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
       var conduitWithZDirection = new List<XYZ>() ;
       foreach ( var conduit in conduits ) {
         var conduitPosition = ( conduit.Location as LocationCurve ) ! ;
@@ -40,50 +42,30 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var conduitDirection = conduitLine.Direction ;
         if ( conduitDirection.Z is not (1.0 or -1.0) ) continue ;
         var conduitOrigin = conduitLine.Origin ;
-        if ( ! conduitWithZDirection.Contains( conduitOrigin ) ) 
+        if ( conduitWithZDirection.All( item =>
+              Math.Abs( item.X - conduitOrigin.X ) > GeometryUtil.Tolerance ||
+              Math.Abs( item.Y - conduitOrigin.Y ) > GeometryUtil.Tolerance ||
+              Math.Abs( item.Z - conduitOrigin.Z ) > GeometryUtil.Tolerance ) )
           conduitWithZDirection.Add( conduitOrigin ) ;
       }
-      
+
       if ( ! conduitWithZDirection.Any() ) return ;
-      {
-        var fallMarkSymbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        fallMarkSymbol.TryGetProperty( "Lenght", out double lenghtMark ) ;
-        foreach ( var (x, y, z) in conduitWithZDirection ) {
-          fallMarkSymbol.Instantiate( new XYZ( x, y - lenghtMark / 2, z ), StructuralType.NonStructural ) ;
-        }
+      var fallMarkSymbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ).FirstOrDefault() ??
+                           throw new InvalidOperationException() ;
+      fallMarkSymbol.TryGetProperty( "Lenght", out double lenghtMark ) ;
+      foreach ( var (x, y, z) in conduitWithZDirection ) {
+        fallMarkSymbol.Instantiate( new XYZ( x, y - lenghtMark / 2, z ), StructuralType.NonStructural ) ;
       }
     }
 
-    private bool CheckConduitWithZDirection( IReadOnlyCollection<Element> allConnectors, Element conduit )
+    private bool HideFallMarks( Document document )
     {
-      XYZ fromOrigin = new() ;
-      XYZ toOrigin ;
-      var fromEndPoint = conduit.GetNearestEndPoints( true ) ;
-      var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;
-      if ( fromEndPointKey != null ) {
-        var fromElementUniqueId = fromEndPointKey.GetElementUniqueId() ;
-        if ( ! string.IsNullOrEmpty( fromElementUniqueId ) ) {
-          var fromConnector = allConnectors.FirstOrDefault( c => c.UniqueId == fromElementUniqueId ) ;
-          if ( fromConnector != null ) {
-            var fromLocation = ( fromConnector.Location as LocationPoint ) ! ;
-            fromOrigin = fromLocation.Point ;
-          }
-        }
-      }
-      
-      var toEndPoint = conduit.GetNearestEndPoints( false ) ;
-      var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
-      if ( toEndPointKey == null ) return false ;
-      {
-        var toElementUniqueId = toEndPointKey.GetElementUniqueId() ;
-        if ( string.IsNullOrEmpty( toElementUniqueId ) ) return false ;
-        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementUniqueId ) ;
-        if ( toConnector == null ) return false ;
-        var toLocation = ( toConnector.Location as LocationPoint ) ! ;
-        toOrigin = toLocation.Point ;
-      }
-
-      return Math.Abs( fromOrigin.Z - toOrigin.Z ) > 0 && Math.Abs( fromOrigin.X - toOrigin.X ) == 0 && Math.Abs( fromOrigin.Y - toOrigin.Y ) == 0 ;
+      var fallMarkSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ) ??
+                            throw new InvalidOperationException() ;
+      var fallMarkIds = document.GetAllFamilyInstances( fallMarkSymbols ).Select( item => item.Id ).ToList() ;
+      if ( fallMarkIds.Count == 0 ) return false ;
+      document.Delete( fallMarkIds ) ;
+      return true ;
     }
   }
 }
