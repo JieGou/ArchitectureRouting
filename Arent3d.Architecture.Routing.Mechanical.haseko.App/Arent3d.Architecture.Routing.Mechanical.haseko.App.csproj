@@ -23,6 +23,9 @@
         <Reference Include="Arent3d.Math, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
             <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Math.dll</HintPath>
         </Reference>
+        <Reference Include="Arent3d.PhysicalUnits, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.PhysicalUnits.dll</HintPath>
+        </Reference>
         <Reference Include="Arent3d.Utility, Version=$(CommonLibraryVersion), Culture=neutral, PublicKeyToken=null">
             <HintPath>..\lib\$(RevitVersion)\$(TargetFramework)\Arent3d.Utility.dll</HintPath>
         </Reference>
