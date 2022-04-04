@@ -69,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void CbCalculationExclusion_Checked( object sender, RoutedEventArgs e )
     {
-      if ( DtGrid.SelectedValue is not DetailTableModel selectedItem ) return ;
+      if ( sender is not DataGridCell { DataContext: DetailTableModel selectedItem } ) return ;
       if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
         var selectedItems = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
         foreach ( var item in selectedItems ) {
@@ -83,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void CbCalculationExclusion_UnChecked( object sender, RoutedEventArgs e )
     {
-      if ( DtGrid.SelectedValue is not DetailTableModel selectedItem ) return ;
+      if ( sender is not DataGridCell { DataContext: DetailTableModel selectedItem } ) return ;
       if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
         var selectedItems = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
         foreach ( var item in selectedItems ) {

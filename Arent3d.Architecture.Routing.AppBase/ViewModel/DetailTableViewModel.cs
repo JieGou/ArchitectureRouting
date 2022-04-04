@@ -203,16 +203,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels )
+    private static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels )
     {
       detailTableModels = 
         detailTableModels
         .OrderBy( x => x.DetailSymbol )
         .ThenByDescending( x => x.DetailSymbolId )
         .ThenByDescending( x => x.SignalType )
-        .ThenByDescending( x => x.ConstructionItems )
         .ThenByDescending( x => x.PlumbingIdentityInfo )
         .ThenByDescending( x => x.IsParentRoute )
+        .ThenByDescending( x => x.ConstructionItems )
         .ThenByDescending( x => x.GroupId )
         .GroupBy( x => x.DetailSymbolId )
         .SelectMany( x => x ).ToList() ;
@@ -260,7 +260,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var selectedItems = detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
           foreach ( var item in selectedItems ) {
             var countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName = detailTableViewModel.DetailTableModels.Count( d => d.DetailSymbolId == item.DetailSymbolId && d.RouteName == item.RouteName && d != item ) ;
-            if ( countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName > 0 ) {
+            if ( countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName == 0 ) {
               var detailSymbolModels = detailSymbolStorable.DetailSymbolModelData.Where( s => s.DetailSymbolId == item.DetailSymbolId && s.RouteName == item.RouteName ).ToList() ;
               foreach ( var detailSymbolModel in detailSymbolModels ) {
                 detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;
@@ -281,7 +281,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
         else {
           var countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName = detailTableViewModel.DetailTableModels.Count( d => d.DetailSymbolId == selectedItem.DetailSymbolId && d.RouteName == selectedItem.RouteName && d != selectedItem ) ;
-          if ( countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName > 0 ) {
+          if ( countOfDetailTableRowsWithSameDetailSymbolIdAndRouteName == 0 ) {
             var detailSymbolModels = detailSymbolStorable.DetailSymbolModelData.Where( s => s.DetailSymbolId == selectedItem.DetailSymbolId && s.RouteName == selectedItem.RouteName ).ToList() ;
             foreach ( var detailSymbolModel in detailSymbolModels ) {
               detailSymbolStorable.DetailSymbolModelData.Remove( detailSymbolModel ) ;

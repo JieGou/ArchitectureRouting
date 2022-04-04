@@ -274,9 +274,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         .OrderBy( x => x.DetailSymbol )
         .ThenByDescending( x => x.DetailSymbolId )
         .ThenByDescending( x => x.SignalType )
-        .ThenByDescending( x => x.ConstructionItems )
         .ThenByDescending( x => x.PlumbingIdentityInfo )
         .ThenByDescending( x => x.IsParentRoute )
+        .ThenByDescending( x => x.ConstructionItems )
         .ThenByDescending( x => x.GroupId )
         .GroupBy( x => x.DetailSymbolId )
         .SelectMany( x => x ).ToList() ;
