@@ -64,10 +64,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         return Result.Cancelled ;
       }
-      catch ( Exception exception ) {
-        CommandUtils.DebugAlertException( exception ) ;
-        return Result.Failed ;
-      }
+      // catch ( Exception exception ) {
+      //   CommandUtils.DebugAlertException( exception ) ;
+      //   return Result.Failed ;
+      // }
     }
 
     private static Dictionary<ElementId, IList<ScheduleSheetInstance>> GetScheduleGroups( Document document, IList<ScheduleSheetInstance> scheduleSheetInstances )
@@ -150,9 +150,52 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         }
       }
 
+      if ( mergedSchedules.Count > 1 ) return MergeNotSameLevelSchedules( document, mergedSchedules ) ;
       return Result.Succeeded ;
     }
 
+    private static Result MergeNotSameLevelSchedules( Document document, List<ScheduleSheetInstance> scheduleSheets )
+    {
+      if(scheduleSheets.Count < 2) return Result.Succeeded ;
+      if ( document.GetElement( scheduleSheets[0].ScheduleId ) is not ViewSchedule firstSchedule )
+        return Result.Failed ;
+      var firstImageMap = firstSchedule.GetImageMap() ;
+      var firstSessionData = firstSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
+      var firstSessionDataRowCount = firstSessionData.NumberOfRows ;
+      var firstSessionDataColumnCount = firstSessionData.NumberOfColumns ;
+      var headerRowCount = firstSchedule.GetScheduleHeaderRowCount() ;
+      for ( int i = 1 ; i < scheduleSheets.Count ; i++ ) {
+        if ( document.GetElement( scheduleSheets[i].ScheduleId ) is not ViewSchedule schedule )
+          return Result.Failed ;
+        var imageMap = schedule.GetImageMap() ;
+        var sectionData = schedule.GetTableData().GetSectionData( SectionType.Header ) ;
+        var rowCount = sectionData.NumberOfRows ;
+        var columnCount = Math.Min( sectionData.NumberOfColumns, firstSessionDataColumnCount ) ;
+        for ( int row = headerRowCount ; row < rowCount ; row++ ) {
+          firstSessionData.InsertRow( firstSessionDataRowCount ) ;
+          firstSessionData.SetRowHeight( firstSessionDataRowCount, sectionData.GetRowHeight( row ) ) ;
+          for ( int column = 0 ; column < columnCount ; column++ ) {
+            var mergedCell = sectionData.GetMergedCell( row, column ) ;
+            if(mergedCell.Top == row && mergedCell.Left == column && (mergedCell.Top != mergedCell.Bottom || mergedCell.Left != mergedCell.Right))
+              firstSessionData.MergeCells(  new TableMergedCell(firstSessionDataRowCount + mergedCell.Top - row, mergedCell.Left,firstSessionDataRowCount + mergedCell.Bottom - row,mergedCell.Right) );
+            firstSessionData.SetCellText( firstSessionDataRowCount, column, sectionData.GetCellText( row, column ) ) ;
+            firstSessionData.SetCellStyle( firstSessionDataRowCount, column, sectionData.GetTableCellStyle( row, column ) ) ;
+            firstSessionData.SetCellType( firstSessionDataRowCount, column, sectionData.GetCellType( row, column ) ) ;
+            if ( imageMap.ContainsKey( ( row, column ) ) ) {
+              firstSessionData.InsertImage( firstSessionDataRowCount, column, imageMap[ ( row, column ) ] ) ;
+              firstImageMap.Add( (firstSessionDataRowCount, column), imageMap[ ( row, column ) ] ) ;
+            }
+          }
+
+          firstSessionDataRowCount++ ;
+        }
+
+        document.Delete( schedule.Id ) ;
+      }
+      firstSchedule.Name = firstSchedule.GetParentScheduleName() ;
+      firstSchedule.SetImageMap( firstImageMap ) ;
+      return Result.Succeeded ;
+    }
     private static (Result, ScheduleSheetInstance?) MergeSameLevelScheduleSheetInstance( Document document, ScheduleSheetInstance firstScheduleSheet, ScheduleSheetInstance secondScheduleSheet )
     {
       if ( document.GetElement( firstScheduleSheet.ScheduleId ) is not ViewSchedule firstSchedule )
@@ -165,6 +208,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var headerRowCount = firstSchedule.GetScheduleHeaderRowCount() ;
       if ( document.GetElement( secondScheduleSheet.ScheduleId ) is not ViewSchedule secondSchedule )
         return ( Result.Failed, null ) ;
+      var secondImageMap = secondSchedule.GetImageMap() ;
       var sectionData = secondSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
       var rowCount = sectionData.NumberOfRows ;
       var columnCount = Math.Min( sectionData.NumberOfColumns, firstSessionDataColumnCount ) ;
@@ -172,18 +216,23 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         firstSessionData.InsertRow( firstSessionDataRowCount ) ;
         firstSessionData.SetRowHeight( firstSessionDataRowCount, sectionData.GetRowHeight( row ) ) ;
         for ( int column = 0 ; column < columnCount ; column++ ) {
+          var mergedCell = sectionData.GetMergedCell( row, column ) ;
+          if(mergedCell.Top == row && mergedCell.Left == column && (mergedCell.Top != mergedCell.Bottom || mergedCell.Left != mergedCell.Right))
+            firstSessionData.MergeCells(  new TableMergedCell(firstSessionDataRowCount + mergedCell.Top - row, mergedCell.Left,firstSessionDataRowCount + mergedCell.Bottom - row,mergedCell.Right) );
           firstSessionData.SetCellText( firstSessionDataRowCount, column, sectionData.GetCellText( row, column ) ) ;
           firstSessionData.SetCellStyle( firstSessionDataRowCount, column, sectionData.GetTableCellStyle( row, column ) ) ;
           firstSessionData.SetCellType( firstSessionDataRowCount, column, sectionData.GetCellType( row, column ) ) ;
-          if ( imageMap.ContainsKey( ( firstSessionDataRowCount, column ) ) )
-            firstSessionData.InsertImage( firstSessionDataRowCount, column, imageMap[ ( firstSessionDataRowCount, column ) ] ) ;
+          if ( secondImageMap.ContainsKey( ( row, column ) ) ) {
+            firstSessionData.InsertImage( firstSessionDataRowCount, column, secondImageMap[ ( row, column ) ] ) ;
+            imageMap.Add((firstSessionDataRowCount, column), secondImageMap[ ( row, column ) ]);
+          }
         }
 
         firstSessionDataRowCount++ ;
       }
 
-      document.Delete( secondSchedule.Id ) ;
-
+      document.Delete( secondSchedule.Id );
+      firstSchedule.SetImageMap( imageMap );
       firstSchedule.Name = firstSchedule.GetParentScheduleName() ;
       firstSchedule.SetSplitLevel( firstSchedule.GetSplitLevel() - 1 ) ;
       firstSchedule.SetSplitIndex( ( firstSchedule.GetSplitIndex() - 1 ) / 2 ) ;

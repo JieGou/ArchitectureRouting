@@ -95,6 +95,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id,
           Transform.CreateTranslation(XYZ.BasisX * 10.0.MillimetersToRevitUnits()).OfPoint(boundingBoxXYZ.Max) ) ;
+        var (firstImageMap, secondImageMap) = schedule.SplitImageMap( topIndex, bottomIndex, schedule.GetScheduleHeaderRowCount() ) ;
+        schedule.SetImageMap( firstImageMap );
+        cloneSchedule.SetImageMap( secondImageMap );
         SetSplitInformation( schedule, cloneSchedule, originalName ) ;
         transaction.Commit() ;
         

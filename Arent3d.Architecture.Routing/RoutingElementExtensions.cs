@@ -374,7 +374,55 @@ namespace Arent3d.Architecture.Routing
       imageMap += ( imageMap == string.Empty ? imageMap : "|" ) + $"{row},{column},{imageId.IntegerValue}" ;
       viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.ImageCellMap, imageMap ) ;
     }
+    public static void SetImageMap( this ViewSchedule viewSchedule, Dictionary<(int row, int column), ElementId> imageMap )
+    {
+      var imageMapString = string.Empty ;
+      foreach ( var imageMapKey in imageMap.Keys ) {
+        imageMapString += ( imageMapString == string.Empty ? imageMapString : "|" ) + $"{imageMapKey.row},{imageMapKey.column},{imageMap[imageMapKey].IntegerValue}" ;
+      }
+      viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.ImageCellMap, imageMapString ) ;
+    }
 
+    public static (Dictionary<(int row, int column), ElementId> firstImageMap, Dictionary<(int row, int column), ElementId> secondImageMap) SplitImageMap( this ViewSchedule viewSchedule, int secondTopRow, int secondBottomRow, int headerRowCount )
+    {
+      var imageMap = viewSchedule.GetImageMap() ;
+      var firstImageMap = new Dictionary<(int row, int column), ElementId>() ;
+      var secondImageMap = new Dictionary<(int row, int column), ElementId>() ;
+      foreach ( var key in imageMap.Keys ) {
+        if ( key.row < headerRowCount ) //header
+        {
+          firstImageMap.Add( key, imageMap[key]);
+          secondImageMap.Add( key, imageMap[key]);
+        }
+        else if ( key.row >= secondTopRow && key.row <= secondBottomRow ) {
+          secondImageMap.Add( key, imageMap[key]);
+        }
+        else {
+          firstImageMap.Add( (key.row - (secondBottomRow - secondTopRow + 1), key.column), imageMap[key]);
+        }
+      }
+
+      return ( firstImageMap, secondImageMap ) ;
+    }
+    public static Dictionary<(int row, int column), ElementId> GetImageMap( this ViewSchedule viewSchedule )
+    {
+      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ImageCellMap, out string? imageMap ) || string.IsNullOrEmpty( imageMap ) ) return new Dictionary<(int row, int column), ElementId>() ;
+      var imageMapDictionary = new Dictionary<(int row, int column), ElementId>() ;
+      string[]? imageCells = imageMap?.Split( '|' ) ;
+      if ( imageCells == null ) return new Dictionary<(int row, int column), ElementId>() ;
+      foreach ( var cell in imageCells ) {
+        if ( string.IsNullOrEmpty( cell ) ) continue ;
+        var cellItems = cell.Split( ',' ) ;
+        if ( cellItems.Count() != 3 ) continue ;
+        if ( ! int.TryParse( cellItems[ 0 ], out int row ) ) continue ;
+        if ( ! int.TryParse( cellItems[ 1 ], out int column ) ) continue ;
+        if ( ! int.TryParse( cellItems[ 2 ], out int elementIdValue ) ) continue ;
+        if ( imageMapDictionary.ContainsKey( ( row, column ) ) ) continue ;
+        imageMapDictionary.Add( ( row, column ), new ElementId( elementIdValue ) ) ;
+      }
+
+      return imageMapDictionary ;
+    }
     public static void SetSplitStatus( this ViewSchedule viewSchedule, bool isSplit )
     {
       viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.IsSplit, isSplit ? 1 : 0 ) ;
@@ -437,26 +485,6 @@ namespace Arent3d.Architecture.Routing
     {
       if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ParentScheduleName, out string? originalTableName ) ) return string.Empty ;
       return originalTableName ?? string.Empty ;
-    }
-
-    public static Dictionary<(int row, int column), ElementId> GetImageMap( this ViewSchedule viewSchedule )
-    {
-      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ImageCellMap, out string? imageMap ) || string.IsNullOrEmpty( imageMap ) ) return new Dictionary<(int row, int column), ElementId>() ;
-      var imageMapDictionary = new Dictionary<(int row, int column), ElementId>() ;
-      string[]? imageCells = imageMap?.Split( '|' ) ;
-      if ( imageCells == null ) return new Dictionary<(int row, int column), ElementId>() ;
-      foreach ( var cell in imageCells ) {
-        if ( string.IsNullOrEmpty( cell ) ) continue ;
-        var cellItems = cell.Split( ',' ) ;
-        if ( cellItems.Count() != 3 ) continue ;
-        if ( ! int.TryParse( cellItems[ 0 ], out int row ) ) continue ;
-        if ( ! int.TryParse( cellItems[ 1 ], out int column ) ) continue ;
-        if ( ! int.TryParse( cellItems[ 2 ], out int elementIdValue ) ) continue ;
-        if ( imageMapDictionary.ContainsKey( ( row, column ) ) ) continue ;
-        imageMapDictionary.Add( ( row, column ), new ElementId( elementIdValue ) ) ;
-      }
-
-      return imageMapDictionary ;
     }
 
     #endregion
