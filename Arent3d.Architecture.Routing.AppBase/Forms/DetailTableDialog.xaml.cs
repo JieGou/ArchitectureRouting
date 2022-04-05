@@ -67,71 +67,55 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
     }
 
-    private void CbCalculationExclusion_Checked( object sender, RoutedEventArgs e )
+    private void DtGrid_SelectionChanged( object sender, SelectionChangedEventArgs e )
     {
-      if ( sender is not DataGridCell { DataContext: DetailTableModel selectedItem } ) return ;
-      if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
-        var selectedItems = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
-        foreach ( var item in selectedItems ) {
-          item.CalculationExclusion = true ;
+      if ( sender is not DataGrid dataGrid ) return ;
+      var selectedItems = dataGrid.SelectedItems ;
+      if ( selectedItems.Count <= 0 ) return ;
+      _selectedDetailTableRows.Clear() ;
+      foreach ( var item in selectedItems ) {
+        if ( item is not DetailTableModel detailTableRow ) continue ;
+        if ( ! string.IsNullOrEmpty( detailTableRow.GroupId ) ) {
+          var detailTableRows = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == detailTableRow.GroupId ).ToList() ;
+          _selectedDetailTableRows.AddRange( detailTableRows ) ;
         }
-      }
-      else {
-        selectedItem.CalculationExclusion = true ;
+        else {
+          _selectedDetailTableRows.Add( detailTableRow ) ;
+        }
       }
     }
 
-    private void CbCalculationExclusion_UnChecked( object sender, RoutedEventArgs e )
-    {
-      if ( sender is not DataGridCell { DataContext: DetailTableModel selectedItem } ) return ;
-      if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
-        var selectedItems = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
-        foreach ( var item in selectedItems ) {
-          item.CalculationExclusion = false ;
-        }
-      }
-      else {
-        selectedItem.CalculationExclusion = false ;
-      }
-    }
-    
     private void BtnDeleteLine_Click( object sender, RoutedEventArgs e )
     {
-      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
       if ( ! _selectedDetailTableRows.Any() ) return ;
       var detailSymbolStorable = _document.GetDetailSymbolStorable() ;
       DetailTableViewModel.DeleteDetailTableRows( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, detailSymbolStorable ) ;
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
       DetailTableViewModel.SaveDetailSymbolData( _document, detailSymbolStorable ) ;
+      _selectedDetailTableRows.Clear() ;
     }
     
     private void BtnCopyLine_Click( object sender, RoutedEventArgs e )
     {
-      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
       if ( ! _selectedDetailTableRows.Any() ) return ;
       _copyDetailTableRow = _selectedDetailTableRows.First() ;
     }
     
     private void BtnPasteLine_Click( object sender, RoutedEventArgs e )
     {
-      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
       if ( ! _selectedDetailTableRows.Any() || _copyDetailTableRow == null ) return ;
       var newDetailTableModels = DetailTableViewModel.PasteDetailTableRow( _detailTableViewModel, _copyDetailTableRow, _isMixConstructionItems ) ;
       _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
+      _selectedDetailTableRows.Clear() ;
     }
     
     private void BtnSelectAll_Click( object sender, RoutedEventArgs e )
     {
-      foreach ( var detailTableRow in _detailTableViewModel.DetailTableModels ) {
-        detailTableRow.CalculationExclusion = true ;
-      }
-
+      _selectedDetailTableRows.Clear() ;
       _selectedDetailTableRows = _detailTableViewModel.DetailTableModels.ToList() ;
-      CreateDetailTableViewModelByGroupId() ;
-      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
@@ -341,26 +325,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    
-
     private void BtnPlumbingSummary_Click( object sender, RoutedEventArgs e )
     {
-      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
       if ( ! _selectedDetailTableRows.Any() ) return ;
       _isMixConstructionItems = false ;
       DetailTableViewModel.PlumbingSummary( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, _isMixConstructionItems ) ;
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
+      _selectedDetailTableRows.Clear() ;
     }
 
     private void BtnPlumbingSummaryMixConstructionItems_Click( object sender, RoutedEventArgs e )
     {
-      _selectedDetailTableRows = DetailTableViewModel.GetSelectedDetailTableRows( _detailTableViewModel ) ;
       if ( ! _selectedDetailTableRows.Any() ) return ;
       _isMixConstructionItems = true ;
       DetailTableViewModel.PlumbingSummary( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, _isMixConstructionItems ) ;
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
+      _selectedDetailTableRows.Clear() ;
     }
 
     private void CreateDetailTableViewModelByGroupId()

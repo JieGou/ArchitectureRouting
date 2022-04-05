@@ -58,7 +58,8 @@
             <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" RowHeight="25" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" RowHeight="25" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
+                  SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtGrid_SelectionChanged" >
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
                     <Setter Property="Padding" Value="-2" />
@@ -73,14 +74,7 @@
             </DataGrid.Resources>
 
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="計算除外" Width="30" Binding="{Binding CalculationExclusion}" CanUserSort="False" >
-                    <DataGridCheckBoxColumn.CellStyle>
-                        <Style>
-                            <EventSetter Event="CheckBox.Checked" Handler="CbCalculationExclusion_Checked"/>
-                            <EventSetter Event="CheckBox.Unchecked" Handler="CbCalculationExclusion_UnChecked"/>
-                        </Style>
-                    </DataGridCheckBoxColumn.CellStyle>
-                </DataGridCheckBoxColumn>
+                <DataGridCheckBoxColumn Header="計算除外" Width="30" Binding="{Binding CalculationExclusion}" CanUserSort="False" />
                 <DataGridTextColumn Header="フロア" Width="45" Binding="{Binding Floor, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" />
                 <DataGridTextColumn Header="明細記号" Width="45" Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="電線種類" Width="70" Binding="{Binding WireType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />

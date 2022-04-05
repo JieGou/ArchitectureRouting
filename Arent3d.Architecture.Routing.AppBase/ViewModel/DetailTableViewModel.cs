@@ -337,11 +337,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return newDetailTableModels ;
     }
 
-    public static List<DetailTableModel> GetSelectedDetailTableRows( DetailTableViewModel detailTableViewModel )
-    {
-      return detailTableViewModel.DetailTableModels.Where( d => d.CalculationExclusion ).ToList() ;
-    }
-
     public static void PlumbingSummary( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems )
     {
       var detailTableModelsGroupByDetailSymbolId = 
