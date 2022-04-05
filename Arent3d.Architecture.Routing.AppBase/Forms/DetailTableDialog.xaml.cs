@@ -201,14 +201,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             DetailSymbolIdsWithPlumbingTypeHasChanged[ newDetailTableModels.First().DetailSymbolId ] = plumbingType!.ToString() ;
           }
 
-          var newDetailTableModelList = 
-            _detailTableViewModel.DetailTableModels
-              .OrderBy( x => x.DetailSymbol )
-              .ThenByDescending( x => x.DetailSymbolId )
-              .ThenByDescending( x => x.IsParentRoute )
-              .GroupBy( x => x.DetailSymbolId )
-              .SelectMany( x => x )
-              .ToList() ;
+          var newDetailTableModelList = _detailTableViewModel.DetailTableModels.ToList() ;
+          DetailTableViewModel.SortDetailTableModel( ref newDetailTableModelList ) ;
           _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModelList ) ;
           CreateDetailTableViewModelByGroupId() ;
           DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;

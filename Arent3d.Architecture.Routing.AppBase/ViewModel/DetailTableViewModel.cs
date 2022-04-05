@@ -203,7 +203,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels )
+    public static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels )
     {
       detailTableModels = 
         detailTableModels

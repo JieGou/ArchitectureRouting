@@ -383,7 +383,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var currentPlumbingCrossSectionalArea = 0.0 ;
         foreach ( var currentDetailTableRow in detailTableRows ) {
           if ( currentDetailTableRow.ConstructionClassification != noPlumpingConstructionClassification ) {
-            currentPlumbingCrossSectionalArea += currentDetailTableRow.WireCrossSectionalArea / percentage ;
+            currentPlumbingCrossSectionalArea += ( currentDetailTableRow.WireCrossSectionalArea / percentage ) ;
 
             if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
               var plumbing = conduitsModels.Last() ;
