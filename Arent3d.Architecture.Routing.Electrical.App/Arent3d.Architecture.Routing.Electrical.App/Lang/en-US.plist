@@ -134,6 +134,9 @@
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>Selection Range&#xA;Route</string>
 
+        <key>Electrical.App.Commands.Routing.SelectionRangeRouteWithHeightAdjustmentCommand</key>
+        <string>Selection Range&#xA;Route With Height Adjustment</string>
+
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>Create 3D&#xA;Floor Views</string>
 

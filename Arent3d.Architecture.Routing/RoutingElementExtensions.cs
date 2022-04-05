@@ -233,6 +233,11 @@ namespace Arent3d.Architecture.Routing
       var topItem = elm.GetConnectors().MaxBy( conn => conn.Origin.Z ) ;
       return topItem ?? elm.GetConnectors().First() ;
     }
+    public static Connector GetBottomConnectorOfConnectorFamily( this FamilyInstance elm )
+    {
+      var topItem = elm.GetConnectors().MinBy( conn => conn.Origin.Z ) ;
+      return topItem ?? elm.GetConnectors().First() ;
+    }
 
     #endregion
 
