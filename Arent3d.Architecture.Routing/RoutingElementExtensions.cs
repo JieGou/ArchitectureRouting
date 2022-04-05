@@ -395,10 +395,10 @@ namespace Arent3d.Architecture.Routing
           secondImageMap.Add( key, imageMap[key]);
         }
         else if ( key.row >= secondTopRow && key.row <= secondBottomRow ) {
-          secondImageMap.Add( key, imageMap[key]);
+          secondImageMap.Add( (key.row - secondTopRow + headerRowCount, key.column), imageMap[key]);
         }
         else {
-          firstImageMap.Add( (key.row - (secondBottomRow - secondTopRow + 1), key.column), imageMap[key]);
+          firstImageMap.Add( key, imageMap[key]);
         }
       }
 
