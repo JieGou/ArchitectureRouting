@@ -20,11 +20,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class CeedViewModel : ViewModelBase
   {
-    private const string NotExistConnectorFamilyInFolderModelWarning = "excelで指定したモデルはmodelフォルダーに存在していませんので、既存のモデルを使用します。" ;
+    private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
     public List<CeedModel> CeedModels { get ; }
     public CeedStorable CeedStorable { get ; }
-    public readonly List<string> CeedModelNumbers = new List<string>() ;
-    public readonly List<string> ModelNumbers = new List<string>() ;
+    public readonly List<string> CeedModelNumbers = new() ;
+    public readonly List<string> ModelNumbers = new() ;
 
     public CeedViewModel( CeedStorable ceedStorable )
     {
@@ -40,11 +40,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       AddModelNumber( ceedModels ) ;
     }
 
-    private void AddModelNumber( List<CeedModel> ceedModels )
+    private void AddModelNumber( IReadOnlyCollection<CeedModel> ceedModels )
     {
       foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeedModelNumber ) ) ) {
         if ( ! CeedModelNumbers.Contains( ceedModel.CeedModelNumber ) ) CeedModelNumbers.Add( ceedModel.CeedModelNumber ) ;
       }
+
       foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.ModelNumber ) ) ) {
         var modelNumbers = ceedModel.ModelNumber.Split( '\n' ) ;
         foreach ( var modelNumber in modelNumbers ) {
@@ -59,20 +60,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       var existedConnectorFamilies = GetExistedConnectorFamilies( document, connectorFamilyPaths ) ;
       if ( existedConnectorFamilies.Any() ) {
-        var confirmMessage = MessageBox.Show( "モデルがすでに存在していますが、上書きしますか。", "Confirm Message", MessageBoxButton.OKCancel ) ;
+        var confirmMessage = MessageBox.Show( $"モデルがすでに存在していますが、上書きしますか。\n対象モデル：" + string.Join( ", ", existedConnectorFamilies.Keys ), "Confirm Message", MessageBoxButton.OKCancel ) ;
         if ( confirmMessage == MessageBoxResult.Cancel ) {
           connectorFamilyPaths = connectorFamilyPaths.Where( p => ! existedConnectorFamilies.ContainsValue( p ) ).ToList() ;
           connectorFamilyFiles.AddRange( existedConnectorFamilies.Keys ) ;
         }
       }
-      
-      using Transaction loadTransaction = new ( document, "Load connector's family" ) ;
+
+      using Transaction loadTransaction = new(document, "Load connector's family") ;
       loadTransaction.Start() ;
       foreach ( var connectorFamilyPath in connectorFamilyPaths ) {
         var isLoadFamilySuccessfully = true ;
         var connectorFamilyFile = Path.GetFileName( connectorFamilyPath ) ;
         var connectorFamily = LoadFamily( document, connectorFamilyPath, ref isLoadFamilySuccessfully ) ;
-        if ( connectorFamily != null || ( connectorFamily == null && isLoadFamilySuccessfully && existedConnectorFamilies.ContainsValue( connectorFamilyPath ) ) ) 
+        if ( connectorFamily != null || ( connectorFamily == null && isLoadFamilySuccessfully && existedConnectorFamilies.ContainsValue( connectorFamilyPath ) ) )
           connectorFamilyFiles.Add( connectorFamilyFile ) ;
       }
 
@@ -103,7 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var connectorFamilyPath in connectorFamilyPaths ) {
         var connectorFamilyFile = Path.GetFileName( connectorFamilyPath ) ;
         var connectorFamilyName = connectorFamilyFile.Replace( ".rfa", "" ) ;
-        if ( new FilteredElementCollector( document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == connectorFamilyName ) is Family family ) {
+        if ( new FilteredElementCollector( document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == connectorFamilyName ) is Family ) {
           existsConnectorFamilies.Add( connectorFamilyFile, connectorFamilyPath ) ;
         }
       }
@@ -113,31 +114,29 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public static void ReplaceMultipleSymbols( Document document, UIApplication uiApplication, ref CeedViewModel? allCeedModels, ref CeedViewModel? usingCeedModel, ref DataGrid dtGrid )
     {
-      const string successfullyMess = "Replaced multiple floor plan symbols successfully." ;
-      const string failedMess = "Replaced multiple floor plan symbols failed." ;
-      var infoPath = string.Empty ;
-      List<string> connectorFamilyPaths = new() ;
-      MessageBox.Show( "Please select sample model folder.", "Message" ) ;
+      const string successfullyMess = "モデルを正常に置き換えました。" ;
+      const string failedMess = "モデルの置き換えが失敗しました。" ;
+      List<string> connectorFamilyPaths ;
+      MessageBox.Show( "モデルフォルダーを選択してください。", "Message" ) ;
       FolderBrowserDialog folderBrowserDialog = new() ;
-      if ( folderBrowserDialog.ShowDialog() == DialogResult.OK ) {
-        string folderPath = folderBrowserDialog.SelectedPath ;
-        infoPath = Directory.GetFiles( folderPath ).FirstOrDefault( f => Path.GetExtension( f ) is ".xls" or ".xlsx" ) ;
-        if ( string.IsNullOrEmpty( infoPath ) ) {
-          MessageBox.Show( "No info file in selected folder.", "Error" ) ;
-          return ;
-        }
-
-        DirectoryInfo dirInfo = new( folderPath ) ;
-        var familyFolder = dirInfo.GetDirectories().FirstOrDefault() ;
-        if ( familyFolder != null ) {
-          connectorFamilyPaths = Directory.GetFiles( familyFolder.FullName ).ToList() ;
-        }
-        else {
-          MessageBox.Show( "No family folder in selected folder.", "Error" ) ;
-          return ;
-        }
+      if ( folderBrowserDialog.ShowDialog() != DialogResult.OK ) return ;
+      string folderPath = folderBrowserDialog.SelectedPath ;
+      string infoPath = Directory.GetFiles( folderPath ).FirstOrDefault( f => Path.GetExtension( f ) is ".xls" or ".xlsx" ) ?? string.Empty ;
+      if ( string.IsNullOrEmpty( infoPath ) ) {
+        MessageBox.Show( "指定したフォルダーにはモデル指定情報のエクセルファイルが存在していません。", "Error" ) ;
+        return ;
       }
 
+      DirectoryInfo dirInfo = new(folderPath) ;
+      var familyFolder = dirInfo.GetDirectories().FirstOrDefault() ;
+      if ( familyFolder != null ) {
+        connectorFamilyPaths = Directory.GetFiles( familyFolder.FullName ).ToList() ;
+      }
+      else {
+        MessageBox.Show( "指定したフォルダーにはモデルデータが存在していません。モデルデータをmodelフォルダに入れてください。", "Error" ) ;
+        return ;
+      }
+        
       if ( connectorFamilyPaths.Any() ) {
         try {
           List<string> connectorFamilyFiles ;
@@ -145,7 +144,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           using var progress = ProgressBar.ShowWithNewThread( uiApplication ) ;
           progress.Message = "Processing......." ;
           using ( var progressData = progress.Reserve( 0.3 ) ) {
-            connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath! ) ;
+            connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;
             connectorFamilyFiles = LoadConnectorFamily( document, connectorFamilyPaths ) ;
             progressData.ThrowIfCanceled() ;
           }
@@ -176,13 +175,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
       else {
-        MessageBox.Show( NotExistConnectorFamilyInFolderModelWarning, "Message" ) ;
+        MessageBox.Show( NotExistConnectorFamilyInFolderModelWarningMessage, "Message" ) ;
       }
     }
-    
+
     private static bool IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( Document document, ref CeedViewModel? allCeedModels, ref CeedViewModel? usingCeedModel, IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
     {
-      List<string> deviceSymbolsNotHaveConnectorFamily = new () ;
+      List<string> deviceSymbolsNotHaveConnectorFamily = new() ;
       var ceedStorable = document.GetAllStorables<CeedStorable>().First() ;
       if ( ceedStorable == null ) return false ;
       if ( allCeedModels != null ) {
@@ -220,36 +219,38 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
           }
         }
+
         ceedStorable.CeedModelData = usingCeedModel.CeedModels ;
       }
-      
+
       var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! ceedStorable.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
       ceedStorable.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
 
       try {
-        using Transaction t = new( document, "Save CeeD data" ) ;
+        using Transaction t = new(document, "Save CeeD data") ;
         t.Start() ;
         ceedStorable.Save() ;
         t.Commit() ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
-        return false;
+        return false ;
       }
 
       if ( deviceSymbolsNotHaveConnectorFamily.Any() ) {
-        MessageBox.Show( NotExistConnectorFamilyInFolderModelWarning + "( " + string.Join( ", ", deviceSymbolsNotHaveConnectorFamily ) + " )", "Message" ) ;
+        MessageBox.Show( NotExistConnectorFamilyInFolderModelWarningMessage + "対象の一般表示用機器記号：" + string.Join( ", ", deviceSymbolsNotHaveConnectorFamily ), "Message" ) ;
       }
 
       return true ;
     }
-    
+
     private static bool IsUpdateUpdateDataGridAfterReplaceMultipleSymbolsSuccessfully( IEnumerable<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName, ItemsControl dtGrid )
     {
       if ( dtGrid.ItemsSource is not List<CeedModel> newCeedModels ) {
         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
         return false ;
       }
+
       foreach ( var connectorFamilyReplacement in connectorFamilyReplacements ) {
         if ( ! connectorFamilyFileName.Contains( connectorFamilyReplacement.ConnectorFamilyFile ) ) continue ;
         var deviceSymbols = connectorFamilyReplacement.DeviceSymbols.Split( '\n' ) ;
@@ -266,7 +267,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       dtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
       return true ;
     }
-    
+
     public class FamilyOption : IFamilyLoadOptions
     {
       private readonly bool _forceUpdate ;

@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! _ceedStorable.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
         _ceedStorable.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
-        using Transaction t = new Transaction( _document, "Save connector family upload data" ) ;
+        using Transaction t = new( _document, "Save connector family upload data" ) ;
         t.Start() ;
         _ceedStorable.Save() ;
         t.Commit() ;
@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var imagePath = ConnectorFamilyManager.GetFolderPath() ;
       if ( ! Directory.Exists( imagePath ) ) Directory.CreateDirectory( imagePath ) ;
-      var connectorFamilyName = connectorFamilyFileName!.Replace( ".rfa", "" ) ;
+      var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
       using Transaction t = new( _document, "Load connector's family" ) ;
       t.Start() ;
       var connectorFamily = LoadFamily( filePath, connectorFamilyName ) ;
@@ -85,7 +85,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       try {
         if ( new FilteredElementCollector( _document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == familyName ) is Family family ) {
-          var confirmMessage = MessageBox.Show( "モデルがすでに存在していますが、上書きしますか。", "Confirm Message", MessageBoxButtons.OKCancel ) ;
+          var confirmMessage = MessageBox.Show( $"モデル{familyName}がすでに存在していますが、上書きしますか。", "Message", MessageBoxButtons.OKCancel ) ;
           if ( confirmMessage == System.Windows.Forms.DialogResult.Cancel ) {
             return family ;
           }
