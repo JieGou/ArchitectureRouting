@@ -36,32 +36,31 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
             return false ;
 
           return curves.First() is Arc ;
-        } ), "Pick a cylindrical shaft!" ) ;
+        } ), "円柱シャフトを選択してください。" ) ;
         var cylindricalShaft = null != cylindricalShaftReference ? document.GetElement( cylindricalShaftReference ) as Opening : null ;
         if ( null == cylindricalShaft )
           return Result.Failed ;
-        
+
         var dialog = new GetLevel( document, "Add H Symbol" ) ;
         if ( false == dialog.ShowDialog() )
           return Result.Succeeded ;
 
         var baseLevel = document.GetElement( cylindricalShaft.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT ).AsElementId() ) as Level ;
         var baseElevation = cylindricalShaft.get_Parameter( BuiltInParameter.WALL_BASE_OFFSET ).AsDouble() + baseLevel!.Elevation ;
-        
+
         var topLevelId = cylindricalShaft.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).AsElementId() ;
-        var topElevation = baseElevation;
-        if ( topLevelId == ElementId.InvalidElementId  ) {
+        var topElevation = baseElevation ;
+        if ( topLevelId == ElementId.InvalidElementId ) {
           topElevation += cylindricalShaft.get_Parameter( BuiltInParameter.WALL_USER_HEIGHT_PARAM ).AsDouble() ;
         }
         else {
           topElevation = ( document.GetElement( topLevelId ) as Level )!.Elevation ;
           topElevation += cylindricalShaft.get_Parameter( BuiltInParameter.WALL_TOP_OFFSET ).AsDouble() ;
         }
-        
+
         var centerPoint = cylindricalShaft.BoundaryCurves.OfType<Arc>().First().Center ;
-        var levels = dialog.GetSelectedLevels().Select(x => document.GetElement(x.Id) as Level).Where(x => x!.Elevation >= baseElevation && x.Elevation <= topElevation) ;
-        var viewPlans = document.GetAllElements<ViewPlan>()
-          .Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y!.Id == x.GenLevel.Id ) ) ;
+        var levels = dialog.GetSelectedLevels().Select( x => document.GetElement( x.Id ) as Level ).Where( x => x!.Elevation >= baseElevation && x.Elevation <= topElevation ) ;
+        var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y!.Id == x.GenLevel.Id ) ) ;
 
         using var transaction = new Transaction( document ) ;
         transaction.Start( "Electrical.App.Commands.Shaft.AddHSymbolCommand".GetAppStringByKeyOrDefault( "Create Sign Cylindrical Shaft" ) ) ;
@@ -85,16 +84,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
 
     private static void CreateSymbolCenter( View viewPlan, XYZ centerPoint )
     {
-      var lineStyle = GetLineStyle( viewPlan.Document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 2 )
-        .GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-      var lineOne = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * 200d.MillimetersToRevitUnits() ).OfPoint( centerPoint ),
-        Transform.CreateTranslation( -XYZ.BasisX * 200d.MillimetersToRevitUnits() ).OfPoint( centerPoint ) ) ;
+      var lineStyle = GetLineStyle( viewPlan.Document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+      var lineOne = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * 200d.MillimetersToRevitUnits() ).OfPoint( centerPoint ), Transform.CreateTranslation( -XYZ.BasisX * 200d.MillimetersToRevitUnits() ).OfPoint( centerPoint ) ) ;
       CreateDetailLine( viewPlan, lineStyle, lineOne ) ;
-      var lineTwo = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 1 ) ),
-        Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 1 ) ) ) ;
+      var lineTwo = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 1 ) ), Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 1 ) ) ) ;
       CreateDetailLine( viewPlan, lineStyle, lineTwo ) ;
-      var lineThree = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 0 ) ),
-        Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 0 ) ) ) ;
+      var lineThree = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 0 ) ), Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 0 ) ) ) ;
       CreateDetailLine( viewPlan, lineStyle, lineThree ) ;
     }
 
