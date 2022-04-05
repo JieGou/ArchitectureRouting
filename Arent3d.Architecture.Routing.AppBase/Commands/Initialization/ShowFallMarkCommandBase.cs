@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      Document document = commandData.Application.ActiveUIDocument.Document ;
+      var document = commandData.Application.ActiveUIDocument.Document ;
       try {
         return document.Transaction(
           "TransactionName.Commands.Routing.ConfirmUnset".GetAppStringByKeyOrDefault( "Confirm Not Connect" ), _ =>
@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void CreateFallMarkForConduitWithZDirection( Document document )
+    private static void CreateFallMarkForConduitWithZDirection( Document document )
     {
       var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
         .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
@@ -53,12 +53,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var fallMarkSymbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ).FirstOrDefault() ??
                            throw new InvalidOperationException() ;
       fallMarkSymbol.TryGetProperty( "Lenght", out double lenghtMark ) ;
-      foreach ( var (x, y, z) in conduitWithZDirection ) {
+      foreach ( var (x, y, z) in conduitWithZDirection )
         fallMarkSymbol.Instantiate( new XYZ( x, y - lenghtMark / 2, z ), StructuralType.NonStructural ) ;
-      }
     }
 
-    private bool HideFallMarks( Document document )
+    private static bool HideFallMarks( Document document )
     {
       var fallMarkSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ) ??
                             throw new InvalidOperationException() ;
