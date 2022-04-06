@@ -136,6 +136,9 @@
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>選択範囲配線</string>
 
+        <key>Electrical.App.Commands.Routing.SelectionRangeRouteWithHeightAdjustmentCommand</key>
+        <string>選択範囲配線&#xA;高さ調整</string>
+
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>階ごとの3dビュー作成</string>
 
@@ -398,6 +401,10 @@
         <string>電気シンボル表</string>
         <key>Revit.Detail.Table.Name</key>
         <string>明細表</string>
+        
+        <!-- Message -->
+        <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
+        <string>選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。</string>
     </dict>
 </plist>
 

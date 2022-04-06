@@ -1,14 +1,17 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Manager ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using MathLib ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -87,6 +90,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var (footPassPoint, passPoints) = SelectionRangeRouteManager.CreatePassPoints( routeName, powerConnector, sensorConnectors, sensorDirection, routeProperty, pipeSpec, powerConnector.GetTopConnectorOfConnectorFamily().Origin ) ;
       document.Regenerate() ; // Apply Arent-RoundDuct-Diameter
 
+      var allPassPoints = new List<FamilyInstance>() ;
+      if ( footPassPoint != null ) allPassPoints.Add( footPassPoint ) ;
+      allPassPoints.AddRange( passPoints ) ;
+      if ( IsAnyPassPointsInsideEnvelope( document, allPassPoints ) ) {
+        var allPassPointIds = allPassPoints.Select( p => p.UniqueId ).ToList() ;
+        document.Delete( allPassPointIds ) ;
+        MessageBox.Show( "Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope".GetDocumentStringByKeyOrDefault( document, "選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。" ), "Error" ) ;
+        return new List<(string RouteName, RouteSegment Segment)>() ;
+      }
+      
       var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 1 ) ;
 
       // main route
@@ -136,6 +149,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
+    private static bool IsAnyPassPointsInsideEnvelope( Document document, IReadOnlyCollection<FamilyInstance> passPoints )
+    {
+      var envelopes = document.GetAllFamilyInstances( RoutingFamilyType.Envelope ).ToList() ;
+      if ( ! envelopes.Any() ) return false ;
+      foreach ( var envelope in envelopes ) {
+        var envelopLocation = ( envelope.Location as LocationPoint ) ! ;
+        var (xEnvelope, yEnvelope, zEnvelope) = envelopLocation.Point ;
+        var lenghtEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Length".GetDocumentStringByKeyOrDefault( document, "奥行き" ) ).AsDouble() ;
+        var widthEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Width".GetDocumentStringByKeyOrDefault( document, "幅" ) ).AsDouble() ;
+        var heightEnvelope = envelope.ParametersMap.get_Item( "Revit.Property.Builtin.Envelope.Height".GetDocumentStringByKeyOrDefault( document, "高さ" ) ).AsDouble() ;
+        var center = new Vector3d( xEnvelope, yEnvelope, zEnvelope + heightEnvelope / 2 ) ;
+        var size = new Vector3d( widthEnvelope, lenghtEnvelope, heightEnvelope ) ;
+        var envelopeBox = Box3d.ConstructFromCenterSize( center, size ) ;
+        foreach ( var passPoint in passPoints ) {
+          var passPointLocation = ( passPoint.Location as LocationPoint ) ! ;
+          var (xPassPoint, yPassPoint, zPassPoint) = passPointLocation.Point ;
+          if ( envelopeBox.Contains( new Vector3d( xPassPoint, yPassPoint, zPassPoint ), 0 ) ) {
+            return true ;
+          }
+        }
+      }
+
+      return false ;
+    }
+    
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
       ElectricalCommandUtil.SetConstructionItemForCable( document, executeResultValue ) ;

@@ -136,6 +136,9 @@
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>Selection Range&#xA;Route</string>
 
+        <key>Electrical.App.Commands.Routing.SelectionRangeRouteWithHeightAdjustmentCommand</key>
+        <string>Selection Range&#xA;Route With Height Adjustment</string>
+
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>Create 3D&#xA;Floor Views</string>
 
@@ -407,5 +410,9 @@
         <string>Electrical Symbol Table</string>
         <key>Revit.Detail.Table.Name</key>
         <string>Detail Table</string>
+
+        <!-- Message -->
+        <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
+        <string>Since it is impossible to avoid the interference of the envelope in the selection range, adjust the position of the envelope or the position of the connector.</string>
     </dict>
 </plist>
