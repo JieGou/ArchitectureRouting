@@ -36,40 +36,43 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
         .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
-      var conduitWithZDirection = new List<XYZ>() ;
+      var conduitWithZDirection = new List<Conduit>() ;
       foreach ( var conduit in conduits ) {
         var conduitPosition = ( conduit.Location as LocationCurve ) ! ;
         var conduitLine = ( conduitPosition.Curve as Line ) ! ;
         var conduitDirection = conduitLine.Direction ;
         if ( conduitDirection.Z is not (1.0 or -1.0) ) continue ;
-        var conduitOrigin = conduitLine.Origin ;
-        if ( !conduitWithZDirection.Any( item => Equal( item, conduitOrigin ) ) )
-          conduitWithZDirection.Add( conduitOrigin ) ;
+        if ( ! conduitWithZDirection.Any( item => Equal(
+              ( ( item.Location as LocationCurve )!.Curve as Line )!.Origin, conduitLine.Origin ) ) )
+          conduitWithZDirection.Add( conduit ) ;
       }
 
       if ( ! conduitWithZDirection.Any() ) return ;
-      var fallMarkSymbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ).FirstOrDefault() ??
-                           throw new InvalidOperationException() ;
-      fallMarkSymbol.TryGetProperty( "Lenght", out double lenghtMark ) ;
-      foreach ( var (x, y, z) in conduitWithZDirection )
-        fallMarkSymbol.Instantiate( new XYZ( x, y - lenghtMark / 2, z ), StructuralType.NonStructural ) ;
+      var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ).FirstOrDefault() ??
+                   throw new InvalidOperationException() ;
+      symbol.TryGetProperty( "Lenght", out double lenghtMark ) ;
+      foreach ( var conduit in conduitWithZDirection ) {
+        GenerateMark( document, symbol, conduit ) ;
+      }
     }
 
-    private static void GenerateMark( Document document, FamilySymbol symbol, Connector connector )
+    private static void GenerateMark( Document document, FamilySymbol symbol, Conduit conduit )
     {
-      var level = ( connector.Owner as Conduit )!.ReferenceLevel ;
-      var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-      symbol.Instantiate( new XYZ( connector.Origin.X, connector.Origin.Y, height ), level,
+      var level = conduit.ReferenceLevel ;
+      var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() + 0.1 ;
+      var conduitPosition = ( conduit.Location as LocationCurve ) ! ;
+      var conduitLine = ( conduitPosition.Curve as Line ) ! ;
+      symbol.Instantiate( new XYZ( conduitLine.Origin.X, conduitLine.Origin.Y, height ), level,
         StructuralType.NonStructural ) ;
     }
-    
+
     private static bool Equal( XYZ a, XYZ b )
     {
       return Math.Abs( a.X - b.X ) <= GeometryUtil.Tolerance && Math.Abs( a.Y - b.Y ) <= GeometryUtil.Tolerance &&
              Math.Abs( a.Z - b.Z ) <= GeometryUtil.Tolerance ;
     }
 
-    
+
     private static bool HideFallMarks( Document document )
     {
       var fallMarkSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ) ??
