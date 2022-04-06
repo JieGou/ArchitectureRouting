@@ -203,19 +203,34 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels )
+    public static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels, bool isMixConstructionItems = false )
     {
-      detailTableModels = 
-        detailTableModels
-        .OrderBy( x => x.DetailSymbol )
-        .ThenByDescending( x => x.DetailSymbolId )
-        .ThenByDescending( x => x.SignalType )
-        .ThenByDescending( x => x.PlumbingIdentityInfo )
-        .ThenByDescending( x => x.IsParentRoute )
-        .ThenByDescending( x => x.ConstructionItems )
-        .ThenByDescending( x => x.GroupId )
-        .GroupBy( x => x.DetailSymbolId )
-        .SelectMany( x => x ).ToList() ;
+      if ( isMixConstructionItems ) {
+        detailTableModels = 
+          detailTableModels
+            .OrderBy( x => x.DetailSymbol )
+            .ThenByDescending( x => x.DetailSymbolId )
+            .ThenByDescending( x => x.SignalType )
+            .ThenByDescending( x => x.PlumbingIdentityInfo )
+            .ThenByDescending( x => x.IsParentRoute )
+            .ThenByDescending( x => x.GroupId )
+            .GroupBy( x => x.DetailSymbolId )
+            .SelectMany( x => x ).ToList() ;
+      }
+      else
+      {
+        detailTableModels = 
+          detailTableModels
+            .OrderBy( x => x.DetailSymbol )
+            .ThenByDescending( x => x.DetailSymbolId )
+            .ThenByDescending( x => x.SignalType )
+            .ThenByDescending( x => x.ConstructionItems )
+            .ThenByDescending( x => x.PlumbingIdentityInfo )
+            .ThenByDescending( x => x.IsParentRoute )
+            .ThenByDescending( x => x.GroupId )
+            .GroupBy( x => x.DetailSymbolId )
+            .SelectMany( x => x ).ToList() ;
+      }
     }
     
     public static void SaveData( Document document, IReadOnlyCollection<DetailTableModel> detailTableRowsBySelectedDetailSymbols )
@@ -323,7 +338,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static List<DetailTableModel> PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow, bool isMixConstructionItems )
+    public static List<DetailTableModel> PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow )
     {
       var newDetailTableRow = new DetailTableModel( false, copyDetailTableRow.Floor, copyDetailTableRow.CeedCode, copyDetailTableRow.DetailSymbol, 
         copyDetailTableRow.DetailSymbolId, copyDetailTableRow.WireType, copyDetailTableRow.WireSize, copyDetailTableRow.WireStrip, copyDetailTableRow.WireBook, copyDetailTableRow.EarthType, 
@@ -333,7 +348,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         copyDetailTableRow.IsReadOnly, copyDetailTableRow.PlumbingIdentityInfo, copyDetailTableRow.GroupId, copyDetailTableRow.IsReadOnlyPlumbingItems, copyDetailTableRow.IsMixConstructionItems ) ;
       detailTableViewModel.DetailTableModels.Add( newDetailTableRow ) ;
       var newDetailTableModels = detailTableViewModel.DetailTableModels.ToList() ;
-      SortDetailTableModel( ref newDetailTableModels ) ;
+      SortDetailTableModel( ref newDetailTableModels, copyDetailTableRow.IsMixConstructionItems ) ;
       return newDetailTableModels ;
     }
 
@@ -372,7 +387,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       var newDetailTableModels = detailTableViewModel.DetailTableModels.ToList() ;
-      SortDetailTableModel( ref newDetailTableModels ) ;
+      SortDetailTableModel( ref newDetailTableModels, isMixConstructionItems ) ;
       detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
   }

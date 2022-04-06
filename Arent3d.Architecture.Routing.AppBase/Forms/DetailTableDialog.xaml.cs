@@ -105,7 +105,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void BtnPasteLine_Click( object sender, RoutedEventArgs e )
     {
       if ( ! _selectedDetailTableRows.Any() || _copyDetailTableRow == null ) return ;
-      var newDetailTableModels = DetailTableViewModel.PasteDetailTableRow( _detailTableViewModel, _copyDetailTableRow, _isMixConstructionItems ) ;
+      var newDetailTableModels = DetailTableViewModel.PasteDetailTableRow( _detailTableViewModel, _copyDetailTableRow ) ;
       _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
@@ -202,7 +202,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           }
 
           var newDetailTableModelList = _detailTableViewModel.DetailTableModels.ToList() ;
-          DetailTableViewModel.SortDetailTableModel( ref newDetailTableModelList ) ;
+          DetailTableViewModel.SortDetailTableModel( ref newDetailTableModelList, _isMixConstructionItems ) ;
           _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModelList ) ;
           CreateDetailTableViewModelByGroupId() ;
           DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
