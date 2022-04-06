@@ -9,7 +9,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class ReRouteByFloorCommandBase : RoutingCommandBase<IReadOnlyCollection<ElementId>>
+  public abstract class AllReRouteByFloorCommandBase : RoutingCommandBase<IReadOnlyCollection<ElementId>>
   {
     protected abstract AddInType GetAddInType() ;
 

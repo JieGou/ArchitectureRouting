@@ -109,8 +109,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
           private static class AllReRouteCommandButton { }
 
-          [Button( typeof( ReRouteByFloorCommand ), OnlyInitialized = true )]
-          private static class ReRouteByFloorCommandButton { }
+          [Button( typeof( AllReRouteByFloorCommand ), OnlyInitialized = true )]
+          private static class AllReRouteByFloorCommandButton { }
           
           [Button( typeof( RoomPickRoutingCommand ), OnlyInitialized = true )]
           private static class RoomPickRoutingCommandButton { }

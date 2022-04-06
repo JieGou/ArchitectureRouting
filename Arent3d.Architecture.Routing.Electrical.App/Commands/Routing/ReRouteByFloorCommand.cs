@@ -7,11 +7,11 @@ using Autodesk.Revit.DB ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.ReRouteByFloorCommand", DefaultString = "Re-Route\nBy Floor" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.AllReRouteByFloorCommand", DefaultString = "Re-Route\nBy Floor" )]
   [Image( "resources/RerouteAll.png" )]
-  public class ReRouteByFloorCommand : ReRouteByFloorCommandBase
+  public class AllReRouteByFloorCommand : AllReRouteByFloorCommandBase
   {
-    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.ReRouteByFloor" ;
+    protected override string GetTransactionNameKey() => "TransactionName.Commands.Routing.AllReRouteByFloor" ;
 
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
 
