@@ -17,6 +17,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
+using Microsoft.WindowsAPICodePack.Shell ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 {
@@ -167,8 +168,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         var directoryInfo = new DirectoryInfo( browseFolderPath ) ;
         if ( ! directoryInfo.Attributes.HasFlag( FileAttributes.Hidden ) ) {
           var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-          folders.Add(
-            new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ) ;
+          folders.Add( new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ) ;
         }
 
         foreach ( var path in Directory.GetDirectories( browseFolderPath ) ) {
@@ -177,10 +177,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             continue ;
 
           var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-          var folder = new FolderModel
-          {
-            Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected
-          } ;
+          var folder = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ;
           var subPaths = Directory.GetDirectories( folder.Path ) ;
           if ( subPaths.Length > 0 ) {
             RecursiveFolder( subPaths, ref folder ) ;
@@ -204,10 +201,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           continue ;
 
         var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-        var subFolderModel = new FolderModel
-        {
-          Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected
-        } ;
+        var subFolderModel = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ;
         var subPaths = Directory.GetDirectories( directoryInfo.FullName ) ;
         if ( subPaths.Length > 0 ) {
           RecursiveFolder( subPaths, ref subFolderModel ) ;
@@ -222,8 +216,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if ( ! _isExistFolderSelectedPath )
         return ( false, false ) ;
 
-      if ( directoryInfo.FullName.Length > _settingStorable.FolderSelectedPath.Length ||
-           ! _settingStorable.FolderSelectedPath.StartsWith( directoryInfo.FullName ) )
+      if ( directoryInfo.FullName.Length > _settingStorable.FolderSelectedPath.Length || ! _settingStorable.FolderSelectedPath.StartsWith( directoryInfo.FullName ) )
         return ( false, false ) ;
 
       return directoryInfo.FullName.Length < _settingStorable.FolderSelectedPath.Length ? ( true, false ) : ( true, true ) ;
@@ -257,15 +250,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
         foreach ( var filePath in filePaths ) {
           var fileInfo = new FileInfo( filePath ) ;
-          var bitmap = ThumbnailProvider.GetThumbnail( fileInfo.FullName, 125, 125, ThumbnailOptions.ThumbnailOnly ) ;
+          var bitmap = ShellFile.FromFilePath( fileInfo.FullName ).Thumbnail.LargeBitmap ;
 
-          previewModels.Add( new PreviewModel
-          {
-            FileName = fileInfo.Name,
-            Thumbnail = Imaging.CreateBitmapSourceFromHBitmap( bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty,
-              BitmapSizeOptions.FromEmptyOptions() ),
-            Path = fileInfo.FullName
-          } ) ;
+          previewModels.Add( new PreviewModel { FileName = fileInfo.Name, Thumbnail = Imaging.CreateBitmapSourceFromHBitmap( bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions() ), Path = fileInfo.FullName } ) ;
         }
       }
 
@@ -316,10 +303,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         ElementTransformUtils.MoveElement( _uiDocument.Document, importInstance.Id, pickPoint - centerPoint ) ;
       }
       else {
-        var options = new DWGImportOptions
-        {
-          ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default
-        } ;
+        var options = new DWGImportOptions { ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default } ;
         var result = _uiDocument.Document.Import( previewFile.Path, options, _uiDocument.ActiveView, out _ ) ;
         if ( ! result ) {
           System.Windows.MessageBox.Show( "The import file failed!", "Arent Notification" ) ;
