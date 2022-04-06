@@ -72,9 +72,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         if ( document.GetElement( schedule.Duplicate( ViewDuplicateOption.Duplicate ) ) is not ViewSchedule cloneSchedule )
           return Result.Failed ;
-        var originalName = schedule.Name ;
         var (newName, oldName) = GetNewScheduleName( document, schedule.Name ) ;
-        cloneSchedule.Name = newName ;
+        try {
+          cloneSchedule.Name = newName ;
+        }
+        catch ( Autodesk.Revit.Exceptions.ArgumentException ) {
+          newName += Guid.NewGuid() ;
+          cloneSchedule.Name = newName ;
+        }
+
         schedule.Name = oldName ;
 
         var (topIndex, bottomIndex) = GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBoxXYZ, pickedBox, splitFromRow ) ;
@@ -92,10 +98,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         }
 
         ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id, Transform.CreateTranslation( XYZ.BasisX * 10.0.MillimetersToRevitUnits() ).OfPoint( boundingBoxXYZ.Max ) ) ;
+
         var (firstImageMap, secondImageMap) = schedule.SplitImageMap( topIndex, bottomIndex, schedule.GetScheduleHeaderRowCount() ) ;
         schedule.SetImageMap( firstImageMap ) ;
         cloneSchedule.SetImageMap( secondImageMap ) ;
-        SetSplitInformation( schedule, cloneSchedule, originalName ) ;
+        SetSplitInformation( schedule, cloneSchedule ) ;
         transaction.Commit() ;
 
         return Result.Succeeded ;
@@ -109,18 +116,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
-    private static void SetSplitInformation( ViewSchedule schedule, ViewSchedule cloneSchedule, string originalName )
+    private static void SetSplitInformation( ViewSchedule schedule, ViewSchedule cloneSchedule )
     {
       var currentSplitIndex = schedule.GetSplitIndex() ;
       var splitLevel = schedule.GetSplitLevel() + 1 ;
       var parentScheduleId = schedule.GetParentScheduleId() ?? schedule.Id ;
-      schedule.SetParentScheduleName( originalName ) ;
       schedule.SetSplitStatus( true ) ;
       schedule.SetSplitIndex( 2 * currentSplitIndex + 1 ) ;
       schedule.SetParentScheduleId( parentScheduleId ) ;
       schedule.SetSplitLevel( splitLevel ) ;
 
-      cloneSchedule.SetParentScheduleName( originalName ) ;
       cloneSchedule.SetSplitStatus( true ) ;
       cloneSchedule.SetSplitIndex( 2 * currentSplitIndex + 2 ) ;
       cloneSchedule.SetParentScheduleId( parentScheduleId ) ;

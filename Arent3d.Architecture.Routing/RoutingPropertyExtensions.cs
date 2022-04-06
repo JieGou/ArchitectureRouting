@@ -139,10 +139,6 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     ImageCellMap,
 
-    [ParameterGuid( "25b74701-a8f1-469a-88b2-2ecba55e6955" ), NameOnRevit( "Parent Schedule Name" )]
-    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
-    ParentScheduleName,
-
     [ParameterGuid( "268a73c8-acca-491e-87b4-0b1a0a627fc4" ), NameOnRevit( "Split Level" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     SplitLevel,

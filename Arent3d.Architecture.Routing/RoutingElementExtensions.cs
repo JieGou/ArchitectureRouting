@@ -374,12 +374,14 @@ namespace Arent3d.Architecture.Routing
       imageMap += ( imageMap == string.Empty ? imageMap : "|" ) + $"{row},{column},{imageId.IntegerValue}" ;
       viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.ImageCellMap, imageMap ) ;
     }
+
     public static void SetImageMap( this ViewSchedule viewSchedule, Dictionary<(int row, int column), ElementId> imageMap )
     {
       var imageMapString = string.Empty ;
       foreach ( var imageMapKey in imageMap.Keys ) {
-        imageMapString += ( imageMapString == string.Empty ? imageMapString : "|" ) + $"{imageMapKey.row},{imageMapKey.column},{imageMap[imageMapKey].IntegerValue}" ;
+        imageMapString += ( imageMapString == string.Empty ? imageMapString : "|" ) + $"{imageMapKey.row},{imageMapKey.column},{imageMap[ imageMapKey ].IntegerValue}" ;
       }
+
       viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.ImageCellMap, imageMapString ) ;
     }
 
@@ -391,19 +393,20 @@ namespace Arent3d.Architecture.Routing
       foreach ( var key in imageMap.Keys ) {
         if ( key.row < headerRowCount ) //header
         {
-          firstImageMap.Add( key, imageMap[key]);
-          secondImageMap.Add( key, imageMap[key]);
+          firstImageMap.Add( key, imageMap[ key ] ) ;
+          secondImageMap.Add( key, imageMap[ key ] ) ;
         }
         else if ( key.row >= secondTopRow && key.row <= secondBottomRow ) {
-          secondImageMap.Add( (key.row - secondTopRow + headerRowCount, key.column), imageMap[key]);
+          secondImageMap.Add( ( key.row - secondTopRow + headerRowCount, key.column ), imageMap[ key ] ) ;
         }
         else {
-          firstImageMap.Add( key, imageMap[key]);
+          firstImageMap.Add( key, imageMap[ key ] ) ;
         }
       }
 
       return ( firstImageMap, secondImageMap ) ;
     }
+
     public static Dictionary<(int row, int column), ElementId> GetImageMap( this ViewSchedule viewSchedule )
     {
       if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ImageCellMap, out string? imageMap ) || string.IsNullOrEmpty( imageMap ) ) return new Dictionary<(int row, int column), ElementId>() ;
@@ -423,6 +426,7 @@ namespace Arent3d.Architecture.Routing
 
       return imageMapDictionary ;
     }
+
     public static void SetSplitStatus( this ViewSchedule viewSchedule, bool isSplit )
     {
       viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.IsSplit, isSplit ? 1 : 0 ) ;
@@ -444,6 +448,7 @@ namespace Arent3d.Architecture.Routing
       if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.SplitIndex, out int index ) ) return 0 ;
       return index ;
     }
+
     public static void SetSplitLevel( this ViewSchedule viewSchedule, int index )
     {
       viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.SplitLevel, index ) ;
@@ -454,6 +459,7 @@ namespace Arent3d.Architecture.Routing
       if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.SplitLevel, out int index ) ) return 0 ;
       return index ;
     }
+
     public static void SetParentScheduleId( this ViewSchedule viewSchedule, ElementId elementId )
     {
       viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.ParentScheduleId, elementId.IntegerValue ) ;
@@ -474,17 +480,6 @@ namespace Arent3d.Architecture.Routing
     {
       if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ScheduleHeaderRowCount, out int headerRowCount ) ) return 0 ;
       return headerRowCount ;
-    }
-
-    public static void SetParentScheduleName( this ViewSchedule viewSchedule, string originalTableName )
-    {
-      viewSchedule.TrySetProperty( ElectricalRoutingElementParameter.ParentScheduleName, originalTableName ) ;
-    }
-
-    public static string GetParentScheduleName( this ViewSchedule viewSchedule )
-    {
-      if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ParentScheduleName, out string? originalTableName ) ) return string.Empty ;
-      return originalTableName ?? string.Empty ;
     }
 
     #endregion

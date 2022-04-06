@@ -193,7 +193,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         document.Delete( schedule.Id ) ;
       }
 
-      firstSchedule.Name = firstSchedule.GetParentScheduleName() ;
       firstSchedule.SetImageMap( firstImageMap ) ;
       return Result.Succeeded ;
     }
@@ -235,7 +234,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
       document.Delete( secondSchedule.Id ) ;
       firstSchedule.SetImageMap( imageMap ) ;
-      firstSchedule.Name = firstSchedule.GetParentScheduleName() ;
       firstSchedule.SetSplitLevel( firstSchedule.GetSplitLevel() - 1 ) ;
       firstSchedule.SetSplitIndex( ( firstSchedule.GetSplitIndex() - 1 ) / 2 ) ;
       return ( Result.Succeeded, firstScheduleSheet ) ;
