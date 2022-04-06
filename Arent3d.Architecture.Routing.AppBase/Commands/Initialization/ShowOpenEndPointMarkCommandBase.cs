@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -34,46 +35,54 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static void CreateOpenEndPointMarkForNotConnectedConnector( Document document )
     {
-      var notConnectedConduitPosition = new List<XYZ>() ;
+      var missingConnector = new List<Connector>() ;
 
       // check conduits
       var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
         .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       foreach ( var conduit in conduits ) {
-        if (CheckConnectedConduit( allConnectors, conduit )) continue;
+        if ( CheckConnectedConduit( allConnectors, conduit ) ) continue ;
         var from = conduit.GetRoutingConnectors( true ).FirstOrDefault() ;
         var to = conduit.GetRoutingConnectors( false ).FirstOrDefault() ;
         if ( to is { IsConnected: false } &&
-             ! notConnectedConduitPosition.Any( item => item != null && Equal( item, to.Origin ) ) )
-          notConnectedConduitPosition.Add( to.Origin ) ;
+             ! missingConnector.Any( item => item != null && Equal( item.Origin, to.Origin ) ) )
+          missingConnector.Add( to ) ;
 
         if ( from is { IsConnected: false } &&
-             ! notConnectedConduitPosition.Any( item => item != null && Equal( item, from.Origin ) ) )
-          notConnectedConduitPosition.Add( from.Origin ) ;
+             ! missingConnector.Any( item => item != null && Equal( item.Origin, from.Origin ) ) )
+          missingConnector.Add( from ) ;
       }
 
       // check conduitFittings
       var conduitFittings = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) )
         .OfCategory( BuiltInCategory.OST_ConduitFitting ).AsEnumerable().OfType<FamilyInstance>() ;
       foreach ( var conduit in conduitFittings ) {
-        if (CheckConnectedConduit( allConnectors, conduit )) continue;
+        if ( CheckConnectedConduit( allConnectors, conduit ) ) continue ;
         var from = conduit.GetRoutingConnectors( true ).FirstOrDefault() ;
         var to = conduit.GetRoutingConnectors( false ).FirstOrDefault() ;
         if ( to is { IsConnected: false } &&
-             ! notConnectedConduitPosition.Any( item => item != null && Equal( item, to.Origin ) ) )
-          notConnectedConduitPosition.Add( to.Origin ) ;
+             ! missingConnector.Any( item => item != null && Equal( item.Origin, to.Origin ) ) )
+          missingConnector.Add( to ) ;
 
         if ( from is { IsConnected: false } &&
-             ! notConnectedConduitPosition.Any( item => item != null && Equal( item, from.Origin ) ) )
-          notConnectedConduitPosition.Add( from.Origin ) ;
+             ! missingConnector.Any( item => item != null && Equal( item.Origin, from.Origin ) ) )
+          missingConnector.Add( from ) ;
       }
 
-      if ( ! notConnectedConduitPosition.Any() ) return ;
-      var fallMarkSymbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.OpenEndPointMark ).FirstOrDefault() ??
-                           throw new InvalidOperationException() ;
-      foreach ( var conduitOrigin in notConnectedConduitPosition )
-        fallMarkSymbol.Instantiate( conduitOrigin, StructuralType.NonStructural ) ;
+      if ( ! missingConnector.Any() ) return ;
+      var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.OpenEndPointMark ).FirstOrDefault() ??
+                   throw new InvalidOperationException() ;
+      foreach ( var connector in missingConnector )
+        GenerateMark( document, symbol, connector ) ;
+    }
+
+    private static void GenerateMark( Document document, FamilySymbol symbol, Connector connector )
+    {
+      var level = ( connector.Owner as Conduit )!.ReferenceLevel ;
+      var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+      symbol.Instantiate( new XYZ( connector.Origin.X, connector.Origin.Y, height ), level,
+        StructuralType.NonStructural ) ;
     }
 
     private static bool Equal( XYZ a, XYZ b )

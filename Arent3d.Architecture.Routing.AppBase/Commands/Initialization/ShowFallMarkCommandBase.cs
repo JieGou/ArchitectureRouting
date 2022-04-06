@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -42,10 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var conduitDirection = conduitLine.Direction ;
         if ( conduitDirection.Z is not (1.0 or -1.0) ) continue ;
         var conduitOrigin = conduitLine.Origin ;
-        if ( conduitWithZDirection.All( item =>
-              Math.Abs( item.X - conduitOrigin.X ) > GeometryUtil.Tolerance ||
-              Math.Abs( item.Y - conduitOrigin.Y ) > GeometryUtil.Tolerance ||
-              Math.Abs( item.Z - conduitOrigin.Z ) > GeometryUtil.Tolerance ) )
+        if ( !conduitWithZDirection.Any( item => Equal( item, conduitOrigin ) ) )
           conduitWithZDirection.Add( conduitOrigin ) ;
       }
 
@@ -57,6 +55,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         fallMarkSymbol.Instantiate( new XYZ( x, y - lenghtMark / 2, z ), StructuralType.NonStructural ) ;
     }
 
+    private static void GenerateMark( Document document, FamilySymbol symbol, Connector connector )
+    {
+      var level = ( connector.Owner as Conduit )!.ReferenceLevel ;
+      var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+      symbol.Instantiate( new XYZ( connector.Origin.X, connector.Origin.Y, height ), level,
+        StructuralType.NonStructural ) ;
+    }
+    
+    private static bool Equal( XYZ a, XYZ b )
+    {
+      return Math.Abs( a.X - b.X ) <= GeometryUtil.Tolerance && Math.Abs( a.Y - b.Y ) <= GeometryUtil.Tolerance &&
+             Math.Abs( a.Z - b.Z ) <= GeometryUtil.Tolerance ;
+    }
+
+    
     private static bool HideFallMarks( Document document )
     {
       var fallMarkSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ) ??
