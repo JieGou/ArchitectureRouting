@@ -270,6 +270,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     private void Import()
     {
+      SaveSettingData() ;
       var previewSelected = Previews.SingleOrDefault( x => x.IsSelected ) ;
       if ( null != previewSelected ) {
         switch ( Path.GetExtension( previewSelected.FileName ) ) {
