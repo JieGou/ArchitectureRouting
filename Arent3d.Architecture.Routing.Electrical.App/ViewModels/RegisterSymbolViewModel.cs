@@ -307,7 +307,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         var options = new DWGImportOptions { ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default } ;
         var result = _uiDocument.Document.Import( previewFile.Path, options, _uiDocument.ActiveView, out _ ) ;
         if ( ! result ) {
-          System.Windows.MessageBox.Show( "The import file failed!", "Arent Notification" ) ;
+          System.Windows.MessageBox.Show( "図面ファイルが無効です。", "Arent Notification" ) ;
         }
       }
 
