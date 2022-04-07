@@ -19,6 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   public class DetailTableViewModel : ViewModelBase
   {
     private const string DefaultParentPlumbingType = "E" ;
+    private const string NoPlumping = "配管なし" ;
 
     public ObservableCollection<DetailTableModel> DetailTableModels { get ; set ; }
 
@@ -253,7 +254,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
     
-    public static void SaveDetailSymbolData( Document document, StorableBase detailSymbolStorable )
+    public static void SaveDetailSymbolData( Document document, DetailSymbolStorable detailSymbolStorable )
     {
       try {
         using Transaction t = new( document, "Save data" ) ;
@@ -325,7 +326,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var detailTableRowsWithSamePlumbingIdentityInfo = detailTableViewModel.DetailTableModels.Where( d => d.PlumbingIdentityInfo == plumbingIdentityInfo ).ToList() ;
         if ( ! detailTableRowsWithSamePlumbingIdentityInfo.Any() ) continue ;
         var isMixConstructionItems = detailTableRowsWithSamePlumbingIdentityInfo.First().IsMixConstructionItems ;
-        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSamePlumbingIdentityInfo, plumbingType, true, isMixConstructionItems ) ;
+        if ( plumbingType == NoPlumping ) {
+          CreateDetailTableCommandBase.SetNoPlumbingDataForOneSymbol( ref detailTableRowsWithSamePlumbingIdentityInfo, isMixConstructionItems ) ;
+        }
+        else {
+          CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSamePlumbingIdentityInfo, plumbingType, true, isMixConstructionItems ) ;
+        }
       }
 
       foreach ( var plumbingIdentityInfo in childDetailRowDeletedPlumbingIdentityInfo ) {
@@ -333,6 +339,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( ! detailTableRowsWithSamePlumbingIdentityInfo.Any() ) continue ;
         var parentDetailRow = detailTableRowsWithSamePlumbingIdentityInfo.FirstOrDefault( d => d.IsParentRoute ) ;
         var plumbingType = parentDetailRow == null ? DefaultParentPlumbingType : parentDetailRow.PlumbingType ;
+        if ( plumbingType == NoPlumping ) continue ;
         var isMixConstructionItems = detailTableRowsWithSamePlumbingIdentityInfo.First().IsMixConstructionItems ;
         CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSamePlumbingIdentityInfo, plumbingType, true, isMixConstructionItems ) ;
       }
@@ -368,6 +375,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var parentDetailRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.IsParentRoute && d.DetailSymbolId == detailTableRowsWithSameDetailSymbolId.First().DetailSymbolId ) ;
         var plumbingType = parentDetailRow == null ? DefaultParentPlumbingType : parentDetailRow.PlumbingType ;
         CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType, true, isMixConstructionItems ) ;
+
         if ( isMixConstructionItems ) {
           SetGroupIdForDetailTableRowsMixConstructionItems( detailTableRowsWithSameDetailSymbolId ) ;
         }
@@ -377,6 +385,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         foreach ( var otherDetailTableRows in otherDetailTableRowsWithSamePlumbingIdentityInfo ) {
           CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, otherDetailTableRows, plumbingType, true, otherDetailTableRows.First().IsMixConstructionItems ) ;
+
           if ( isMixConstructionItems ) {
             SetGroupIdForDetailTableRowsMixConstructionItems( otherDetailTableRows ) ;
           }

@@ -88,6 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void InsertDataFromDetailTableModelIntoElectricalSymbolModel( List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
     {
       const string defaultChildPlumbingSymbol = "↑" ;
+      const string noPlumping = "配管なし" ;
       foreach ( var element in detailTableModelsByRouteName ) {
         var wireType = element.WireType ;
         var wireSize = element.WireSize ;
@@ -96,10 +97,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var plumbingSize = string.Empty ;
         if ( element.IsParentRoute ) {
           plumbingType = element.PlumbingType ;
-          plumbingSize = element.PlumbingSize ;
+          plumbingSize = plumbingType == noPlumping ? string.Empty : element.PlumbingSize ;
         }
         else {
           plumbingType = element.PlumbingIdentityInfo.Split( '-' ).First().Replace( defaultChildPlumbingSymbol, "" ) ;
+          if ( plumbingType.Contains( noPlumping ) ) plumbingType = noPlumping ;
         }
 
         if ( fromConnectorCeedModel != null ) {

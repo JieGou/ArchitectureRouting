@@ -17,7 +17,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class DetailTableDialog : Window
   {
-    private const string DefaultParentPlumbingType = "E" ;
     private const string DefaultChildPlumbingSymbol = "↑" ;
     private const string NoPlumping = "配管なし" ;
     private const string IncorrectDataErrorMessage = "Incorrect data." ;
@@ -25,6 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly Document _document ;
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly DetailTableViewModel _detailTableViewModel ;
+    private readonly DetailSymbolStorable _detailSymbolStorable ;
     private List<DetailTableModel> _selectedDetailTableRows ;
     private DetailTableModel? _copyDetailTableRow ;
     public DetailTableViewModel DetailTableViewModelSummary { get ; set ; }
@@ -41,6 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _document = document ;
       DataContext = viewModel ;
       _detailTableViewModel = viewModel ;
+      _detailSymbolStorable = document.GetDetailSymbolStorable() ;
       DetailTableViewModelSummary = viewModel ;
       _conduitsModelData = conduitsModelData ;
       _isMixConstructionItems = mixConstructionItems ;
@@ -88,11 +89,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void BtnDeleteLine_Click( object sender, RoutedEventArgs e )
     {
       if ( ! _selectedDetailTableRows.Any() ) return ;
-      var detailSymbolStorable = _document.GetDetailSymbolStorable() ;
-      DetailTableViewModel.DeleteDetailTableRows( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, detailSymbolStorable ) ;
+      DetailTableViewModel.DeleteDetailTableRows( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, _detailSymbolStorable ) ;
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
-      DetailTableViewModel.SaveDetailSymbolData( _document, detailSymbolStorable ) ;
+      DetailTableViewModel.SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
       _selectedDetailTableRows.Clear() ;
     }
     
@@ -116,11 +116,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       _selectedDetailTableRows.Clear() ;
       _selectedDetailTableRows = _detailTableViewModel.DetailTableModels.ToList() ;
+      DtGrid.SelectAll() ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
     {
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
+      DetailTableViewModel.SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
       DialogResult = true ;
       this.Close() ;
     }
@@ -134,6 +136,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             mixtureOfMultipleConstructionClassificationsInDetailSymbol ), "Warning", MessageBoxButton.OKCancel ) ;
       if ( confirmResult == MessageBoxResult.OK ) {
         DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
+        DetailTableViewModel.SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
         DialogResult = true ;
         this.Close() ;
       }
@@ -160,7 +163,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       else {
         if ( detailTableRow.PlumbingType == plumbingType.ToString() ) return ;
-        if ( plumbingType.ToString() == DefaultChildPlumbingSymbol || plumbingType.ToString() == NoPlumping ) {
+        if ( plumbingType.ToString() == DefaultChildPlumbingSymbol ) {
           comboBox.SelectedValue = detailTableRow.PlumbingType ;
         }
         else {
@@ -168,7 +171,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
           var newDetailTableModels = new ObservableCollection<DetailTableModel>( detailTableModels ) ;
 
-          CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref newDetailTableModels, plumbingType.ToString(), _isMixConstructionItems ) ;
+          if ( plumbingType.ToString() == NoPlumping ) {
+            CreateDetailTableCommandBase.SetNoPlumbingDataForOneSymbol( ref detailTableModels, _isMixConstructionItems ) ;
+          }
+          else {
+            CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref newDetailTableModels, plumbingType.ToString(), _isMixConstructionItems ) ;
+          }
 
           if ( newDetailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null ) {
             if ( _isMixConstructionItems ) {
@@ -323,20 +331,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       if ( ! _selectedDetailTableRows.Any() ) return ;
       _isMixConstructionItems = false ;
-      DetailTableViewModel.PlumbingSummary( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, _isMixConstructionItems ) ;
-      CreateDetailTableViewModelByGroupId() ;
-      DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
-      _selectedDetailTableRows.Clear() ;
+      PlumbingSummary() ;
     }
 
     private void BtnPlumbingSummaryMixConstructionItems_Click( object sender, RoutedEventArgs e )
     {
       if ( ! _selectedDetailTableRows.Any() ) return ;
       _isMixConstructionItems = true ;
+      PlumbingSummary() ;
+    }
+
+    private void PlumbingSummary()
+    {
       DetailTableViewModel.PlumbingSummary( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, _isMixConstructionItems ) ;
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
       _selectedDetailTableRows.Clear() ;
+      DtGrid.SelectedItems.Clear() ;
     }
 
     private void CreateDetailTableViewModelByGroupId()
