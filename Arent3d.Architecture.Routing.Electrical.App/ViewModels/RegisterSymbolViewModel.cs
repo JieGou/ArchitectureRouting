@@ -344,8 +344,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if ( ! ImageInstance.IsValidView( _uiDocument.ActiveView ) ) return ;
       ImageInstance.Create( _uiDocument.Document, _uiDocument.ActiveView, imageType.Id, optionInstance ) ;
 #elif REVIT2019
-      _uiDocument.Document.Import( previewFile.Path, new ImageImportOptions { RefPoint = pickPoint, Placement =
- BoxPlacement.Center }, _uiDocument.ActiveView, out _ ) ;
+      _uiDocument.Document.Import( previewFile.Path, new ImageImportOptions { RefPoint = pickPoint, Placement = BoxPlacement.Center }, _uiDocument.ActiveView, out _ ) ;
 #endif
 
       transaction.Commit() ;
