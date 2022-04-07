@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       try {
         foreach ( var action in Actions )
           action() ;
+        Actions = new List<Action>() ;
       }
       catch ( Exception exception ) {
         TaskDialog.Show( "Arent Inc", exception.Message ) ;
