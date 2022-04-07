@@ -44,8 +44,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if ( null != _folders )
           return _folders ;
 
-        var folders = GetFolders( _settingStorable.BrowseFolderPath ) ;
-        _folders = new ObservableCollection<FolderModel>( folders ) ;
+        var folderModel = GetFolderModel( _settingStorable.BrowseFolderPath ) ;
+        var folderModelList = new List<FolderModel>() ;
+        if ( null != folderModel ) folderModelList.Add( folderModel ) ;
+        _folders = new ObservableCollection<FolderModel>( folderModelList ) ;
 
         FolderSelected = FindSelectedFolder( _folders ) ;
         Previews = new ObservableCollection<PreviewModel>( GetPreviewFiles( FolderSelected?.Path ) ) ;
@@ -108,7 +110,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", PatternSearchings )} file extension." ;
             if ( folderBrowserDialog.ShowDialog() == DialogResult.OK && ! string.IsNullOrWhiteSpace( folderBrowserDialog.SelectedPath ) ) {
               _settingStorable.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
-              Folders = new ObservableCollection<FolderModel>( GetFolders( _settingStorable.BrowseFolderPath ) ) ;
+              var folderModel = GetFolderModel( _settingStorable.BrowseFolderPath ) ;
+              var folderModelList = new List<FolderModel>() ;
+              if ( null != folderModel ) folderModelList.Add( folderModel ) ;
+              Folders = new ObservableCollection<FolderModel>( folderModelList ) ;
             }
           }
           catch ( Exception exception ) {
@@ -160,15 +165,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     #region Methods
 
-    private IEnumerable<FolderModel> GetFolders( string? browseFolderPath )
+    private FolderModel? GetFolderModel( string? browseFolderPath )
     {
-      var folders = new List<FolderModel>() ;
+      FolderModel? folderModel = null ;
 
       if ( null != browseFolderPath && Directory.Exists( browseFolderPath ) ) {
         var directoryInfo = new DirectoryInfo( browseFolderPath ) ;
         if ( ! directoryInfo.Attributes.HasFlag( FileAttributes.Hidden ) ) {
           var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-          folders.Add( new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ) ;
+          folderModel = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ;
         }
 
         foreach ( var path in Directory.GetDirectories( browseFolderPath ) ) {
@@ -177,20 +182,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             continue ;
 
           var (isExpanded, isSelected) = IsNodeSelected( directoryInfo ) ;
-          var folder = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ;
-          var subPaths = Directory.GetDirectories( folder.Path ) ;
+          var subFolderModel = new FolderModel { Name = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = isExpanded, IsSelected = isSelected } ;
+          var subPaths = Directory.GetDirectories( subFolderModel.Path ) ;
           if ( subPaths.Length > 0 ) {
-            RecursiveFolder( subPaths, ref folder ) ;
+            RecursiveFolder( subPaths, ref subFolderModel ) ;
           }
 
-          folders[ 0 ].Folders.Add( folder ) ;
+          folderModel?.Folders.Add( subFolderModel ) ;
         }
       }
       else {
         System.Windows.MessageBox.Show( "The folder path does not exist!", "Arent Notification" ) ;
       }
 
-      return folders ;
+      return folderModel ;
     }
 
     private void RecursiveFolder( IEnumerable<string> paths, ref FolderModel folderModel )
