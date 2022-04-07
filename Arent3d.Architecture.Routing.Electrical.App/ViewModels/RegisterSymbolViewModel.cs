@@ -83,6 +83,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
     }
 
+    private PreviewModel? _previewSelected ;
     public ExternalEventHandler? ExternalEventHandler { get ; set ; }
 
     public RegisterSymbolViewModel( UIDocument uiDocument )
@@ -131,8 +132,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       {
         return new RelayCommand<Window>( wd => null != wd, wd =>
         {
-          ExternalEventHandler?.AddAction( Import )?.Raise() ;
-          wd.Close() ;
+          wd.Hide();
+          _previewSelected = Previews.SingleOrDefault( x => x.IsSelected ) ;
+          if ( null != _previewSelected ) {
+            ExternalEventHandler?.AddAction( Import )?.Raise() ;
+            wd.Close();
+          }
+          else {
+            System.Windows.MessageBox.Show( "Please, select a file at the preview!", "Arent Notification" ) ;
+            wd.Show() ;
+          }
         } ) ;
       }
     }
@@ -276,19 +285,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private void Import()
     {
       SaveSettingData() ;
-      var previewSelected = Previews.SingleOrDefault( x => x.IsSelected ) ;
-      if ( null != previewSelected ) {
-        switch ( Path.GetExtension( previewSelected.FileName ) ) {
-          case DwgExtension :
-            ImportDwgFile( previewSelected ) ;
-            break ;
-          case PngExtension :
-            ImportImageFile( previewSelected ) ;
-            break ;
-        }
-      }
-      else {
-        System.Windows.MessageBox.Show( "Please, select a file at the preview!", "Arent Notification" ) ;
+      switch ( Path.GetExtension( _previewSelected!.FileName ) ) {
+        case DwgExtension :
+          ImportDwgFile( _previewSelected ) ;
+          break ;
+        case PngExtension :
+          ImportImageFile( _previewSelected ) ;
+          break ;
       }
     }
 
