@@ -7,8 +7,8 @@ using Autodesk.Revit.DB ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand", DefaultString = "Room Range Wiring" )]
-  [Image( "resources/PickFrom-To.png" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand", DefaultString = "Room Selection Range Routing" )]
+  [Image( "resources/RerouteAll.png" )]
   public class RoomSelectionRangeRouteCommand : RoomSelectionRangeRouteCommandBase
   {
     protected override string GetTransactionNameKey()
