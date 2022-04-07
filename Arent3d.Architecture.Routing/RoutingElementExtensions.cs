@@ -468,7 +468,7 @@ namespace Arent3d.Architecture.Routing
     public static ElementId? GetParentScheduleId( this ViewSchedule viewSchedule )
     {
       if ( ! viewSchedule.TryGetProperty( ElectricalRoutingElementParameter.ParentScheduleId, out int elementIdValue ) ) return null ;
-      return new ElementId( elementIdValue ) ;
+      return elementIdValue == 0? null: new ElementId( elementIdValue ) ;
     }
 
     public static void SetScheduleHeaderRowCount( this ViewSchedule viewSchedule, int headerRowCount )
