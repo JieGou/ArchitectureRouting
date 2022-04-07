@@ -33,16 +33,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private void ExportDWG( Document document )
     {
+      const string layerSettingsFileName = "Arent-export-layers.txt" ;
       var activeView = document.ActiveView ;
-      OpenFileDialog openFileDialog = new() { Filter = "Layer setting file (*.txt)|*.txt", Multiselect = false } ;
-      string settingFilePath = string.Empty ;
-      if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
-        settingFilePath = openFileDialog.FileName ;
-      }
-
+      SaveFileDialog saveFileDialog = new() { Filter = "DWG file (*.dwg)|*.dwg", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
+      if ( saveFileDialog.ShowDialog() != DialogResult.OK ) return ;
+      var filePath = Path.GetDirectoryName( saveFileDialog.FileName ) ;
+      var fileName = Path.GetFileName( saveFileDialog.FileName ) ;
+      string directory = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location ) ! ;
+      var resourcesPath = Path.Combine( directory.Substring( 0, directory.IndexOf( "bin", StringComparison.Ordinal ) ), "resources" ) ;
+      string settingFilePath = Path.Combine( resourcesPath, layerSettingsFileName ) ;
       DWGExportOptions options = new() { LayerMapping = settingFilePath } ;
-      var filePath = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) ;
-      var fileName = activeView.Name + "-layer.dwg" ;
       List<ElementId> viewIds = new() { activeView.Id } ;
       document.Export( filePath, fileName, viewIds, options ) ;
     }
