@@ -79,7 +79,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
-    private (IList<Element> conduitList, IList<Element> connectorList) GetAllConduitAndConnectorInProject( Document document )
+    private IList<Element> GetAllConduitInProject( Document document )
     {
       FilteredElementCollector collector = new FilteredElementCollector( document ) ;
       collector = collector.OfClass( typeof( FamilyInstance ) ) ;
@@ -87,25 +87,32 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       collector = new FilteredElementCollector( document ) ;
       conduitList.AddRange( collector.OfClass( typeof( Conduit ) ).ToElements() ) ;
       conduitList = conduitList.Where( elem => BuiltInCategorySets.ConnectorsAndConduits.Contains( elem.GetBuiltInCategory() ) ).ToList() ;
-      collector = new FilteredElementCollector( document ) ;
+
+      var listApplyConduit = ConduitUtil.GetConduitRelated( document, conduitList ) ;
+      return listApplyConduit ;
+    }
+
+    private IList<Element> GetAllConnectorInProject( Document document )
+    {
+      FilteredElementCollector collector = new FilteredElementCollector( document ) ;
       collector = collector.OfClass( typeof( FamilyInstance ) ) ;
       var connectorList = collector.ToElements().ToList() ;
       collector = new FilteredElementCollector( document ) ;
       connectorList.AddRange( collector.OfClass( typeof( TextNote ) ).ToElements() ) ;
       connectorList = connectorList.Where( elem => ( elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ) ).ToList() ;
 
-      var listApplyConduit = ConduitUtil.GetConduitRelated( document, conduitList ) ;
-      return ( listApplyConduit, connectorList ) ;
+      return connectorList ;
     }
 
     private Result SwitchModeForProject( Document document, ref string message, bool isEcoMode )
     {
-      var (conduitList, connectorList) = GetAllConduitAndConnectorInProject( document ) ;
+      var conduitList = GetAllConduitInProject( document ) ;
+      var connectorList = GetAllConnectorInProject( document ) ;
       using var transaction = new Transaction( document, TransactionName ) ;
       transaction.Start() ;
-      SetModeForConduit( conduitList, (bool) isEcoMode ) ;
-      SetModeForConnector( connectorList, (bool) isEcoMode, document ) ;
-      SetEcoNormalModeForProject( document, (bool) isEcoMode ) ;
+      SetModeForConduit( conduitList, isEcoMode ) ;
+      SetModeForConnector( connectorList, isEcoMode, document ) ;
+      SetEcoNormalModeForProject( document, isEcoMode ) ;
       transaction.Commit() ;
       MessageBox.Show( string.IsNullOrEmpty( message ) ? DialogResultSuccessKey.GetAppStringByKeyOrDefault( UpdateDataSuccessMessage ) : message, DialogResultTitleKey.GetAppStringByKeyOrDefault( ElectricalChangeModeTitle ), MessageBoxButtons.OK ) ;
       return Result.Succeeded ;
