@@ -132,7 +132,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       {
         return new RelayCommand<Window>( wd => null != wd, wd =>
         {
-          wd.Hide();
           _previewSelected = Previews.SingleOrDefault( x => x.IsSelected ) ;
           if ( null != _previewSelected ) {
             ExternalEventHandler?.AddAction( Import )?.Raise() ;
@@ -140,7 +139,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           }
           else {
             System.Windows.MessageBox.Show( "Please, select a file at the preview!", "Arent Notification" ) ;
-            wd.Show() ;
           }
         } ) ;
       }
