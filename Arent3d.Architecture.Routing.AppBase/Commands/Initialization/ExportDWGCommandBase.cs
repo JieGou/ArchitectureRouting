@@ -12,12 +12,12 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  public class ExportDWGCommandBase: IExternalCommand
+  public class ExportDWGCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-      
+
       try {
         return document.Transaction( "Electrical.App.Commands.Initialization.ExportDWGCommandBase".GetAppStringByKeyOrDefault( "Export DWG" ), _ =>
         {
@@ -34,17 +34,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void ExportDWG( Document document )
     {
       var activeView = document.ActiveView ;
-      OpenFileDialog openFileDialog = new() { Filter = "Setting file (*.txt)|*.txt", Multiselect = false } ;
+      OpenFileDialog openFileDialog = new() { Filter = "Layer setting file (*.txt)|*.txt", Multiselect = false } ;
       string settingFilePath = string.Empty ;
       if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
         settingFilePath = openFileDialog.FileName ;
       }
-      
+
       DWGExportOptions options = new() { LayerMapping = settingFilePath } ;
       var filePath = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) ;
       var fileName = activeView.Name + "-layer.dwg" ;
       List<ElementId> viewIds = new() { activeView.Id } ;
-      document.Export(filePath, fileName, viewIds, options) ;
+      document.Export( filePath, fileName, viewIds, options ) ;
     }
   }
 }
