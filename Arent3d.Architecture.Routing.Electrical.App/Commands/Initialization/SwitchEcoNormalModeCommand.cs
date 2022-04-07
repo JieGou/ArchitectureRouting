@@ -79,28 +79,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
-    private IList<Element> GetAllConduitInProject( Document document )
+    private static IList<Element> GetAllConduitInProject( Document document )
     {
-      FilteredElementCollector collector = new FilteredElementCollector( document ) ;
-      collector = collector.OfClass( typeof( FamilyInstance ) ) ;
-      var conduitList = collector.ToElements().ToList() ;
-      collector = new FilteredElementCollector( document ) ;
-      conduitList.AddRange( collector.OfClass( typeof( Conduit ) ).ToElements() ) ;
-      conduitList = conduitList.Where( elem => BuiltInCategorySets.ConnectorsAndConduits.Contains( elem.GetBuiltInCategory() ) ).ToList() ;
-
-      var listApplyConduit = ConduitUtil.GetConduitRelated( document, conduitList ) ;
+      var familyInstances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).ToElements().ToList() ;
+      var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) ).ToElements().ToList() ;
+      var allConduits = familyInstances.Concat( conduits ).ToList() ;
+      allConduits = allConduits.Where( elem => BuiltInCategorySets.ConnectorsAndConduits.Contains( elem.GetBuiltInCategory() ) ).ToList() ;
+      var listApplyConduit = ConduitUtil.GetConduitRelated( document, allConduits ) ;
       return listApplyConduit ;
     }
 
-    private IList<Element> GetAllConnectorInProject( Document document )
+    private static IList<Element> GetAllConnectorInProject( Document document )
     {
-      FilteredElementCollector collector = new FilteredElementCollector( document ) ;
-      collector = collector.OfClass( typeof( FamilyInstance ) ) ;
-      var connectorList = collector.ToElements().ToList() ;
-      collector = new FilteredElementCollector( document ) ;
-      connectorList.AddRange( collector.OfClass( typeof( TextNote ) ).ToElements() ) ;
-      connectorList = connectorList.Where( elem => ( elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ) ).ToList() ;
-
+      var familyInstances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).ToElements().ToList() ;
+      var textNotes = new FilteredElementCollector( document ).OfClass( typeof( TextNote ) ).ToElements().ToList() ;
+      var connectorList = familyInstances.Concat( textNotes ).ToList() ;
+      connectorList = connectorList.Where( elem => elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ).ToList() ;
       return connectorList ;
     }
 
