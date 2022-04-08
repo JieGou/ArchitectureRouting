@@ -4,7 +4,7 @@ using System.IO ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Forms ;
-using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
@@ -56,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
         var newConnectorFamilyUploadFiles = connectorFamilyUploadFiles.Where( f => ! _ceedStorable.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
         _ceedStorable.ConnectorFamilyUploadData.AddRange( newConnectorFamilyUploadFiles ) ;
-        using Transaction t = new Transaction( _document, "Save connector family upload data" ) ;
+        using Transaction t = new( _document, "Save connector family upload data" ) ;
         t.Start() ;
         _ceedStorable.Save() ;
         t.Commit() ;
@@ -72,8 +72,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var imagePath = ConnectorFamilyManager.GetFolderPath() ;
       if ( ! Directory.Exists( imagePath ) ) Directory.CreateDirectory( imagePath ) ;
-      var connectorFamilyName = connectorFamilyFileName!.Replace( ".rfa", "" ) ;
-      using Transaction t = new Transaction( _document, "Load connector's family" ) ;
+      var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
+      using Transaction t = new( _document, "Load connector's family" ) ;
       t.Start() ;
       var connectorFamily = LoadFamily( filePath, connectorFamilyName ) ;
       t.Commit() ;
@@ -83,11 +83,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private Family? LoadFamily( string filePath, string familyName )
     {
-      if ( new FilteredElementCollector( _document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == familyName ) is Family family ) return family ;
-      _document.LoadFamily( filePath, out family ) ;
-      foreach ( ElementId familySymbolId in (IEnumerable<ElementId>) family.GetFamilySymbolIds() )
-        _document.GetElementById<FamilySymbol>( familySymbolId ) ;
-      return family ;
+      try {
+        if ( new FilteredElementCollector( _document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == familyName ) is Family family ) {
+          var confirmMessage = MessageBox.Show( $"モデル{familyName}がすでに存在していますが、上書きしますか。", "Message", MessageBoxButtons.OKCancel ) ;
+          if ( confirmMessage == System.Windows.Forms.DialogResult.Cancel ) {
+            return family ;
+          }
+
+          _document.LoadFamily( filePath, new CeedViewModel.FamilyOption( true ), out var overwriteFamily ) ;
+          if ( overwriteFamily == null ) return family ;
+          foreach ( ElementId familySymbolId in overwriteFamily.GetFamilySymbolIds() )
+            _document.GetElementById<FamilySymbol>( familySymbolId ) ;
+          return overwriteFamily ;
+        }
+
+        _document.LoadFamily( filePath, new CeedViewModel.FamilyOption( true ), out var newFamily ) ;
+        if ( newFamily == null ) return null ;
+        foreach ( ElementId familySymbolId in newFamily.GetFamilySymbolIds() )
+          _document.GetElementById<FamilySymbol>( familySymbolId ) ;
+        return newFamily ;
+      }
+      catch {
+        return null ;
+      }
     }
 
     private void LoadConnectorFamilyList()

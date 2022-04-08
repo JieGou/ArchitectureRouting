@@ -18,10 +18,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     public ObservableCollection<LevelInfo> LevelList { get ; }
 
-    public GetLevel( Document doc )
+    public GetLevel( Document doc, string nameButton = "Select" )
     {
       InitializeComponent() ;
-
+      BtSelect.Content = nameButton ;
       LevelList = new ObservableCollection<LevelInfo>( doc.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).Select( ToLevelInfo ).OrderBy( l => l.Elevation ) ) ;
     }
 

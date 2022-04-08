@@ -114,6 +114,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
           private static class AllReRouteCommandButton { }
+
+          [Button( typeof( AllReRouteByFloorCommand ), OnlyInitialized = true )]
+          private static class AllReRouteByFloorCommandButton { }
           
           [Button( typeof( RoomPickRoutingCommand ), OnlyInitialized = true )]
           private static class RoomPickRoutingCommandButton { }
@@ -258,6 +261,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof(CreateCylindricalShaftCommand), OnlyInitialized = true )]
         private static class CreateCylindricalShaftCommandButton { }
+        
+        [Button( typeof(AddHSymbolCommand), OnlyInitialized = true )]
+        private static class AddHSymbolCommandButton { }
       }
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Electrical.App.Panels.Routing.Monitor" )]
       private static class MonitorPanel
