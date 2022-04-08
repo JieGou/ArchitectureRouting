@@ -19,15 +19,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var oldCeedStorable = document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeedStorable == null ) return Result.Failed ;
 
-      var floorPlans = oldCeedStorable.CeedModelData.Select( item => item.FloorPlanType ).GroupBy( item => item ).Select( item => item.Key )
-        .Where( item => ! string.IsNullOrEmpty( item ) ).ToList() ;
+      var floorPlans = oldCeedStorable.CeedModelData.Select( item => item.FloorPlanType ).GroupBy( item => item )
+        .Select( item => item.Key ).Where( item => ! string.IsNullOrEmpty( item ) ).ToList() ;
 
       var connectorOneSideFamilyTypeNames =
         ( (ConnectorOneSideFamilyType[]) Enum.GetValues( typeof( ConnectorOneSideFamilyType ) ) )
         .Select( f => f.GetFieldName() ).ToHashSet() ;
 
-      using Transaction t = new(document, "Update グレード3") ;
-      t.Start() ;
+      var instances = new List<FamilyInstance>() ;
+
       foreach ( var item in floorPlans ) {
         // get symbols
         var symbol = new List<FamilySymbol>() ;
@@ -45,15 +45,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                      throw new InvalidOperationException() ) ;
           }
         }
-
-        // update property グレード3 of instances
-        var instances = document.GetAllFamilyInstances( symbol ).ToList() ;
-        foreach ( var instance in instances.Where( instance => instance.HasParameter( "グレード3" ) ) ) {
-          instance.SetProperty( "グレード3", ! instance.GetPropertyBool( "グレード3" ) ) ;
-        }
+        
+        // find instances
+        instances.AddRange( document.GetAllFamilyInstances( symbol )
+          .Where( instance => instance.HasParameter( "グレード3" ) ).ToList() ) ;
       }
+
+      // update property グレード3 of instances
+      using Transaction t = new(document, "Update グレード3") ;
+      t.Start() ;
+      var valueToUpdate = ! instances.Any( item => item.GetPropertyBool( "グレード3" ) ) ;
+      foreach ( var instance in instances )
+        instance.SetProperty( "グレード3", valueToUpdate ) ;
       t.Commit() ;
-      
+
       return Result.Succeeded ;
     }
 
