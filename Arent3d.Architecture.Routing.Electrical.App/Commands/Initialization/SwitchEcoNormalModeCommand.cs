@@ -115,6 +115,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var connectorList = GetAllConnectorInProject( document ) ;
       using var transaction = new Transaction( document, TransactionName ) ;
       transaction.Start() ;
+      var failureOptions = transaction.GetFailureHandlingOptions() ;
+      failureOptions.SetFailuresPreprocessor( new FailurePreprocessor() ) ;
+      transaction.SetFailureHandlingOptions( failureOptions ) ;
       SetModeForConduit( conduitList, isEcoMode ) ;
       SetModeForConnector( connectorList, isEcoMode, document ) ;
       SetEcoNormalModeForProject( document, isEcoMode ) ;
@@ -149,6 +152,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       var listApplyConduit = ConduitUtil.GetConduitRelated( document, conduitList ) ;
       using var transaction = new Transaction( document, TransactionName ) ;
       transaction.Start() ;
+      var failureOptions = transaction.GetFailureHandlingOptions() ;
+      failureOptions.SetFailuresPreprocessor( new FailurePreprocessor() ) ;
+      transaction.SetFailureHandlingOptions( failureOptions ) ;
       SetModeForConduit( listApplyConduit, isEcoMode ) ;
       SetModeForConnector( connectorList, isEcoMode, document ) ;
       transaction.Commit() ;
@@ -197,6 +203,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         groupIds.AddRange( value ) ;
         document.Create.NewGroup( groupIds ) ;
       }
+    }
+  }
+
+  public class FailurePreprocessor : IFailuresPreprocessor
+  {
+    public FailureProcessingResult PreprocessFailures( FailuresAccessor failuresAccessor )
+    {
+      var failureMessages = failuresAccessor.GetFailureMessages() ;
+      foreach ( var message in failureMessages ) {
+        if ( message.GetFailureDefinitionId() == BuiltInFailures.GroupFailures.AtomViolationWhenOnePlaceInstance )
+          failuresAccessor.DeleteWarning( message ) ;
+      }
+
+      return FailureProcessingResult.Continue ;
     }
   }
 }
