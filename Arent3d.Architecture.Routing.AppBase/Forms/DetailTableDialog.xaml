@@ -72,6 +72,17 @@
                     </Style.Triggers>
                 </Style>
             </DataGrid.Resources>
+            
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="RoyalBlue" />
+                            <Setter Property="BorderBrush" Value="RoyalBlue" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.CellStyle>
 
             <DataGrid.Columns>
                 <DataGridCheckBoxColumn Header="計算除外" Width="30" Binding="{Binding CalculationExclusion}" CanUserSort="False" />
