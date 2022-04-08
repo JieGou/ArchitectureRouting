@@ -13,74 +13,78 @@ namespace Arent3d.Architecture.Routing.AppBase
   {
     public const double Tolerance = 0.0001 ;
 
-    private static (IList<T>? elements, (double minHeight, double maxHeight)) IntersectElements<T>( this (XYZ, XYZ ) leader, Document document ) where T : Element
+    private static IList<Element> IntersectElements( this (XYZ Elbow, XYZ End) leader, Document document, BuiltInCategory builtInCategory )
     {
-      var (elbow, end) = leader ;
-
       var (minHeight, maxHeight) = GetHeightRange( document ) ;
       if ( minHeight.Equals( maxHeight ) )
-        return ( null, ( minHeight, maxHeight ) ) ;
+        return new List<Element>() ;
 
-      var minOutline = new XYZ( Math.Min( elbow.X, end.X ), Math.Min( elbow.Y, end.Y ), minHeight ) ;
-      var maxOutline = new XYZ( Math.Max( elbow.X, end.X ), Math.Max( elbow.Y, end.Y ), maxHeight ) ;
+      var minOutline = new XYZ( Math.Min( leader.Elbow.X, leader.End.X ), Math.Min( leader.Elbow.Y, leader.End.Y ), minHeight ) ;
+      var maxOutline = new XYZ( Math.Max( leader.Elbow.X, leader.End.X ), Math.Max( leader.Elbow.Y, leader.End.Y ), maxHeight ) ;
 
       var intersectFilter = new BoundingBoxIntersectsFilter( new Outline( minOutline, maxOutline ) ) ;
-      var elements = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( intersectFilter ).ToElements().OfType<T>() ;
+      var categoryFilter = new ElementCategoryFilter( builtInCategory ) ;
+      var logicalAndFilter = new LogicalAndFilter( intersectFilter, categoryFilter ) ;
+      var elements = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( logicalAndFilter ).ToElements().ToList() ;
 
-      var elementFilters = new List<T>() ;
-      foreach ( var element in elements ) {
-        if ( element.Location is not LocationCurve { Curve: Line locationLine } )
+      return elements ;
+    }
+
+    public static List<Curve> IntersectCurveLeader( Document document, (XYZ Elbow, XYZ End) leader )
+    {
+      var curvesIntersected = new List<Curve> { Line.CreateBound( leader.Elbow, leader.End ) } ;
+      var (minHeight, maxHeight) = GetHeightRange( document ) ;
+
+      var conduits = leader.IntersectElements( document, BuiltInCategory.OST_Conduit ) ;
+      var conduitFilters = new List<Element>() ;
+      foreach ( var conduit in conduits ) {
+        if ( conduit.Location is not LocationCurve { Curve: Line locationLine } )
           continue ;
 
         if ( Math.Abs( locationLine.Direction.DotProduct( document.ActiveView.ViewDirection ) ) < 0.0001 ) {
-          elementFilters.Add( element ) ;
+          conduitFilters.Add( conduit ) ;
         }
       }
 
-      return ( elementFilters, ( minHeight, maxHeight ) ) ;
-    }
+      var solidOption = new SolidCurveIntersectionOptions { ResultType = SolidCurveIntersectionMode.CurveSegmentsOutside } ;
+      foreach ( var conduitFilter in conduitFilters ) {
+        if ( conduitFilter.Location is not LocationCurve { Curve: Line locationLine } ) continue ;
+        var (startPoint, endPoint) = ( locationLine.GetEndPoint( 0 ), locationLine.GetEndPoint( 1 ) ) ;
+        var line = Line.CreateBound( new XYZ( startPoint.X, startPoint.Y, leader.Elbow.Z ), new XYZ( endPoint.X, endPoint.Y, leader.Elbow.Z ) ) ;
 
-    public static List<Curve> IntersectCurveLeader( Document document, (XYZ, XYZ) leader )
-    {
-      var (elbow, end) = leader ;
-      var curvesIntersected = new List<Curve>() { Line.CreateBound( elbow, end ) } ;
-      var (conduits, (minHeight, maxHeight)) = leader.IntersectElements<Conduit>( document ) ;
-      if ( ( conduits?.Count ?? 0 ) == 0 )
-        return curvesIntersected ;
+        var diameter = conduitFilter.ParametersMap.get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document, "Outside Diameter" ) ).AsDouble() ;
+        var curveLoop = CurveLoop.CreateViaThicken( line.Clone(), 9 * diameter, document.ActiveView.ViewDirection ) ;
+        var transform = Transform.CreateTranslation( document.ActiveView.ViewDirection.Negate() * ( leader.Elbow.Z - minHeight ) ) ;
+        curveLoop = CurveLoop.CreateViaTransform( curveLoop, transform ) ;
 
-      var solidOption = new SolidCurveIntersectionOptions() { ResultType = SolidCurveIntersectionMode.CurveSegmentsOutside } ;
+        curvesIntersected = GetCurvesOutsiteSolid( document, curveLoop, maxHeight - minHeight, solidOption, curvesIntersected ) ;
+      }
 
-      foreach ( var conduit in conduits! ) {
-        if ( conduit.Location is LocationCurve locationCurve && locationCurve.Curve is Line locationLine ) {
-          var (startPoint, endPoint) = ( locationLine.GetEndPoint( 0 ), locationLine.GetEndPoint( 1 ) ) ;
-          var line = Line.CreateBound( new XYZ( startPoint.X, startPoint.Y, elbow.Z ), new XYZ( endPoint.X, endPoint.Y, elbow.Z ) ) ;
-
-          var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document, "Outside Diameter" ) ).AsDouble() ;
-          var curveLoop = CurveLoop.CreateViaThicken( line.Clone(), 9 * diameter, document.ActiveView.ViewDirection ) ;
-          var transform = Transform.CreateTranslation( document.ActiveView.ViewDirection.Negate() * ( elbow.Z - minHeight ) ) ;
-          curveLoop = CurveLoop.CreateViaTransform( curveLoop, transform ) ;
-
-          var solid = GeometryCreationUtilities.CreateExtrusionGeometry( new List<CurveLoop>() { curveLoop }, document.ActiveView.ViewDirection, maxHeight - minHeight ) ;
-          var curvesIntersectSolid = new List<Curve>() ;
-
-          foreach ( var curveIntersected in curvesIntersected ) {
-            var results = solid.IntersectWithCurve( curveIntersected, solidOption ) ;
-
-            if ( null != results ) {
-              results.ForEach( curve =>
-              {
-                if ( curve.Length > document.Application.ShortCurveTolerance ) {
-                  curvesIntersectSolid.Add( curve ) ;
-                }
-              } ) ;
-            }
-          }
-
-          curvesIntersected = curvesIntersectSolid ;
-        }
+      var conduitFittings = leader.IntersectElements( document, BuiltInCategory.OST_ConduitFitting ) ;
+      foreach ( var conduitFitting in conduitFittings ) {
+        var curveLoop = GetBoundaryBoundingBox( conduitFitting.get_BoundingBox( null ), minHeight ) ;
+        curveLoop = CurveLoop.CreateViaOffset( curveLoop, 50d.MillimetersToRevitUnits(), document.ActiveView.ViewDirection ) ;
+        curvesIntersected = GetCurvesOutsiteSolid( document, curveLoop, maxHeight - minHeight, solidOption, curvesIntersected ) ;
       }
 
       return curvesIntersected ;
+    }
+
+    private static List<Curve> GetCurvesOutsiteSolid( Document document, CurveLoop curveLoopBase, double heightSolid, SolidCurveIntersectionOptions solidOption, List<Curve> curvesIntersected )
+    {
+      var solid = GeometryCreationUtilities.CreateExtrusionGeometry( new List<CurveLoop> { curveLoopBase }, document.ActiveView.ViewDirection, heightSolid ) ;
+      var curvesIntersectSolid = new List<Curve>() ;
+
+      foreach ( var results in from curveIntersected in curvesIntersected select solid.IntersectWithCurve( curveIntersected, solidOption ) ) {
+        results?.ForEach( curve =>
+        {
+          if ( curve.Length > document.Application.ShortCurveTolerance ) {
+            curvesIntersectSolid.Add( curve ) ;
+          }
+        } ) ;
+      }
+
+      return curvesIntersectSolid ;
     }
 
     private static (double, double) GetHeightRange( Document document )
