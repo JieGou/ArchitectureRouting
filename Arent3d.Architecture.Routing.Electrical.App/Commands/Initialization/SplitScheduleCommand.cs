@@ -1,9 +1,11 @@
 ﻿using System ;
+using System.Collections.Generic ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -33,7 +35,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         if ( document.GetElement( reference ) is not ScheduleSheetInstance sheetInstance )
           return Result.Failed ;
 
-        var boundingBoxXYZ = sheetInstance.get_BoundingBox( document.ActiveView ) ;
+        var boundingBox = sheetInstance.get_BoundingBox( document.ActiveView ) ;
 
         if ( document.GetElement( sheetInstance.ScheduleId ) is not ViewSchedule schedule )
           return Result.Failed ;
@@ -47,12 +49,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         pickedBox.Min = min ;
         pickedBox.Max = max ;
 
-        if ( pickedBox.Max.Y <= boundingBoxXYZ.Min.Y || pickedBox.Min.Y >= boundingBoxXYZ.Max.Y || pickedBox.Max.X <= boundingBoxXYZ.Min.X || pickedBox.Min.X >= boundingBoxXYZ.Max.X ) {
+        if ( pickedBox.Max.Y <= boundingBox.Min.Y || pickedBox.Min.Y >= boundingBox.Max.Y || pickedBox.Max.X <= boundingBox.Min.X || pickedBox.Min.X >= boundingBox.Max.X ) {
           TaskDialog.Show( DialogTitle, "選択された領域は集計表の範囲外です。" ) ;
           return Result.Cancelled ;
         }
 
-        if ( pickedBox.Max.Y >= boundingBoxXYZ.Max.Y && pickedBox.Min.Y <= boundingBoxXYZ.Min.Y ) {
+        if ( pickedBox.Max.Y >= boundingBox.Max.Y && pickedBox.Min.Y <= boundingBox.Min.Y ) {
           TaskDialog.Show( DialogTitle, "選択された領域は集計表の範囲内です。" ) ;
           return Result.Cancelled ;
         }
@@ -62,7 +64,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
           heightRequest += schedule.GetTableData().GetSectionData( SectionType.Header ).GetRowHeight( i ) ;
         }
 
-        if ( pickedBox.Max.Y >= boundingBoxXYZ.Max.Y - heightRequest ) {
+        if ( pickedBox.Max.Y >= boundingBox.Max.Y - heightRequest ) {
           TaskDialog.Show( DialogTitle, "選択された領域は無効です。" ) ;
           return Result.Cancelled ;
         }
@@ -83,7 +85,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         schedule.Name = oldName ;
 
-        var (topIndex, bottomIndex) = GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBoxXYZ, pickedBox, splitFromRow ) ;
+        var (topIndex, bottomIndex) = GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBox, pickedBox, splitFromRow ) ;
 
         var numberOfRows = schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
         for ( int i = numberOfRows - 1 ; i >= 0 ; i-- ) {
@@ -97,8 +99,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
             cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
         }
 
-        ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id, Transform.CreateTranslation( XYZ.BasisX * 10.0.MillimetersToRevitUnits() ).OfPoint( boundingBoxXYZ.Max ) ) ;
-
+        ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id, Transform.CreateTranslation( XYZ.BasisX * 10.0.MillimetersToRevitUnits() ).OfPoint( boundingBox.Max ) ) ;
+        var scheduleSheetInstancesContainSameSchedule = GetScheduleSheetInstancesContainSameSchedule( document, schedule, sheetInstance ) ;
+        CreateSplitScheduleSheetInstances( document, scheduleSheetInstancesContainSameSchedule, cloneSchedule ) ;
         var (firstImageMap, secondImageMap) = schedule.SplitImageMap( topIndex, bottomIndex, schedule.GetScheduleHeaderRowCount() ) ;
         schedule.SetImageMap( firstImageMap ) ;
         cloneSchedule.SetImageMap( secondImageMap ) ;
@@ -113,6 +116,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
         return Result.Cancelled ;
+      }
+    }
+
+    private static IList<ScheduleSheetInstance> GetScheduleSheetInstancesContainSameSchedule( Document document, ViewSchedule scheduleToFind, ScheduleSheetInstance excludedScheduleSheet )
+    {
+      var elementCollector = new FilteredElementCollector( document, document.ActiveView.Id ) ;
+      return elementCollector.OfClass( typeof( ScheduleSheetInstance ) ).ToElements().ConvertAll( e => (ScheduleSheetInstance) e ).Where( s => excludedScheduleSheet.Id.IntegerValue != s.Id.IntegerValue && document.GetElement( s.ScheduleId ) is ViewSchedule schedule && schedule.Id.IntegerValue == scheduleToFind.Id.IntegerValue ).ToList() ;
+    }
+
+    private static void CreateSplitScheduleSheetInstances( Document document, IList<ScheduleSheetInstance> scheduleSheetInstances, ViewSchedule viewSchedule )
+    {
+      foreach ( var scheduleSheetInstance in scheduleSheetInstances ) {
+        var boundingBox = scheduleSheetInstance.get_BoundingBox( document.ActiveView ) ;
+        ScheduleSheetInstance.Create( document, document.ActiveView.Id, viewSchedule.Id, Transform.CreateTranslation( XYZ.BasisX * 10.0.MillimetersToRevitUnits() ).OfPoint( boundingBox.Max ) ) ;
       }
     }
 
@@ -132,9 +149,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       cloneSchedule.SetSplitLevel( splitLevel ) ;
     }
 
-    private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox, int splitFromRow )
+    private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXyz, PickedBox pickedBox, int splitFromRow )
     {
-      var heightTable = boxXYZ.Max.Y ;
+      var heightTable = boxXyz.Max.Y ;
       var topIndex = splitFromRow - 1 ;
       var bottomIndex = sectionData.NumberOfRows - 1 ;
 

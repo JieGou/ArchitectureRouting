@@ -50,6 +50,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
           scheduleSheetInstances.Add( (ScheduleSheetInstance) element ) ;
         }
 
+        scheduleSheetInstances = DistinctScheduleSheet( scheduleSheetInstances ) ;
         var scheduleGroups = GetScheduleGroups( document, scheduleSheetInstances ) ;
         using Transaction transaction = new Transaction( document, TransactionName ) ;
         transaction.Start() ;
@@ -68,6 +69,23 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         CommandUtils.DebugAlertException( exception ) ;
         return Result.Failed ;
       }
+    }
+
+    private static List<ScheduleSheetInstance> DistinctScheduleSheet( IList<ScheduleSheetInstance> scheduleSheetInstances )
+    {
+      var distinctScheduleSheets = new List<ScheduleSheetInstance>() ;
+      distinctScheduleSheets.AddRange( scheduleSheetInstances ) ;
+      foreach ( var scheduleSheet in scheduleSheetInstances ) {
+        var removes = scheduleSheetInstances.Where( s => scheduleSheet.ScheduleId.IntegerValue == s.ScheduleId.IntegerValue ).ToList() ;
+        foreach ( var remove in removes ) {
+          distinctScheduleSheets.Remove( remove ) ;
+        }
+
+        if ( removes.Contains( scheduleSheet ) )
+          distinctScheduleSheets.Add( scheduleSheet ) ;
+      }
+
+      return distinctScheduleSheets ;
     }
 
     private static Dictionary<ElementId, IList<ScheduleSheetInstance>> GetScheduleGroups( Document document, IList<ScheduleSheetInstance> scheduleSheetInstances )
