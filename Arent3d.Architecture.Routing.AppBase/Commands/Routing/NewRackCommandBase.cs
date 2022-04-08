@@ -516,11 +516,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           noteLeader.Elbow = new XYZ( endPoint.X + ( isDirectionX ? baseLengthOfLine * 3 : -baseLengthOfLine * 4 ), noteLeader.Elbow.Y - minBaseLengthOfLine * 8.5, endPoint.Z ) ;
           noteLeader.End = endPoint ;
 
-          var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
           (string? endLineUniqueId, int? endPoint) endLineLeader = ( null, null ) ;
           var ortherLineId = new List<string>() ;
-          
-          if ( curves.Count > 1 && doc.ActiveView is ViewPlan) {
+          if ( doc.ActiveView is ViewPlan ) {
+            var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
             doc.Regenerate();
             
             if(noteLeader.Anchor.DistanceTo(noteLeader.Elbow) > doc.Application.ShortCurveTolerance)
