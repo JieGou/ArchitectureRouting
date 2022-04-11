@@ -19,6 +19,8 @@
         <string>Routing</string>
         <key>Electrical.App.Panels.Routing.Routing.Routing</key>
         <string>Routing</string>
+        <key>Electrical.App.Panels.Routing.Routing.SelectionRangeRouting</key>
+        <string>Selection Range Routing</string>
         <key>Electrical.App.Panels.Routing.Routing.Erase</key>
         <string>Erase</string>
 
@@ -128,8 +130,14 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>Create&#xA;Cylindrical Shaft</string>
 
+        <key>Electrical.App.Commands.Shaft.AddHSymbolCommand</key>
+        <string>Add H Symbol</string>
+
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>Selection Range&#xA;Route</string>
+
+        <key>Electrical.App.Commands.Routing.SelectionRangeRouteWithHeightAdjustmentCommand</key>
+        <string>Selection Range&#xA;Route With Height Adjustment</string>
 
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>Create 3D&#xA;Floor Views</string>

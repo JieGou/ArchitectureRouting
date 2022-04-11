@@ -84,7 +84,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         SetupFailureHandlingOptions( transaction, executor ) ;
 
         try {
-          using var progress = ShowProgressBar( "Routing..." ) ;
+          using var progress = ShowProgressBar( "Routing...", false ) ;
 
           var segments = GetRouteSegments( document, state ) ;
           return executor.Run( segments, progress ) ;

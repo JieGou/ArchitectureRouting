@@ -19,6 +19,8 @@
         <string>From-To</string>
         <key>Electrical.App.Panels.Routing.Routing.Routing</key>
         <string>ルーティング</string>
+        <key>Electrical.App.Panels.Routing.Routing.SelectionRangeRouting</key>
+        <string>選択範囲配線</string>
         <key>Electrical.App.Panels.Routing.Routing.Erase</key>
         <string>削除</string>
 
@@ -125,8 +127,14 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>円柱シャフト作成</string>
 
+        <key>Electrical.App.Commands.Shaft.AddHSymbolCommand</key>
+        <string>H記号追加</string>
+
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>選択範囲配線</string>
+
+        <key>Electrical.App.Commands.Routing.SelectionRangeRouteWithHeightAdjustmentCommand</key>
+        <string>選択範囲配線&#xA;高さ調整</string>
 
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>階ごとの3dビュー作成</string>
@@ -183,7 +191,7 @@
         <string>部屋の配線</string>
 
         <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
-        <string>部屋の範囲配線</string>
+        <string>部屋の選択範囲配線</string>
         
         <key>Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand</key>
         <string>エコモード切替</string>
