@@ -50,6 +50,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( SwitchEcoNormalModeCommand ), OnlyInitialized = true )]
           private static class SwitchEcoNormalModeCommandButton { }
+
+          [Button( typeof( RegisterSymbolCommand ), OnlyInitialized = true )]
+          private static class RegisterSymbolCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
