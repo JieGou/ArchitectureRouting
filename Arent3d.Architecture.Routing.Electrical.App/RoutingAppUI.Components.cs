@@ -45,16 +45,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( ConfirmNotConnectingCommand ), OnlyInitialized = true )]
           private static class ConfirmNotConnectingCommandButton { }
           
-          [Button( typeof( ChangeToEcoCommand ), OnlyInitialized = true )]
-          private static class ChangeToEcoCommandButton { }
-          
-          [Button( typeof( ChangeToNormalCommand ), OnlyInitialized = true )]
-          private static class ChangeToNormalCommandButton { }
-          
           [Button( typeof( SplitScheduleCommand ), OnlyInitialized = true )]
           private static class SplitScheduleCommandButton { }
+          
           [Button( typeof( MergeSchedulesCommand ), OnlyInitialized = true )]
           private static class MergeSchedulesCommandButton { }
+          
+          [Button( typeof( SwitchEcoNormalModeCommand ), OnlyInitialized = true )]
+          private static class SwitchEcoNormalModeCommandButton { }
+
+          [Button( typeof( RegisterSymbolCommand ), OnlyInitialized = true )]
+          private static class RegisterSymbolCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
@@ -80,6 +81,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
           [Button( typeof( CreateDetailSymbolCommand ), OnlyInitialized = true )]
           private static class CreateDetailSymbolCommandButton { }
+          
+          [Button( typeof( LoadDrawingCommand ), OnlyInitialized = true )]
+          private static class LoadDrawingCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
@@ -110,16 +114,23 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( AllReRouteCommand ), OnlyInitialized = true )]
           private static class AllReRouteCommandButton { }
+
+          [Button( typeof( AllReRouteByFloorCommand ), OnlyInitialized = true )]
+          private static class AllReRouteByFloorCommandButton { }
           
           [Button( typeof( RoomPickRoutingCommand ), OnlyInitialized = true )]
           private static class RoomPickRoutingCommandButton { }
-          
-          [Button( typeof( RoomSelectionRangeRouteCommand ), OnlyInitialized = true )]
-          private static class RoomSelectionRangeRouteCommandButton { }
         }
-
-        [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
-        private static class SelectionRangeRouteCommandButton { }
+        
+        [SplitButton( "arent3d.architecture.routing.routing.selection.range.routing", TitleKey = "Electrical.App.Panels.Routing.Routing.SelectionRangeRouting" )]
+        private static class SelectionRangeRoutingSplitButton
+        {
+          [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
+          private static class SelectionRangeRouteCommandButton { }
+        
+          [Button( typeof( RoomSelectionRangeRouteCommand ), OnlyInitialized = true )]
+          private static class RoomSelectionRangeRouteCommandButton { } 
+        }
 
         [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]
         private static class InsertPassPointCommandButton { }
@@ -250,6 +261,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof(CreateCylindricalShaftCommand), OnlyInitialized = true )]
         private static class CreateCylindricalShaftCommandButton { }
+        
+        [Button( typeof(AddHSymbolCommand), OnlyInitialized = true )]
+        private static class AddHSymbolCommandButton { }
       }
       [Panel( "arent3d.architecture.routing.monitor", TitleKey = "Electrical.App.Panels.Routing.Monitor" )]
       private static class MonitorPanel

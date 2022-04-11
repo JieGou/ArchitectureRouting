@@ -5,10 +5,9 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Initialization.ChangeToEcoCommand", DefaultString = "Change to Eco" )]
+  [DisplayNameKey( "Electrical.App.Commands.Initialization.LoadDrawingCommand", DefaultString = "Load Drawing" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class ChangeToEcoCommand :  ChangeConduitModeCommandBase
+  public class LoadDrawingCommand :  LoadDrawingCommandBase
   {
-    public ChangeToEcoCommand() => IsEcoMode = true ;
   }
 }

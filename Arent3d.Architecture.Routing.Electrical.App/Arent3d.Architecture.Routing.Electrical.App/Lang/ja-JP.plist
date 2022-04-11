@@ -19,6 +19,8 @@
         <string>From-To</string>
         <key>Electrical.App.Panels.Routing.Routing.Routing</key>
         <string>ルーティング</string>
+        <key>Electrical.App.Panels.Routing.Routing.SelectionRangeRouting</key>
+        <string>選択範囲配線</string>
         <key>Electrical.App.Panels.Routing.Routing.Erase</key>
         <string>削除</string>
 
@@ -110,12 +112,6 @@
         <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>工事区分設定</string>
 
-        <key>Electrical.App.Commands.Initialization.ChangeToEcoCommand</key>
-        <string>エコへ切替</string>
-
-        <key>Electrical.App.Commands.Initialization.ChangeToNormalCommand</key>
-        <string>通常へ切替</string>
-
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
@@ -131,8 +127,14 @@
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>円柱シャフト作成</string>
 
+        <key>Electrical.App.Commands.Shaft.AddHSymbolCommand</key>
+        <string>H記号追加</string>
+
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>選択範囲配線</string>
+
+        <key>Electrical.App.Commands.Routing.SelectionRangeRouteWithHeightAdjustmentCommand</key>
+        <string>選択範囲配線&#xA;高さ調整</string>
 
         <key>Electrical.App.Commands.Initialization.Show3DViewsCommand</key>
         <string>階ごとの3dビュー作成</string>
@@ -192,7 +194,10 @@
         <string>部屋の配線</string>
 
         <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
-        <string>部屋の範囲配線</string>
+        <string>部屋の選択範囲配線</string>
+        
+        <key>Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand</key>
+        <string>エコモード切替</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -352,7 +357,12 @@
 		<key>Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning</key>
         <string>明細記号 {0} には施工区分が混在しています。そのまま明細表作成に進めますか。</string>
 
+        <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.EcoMode</key>
+        <string>エコモード</string>
 
+        <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.NormalMode</key>
+        <string>ノーマルモード</string>
+        
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
         <string>M_電線管エルボ - 鉄鋼</string>

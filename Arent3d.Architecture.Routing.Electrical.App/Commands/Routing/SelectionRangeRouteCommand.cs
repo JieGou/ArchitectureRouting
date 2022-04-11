@@ -5,14 +5,12 @@ using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Routing.SelectionRangeRouteCommand", DefaultString = "Selection Range\nRoute" )]
-  [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
-  [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
+  [Image( "resources/RerouteAll.png" )]
   public class SelectionRangeRouteCommand : SelectionRangeRouteCommandBase
   {
     protected override string GetTransactionNameKey()
