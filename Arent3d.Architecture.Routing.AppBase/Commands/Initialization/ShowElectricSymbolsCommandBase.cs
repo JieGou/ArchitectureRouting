@@ -200,6 +200,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( electricalSchedule == null ) {
         electricalSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
         electricalSchedule.Name = scheduleName ;
+        electricalSchedule.TrySetProperty( ElectricalRoutingElementParameter.ScheduleBaseName, scheduleName ) ;
       }
 
       CreateScheduleData( document, electricalSchedule, electricalSymbolModels ) ;

@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -45,20 +46,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         var selectedElements = selection.PickElementsByRectangle( new ScheduleSheetInstanceFilter(), PickElementMessage ) ;
         if ( ! selectedElements.Any() ) return Result.Succeeded ;
-        var scheduleSheetInstances = new List<ScheduleSheetInstance>() ;
-        foreach ( var element in selectedElements ) {
-          scheduleSheetInstances.Add( (ScheduleSheetInstance) element ) ;
-        }
-
+        var scheduleSheetInstances = selectedElements.Cast<ScheduleSheetInstance>().ToList() ;
         scheduleSheetInstances = DistinctScheduleSheet( scheduleSheetInstances ) ;
-        var scheduleGroups = GetScheduleGroups( document, scheduleSheetInstances ) ;
-        using Transaction transaction = new Transaction( document, TransactionName ) ;
+        using Transaction transaction = new(document, TransactionName) ;
         transaction.Start() ;
-        foreach ( var scheduleGroup in scheduleGroups.Values ) {
-          var result = MergeScheduleSheetInstance( document, scheduleGroup ) ;
-          if ( result != Result.Succeeded ) return result ;
-        }
-
+        var result = MergeScheduleSheetInstance( document, scheduleSheetInstances ) ;
+        if ( result != Result.Succeeded ) return result ;
         transaction.Commit() ;
         return Result.Succeeded ;
       }
@@ -88,173 +81,86 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       return distinctScheduleSheets ;
     }
 
-    private static Dictionary<ElementId, IList<ScheduleSheetInstance>> GetScheduleGroups( Document document, IList<ScheduleSheetInstance> scheduleSheetInstances )
+    private static Result MergeScheduleSheetInstance( Document document, IEnumerable<ScheduleSheetInstance> scheduleSheetInstances )
     {
-      var groups = new Dictionary<ElementId, IList<ScheduleSheetInstance>>() ;
-      foreach ( var scheduleSheetInstance in scheduleSheetInstances ) {
-        if ( document.GetElement( scheduleSheetInstance.ScheduleId ) is not ViewSchedule schedule ) continue ;
-        if ( ! schedule.GetSplitStatus() ) continue ;
-        var groupId = schedule.GetParentScheduleId() ;
-        if ( groupId == null ) continue ;
-        if ( groups.ContainsKey( groupId ) )
-          groups[ groupId ].Add( scheduleSheetInstance ) ;
-        else groups.Add( groupId, new List<ScheduleSheetInstance>() { scheduleSheetInstance } ) ;
+      var sheetInstances = scheduleSheetInstances.ToList() ;
+      var scheduleSheetInstancesByParentIds = sheetInstances.GroupBy( s => ( document.GetElement( s.ScheduleId ) as ViewSchedule )?.GetParentScheduleId() ) ;
+      foreach ( var scheduleSheetInstancesByParentId in scheduleSheetInstancesByParentIds ) {
+        var sortedScheduleSheetInstances = scheduleSheetInstancesByParentId.OrderBy( s => ( document.GetElement( s.ScheduleId ) as ViewSchedule )?.GetSplitIndex() ).ToList() ;
+        var mergedSchedules = MergeMultiplesScheduleSheetInstance( document, sortedScheduleSheetInstances ) ;
+        if ( mergedSchedules == null ) return Result.Failed ;
+        if ( document.GetElement( mergedSchedules.ScheduleId ) is not ViewSchedule mergedViewSchedule ) return Result.Failed ;
+        UpdateInfoOfScheduleHasSameBase( document, mergedViewSchedule ) ;
       }
 
-      var sortedGroups = new Dictionary<ElementId, IList<ScheduleSheetInstance>>() ;
-      foreach ( var groupId in groups.Keys ) {
-        sortedGroups.Add( groupId, groups[ groupId ].OrderBy( s => ( document.GetElement( s.ScheduleId ) as ViewSchedule )?.GetSplitIndex() ).ToList() ) ;
-      }
-
-      return sortedGroups ;
-    }
-
-    private static Result MergeScheduleSheetInstance( Document document, IList<ScheduleSheetInstance> scheduleSheetInstances )
-    {
-      var scheduleLevelDictionary = new Dictionary<int, IList<ScheduleSheetInstance>>() ;
-      foreach ( var scheduleSheetInstance in scheduleSheetInstances ) {
-        if ( document.GetElement( scheduleSheetInstance.ScheduleId ) is not ViewSchedule schedule )
-          continue ;
-        var splitLevel = schedule.GetSplitLevel() ;
-        if ( scheduleLevelDictionary.ContainsKey( splitLevel ) ) {
-          scheduleLevelDictionary[ splitLevel ].Add( scheduleSheetInstance ) ;
-        }
-        else {
-          scheduleLevelDictionary.Add( splitLevel, new List<ScheduleSheetInstance> { scheduleSheetInstance } ) ;
-        }
-      }
-
-      var sortedScheduleLevelDictionary = new Dictionary<int, IList<ScheduleSheetInstance>>() ;
-      foreach ( var groupId in scheduleLevelDictionary.Keys ) {
-        sortedScheduleLevelDictionary.Add( groupId, scheduleLevelDictionary[ groupId ].OrderBy( s => ( document.GetElement( s.ScheduleId ) as ViewSchedule )?.GetSplitIndex() ).ToList() ) ;
-      }
-
-      var sortedKeys = sortedScheduleLevelDictionary.Keys.ToList() ;
-      sortedKeys.Sort() ;
-      var mergedSchedules = new List<ScheduleSheetInstance>() ;
-      for ( int i = sortedKeys.Count - 1 ; i > -1 ; i-- ) {
-        var level = sortedKeys[ i ] ;
-        var schedulesInCurrentLevel = sortedScheduleLevelDictionary[ level ].ToList() ;
-        schedulesInCurrentLevel.AddRange( mergedSchedules ) ;
-        schedulesInCurrentLevel = schedulesInCurrentLevel.OrderBy( s => ( document.GetElement( s.ScheduleId ) as ViewSchedule )?.GetSplitIndex() ).ToList() ;
-        mergedSchedules.Clear() ;
-        for ( int j = 0 ; j < schedulesInCurrentLevel.Count ; j++ ) {
-          var scheduleSheet = schedulesInCurrentLevel[ j ] ;
-          if ( document.GetElement( scheduleSheet.ScheduleId ) is not ViewSchedule schedule ) continue ;
-          var splitIndex = schedule.GetSplitIndex() ;
-          if ( j == schedulesInCurrentLevel.Count - 1 || splitIndex % 2 == 0 ) {
-            schedule.SetSplitLevel( schedule.GetSplitLevel() - 1 ) ;
-            schedule.SetSplitIndex( ( schedule.GetSplitIndex() - 1 ) / 2 ) ;
-            mergedSchedules.Add( scheduleSheet ) ;
-            continue ;
-          }
-
-          if ( splitIndex % 2 == 1 && j < schedulesInCurrentLevel.Count - 1 ) {
-            var nextScheduleSheet = schedulesInCurrentLevel[ j + 1 ] ;
-            if ( document.GetElement( nextScheduleSheet.ScheduleId ) is not ViewSchedule nextSchedule ) continue ;
-            var nextSplitIndex = nextSchedule.GetSplitIndex() ;
-            if ( nextSplitIndex == splitIndex + 1 ) {
-              var (mergeResult, mergedSchedule) = MergeSameLevelScheduleSheetInstance( document, scheduleSheet, nextScheduleSheet ) ;
-              if ( mergeResult != Result.Succeeded ) continue ;
-              mergedSchedules.Add( mergedSchedule! ) ;
-              j++ ;
-            }
-            else {
-              schedule.SetSplitLevel( schedule.GetSplitLevel() - 1 ) ;
-              schedule.SetSplitIndex( ( schedule.GetSplitIndex() - 1 ) / 2 ) ;
-              mergedSchedules.Add( scheduleSheet ) ;
-            }
-          }
-        }
-      }
-
-      if ( mergedSchedules.Count > 1 ) return MergeNotSameLevelSchedules( document, mergedSchedules ) ;
       return Result.Succeeded ;
     }
 
-    private static Result MergeNotSameLevelSchedules( Document document, List<ScheduleSheetInstance> scheduleSheets )
+    private static void UpdateInfoOfScheduleHasSameBase( Document document, ViewSchedule currentSchedule )
     {
-      if ( scheduleSheets.Count < 2 ) return Result.Succeeded ;
-      if ( document.GetElement( scheduleSheets[ 0 ].ScheduleId ) is not ViewSchedule firstSchedule )
-        return Result.Failed ;
-      var firstImageMap = firstSchedule.GetImageMap() ;
-      var firstSessionData = firstSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
+      var allSchedulesHasTheSameBase = new FilteredElementCollector( document ).OfClass( typeof( ViewSchedule ) ).ToElements().ConvertAll( e => (ViewSchedule) e ).Where( s => s.GetScheduleBaseName().Equals( currentSchedule.GetScheduleBaseName() ) ).ToList() ;
+      var sortedSchedulesHasTheSameBase = allSchedulesHasTheSameBase.OrderBy( s => ( document.GetElement( s.Id ) as ViewSchedule )?.GetSplitIndex() ).ToList() ;
+      var splitLevel = allSchedulesHasTheSameBase.Count ;
+      if ( splitLevel <= 1 ) {
+        var schedule = sortedSchedulesHasTheSameBase.First() ;
+        schedule.SetSplitIndex( 0 ) ;
+        schedule.SetSplitLevel( 1 ) ;
+        schedule.Name = schedule.GetScheduleBaseName() ;
+      }
+      else {
+        for ( var i = 0 ; i < splitLevel ; i++ ) {
+          var splitIndex = i + 1 ;
+          var schedule = sortedSchedulesHasTheSameBase[ i ] ;
+          schedule.SetSplitIndex( splitIndex ) ;
+          schedule.SetSplitLevel( splitLevel ) ;
+          schedule.Name = schedule.GetScheduleBaseName() + " " + splitIndex + "/" + splitLevel ;
+        }
+      }
+    }
+
+
+    private static ScheduleSheetInstance? MergeMultiplesScheduleSheetInstance( Document document, IReadOnlyList<ScheduleSheetInstance> scheduleSheetInstances )
+    {
+      var firstScheduleSheet = scheduleSheetInstances.First() ;
+      if ( document.GetElement( firstScheduleSheet.ScheduleId ) is not ViewSchedule firstViewSchedule ) return null ;
+
+      var imageMap = firstViewSchedule.GetImageMap() ;
+      var firstSessionData = firstViewSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
       var firstSessionDataRowCount = firstSessionData.NumberOfRows ;
       var firstSessionDataColumnCount = firstSessionData.NumberOfColumns ;
-      var headerRowCount = firstSchedule.GetScheduleHeaderRowCount() ;
-      for ( int i = 1 ; i < scheduleSheets.Count ; i++ ) {
-        if ( document.GetElement( scheduleSheets[ i ].ScheduleId ) is not ViewSchedule schedule )
-          return Result.Failed ;
-        var imageMap = schedule.GetImageMap() ;
-        var sectionData = schedule.GetTableData().GetSectionData( SectionType.Header ) ;
+      var headerRowCount = firstViewSchedule.GetScheduleHeaderRowCount() ;
+
+      for ( var i = 1 ; i < scheduleSheetInstances.Count ; i++ ) {
+        var nextScheduleSheet = scheduleSheetInstances[ i ] ;
+        if ( document.GetElement( nextScheduleSheet.ScheduleId ) is not ViewSchedule nextViewSchedule ) return null ;
+        var secondImageMap = nextViewSchedule.GetImageMap() ;
+        var sectionData = nextViewSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
         var rowCount = sectionData.NumberOfRows ;
         var columnCount = Math.Min( sectionData.NumberOfColumns, firstSessionDataColumnCount ) ;
-        for ( int row = headerRowCount ; row < rowCount ; row++ ) {
+        for ( var row = headerRowCount ; row < rowCount ; row++ ) {
           firstSessionData.InsertRow( firstSessionDataRowCount ) ;
           firstSessionData.SetRowHeight( firstSessionDataRowCount, sectionData.GetRowHeight( row ) ) ;
-          for ( int column = 0 ; column < columnCount ; column++ ) {
+          for ( var column = 0 ; column < columnCount ; column++ ) {
             var mergedCell = sectionData.GetMergedCell( row, column ) ;
             if ( mergedCell.Top == row && mergedCell.Left == column && ( mergedCell.Top != mergedCell.Bottom || mergedCell.Left != mergedCell.Right ) )
               firstSessionData.MergeCells( new TableMergedCell( firstSessionDataRowCount + mergedCell.Top - row, mergedCell.Left, firstSessionDataRowCount + mergedCell.Bottom - row, mergedCell.Right ) ) ;
             firstSessionData.SetCellText( firstSessionDataRowCount, column, sectionData.GetCellText( row, column ) ) ;
             firstSessionData.SetCellStyle( firstSessionDataRowCount, column, sectionData.GetTableCellStyle( row, column ) ) ;
             firstSessionData.SetCellType( firstSessionDataRowCount, column, sectionData.GetCellType( row, column ) ) ;
-            if ( imageMap.ContainsKey( ( row, column ) ) ) {
-              firstSessionData.InsertImage( firstSessionDataRowCount, column, imageMap[ ( row, column ) ] ) ;
-              firstImageMap.Add( ( firstSessionDataRowCount, column ), imageMap[ ( row, column ) ] ) ;
-            }
+            if ( ! secondImageMap.ContainsKey( ( row, column ) ) ) continue ;
+            firstSessionData.InsertImage( firstSessionDataRowCount, column, secondImageMap[ ( row, column ) ] ) ;
+            imageMap.Add( ( firstSessionDataRowCount, column ), secondImageMap[ ( row, column ) ] ) ;
           }
 
           firstSessionDataRowCount++ ;
         }
 
-        document.Delete( schedule.Id ) ;
+        document.Delete( nextViewSchedule.Id ) ;
+        firstViewSchedule.SetImageMap( imageMap ) ;
+        firstViewSchedule.SetSplitLevel( firstViewSchedule.GetSplitLevel() - 1 ) ;
       }
 
-      firstSchedule.SetImageMap( firstImageMap ) ;
-      return Result.Succeeded ;
-    }
-
-    private static (Result, ScheduleSheetInstance?) MergeSameLevelScheduleSheetInstance( Document document, ScheduleSheetInstance firstScheduleSheet, ScheduleSheetInstance secondScheduleSheet )
-    {
-      if ( document.GetElement( firstScheduleSheet.ScheduleId ) is not ViewSchedule firstSchedule )
-        return ( Result.Failed, null ) ;
-
-      var imageMap = firstSchedule.GetImageMap() ;
-      var firstSessionData = firstSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
-      var firstSessionDataRowCount = firstSessionData.NumberOfRows ;
-      var firstSessionDataColumnCount = firstSessionData.NumberOfColumns ;
-      var headerRowCount = firstSchedule.GetScheduleHeaderRowCount() ;
-      if ( document.GetElement( secondScheduleSheet.ScheduleId ) is not ViewSchedule secondSchedule )
-        return ( Result.Failed, null ) ;
-      var secondImageMap = secondSchedule.GetImageMap() ;
-      var sectionData = secondSchedule.GetTableData().GetSectionData( SectionType.Header ) ;
-      var rowCount = sectionData.NumberOfRows ;
-      var columnCount = Math.Min( sectionData.NumberOfColumns, firstSessionDataColumnCount ) ;
-      for ( int row = headerRowCount ; row < rowCount ; row++ ) {
-        firstSessionData.InsertRow( firstSessionDataRowCount ) ;
-        firstSessionData.SetRowHeight( firstSessionDataRowCount, sectionData.GetRowHeight( row ) ) ;
-        for ( int column = 0 ; column < columnCount ; column++ ) {
-          var mergedCell = sectionData.GetMergedCell( row, column ) ;
-          if ( mergedCell.Top == row && mergedCell.Left == column && ( mergedCell.Top != mergedCell.Bottom || mergedCell.Left != mergedCell.Right ) )
-            firstSessionData.MergeCells( new TableMergedCell( firstSessionDataRowCount + mergedCell.Top - row, mergedCell.Left, firstSessionDataRowCount + mergedCell.Bottom - row, mergedCell.Right ) ) ;
-          firstSessionData.SetCellText( firstSessionDataRowCount, column, sectionData.GetCellText( row, column ) ) ;
-          firstSessionData.SetCellStyle( firstSessionDataRowCount, column, sectionData.GetTableCellStyle( row, column ) ) ;
-          firstSessionData.SetCellType( firstSessionDataRowCount, column, sectionData.GetCellType( row, column ) ) ;
-          if ( secondImageMap.ContainsKey( ( row, column ) ) ) {
-            firstSessionData.InsertImage( firstSessionDataRowCount, column, secondImageMap[ ( row, column ) ] ) ;
-            imageMap.Add( ( firstSessionDataRowCount, column ), secondImageMap[ ( row, column ) ] ) ;
-          }
-        }
-
-        firstSessionDataRowCount++ ;
-      }
-
-      document.Delete( secondSchedule.Id ) ;
-      firstSchedule.SetImageMap( imageMap ) ;
-      firstSchedule.SetSplitLevel( firstSchedule.GetSplitLevel() - 1 ) ;
-      firstSchedule.SetSplitIndex( ( firstSchedule.GetSplitIndex() - 1 ) / 2 ) ;
-      return ( Result.Succeeded, firstScheduleSheet ) ;
+      return firstScheduleSheet ;
     }
   }
 }

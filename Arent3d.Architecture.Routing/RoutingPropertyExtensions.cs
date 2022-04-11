@@ -134,6 +134,10 @@ namespace Arent3d.Architecture.Routing
     [ParameterGuid( "24dcc21e-807b-4562-9e65-a8289a6599d4" ), NameOnRevit( "Parent Schedule Id" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
     ParentScheduleId,
+    
+    [ParameterGuid( "9dcb1465-2f98-4542-9bdd-550694d97a48" ), NameOnRevit( "Schedule Base Name" )]
+    [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]
+    ScheduleBaseName,
 
     [ParameterGuid( "63c05fcb-fba0-4502-903a-4f713c0e6cb8" ), NameOnRevit( "Image Cell Map" )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ScheduleElements ) )]

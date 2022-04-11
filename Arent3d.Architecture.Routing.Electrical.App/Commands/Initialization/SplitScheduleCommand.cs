@@ -74,7 +74,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         if ( document.GetElement( schedule.Duplicate( ViewDuplicateOption.Duplicate ) ) is not ViewSchedule cloneSchedule )
           return Result.Failed ;
-        var (newName, oldName) = GetNewScheduleName( document, schedule.Name ) ;
+        var (newName, oldName) = GetNewScheduleName( schedule ) ;
         try {
           cloneSchedule.Name = newName ;
         }
@@ -88,13 +88,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         var (topIndex, bottomIndex) = GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBox, pickedBox, splitFromRow ) ;
 
         var numberOfRows = schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
-        for ( int i = numberOfRows - 1 ; i >= 0 ; i-- ) {
+        for ( var i = numberOfRows - 1 ; i >= 0 ; i-- ) {
           if ( i >= topIndex && i <= bottomIndex )
             schedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
         }
 
         numberOfRows = cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
-        for ( int i = numberOfRows - 1 ; i >= splitFromRow - 1 ; i-- ) {
+        for ( var i = numberOfRows - 1 ; i >= splitFromRow - 1 ; i-- ) {
           if ( i < topIndex || i > bottomIndex )
             cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
         }
@@ -106,6 +106,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         schedule.SetImageMap( firstImageMap ) ;
         cloneSchedule.SetImageMap( secondImageMap ) ;
         SetSplitInformation( schedule, cloneSchedule ) ;
+        UpdateOtherSchedule( document, schedule, cloneSchedule ) ;
         transaction.Commit() ;
 
         return Result.Succeeded ;
@@ -133,29 +134,58 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
-    private static void SetSplitInformation( ViewSchedule schedule, ViewSchedule cloneSchedule )
+    private static (string NewScheduleName, string OldScheduleName) GetNewScheduleName( ViewSchedule oldSchedule )
     {
-      var currentSplitIndex = schedule.GetSplitIndex() ;
-      var splitLevel = schedule.GetSplitLevel() + 1 ;
-      var parentScheduleId = schedule.GetParentScheduleId() ?? schedule.Id ;
-      schedule.SetSplitStatus( true ) ;
-      schedule.SetSplitIndex( 2 * currentSplitIndex + 1 ) ;
-      schedule.SetParentScheduleId( parentScheduleId ) ;
-      schedule.SetSplitLevel( splitLevel ) ;
-
-      cloneSchedule.SetSplitStatus( true ) ;
-      cloneSchedule.SetSplitIndex( 2 * currentSplitIndex + 2 ) ;
-      cloneSchedule.SetParentScheduleId( parentScheduleId ) ;
-      cloneSchedule.SetSplitLevel( splitLevel ) ;
+      var currentSplitIndex = oldSchedule.GetSplitIndex() <= 0 ? 1 : oldSchedule.GetSplitIndex() ;
+      var newSplitIndex = currentSplitIndex + 1 ;
+      var currentSplitLevel = oldSchedule.GetSplitLevel() <= 0 ? 1 : oldSchedule.GetSplitLevel() ;
+      var scheduleBaseName = oldSchedule.GetScheduleBaseName() ;
+      var newSplitLevel = currentSplitLevel + 1 ;
+      var oldScheduleName = scheduleBaseName + " " + currentSplitIndex + "/" + newSplitLevel ;
+      var newScheduleName = scheduleBaseName + " " + newSplitIndex + "/" + newSplitLevel ;
+      return ( newScheduleName, oldScheduleName ) ;
     }
 
-    private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXyz, PickedBox pickedBox, int splitFromRow )
+    private static void SetSplitInformation( ViewSchedule currentSchedule, ViewSchedule newSchedule )
+    {
+      var currentSplitIndex = currentSchedule.GetSplitIndex() <= 0 ? 1 : currentSchedule.GetSplitIndex() ;
+      var currentSplitLevel = currentSchedule.GetSplitLevel() <= 0 ? 1 : currentSchedule.GetSplitLevel() ;
+      var newSplitLevel = currentSplitLevel + 1 ;
+      var parentScheduleId = currentSchedule.GetParentScheduleId() ?? currentSchedule.Id ;
+      currentSchedule.SetSplitStatus( true ) ;
+      currentSchedule.SetParentScheduleId( parentScheduleId ) ;
+      currentSchedule.SetSplitLevel( newSplitLevel ) ;
+      currentSchedule.SetSplitIndex( currentSplitIndex ) ;
+
+      newSchedule.SetSplitStatus( true ) ;
+      newSchedule.SetSplitIndex( currentSplitIndex + 1 ) ;
+      newSchedule.SetParentScheduleId( parentScheduleId ) ;
+      newSchedule.SetSplitLevel( newSplitLevel ) ;
+      newSchedule.SetSplitIndex( currentSplitIndex + 1 ) ;
+    }
+
+    private static void UpdateOtherSchedule( Document document, ViewSchedule currentSchedule, ViewSchedule newSchedule )
+    {
+      var allSchedules = new FilteredElementCollector( document).OfClass( typeof( ViewSchedule ) ).ToElements().ConvertAll( e => (ViewSchedule) e ).Where( s => s.GetScheduleBaseName().Equals( currentSchedule.GetScheduleBaseName() ) ).ToList() ;
+      var otherSchedules = allSchedules.Where( s => s.UniqueId != currentSchedule.UniqueId && s.UniqueId != newSchedule.UniqueId ).ToList() ;
+      var newSplitLevel = allSchedules.Count ;
+      foreach ( var schedule in otherSchedules ) {
+        var splitIndex = schedule.GetSplitIndex() <= 0 ? 1 : schedule.GetSplitIndex() ;
+        var newSplitIndex = splitIndex ;
+        if ( splitIndex > currentSchedule.GetSplitIndex() ) newSplitIndex += 1 ;
+        schedule.SetSplitIndex( newSplitIndex ) ;
+        schedule.SetSplitLevel( newSplitLevel ) ;
+        schedule.Name = schedule.GetScheduleBaseName() + " " + newSplitIndex + "/" + newSplitLevel ;
+      }
+    }
+
+    private static (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXyz, PickedBox pickedBox, int splitFromRow )
     {
       var heightTable = boxXyz.Max.Y ;
       var topIndex = splitFromRow - 1 ;
       var bottomIndex = sectionData.NumberOfRows - 1 ;
 
-      for ( int i = 0 ; i < sectionData.NumberOfRows ; i++ ) {
+      for ( var i = 0 ; i < sectionData.NumberOfRows ; i++ ) {
         heightTable -= sectionData.GetRowHeight( i ) ;
 
         var old = heightTable + sectionData.GetRowHeight( i ) ;
@@ -167,22 +197,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
 
       return ( topIndex, bottomIndex ) ;
-    }
-
-    private (string NewScheduleName, string OldScheduleName) GetNewScheduleName( Document document, string oldScheduleName )
-    {
-      var prefix = "Splited-" ;
-      var pattern = @$"{prefix}(\d+)$" ;
-      var match = Regex.Match( oldScheduleName, pattern ) ;
-      var scheduleNames = document.GetAllElements<ViewSchedule>().Select( x => x.Name ) ;
-
-      if ( match.Success ) {
-        var start = Regex.Split( oldScheduleName, match.Value ).First() ;
-        var count = scheduleNames.Where( x => Regex.IsMatch( x, $"{start}{pattern}" ) ).Count() ;
-        return ( $"{start}{prefix}{count + 1}", oldScheduleName ) ;
-      }
-
-      return ( $"{oldScheduleName} {prefix}2", $"{oldScheduleName} {prefix}1" ) ;
     }
   }
 }
