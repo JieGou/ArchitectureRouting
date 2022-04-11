@@ -23,17 +23,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     private const string NormalModeDefaultString = "Normal Mode" ;
     public static readonly DependencyProperty EcoNormalModeComboBoxIndexProperty = DependencyProperty.Register( "EcoNormalModeComboBoxIndex", typeof( int ), typeof( SwitchEcoNormalModeDialog ), new PropertyMetadata( 1 ) ) ;
 
-    public SwitchEcoNormalModeDialog( UIApplication uiApplication, bool? isProjectInEcoMode ) : base( uiApplication )
+    public SwitchEcoNormalModeDialog( UIApplication uiApplication ) : base( uiApplication )
     {
       InitializeComponent() ;
-      if ( isProjectInEcoMode != null )
-        EcoNormalModeComboBox.SelectedIndex = isProjectInEcoMode == true ? 0 : 1 ;
+      EcoNormalModeComboBox.SelectedIndex = 0 ;
     }
 
     public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string>
     {
-      [ EcoNormalMode.EcoMode ] = EcoModeKey.GetAppStringByKeyOrDefault(EcoModeDefaultString), 
       [ EcoNormalMode.NormalMode ] = NormalModeKey.GetAppStringByKeyOrDefault(NormalModeDefaultString),
+      [ EcoNormalMode.EcoMode ] = EcoModeKey.GetAppStringByKeyOrDefault(EcoModeDefaultString)
     } ;
 
     public bool? ApplyForProject ;

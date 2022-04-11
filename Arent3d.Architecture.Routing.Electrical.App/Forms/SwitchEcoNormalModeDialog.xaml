@@ -36,7 +36,7 @@
             </ComboBox.Style>
         </ComboBox>
         <Button Grid.Row="0" Grid.Column="1"
-                Content="プロジェクト変更"
+                Content="全体変更"
                 Click="Button_BtnApplyForProject_Click"
                 Margin="10,15,0,5"
                 HorizontalAlignment="Left"
@@ -50,7 +50,7 @@
                 Width="100" />
 
         <Button Grid.Row="2" Grid.Column="1"
-                Content="Cancel"
+                Content="キャンセル"
                 Click="Button_Cancel_Click"
                 Margin="10,5,0,5"
                 HorizontalAlignment="Left"

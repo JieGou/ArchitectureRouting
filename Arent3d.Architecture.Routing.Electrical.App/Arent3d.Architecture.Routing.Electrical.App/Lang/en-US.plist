@@ -46,6 +46,9 @@
         <key>Electrical.App.Panels.Routing.RackCommand</key>
         <string>Rack</string>
 
+        <key>Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand</key>
+        <string>Switch Eco&#xA;Normal Mode</string>
+
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>
         <string>Insert&#xA;Branch Point</string>

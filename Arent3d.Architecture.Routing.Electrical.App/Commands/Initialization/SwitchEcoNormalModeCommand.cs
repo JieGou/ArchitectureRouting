@@ -12,7 +12,6 @@ using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
-using Autodesk.Revit.DB.ExtensibleStorage ;
 using Autodesk.Revit.UI ;
 using ImageType = Arent3d.Revit.UI.ImageType ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
@@ -21,13 +20,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand",
-    DefaultString = "Switch EcoNormal Mode" )]
+    DefaultString = "Switch Eco\nNormal Mode" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class SwitchEcoNormalModeCommand : IExternalCommand
   {
-    private const string SchemaGuid = "DA4AAE5A-4EE1-45A8-B3E8-F790C84CC44F" ;
-    private const string IsEcoFieldName = "IsEco" ;
-    private const string EcoNormalModeSchema = "EcoNormalModeSchema" ;
     private const string TransactionName = "Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand" ;
     private const string DialogResultSuccessKey = "Dialog.Electrical.ChangeMode.Success" ;
     private const string DialogResultTitleKey = "Dialog.Electrical.ChangeMode.Title" ;
@@ -44,14 +40,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       try {
         var uiDocument = commandData.Application.ActiveUIDocument ;
         var document = uiDocument.Document ;
-        var isEcoMode = IsProjectInEcoMode( document ) ;
-        var dialog = new SwitchEcoNormalModeDialog( commandData.Application, isEcoMode ) ;
+        var dialog = new SwitchEcoNormalModeDialog( commandData.Application ) ;
         dialog.ShowDialog() ;
-        if ( dialog.DialogResult == false ) return Result.Cancelled ;
-        isEcoMode = dialog.SelectedMode == EcoNormalMode.EcoMode ;
-        return dialog.ApplyForProject == true
-          ? SwitchModeForProject( document, ref message, isEcoMode ?? false )
-          : SwitchModeForRange( commandData, ref message, isEcoMode ?? false ) ;
+        {
+          if ( dialog.DialogResult == false ) return Result.Cancelled ;
+          bool? isEcoMode = dialog.SelectedMode == EcoNormalMode.EcoMode ;
+          return dialog.ApplyForProject == true ? SwitchModeForProject( document, ref message, isEcoMode ?? false ) : SwitchModeForRange( commandData, ref message, isEcoMode ?? false ) ;
+        }
       }
       catch ( OperationCanceledException ) {
         return Result.Cancelled ;
@@ -62,50 +57,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
     }
 
-    private static void SetEcoNormalModeForProject( Document document, bool isEco )
-    {
-      var schemaBuilder = new SchemaBuilder( new Guid( SchemaGuid ) ) ;
-      schemaBuilder.SetSchemaName( EcoNormalModeSchema ) ;
-      schemaBuilder.AddSimpleField( IsEcoFieldName, typeof( bool ) ) ;
-      var schema = schemaBuilder.Finish() ;
-      var entity = new Entity( schema ) ;
-      entity.Set( IsEcoFieldName, isEco ) ;
-      document.ProjectInformation.SetEntity( entity ) ;
-    }
-
-    private static bool? IsProjectInEcoMode( Document document )
-    {
-      try {
-        var schema = Schema.Lookup( new Guid( SchemaGuid ) ) ;
-        var entity = document.ProjectInformation.GetEntity( schema ) ;
-        return entity?.Get<bool>( IsEcoFieldName ) ;
-      }
-      catch {
-        return null ;
-      }
-    }
-
     private static IList<Element> GetAllConduitInProject( Document document )
     {
-      var familyInstances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).ToElements()
-        .ToList() ;
+      var familyInstances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).ToElements().ToList() ;
       var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) ).ToElements().ToList() ;
       var allConduits = familyInstances.Concat( conduits ).ToList() ;
-      allConduits = allConduits
-        .Where( elem => BuiltInCategorySets.ConnectorsAndConduits.Contains( elem.GetBuiltInCategory() ) ).ToList() ;
+      allConduits = allConduits.Where( elem => BuiltInCategorySets.ConnectorsAndConduits.Contains( elem.GetBuiltInCategory() ) ).ToList() ;
       var listApplyConduit = ConduitUtil.GetConduitRelated( document, allConduits ) ;
       return listApplyConduit ;
     }
 
     private static IList<Element> GetAllConnectorInProject( Document document )
     {
-      var familyInstances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).ToElements()
-        .ToList() ;
+      var familyInstances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).ToElements().ToList() ;
       var textNotes = new FilteredElementCollector( document ).OfClass( typeof( TextNote ) ).ToElements().ToList() ;
       var connectorList = familyInstances.Concat( textNotes ).ToList() ;
-      connectorList = connectorList.Where( elem =>
-        elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ||
-        elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ).ToList() ;
+      connectorList = connectorList.Where( elem => elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ).ToList() ;
       return connectorList ;
     }
 
@@ -120,13 +87,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       transaction.SetFailureHandlingOptions( failureOptions ) ;
       SetModeForConduit( conduitList, isEcoMode ) ;
       SetModeForConnector( connectorList, isEcoMode, document ) ;
-      SetEcoNormalModeForProject( document, isEcoMode ) ;
       transaction.Commit() ;
-      MessageBox.Show(
-        string.IsNullOrEmpty( message )
-          ? DialogResultSuccessKey.GetAppStringByKeyOrDefault( UpdateDataSuccessMessage )
-          : message, DialogResultTitleKey.GetAppStringByKeyOrDefault( ElectricalChangeModeTitle ),
-        MessageBoxButtons.OK ) ;
+      MessageBox.Show( string.IsNullOrEmpty( message ) ? DialogResultSuccessKey.GetAppStringByKeyOrDefault( UpdateDataSuccessMessage ) : message, DialogResultTitleKey.GetAppStringByKeyOrDefault( ElectricalChangeModeTitle ), MessageBoxButtons.OK ) ;
       return Result.Succeeded ;
     }
 
@@ -134,19 +96,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
-      MessageBox.Show( SelectElementDialogMessageKey.GetAppStringByKeyOrDefault( SelectRangeMessage ),
-        SelectElementDialogTitleKey.GetAppStringByKeyOrDefault( DialogMessageTitle ), MessageBoxButtons.OK ) ;
-      var selectedElements = uiDocument.Selection
-        .PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" )
-        .Where( p => p is FamilyInstance or Conduit or CableTray ).ToList() ;
-      var conduitList = selectedElements.Where( elem =>
-        BuiltInCategorySets.ConnectorsAndConduits.Contains( elem.GetBuiltInCategory() ) &&
-        elem is FamilyInstance or Conduit ).ToList() ;
-      var connectorList = selectedElements.Where( elem =>
-          ( elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures ||
-            elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ) &&
-          elem is FamilyInstance or TextNote )
-        .ToList() ;
+      MessageBox.Show( SelectElementDialogMessageKey.GetAppStringByKeyOrDefault( SelectRangeMessage ), SelectElementDialogTitleKey.GetAppStringByKeyOrDefault( DialogMessageTitle ), MessageBoxButtons.OK ) ;
+      var selectedElements = uiDocument.Selection.PickElementsByRectangle( ConduitWithStartEndSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is FamilyInstance or Conduit or CableTray ).ToList() ;
+      var conduitList = selectedElements.Where( elem => BuiltInCategorySets.ConnectorsAndConduits.Contains( elem.GetBuiltInCategory() ) && elem is FamilyInstance or Conduit ).ToList() ;
+      var connectorList = selectedElements.Where( elem => ( elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalFixtures || elem.GetBuiltInCategory() == BuiltInCategory.OST_ElectricalEquipment ) && elem is FamilyInstance or TextNote ).ToList() ;
       if ( ! conduitList.Any() && ! connectorList.Any() ) message = NoItemSelectedMessage ;
 
       var listApplyConduit = ConduitUtil.GetConduitRelated( document, conduitList ) ;
@@ -159,11 +112,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       SetModeForConnector( connectorList, isEcoMode, document ) ;
       transaction.Commit() ;
 
-      MessageBox.Show(
-        string.IsNullOrEmpty( message )
-          ? DialogResultSuccessKey.GetAppStringByKeyOrDefault( UpdateDataSuccessMessage )
-          : message, DialogResultTitleKey.GetAppStringByKeyOrDefault( ElectricalChangeModeTitle ),
-        MessageBoxButtons.OK ) ;
+      MessageBox.Show( string.IsNullOrEmpty( message ) ? DialogResultSuccessKey.GetAppStringByKeyOrDefault( UpdateDataSuccessMessage ) : message, DialogResultTitleKey.GetAppStringByKeyOrDefault( ElectricalChangeModeTitle ), MessageBoxButtons.OK ) ;
       return Result.Succeeded ;
     }
 
