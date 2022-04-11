@@ -55,6 +55,7 @@
             <HintPath>$(RevitPath)AdWindows.dll</HintPath>
             <Private>false</Private>
         </Reference>
+        <Reference Include="System.Windows.Forms" />
     </ItemGroup>
 
     <ItemGroup>
@@ -91,12 +92,19 @@
         <Resource Include="resources\rack.png" />
         <Resource Include="resources\shaft_02.png" />
         <None Remove="resources\split_schedule_32x32.png" />
+        <None Remove="resources\folder_16x16.png" />
+        <Resource Include="resources\icon_folder_16x16.png" />
     </ItemGroup>
 
     <ItemGroup>
         <Compile Update="RoutingAppUI.Components.cs">
             <DependentUpon>RoutingAppUI.cs</DependentUpon>
         </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.Windows.Interactivity.WPF" Version="2.0.20525" />
+      <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
     </ItemGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
