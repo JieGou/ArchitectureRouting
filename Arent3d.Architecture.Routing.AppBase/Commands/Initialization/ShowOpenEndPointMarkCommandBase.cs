@@ -19,11 +19,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var document = commandData.Application.ActiveUIDocument.Document ;
       try {
         return document.Transaction(
-          "TransactionName.Commands.Routing.ConfirmUnset".GetAppStringByKeyOrDefault( "Confirm Not Connect" ), _ =>
+          "TransactionName.Commands.Routing.ShowOpenEndPointMark".GetAppStringByKeyOrDefault( "Show Open End Point Mark" ), _ =>
           {
-            if ( ! HideOpenEndPointMarks( document ) )
+            var openEndPointMarkInstanceIds = GetExistedOpenEndPointMarkInstanceIds( document ) ;
+            if ( openEndPointMarkInstanceIds.Count > 0 )
+              document.Delete( openEndPointMarkInstanceIds ) ; // remove marks are displaying
+            else
               CreateOpenEndPointMarkForNotConnectedConnector( document ) ;
-
             return Result.Succeeded ;
           } ) ;
       }
@@ -36,7 +38,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private static void CreateOpenEndPointMarkForNotConnectedConnector( Document document )
     {
       var missingConnectors = new List<Connector>() ;
-      // check conduits
       var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
         .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
@@ -45,28 +46,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( ! IsMissingConnector( allConnectors, conduit, true ) ) {
           var from = conduit.GetRoutingConnectors( true ).FirstOrDefault() ;
           if ( from != null )
-            connectors = connectors.Where( connector => ! Equal( connector.Origin, from.Origin ) ).ToList() ;
+            connectors = connectors.Where( connector => ! IsAlmostEqual( connector.Origin, from.Origin ) ).ToList() ;
         }
 
         if ( ! IsMissingConnector( allConnectors, conduit, false ) ) {
           var to = conduit.GetRoutingConnectors( false ).FirstOrDefault() ;
           if ( to != null )
-            connectors = connectors.Where( connector => ! Equal( connector.Origin, to.Origin ) ).ToList() ;
+            connectors = connectors.Where( connector => ! IsAlmostEqual( connector.Origin, to.Origin ) ).ToList() ;
         }
 
         missingConnectors.AddRange( connectors.Where( connector =>
           connector is { IsConnected: false } &&
-          ! missingConnectors.Any( item => item != null && Equal( item.Origin, connector.Origin ) ) ) ) ;
+          ! missingConnectors.Any( item => item != null && IsAlmostEqual( item.Origin, connector.Origin ) ) ) ) ;
       }
 
       if ( ! missingConnectors.Any() ) return ;
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.OpenEndPointMark ).FirstOrDefault() ??
                    throw new InvalidOperationException() ;
       foreach ( var connector in missingConnectors )
-        GenerateMark( document, symbol, connector ) ;
+        GenerateOpenEndPointMark( document, symbol, connector ) ;
     }
 
-    private static void GenerateMark( Document document, FamilySymbol symbol, Connector connector )
+    private static void GenerateOpenEndPointMark( Document document, FamilySymbol symbol, Connector connector )
     {
       var level = ( connector.Owner as Conduit )!.ReferenceLevel ;
       var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
@@ -74,7 +75,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         StructuralType.NonStructural ) ;
     }
 
-    private static bool Equal( XYZ a, XYZ b )
+    private static bool IsAlmostEqual( XYZ a, XYZ b )
     {
       return Math.Abs( a.X - b.X ) <= GeometryUtil.Tolerance && Math.Abs( a.Y - b.Y ) <= GeometryUtil.Tolerance &&
              Math.Abs( a.Z - b.Z ) <= GeometryUtil.Tolerance ;
@@ -90,14 +91,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
              allConnectors.All( c => c.UniqueId != fromElementUniqueId ) ;
     }
 
-    private static bool HideOpenEndPointMarks( Document document )
+    private static List<ElementId> GetExistedOpenEndPointMarkInstanceIds( Document document )
     {
       var fallMarkSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.OpenEndPointMark ) ??
                             throw new InvalidOperationException() ;
-      var fallMarkIds = document.GetAllFamilyInstances( fallMarkSymbols ).Select( item => item.Id ).ToList() ;
-      if ( fallMarkIds.Count == 0 ) return false ;
-      document.Delete( fallMarkIds ) ;
-      return true ;
+      return document.GetAllFamilyInstances( fallMarkSymbols ).Select( item => item.Id ).ToList() ;
     }
   }
 }
