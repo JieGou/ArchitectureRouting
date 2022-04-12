@@ -2,7 +2,6 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -13,107 +12,187 @@ namespace Arent3d.Architecture.Routing.AppBase
   {
     public const double Tolerance = 0.0001 ;
 
-    private static IList<Element> IntersectElements( this (XYZ Elbow, XYZ End) leader, Document document, BuiltInCategory builtInCategory )
+    public static IList<Curve> GetCurvesAfterIntersection( ViewPlan viewPlan, IList<Curve> bodyDirections)
     {
-      var (minHeight, maxHeight) = GetHeightRange( document ) ;
-      if ( minHeight.Equals( maxHeight ) )
-        return new List<Element>() ;
+      var elevation = viewPlan.GenLevel.Elevation ;
+      var classFilter2Ds = new ElementMulticlassFilter( new List<Type> { typeof( Wire ), typeof( TextNote ) } ) ;
+      var classFilter3Ds = new ElementMulticlassFilter( new List<Type> { typeof( CableTray ), typeof( Conduit ), typeof( FamilyInstance ) } ) ;
+      var outlineCurve = GetOutlineFromCurve( viewPlan, bodyDirections.Select( x => x.Tessellate() ).SelectMany( x => x ).ToList() ) ;
+      var boxFilter = new BoundingBoxIntersectsFilter( outlineCurve ) ;
 
-      var minOutline = new XYZ( Math.Min( leader.Elbow.X, leader.End.X ), Math.Min( leader.Elbow.Y, leader.End.Y ), minHeight ) ;
-      var maxOutline = new XYZ( Math.Max( leader.Elbow.X, leader.End.X ), Math.Max( leader.Elbow.Y, leader.End.Y ), maxHeight ) ;
+      var element2Ds = new FilteredElementCollector( viewPlan.Document, viewPlan.Id ).WherePasses( classFilter2Ds ).ToElements() ;
+      var element3Ds = new FilteredElementCollector( viewPlan.Document, viewPlan.Id ).WherePasses( new LogicalAndFilter( classFilter3Ds, boxFilter ) ).ToElements().Where( x => x is FamilyInstance familyInstance && ( familyInstance.MEPModel?.ConnectorManager?.Connectors?.Size ?? 0 ) > 0 || true ) ;
+      
+      var viewDirection = viewPlan.ViewDirection ;
+      var curveIntersects = new List<Curve>( bodyDirections ) ;
 
-      var intersectFilter = new BoundingBoxIntersectsFilter( new Outline( minOutline, maxOutline ) ) ;
-      var categoryFilter = new ElementCategoryFilter( builtInCategory ) ;
-      var logicalAndFilter = new LogicalAndFilter( intersectFilter, categoryFilter ) ;
-      var elements = new FilteredElementCollector( document, document.ActiveView.Id ).WherePasses( logicalAndFilter ).ToElements().ToList() ;
+      foreach ( var element2D in element2Ds ) {
+        var boxElement2D = element2D.get_BoundingBox( viewPlan ) ;
+        var outlineElement2D = new Outline( new XYZ( boxElement2D.Min.X, boxElement2D.Min.Y, elevation ), new XYZ( boxElement2D.Max.X, boxElement2D.Max.Y, elevation ) ) ;
+        if ( ! outlineCurve.Intersects( outlineElement2D, 0d ) ) continue ;
 
-      return elements ;
+        CurveLoop? curveLoopOrigin = null ;
+        CurveLoop? curveLoopOffset = null ;
+        Line? locationElement = null ;
+        switch ( element2D ) {
+          case TextNote textNote :
+            var outline = GetOutlineTextNote( textNote ) ;
+            curveLoopOffset = CurveLoop.CreateViaTransform( outline, Transform.CreateTranslation( viewDirection * ( elevation - textNote.Coord.Z ) ) ) ;
+            break ;
+          case Wire wire :
+            if ( wire.Location is not LocationCurve { Curve: Line line } )
+              continue ;
+
+            if ( line.Length <= viewPlan.Document.Application.ShortCurveTolerance )
+              continue ;
+
+            locationElement = line.Clone() as Line ;
+            curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 400d.MillimetersToRevitUnits(), viewDirection ) ;
+            break ;
+        }
+
+        if ( null != curveLoopOffset && curveIntersects.Any() )
+          curveIntersects = GetCurvesIntersectSolid( viewPlan, curveLoopOrigin, curveLoopOffset, locationElement, curveIntersects ) ;
+      }
+
+      foreach ( var element3D in element3Ds ) {
+        CurveLoop? curveLoopOrigin = null ;
+        CurveLoop? curveLoopOffset = null ;
+        Line? locationElement = null ;
+
+        if ( element3D is FamilyInstance familyInstance ) {
+          curveLoopOrigin = GeometryHelper.GetBoundaryBoundingBox( familyInstance.get_BoundingBox( null ), elevation ) ;
+          curveLoopOffset = CurveLoop.CreateViaOffset( curveLoopOrigin, 200d.MillimetersToRevitUnits(), viewDirection ) ;
+        }
+        else {
+          if ( element3D.Location is not LocationCurve { Curve: Line line } )
+            continue ;
+
+          if ( line.Length <= viewPlan.Document.Application.ShortCurveTolerance )
+            continue ;
+
+          var endPointOne = new XYZ( line.GetEndPoint( 0 ).X, line.GetEndPoint( 0 ).Y, elevation ) ;
+          var endPointTwo = new XYZ( line.GetEndPoint( 1 ).X, line.GetEndPoint( 1 ).Y, elevation ) ;
+          if ( endPointOne.DistanceTo( endPointTwo ) <= viewPlan.Document.Application.ShortCurveTolerance )
+            continue ;
+          locationElement = Line.CreateBound( endPointOne, endPointTwo ) ;
+
+          switch ( element3D ) {
+            case CableTray cableTray :
+              curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 600d.MillimetersToRevitUnits() + cableTray.Width, viewDirection ) ;
+              break ;
+            case Conduit conduit :
+            {
+              var outSizePara = conduit.get_Parameter( BuiltInParameter.RBS_CONDUIT_OUTER_DIAM_PARAM ) ;
+              if ( null == outSizePara )
+                continue ;
+              curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 400d.MillimetersToRevitUnits() + outSizePara.AsDouble(), viewDirection ) ;
+              break ;
+            }
+          }
+        }
+
+        if ( null != curveLoopOffset && curveIntersects.Any() )
+          curveIntersects = GetCurvesIntersectSolid( viewPlan, curveLoopOrigin, curveLoopOffset, locationElement, curveIntersects ) ;
+      }
+
+      return curveIntersects ;
     }
-
-    public static List<Curve> IntersectCurveLeader( Document document, (XYZ Elbow, XYZ End) leader )
+    
+    private static Outline GetOutlineFromCurve( View viewPlan, IList<XYZ> points )
     {
-      var curvesIntersected = new List<Curve> { Line.CreateBound( leader.Elbow, leader.End ) } ;
-      var (minHeight, maxHeight) = GetHeightRange( document ) ;
+      var rangeExtend = 3000d.MillimetersToRevitUnits() ;
+      var minZ = viewPlan.GenLevel.Elevation - rangeExtend ;
+      var maxZ = viewPlan.GenLevel.Elevation + rangeExtend ;
 
-      var conduits = leader.IntersectElements( document, BuiltInCategory.OST_Conduit ) ;
-      var conduitFilters = new List<Element>() ;
-      foreach ( var conduit in conduits ) {
-        if ( conduit.Location is not LocationCurve { Curve: Line locationLine } )
-          continue ;
+      var levels = viewPlan.Document.GetAllElements<Level>().OrderBy( x => x.Elevation ).EnumerateAll() ;
+      if ( levels.Any() ) {
+        minZ = levels.First().Elevation - rangeExtend ;
+        maxZ = levels.Last().Elevation + rangeExtend ;
+      }
 
-        if ( Math.Abs( locationLine.Direction.DotProduct( document.ActiveView.ViewDirection ) ) < 0.0001 ) {
-          conduitFilters.Add( conduit ) ;
+      var minPoint = new XYZ( points.MinBy( x => x.X )!.X, points.MinBy( x => x.Y )!.Y, minZ ) ;
+      var maxPoint = new XYZ( points.MaxBy( x => x.X )!.X, points.MaxBy( x => x.Y )!.Y, maxZ ) ;
+      return new Outline( minPoint, maxPoint ) ;
+    }
+    
+    private static List<Curve> GetCurvesIntersectSolid( View viewPlan, CurveLoop? curveLoopOrigin, CurveLoop curveLoopOffset, Curve? locationElement, List<Curve> curves )
+    {
+      var curvesResult = new List<Curve>() ;
+      try {
+        if ( null != curveLoopOrigin ) {
+          var solidOrigin = CreateSolid( viewPlan, curveLoopOrigin ) ;
+          var curvesTemp = GetCurvesIntersectSolid( solidOrigin, curves, viewPlan.Document.Application.ShortCurveTolerance ) ;
+          if ( Math.Abs( curves.Select( x => x.Length ).Sum() - curvesTemp.Select( x => x.Length ).Sum() ) < Tolerance )
+            return curves ;
+        }
+
+        if ( null != locationElement ) {
+          var pointOne = new XYZ( locationElement.GetEndPoint( 0 ).X, locationElement.GetEndPoint( 0 ).Y, viewPlan.GenLevel.Elevation ) ;
+          var pointTwo = new XYZ( locationElement.GetEndPoint( 1 ).X, locationElement.GetEndPoint( 1 ).Y, viewPlan.GenLevel.Elevation ) ;
+          if ( pointOne.DistanceTo( pointTwo ) < Tolerance )
+            return curves ;
+
+          var newLocationElement = Line.CreateBound( pointOne, pointTwo ) ;
+          if ( ! IsCurveIntersectCurves( newLocationElement, curves ) )
+            return curves ;
+        }
+
+        var solidScale = CreateSolid( viewPlan, curveLoopOffset ) ;
+        curvesResult = GetCurvesIntersectSolid( solidScale, curves, viewPlan.Document.Application.ShortCurveTolerance ) ;
+      }
+      catch {
+        // ignore
+      }
+
+      return curvesResult ;
+    }
+    
+    private static List<Curve> GetCurvesIntersectSolid( Solid? solid, IList<Curve> curves, double shortCurveTolerance )
+    {
+      var curveResult = new List<Curve>() ;
+      if ( null == solid || ! curves.Any() )
+        return curveResult ;
+
+      var option = new SolidCurveIntersectionOptions { ResultType = SolidCurveIntersectionMode.CurveSegmentsOutside } ;
+      foreach ( var curve in curves ) {
+        var result = solid.IntersectWithCurve( curve, option ) ;
+        if ( null == result ) continue ;
+
+        for ( var i = 0 ; i < result.SegmentCount ; i++ ) {
+          if ( result.GetCurveSegment( i ).Length > shortCurveTolerance ) {
+            curveResult.Add( result.GetCurveSegment( i ) ) ;
+          }
         }
       }
 
-      var solidOption = new SolidCurveIntersectionOptions { ResultType = SolidCurveIntersectionMode.CurveSegmentsOutside } ;
-      foreach ( var conduitFilter in conduitFilters ) {
-        if ( conduitFilter.Location is not LocationCurve { Curve: Line locationLine } ) continue ;
-        var (startPoint, endPoint) = ( locationLine.GetEndPoint( 0 ), locationLine.GetEndPoint( 1 ) ) ;
-        var line = Line.CreateBound( new XYZ( startPoint.X, startPoint.Y, leader.Elbow.Z ), new XYZ( endPoint.X, endPoint.Y, leader.Elbow.Z ) ) ;
-
-        var diameter = conduitFilter.ParametersMap.get_Item( "Revit.Property.Builtin.OutsideDiameter".GetDocumentStringByKeyOrDefault( document, "Outside Diameter" ) ).AsDouble() ;
-        var curveLoop = CurveLoop.CreateViaThicken( line.Clone(), 9 * diameter, document.ActiveView.ViewDirection ) ;
-        var transform = Transform.CreateTranslation( document.ActiveView.ViewDirection.Negate() * ( leader.Elbow.Z - minHeight ) ) ;
-        curveLoop = CurveLoop.CreateViaTransform( curveLoop, transform ) ;
-
-        curvesIntersected = GetCurvesOutsiteSolid( document, curveLoop, maxHeight - minHeight, solidOption, curvesIntersected ) ;
-      }
-
-      var conduitFittings = leader.IntersectElements( document, BuiltInCategory.OST_ConduitFitting ) ;
-      foreach ( var conduitFitting in conduitFittings ) {
-        var curveLoop = GetBoundaryBoundingBox( conduitFitting.get_BoundingBox( null ), minHeight ) ;
-        curveLoop = CurveLoop.CreateViaOffset( curveLoop, 50d.MillimetersToRevitUnits(), document.ActiveView.ViewDirection ) ;
-        curvesIntersected = GetCurvesOutsiteSolid( document, curveLoop, maxHeight - minHeight, solidOption, curvesIntersected ) ;
-      }
-
-      return curvesIntersected ;
+      return curveResult ;
     }
 
-    private static List<Curve> GetCurvesOutsiteSolid( Document document, CurveLoop curveLoopBase, double heightSolid, SolidCurveIntersectionOptions solidOption, List<Curve> curvesIntersected )
+    private static Solid CreateSolid( View viewPlan, CurveLoop curveLoop )
     {
-      var solid = GeometryCreationUtilities.CreateExtrusionGeometry( new List<CurveLoop> { curveLoopBase }, document.ActiveView.ViewDirection, heightSolid ) ;
-      var curvesIntersectSolid = new List<Curve>() ;
-
-      foreach ( var results in from curveIntersected in curvesIntersected select solid.IntersectWithCurve( curveIntersected, solidOption ) ) {
-        results?.ForEach( curve =>
-        {
-          if ( curve.Length > document.Application.ShortCurveTolerance ) {
-            curvesIntersectSolid.Add( curve ) ;
-          }
-        } ) ;
-      }
-
-      return curvesIntersectSolid ;
+      var tolerance = 100d.MillimetersToRevitUnits() ;
+      curveLoop = CurveLoop.CreateViaTransform( curveLoop, Transform.CreateTranslation( viewPlan.ViewDirection.Negate() * tolerance ) ) ;
+      var solid = GeometryCreationUtilities.CreateExtrusionGeometry( new List<CurveLoop> { curveLoop }, viewPlan.ViewDirection, 2 * tolerance ) ;
+      return solid ;
     }
 
-    private static (double, double) GetHeightRange( Document document )
-    {
-      var levels = document.GetAllElements<Level>() ;
-      if ( ! levels.Any() )
-        return ( 0d, 0d ) ;
-
-      var elevations = levels.Select( x => x.Elevation ).ToList() ;
-
-      return ( elevations.Min(), elevations.Max() ) ;
-    }
-
-    public static (DetailCurve? detailCurve, int? endPoint) GetCurveClosestPoint( IList<DetailCurve>? detailCurves, XYZ point )
+    public static (DetailCurve? DetailCurve, int? EndPoint) GetCurveClosestPoint( IList<DetailCurve>? detailCurves, XYZ point )
     {
       if ( ! detailCurves?.Any() ?? true )
         return ( null, null ) ;
 
-      var lists = new List<(DetailCurve detailCurve, (double distance, int endPoint) point)>() ;
+      var lists = new List<(DetailCurve DetailCurve, (double Distance, int EndPoint) Point)>() ;
 
       foreach ( var detailCurve in detailCurves! ) {
-        var dis1 = detailCurve.GeometryCurve.GetEndPoint( 0 ).DistanceTo( point ) ;
-        var dis2 = detailCurve.GeometryCurve.GetEndPoint( 1 ).DistanceTo( point ) ;
+        var distanceOne = detailCurve.GeometryCurve.GetEndPoint( 0 ).DistanceTo( point ) ;
+        var distanceTwo = detailCurve.GeometryCurve.GetEndPoint( 1 ).DistanceTo( point ) ;
 
-        lists.Add( dis1 < dis2 ? ( detailCurve, ( dis1, 0 ) ) : ( detailCurve, ( dis2, 1 ) ) ) ;
+        lists.Add( distanceOne < distanceTwo ? ( detailCurve, ( distanceOne, 0 ) ) : ( detailCurve, ( distanceTwo, 1 ) ) ) ;
       }
 
-      var min = lists.MinBy( x => x.point.distance ) ;
-      return ( min.detailCurve, min.point.endPoint ) ;
+      var min = lists.MinBy( x => x.Point.Distance ) ;
+      return ( min.DetailCurve, min.Point.EndPoint ) ;
     }
 
     public static Line CreateUnderLineText( TextNote textNote, XYZ basePoint )
@@ -148,23 +227,6 @@ namespace Arent3d.Architecture.Routing.AppBase
       curveLoop.Append( Line.CreateBound( p4, p1 ) ) ;
 
       return curveLoop ;
-    }
-
-    public static List<DetailCurve> CreateDetailCurve( View? view, List<Curve> curves )
-    {
-      var detailCurves = new List<DetailCurve>() ;
-      if ( null == view )
-        return detailCurves ;
-
-      var graphicsStyle = view.Document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-
-      foreach ( var curve in curves ) {
-        var detailCurve = view.Document.Create.NewDetailCurve( view, curve ) ;
-        detailCurve.LineStyle = graphicsStyle ;
-        detailCurves.Add( detailCurve ) ;
-      }
-
-      return detailCurves ;
     }
 
     public static CurveLoop GetBoundaryBoundingBox( BoundingBoxXYZ boundingBox, double elevation )

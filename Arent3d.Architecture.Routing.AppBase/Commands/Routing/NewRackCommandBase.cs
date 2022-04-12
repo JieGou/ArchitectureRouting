@@ -518,20 +518,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           (string? endLineUniqueId, int? endPoint) endLineLeader = ( null, null ) ;
           var ortherLineId = new List<string>() ;
-          if ( doc.ActiveView is ViewPlan ) {
-            var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
-            doc.Regenerate();
-            
-            if(noteLeader.Anchor.DistanceTo(noteLeader.Elbow) > doc.Application.ShortCurveTolerance)
+          if ( doc.ActiveView is ViewPlan viewPlan ) {
+            var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve>() { Line.CreateBound( noteLeader.Elbow, noteLeader.End ) } ) ;
+            doc.Regenerate() ;
+
+            if ( noteLeader.Anchor.DistanceTo( noteLeader.Elbow ) > doc.Application.ShortCurveTolerance )
               curves.Add( Line.CreateBound( noteLeader.Anchor, noteLeader.Elbow ) ) ;
 
-            var detailCurves = GeometryHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
+            var detailCurves = NotationHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
             var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, noteLeader.End ) ;
-            
-            endLineLeader = (curveClosestPoint.detailCurve?.UniqueId, curveClosestPoint.endPoint)  ;
-            ortherLineId = detailCurves.Select(x => x.UniqueId).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
-            
-            textNote.RemoveLeaders();
+
+            endLineLeader = ( curveClosestPoint.DetailCurve?.UniqueId, endPoint: curveClosestPoint.EndPoint ) ;
+            ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
+
+            textNote.RemoveLeaders() ;
           }
 
           foreach ( var item in racks ) {
