@@ -35,45 +35,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static void CreateOpenEndPointMarkForNotConnectedConnector( Document document )
     {
-      var missingConnector = new List<Connector>() ;
-
+      var missingConnectors = new List<Connector>() ;
       // check conduits
       var conduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
         .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
       var allConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       foreach ( var conduit in conduits ) {
-        if ( CheckConnectedConduit( allConnectors, conduit ) ) continue ;
-        var from = conduit.GetRoutingConnectors( true ).FirstOrDefault() ;
-        var to = conduit.GetRoutingConnectors( false ).FirstOrDefault() ;
-        if ( to is { IsConnected: false } &&
-             ! missingConnector.Any( item => item != null && Equal( item.Origin, to.Origin ) ) )
-          missingConnector.Add( to ) ;
+        var connectors = conduit.GetConnectors().ToList() ;
+        if ( ! IsMissingConnector( allConnectors, conduit, true ) ) {
+          var from = conduit.GetRoutingConnectors( true ).FirstOrDefault() ;
+          if ( from != null )
+            connectors = connectors.Where( connector => ! Equal( connector.Origin, from.Origin ) ).ToList() ;
+        }
 
-        if ( from is { IsConnected: false } &&
-             ! missingConnector.Any( item => item != null && Equal( item.Origin, from.Origin ) ) )
-          missingConnector.Add( from ) ;
+        if ( ! IsMissingConnector( allConnectors, conduit, false ) ) {
+          var to = conduit.GetRoutingConnectors( false ).FirstOrDefault() ;
+          if ( to != null )
+            connectors = connectors.Where( connector => ! Equal( connector.Origin, to.Origin ) ).ToList() ;
+        }
+
+        missingConnectors.AddRange( connectors.Where( connector =>
+          connector is { IsConnected: false } &&
+          ! missingConnectors.Any( item => item != null && Equal( item.Origin, connector.Origin ) ) ) ) ;
       }
 
-      // check conduitFittings
-      var conduitFittings = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) )
-        .OfCategory( BuiltInCategory.OST_ConduitFitting ).AsEnumerable().OfType<FamilyInstance>() ;
-      foreach ( var conduit in conduitFittings ) {
-        if ( CheckConnectedConduit( allConnectors, conduit ) ) continue ;
-        var from = conduit.GetRoutingConnectors( true ).FirstOrDefault() ;
-        var to = conduit.GetRoutingConnectors( false ).FirstOrDefault() ;
-        if ( to is { IsConnected: false } &&
-             ! missingConnector.Any( item => item != null && Equal( item.Origin, to.Origin ) ) )
-          missingConnector.Add( to ) ;
-
-        if ( from is { IsConnected: false } &&
-             ! missingConnector.Any( item => item != null && Equal( item.Origin, from.Origin ) ) )
-          missingConnector.Add( from ) ;
-      }
-
-      if ( ! missingConnector.Any() ) return ;
+      if ( ! missingConnectors.Any() ) return ;
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.OpenEndPointMark ).FirstOrDefault() ??
                    throw new InvalidOperationException() ;
-      foreach ( var connector in missingConnector )
+      foreach ( var connector in missingConnectors )
         GenerateMark( document, symbol, connector ) ;
     }
 
@@ -91,26 +80,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
              Math.Abs( a.Z - b.Z ) <= GeometryUtil.Tolerance ;
     }
 
-    private static bool CheckConnectedConduit( IReadOnlyCollection<Element> allConnectors, Element conduit )
+    private static bool IsMissingConnector( IEnumerable<Element> allConnectors, Element conduit, bool isFrom )
     {
-      var fromEndPoint = conduit.GetNearestEndPoints( true ).FirstOrDefault() ;
-      var fromEndPointKey = fromEndPoint?.Key ;
-      if ( fromEndPointKey != null ) {
-        var fromElementUniqueId = fromEndPointKey.GetElementUniqueId() ;
-        if ( ! string.IsNullOrEmpty( fromElementUniqueId ) &&
-             allConnectors.All( c => c.UniqueId != fromElementUniqueId ) )
-          return false ;
-      }
-
-      var toEndPoint = conduit.GetNearestEndPoints( false ).FirstOrDefault() ;
-      var toEndPointKey = toEndPoint?.Key ;
-      if ( toEndPointKey != null ) {
-        var toElementUniqueId = toEndPointKey.GetElementUniqueId() ;
-        if ( ! string.IsNullOrEmpty( toElementUniqueId ) && allConnectors.All( c => c.UniqueId != toElementUniqueId ) )
-          return false ;
-      }
-
-      return true ;
+      var endPoint = conduit.GetNearestEndPoints( isFrom ).FirstOrDefault() ;
+      var endPointKey = endPoint?.Key ;
+      if ( endPointKey == null ) return true ;
+      var fromElementUniqueId = endPointKey.GetElementUniqueId() ;
+      return ! string.IsNullOrEmpty( fromElementUniqueId ) &&
+             allConnectors.All( c => c.UniqueId != fromElementUniqueId ) ;
     }
 
     private static bool HideOpenEndPointMarks( Document document )
