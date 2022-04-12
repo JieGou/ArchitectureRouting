@@ -16,10 +16,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-      var oldCeedStorable = document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      if ( oldCeedStorable == null ) return Result.Failed ;
+      var ceedStorable = document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      if ( ceedStorable == null ) return Result.Failed ;
 
-      var floorPlans = oldCeedStorable.CeedModelData.Select( item => item.FloorPlanType ).GroupBy( item => item )
+      var floorPlans = ceedStorable.CeedModelData.Select( item => item.FloorPlanType ).GroupBy( item => item )
         .Select( item => item.Key ).Where( item => ! string.IsNullOrEmpty( item ) ).ToList() ;
 
       var connectorOneSideFamilyTypeNames =
@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       // update property グレード3 of instances
-      using Transaction t = new(document, "Update グレード3") ;
+      using Transaction t = new(document, "Update grade") ;
       t.Start() ;
       var valueToUpdate = ! instances.Any( item => item.GetPropertyBool( "グレード3" ) ) ;
       foreach ( var instance in instances )
