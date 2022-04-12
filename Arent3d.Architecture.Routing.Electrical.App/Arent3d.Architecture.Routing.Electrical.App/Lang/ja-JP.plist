@@ -151,6 +151,12 @@
         <key>Electrical.App.Commands.Initialization.ShowCeedDetailInformationCommand</key>
         <string>拾い情報表示</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowFallMarkCommand</key>
+        <string>立ち下りマーク表示</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowOpenEndPointMarkCommand</key>
+        <string>開放端点マーク表示</string>
+
         <key>Electrical.App.Commands.Initialization.CreateDetailTableCommand</key>
         <string>明細表作成</string>
 
