@@ -266,9 +266,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static void DeleteDetailTableRows( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableModels, DetailSymbolStorable detailSymbolStorable )
+    public static void DeleteDetailTableRows( DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableModels, DetailSymbolStorable detailSymbolStorable )
     {
-      var detailTableRowDeleted = new List<DetailTableModel>() ;
       foreach ( var selectedItem in selectedDetailTableModels ) {
         if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
           var selectedItems = detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == selectedItem.GroupId ).ToList() ;
@@ -293,28 +292,28 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             }
           }
 
-          detailTableRowDeleted.AddRange( selectedDetailTableModels.Where( d => d.DetailSymbolId == selectedItem.DetailSymbolId && d.RouteName == selectedItem.RouteName ) ) ;
           var detailTableRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == selectedItem ) ;
           detailTableViewModel.DetailTableModels.Remove( detailTableRow ) ;
         }
       }
-
-      foreach ( var detailTableRow in detailTableRowDeleted ) {
-        selectedDetailTableModels.Remove( detailTableRow ) ;
-      }
     }
 
-    public static List<DetailTableModel> PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow )
+    public static List<DetailTableModel> PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow, DetailTableModel pasteDetailTableRow )
     {
+      var newDetailTableModels = new List<DetailTableModel>() ;
       var newDetailTableRow = new DetailTableModel( false, copyDetailTableRow.Floor, copyDetailTableRow.CeedCode, copyDetailTableRow.DetailSymbol, 
         copyDetailTableRow.DetailSymbolId, copyDetailTableRow.WireType, copyDetailTableRow.WireSize, copyDetailTableRow.WireStrip, copyDetailTableRow.WireBook, copyDetailTableRow.EarthType, 
         copyDetailTableRow.EarthSize, copyDetailTableRow.NumberOfGrounds, copyDetailTableRow.PlumbingType, copyDetailTableRow.PlumbingSize, copyDetailTableRow.NumberOfPlumbing, 
         copyDetailTableRow.ConstructionClassification, copyDetailTableRow.SignalType, copyDetailTableRow.ConstructionItems, copyDetailTableRow.PlumbingItems, copyDetailTableRow.Remark, 
         copyDetailTableRow.WireCrossSectionalArea, copyDetailTableRow.CountCableSamePosition, copyDetailTableRow.RouteName, copyDetailTableRow.IsEcoMode, copyDetailTableRow.IsParentRoute, 
         copyDetailTableRow.IsReadOnly, copyDetailTableRow.PlumbingIdentityInfo, copyDetailTableRow.GroupId, copyDetailTableRow.IsReadOnlyPlumbingItems, copyDetailTableRow.IsMixConstructionItems ) ;
-      detailTableViewModel.DetailTableModels.Add( newDetailTableRow ) ;
-      var newDetailTableModels = detailTableViewModel.DetailTableModels.ToList() ;
-      SortDetailTableModel( ref newDetailTableModels, copyDetailTableRow.IsMixConstructionItems ) ;
+      foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
+        newDetailTableModels.Add( detailTableRow ) ;
+        if ( detailTableRow == pasteDetailTableRow ) {
+          newDetailTableModels.Add( newDetailTableRow ) ;
+        }
+      }
+
       return newDetailTableModels ;
     }
 

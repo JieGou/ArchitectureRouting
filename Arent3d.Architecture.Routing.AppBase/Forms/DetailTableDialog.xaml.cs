@@ -89,7 +89,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void BtnDeleteLine_Click( object sender, RoutedEventArgs e )
     {
       if ( ! _selectedDetailTableRows.Any() ) return ;
-      DetailTableViewModel.DeleteDetailTableRows( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, _detailSymbolStorable ) ;
+      DetailTableViewModel.DeleteDetailTableRows( _detailTableViewModel, _selectedDetailTableRows, _detailSymbolStorable ) ;
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
       DetailTableViewModel.SaveDetailSymbolData( _document, _detailSymbolStorable ) ;
@@ -100,12 +100,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       if ( ! _selectedDetailTableRows.Any() ) return ;
       _copyDetailTableRow = _selectedDetailTableRows.First() ;
+      _selectedDetailTableRows.Clear() ;
     }
-    
+
     private void BtnPasteLine_Click( object sender, RoutedEventArgs e )
     {
-      if ( ! _selectedDetailTableRows.Any() || _copyDetailTableRow == null ) return ;
-      var newDetailTableModels = DetailTableViewModel.PasteDetailTableRow( _detailTableViewModel, _copyDetailTableRow ) ;
+      if ( _copyDetailTableRow == null ) {
+        MessageBox.Show( "Please choose a row to copy", "Message" ) ;
+        return ;
+      }
+
+      var pasteDetailTableRow = ! _selectedDetailTableRows.Any() ? _copyDetailTableRow : _selectedDetailTableRows.First() ;
+      var newDetailTableModels = DetailTableViewModel.PasteDetailTableRow( _detailTableViewModel, _copyDetailTableRow, pasteDetailTableRow ) ;
       _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
       CreateDetailTableViewModelByGroupId() ;
       DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
