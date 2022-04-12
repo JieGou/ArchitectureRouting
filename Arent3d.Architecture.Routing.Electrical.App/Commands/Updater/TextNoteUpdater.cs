@@ -4,50 +4,18 @@ using System.Linq ;
 using System.Windows ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Org.BouncyCastle.Asn1.Cms ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
 {
-  public static class TextNoteArent
-  {
-    public static bool Clicked;
-    public const string ArentTextNoteType = "ArrentTextNoteType";
-    public static Dictionary<ElementId, List<ElementId>> StorageLines = new();
-    
-    public static void CreateSingleBoxText(TextNote text )
-    {
-      var document = text.Document ;
-      var bb = text.get_BoundingBox( document.ActiveView ) ;
-      var min = bb.Min ;
-      var max = bb.Max ;
-
-      var line1 = Line.CreateBound( min, new XYZ( max.X, min.Y, min.Z ) ) ;
-      var line2 = Line.CreateBound(new XYZ( max.X, min.Y, min.Z ), max ) ;
-      var line3 = Line.CreateBound( max, new XYZ( min.X, max.Y, min.Z ) ) ;
-      var line4 = Line.CreateBound( new XYZ( min.X, max.Y, min.Z ), min ) ;
-
-      var curs = new CurveArray() ;
-      curs.Append( line1 );
-      curs.Append( line2 );
-      curs.Append( line3 );
-      curs.Append( line4 );
-      
-      var curveArray = document.Create.NewDetailCurveArray( document.ActiveView, curs) ;
-      var listCurves = (from DetailCurve curve in curveArray select curve.Id).ToList();
-      StorageLines[text.Id] = listCurves;
-    }
-
-    public static bool CheckIdIsDeleted(Document doc, ElementId id)
-    {
-      return doc.GetElement(id) != null;
-    }
-  }
   public class TextNoteUpdaterChanged : IUpdater
   {
     private static UpdaterId? _updaterId ;
-
-    public TextNoteUpdaterChanged( AddInId? id )
+    private readonly bool _isDoubleBorder ;
+    public TextNoteUpdaterChanged( AddInId? id, bool isDoubleBorder )
     {
-      _updaterId = new UpdaterId( id, new Guid( "92E18EDD-001E-4BA5-9764-38FA12A5DD94" ) ) ;
+      _isDoubleBorder = isDoubleBorder ;
+      _updaterId = new UpdaterId( id, Guid.NewGuid() ) ;
     }
 
     public void Execute( UpdaterData data )
@@ -56,11 +24,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       var modifiedId = data.GetModifiedElementIds().FirstOrDefault() ;
       if(modifiedId is null) return;
       if(doc.GetElement(modifiedId) is not TextNote text) return;
-      if(text.TextNoteType.Name != TextNoteArent.ArentTextNoteType) return;
-
-      doc.Delete( TextNoteArent.StorageLines[text.Id].Where(x=>TextNoteArent.CheckIdIsDeleted(doc, x)).ToList() ) ;
-      TextNoteArent.CreateSingleBoxText( text ) ;
-
+      if(text.TextNoteType.Name != ArentTextNote.ArentTextNoteType) return;
+      doc.Delete( ArentTextNote.StorageLines[text.Id].Where(x=>ArentTextNote.CheckIdIsDeleted(doc, x)).ToList() ) ;
+      if (_isDoubleBorder)
+        ArentTextNote.CreateDoubleBorderText( text ) ;
+      else
+        ArentTextNote.CreateSingleBorderText( text ) ;
     }
 
     
@@ -109,11 +78,13 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
   {
     private static UpdaterId? _updaterId ;
     private readonly TextNoteType _textNoteType ;
+    private readonly bool _isDoubleBorder ;
     
-    public TextNoteUpdaterCreated( AddInId? id, TextNoteType textNoteType )
+    public TextNoteUpdaterCreated( AddInId? id, TextNoteType textNoteType, bool isDoubleBorder )
     {
-      _updaterId = new UpdaterId( id, new Guid( "C96F9CAC-81E4-4A8B-9857-90829C830DE5" ) ) ;
+      _updaterId = new UpdaterId( id, Guid.NewGuid() ) ;
       _textNoteType = textNoteType;
+      _isDoubleBorder = isDoubleBorder ;
     }
 
     public void Execute( UpdaterData data )
@@ -121,18 +92,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       var doc = data.GetDocument() ;
       var addedElementIds = data.GetAddedElementIds() ;
       try {
-        if (TextNoteArent.Clicked)
+        if (ArentTextNote.Clicked)
         {
           addedElementIds.ForEach( x =>
           {
             if (doc.GetElement(x) is TextNote text)
             {
               text.TextNoteType = _textNoteType;
-              TextNoteArent.CreateSingleBoxText( text ) ;
+              if (_isDoubleBorder)
+                ArentTextNote.CreateDoubleBorderText( text ) ;
+              else
+                ArentTextNote.CreateSingleBorderText( text ) ;
             }
           } );
           
-          TextNoteArent.Clicked = false;
+          ArentTextNote.Clicked = false;
         }
       }
       catch ( Exception e ) {

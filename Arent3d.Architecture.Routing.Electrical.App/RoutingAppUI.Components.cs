@@ -272,12 +272,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         {
         }
       }
-      [Panel( "arent3d.architecture.rc.Annotation", TitleKey = "App.Panels.Rc.TextNote" )]
+      [Panel( "arent3d.architecture.rc.annotation", TitleKey = "App.Panels.Rc.TextNote" )]
       private static class AnnotationPanel
       {
-        [Button( typeof( UpdateAnnotationTextNote ), OnlyInitialized = true )]
-        private static class UpdaterAnnotationButton
+        [SplitButton( "arent3d.architecture.rc.annotation.textNote", TitleKey = "App.Panels.Rc.TextNote.PlaceText" )]
+        private static class TextNoteSplitButton
         {
+          [Button( typeof( UpdateAnnotationTextNoteSingleBorder ), OnlyInitialized = true )]
+          private static class UpdaterAnnotationSingleBorderButton
+          {
+          }
+
+          [Button( typeof( UpdateAnnotationTextNoteDoubleBorder ), OnlyInitialized = true )]
+          private static class UpdaterAnnotationDoubleBorderButton
+          {
+          }
         }
       }
     }

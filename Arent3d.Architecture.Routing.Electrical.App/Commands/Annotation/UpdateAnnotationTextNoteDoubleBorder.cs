@@ -11,36 +11,28 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Shaft.PlaceTextNote", DefaultString = "Place Text" )]
+  [DisplayNameKey( "Electrical.App.Commands.Shaft.PlaceTextNoteDoubleBorder", DefaultString = "Note\nDouble Border" )]
   [Image( "resources/Initialize-16.bmp", ImageType = ImageType.Normal )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class UpdateAnnotationTextNote : IExternalCommand
+  public class UpdateAnnotationTextNoteDoubleBorder : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var arentTextNoteType = CheckExistedOrCreateTextNoteArent(doc);
       
-      TextNoteArent.Clicked = true;
       var addId = commandData.Application.ActiveAddInId ;
 
       CheckAndUpdateStorageLines(doc);
-      var textNoteUpdater = new TextNoteUpdaterChanged( addId ) ;
-      var createUpdater = new TextNoteUpdaterCreated( addId, arentTextNoteType ) ;
-      if ( ! textNoteUpdater.IsRegistered() ) {
+      var textNoteUpdater = new TextNoteUpdaterChanged( addId, true ) ;
+      var createUpdater = new TextNoteUpdaterCreated( addId, arentTextNoteType, true ) ;
+      var viewUpdater = new ViewUpdater(addId, true);
+      if ( ! textNoteUpdater.IsRegistered() ) 
         textNoteUpdater.Register() ;
-      }
-      
-      if ( ! createUpdater.IsRegistered() ) {
+      if ( ! createUpdater.IsRegistered() ) 
         createUpdater.Register() ;
-      }
-
-      var viewUpdater = new ViewUpdater(addId);
       if (!viewUpdater.IsRegistered())
-      {
         viewUpdater.Register(doc);
-      }
-      
       var textId = RevitCommandId.LookupPostableCommandId(PostableCommand.Text);
       if (textId != null)
       {
@@ -50,24 +42,24 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
     }
     
 
-    private TextNoteType CheckExistedOrCreateTextNoteArent(Document doc)
+    private static TextNoteType CheckExistedOrCreateTextNoteArent(Document doc)
     {
 
       var list = new FilteredElementCollector(doc).WhereElementIsElementType().OfClass(typeof(TextNoteType));
-      if (list.Select(x => x.Name).Contains(TextNoteArent.ArentTextNoteType))
+      if (list.Select(x => x.Name).Contains(ArentTextNote.ArentTextNoteType))
       {
-        var result =list.First(x=>x.Name == TextNoteArent.ArentTextNoteType) as TextNoteType;
+        var result =list.First(x=>x.Name == ArentTextNote.ArentTextNoteType) as TextNoteType;
         return result!;
       }
       using var tran = new Transaction(doc);
       tran.Start("Create Arent TextNote Type");
-      var newTextNoteType = ((TextNoteType)list.First()).Duplicate(TextNoteArent.ArentTextNoteType) as TextNoteType;
+      var newTextNoteType = ((TextNoteType)list.First()).Duplicate(ArentTextNote.ArentTextNoteType) as TextNoteType;
       //newTextNoteType.get_Parameter("Text Font").Set("Arial Narrow");
       tran.Commit();
       return newTextNoteType!;
     }
     
-    private XYZ GetMiddlePoint(DetailLine line)
+    private static XYZ GetMiddlePoint(DetailLine line)
     {
       var (x, y, _) = line.GeometryCurve.GetEndPoint(0);
       var (x1, y1, _) = line.GeometryCurve.GetEndPoint(1);
@@ -75,7 +67,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
       return new XYZ((x + x1)/2,(y + y1)/2,0);
     }
 
-    private IEnumerable<XYZ> GetListPointRef(BoundingBoxXYZ bb)
+    private static IEnumerable<XYZ> GetListPointRef(BoundingBoxXYZ bb)
     {
       var minX = bb.Min.X;
       var minY = bb.Min.Y;
@@ -91,7 +83,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
       };
     }
 
-    private void CheckAndUpdateStorageLines(Document document)
+    private static void CheckAndUpdateStorageLines(Document document)
     {
       var allText = new FilteredElementCollector(document, document.ActiveView.Id).WhereElementIsNotElementType().OfClass(typeof(TextNote)).Cast<TextNote>().ToList();
       var allLines = new FilteredElementCollector(document, document.ActiveView.Id).WhereElementIsNotElementType().OfClass(typeof(CurveElement)).Where(x=>x is DetailLine).Cast<DetailLine>().ToList();
@@ -103,7 +95,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
         {
           return refPoints.Any(p => p.IsAlmostEqualTo(GetMiddlePoint(line)));
         }).Select(x=>x.Id).ToList();
-        TextNoteArent.StorageLines[text.Id] = listLines;
+        ArentTextNote.StorageLines[text.Id] = listLines;
       });
     }
   }
