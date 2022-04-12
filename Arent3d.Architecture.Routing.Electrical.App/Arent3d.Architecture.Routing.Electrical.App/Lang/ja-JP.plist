@@ -414,7 +414,7 @@
 
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
-        <string>グレード </string>
+        <string>グレード</string>
 
     </dict>
 </plist>

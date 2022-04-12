@@ -30,8 +30,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 
     public IReadOnlyDictionary<GradeMode, string> GradeModes { get ; } = new Dictionary<GradeMode, string>
     {
-      [ GradeMode.Grade3 ] = GradeKey.GetAppStringByKeyOrDefault($"{GradeDefaultString}3"), 
-      [ GradeMode.Grade2 ] = GradeKey.GetAppStringByKeyOrDefault($"{GradeDefaultString}2"),
+      [ GradeMode.Grade3 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}3", 
+      [ GradeMode.Grade2 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}2",
     } ;
 
     private void Button_Apply_Click( object sender, RoutedEventArgs e )
