@@ -46,8 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var conduitLine = ( conduitPosition.Curve as Line ) ! ;
         var conduitDirection = conduitLine.Direction ;
         if ( conduitDirection.Z is not (1.0 or -1.0) ) continue ;
-        if ( ! conduitWithZDirection.Any( item => IsAlmostEqual(
-              ( ( item.Location as LocationCurve )!.Curve as Line )!.Origin, conduitLine.Origin ) ) )
+        if ( ! conduitWithZDirection.Any( item => ((item.Location as LocationCurve )!.Curve as Line )!.Origin.IsAlmostEqualTo( conduitLine.Origin )))
           conduitWithZDirection.Add( conduit ) ;
       }
 
@@ -69,13 +68,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       symbol.Instantiate( new XYZ( conduitLine.Origin.X, conduitLine.Origin.Y, height ), level,
         StructuralType.NonStructural ) ;
     }
-
-    private static bool IsAlmostEqual( XYZ a, XYZ b )
-    {
-      return Math.Abs( a.X - b.X ) <= GeometryUtil.Tolerance && Math.Abs( a.Y - b.Y ) <= GeometryUtil.Tolerance &&
-             Math.Abs( a.Z - b.Z ) <= GeometryUtil.Tolerance ;
-    }
-
     private static List<ElementId> GetExistedFallMarkInstancesIds( Document document )
     {
       var fallMarkSymbols = document.GetFamilySymbols( ElectricalRoutingFamilyType.FallMark ) ??

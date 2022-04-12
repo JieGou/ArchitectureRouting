@@ -19,7 +19,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var document = commandData.Application.ActiveUIDocument.Document ;
       try {
         return document.Transaction(
-          "TransactionName.Commands.Routing.ShowOpenEndPointMark".GetAppStringByKeyOrDefault( "Show Open End Point Mark" ), _ =>
+          "TransactionName.Commands.Routing.ShowOpenEndPointMark".GetAppStringByKeyOrDefault(
+            "Show Open End Point Mark" ), _ =>
           {
             var openEndPointMarkInstanceIds = GetExistedOpenEndPointMarkInstanceIds( document ) ;
             if ( openEndPointMarkInstanceIds.Count > 0 )
@@ -46,18 +47,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( ! IsMissingConnector( allConnectors, conduit, true ) ) {
           var from = conduit.GetRoutingConnectors( true ).FirstOrDefault() ;
           if ( from != null )
-            connectors = connectors.Where( connector => ! IsAlmostEqual( connector.Origin, from.Origin ) ).ToList() ;
+            connectors = connectors.Where( connector => ! connector.Origin.IsAlmostEqualTo( from.Origin ) ).ToList() ;
         }
 
         if ( ! IsMissingConnector( allConnectors, conduit, false ) ) {
           var to = conduit.GetRoutingConnectors( false ).FirstOrDefault() ;
           if ( to != null )
-            connectors = connectors.Where( connector => ! IsAlmostEqual( connector.Origin, to.Origin ) ).ToList() ;
+            connectors = connectors.Where( connector => ! connector.Origin.IsAlmostEqualTo( to.Origin ) ).ToList() ;
         }
 
         missingConnectors.AddRange( connectors.Where( connector =>
           connector is { IsConnected: false } &&
-          ! missingConnectors.Any( item => item != null && IsAlmostEqual( item.Origin, connector.Origin ) ) ) ) ;
+          ! missingConnectors.Any( item => item != null && item.Origin.IsAlmostEqualTo( connector.Origin ) ) ) ) ;
       }
 
       if ( ! missingConnectors.Any() ) return ;
@@ -73,12 +74,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var height = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
       symbol.Instantiate( new XYZ( connector.Origin.X, connector.Origin.Y, height ), level,
         StructuralType.NonStructural ) ;
-    }
-
-    private static bool IsAlmostEqual( XYZ a, XYZ b )
-    {
-      return Math.Abs( a.X - b.X ) <= GeometryUtil.Tolerance && Math.Abs( a.Y - b.Y ) <= GeometryUtil.Tolerance &&
-             Math.Abs( a.Z - b.Z ) <= GeometryUtil.Tolerance ;
     }
 
     private static bool IsMissingConnector( IEnumerable<Element> allConnectors, Element conduit, bool isFrom )
