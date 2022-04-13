@@ -220,5 +220,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             .SelectMany( x => x ).ToList() ;
       }
     }
+
+    public static void AddDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel selectDetailTableRow )
+    {
+      var newDetailTableModels = new List<DetailTableModel>() ;
+      var newDetailTableRow = new DetailTableModel( selectDetailTableRow.DetailSymbol, selectDetailTableRow.DetailSymbolId ) ;
+      foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
+        newDetailTableModels.Add( detailTableRow ) ;
+        if ( detailTableRow == selectDetailTableRow ) {
+          newDetailTableModels.Add( newDetailTableRow ) ;
+        }
+      }
+
+      detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+    }
   }
 }

@@ -22,7 +22,7 @@
                 <RowDefinition Height="55"/>
                 <RowDefinition Height="35"/>
             </Grid.RowDefinitions>
-            <Button Grid.Row="0"  Width="90" Content="行追加" Margin="5,25,5,5" Height="25" />
+            <Button Grid.Row="0"  Width="90" Content="行追加" Margin="5,25,5,5" Height="25" Click="BtnAdd_Click"/>
             <Button Grid.Row="1"  Width="90" Content="行削除" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="2"  Width="90" Content="コピー" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="3"  Width="90" Content="挿入貼付" Margin="5,5,5,5" Height="25" />
@@ -58,7 +58,8 @@
             <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" RowHeight="25" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" RowHeight="25" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
+                  SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtGrid_SelectionChanged">
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
                     <Setter Property="Padding" Value="-2" />

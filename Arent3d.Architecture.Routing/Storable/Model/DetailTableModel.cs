@@ -31,6 +31,7 @@
     public string PlumbingIdentityInfo { get ; set ; }
     public string GroupId { get ; set ; }
     public bool IsReadOnlyPlumbingItems { get ; set ; }
+    public bool IsAddNew { get ; set ; }
 
     public DetailTableModel( 
       bool? calculationExclusion, 
@@ -61,7 +62,8 @@
       bool? isReadOnly,  
       string? plumbingIdentityInfo,
       string? groupId,
-      bool? isReadOnlyPlumbingItems)
+      bool? isReadOnlyPlumbingItems,
+      bool? isAddNew )
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -92,6 +94,41 @@
       PlumbingIdentityInfo = plumbingIdentityInfo ?? string.Empty ;
       GroupId = groupId ?? string.Empty ;
       IsReadOnlyPlumbingItems = isReadOnlyPlumbingItems ?? true ;
+      IsAddNew = isAddNew ?? false ;
+    }
+    
+    public DetailTableModel( string? detailSymbol, string? detailSymbolId)
+    {
+      CalculationExclusion = false ;
+      Floor = string.Empty ;
+      CeedCode = string.Empty ;
+      DetailSymbol = detailSymbol ?? string.Empty ;
+      DetailSymbolId = detailSymbolId ?? string.Empty ;
+      WireType = string.Empty ;
+      WireSize = string.Empty ;
+      WireStrip = string.Empty ;
+      WireBook = string.Empty ;
+      EarthType = string.Empty ;
+      EarthSize = string.Empty ;
+      NumberOfGrounds = string.Empty ;
+      PlumbingType = string.Empty ;
+      PlumbingSize = string.Empty ;
+      NumberOfPlumbing = string.Empty ;
+      ConstructionClassification = string.Empty ;
+      SignalType = string.Empty ;
+      ConstructionItems = string.Empty ;
+      PlumbingItems = string.Empty ;
+      Remark = string.Empty ;
+      WireCrossSectionalArea = 0 ;
+      CountCableSamePosition = 1 ;
+      RouteName = string.Empty ;
+      IsEcoMode = string.Empty ;
+      IsParentRoute = true ;
+      IsReadOnly = false ;
+      PlumbingIdentityInfo = string.Empty ;
+      GroupId = string.Empty ;
+      IsReadOnlyPlumbingItems = true ;
+      IsAddNew = true ;
     }
   }
 }

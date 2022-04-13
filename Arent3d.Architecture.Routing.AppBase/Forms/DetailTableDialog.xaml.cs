@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly Document _document ;
     private readonly List<ConduitsModel> _conduitsModelData ;
     private readonly DetailTableViewModel _detailTableViewModel ;
+    private readonly List<DetailTableModel> _selectedDetailTableRows ;
     public DetailTableViewModel DetailTableViewModelSummary { get ; set ; }
     public Dictionary<string, string> RoutesWithConstructionItemHasChanged { get ; }
     public Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged { get ; }
@@ -45,6 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _isMixConstructionItems = mixConstructionItems ;
       RoutesWithConstructionItemHasChanged = new Dictionary<string, string>() ;
       DetailSymbolIdsWithPlumbingTypeHasChanged = new Dictionary<string, string>() ;
+      _selectedDetailTableRows = new List<DetailTableModel>() ;
 
       var isGrouped = viewModel.DetailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null ;
       if ( isGrouped ) SetGroupIdForNewDetailTableRows() ;
@@ -62,6 +64,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       UnGroupDetailTableRows( selectedItem.GroupId ) ;
       CreateDetailTableViewModelByGroupId() ;
       SaveData( _detailTableViewModel.DetailTableModels ) ;
+    }
+    
+    private void DtGrid_SelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      if ( sender is not DataGrid dataGrid ) return ;
+      var selectedItems = dataGrid.SelectedItems ;
+      if ( selectedItems.Count <= 0 ) return ;
+      _selectedDetailTableRows.Clear() ;
+      foreach ( var item in selectedItems ) {
+        if ( item is not DetailTableModel detailTableRow ) continue ;
+        if ( ! string.IsNullOrEmpty( detailTableRow.GroupId ) ) {
+          var detailTableRows = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == detailTableRow.GroupId ).ToList() ;
+          _selectedDetailTableRows.AddRange( detailTableRows ) ;
+        }
+        else {
+          _selectedDetailTableRows.Add( detailTableRow ) ;
+        }
+      }
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
@@ -94,6 +114,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SaveData( _detailTableViewModel.DetailTableModels ) ;
       DialogResult = true ;
       this.Close() ;
+    }
+
+    private void BtnAdd_Click( object sender, RoutedEventArgs e )
+    {
+      if ( ! _selectedDetailTableRows.Any() ) return ;
+      var selectedDetailTableRow = _selectedDetailTableRows.Last() ;
+      DetailTableViewModel.AddDetailTableRow( _detailTableViewModel, selectedDetailTableRow ) ;
+      _selectedDetailTableRows.Clear() ;
+      DataContext = _detailTableViewModel ;
+      DtGrid.ItemsSource = _detailTableViewModel.DetailTableModels ;
+      DetailTableViewModelSummary = _detailTableViewModel ;
     }
 
     private void PlumpingTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -182,7 +213,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               oldDetailTableRow.EarthSize, oldDetailTableRow.NumberOfGrounds, oldDetailTableRow.PlumbingType, oldDetailTableRow.PlumbingSize, oldDetailTableRow.NumberOfPlumbing, 
               oldDetailTableRow.ConstructionClassification, oldDetailTableRow.SignalType, constructionItem.ToString(), plumbingItems, oldDetailTableRow.Remark, 
               oldDetailTableRow.WireCrossSectionalArea, oldDetailTableRow.CountCableSamePosition, oldDetailTableRow.RouteName, oldDetailTableRow.IsEcoMode, oldDetailTableRow.IsParentRoute, 
-              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems ) ;
+              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems, oldDetailTableRow.IsAddNew ) ;
             newDetailTableModels.Add( newDetailTableRow ) ;
           }
           else {
@@ -251,7 +282,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               oldDetailTableRow.EarthSize, oldDetailTableRow.NumberOfGrounds, oldDetailTableRow.PlumbingType, oldDetailTableRow.PlumbingSize, oldDetailTableRow.NumberOfPlumbing, 
               oldDetailTableRow.ConstructionClassification, oldDetailTableRow.SignalType, oldDetailTableRow.ConstructionItems, plumbingItem.ToString(), oldDetailTableRow.Remark, 
               oldDetailTableRow.WireCrossSectionalArea, oldDetailTableRow.CountCableSamePosition, oldDetailTableRow.RouteName, oldDetailTableRow.IsEcoMode, oldDetailTableRow.IsParentRoute, 
-              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems ) ;
+              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems, oldDetailTableRow.IsAddNew ) ;
             newDetailTableModels.Add( newDetailTableRow ) ;
           }
           else {
@@ -348,7 +379,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             detailTableRow.EarthSize, detailTableRow.NumberOfGrounds, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
             detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
             detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
-            detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems ) ;
+            detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsAddNew ) ;
           newDetailTableModels.Add( newDetailTableRow ) ;
           existedGroupIds.Add( detailTableRow.GroupId ) ;
         }
