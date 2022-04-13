@@ -47,9 +47,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
         var pickedObjectIds = pickedObjects.Select( p => p.UniqueId ).ToList() ;
-        var detailSymbolModelsByDetailSymbolId = detailSymbolStorable.DetailSymbolModelData.Where( x => pickedObjectIds.Contains( x.ConduitId ) ).OrderBy( x => x.DetailSymbol ).ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.IsParentSymbol ).GroupBy( x => x.DetailSymbolId, ( key, p ) => new { DetailSymbolId = key, DetailSymbolModels = p.ToList() } ) ;
-        var detailSymbolIds = detailSymbolStorable.DetailSymbolModelData.Where( x => pickedObjectIds.Contains( x.ConduitId ) ).Select( d => d.DetailSymbolId ).Distinct().ToHashSet() ;
-        isMixConstructionItems = CheckMixConstructionItems( detailTableModelsData, detailSymbolIds ) ;
+        var allDetailSymbolIdsOnDetailTableModels = detailTableModelsData.Select( d => d.DetailSymbolId ).Distinct().ToHashSet() ;
+        var detailSymbolIdsOnDetailTableModels = detailSymbolStorable.DetailSymbolModelData.Where( x => pickedObjectIds.Contains( x.ConduitId ) && allDetailSymbolIdsOnDetailTableModels.Contains( x.DetailSymbolId ) ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
+        isMixConstructionItems = detailSymbolIdsOnDetailTableModels.Any() && CheckMixConstructionItems( detailTableModelsData, detailSymbolIdsOnDetailTableModels ) ;
+        var detailSymbolModelsByDetailSymbolId = 
+          detailSymbolStorable.DetailSymbolModelData
+            .Where( x => pickedObjectIds.Contains( x.ConduitId ) && ! allDetailSymbolIdsOnDetailTableModels.Contains( x.DetailSymbolId ) )
+            .OrderBy( x => x.DetailSymbol )
+            .ThenByDescending( x => x.DetailSymbolId )
+            .ThenByDescending( x => x.IsParentSymbol )
+            .GroupBy( x => x.DetailSymbolId, ( key, p ) => new { DetailSymbolId = key, DetailSymbolModels = p.ToList() } ) ;
         foreach ( var detailSymbolModelByDetailSymbolId in detailSymbolModelsByDetailSymbolId ) {
           var firstDetailSymbolModelByDetailSymbolId = detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault() ;
           var routeNames = detailSymbolModelByDetailSymbolId.DetailSymbolModels.Select( d => d.RouteName ).Distinct().ToList() ;
@@ -66,6 +73,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         SetPlumbingDataForEachWiring( detailTableModelsData, conduitsModelData, ref detailTableModels, defaultParentPlumbingType, isMixConstructionItems ) ;
+        if ( detailSymbolIdsOnDetailTableModels.Any() ) {
+          var detailTableModelRowsOnDetailTableStorable = detailTableModelsData.Where( d => detailSymbolIdsOnDetailTableModels.Contains( d.DetailSymbolId ) ) ;
+          foreach ( var detailTableRow in detailTableModelRowsOnDetailTableStorable ) {
+            detailTableModels.Add( detailTableRow ) ;
+          }
+          SortDetailTableModelByDetailSymbol( ref detailTableModels ) ;
+        }
       }
       catch {
         return Result.Cancelled ;
@@ -300,6 +314,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             .SelectMany( x => x ).ToList() ;
       }
 
+      detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
+    }
+    
+    private static void SortDetailTableModelByDetailSymbol( ref ObservableCollection<DetailTableModel> detailTableModels )
+    {
+      var sortedDetailTableModelsList = 
+        detailTableModels
+          .OrderBy( x => x.DetailSymbol )
+          .GroupBy( x => x.DetailSymbolId )
+          .SelectMany( x => x ).ToList() ;
+     
       detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
     }
 
@@ -684,7 +709,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       detailTableModels.Add( detailTableRow ) ;
     }
 
-    private bool CheckMixConstructionItems( List<DetailTableModel> detailTableModelsData, HashSet<string> detailSymbolIds )
+    private bool CheckMixConstructionItems( List<DetailTableModel> detailTableModelsData, List<string> detailSymbolIds )
     {
       var detailTableModelRowGroupMixConstructionItems = detailTableModelsData.FirstOrDefault( d => detailSymbolIds.Contains( d.DetailSymbolId ) && ! string.IsNullOrEmpty( d.GroupId ) && bool.Parse( d.GroupId.Split( '-' ).First() ) ) ;
       var detailTableModelRowGroupNoMixConstructionItems = detailTableModelsData.FirstOrDefault( d => detailSymbolIds.Contains( d.DetailSymbolId ) && ! string.IsNullOrEmpty( d.GroupId ) && ! bool.Parse( d.GroupId.Split( '-' ).First() ) ) ;
