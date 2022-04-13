@@ -204,34 +204,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels, bool isMixConstructionItems = false )
+    public static void SortDetailTableModel( ref List<DetailTableModel> detailTableModels )
     {
-      if ( isMixConstructionItems ) {
-        detailTableModels = 
-          detailTableModels
-            .OrderBy( x => x.DetailSymbol )
-            .ThenByDescending( x => x.DetailSymbolId )
-            .ThenByDescending( x => x.SignalType )
-            .ThenByDescending( x => x.PlumbingIdentityInfo )
-            .ThenByDescending( x => x.IsParentRoute )
-            .ThenByDescending( x => x.GroupId )
-            .GroupBy( x => x.DetailSymbolId )
-            .SelectMany( x => x ).ToList() ;
-      }
-      else
-      {
-        detailTableModels = 
-          detailTableModels
-            .OrderBy( x => x.DetailSymbol )
-            .ThenByDescending( x => x.DetailSymbolId )
-            .ThenByDescending( x => x.SignalType )
-            .ThenByDescending( x => x.ConstructionItems )
-            .ThenByDescending( x => x.PlumbingIdentityInfo )
-            .ThenByDescending( x => x.IsParentRoute )
-            .ThenByDescending( x => x.GroupId )
-            .GroupBy( x => x.DetailSymbolId )
-            .SelectMany( x => x ).ToList() ;
-      }
+      detailTableModels = 
+        detailTableModels
+          .OrderBy( x => x.DetailSymbol )
+          .ThenByDescending( x => x.PlumbingIdentityInfo )
+          .ThenByDescending( x => x.IsParentRoute )
+          .ThenByDescending( x => x.GroupId )
+          .GroupBy( x => x.DetailSymbolId )
+          .SelectMany( x => x ).ToList() ;
     }
     
     public static void SaveData( Document document, IReadOnlyCollection<DetailTableModel> detailTableRowsBySelectedDetailSymbols )
@@ -301,12 +283,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public static List<DetailTableModel> PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow, DetailTableModel pasteDetailTableRow )
     {
       var newDetailTableModels = new List<DetailTableModel>() ;
+      var index = DateTime.Now.ToString( "-yyyyMMddHHmmss" ) ;
       var newDetailTableRow = new DetailTableModel( false, copyDetailTableRow.Floor, copyDetailTableRow.CeedCode, copyDetailTableRow.DetailSymbol, 
         copyDetailTableRow.DetailSymbolId, copyDetailTableRow.WireType, copyDetailTableRow.WireSize, copyDetailTableRow.WireStrip, copyDetailTableRow.WireBook, copyDetailTableRow.EarthType, 
         copyDetailTableRow.EarthSize, copyDetailTableRow.NumberOfGrounds, copyDetailTableRow.PlumbingType, copyDetailTableRow.PlumbingSize, copyDetailTableRow.NumberOfPlumbing, 
         copyDetailTableRow.ConstructionClassification, copyDetailTableRow.SignalType, copyDetailTableRow.ConstructionItems, copyDetailTableRow.PlumbingItems, copyDetailTableRow.Remark, 
         copyDetailTableRow.WireCrossSectionalArea, copyDetailTableRow.CountCableSamePosition, copyDetailTableRow.RouteName, copyDetailTableRow.IsEcoMode, copyDetailTableRow.IsParentRoute, 
-        copyDetailTableRow.IsReadOnly, copyDetailTableRow.PlumbingIdentityInfo, copyDetailTableRow.GroupId, copyDetailTableRow.IsReadOnlyPlumbingItems, copyDetailTableRow.IsMixConstructionItems ) ;
+        copyDetailTableRow.IsReadOnly, copyDetailTableRow.PlumbingIdentityInfo + index, string.Empty, copyDetailTableRow.IsReadOnlyPlumbingItems, copyDetailTableRow.IsMixConstructionItems ) ;
       foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
         newDetailTableModels.Add( detailTableRow ) ;
         if ( detailTableRow == pasteDetailTableRow ) {
@@ -319,6 +302,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public static void PlumbingSummary( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems )
     {
+      Dictionary<DetailTableModel, List<DetailTableModel>> sortDetailTableModel = new() ;
       var detailTableModelsGroupByDetailSymbolId = 
         detailTableViewModel.DetailTableModels
           .Where( selectedDetailTableRows.Contains )
@@ -330,8 +314,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           .Where( d => plumbingIdentityInfos.Contains( d.PlumbingIdentityInfo ) && ! detailTableRowsWithSameDetailSymbolId.Contains( d ) )
           .GroupBy( d => d.PlumbingIdentityInfo )
           .Select( g => g.ToList() ) ;
-        var parentDetailRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.IsParentRoute && d.DetailSymbolId == detailTableRowsWithSameDetailSymbolId.First().DetailSymbolId ) ;
-        var plumbingType = parentDetailRow == null ? DefaultParentPlumbingType : parentDetailRow.PlumbingType ;
+        var parentDetailTableRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.IsParentRoute && d.DetailSymbolId == detailTableRowsWithSameDetailSymbolId.First().DetailSymbolId ) ;
+        var plumbingType = parentDetailTableRow == null ? DefaultParentPlumbingType : parentDetailTableRow.PlumbingType ;
         CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType, true, isMixConstructionItems ) ;
 
         if ( isMixConstructionItems ) {
@@ -340,22 +324,50 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         else {
           SetGroupIdForDetailTableRows( detailTableRowsWithSameDetailSymbolId ) ;
         }
+        
+        var detailTableModelsGroupByPlumbingIdentityInfos = 
+          detailTableRowsWithSameDetailSymbolId
+            .GroupBy( d => d.PlumbingIdentityInfo )
+            .Select( g => g.ToList() ) ;
+        foreach ( var detailTableModelsGroupByPlumbingIdentityInfo in detailTableModelsGroupByPlumbingIdentityInfos ) {
+          sortDetailTableModel.Add( detailTableModelsGroupByPlumbingIdentityInfo.First(), detailTableModelsGroupByPlumbingIdentityInfo ) ;
+        }
 
         foreach ( var otherDetailTableRows in otherDetailTableRowsWithSamePlumbingIdentityInfo ) {
           CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, otherDetailTableRows, plumbingType, true, otherDetailTableRows.First().IsMixConstructionItems ) ;
-
-          if ( isMixConstructionItems ) {
-            SetGroupIdForDetailTableRowsMixConstructionItems( otherDetailTableRows ) ;
+          var isGroup = otherDetailTableRows.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null ;
+          if ( isGroup ) {
+            if ( isMixConstructionItems ) {
+              SetGroupIdForDetailTableRowsMixConstructionItems( otherDetailTableRows ) ;
+            }
+            else {
+              SetGroupIdForDetailTableRows( otherDetailTableRows ) ;
+            }
           }
-          else {
-            SetGroupIdForDetailTableRows( otherDetailTableRows ) ;
+
+          var otherDetailTableModelsGroupByPlumbingIdentityInfos = 
+            otherDetailTableRows
+              .GroupBy( d => d.PlumbingIdentityInfo )
+              .Select( g => g.ToList() ) ;
+          foreach ( var detailTableModelsGroupByPlumbingIdentityInfo in otherDetailTableModelsGroupByPlumbingIdentityInfos ) {
+            sortDetailTableModel.Add( detailTableModelsGroupByPlumbingIdentityInfo.First(), detailTableModelsGroupByPlumbingIdentityInfo ) ;
           }
         }
       }
 
-      var newDetailTableModels = detailTableViewModel.DetailTableModels.ToList() ;
-      SortDetailTableModel( ref newDetailTableModels, isMixConstructionItems ) ;
-      detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+      foreach ( var (parentDetailTableRow, detailTableRows) in sortDetailTableModel ) {
+        List<DetailTableModel> newDetailTableModels = new() ;
+        foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
+          if ( detailTableRow == parentDetailTableRow ) {
+            newDetailTableModels.AddRange( detailTableRows ) ;
+          }
+          else if ( ! detailTableRows.Contains( detailTableRow ) ) {
+            newDetailTableModels.Add( detailTableRow ) ;
+          }
+        }
+
+        detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+      }
     }
   }
 }

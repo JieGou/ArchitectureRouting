@@ -216,7 +216,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           }
 
           var newDetailTableModelList = _detailTableViewModel.DetailTableModels.ToList() ;
-          DetailTableViewModel.SortDetailTableModel( ref newDetailTableModelList, _isMixConstructionItems ) ;
+          DetailTableViewModel.SortDetailTableModel( ref newDetailTableModelList ) ;
           _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModelList ) ;
           CreateDetailTableViewModelByGroupId() ;
           DetailTableViewModel.SaveData( _document, _detailTableViewModel.DetailTableModels ) ;
