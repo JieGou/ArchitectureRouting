@@ -1,10 +1,7 @@
 ﻿using System ;
-using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -12,8 +9,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ChangeFamilyGradeCommandBase : IExternalCommand
   {
-    protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
-
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
@@ -43,17 +38,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         CommandUtils.DebugAlertException( exception ) ;
         return Result.Cancelled ;
       }
-    }
-
-    private static ConnectorOneSideFamilyType GetConnectorFamilyType( string floorPlanType )
-    {
-      var connectorOneSideFamilyType = ConnectorOneSideFamilyType.ConnectorOneSide1 ;
-      if ( string.IsNullOrEmpty( floorPlanType ) ) return connectorOneSideFamilyType ;
-      foreach ( var item in (ConnectorOneSideFamilyType[]) Enum.GetValues( typeof( ConnectorOneSideFamilyType ) ) ) {
-        if ( floorPlanType == item.GetFieldName() ) connectorOneSideFamilyType = item ;
-      }
-
-      return connectorOneSideFamilyType ;
     }
   }
 }
