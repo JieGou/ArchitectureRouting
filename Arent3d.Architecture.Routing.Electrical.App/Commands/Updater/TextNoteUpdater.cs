@@ -2,6 +2,11 @@
 using System.Collections.Generic;
 using System.Linq ;
 using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -72,105 +77,5 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
     {
       return "Arent, " + "https://arent3d.com" ;
     }
-
-    public bool Register()
-    {
-      var textFilter = new ElementClassFilter(typeof(TextNote));
-
-      UpdaterRegistry.RegisterUpdater( this ) ;
-      UpdaterRegistry.AddTrigger( GetUpdaterId(), textFilter, Element.GetChangeTypeAny() ) ;
-      return true ;
-    }
-
-    public void UnRegister()
-    {
-      if ( UpdaterRegistry.IsUpdaterRegistered( GetUpdaterId() ) ) UpdaterRegistry.UnregisterUpdater( GetUpdaterId() ) ;
-    }
-
-    public bool IsRegistered()
-    {
-      return UpdaterRegistry.IsUpdaterRegistered( GetUpdaterId() ) ;
-    }
-    
-  }
-  
-  public class TextNoteUpdaterCreated : IUpdater
-  {
-    private static UpdaterId? _updaterId ;
-    private readonly TextNoteType _textNoteType ;
-    
-    public TextNoteUpdaterCreated( AddInId? id, TextNoteType textNoteType )
-    {
-      _updaterId = new UpdaterId( id, new Guid( "C96F9CAC-81E4-4A8B-9857-90829C830DE5" ) ) ;
-      _textNoteType = textNoteType;
-    }
-
-    public void Execute( UpdaterData data )
-    {
-      var doc = data.GetDocument() ;
-      var addedElementIds = data.GetAddedElementIds() ;
-      try {
-        if (TextNoteArent.Clicked)
-        {
-          addedElementIds.ForEach( x =>
-          {
-            if (doc.GetElement(x) is TextNote text)
-            {
-              text.TextNoteType = _textNoteType;
-              TextNoteArent.CreateSingleBoxText( text ) ;
-            }
-          } );
-          
-          TextNoteArent.Clicked = false;
-        }
-      }
-      catch ( Exception e ) {
-        MessageBox.Show( e.Message ) ;
-      }
-
-      
-    }
-
-    public UpdaterId? GetUpdaterId()
-    {
-      return _updaterId ;
-    }
-
-    public ChangePriority GetChangePriority()
-    {
-      return ChangePriority.Annotations ;
-    }
-
-    public string GetUpdaterName()
-    {
-      return "TextNoteCreateUpdater" ;
-    }
-
-    public string GetAdditionalInformation()
-    {
-      return "Arent, " + "https://arent3d.com" ;
-    }
-
-    public bool Register()
-    {
-      var textFilter = new ElementClassFilter(typeof(TextNote));
-
-      UpdaterRegistry.RegisterUpdater( this ) ;
-      UpdaterRegistry.AddTrigger( GetUpdaterId(), textFilter, Element.GetChangeTypeElementAddition() ) ;
-      return true ;
-    }
-
-    public void UnRegister()
-    {
-      if ( UpdaterRegistry.IsUpdaterRegistered( GetUpdaterId() ) ) UpdaterRegistry.UnregisterUpdater( GetUpdaterId() ) ;
-    }
-
-    public bool IsRegistered()
-    {
-      return UpdaterRegistry.IsUpdaterRegistered( GetUpdaterId() ) ;
-    }
-    
-   
-    
   }
 }
