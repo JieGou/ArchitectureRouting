@@ -48,6 +48,9 @@
         <key>Electrical.App.Panels.Routing.RackCommand</key>
         <string>Rack</string>
 
+        <key>Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand</key>
+        <string>Switch Eco&#xA;Normal Mode</string>
+
         <!-- Application UI Button Strings -->
         <key>Electrical.App.Commands.BranchPoint.InsertBranchPointCommand</key>
         <string>Insert&#xA;Branch Point</string>
@@ -109,12 +112,6 @@
         <key>Electrical.App.Commands.Routing.CnsSettingCommand</key>
         <string>CNS Setting</string>
 
-        <key>Electrical.App.Commands.Initialization.ChangeToEcoCommand</key>
-        <string>Change to&#xA;Eco</string>
-
-        <key>Electrical.App.Commands.Initialization.ChangeToNormalCommand</key>
-        <string>Change to&#xA;Normal</string>
-
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>Create Rack&#xA;For All</string>
 
@@ -132,6 +129,9 @@
 
         <key>Electrical.App.Commands.Shaft.CreateCylindricalShaftCommand</key>
         <string>Create&#xA;Cylindrical Shaft</string>
+
+        <key>Electrical.App.Commands.Shaft.AddHSymbolCommand</key>
+        <string>Add H Symbol</string>
 
         <key>Electrical.App.Commands.Routing.SelectionRangeRouteCommand</key>
         <string>Selection Range&#xA;Route</string>
@@ -371,6 +371,12 @@
 		<key>Dialog.Electrical.MultipleConstructionCategoriesAreMixedWithSameDetailSymbol.Warning</key>
         <string>Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?</string>
 
+        <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.EcoMode</key>
+        <string>Eco Mode</string>
+
+        <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.NormalMode</key>
+        <string>Normal Mode</string>
+
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
         <string>M_電線管エルボ - 鉄鋼</string>
@@ -416,9 +422,5 @@
         <string>Electrical Symbol Table</string>
         <key>Revit.Detail.Table.Name</key>
         <string>Detail Table</string>
-
-        <!-- Message -->
-        <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
-        <string>Since it is impossible to avoid the interference of the envelope in the selection range, adjust the position of the envelope or the position of the connector.</string>
     </dict>
 </plist>
