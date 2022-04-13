@@ -7,12 +7,12 @@ using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.UI ;
 
-namespace Arent3d.Architecture.Routing.Electrical.App.Forms
+namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public enum GradeMode
   {
     Grade3,
-    Grade2
+    Grade1Grade2
   }
 
   public partial class ChangeFamilyGradeDialog
@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     public IReadOnlyDictionary<GradeMode, string> GradeModes { get ; } = new Dictionary<GradeMode, string>
     {
       [ GradeMode.Grade3 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}3", 
-      [ GradeMode.Grade2 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}2",
+      [ GradeMode.Grade1Grade2 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}1-2",
     } ;
 
     private void Button_Apply_Click( object sender, RoutedEventArgs e )

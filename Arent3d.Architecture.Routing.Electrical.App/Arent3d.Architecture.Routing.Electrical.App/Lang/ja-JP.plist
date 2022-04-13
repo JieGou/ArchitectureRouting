@@ -122,7 +122,7 @@
         <string>Height Setting</string>
 
         <key>Electrical.App.Commands.Initialization.ChangeFamilyGradeCommand</key>
-        <string>Change&#xA;Family Grade</string>
+        <string>グレード設定</string>
 
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>ラックを作成する&#xA;すべてのコンジット用</string>
