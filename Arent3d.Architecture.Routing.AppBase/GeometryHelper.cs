@@ -150,5 +150,29 @@ namespace Arent3d.Architecture.Routing.AppBase
       
       return  detailCurves;
     }
+    
+    public static CurveLoop GetOutlineTextNote( TextNote textNote )
+    {
+      var offset = textNote.TextNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).AsDouble() ;
+      var height = ( textNote.Height + 2 * offset ) * textNote.Document.ActiveView.Scale ;
+      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * ( textNote.Width + 2 * offset ) * textNote.Document.ActiveView.Scale ;
+
+      var transformHeight = Transform.CreateTranslation( textNote.UpDirection.Negate() * height ) ;
+      var transformWidth = Transform.CreateTranslation( textNote.BaseDirection * width ) ;
+      var transformCoord = Transform.CreateTranslation( textNote.UpDirection.Add( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? textNote.BaseDirection : textNote.BaseDirection.Negate() ) * offset * textNote.Document.ActiveView.Scale ) ;
+
+      var curveLoop = new CurveLoop() ;
+      var p1 = transformCoord.OfPoint( textNote.Coord ) ;
+      var p2 = transformWidth.OfPoint( p1 ) ;
+      var p3 = transformHeight.OfPoint( p2 ) ;
+      var p4 = transformHeight.OfPoint( p1 ) ;
+
+      curveLoop.Append( Line.CreateBound( p1, p2 ) ) ;
+      curveLoop.Append( Line.CreateBound( p2, p3 ) ) ;
+      curveLoop.Append( Line.CreateBound( p3, p4 ) ) ;
+      curveLoop.Append( Line.CreateBound( p4, p1 ) ) ;
+
+      return curveLoop ;
+    }
   }
 }

@@ -1,147 +1,62 @@
 ﻿using System ;
 using System.Collections.Generic;
 using System.Linq ;
-using System.Windows ;
+using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
 {
-  public static class TextNoteArent
-  {
-    public static bool Clicked;
-    public const string ArentTextNoteType = "ArrentTextNoteType";
-    public static Dictionary<ElementId, List<ElementId>> StorageLines = new();
-    
-    public static void CreateSingleBoxText(TextNote text )
-    {
-      var document = text.Document ;
-      var bb = text.get_BoundingBox( document.ActiveView ) ;
-      var min = bb.Min ;
-      var max = bb.Max ;
-
-      var line1 = Line.CreateBound( min, new XYZ( max.X, min.Y, min.Z ) ) ;
-      var line2 = Line.CreateBound(new XYZ( max.X, min.Y, min.Z ), max ) ;
-      var line3 = Line.CreateBound( max, new XYZ( min.X, max.Y, min.Z ) ) ;
-      var line4 = Line.CreateBound( new XYZ( min.X, max.Y, min.Z ), min ) ;
-
-      var curs = new CurveArray() ;
-      curs.Append( line1 );
-      curs.Append( line2 );
-      curs.Append( line3 );
-      curs.Append( line4 );
-      
-      var curveArray = document.Create.NewDetailCurveArray( document.ActiveView, curs) ;
-      var listCurves = (from DetailCurve curve in curveArray select curve.Id).ToList();
-      StorageLines[text.Id] = listCurves;
-    }
-
-    public static bool CheckIdIsDeleted(Document doc, ElementId id)
-    {
-      return doc.GetElement(id) != null;
-    }
-  }
-  public class TextNoteUpdaterChanged : IUpdater
+  public class TextNoteUpdater : IUpdater
   {
     private static UpdaterId? _updaterId ;
 
-    public TextNoteUpdaterChanged( AddInId? id )
+    public TextNoteUpdater( AddInId? id )
     {
       _updaterId = new UpdaterId( id, new Guid( "92E18EDD-001E-4BA5-9764-38FA12A5DD94" ) ) ;
     }
 
     public void Execute( UpdaterData data )
     {
-      var doc = data.GetDocument() ;
-      var modifiedId = data.GetModifiedElementIds().FirstOrDefault() ;
-      if(modifiedId is null) return;
-      if(doc.GetElement(modifiedId) is not TextNote text) return;
-      if(text.TextNoteType.Name != TextNoteArent.ArentTextNoteType) return;
+      var document = data.GetDocument() ;
+      var uiDocument = new UIDocument( document ) ;
+      var selection = uiDocument.Selection ;
 
-      doc.Delete( TextNoteArent.StorageLines[text.Id].Where(x=>TextNoteArent.CheckIdIsDeleted(doc, x)).ToList() ) ;
-      TextNoteArent.CreateSingleBoxText( text ) ;
-
-    }
-
-    
-    public UpdaterId? GetUpdaterId()
-    {
-      return _updaterId ;
-    }
-
-    public ChangePriority GetChangePriority()
-    {
-      return ChangePriority.Annotations ;
-    }
-
-    public string GetUpdaterName()
-    {
-      return "TextNoteChangeUpdater" ;
-    }
-
-    public string GetAdditionalInformation()
-    {
-      return "Arent, " + "https://arent3d.com" ;
-    }
-
-    public bool Register()
-    {
-      var textFilter = new ElementClassFilter(typeof(TextNote));
-
-      UpdaterRegistry.RegisterUpdater( this ) ;
-      UpdaterRegistry.AddTrigger( GetUpdaterId(), textFilter, Element.GetChangeTypeAny() ) ;
-      return true ;
-    }
-
-    public void UnRegister()
-    {
-      if ( UpdaterRegistry.IsUpdaterRegistered( GetUpdaterId() ) ) UpdaterRegistry.UnregisterUpdater( GetUpdaterId() ) ;
-    }
-
-    public bool IsRegistered()
-    {
-      return UpdaterRegistry.IsUpdaterRegistered( GetUpdaterId() ) ;
-    }
-    
-  }
-  
-  public class TextNoteUpdaterCreated : IUpdater
-  {
-    private static UpdaterId? _updaterId ;
-    private readonly TextNoteType _textNoteType ;
-    
-    public TextNoteUpdaterCreated( AddInId? id, TextNoteType textNoteType )
-    {
-      _updaterId = new UpdaterId( id, new Guid( "C96F9CAC-81E4-4A8B-9857-90829C830DE5" ) ) ;
-      _textNoteType = textNoteType;
-    }
-
-    public void Execute( UpdaterData data )
-    {
-      var doc = data.GetDocument() ;
-      var addedElementIds = data.GetAddedElementIds() ;
-      try {
-        if (TextNoteArent.Clicked)
-        {
-          addedElementIds.ForEach( x =>
-          {
-            if (doc.GetElement(x) is TextNote text)
-            {
-              text.TextNoteType = _textNoteType;
-              TextNoteArent.CreateSingleBoxText( text ) ;
-            }
-          } );
-          
-          TextNoteArent.Clicked = false;
+      if ( selection.GetElementIds().Count == 1 && data.GetModifiedElementIds().Count == 1 && document.GetElement( data.GetModifiedElementIds().First() ) is TextNote textNote ) {
+        using var transaction = new Transaction( document ) ;
+        transaction.Start( "Modify Double Border" ) ;
+        
+        var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
+        var borderUniqueIds = ( from curve in curveLoop select document.Create.NewDetailCurve( document.ActiveView, curve ) into detailLine select detailLine.UniqueId ).ToList() ;
+        
+        var borderTextNoteStorable = document.GetAllStorables<BorderTextNoteStorable>().FirstOrDefault() ?? document.GetBorderTextNoteStorable() ;
+        var borderTextNoteData = borderTextNoteStorable.BorderTextNoteData.Where( x => document.GetElement( x.TextNoteUniqueId ) is TextNote ).ToList() ;
+        if ( borderTextNoteData.SingleOrDefault( x => x.TextNoteUniqueId == textNote.UniqueId ) is { } borderTextNoteModel ) {
+          var detailLines = borderTextNoteModel.BorderUniqueIds.Split( ',' ).Select( x => document.GetElement( x ) ).OfType<DetailLine>().EnumerateAll() ;
+          if ( detailLines.Any() )
+            document.Delete( detailLines.Select( x => x.Id ).ToList() ) ;
+        
+          borderTextNoteModel.BorderUniqueIds = string.Join(",", borderUniqueIds) ;
         }
-      }
-      catch ( Exception e ) {
-        MessageBox.Show( e.Message ) ;
-      }
+        else {
+          borderTextNoteModel = new BorderTextNoteModel( textNote.UniqueId, string.Join( ",", borderUniqueIds ) ) ;
+          borderTextNoteData.Add(borderTextNoteModel);
+        }
 
-      
+        borderTextNoteStorable.BorderTextNoteData = borderTextNoteData ;
+        borderTextNoteStorable.Save();
+        selection.SetElementIds(new List<ElementId>());
+
+        transaction.Commit() ;
+      }
     }
 
+    
     public UpdaterId? GetUpdaterId()
     {
       return _updaterId ;
@@ -154,34 +69,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
 
     public string GetUpdaterName()
     {
-      return "TextNoteCreateUpdater" ;
+      return "Text Note Arent Updater" ;
     }
 
     public string GetAdditionalInformation()
     {
       return "Arent, " + "https://arent3d.com" ;
     }
-
-    public bool Register()
-    {
-      var textFilter = new ElementClassFilter(typeof(TextNote));
-
-      UpdaterRegistry.RegisterUpdater( this ) ;
-      UpdaterRegistry.AddTrigger( GetUpdaterId(), textFilter, Element.GetChangeTypeElementAddition() ) ;
-      return true ;
-    }
-
-    public void UnRegister()
-    {
-      if ( UpdaterRegistry.IsUpdaterRegistered( GetUpdaterId() ) ) UpdaterRegistry.UnregisterUpdater( GetUpdaterId() ) ;
-    }
-
-    public bool IsRegistered()
-    {
-      return UpdaterRegistry.IsUpdaterRegistered( GetUpdaterId() ) ;
-    }
-    
-   
-    
   }
 }
