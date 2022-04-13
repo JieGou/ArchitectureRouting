@@ -8,6 +8,7 @@ using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Utility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -229,6 +230,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         newDetailTableModels.Add( detailTableRow ) ;
         if ( detailTableRow == selectDetailTableRow ) {
           newDetailTableModels.Add( newDetailTableRow ) ;
+        }
+      }
+
+      detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+    }
+    
+    public static void MoveDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel selectDetailTableRow, bool isMoveUp )
+    {
+      var newDetailTableModels = new List<DetailTableModel>() ;
+      var selectDetailTableRowIndex = detailTableViewModel.DetailTableModels.FindIndex( d => d == selectDetailTableRow ) ;
+      var tempDetailTableRow = detailTableViewModel.DetailTableModels.ElementAt( isMoveUp ? selectDetailTableRowIndex - 1 : selectDetailTableRowIndex + 1 ) ;
+      foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
+        if ( detailTableRow == tempDetailTableRow ) {
+          newDetailTableModels.Add( selectDetailTableRow ) ;
+        }
+        else if ( detailTableRow == selectDetailTableRow ) {
+          newDetailTableModels.Add( tempDetailTableRow ) ;
+        }
+        else {
+          newDetailTableModels.Add( detailTableRow ) ;
         }
       }
 

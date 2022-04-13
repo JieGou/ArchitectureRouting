@@ -43,8 +43,8 @@
                 </Button.Content>
             </Button>
             <Button Grid.Row="6"  Width="90" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="7"  Width="90" Content="上へ" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="8"  Width="90" Content="下へ" Margin="5,5,5,5" Height="25" />
+            <Button Grid.Row="7"  Width="90" Content="上へ" Margin="5,5,5,5" Height="25" Click="BtnMoveUp_Click" />
+            <Button Grid.Row="8"  Width="90" Content="下へ" Margin="5,5,5,5" Height="25" Click="BtnMoveDown_Click" />
             <Button Grid.Row="9"  Width="90" Content="全選択" Margin="5,5,5,5" Height="25" />
             <Label Grid.Row="10" Content="参照情報" Margin="0,30,5,0"/>
             <Button Grid.Row="11"  Width="90" Content="▼" Margin="5,0,5,5" Height="25" />

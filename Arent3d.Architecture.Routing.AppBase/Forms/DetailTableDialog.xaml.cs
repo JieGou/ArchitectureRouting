@@ -126,6 +126,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DtGrid.ItemsSource = _detailTableViewModel.DetailTableModels ;
       DetailTableViewModelSummary = _detailTableViewModel ;
     }
+    
+    private void BtnMoveUp_Click( object sender, RoutedEventArgs e )
+    {
+      MoveDetailTableRow( true ) ;
+    }
+    
+    private void BtnMoveDown_Click( object sender, RoutedEventArgs e )
+    {
+      MoveDetailTableRow( false ) ;
+    }
+
+    private void MoveDetailTableRow( bool isMoveUp )
+    {
+      if ( ! _selectedDetailTableRows.Any() ) return ;
+      var selectedDetailTableRow = _selectedDetailTableRows.First() ;
+      DetailTableViewModel.MoveDetailTableRow( _detailTableViewModel, selectedDetailTableRow, isMoveUp ) ;
+      _selectedDetailTableRows.Clear() ;
+      DataContext = _detailTableViewModel ;
+      DtGrid.ItemsSource = _detailTableViewModel.DetailTableModels ;
+      DetailTableViewModelSummary = _detailTableViewModel ;
+    }
 
     private void PlumpingTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
