@@ -275,10 +275,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       [Panel( "arent3d.architecture.rc.Annotation", TitleKey = "App.Panels.Rc.TextNote" )]
       private static class AnnotationPanel
       {
-        [Button( typeof( UpdateAnnotationTextNote ), OnlyInitialized = true )]
-        private static class UpdaterAnnotationButton
-        {
-        }
+        [Button( typeof( SimpleBorderCommand ), OnlyInitialized = true )]
+        private static class SimpleBorderCommandButton { }
+        
+        [Button( typeof( DoubleBorderCommand ), OnlyInitialized = true )]
+        private static class DoubleBorderCommandButton { }
       }
     }
   }
