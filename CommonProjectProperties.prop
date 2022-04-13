@@ -1,13 +1,16 @@
 <Project>
     <PropertyGroup>
-        <CommonLibraryVersion>1.0.22.404</CommonLibraryVersion>
-        <AssemblyVersion>$(CommonLibraryVersion)</AssemblyVersion>
-        <FileVersion>$(CommonLibraryVersion)</FileVersion>
-        <Version>$(CommonLibraryVersion)</Version>
+        <AddOnVersion>0.9.0.0</AddOnVersion>
+        <InformationalVersion>$(AddOnVersion)</InformationalVersion>
+
+        <CommonLibraryVersion>1.0.22.413</CommonLibraryVersion>
+        <AssemblyVersion>$(AddOnVersion)</AssemblyVersion>
+        <FileVersion>$(AddOnVersion)</FileVersion>
+        <Version>$(AddOnVersion)</Version>
     </PropertyGroup>
 
     <PropertyGroup>
-        <Configurations>Debug 2019;Release 2019;Debug 2020;Release 2020;Debug 2021;Release 2021;Debug 2022;Release 2022</Configurations>
+        <Configurations>Debug 2019;Release 2019;Debug 2020;Release 2020;Debug 2021;Release 2021;Debug 2022;Release 2022;Debug 2023;Release 2023</Configurations>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <LangVersion>9</LangVersion>
         <Nullable>enable</Nullable>
@@ -55,6 +58,12 @@
                 <TargetFramework>net48</TargetFramework>
             </PropertyGroup>
         </When>
+        <When Condition=" $(Configuration.EndsWith(' 2023')) ">
+            <PropertyGroup>
+                <RevitVersion>2023</RevitVersion>
+                <TargetFramework>net48</TargetFramework>
+            </PropertyGroup>
+        </When>
         <Otherwise>
             <PropertyGroup>
                 <RevitVersion>0</RevitVersion>
@@ -79,5 +88,8 @@
     </PropertyGroup>
     <PropertyGroup Condition="2022 &lt;= $(RevitVersion)">
         <DefineConstants>$(DefineConstants);REVIT2022_OR_GREATER</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition="2023 &lt;= $(RevitVersion)">
+        <DefineConstants>$(DefineConstants);REVIT2023_OR_GREATER</DefineConstants>
     </PropertyGroup>
 </Project>
