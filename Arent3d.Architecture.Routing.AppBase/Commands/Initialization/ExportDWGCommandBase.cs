@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private void ExportDWG( Document document )
     {
-      const string layerSettingsFileName = "Arent-export-layers.txt" ;
+      string layerSettingsFileName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile".GetDocumentStringByKeyOrDefault( document, "Arent-export-layers.txt" ) ;
       var activeView = document.ActiveView ;
       SaveFileDialog saveFileDialog = new() { Filter = "DWG file (*.dwg)|*.dwg", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
       if ( saveFileDialog.ShowDialog() != DialogResult.OK ) return ;
