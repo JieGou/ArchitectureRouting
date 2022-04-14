@@ -301,7 +301,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public static List<DetailTableModel> PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow, DetailTableModel pasteDetailTableRow )
     {
       var newDetailTableModels = new List<DetailTableModel>() ;
-      var index = DateTime.Now.ToString( "yyyyMMddHHmmss" ) ;
+      var index = DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
       var newDetailTableRow = new DetailTableModel( false, copyDetailTableRow.Floor, copyDetailTableRow.CeedCode, copyDetailTableRow.DetailSymbol, 
         copyDetailTableRow.DetailSymbolId, copyDetailTableRow.WireType, copyDetailTableRow.WireSize, copyDetailTableRow.WireStrip, copyDetailTableRow.WireBook, copyDetailTableRow.EarthType, 
         copyDetailTableRow.EarthSize, copyDetailTableRow.NumberOfGrounds, copyDetailTableRow.PlumbingType, copyDetailTableRow.PlumbingSize, copyDetailTableRow.NumberOfPlumbing, 
