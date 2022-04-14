@@ -5,13 +5,13 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class BorderTextNoteModel
   {
-    public string TextNoteUniqueId { get ; set ; }
-    public string BorderUniqueIds { get ; set ; }
+    public int TextNoteId { get ; set ; }
+    public string BorderIds { get ; set ; }
   
-    public BorderTextNoteModel(string? textNoteUniqueId = default, string? borderUniqueIds = default)
+    public BorderTextNoteModel(int? textNoteId = default, string? borderIds = default)
     {
-      TextNoteUniqueId = textNoteUniqueId ?? string.Empty ;
-      BorderUniqueIds = borderUniqueIds ?? string.Empty ;
+      TextNoteId = textNoteId ?? 0 ;
+      BorderIds = borderIds ?? string.Empty ;
     }
   }
 }

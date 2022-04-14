@@ -10,26 +10,26 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
   {
     private enum SerializeField
     {
-      TextNoteUniqueId,
-      BorderUniqueIds
+      TextNoteId,
+      BorderIds
     }
   
     protected override BorderTextNoteModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
   
-      var textNoteUniqueId = deserializer.GetString( SerializeField.TextNoteUniqueId ) ;
-      var borderUniqueIds = deserializer.GetString( SerializeField.BorderUniqueIds ) ;
+      var textNoteId = deserializer.GetInt( SerializeField.TextNoteId ) ;
+      var borderIds = deserializer.GetString( SerializeField.BorderIds ) ;
   
-      return new BorderTextNoteModel( textNoteUniqueId, borderUniqueIds ) ;
+      return new BorderTextNoteModel( textNoteId, borderIds ) ;
     }
   
     protected override ISerializerObject Serialize( Element storedElement, BorderTextNoteModel customTypeValue )
     {
       var serializerObject = new SerializerObject<SerializeField>() ;
   
-      serializerObject.AddNonNull( SerializeField.TextNoteUniqueId, customTypeValue.TextNoteUniqueId ) ;
-      serializerObject.AddNonNull( SerializeField.BorderUniqueIds, customTypeValue.BorderUniqueIds ) ;;
+      serializerObject.Add( SerializeField.TextNoteId, customTypeValue.TextNoteId ) ;
+      serializerObject.AddNonNull( SerializeField.BorderIds, customTypeValue.BorderIds ) ;;
   
       return serializerObject ;
     }

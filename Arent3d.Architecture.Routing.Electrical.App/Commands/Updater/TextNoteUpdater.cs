@@ -1,8 +1,8 @@
 ﻿using System ;
 using System.Collections.Generic;
 using System.Linq ;
-using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -24,40 +24,67 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
 
     public void Execute( UpdaterData data )
     {
-      var document = data.GetDocument() ;
-      var uiDocument = new UIDocument( document ) ;
-      var selection = uiDocument.Selection ;
+      try {
+        var document = data.GetDocument() ;
+        var uiDocument = new UIDocument( document ) ;
+        var selection = uiDocument.Selection ;
 
-      if ( selection.GetElementIds().Count == 1 && data.GetModifiedElementIds().Count == 1 && document.GetElement( data.GetModifiedElementIds().First() ) is TextNote textNote ) {
-        using var transaction = new Transaction( document ) ;
-        transaction.Start( "Modify Double Border" ) ;
-        
-        var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
-        var borderUniqueIds = ( from curve in curveLoop select document.Create.NewDetailCurve( document.ActiveView, curve ) into detailLine select detailLine.UniqueId ).ToList() ;
-        
-        var borderTextNoteStorable = document.GetAllStorables<BorderTextNoteStorable>().FirstOrDefault() ?? document.GetBorderTextNoteStorable() ;
-        var borderTextNoteData = borderTextNoteStorable.BorderTextNoteData.Where( x => document.GetElement( x.TextNoteUniqueId ) is TextNote ).ToList() ;
-        if ( borderTextNoteData.SingleOrDefault( x => x.TextNoteUniqueId == textNote.UniqueId ) is { } borderTextNoteModel ) {
-          var detailLines = borderTextNoteModel.BorderUniqueIds.Split( ',' ).Select( x => document.GetElement( x ) ).OfType<DetailLine>().EnumerateAll() ;
-          if ( detailLines.Any() )
-            document.Delete( detailLines.Select( x => x.Id ).ToList() ) ;
-        
-          borderTextNoteModel.BorderUniqueIds = string.Join(",", borderUniqueIds) ;
+        if ( data.GetAddedElementIds().Count == 1 ) {
+          var textNote = GetTextNote( document, data.GetAddedElementIds().First(), DoubleBorderCommand.TextNoteTypeName ) ;
+          if ( null == textNote )
+            return ;
+          
+          var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
+          curveLoop = CurveLoop.CreateViaOffset(curveLoop, -0.5.MillimetersToRevitUnits() * document.ActiveView.Scale, document.ActiveView.ViewDirection);
+          var borderIds = ( from curve in curveLoop select document.Create.NewDetailCurve( document.ActiveView, curve ) into detailLine select $"{detailLine.Id.IntegerValue}" ).ToList() ;
+
+          var borderTextNoteStorable = document.GetAllStorables<BorderTextNoteStorable>().FirstOrDefault() ?? document.GetBorderTextNoteStorable() ;
+          borderTextNoteStorable.BorderTextNoteData.Add( new BorderTextNoteModel( textNote.Id.IntegerValue, string.Join( ",", borderIds ) ) ) ;
+          borderTextNoteStorable.Save() ;
         }
-        else {
-          borderTextNoteModel = new BorderTextNoteModel( textNote.UniqueId, string.Join( ",", borderUniqueIds ) ) ;
-          borderTextNoteData.Add(borderTextNoteModel);
+        else if ( data.GetModifiedElementIds().Count == 1 && selection.GetElementIds().Count == 1 && data.GetModifiedElementIds().First() == selection.GetElementIds().First() ) {
+          var textNote = GetTextNote( document, data.GetModifiedElementIds().First(), DoubleBorderCommand.TextNoteTypeName ) ;
+          if ( null == textNote )
+            return ;
+
+          var curveLoop = GeometryHelper.GetOutlineTextNote( textNote ) ;
+          curveLoop = CurveLoop.CreateViaOffset(curveLoop, -0.5.MillimetersToRevitUnits() * document.ActiveView.Scale, document.ActiveView.ViewDirection);
+          var borderUniqueIds = ( from curve in curveLoop select document.Create.NewDetailCurve( document.ActiveView, curve ) into detailLine select $"{detailLine.Id.IntegerValue}" ).ToList() ;
+
+          var borderTextNoteStorable = document.GetAllStorables<BorderTextNoteStorable>().FirstOrDefault() ?? document.GetBorderTextNoteStorable() ;
+          if ( borderTextNoteStorable.BorderTextNoteData.SingleOrDefault( x => x.TextNoteId == textNote.Id.IntegerValue ) is { } borderTextNoteModel ) {
+            var detailLines = borderTextNoteModel.BorderIds.Split( ',' ).Select( x => document.GetElement( new ElementId(int.Parse(x)) ) ).OfType<DetailLine>().EnumerateAll() ;
+            if ( detailLines.Any() )
+              document.Delete( detailLines.Select( x => x.Id ).ToList() ) ;
+
+            borderTextNoteModel.BorderIds = string.Join( ",", borderUniqueIds ) ;
+          }
+          else {
+            borderTextNoteModel = new BorderTextNoteModel( textNote.Id.IntegerValue, string.Join( ",", borderUniqueIds ) ) ;
+            borderTextNoteStorable.BorderTextNoteData.Add( borderTextNoteModel ) ;
+          }
+          
+          borderTextNoteStorable.Save() ;
+          selection.SetElementIds( new List<ElementId>() ) ;
         }
+        else if ( data.GetDeletedElementIds().Count == 1 ) {
+          var borderTextNoteStorable = document.GetAllStorables<BorderTextNoteStorable>().FirstOrDefault() ?? document.GetBorderTextNoteStorable() ;
+          if ( borderTextNoteStorable.BorderTextNoteData.SingleOrDefault( x => x.TextNoteId == data.GetDeletedElementIds().First().IntegerValue ) is { } borderTextNoteModel ) {
+            var detailLines = borderTextNoteModel.BorderIds.Split( ',' ).Select( x => document.GetElement( new ElementId(int.Parse(x)) ) ).OfType<DetailLine>().EnumerateAll() ;
+            if ( detailLines.Any() )
+              document.Delete( detailLines.Select( x => x.Id ).ToList() ) ;
+            
+            borderTextNoteStorable.BorderTextNoteData.Remove( borderTextNoteModel ) ;
+          }
 
-        borderTextNoteStorable.BorderTextNoteData = borderTextNoteData ;
-        borderTextNoteStorable.Save();
-        selection.SetElementIds(new List<ElementId>());
-
-        transaction.Commit() ;
+          borderTextNoteStorable.Save() ;
+        }
+      }
+      catch ( Exception exception ) {
+        TaskDialog.Show( "Arent Inc", exception.Message ) ;
       }
     }
 
-    
     public UpdaterId? GetUpdaterId()
     {
       return _updaterId ;
@@ -76,6 +103,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
     public string GetAdditionalInformation()
     {
       return "Arent, " + "https://arent3d.com" ;
+    }
+
+    private static TextNote? GetTextNote(Document document, ElementId elementId, string textNoteTypeName )
+    {
+      if(document.GetElement(elementId) is not TextNote textNote)
+        return null;
+        
+      if(document.GetElement(textNote.GetTypeId()) is not TextNoteType textNoteType)
+        return null;
+        
+      return textNoteType.Name != textNoteTypeName ? null : textNote ;
     }
   }
 }

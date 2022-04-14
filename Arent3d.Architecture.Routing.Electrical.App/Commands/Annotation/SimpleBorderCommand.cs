@@ -13,7 +13,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
   [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
   public class SimpleBorderCommand : IExternalCommand
   {
-    public const string TextNoteTypeName = "ARENT_2.5MM_BORDER" ;
+    public const string TextNoteTypeName = "ARENT_2.5MM_SIMPLE-BORDER" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
