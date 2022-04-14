@@ -78,6 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedItems = dataGrid.SelectedItems ;
       if ( selectedItems.Count <= 0 ) return ;
       _selectedDetailTableRows.Clear() ;
+      _selectedDetailTableRowsSummary.Clear() ;
       foreach ( var item in selectedItems ) {
         if ( item is not DetailTableModel detailTableRow ) continue ;
         if ( ! string.IsNullOrEmpty( detailTableRow.GroupId ) ) {

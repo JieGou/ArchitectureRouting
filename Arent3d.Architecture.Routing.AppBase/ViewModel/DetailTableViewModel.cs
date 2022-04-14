@@ -482,7 +482,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           newDetailTableModels.Add( selectDetailTableRowSummary ) ;
         }
         else if ( detailTableRow == selectDetailTableRowSummary ) {
-          newDetailTableModels.Add( tempDetailTableRow ) ;
+          newDetailTableModels.Add( tempDetailTableRowSummary ) ;
         }
         else {
           newDetailTableModels.Add( detailTableRow ) ;
