@@ -39,7 +39,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       PlumbingIdentityInfo,
       GroupId,
       IsReadOnlyPlumbingItems, 
-      IsAddNew
+      IsReadOnlyParameters
     }
 
     protected override DetailTableModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -75,11 +75,11 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var plumbingIdentityInfo = deserializer.GetString( SerializeField.PlumbingIdentityInfo ) ;
       var groupId = deserializer.GetString( SerializeField.GroupId ) ;
       var isReadOnlyPlumbingItems = deserializer.GetBool( SerializeField.IsReadOnlyPlumbingItems ) ;
-      var isAddNew = deserializer.GetBool( SerializeField.IsAddNew ) ;
+      var isReadOnlyParameters = deserializer.GetBool( SerializeField.IsReadOnlyParameters ) ;
 
       return new DetailTableModel( calculationExclusion, floor, ceedCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType,
         plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode,
-        isParentRoute, isReadOnly, plumbingIdentityInfo, groupId, isReadOnlyPlumbingItems, isAddNew ) ;
+        isParentRoute, isReadOnly, plumbingIdentityInfo, groupId, isReadOnlyPlumbingItems, isReadOnlyParameters ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailTableModel customTypeValue )
@@ -115,7 +115,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.PlumbingIdentityInfo, customTypeValue.PlumbingIdentityInfo ) ;
       serializerObject.AddNonNull( SerializeField.GroupId, customTypeValue.GroupId ) ;
       serializerObject.Add( SerializeField.IsReadOnlyPlumbingItems, customTypeValue.IsReadOnlyPlumbingItems ) ;
-      serializerObject.Add( SerializeField.IsAddNew, customTypeValue.IsAddNew ) ;
+      serializerObject.Add( SerializeField.IsReadOnlyParameters, customTypeValue.IsReadOnlyParameters ) ;
 
       return serializerObject ;
     }

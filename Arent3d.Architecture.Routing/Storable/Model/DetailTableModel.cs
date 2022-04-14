@@ -31,7 +31,7 @@
     public string PlumbingIdentityInfo { get ; set ; }
     public string GroupId { get ; set ; }
     public bool IsReadOnlyPlumbingItems { get ; set ; }
-    public bool IsAddNew { get ; set ; }
+    public bool IsReadOnlyParameters { get ; set ; }
 
     public DetailTableModel( 
       bool? calculationExclusion, 
@@ -63,7 +63,7 @@
       string? plumbingIdentityInfo,
       string? groupId,
       bool? isReadOnlyPlumbingItems,
-      bool? isAddNew )
+      bool? isReadOnlyParameters )
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -94,7 +94,7 @@
       PlumbingIdentityInfo = plumbingIdentityInfo ?? string.Empty ;
       GroupId = groupId ?? string.Empty ;
       IsReadOnlyPlumbingItems = isReadOnlyPlumbingItems ?? true ;
-      IsAddNew = isAddNew ?? false ;
+      IsReadOnlyParameters = isReadOnlyParameters ?? true ;
     }
     
     public DetailTableModel( string? detailSymbol, string? detailSymbolId)
@@ -128,7 +128,7 @@
       PlumbingIdentityInfo = string.Empty ;
       GroupId = string.Empty ;
       IsReadOnlyPlumbingItems = true ;
-      IsAddNew = true ;
+      IsReadOnlyParameters = false ;
     }
   }
 }

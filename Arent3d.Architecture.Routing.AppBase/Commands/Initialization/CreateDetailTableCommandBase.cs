@@ -77,8 +77,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
       var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
 
-      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems ) ;
-      var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, mixConstructionItems ) ;
+      var levelNames = doc.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).Select( l => l.Name ).ToList() ;
+      var levels = ( from levelName in levelNames select new ComboboxItemType( levelName, levelName ) ).ToList() ;
+
+      var wireTypeNames = wiresAndCablesModelData.Select( w => w.WireType ).Distinct().ToList() ;
+      var wireTypes = ( from wireType in wireTypeNames select new ComboboxItemType( wireType, wireType ) ).ToList() ;
+      
+      var earthTypes =  new List<ComboboxItemType>() { new( "IV", "IV" ), new ( "EM-IE", "EM-IE") } ;
+
+      var numbers = new List<ComboboxItemType>() ;
+      for ( var i = 1; i <= 10; i++ ) {
+        numbers.Add( new ComboboxItemType( i.ToString(), i.ToString() ) ) ;
+      }
+
+      var constructionClassificationTypeNames = hiroiSetCdMasterNormalModelData.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
+      var constructionClassificationTypes = ( from constructionClassification in constructionClassificationTypeNames select new ComboboxItemType( constructionClassification, constructionClassification ) ).ToList() ;
+
+      var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) select new ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
+
+      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, new List<ComboboxItemType>() ) ;
+      var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, mixConstructionItems ) ;
       dialog.ShowDialog() ;
 
       if ( dialog.DialogResult ?? false ) {
@@ -117,6 +135,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       else {
         return Result.Cancelled ;
       }
+    }
+    
+    private enum SignalType
+    {
+      伝送幹線,
+      低電圧,
+      小勢力,
+      動力
     }
 
     private enum ConstructionClassificationType
@@ -572,7 +598,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
       }
 
-      var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, constructionItem, plumbingItems, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, string.Empty, groupId, true, false ) ;
+      var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, constructionItem, plumbingItems, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, string.Empty, groupId, true, true ) ;
       detailTableModels.Add( detailTableRow ) ;
     }
 

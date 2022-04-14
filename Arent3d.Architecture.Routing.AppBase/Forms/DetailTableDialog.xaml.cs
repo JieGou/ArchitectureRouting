@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private const string CaptionErrorMessage = "Error" ;
     private readonly Document _document ;
     private readonly List<ConduitsModel> _conduitsModelData ;
+    private readonly List<WiresAndCablesModel> _wiresAndCablesModelData ;
     private readonly DetailTableViewModel _detailTableViewModel ;
     private readonly List<DetailTableModel> _selectedDetailTableRows ;
     public DetailTableViewModel DetailTableViewModelSummary { get ; set ; }
@@ -35,7 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private static string MultipleConstructionCategoriesMixedWithSameDetailSymbolMessage =
       "Construction categories are mixed in the detail symbol {0}. Would you like to proceed to create the detail table?" ;
 
-    public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData, bool mixConstructionItems )
+    public DetailTableDialog( Document document, DetailTableViewModel viewModel, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, bool mixConstructionItems )
     {
       InitializeComponent() ;
       _document = document ;
@@ -43,6 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _detailTableViewModel = viewModel ;
       DetailTableViewModelSummary = viewModel ;
       _conduitsModelData = conduitsModelData ;
+      _wiresAndCablesModelData = wiresAndCablesModelData ;
       _isMixConstructionItems = mixConstructionItems ;
       RoutesWithConstructionItemHasChanged = new Dictionary<string, string>() ;
       DetailSymbolIdsWithPlumbingTypeHasChanged = new Dictionary<string, string>() ;
@@ -202,10 +204,46 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           newDetailTableModels = _detailTableViewModel.DetailTableModels.ToList() ;
           DetailTableViewModel.SortDetailTableModel( ref newDetailTableModels, _isMixConstructionItems ) ;
           _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+          var plumbingSizesOfPlumbingType = _conduitsModelData.Where( c => c.PipingType == plumbingType!.ToString() ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+          var plumbingSizes = ( from plumbingSize in plumbingSizesOfPlumbingType select new CreateDetailTableCommandBase.ComboboxItemType( plumbingSize, plumbingSize ) ).ToList() ;
+          _detailTableViewModel.PlumbingSizes = plumbingSizes ;
           CreateDetailTableViewModelByGroupId() ;
           SaveData( _detailTableViewModel.DetailTableModels ) ;
         }
       }
+    }
+
+    private void WireTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      if ( sender is not ComboBox comboBox ) return ;
+      var selectedWireType = comboBox.SelectedValue ;
+      if ( selectedWireType == null ) return ;
+      var wireSizesOfWireType = _wiresAndCablesModelData.Where( w => w.WireType == selectedWireType.ToString() ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
+      var wireSizes = ( from wireType in wireSizesOfWireType select new CreateDetailTableCommandBase.ComboboxItemType( wireType, wireType ) ).ToList() ;
+      _detailTableViewModel.WireSizes = wireSizes ;
+      DetailTableViewModelSummary = _detailTableViewModel ;
+    }
+    
+    private void WireSizeSelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      if ( sender is not ComboBox comboBox ) return ;
+      var selectedWireSize = comboBox.SelectedValue ;
+      var selectedDetailTableRow = (DetailTableModel) DtGrid.SelectedValue ;
+      if ( string.IsNullOrEmpty( selectedDetailTableRow.WireType ) || string.IsNullOrEmpty( selectedWireSize.ToString() ) ) return ;
+      var wireStripsOfWireType = _wiresAndCablesModelData.Where( w => w.WireType == selectedDetailTableRow.WireType && w.DiameterOrNominal == selectedWireSize.ToString() ).Select( w => w.NumberOfHeartsOrLogarithm + w.COrP ).Distinct().ToList() ;
+      var wireStrips = ( from wireStrip in wireStripsOfWireType select new CreateDetailTableCommandBase.ComboboxItemType( wireStrip, wireStrip ) ).ToList() ;
+      _detailTableViewModel.WireStrips = wireStrips ;
+      DataContext = _detailTableViewModel ;
+    }
+    
+    private void WireStripSelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      if ( sender is not ComboBox comboBox ) return ;
+      var selectedWireStrip = comboBox.SelectedValue ;
+      var selectedDetailTableRow = (DetailTableModel) DtGrid.SelectedValue ;
+      if ( string.IsNullOrEmpty( selectedDetailTableRow.WireType ) || string.IsNullOrEmpty( selectedDetailTableRow.WireSize ) || string.IsNullOrEmpty( selectedWireStrip.ToString() ) ) return ;
+      var crossSectionalArea = Convert.ToDouble( _wiresAndCablesModelData.FirstOrDefault( w => w.WireType == selectedDetailTableRow.WireType && w.DiameterOrNominal == selectedDetailTableRow.WireSize && w.NumberOfHeartsOrLogarithm + w.COrP == selectedDetailTableRow.WireStrip )?.CrossSectionalArea ) ;
+      selectedDetailTableRow.WireCrossSectionalArea = crossSectionalArea ;
     }
 
     private void ConstructionItemSelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -234,7 +272,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               oldDetailTableRow.EarthSize, oldDetailTableRow.NumberOfGrounds, oldDetailTableRow.PlumbingType, oldDetailTableRow.PlumbingSize, oldDetailTableRow.NumberOfPlumbing, 
               oldDetailTableRow.ConstructionClassification, oldDetailTableRow.SignalType, constructionItem.ToString(), plumbingItems, oldDetailTableRow.Remark, 
               oldDetailTableRow.WireCrossSectionalArea, oldDetailTableRow.CountCableSamePosition, oldDetailTableRow.RouteName, oldDetailTableRow.IsEcoMode, oldDetailTableRow.IsParentRoute, 
-              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems, oldDetailTableRow.IsAddNew ) ;
+              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems, oldDetailTableRow.IsReadOnlyParameters ) ;
             newDetailTableModels.Add( newDetailTableRow ) ;
           }
           else {
@@ -303,7 +341,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
               oldDetailTableRow.EarthSize, oldDetailTableRow.NumberOfGrounds, oldDetailTableRow.PlumbingType, oldDetailTableRow.PlumbingSize, oldDetailTableRow.NumberOfPlumbing, 
               oldDetailTableRow.ConstructionClassification, oldDetailTableRow.SignalType, oldDetailTableRow.ConstructionItems, plumbingItem.ToString(), oldDetailTableRow.Remark, 
               oldDetailTableRow.WireCrossSectionalArea, oldDetailTableRow.CountCableSamePosition, oldDetailTableRow.RouteName, oldDetailTableRow.IsEcoMode, oldDetailTableRow.IsParentRoute, 
-              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems, oldDetailTableRow.IsAddNew ) ;
+              oldDetailTableRow.IsReadOnly, oldDetailTableRow.PlumbingIdentityInfo, oldDetailTableRow.GroupId, oldDetailTableRow.IsReadOnlyPlumbingItems, oldDetailTableRow.IsReadOnlyParameters ) ;
             newDetailTableModels.Add( newDetailTableRow ) ;
           }
           else {
@@ -400,13 +438,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             detailTableRow.EarthSize, detailTableRow.NumberOfGrounds, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
             detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
             detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
-            detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsAddNew ) ;
+            detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsReadOnlyParameters ) ;
           newDetailTableModels.Add( newDetailTableRow ) ;
           existedGroupIds.Add( detailTableRow.GroupId ) ;
         }
       }
 
-      DetailTableViewModel newDetailTableViewModel = new( new ObservableCollection<DetailTableModel>( newDetailTableModels ), _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems ) ;
+      DetailTableViewModel newDetailTableViewModel = new( new ObservableCollection<DetailTableModel>( newDetailTableModels ), _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems, 
+        _detailTableViewModel.Levels, _detailTableViewModel.WireTypes, _detailTableViewModel.EarthTypes, _detailTableViewModel.Numbers, _detailTableViewModel.ConstructionClassificationTypes, 
+        _detailTableViewModel.SignalTypes, _detailTableViewModel.PlumbingSizes ) ;
       this.DataContext = newDetailTableViewModel ;
       DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
       DetailTableViewModelSummary = newDetailTableViewModel ;

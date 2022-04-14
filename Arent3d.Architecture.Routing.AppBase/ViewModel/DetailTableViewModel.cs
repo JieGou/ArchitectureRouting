@@ -20,15 +20,34 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     public  bool IsCancelCreateDetailTable { get; set; }
 
-    public ICommand SaveDetailTableCommand { get; set; }
+    public ICommand SaveDetailTableCommand { get; }
 
-    public ICommand SaveAndCreateDetailTableCommand { get ; set ; }
+    public ICommand SaveAndCreateDetailTableCommand { get ; }
 
-    public List<CreateDetailTableCommandBase.ComboboxItemType> ConduitTypes { get ; set ; }
+    public List<CreateDetailTableCommandBase.ComboboxItemType> ConduitTypes { get ;}
 
-    public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionItems { get ; set ; }
+    public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionItems { get ; }
+    
+    public List<CreateDetailTableCommandBase.ComboboxItemType> Levels { get ; }
 
-    public DetailTableViewModel( ObservableCollection<DetailTableModel> detailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems )
+    public List<CreateDetailTableCommandBase.ComboboxItemType> WireTypes { get ; }
+    public List<CreateDetailTableCommandBase.ComboboxItemType> WireSizes { get ; set ; }
+    public List<CreateDetailTableCommandBase.ComboboxItemType> WireStrips { get ; set ; }
+    
+    public List<CreateDetailTableCommandBase.ComboboxItemType> EarthTypes { get ; }
+    public List<CreateDetailTableCommandBase.ComboboxItemType> EarthSizes { get ; set ; }
+
+    public List<CreateDetailTableCommandBase.ComboboxItemType> Numbers { get ; }
+    
+    public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionClassificationTypes { get ; }
+
+    public List<CreateDetailTableCommandBase.ComboboxItemType> SignalTypes { get ; }
+    public List<CreateDetailTableCommandBase.ComboboxItemType> PlumbingSizes { get ; set ; }
+
+    public DetailTableViewModel( ObservableCollection<DetailTableModel> detailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems,
+      List<CreateDetailTableCommandBase.ComboboxItemType> levels, List<CreateDetailTableCommandBase.ComboboxItemType> wireTypes, List<CreateDetailTableCommandBase.ComboboxItemType> earthTypes,
+      List<CreateDetailTableCommandBase.ComboboxItemType> numbers, List<CreateDetailTableCommandBase.ComboboxItemType> constructionClassificationTypes, List<CreateDetailTableCommandBase.ComboboxItemType> signalTypes,
+      List<CreateDetailTableCommandBase.ComboboxItemType> plumbingSizes )
     {
       DetailTableModels = detailTableModels ;
       IsCreateDetailTableOnFloorPlanView = false ;
@@ -43,6 +62,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       ConduitTypes = conduitTypes ;
       ConstructionItems = constructionItems ;
+      Levels = levels ;
+      WireTypes = wireTypes ;
+      WireSizes = new List<CreateDetailTableCommandBase.ComboboxItemType>() ;
+      WireStrips = new List<CreateDetailTableCommandBase.ComboboxItemType>() ;
+      EarthTypes = earthTypes ;
+      EarthSizes = new List<CreateDetailTableCommandBase.ComboboxItemType>() ;
+      Numbers = numbers ;
+      ConstructionClassificationTypes = constructionClassificationTypes ;
+      SignalTypes = signalTypes ;
+      PlumbingSizes = plumbingSizes ;
     }
 
     private void SaveDetailTable()
