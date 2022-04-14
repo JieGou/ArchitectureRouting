@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
 {
   public class TextNoteUpdater : IUpdater
   {
-    private static UpdaterId? _updaterId ;
+    private readonly UpdaterId? _updaterId ;
 
     public TextNoteUpdater( AddInId? id )
     {
