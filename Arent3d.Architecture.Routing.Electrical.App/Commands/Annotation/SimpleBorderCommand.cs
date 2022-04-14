@@ -56,6 +56,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
       
       textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 1 ) ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( 2.5.MillimetersToRevitUnits() ) ;
+      textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( 0.6.MillimetersToRevitUnits() ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
 
       return textNoteType ;
     }
