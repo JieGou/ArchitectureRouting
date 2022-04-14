@@ -28,7 +28,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly DetailTableViewModel _detailTableViewModel ;
     private readonly DetailSymbolStorable _detailSymbolStorable ;
     private List<DetailTableModel> _selectedDetailTableRows ;
+    private List<DetailTableModel> _selectedDetailTableRowsSummary ;
     private DetailTableModel? _copyDetailTableRow ;
+    private DetailTableModel? _copyDetailTableRowSummary ;
     public DetailTableViewModel DetailTableViewModelSummary { get ; set ; }
     public Dictionary<string, string> RoutesWithConstructionItemHasChanged { get ; }
     public Dictionary<string, string> DetailSymbolIdsWithPlumbingTypeHasChanged { get ; }
@@ -51,7 +53,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       RoutesWithConstructionItemHasChanged = new Dictionary<string, string>() ;
       DetailSymbolIdsWithPlumbingTypeHasChanged = new Dictionary<string, string>() ;
       _selectedDetailTableRows = new List<DetailTableModel>() ;
+      _selectedDetailTableRowsSummary = new List<DetailTableModel>() ;
       _copyDetailTableRow = null ;
+      _copyDetailTableRowSummary = null ;
 
       CreateDetailTableViewModelByGroupId() ;
       
@@ -83,42 +87,45 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         else {
           _selectedDetailTableRows.Add( detailTableRow ) ;
         }
+        _selectedDetailTableRowsSummary.Add( detailTableRow ) ;
       }
     }
 
     private void BtnDeleteLine_Click( object sender, RoutedEventArgs e )
     {
-      if ( ! _selectedDetailTableRows.Any() ) return ;
-      DetailTableViewModel.DeleteDetailTableRows( _detailTableViewModel, _selectedDetailTableRows, _detailSymbolStorable ) ;
-      CreateDetailTableViewModelByGroupId() ;
-      _selectedDetailTableRows.Clear() ;
+      if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) return ;
+      DetailTableViewModel.DeleteDetailTableRows( _detailTableViewModel, _selectedDetailTableRows, DetailTableViewModelSummary, _selectedDetailTableRowsSummary, _detailSymbolStorable ) ;
+      UpdateDataGridAndRemoveSelectedRow() ;
     }
     
     private void BtnCopyLine_Click( object sender, RoutedEventArgs e )
     {
-      if ( ! _selectedDetailTableRows.Any() ) return ;
+      if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) return ;
       _copyDetailTableRow = _selectedDetailTableRows.First() ;
+      _copyDetailTableRowSummary = _selectedDetailTableRowsSummary.First() ;
       _selectedDetailTableRows.Clear() ;
+      _selectedDetailTableRowsSummary.Clear() ;
     }
 
     private void BtnPasteLine_Click( object sender, RoutedEventArgs e )
     {
-      if ( _copyDetailTableRow == null ) {
+      if ( _copyDetailTableRow == null || _copyDetailTableRowSummary == null ) {
         MessageBox.Show( "Please choose a row to copy", "Message" ) ;
         return ;
       }
 
       var pasteDetailTableRow = ! _selectedDetailTableRows.Any() ? _copyDetailTableRow : _selectedDetailTableRows.First() ;
-      var newDetailTableModels = DetailTableViewModel.PasteDetailTableRow( _detailTableViewModel, _copyDetailTableRow, pasteDetailTableRow ) ;
-      _detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
-      CreateDetailTableViewModelByGroupId() ;
-      _selectedDetailTableRows.Clear() ;
+      var pasteDetailTableRowSummary = ! _selectedDetailTableRowsSummary.Any() ? _copyDetailTableRowSummary : _selectedDetailTableRowsSummary.First() ;
+      DetailTableViewModel.PasteDetailTableRow( _detailTableViewModel, _copyDetailTableRow, pasteDetailTableRow, DetailTableViewModelSummary, pasteDetailTableRowSummary ) ;
+      UpdateDataGridAndRemoveSelectedRow() ;
     }
     
     private void BtnSelectAll_Click( object sender, RoutedEventArgs e )
     {
       _selectedDetailTableRows.Clear() ;
+      _selectedDetailTableRowsSummary.Clear() ;
       _selectedDetailTableRows = _detailTableViewModel.DetailTableModels.ToList() ;
+      _selectedDetailTableRowsSummary = DetailTableViewModelSummary.DetailTableModels.ToList() ;
       DtGrid.SelectAll() ;
     }
 
@@ -157,15 +164,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       this.Close() ;
     }
 
+    private void UpdateDataGridAndRemoveSelectedRow()
+    {
+      DataContext = DetailTableViewModelSummary ;
+      DtGrid.ItemsSource = DetailTableViewModelSummary.DetailTableModels ;
+      _selectedDetailTableRows.Clear() ;
+      _selectedDetailTableRowsSummary.Clear() ;
+    }
+
     private void BtnAdd_Click( object sender, RoutedEventArgs e )
     {
-      if ( ! _selectedDetailTableRows.Any() ) return ;
+      if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) return ;
       var selectedDetailTableRow = _selectedDetailTableRows.Last() ;
-      DetailTableViewModel.AddDetailTableRow( _detailTableViewModel, selectedDetailTableRow ) ;
-      _selectedDetailTableRows.Clear() ;
-      DataContext = _detailTableViewModel ;
-      DtGrid.ItemsSource = _detailTableViewModel.DetailTableModels ;
-      DetailTableViewModelSummary = _detailTableViewModel ;
+      var selectedDetailTableRowSummary = _selectedDetailTableRowsSummary.Last() ;
+      DetailTableViewModel.AddDetailTableRow( _detailTableViewModel, selectedDetailTableRow, DetailTableViewModelSummary, selectedDetailTableRowSummary ) ;
+      UpdateDataGridAndRemoveSelectedRow() ;
     }
     
     private void BtnMoveUp_Click( object sender, RoutedEventArgs e )
@@ -180,13 +193,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void MoveDetailTableRow( bool isMoveUp )
     {
-      if ( ! _selectedDetailTableRows.Any() ) return ;
+      if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) return ;
       var selectedDetailTableRow = _selectedDetailTableRows.First() ;
-      DetailTableViewModel.MoveDetailTableRow( _detailTableViewModel, selectedDetailTableRow, isMoveUp ) ;
-      _selectedDetailTableRows.Clear() ;
-      DataContext = _detailTableViewModel ;
-      DtGrid.ItemsSource = _detailTableViewModel.DetailTableModels ;
-      DetailTableViewModelSummary = _detailTableViewModel ;
+      var selectedDetailTableRowSummary = _selectedDetailTableRowsSummary.First() ;
+      DetailTableViewModel.MoveDetailTableRow( _detailTableViewModel, selectedDetailTableRow, DetailTableViewModelSummary, selectedDetailTableRowSummary, isMoveUp ) ;
+      UpdateDataGridAndRemoveSelectedRow() ;
     }
 
     private void PlumpingTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -255,7 +266,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var wireSizesOfWireType = _wiresAndCablesModelData.Where( w => w.WireType == selectedWireType.ToString() ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
       var wireSizes = ( from wireType in wireSizesOfWireType select new CreateDetailTableCommandBase.ComboboxItemType( wireType, wireType ) ).ToList() ;
       _detailTableViewModel.WireSizes = wireSizes ;
-      DetailTableViewModelSummary = _detailTableViewModel ;
+      DetailTableViewModelSummary.WireSizes = wireSizes ;
+      UpdateDataGridAndRemoveSelectedRow() ;
     }
     
     private void WireSizeSelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -267,7 +279,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var wireStripsOfWireType = _wiresAndCablesModelData.Where( w => w.WireType == selectedDetailTableRow.WireType && w.DiameterOrNominal == selectedWireSize.ToString() ).Select( w => w.NumberOfHeartsOrLogarithm + w.COrP ).Distinct().ToList() ;
       var wireStrips = ( from wireStrip in wireStripsOfWireType select new CreateDetailTableCommandBase.ComboboxItemType( wireStrip, wireStrip ) ).ToList() ;
       _detailTableViewModel.WireStrips = wireStrips ;
-      DataContext = _detailTableViewModel ;
+      DetailTableViewModelSummary.WireStrips = wireStrips ;
+      UpdateDataGridAndRemoveSelectedRow() ;
     }
     
     private void WireStripSelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -277,7 +290,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedDetailTableRow = (DetailTableModel) DtGrid.SelectedValue ;
       if ( string.IsNullOrEmpty( selectedDetailTableRow.WireType ) || string.IsNullOrEmpty( selectedDetailTableRow.WireSize ) || string.IsNullOrEmpty( selectedWireStrip.ToString() ) ) return ;
       var crossSectionalArea = Convert.ToDouble( _wiresAndCablesModelData.FirstOrDefault( w => w.WireType == selectedDetailTableRow.WireType && w.DiameterOrNominal == selectedDetailTableRow.WireSize && w.NumberOfHeartsOrLogarithm + w.COrP == selectedDetailTableRow.WireStrip )?.CrossSectionalArea ) ;
-      selectedDetailTableRow.WireCrossSectionalArea = crossSectionalArea ;
+      var detailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == selectedDetailTableRow ) ;
+      if ( detailTableRow != null ) detailTableRow.WireCrossSectionalArea = crossSectionalArea ;
+      var detailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == selectedDetailTableRow ) ;
+      if ( detailTableRowSummary != null ) detailTableRowSummary.WireCrossSectionalArea = crossSectionalArea ;
+      UpdateDataGridAndRemoveSelectedRow() ;
     }
 
     private void ConstructionItemSelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -342,7 +359,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           detailTableRowWithSamePlumbing.PlumbingItems = plumbingItem.ToString() ;
         }
 
-        CreateDetailTableViewModelByGroupId() ;
+        var detailTableRowsSummaryWithSamePlumbing = DetailTableViewModelSummary.DetailTableModels.Where( c => c.PlumbingIdentityInfo == detailTableRow.PlumbingIdentityInfo ).ToList() ;
+        foreach ( var detailTableRowWithSamePlumbing in detailTableRowsSummaryWithSamePlumbing ) {
+          detailTableRowWithSamePlumbing.PlumbingItems = plumbingItem.ToString() ;
+        }
+        
+        UpdateDataGridAndRemoveSelectedRow() ;
       }
     }
 

@@ -295,7 +295,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static void DeleteDetailTableRows( DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableModels, DetailSymbolStorable detailSymbolStorable )
+    public static void DeleteDetailTableRows( DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableModels, DetailTableViewModel detailTableViewModelSummary, List<DetailTableModel> selectedDetailTableModelsSummary, DetailSymbolStorable detailSymbolStorable )
     {
       foreach ( var selectedItem in selectedDetailTableModels ) {
         if ( ! string.IsNullOrEmpty( selectedItem.GroupId ) ) {
@@ -325,9 +325,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           detailTableViewModel.DetailTableModels.Remove( detailTableRow ) ;
         }
       }
+      
+      foreach ( var selectedItem in selectedDetailTableModelsSummary ) {
+        detailTableViewModelSummary.DetailTableModels.Remove( selectedItem ) ;
+      }
     }
 
-    public static List<DetailTableModel> PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow, DetailTableModel pasteDetailTableRow )
+    public static void PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow, DetailTableModel pasteDetailTableRow, DetailTableViewModel detailTableViewModelSummary, DetailTableModel pasteDetailTableRowSummary )
     {
       var newDetailTableModels = new List<DetailTableModel>() ;
       var index = DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
@@ -344,7 +348,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      return newDetailTableModels ;
+      detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+      
+      newDetailTableModels = new List<DetailTableModel>() ;
+      foreach ( var detailTableRow in detailTableViewModelSummary.DetailTableModels ) {
+        newDetailTableModels.Add( detailTableRow ) ;
+        if ( detailTableRow == pasteDetailTableRowSummary ) {
+          newDetailTableModels.Add( newDetailTableRow ) ;
+        }
+      }
+
+      detailTableViewModelSummary.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
 
     public static void PlumbingSummary( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems )
@@ -417,7 +431,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static void AddDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel selectDetailTableRow )
+    public static void AddDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel selectDetailTableRow, DetailTableViewModel detailTableViewModelSummary, DetailTableModel selectDetailTableRowSummary )
     {
       var newDetailTableModels = new List<DetailTableModel>() ;
       var newDetailTableRow = new DetailTableModel( selectDetailTableRow.DetailSymbol, selectDetailTableRow.DetailSymbolId ) ;
@@ -429,9 +443,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+      
+      newDetailTableModels = new List<DetailTableModel>() ;
+      foreach ( var detailTableRow in detailTableViewModelSummary.DetailTableModels ) {
+        newDetailTableModels.Add( detailTableRow ) ;
+        if ( detailTableRow == selectDetailTableRowSummary ) {
+          newDetailTableModels.Add( newDetailTableRow ) ;
+        }
+      }
+
+      detailTableViewModelSummary.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
     
-    public static void MoveDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel selectDetailTableRow, bool isMoveUp )
+    public static void MoveDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel selectDetailTableRow, DetailTableViewModel detailTableViewModelSummary, DetailTableModel selectDetailTableRowSummary, bool isMoveUp )
     {
       var newDetailTableModels = new List<DetailTableModel>() ;
       var selectDetailTableRowIndex = detailTableViewModel.DetailTableModels.FindIndex( d => d == selectDetailTableRow ) ;
@@ -449,6 +473,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+      
+      newDetailTableModels = new List<DetailTableModel>() ;
+      var selectDetailTableRowSummaryIndex = detailTableViewModelSummary.DetailTableModels.FindIndex( d => d == selectDetailTableRowSummary ) ;
+      var tempDetailTableRowSummary = detailTableViewModelSummary.DetailTableModels.ElementAt( isMoveUp ? selectDetailTableRowSummaryIndex - 1 : selectDetailTableRowSummaryIndex + 1 ) ;
+      foreach ( var detailTableRow in detailTableViewModelSummary.DetailTableModels ) {
+        if ( detailTableRow == tempDetailTableRowSummary ) {
+          newDetailTableModels.Add( selectDetailTableRowSummary ) ;
+        }
+        else if ( detailTableRow == selectDetailTableRowSummary ) {
+          newDetailTableModels.Add( tempDetailTableRow ) ;
+        }
+        else {
+          newDetailTableModels.Add( detailTableRow ) ;
+        }
+      }
+
+      detailTableViewModelSummary.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
   }
 }
