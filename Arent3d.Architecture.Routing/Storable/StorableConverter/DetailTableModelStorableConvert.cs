@@ -38,7 +38,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       IsReadOnly,
       PlumbingIdentityInfo,
       GroupId,
-      IsReadOnlyPlumbingItems, 
+      IsReadOnlyPlumbingItems,
+      IsMixConstructionItems,
+      CopyIndex,
       IsReadOnlyParameters
     }
 
@@ -75,11 +77,13 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var plumbingIdentityInfo = deserializer.GetString( SerializeField.PlumbingIdentityInfo ) ;
       var groupId = deserializer.GetString( SerializeField.GroupId ) ;
       var isReadOnlyPlumbingItems = deserializer.GetBool( SerializeField.IsReadOnlyPlumbingItems ) ;
+      var isMixConstructionItems = deserializer.GetBool( SerializeField.IsMixConstructionItems ) ;
+      var copyIndex = deserializer.GetString( SerializeField.CopyIndex ) ;
       var isReadOnlyParameters = deserializer.GetBool( SerializeField.IsReadOnlyParameters ) ;
 
       return new DetailTableModel( calculationExclusion, floor, ceedCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType,
         plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode,
-        isParentRoute, isReadOnly, plumbingIdentityInfo, groupId, isReadOnlyPlumbingItems, isReadOnlyParameters ) ;
+        isParentRoute, isReadOnly, plumbingIdentityInfo, groupId, isReadOnlyPlumbingItems, isMixConstructionItems, copyIndex, isReadOnlyParameters ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailTableModel customTypeValue )
@@ -115,6 +119,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.PlumbingIdentityInfo, customTypeValue.PlumbingIdentityInfo ) ;
       serializerObject.AddNonNull( SerializeField.GroupId, customTypeValue.GroupId ) ;
       serializerObject.Add( SerializeField.IsReadOnlyPlumbingItems, customTypeValue.IsReadOnlyPlumbingItems ) ;
+      serializerObject.Add( SerializeField.IsMixConstructionItems, customTypeValue.IsMixConstructionItems ) ;
+      serializerObject.AddNonNull( SerializeField.CopyIndex, customTypeValue.CopyIndex ) ;
       serializerObject.Add( SerializeField.IsReadOnlyParameters, customTypeValue.IsReadOnlyParameters ) ;
 
       return serializerObject ;

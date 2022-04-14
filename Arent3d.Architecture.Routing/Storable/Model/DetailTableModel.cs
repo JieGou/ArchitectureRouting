@@ -31,6 +31,8 @@
     public string PlumbingIdentityInfo { get ; set ; }
     public string GroupId { get ; set ; }
     public bool IsReadOnlyPlumbingItems { get ; set ; }
+    public bool IsMixConstructionItems { get ; set ; }
+    public string CopyIndex { get ; set ; }
     public bool IsReadOnlyParameters { get ; set ; }
 
     public DetailTableModel( 
@@ -63,6 +65,8 @@
       string? plumbingIdentityInfo,
       string? groupId,
       bool? isReadOnlyPlumbingItems,
+      bool? isMixConstructionItems,
+      string? copyIndex,
       bool? isReadOnlyParameters )
     {
       CalculationExclusion = calculationExclusion ?? false ;
@@ -94,6 +98,8 @@
       PlumbingIdentityInfo = plumbingIdentityInfo ?? string.Empty ;
       GroupId = groupId ?? string.Empty ;
       IsReadOnlyPlumbingItems = isReadOnlyPlumbingItems ?? true ;
+      IsMixConstructionItems = isMixConstructionItems ?? false ;
+      CopyIndex = copyIndex ?? string.Empty ;
       IsReadOnlyParameters = isReadOnlyParameters ?? true ;
     }
     
@@ -128,6 +134,8 @@
       PlumbingIdentityInfo = string.Empty ;
       GroupId = string.Empty ;
       IsReadOnlyPlumbingItems = true ;
+      IsMixConstructionItems = false ;
+      CopyIndex = string.Empty ;
       IsReadOnlyParameters = false ;
     }
   }
