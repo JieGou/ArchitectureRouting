@@ -552,6 +552,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DetailTableViewModel.PlumbingSummary( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, _isMixConstructionItems ) ;
       CreateDetailTableViewModelByGroupId() ;
       _selectedDetailTableRows.Clear() ;
+      _selectedDetailTableRowsSummary.Clear() ;
+      DtGrid.SelectedItems.Clear() ;
+    }
+    
+    private void BtnSplitPlumbing_Click( object sender, RoutedEventArgs e )
+    {
+      if ( ! _selectedDetailTableRows.Any() ) return ;
+      DetailTableViewModel.SplitPlumbing( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows ) ;
+      CreateDetailTableViewModelByGroupId() ;
+      _selectedDetailTableRows.Clear() ;
+      _selectedDetailTableRowsSummary.Clear() ;
       DtGrid.SelectedItems.Clear() ;
     }
 

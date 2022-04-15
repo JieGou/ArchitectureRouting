@@ -492,5 +492,43 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       detailTableViewModelSummary.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
+
+    public static void SplitPlumbing( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectDetailTableRows )
+    {
+      foreach ( var selectDetailTableRow in selectDetailTableRows ) {
+        var detailTableRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == selectDetailTableRow ) ;
+        if ( detailTableRow == null ) continue ;
+        SetPlumbingDataForEachWiring( conduitsModelData, detailTableViewModel, detailTableRow ) ;
+      }
+    }
+
+    private static void SetPlumbingDataForEachWiring( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, DetailTableModel detailTableRow )
+    {
+      const double percentage = 0.32 ;
+      const int plumbingCount = 1 ;
+      var plumbingType = DefaultParentPlumbingType ;
+      var parentDetailTableRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.DetailSymbolId == detailTableRow.DetailSymbolId ) ;
+      if ( parentDetailTableRow != null ) plumbingType = parentDetailTableRow.PlumbingType ;
+      var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+      var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
+      var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage ;
+      if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
+        var plumbing = conduitsModels.Last() ;
+        detailTableRow.PlumbingType = plumbingType ;
+        detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+      }
+      else {
+        var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
+        detailTableRow.PlumbingType = plumbingType ;
+        detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+      }
+
+      detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
+      detailTableRow.PlumbingIdentityInfo = CreateDetailTableCommandBase.GetDetailTableRowPlumbingIdentityInfo( detailTableRow, false ) ;
+      detailTableRow.GroupId = string.Empty ;
+      detailTableRow.IsParentRoute = true ;
+      detailTableRow.IsReadOnly = false ;
+      detailTableRow.IsReadOnlyPlumbingItems = true ;
+    }
   }
 }
