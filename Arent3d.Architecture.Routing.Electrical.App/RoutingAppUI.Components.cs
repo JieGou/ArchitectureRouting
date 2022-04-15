@@ -1,4 +1,5 @@
 using Arent3d.Architecture.Routing.Electrical.App.Commands ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Demo ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization ;
 using Arent3d.Architecture.Routing.Electrical.App.Commands.PassPoint ;
@@ -87,6 +88,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( LoadDrawingCommand ), OnlyInitialized = true )]
           private static class LoadDrawingCommandButton { }
+          
+          [Button( typeof( SingleBorderCommand ), OnlyInitialized = true )]
+          private static class SingleBorderCommandButton { }
+        
+          [Button( typeof( DoubleBorderCommand ), OnlyInitialized = true )]
+          private static class DoubleBorderCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
