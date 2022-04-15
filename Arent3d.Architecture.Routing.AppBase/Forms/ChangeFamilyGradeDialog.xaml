@@ -1,0 +1,56 @@
+﻿<ui:RevitDialog x:Class="Arent3d.Architecture.Routing.AppBase.Forms.ChangeFamilyGradeDialog"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
+                xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
+                mc:Ignorable="d"
+                WindowStartupLocation="CenterScreen"
+                Title="Update Family Grade" Height="120" Width="310">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="180" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="40" />
+        </Grid.RowDefinitions>
+
+        <ComboBox Name="GradeModeComboBox"
+                  ItemsSource="{Binding GradeModes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:ChangeFamilyGradeDialog}}"
+                  SelectionChanged="GradeModeComboBox_SelectionChanged"
+                  SelectedIndex="{Binding GradeModeComboBoxIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:ChangeFamilyGradeDialog}}"
+                  HorizontalAlignment="Left" 
+                  VerticalAlignment="Top" 
+                  DisplayMemberPath="Value"
+                  Height="27"
+                  Width="170"
+                  Margin="10,5,0,5" >
+            <ComboBox.Style>
+                <Style TargetType="{x:Type ComboBox}">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Setter Property="Height" Value="20"/>
+                    <Setter Property="FontSize" Value="12"/>
+                </Style>
+            </ComboBox.Style>
+        </ComboBox>
+        
+        <Button Grid.Row="0" Grid.Column="1"
+                Content="Apply"
+                Click="Button_Apply_Click"
+                Margin="10,5,0,5"
+                HorizontalAlignment="Left"
+                Height="27"
+                Width="100" />
+        
+        <Button Grid.Row="1" Grid.Column="1"
+                Content="Cancel"
+                Click="Button_Cancel_Click"
+                Margin="10,5,0,5"
+                HorizontalAlignment="Left"
+                Height="27"
+                Width="100" />
+    </Grid>
+</ui:RevitDialog>

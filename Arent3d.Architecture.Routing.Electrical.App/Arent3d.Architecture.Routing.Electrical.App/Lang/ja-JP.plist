@@ -115,6 +115,9 @@
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
+        <key>Electrical.App.Commands.Initialization.ChangeFamilyGradeCommand</key>
+        <string>グレード設定</string>
+
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>ラックを作成する&#xA;すべてのコンジット用</string>
 
@@ -409,6 +412,15 @@
         <string>電気シンボル表</string>
         <key>Revit.Detail.Table.Name</key>
         <string>明細表</string>
+
+        <!-- Message -->
+        <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
+        <string>選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。</string>
+
+        <!-- Change Grade -->
+        <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
+        <string>グレード</string>
+        
     </dict>
 </plist>
 

@@ -36,6 +36,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( ShowCeedModelsCommand ), OnlyInitialized = true )]
           private static class ShowCeedModelsCommandButton { }
 
+          [Button( typeof( ChangeFamilyGradeCommand ), OnlyInitialized = true )]
+          private static class ChangeFamilyGradeCommandButton { }
+          
           [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
           private static class ShowHeightSettingCommandButton { }
           
