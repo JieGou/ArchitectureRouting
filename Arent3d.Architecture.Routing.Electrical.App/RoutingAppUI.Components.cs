@@ -82,6 +82,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( LoadDrawingCommand ), OnlyInitialized = true )]
           private static class LoadDrawingCommandButton { }
+          
+          [Button( typeof( SimpleBorderCommand ), OnlyInitialized = true )]
+          private static class SimpleBorderCommandButton { }
+        
+          [Button( typeof( DoubleBorderCommand ), OnlyInitialized = true )]
+          private static class DoubleBorderCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
@@ -284,15 +290,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         private static class UnInitializeCommandButton
         {
         }
-      }
-      [Panel( "arent3d.architecture.rc.Annotation", TitleKey = "App.Panels.Rc.TextNote" )]
-      private static class AnnotationPanel
-      {
-        [Button( typeof( SimpleBorderCommand ), OnlyInitialized = true )]
-        private static class SimpleBorderCommandButton { }
-        
-        [Button( typeof( DoubleBorderCommand ), OnlyInitialized = true )]
-        private static class DoubleBorderCommandButton { }
       }
     }
   }
