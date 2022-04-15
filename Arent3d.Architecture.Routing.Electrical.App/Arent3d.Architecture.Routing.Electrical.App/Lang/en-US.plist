@@ -154,6 +154,12 @@
         <key>Electrical.App.Commands.Initialization.ShowCeedDetailInformationCommand</key>
         <string>Pickup Display&#xA;Information</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowFallMarkCommand</key>
+        <string>Display&#xA;Fall Mark</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowOpenEndPointMarkCommand</key>
+        <string>Display&#xA;Open End Point Mark</string>
+
         <key>Electrical.App.Commands.Initialization.CreateDetailTableCommand</key>
         <string>Create Detail Table</string>
 

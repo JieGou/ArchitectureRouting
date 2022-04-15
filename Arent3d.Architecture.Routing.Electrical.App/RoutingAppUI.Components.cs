@@ -51,10 +51,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( SplitScheduleCommand ), OnlyInitialized = true )]
           private static class SplitScheduleCommandButton { }
+         
+          [Button( typeof( ShowFallMarkCommand ), OnlyInitialized = true )]
+          private static class ShowFallMarkCommandButton { }
           
+          [Button( typeof( ShowOpenEndPointMarkCommand ), OnlyInitialized = true )]
+          private static class ShowOpenEndPointMarkCommandButton { }
+
           [Button( typeof( MergeSchedulesCommand ), OnlyInitialized = true )]
           private static class MergeSchedulesCommandButton { }
-          
+
           [Button( typeof( SwitchEcoNormalModeCommand ), OnlyInitialized = true )]
           private static class SwitchEcoNormalModeCommandButton { }
 
