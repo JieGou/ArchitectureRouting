@@ -196,6 +196,12 @@
         <key>Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand</key>
         <string>エコモード切替</string>
 
+        <key>Electrical.App.Commands.Initialization.RegisterSymbolCommand</key>
+        <string>Register Symbol</string>
+
+        <key>Electrical.App.Commands.Initialization.SetupPrintCommand</key>
+        <string>Setup Print</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>

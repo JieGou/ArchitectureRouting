@@ -140,5 +140,18 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new DetailTableStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get setup print data from snoop DB.
+    /// </summary>
+    public static SetupPrintStorable GetSetupPrintStorable( this Document document )
+    {
+      try {
+        return SetupPrintStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( SetupPrintStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new SetupPrintStorable( document ) ;
+      }
+    }
   }
 }
