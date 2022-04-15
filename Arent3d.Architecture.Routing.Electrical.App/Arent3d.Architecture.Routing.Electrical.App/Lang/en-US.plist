@@ -196,11 +196,11 @@
         <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
         <string>Room Range Wiring</string>
 
-        <key>Electrical.App.Commands.Annotation.SimpleBorderCommand</key>
-        <string>Simple Border</string>
+        <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
+        <string>Simple Border&#xA;Text Box</string>
 
         <key>Electrical.App.Commands.Annotation.DoubleBorderCommand</key>
-        <string>Double Border</string>
+        <string>Double Border&#xA;Text Box</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

@@ -83,8 +83,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( LoadDrawingCommand ), OnlyInitialized = true )]
           private static class LoadDrawingCommandButton { }
           
-          [Button( typeof( SimpleBorderCommand ), OnlyInitialized = true )]
-          private static class SimpleBorderCommandButton { }
+          [Button( typeof( SingleBorderCommand ), OnlyInitialized = true )]
+          private static class SingleBorderCommandButton { }
         
           [Button( typeof( DoubleBorderCommand ), OnlyInitialized = true )]
           private static class DoubleBorderCommandButton { }

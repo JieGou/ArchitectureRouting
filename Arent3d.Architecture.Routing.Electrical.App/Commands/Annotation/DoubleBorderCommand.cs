@@ -10,7 +10,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Annotation.DoubleBorderCommand", DefaultString = "Double Border" )]
+  [DisplayNameKey( "Electrical.App.Commands.Annotation.DoubleBorderCommand", DefaultString = "Double Border\nText Box" )]
   [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
   public class DoubleBorderCommand : IExternalCommand
   {
