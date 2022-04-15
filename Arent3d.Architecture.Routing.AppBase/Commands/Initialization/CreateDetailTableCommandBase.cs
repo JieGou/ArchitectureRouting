@@ -110,7 +110,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) select new ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
 
-      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, new List<ComboboxItemType>() ) ;
+      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems, levels, wireTypes, new List<ComboboxItemType>(), new List<ComboboxItemType>(), earthTypes, new List<ComboboxItemType>(), 
+        numbers, constructionClassificationTypes, signalTypes, new List<ComboboxItemType>() ) ;
       var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
       dialog.ShowDialog() ;
 
@@ -734,7 +735,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", 
         string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, 
         constructionItem, plumbingItems, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, 
-        string.Empty, groupId, true, mixConstructionItems, string.Empty, true ) ;
+        string.Empty, groupId, true, mixConstructionItems, string.Empty, true, true, true ) ;
       detailTableModels.Add( detailTableRow ) ;
     }
 

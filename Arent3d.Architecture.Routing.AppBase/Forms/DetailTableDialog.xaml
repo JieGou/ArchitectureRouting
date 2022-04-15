@@ -115,6 +115,7 @@
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.Levels, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="FloorSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -173,7 +174,7 @@
                                         CanUserSort="False">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
-                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.WireSizes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
@@ -192,7 +193,7 @@
                     </DataGridComboBoxColumn.ElementStyle>
                     <DataGridComboBoxColumn.EditingElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
-                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.WireSizes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
                             <EventSetter Event="SelectionChanged" Handler="WireSizeSelectionChanged" />
                             <Style.Triggers>
@@ -212,7 +213,7 @@
                                         CanUserSort="False">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
-                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.WireStrips, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
@@ -231,7 +232,7 @@
                     </DataGridComboBoxColumn.ElementStyle>
                     <DataGridComboBoxColumn.EditingElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
-                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.WireStrips, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
                             <EventSetter Event="SelectionChanged" Handler="WireStripSelectionChanged" />
                             <Style.Triggers>
@@ -272,6 +273,7 @@
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="WireBookSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -310,6 +312,7 @@
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.EarthTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="EarthTypeSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -348,6 +351,7 @@
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.EarthSizes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="EarthSizeSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -386,6 +390,7 @@
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="NumberOfGroundsSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -442,7 +447,7 @@
                                         CanUserSort="False">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
-                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingSize}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.PlumbingSizes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
@@ -461,8 +466,9 @@
                     </DataGridComboBoxColumn.ElementStyle>
                     <DataGridComboBoxColumn.EditingElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
-                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingSize}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.PlumbingSizes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="PlumbingSizeSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -503,6 +509,7 @@
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionClassificationTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="ConstructionClassificationSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -541,6 +548,7 @@
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.SignalTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="SignalTypeSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -607,7 +615,32 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" IsReadOnly="{Binding IsReadOnlyParameters}" />
+                
+                <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" >
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="TextBox.IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type TextBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <EventSetter Event="LostKeyboardFocus" Handler="RemarkChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
         <Grid VerticalAlignment="Bottom" Width="1100" Height="70">

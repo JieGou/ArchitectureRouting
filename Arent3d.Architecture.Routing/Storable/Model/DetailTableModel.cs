@@ -1,4 +1,6 @@
-﻿namespace Arent3d.Architecture.Routing.Storable.Model
+﻿using System ;
+
+namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class DetailTableModel
   {
@@ -34,6 +36,8 @@
     public bool IsMixConstructionItems { get ; set ; }
     public string CopyIndex { get ; set ; }
     public bool IsReadOnlyParameters { get ; set ; }
+    public bool IsReadOnlyWireSizeAndWireStrip { get ; set ; }
+    public bool IsReadOnlyPlumbingSize { get ; set ; }
 
     public DetailTableModel( 
       bool? calculationExclusion, 
@@ -67,7 +71,9 @@
       bool? isReadOnlyPlumbingItems,
       bool? isMixConstructionItems,
       string? copyIndex,
-      bool? isReadOnlyParameters )
+      bool? isReadOnlyParameters,
+      bool? isReadOnlyWireSizeAndWireStrip,
+      bool? isReadOnlyPlumbingSize )
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -101,10 +107,13 @@
       IsMixConstructionItems = isMixConstructionItems ?? false ;
       CopyIndex = copyIndex ?? string.Empty ;
       IsReadOnlyParameters = isReadOnlyParameters ?? true ;
+      IsReadOnlyWireSizeAndWireStrip = isReadOnlyWireSizeAndWireStrip ?? true ;
+      IsReadOnlyPlumbingSize = isReadOnlyPlumbingSize ?? true ;
     }
     
     public DetailTableModel( string? detailSymbol, string? detailSymbolId)
     {
+      var index = "new-" + DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
       CalculationExclusion = false ;
       Floor = string.Empty ;
       CeedCode = string.Empty ;
@@ -127,16 +136,18 @@
       Remark = string.Empty ;
       WireCrossSectionalArea = 0 ;
       CountCableSamePosition = 1 ;
-      RouteName = string.Empty ;
+      RouteName = index ;
       IsEcoMode = string.Empty ;
       IsParentRoute = true ;
       IsReadOnly = false ;
-      PlumbingIdentityInfo = string.Empty ;
+      PlumbingIdentityInfo = index ;
       GroupId = string.Empty ;
-      IsReadOnlyPlumbingItems = true ;
+      IsReadOnlyPlumbingItems = false ;
       IsMixConstructionItems = false ;
       CopyIndex = string.Empty ;
       IsReadOnlyParameters = false ;
+      IsReadOnlyWireSizeAndWireStrip = false ;
+      IsReadOnlyPlumbingSize = false ;
     }
   }
 }

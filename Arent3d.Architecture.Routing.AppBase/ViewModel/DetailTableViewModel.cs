@@ -52,9 +52,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public List<CreateDetailTableCommandBase.ComboboxItemType> PlumbingSizes { get ; set ; }
 
     public DetailTableViewModel( ObservableCollection<DetailTableModel> detailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems,
-      List<CreateDetailTableCommandBase.ComboboxItemType> levels, List<CreateDetailTableCommandBase.ComboboxItemType> wireTypes, List<CreateDetailTableCommandBase.ComboboxItemType> earthTypes,
-      List<CreateDetailTableCommandBase.ComboboxItemType> numbers, List<CreateDetailTableCommandBase.ComboboxItemType> constructionClassificationTypes, List<CreateDetailTableCommandBase.ComboboxItemType> signalTypes,
-      List<CreateDetailTableCommandBase.ComboboxItemType> plumbingSizes )
+      List<CreateDetailTableCommandBase.ComboboxItemType> levels, List<CreateDetailTableCommandBase.ComboboxItemType> wireTypes, List<CreateDetailTableCommandBase.ComboboxItemType> wireSizes, List<CreateDetailTableCommandBase.ComboboxItemType> wireStrips,
+      List<CreateDetailTableCommandBase.ComboboxItemType> earthTypes, List<CreateDetailTableCommandBase.ComboboxItemType> earthSizes, List<CreateDetailTableCommandBase.ComboboxItemType> numbers, List<CreateDetailTableCommandBase.ComboboxItemType> constructionClassificationTypes,
+      List<CreateDetailTableCommandBase.ComboboxItemType> signalTypes, List<CreateDetailTableCommandBase.ComboboxItemType> plumbingSizes )
     {
       DetailTableModels = detailTableModels ;
       IsCreateDetailTableOnFloorPlanView = false ;
@@ -71,10 +71,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ConstructionItems = constructionItems ;
       Levels = levels ;
       WireTypes = wireTypes ;
-      WireSizes = new List<CreateDetailTableCommandBase.ComboboxItemType>() ;
-      WireStrips = new List<CreateDetailTableCommandBase.ComboboxItemType>() ;
+      WireSizes = wireSizes ;
+      WireStrips = wireStrips ;
       EarthTypes = earthTypes ;
-      EarthSizes = new List<CreateDetailTableCommandBase.ComboboxItemType>() ;
+      EarthSizes = earthSizes ;
       Numbers = numbers ;
       ConstructionClassificationTypes = constructionClassificationTypes ;
       SignalTypes = signalTypes ;
@@ -340,7 +340,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         copyDetailTableRow.EarthSize, copyDetailTableRow.NumberOfGrounds, copyDetailTableRow.PlumbingType, copyDetailTableRow.PlumbingSize, copyDetailTableRow.NumberOfPlumbing, 
         copyDetailTableRow.ConstructionClassification, copyDetailTableRow.SignalType, copyDetailTableRow.ConstructionItems, copyDetailTableRow.PlumbingItems, copyDetailTableRow.Remark, 
         copyDetailTableRow.WireCrossSectionalArea, copyDetailTableRow.CountCableSamePosition, copyDetailTableRow.RouteName, copyDetailTableRow.IsEcoMode, copyDetailTableRow.IsParentRoute, 
-        copyDetailTableRow.IsReadOnly, copyDetailTableRow.PlumbingIdentityInfo + index, string.Empty, copyDetailTableRow.IsReadOnlyPlumbingItems, copyDetailTableRow.IsMixConstructionItems, index, copyDetailTableRow.IsReadOnlyParameters ) ;
+        copyDetailTableRow.IsReadOnly, copyDetailTableRow.PlumbingIdentityInfo + index, string.Empty, copyDetailTableRow.IsReadOnlyPlumbingItems,
+        copyDetailTableRow.IsMixConstructionItems, index, copyDetailTableRow.IsReadOnlyParameters, true, copyDetailTableRow.IsReadOnlyParameters ) ;
       foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
         newDetailTableModels.Add( detailTableRow ) ;
         if ( detailTableRow == pasteDetailTableRow ) {
