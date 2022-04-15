@@ -21,6 +21,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public class ShowElectricSymbolsCommandBase : IExternalCommand
   {
+    private const int HeaderRowCount = 3 ;
+
     private readonly struct ConnectorInfo
     {
       public ConnectorInfo( string ceedSetCode, string deviceSymbol, string modelNumber )
@@ -34,6 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       public string DeviceSymbol { get ; }
       public string ModelNumber { get ; }
     }
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
@@ -57,13 +60,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             message = errorMess ;
             return Result.Cancelled ;
           }
-          
-          var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.CeedSetCode
-                                                                                       && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.DeviceSymbol 
-                                                                                       && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.ModelNumber ) ;
-          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.CeedSetCode 
-                                                                                     && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.DeviceSymbol 
-                                                                                     && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.ModelNumber ) ;
+
+          var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.ModelNumber ) ;
+          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.ModelNumber ) ;
           if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
           var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
           if ( detailTableModelsByRouteName.Any() ) {
@@ -125,10 +124,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var wireStrip = string.Empty ;
       var endConnector = allConnectors.First( c => c.UniqueId == toConnectorUniqueId ) ;
       endConnector?.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out isEcoMode ) ;
-      var hiroiSetModels = 
-        ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode! ) 
-          ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) 
-          : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) ;
+      var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode! ) ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) ;
       foreach ( var item in hiroiSetModels ) {
         List<string> listMaterialCode = new() ;
         if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
@@ -153,7 +149,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       electricalSymbolModels.Add( endElectricalSymbolModel ) ;
     }
 
-    private static ( string fromConnectorUniqueId, ConnectorInfo fromConnectorInfo , string toConnectorUniqueId, ConnectorInfo toConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
+    private static ( string fromConnectorUniqueId, ConnectorInfo fromConnectorInfo, string toConnectorUniqueId, ConnectorInfo toConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
     {
       var conduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ) ;
       Element? fromConnector = null ;
@@ -206,6 +202,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( electricalSchedule == null ) {
         electricalSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
         electricalSchedule.Name = scheduleName ;
+        electricalSchedule.TrySetProperty( ElectricalRoutingElementParameter.ScheduleBaseName, scheduleName ) ;
       }
 
       CreateScheduleData( document, electricalSchedule, electricalSymbolModels ) ;
@@ -236,6 +233,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const int defaultColumnCount = 5 ;
 
       TableData tableData = viewSchedule.GetTableData() ;
+      viewSchedule.SetScheduleHeaderRowCount( HeaderRowCount ) ;
       TableSectionData tsdHeader = tableData.GetSectionData( SectionType.Header ) ;
       var rowCount = tsdHeader.NumberOfRows ;
       var columnCount = tsdHeader.NumberOfColumns ;
@@ -314,7 +312,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           if ( imageType != null ) {
             tsdHeader.InsertImage( startRowData + j, 0, imageType.Id ) ;
+            viewSchedule.AddImageToImageMap( startRowData + j, 0, imageType.Id ) ;
           }
+
           tsdHeader.SetCellText( startRowData + j, 1, generalDisplayDeviceSymbols.ElementAt( j ) ) ;
         }
 
