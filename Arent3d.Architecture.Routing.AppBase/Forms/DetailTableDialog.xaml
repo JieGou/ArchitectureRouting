@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="明細表作成" Height="600" Width="1100" ResizeMode="NoResize">
+        Title="明細表作成" Height="670" Width="1100" ResizeMode="NoResize">
     <Grid>
         <Grid VerticalAlignment="Top"  HorizontalAlignment="Right">
             <Grid.RowDefinitions>
@@ -20,7 +20,7 @@
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
-                <RowDefinition Height="55"/>
+                <RowDefinition Height="45"/>
                 <RowDefinition Height="35"/>
             </Grid.RowDefinitions>
             <Button Grid.Row="0"  Width="90" Content="行追加" Margin="5,25,5,5" Height="25" Click="BtnAdd_Click" />
@@ -48,7 +48,7 @@
             <Button Grid.Row="8"  Width="90" Content="上へ" Margin="5,5,5,5" Height="25" Click="BtnMoveUp_Click" />
             <Button Grid.Row="9"  Width="90" Content="下へ" Margin="5,5,5,5" Height="25" Click="BtnMoveDown_Click" />
             <Button Grid.Row="10"  Width="90" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnSelectAll_Click" />
-            <Label Grid.Row="11" Content="参照情報" Margin="0,30,5,0"/>
+            <Label Grid.Row="11" Content="参照情報" Margin="0,20,5,0"/>
             <Button Grid.Row="12"  Width="90" Content="▼" Margin="5,0,5,5" Height="25" />
         </Grid>
         <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Width="970" Height="30" Margin="20">
@@ -60,7 +60,7 @@
             <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" RowHeight="25" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
+        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="470" RowHeight="25" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtGrid_SelectionChanged" >
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
