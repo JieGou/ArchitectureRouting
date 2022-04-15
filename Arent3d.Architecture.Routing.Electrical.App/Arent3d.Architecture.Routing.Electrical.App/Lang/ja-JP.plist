@@ -115,6 +115,9 @@
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
+        <key>Electrical.App.Commands.Initialization.ChangeFamilyGradeCommand</key>
+        <string>グレード設定</string>
+
         <key>Electrical.App.Commands.Routing.NewRackCommand</key>
         <string>ラックを作成する&#xA;すべてのコンジット用</string>
 
@@ -178,6 +181,9 @@
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>表分割</string>
 
+        <key>Electrical.App.Commands.Initialization.MergeSchedulesCommand</key>
+        <string>表結合</string>
+
         <key>Electrical.App.Commands.Routing.NewConnectorTypePowerCommand</key>
         <string>コネクタ（電源）</string>
 
@@ -201,6 +207,12 @@
         
         <key>Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand</key>
         <string>エコモード切替</string>
+
+        <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
+        <string>一重テキストボックス</string>
+
+        <key>Electrical.App.Commands.Annotation.DoubleBorderCommand</key>
+        <string>二重テキストボックス</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -412,6 +424,15 @@
         <string>電気シンボル表</string>
         <key>Revit.Detail.Table.Name</key>
         <string>明細表</string>
+
+        <!-- Message -->
+        <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
+        <string>選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。</string>
+
+        <!-- Change Grade -->
+        <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
+        <string>グレード</string>
+        
     </dict>
 </plist>
 

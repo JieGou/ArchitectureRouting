@@ -78,6 +78,11 @@ namespace Arent3d.Architecture.Routing
       BuiltInCategory.OST_ElectricalEquipment,
       BuiltInCategory.OST_ElectricalFixtures,
     } ;
+    
+    public static readonly BuiltInCategory[] ScheduleElements =
+    {
+      BuiltInCategory.OST_Schedules,
+    } ;
 
     public static readonly BuiltInCategory[] CommonRoutingElement =
     {

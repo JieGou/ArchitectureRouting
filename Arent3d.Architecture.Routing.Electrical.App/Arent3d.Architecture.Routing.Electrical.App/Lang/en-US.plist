@@ -124,6 +124,9 @@
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
+        <key>Electrical.App.Commands.Initialization.ChangeFamilyGradeCommand</key>
+        <string>Change&#xA;Family Grade</string>
+
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorTwoSideCommand</key>
         <string>Both Side Connector</string>
 
@@ -163,6 +166,9 @@
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>Split Schedule</string>
 
+        <key>Electrical.App.Commands.Initialization.MergeSchedulesCommand</key>
+        <string>Merge Schedules</string>
+
         <key>Electrical.App.Commands.Routing.NewConnectorTypePowerCommand</key>
         <string>Connector (Power)</string>
 
@@ -201,6 +207,12 @@
 
         <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
         <string>Room Range Wiring</string>
+
+        <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
+        <string>Simple Border&#xA;Text Box</string>
+
+        <key>Electrical.App.Commands.Annotation.DoubleBorderCommand</key>
+        <string>Double Border&#xA;Text Box</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -422,5 +434,14 @@
         <string>Electrical Symbol Table</string>
         <key>Revit.Detail.Table.Name</key>
         <string>Detail Table</string>
+
+        <!-- Message -->
+        <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
+        <string>Since it is impossible to avoid the interference of the envelope in the selection range, adjust the position of the envelope or the position of the connector.</string>
+
+        <!-- Change Grade -->
+        <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
+        <string>Grade </string>
+      
     </dict>
 </plist>

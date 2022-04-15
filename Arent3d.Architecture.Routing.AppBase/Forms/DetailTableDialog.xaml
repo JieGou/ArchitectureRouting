@@ -23,9 +23,9 @@
                 <RowDefinition Height="35"/>
             </Grid.RowDefinitions>
             <Button Grid.Row="0"  Width="90" Content="行追加" Margin="5,25,5,5" Height="25" />
-            <Button Grid.Row="1"  Width="90" Content="行削除" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="2"  Width="90" Content="コピー" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="3"  Width="90" Content="挿入貼付" Margin="5,5,5,5" Height="25" />
+            <Button Grid.Row="1"  Width="90" Content="行削除" Margin="5,5,5,5" Height="25" Click="BtnDeleteLine_Click"/>
+            <Button Grid.Row="2"  Width="90" Content="コピー" Margin="5,5,5,5" Height="25" Click="BtnCopyLine_Click"/>
+            <Button Grid.Row="3"  Width="90" Content="挿入貼付" Margin="5,5,5,5" Height="25" Click="BtnPasteLine_Click"/>
             <Button Grid.Row="4"  Width="90" Margin="5,5,5,5" Height="45" Click="BtnPlumbingSummary_Click">
                 <Button.Content>
                     <StackPanel Orientation="Vertical">
@@ -45,7 +45,7 @@
             <Button Grid.Row="6"  Width="90" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="7"  Width="90" Content="上へ" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="8"  Width="90" Content="下へ" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="9"  Width="90" Content="全選択" Margin="5,5,5,5" Height="25" />
+            <Button Grid.Row="9"  Width="90" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnSelectAll_Click" />
             <Label Grid.Row="10" Content="参照情報" Margin="0,30,5,0"/>
             <Button Grid.Row="11"  Width="90" Content="▼" Margin="5,0,5,5" Height="25" />
         </Grid>
@@ -58,7 +58,8 @@
             <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" RowHeight="25" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" Width="950" Height="450" RowHeight="25" Margin="20"  ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
+                  SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtGrid_SelectionChanged" >
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
                     <Setter Property="Padding" Value="-2" />
@@ -71,9 +72,20 @@
                     </Style.Triggers>
                 </Style>
             </DataGrid.Resources>
+            
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="RoyalBlue" />
+                            <Setter Property="BorderBrush" Value="RoyalBlue" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.CellStyle>
 
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="計算除外" Width="30" Binding="{Binding CalculationExclusion}" CanUserSort="False"/>
+                <DataGridCheckBoxColumn Header="計算除外" Width="30" Binding="{Binding CalculationExclusion}" CanUserSort="False" />
                 <DataGridTextColumn Header="フロア" Width="45" Binding="{Binding Floor, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" />
                 <DataGridTextColumn Header="明細記号" Width="45" Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="電線種類" Width="70" Binding="{Binding WireType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
