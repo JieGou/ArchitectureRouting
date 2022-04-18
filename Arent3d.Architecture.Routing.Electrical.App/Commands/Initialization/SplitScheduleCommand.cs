@@ -5,12 +5,11 @@ using System.Text.RegularExpressions ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using ImageType = Autodesk.Revit.DB.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
@@ -20,7 +19,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   public class SplitScheduleCommand : IExternalCommand
   {
     private const string DialogTitle = "Arent Notification" ;
-    private const int SplitFromRow = 4 ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
     {
@@ -32,18 +30,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
           TaskDialog.Show( DialogTitle, "表分割機能はシート上にしか動作しないため、シートへ移動してください。" ) ;
           return Result.Cancelled ;
         }
-        
+
         var reference = selection.PickObject( ObjectType.Element, "シート上の集計表を選択してください。" ) ;
         if ( document.GetElement( reference ) is not ScheduleSheetInstance sheetInstance )
           return Result.Failed ;
 
-        var boundingBoxXYZ = sheetInstance.get_BoundingBox( document.ActiveView ) ;
+        var boundingBox = sheetInstance.get_BoundingBox( document.ActiveView ) ;
 
         if ( document.GetElement( sheetInstance.ScheduleId ) is not ViewSchedule schedule )
           return Result.Failed ;
-        
-        if ( schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows < SplitFromRow
-            && schedule.GetTableData().GetSectionData( SectionType.Body ).LastColumnNumber != -1)
+        int splitFromRow = schedule.GetScheduleHeaderRowCount() + 1 ;
+        if ( schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows < splitFromRow && schedule.GetTableData().GetSectionData( SectionType.Body ).LastColumnNumber != -1 )
           return Result.Cancelled ;
 
         var pickedBox = selection.PickBox( PickBoxStyle.Crossing, "分割範囲を選択してください。" ) ;
@@ -52,23 +49,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         pickedBox.Min = min ;
         pickedBox.Max = max ;
 
-        if ( pickedBox.Max.Y <= boundingBoxXYZ.Min.Y || pickedBox.Min.Y >= boundingBoxXYZ.Max.Y || pickedBox.Max.X <= boundingBoxXYZ.Min.X ||
-             pickedBox.Min.X >= boundingBoxXYZ.Max.X ) {
+        if ( pickedBox.Max.Y <= boundingBox.Min.Y || pickedBox.Min.Y >= boundingBox.Max.Y || pickedBox.Max.X <= boundingBox.Min.X || pickedBox.Min.X >= boundingBox.Max.X ) {
           TaskDialog.Show( DialogTitle, "選択された領域は集計表の範囲外です。" ) ;
           return Result.Cancelled ;
         }
 
-        if ( pickedBox.Max.Y >= boundingBoxXYZ.Max.Y && pickedBox.Min.Y <= boundingBoxXYZ.Min.Y ) {
+        if ( pickedBox.Max.Y >= boundingBox.Max.Y && pickedBox.Min.Y <= boundingBox.Min.Y ) {
           TaskDialog.Show( DialogTitle, "選択された領域は集計表の範囲内です。" ) ;
           return Result.Cancelled ;
         }
 
         var heightRequest = 0d ;
-        for ( int i = 0 ; i < SplitFromRow ; i++ ) {
+        for ( int i = 0 ; i < splitFromRow ; i++ ) {
           heightRequest += schedule.GetTableData().GetSectionData( SectionType.Header ).GetRowHeight( i ) ;
         }
 
-        if ( pickedBox.Max.Y >= boundingBoxXYZ.Max.Y - heightRequest ) {
+        if ( pickedBox.Max.Y >= boundingBox.Max.Y - heightRequest ) {
           TaskDialog.Show( DialogTitle, "選択された領域は無効です。" ) ;
           return Result.Cancelled ;
         }
@@ -78,50 +74,118 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 
         if ( document.GetElement( schedule.Duplicate( ViewDuplicateOption.Duplicate ) ) is not ViewSchedule cloneSchedule )
           return Result.Failed ;
+        var (newName, oldName) = GetNewScheduleName( schedule ) ;
+        try {
+          cloneSchedule.Name = newName ;
+        }
+        catch ( Autodesk.Revit.Exceptions.ArgumentException ) {
+          newName += Guid.NewGuid() ;
+          cloneSchedule.Name = newName ;
+        }
 
-        var (newName, oldName) = GetNewScheduleName( document, schedule.Name ) ;
-        cloneSchedule.Name = newName ;
         schedule.Name = oldName ;
-        
-        var (topIndex, bottomIndex) =
-          GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBoxXYZ, pickedBox ) ;
+
+        var (topIndex, bottomIndex) = GetIndexRowIntersect( schedule.GetTableData().GetSectionData( SectionType.Header ), boundingBox, pickedBox, splitFromRow ) ;
 
         var numberOfRows = schedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
-        for ( int i = numberOfRows - 1 ; i >= 0 ; i-- ) {
+        for ( var i = numberOfRows - 1 ; i >= 0 ; i-- ) {
           if ( i >= topIndex && i <= bottomIndex )
             schedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
         }
 
         numberOfRows = cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).NumberOfRows ;
-        for ( int i = numberOfRows - 1 ; i >= SplitFromRow - 1 ; i-- ) {
+        for ( var i = numberOfRows - 1 ; i >= splitFromRow - 1 ; i-- ) {
           if ( i < topIndex || i > bottomIndex )
             cloneSchedule.GetTableData().GetSectionData( SectionType.Header ).RemoveRow( i ) ;
         }
 
-        ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id,
-          Transform.CreateTranslation(XYZ.BasisX * 10.0.MillimetersToRevitUnits()).OfPoint(boundingBoxXYZ.Max) ) ;
-
+        ScheduleSheetInstance.Create( document, document.ActiveView.Id, cloneSchedule.Id, Transform.CreateTranslation( XYZ.BasisX * 10.0.MillimetersToRevitUnits() ).OfPoint( boundingBox.Max ) ) ;
+        var scheduleSheetInstancesContainSameSchedule = GetScheduleSheetInstancesContainSameSchedule( document, schedule, sheetInstance ) ;
+        CreateSplitScheduleSheetInstances( document, scheduleSheetInstancesContainSameSchedule, cloneSchedule ) ;
+        var (firstImageMap, secondImageMap) = schedule.SplitImageMap( topIndex, bottomIndex, schedule.GetScheduleHeaderRowCount() ) ;
+        schedule.SetImageMap( firstImageMap ) ;
+        cloneSchedule.SetImageMap( secondImageMap ) ;
+        SetSplitInformation( schedule, cloneSchedule ) ;
+        UpdateOtherSchedule( document, schedule, cloneSchedule ) ;
         transaction.Commit() ;
 
         return Result.Succeeded ;
       }
-      catch (Autodesk.Revit.Exceptions.OperationCanceledException)
-      {
-        return Result.Cancelled;
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        return Result.Cancelled ;
       }
       catch ( Exception exception ) {
-        CommandUtils.DebugAlertException(exception);
+        CommandUtils.DebugAlertException( exception ) ;
         return Result.Cancelled ;
       }
     }
 
-    private (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXYZ, PickedBox pickedBox )
+    private static IList<ScheduleSheetInstance> GetScheduleSheetInstancesContainSameSchedule( Document document, ViewSchedule scheduleToFind, ScheduleSheetInstance excludedScheduleSheet )
     {
-      var heightTable = boxXYZ.Max.Y ;
-      var topIndex = SplitFromRow - 1 ;
+      var elementCollector = new FilteredElementCollector( document, document.ActiveView.Id ) ;
+      return elementCollector.OfClass( typeof( ScheduleSheetInstance ) ).ToElements().ConvertAll( e => (ScheduleSheetInstance) e ).Where( s => excludedScheduleSheet.Id.IntegerValue != s.Id.IntegerValue && document.GetElement( s.ScheduleId ) is ViewSchedule schedule && schedule.Id.IntegerValue == scheduleToFind.Id.IntegerValue ).ToList() ;
+    }
+
+    private static void CreateSplitScheduleSheetInstances( Document document, IList<ScheduleSheetInstance> scheduleSheetInstances, ViewSchedule viewSchedule )
+    {
+      foreach ( var scheduleSheetInstance in scheduleSheetInstances ) {
+        var boundingBox = scheduleSheetInstance.get_BoundingBox( document.ActiveView ) ;
+        ScheduleSheetInstance.Create( document, document.ActiveView.Id, viewSchedule.Id, Transform.CreateTranslation( XYZ.BasisX * 10.0.MillimetersToRevitUnits() ).OfPoint( boundingBox.Max ) ) ;
+      }
+    }
+
+    private static (string NewScheduleName, string OldScheduleName) GetNewScheduleName( ViewSchedule oldSchedule )
+    {
+      var currentSplitIndex = oldSchedule.GetSplitIndex() <= 0 ? 1 : oldSchedule.GetSplitIndex() ;
+      var newSplitIndex = currentSplitIndex + 1 ;
+      var currentSplitLevel = oldSchedule.GetSplitLevel() <= 0 ? 1 : oldSchedule.GetSplitLevel() ;
+      var scheduleBaseName = oldSchedule.GetScheduleBaseName() ;
+      var newSplitLevel = currentSplitLevel + 1 ;
+      var oldScheduleName = scheduleBaseName + " " + currentSplitIndex + "/" + newSplitLevel ;
+      var newScheduleName = scheduleBaseName + " " + newSplitIndex + "/" + newSplitLevel ;
+      return ( newScheduleName, oldScheduleName ) ;
+    }
+
+    private static void SetSplitInformation( ViewSchedule currentSchedule, ViewSchedule newSchedule )
+    {
+      var currentSplitIndex = currentSchedule.GetSplitIndex() <= 0 ? 1 : currentSchedule.GetSplitIndex() ;
+      var currentSplitLevel = currentSchedule.GetSplitLevel() <= 0 ? 1 : currentSchedule.GetSplitLevel() ;
+      var newSplitLevel = currentSplitLevel + 1 ;
+      var parentScheduleId = currentSchedule.GetParentScheduleId() ?? currentSchedule.Id ;
+      currentSchedule.SetSplitStatus( true ) ;
+      currentSchedule.SetParentScheduleId( parentScheduleId ) ;
+      currentSchedule.SetSplitLevel( newSplitLevel ) ;
+      currentSchedule.SetSplitIndex( currentSplitIndex ) ;
+
+      newSchedule.SetSplitStatus( true ) ;
+      newSchedule.SetSplitIndex( currentSplitIndex + 1 ) ;
+      newSchedule.SetParentScheduleId( parentScheduleId ) ;
+      newSchedule.SetSplitLevel( newSplitLevel ) ;
+      newSchedule.SetSplitIndex( currentSplitIndex + 1 ) ;
+    }
+
+    private static void UpdateOtherSchedule( Document document, ViewSchedule currentSchedule, ViewSchedule newSchedule )
+    {
+      var allSchedules = new FilteredElementCollector( document).OfClass( typeof( ViewSchedule ) ).ToElements().ConvertAll( e => (ViewSchedule) e ).Where( s => s.GetScheduleBaseName().Equals( currentSchedule.GetScheduleBaseName() ) ).ToList() ;
+      var otherSchedules = allSchedules.Where( s => s.UniqueId != currentSchedule.UniqueId && s.UniqueId != newSchedule.UniqueId ).ToList() ;
+      var newSplitLevel = allSchedules.Count ;
+      foreach ( var schedule in otherSchedules ) {
+        var splitIndex = schedule.GetSplitIndex() <= 0 ? 1 : schedule.GetSplitIndex() ;
+        var newSplitIndex = splitIndex ;
+        if ( splitIndex > currentSchedule.GetSplitIndex() ) newSplitIndex += 1 ;
+        schedule.SetSplitIndex( newSplitIndex ) ;
+        schedule.SetSplitLevel( newSplitLevel ) ;
+        schedule.Name = schedule.GetScheduleBaseName() + " " + newSplitIndex + "/" + newSplitLevel ;
+      }
+    }
+
+    private static (int, int) GetIndexRowIntersect( TableSectionData sectionData, BoundingBoxXYZ boxXyz, PickedBox pickedBox, int splitFromRow )
+    {
+      var heightTable = boxXyz.Max.Y ;
+      var topIndex = splitFromRow - 1 ;
       var bottomIndex = sectionData.NumberOfRows - 1 ;
 
-      for ( int i = 0 ; i < sectionData.NumberOfRows ; i++ ) {
+      for ( var i = 0 ; i < sectionData.NumberOfRows ; i++ ) {
         heightTable -= sectionData.GetRowHeight( i ) ;
 
         var old = heightTable + sectionData.GetRowHeight( i ) ;
@@ -133,22 +197,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       }
 
       return ( topIndex, bottomIndex ) ;
-    }
-
-    private (string NewScheduleName, string OldScheduleName) GetNewScheduleName(Document document, string oldScheduleName)
-    {
-      var prefix = "Splited-" ;
-      var pattern = @$"{prefix}(\d+)$" ;
-      var match = Regex.Match( oldScheduleName, pattern ) ;
-      var scheduleNames = document.GetAllElements<ViewSchedule>().Select( x => x.Name ) ;
-
-      if ( match.Success ) {
-        var start = Regex.Split( oldScheduleName, match.Value ).First() ;
-        var count = scheduleNames.Where( x => Regex.IsMatch( x, $"{start}{pattern}" ) ).Count() ;
-        return ($"{start}{prefix}{count + 1}", oldScheduleName) ;
-      }
-      
-      return ($"{oldScheduleName} {prefix}2", $"{oldScheduleName} {prefix}1");
     }
   }
 }
