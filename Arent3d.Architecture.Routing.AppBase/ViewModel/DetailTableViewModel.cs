@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public ICommand SaveDetailTableCommand { get; }
 
-    public ICommand SaveAndCreateDetailTableCommand { get ; }
+    public ICommand CreateDetailTableCommand { get ; }
 
     public List<CreateDetailTableCommandBase.ComboboxItemType> ConduitTypes { get ;}
 
@@ -63,8 +63,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         ( p ) => { SaveDetailTable() ; } // Execute()
       ) ;
 
-      SaveAndCreateDetailTableCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
-        ( p ) => { SaveAndCreateDetailTable() ; } // Execute()
+      CreateDetailTableCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
+        ( p ) => { CreateDetailTable() ; } // Execute()
       ) ;
 
       ConduitTypes = conduitTypes ;
@@ -104,10 +104,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void SaveAndCreateDetailTable()
+    private void CreateDetailTable()
     {
       if ( IsCancelCreateDetailTable ) return ;
-      SaveDetailTable() ;
       IsCreateDetailTableOnFloorPlanView = true ;
     }
 

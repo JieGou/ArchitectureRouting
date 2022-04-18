@@ -138,7 +138,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Close() ;
     }
     
-    private void BtnSaveAndCreate_OnClick( object sender, RoutedEventArgs e )
+    private void BtnCreateDetailTable_OnClick( object sender, RoutedEventArgs e )
     {
       var confirmResult = MessageBoxResult.OK ;
       var mixtureOfMultipleConstructionClassificationsInDetailSymbol = string.Empty ;

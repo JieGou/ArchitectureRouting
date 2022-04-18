@@ -673,7 +673,7 @@
                     <ColumnDefinition Width="130" />
                     <ColumnDefinition Width="130" />
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" x:Name="btnSave"
+                <Button Grid.Column="0"
                         Content="保存"
                         Margin="5,5,5,5"
                         HorizontalAlignment="Right"
@@ -682,16 +682,16 @@
                         Click="BtnSave_OnClick"
                         Height="27"
                         Width="110" />
-            <Button Grid.Column="1" x:Name="btnSaveAndCreate"
-                    Content="保存＆明細表作成"
+            <Button Grid.Column="1"
+                    Content="明細表作成"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
                     DockPanel.Dock="Right"
-                    Command="{Binding SaveAndCreateDetailTableCommand}"
-                    Click="BtnSaveAndCreate_OnClick"
+                    Command="{Binding CreateDetailTableCommand}"
+                    Click="BtnCreateDetailTable_OnClick"
                     Height="27"
                     Width="110" />
-            <Button Grid.Column="2" x:Name="btnCompleted"
+            <Button Grid.Column="2"
                     Content="終了"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
