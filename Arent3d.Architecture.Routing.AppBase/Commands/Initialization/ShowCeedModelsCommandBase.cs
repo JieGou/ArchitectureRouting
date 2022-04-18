@@ -24,7 +24,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
-      const double defaultSymbolMagnification = 100.0 ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
 
       var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
@@ -95,6 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( ! groupIds.Any() ) return result ;
       using Transaction t = new ( doc, "Create connector group." ) ;
       t.Start() ;
+      var defaultSymbolMagnification = doc.GetSetupPrintStorable().Scale ;
       if ( element != null ) {
         var isHasParameterSwitch2DSymbol = element.HasParameter( switch2DSymbol ) ;
         if ( isHasParameterSwitch2DSymbol ) element.SetProperty( switch2DSymbol, true ) ;

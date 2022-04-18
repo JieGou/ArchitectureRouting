@@ -119,6 +119,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           else if (viewPlan.Scale != _setupPrintStorable.Scale) {
             viewPlan.Scale = _setupPrintStorable.Scale ;
           }
+          
+          
         }
 
         transaction.Commit() ;
@@ -127,6 +129,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         TaskDialog.Show( "Arent Inc", exception.Message ) ;
       }
     }
+    
     
   }
 }
