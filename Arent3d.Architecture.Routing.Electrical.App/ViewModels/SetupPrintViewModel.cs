@@ -10,6 +10,8 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 
@@ -110,8 +112,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         _setupPrintStorable.Scale = int.Parse( Scale ) ;
         _setupPrintStorable.Save() ;
 
-        var filter = new FilteredElementCollector( _uiDocument.Document ) ;
-        var viewPlans = filter.OfClass( typeof( ViewPlan ) ).OfType<ViewPlan>().Where( x => ! x.IsTemplate ) ;
+        var textNoteType = FindOrCreateTextNoteType( _uiDocument.Document ) ;
+        var viewPlanFilter = new FilteredElementCollector( _uiDocument.Document ) ;
+        var viewPlans = viewPlanFilter.OfClass( typeof( ViewPlan ) ).OfType<ViewPlan>().Where( x => ! x.IsTemplate ) ;
         foreach ( var viewPlan in viewPlans ) {
           if ( null != viewPlan.ViewTemplateId && _uiDocument.Document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != _setupPrintStorable.Scale ) {
             viewTemplate.Scale = _setupPrintStorable.Scale ;
@@ -119,8 +122,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           else if (viewPlan.Scale != _setupPrintStorable.Scale) {
             viewPlan.Scale = _setupPrintStorable.Scale ;
           }
-          
-          
+
+          if ( null == textNoteType ) continue ;
+          var textNoteFilter = new FilteredElementCollector( _uiDocument.Document, viewPlan.Id ) ;
+          textNoteFilter.OfClass( typeof( TextNote ) ).OfType<TextNote>().ForEach(x => x.TextNoteType = textNoteType);
         }
 
         transaction.Commit() ;
@@ -130,6 +135,28 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
     }
     
-    
+    private static TextNoteType? FindOrCreateTextNoteType(Document document)
+    {
+      const string rextNoteTypeName = "ARENT_2.7MM_0.75" ;
+      
+      var textNoteTypes = new FilteredElementCollector( document ).OfClass( typeof( TextNoteType ) ).OfType<TextNoteType>().EnumerateAll() ;
+      if ( ! textNoteTypes.Any() )
+        return null ;
+      
+      var textNoteType = textNoteTypes.SingleOrDefault( x => x.Name == rextNoteTypeName ) ;
+      if ( null != textNoteType ) 
+        return textNoteType ;
+      
+      textNoteType = textNoteTypes.First().Duplicate(rextNoteTypeName) as TextNoteType;
+      if ( null == textNoteType )
+        return null ;
+      
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( 2.7.MillimetersToRevitUnits() ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( 0.75 ) ;
+      textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( 0.6.MillimetersToRevitUnits() ) ;
+      textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
+
+      return textNoteType ;
+    }
   }
 }
