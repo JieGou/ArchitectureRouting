@@ -212,7 +212,7 @@
         <string>Register Symbol</string>
 
         <key>Electrical.App.Commands.Initialization.SetupPrintCommand</key>
-        <string>Setup Print</string>
+        <string>Scale Setting</string>
 
         <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
         <string>Simple Border&#xA;Text Box</string>

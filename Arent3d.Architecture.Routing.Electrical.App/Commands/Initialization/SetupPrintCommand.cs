@@ -9,7 +9,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Initialization.SetupPrintCommand", DefaultString = "Setup Print" )]
+  [DisplayNameKey( "Electrical.App.Commands.Initialization.SetupPrintCommand", DefaultString = "Scale Setting" )]
   [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
   public class SetupPrintCommand : IExternalCommand
   {

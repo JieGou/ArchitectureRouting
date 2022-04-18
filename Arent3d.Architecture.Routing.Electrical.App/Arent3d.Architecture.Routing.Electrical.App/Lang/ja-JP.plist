@@ -209,10 +209,10 @@
         <string>エコモード切替</string>
 
         <key>Electrical.App.Commands.Initialization.RegisterSymbolCommand</key>
-        <string>Register Symbol</string>
+        <string>シンボル登録</string>
 
         <key>Electrical.App.Commands.Initialization.SetupPrintCommand</key>
-        <string>Setup Print</string>
+        <string>尺度設定</string>
 
         <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
         <string>一重テキストボックス</string>
