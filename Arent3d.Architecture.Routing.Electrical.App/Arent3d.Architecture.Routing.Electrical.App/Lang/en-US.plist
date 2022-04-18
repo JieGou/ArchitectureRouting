@@ -124,6 +124,9 @@
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
+        <key>Electrical.App.Commands.Initialization.ChangeFamilyGradeCommand</key>
+        <string>Change&#xA;Family Grade</string>
+
         <key>Electrical.App.Commands.Routing.Connectors.NewConnectorTwoSideCommand</key>
         <string>Both Side Connector</string>
 
@@ -151,11 +154,20 @@
         <key>Electrical.App.Commands.Initialization.ShowCeedDetailInformationCommand</key>
         <string>Pickup Display&#xA;Information</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowFallMarkCommand</key>
+        <string>Display&#xA;Fall Mark</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowOpenEndPointMarkCommand</key>
+        <string>Display&#xA;Open End Point Mark</string>
+
         <key>Electrical.App.Commands.Initialization.CreateDetailTableCommand</key>
         <string>Create Detail Table</string>
 
         <key>Electrical.App.Commands.Initialization.SplitScheduleCommand</key>
         <string>Split Schedule</string>
+
+        <key>Electrical.App.Commands.Initialization.MergeSchedulesCommand</key>
+        <string>Merge Schedules</string>
 
         <key>Electrical.App.Commands.Routing.NewConnectorTypePowerCommand</key>
         <string>Connector (Power)</string>
@@ -195,6 +207,12 @@
 
         <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
         <string>Room Range Wiring</string>
+
+        <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
+        <string>Simple Border&#xA;Text Box</string>
+
+        <key>Electrical.App.Commands.Annotation.DoubleBorderCommand</key>
+        <string>Double Border&#xA;Text Box</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -424,5 +442,9 @@
         <!-- File Names -->
         <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
         <string>Arent-export-layers.txt</string>
+      
+        <!-- Change Grade -->
+        <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
+        <string>Grade </string>
     </dict>
 </plist>
