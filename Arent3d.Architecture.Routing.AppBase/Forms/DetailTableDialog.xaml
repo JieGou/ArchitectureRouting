@@ -627,6 +627,10 @@
                                     <Setter Property="IsEnabled" Value="False" />
                                     <Setter Property="IsHitTestVisible" Value="False" />
                                 </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="RoyalBlue" />
+                                        <Setter Property="BorderBrush" Value="RoyalBlue" />
+                                </Trigger>
                             </Style.Triggers>
                         </Style>
                     </DataGridTextColumn.CellStyle>
