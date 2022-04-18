@@ -519,7 +519,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           (string? endLineUniqueId, int? endPoint) endLineLeader = ( null, null ) ;
           var ortherLineId = new List<string>() ;
           if ( doc.ActiveView is ViewPlan viewPlan ) {
-            var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve>() { Line.CreateBound( noteLeader.Elbow, noteLeader.End ) } ) ;
+            var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( new XYZ( noteLeader.Elbow.X, noteLeader.Elbow.Y, viewPlan.GenLevel.Elevation ), new XYZ( noteLeader.End.X, noteLeader.End.Y, viewPlan.GenLevel.Elevation ) ) } ) ;
             doc.Regenerate() ;
 
             if ( noteLeader.Anchor.DistanceTo( noteLeader.Elbow ) > doc.Application.ShortCurveTolerance )

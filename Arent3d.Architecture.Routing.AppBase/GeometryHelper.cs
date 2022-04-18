@@ -61,7 +61,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         Line? locationElement = null ;
 
         if ( element3D is FamilyInstance familyInstance ) {
-          curveLoopOrigin = GeometryHelper.GetBoundaryBoundingBox( familyInstance.get_BoundingBox( null ), elevation ) ;
+          curveLoopOrigin = GetBoundaryBoundingBox( familyInstance.get_BoundingBox( null ), elevation ) ;
           curveLoopOffset = CurveLoop.CreateViaOffset( curveLoopOrigin, 200d.MillimetersToRevitUnits(), viewDirection ) ;
         }
         else {

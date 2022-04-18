@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase
           : underLineText.GetEndPoint( 1 ) ;
 
       if ( document.GetElement( detailLine.OwnerViewId ) is not ViewPlan viewPlan ) return ( string.Empty, new List<string>() ) ;
-      var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound(pointNearest, endPoint)} ) ;
+      var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( new XYZ( pointNearest.X, pointNearest.Y, viewPlan.GenLevel.Elevation ), new XYZ( endPoint.X, endPoint.Y, viewPlan.GenLevel.Elevation ) ) } ) ;
       curves.Add( underLineText ) ;
 
       var detailCurves = CreateDetailCurve( viewPlan, curves ) ;
