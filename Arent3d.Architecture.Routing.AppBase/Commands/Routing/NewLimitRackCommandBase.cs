@@ -8,6 +8,7 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.StorableCaches ;
+using Arent3d.Utility ;
 using Autodesk.Revit.ApplicationServices ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -45,6 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           "TransactionName.Commands.Rack.CreateLimitCableRack".GetAppStringByKeyOrDefault( "Create Limit Cable" ), _ =>
           {
             var racks = new List<FamilyInstance>() ;
+            var fittings = new List<FamilyInstance>() ;
             var elements = document.CollectAllMultipliedRoutingElements( minNumberOfMultiplicity ) ;
             foreach ( var element in elements ) {
               var (mepCurve, subRoute) = element ;
@@ -57,11 +59,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
 
             foreach ( var elbow in elbowsToCreate ) {
-              CreateElbow( uiDocument, elbow.Key, elbow.Value, racks ) ;
+              CreateElbow( uiDocument, elbow.Key, elbow.Value, fittings ) ;
             }
+
+            var newRacks = ConnectedRacks( document, racks, fittings ) ;
             
             //insert notation for racks
-            NewRackCommandBase.CreateNotationForRack( document, app, racks ) ;
+            NewRackCommandBase.CreateNotationForRack( document, app, newRacks ) ;
 
             return Result.Succeeded ;
           } ) ;
@@ -75,6 +79,98 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
+    }
+
+    private static List<FamilyInstance> ConnectedRacks( Document document, List<FamilyInstance> racks, List<FamilyInstance> fittings )
+    {
+      racks = racks.Where( MEPModelOnPlan ).ToList() ;
+      fittings = fittings.Where( MEPModelOnPlan ).ToList() ;
+      if ( ! racks.Any() )
+        return fittings ;
+
+      var groupRacks = new List<List<FamilyInstance>>() ;
+      while ( racks.Any() ) {
+        var rack = racks[ 0 ] ;
+        racks.RemoveAt( 0 ) ;
+        var subRacks = new List<FamilyInstance> { rack } ;
+
+        if ( ! racks.Any() ) {
+          groupRacks.Add(subRacks);
+        }
+        else {
+          var count = subRacks.Count ;
+          do {
+            var flag = false ;
+            
+            for ( var i = 0 ; i < racks.Count ; i++ ) {
+              foreach ( var con in GetConnector(racks[ i ]) ) {
+                if ( GetConnector(subRacks.Last()).Any( c => con.Origin.DistanceTo( c.Origin ) < GeometryUtil.Tolerance ) ) {
+                  subRacks.Add(racks[i]);
+                  racks.RemoveAt( i ) ;
+                  flag = true ;
+                }
+
+                if(flag)
+                  break;
+              }
+              
+              if ( flag )
+                break ;
+            }
+          } while ( count != subRacks.Count ) ;
+          
+          groupRacks.Add(subRacks);
+        }
+      }
+
+      var newRacks = new List<FamilyInstance>() ;
+      foreach ( var groupRack in groupRacks ) {
+        var line = GetMaxLength( document, groupRack ) ;
+        if(null == line)
+          continue;
+        var rack = groupRack[ 0 ] ; 
+        newRacks.Add(rack);
+        ElementTransformUtils.MoveElement(document, rack.Id, line.Evaluate(0.5, true) - (rack.Location as LocationPoint)!.Point);
+
+        groupRack.RemoveAt( 0 ) ;
+        document.Delete( groupRack.Select( x => x.Id ).ToList() ) ;
+      }
+      
+      newRacks.AddRange(fittings);
+      return newRacks ;
+    }
+
+    private static Line? GetMaxLength(Document document, List<FamilyInstance> racks)
+    {
+      if ( ! racks.Any() )
+        return null ;
+
+      var lines = new List<Line>() ;
+      var points = racks.Select( x => GetConnector( x ).Select( y => y.Origin ) ).SelectMany( x => x ).ToList() ;
+      for ( var i = 0 ; i < points.Count - 1 ; i++ ) {
+        for ( var j = i + 1 ; j < points.Count ; j++ ) {
+          if ( points[ i ].DistanceTo( points[ j ] ) > document.Application.ShortCurveTolerance ) {
+            lines.Add(Line.CreateBound(points[i], points[j]));
+          }
+        }
+      }
+
+      return lines.MaxBy( x => x.Length ) ;
+    }
+
+    private static bool MEPModelOnPlan( FamilyInstance familyInstance )
+    {
+      var connectors = GetConnector( familyInstance ) ;
+      if ( connectors.Count != 2 )
+        return false ;
+
+      return Math.Abs( connectors[ 0 ].Origin.Z - connectors[ 1 ].Origin.Z ) < GeometryHelper.Tolerance ;
+    }
+    
+    private static List<Connector> GetConnector( FamilyInstance familyInstance )
+    {
+      var connectorSet = familyInstance.MEPModel?.ConnectorManager?.Connectors ;
+      return null == connectorSet ? new List<Connector>() : connectorSet.OfType<Connector>().ToList() ;
     }
 
     private static void SetParameter( FamilyInstance instance, string parameterName, double value )
