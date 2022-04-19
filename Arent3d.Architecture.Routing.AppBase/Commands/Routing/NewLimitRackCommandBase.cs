@@ -98,8 +98,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           groupRacks.Add(subRacks);
         }
         else {
-          var count = subRacks.Count ;
+          int count ;
           do {
+            count = subRacks.Count ;
             var flag = false ;
             
             for ( var i = 0 ; i < racks.Count ; i++ ) {
@@ -130,7 +131,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           continue;
         var rack = groupRack[ 0 ] ; 
         newRacks.Add(rack);
-        ElementTransformUtils.MoveElement(document, rack.Id, line.Evaluate(0.5, true) - (rack.Location as LocationPoint)!.Point);
+        rack.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) ).Set( line.Length ) ;
 
         groupRack.RemoveAt( 0 ) ;
         document.Delete( groupRack.Select( x => x.Id ).ToList() ) ;
