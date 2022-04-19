@@ -273,7 +273,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       UpdateDataGridAndRemoveSelectedRow() ;
     }
-    
+
     private void WireTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
@@ -281,23 +281,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( selectedWireType == null ) return ;
 
       var wireSizesOfWireType = _wiresAndCablesModelData.Where( w => w.WireType == selectedWireType.ToString() ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
-      var wireSizes = ( from wireType in wireSizesOfWireType select new CreateDetailTableCommandBase.ComboboxItemType( wireType, wireType ) ).ToList() ;
-      _detailTableViewModel.WireSizes = wireSizes ;
-      DetailTableViewModelSummary.WireSizes = wireSizes ;
+      var wireSizes = ( from wireType in wireSizesOfWireType select new DetailTableModel.ComboboxItemType( wireType, wireType ) ).ToList() ;
 
       var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
       if ( selectedDetailTableRow != null ) {
         selectedDetailTableRow.WireType = selectedWireType.ToString() ;
         selectedDetailTableRow.IsReadOnlyWireSizeAndWireStrip = false ;
+        selectedDetailTableRow.WireSizes = new ObservableCollection<DetailTableModel.ComboboxItemType>( wireSizes ) ;
       }
 
       var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
       if ( selectedDetailTableRowSummary != null ) {
         selectedDetailTableRowSummary.WireType = selectedWireType.ToString() ;
         selectedDetailTableRowSummary.IsReadOnlyWireSizeAndWireStrip = false ;
+        selectedDetailTableRowSummary.WireSizes = new ObservableCollection<DetailTableModel.ComboboxItemType>( wireSizes ) ;
       }
 
       UpdateDataGridAndRemoveSelectedRow() ;
+      var wireSizeCell = DetailTableViewModel.GetCell( DtGrid, 5 ) ;
+      if ( wireSizeCell?.Content is ComboBox wireSizeCombobox ) {
+        wireSizeCombobox.ItemsSource = wireSizes ;
+        wireSizeCombobox.UpdateLayout() ;
+      }
     }
 
     private void WireSizeSelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -593,14 +598,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
             detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
             detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsMixConstructionItems,
-            detailTableRow.CopyIndex, true, true, true ) ;
+            detailTableRow.CopyIndex, true, true, true, detailTableRow.WireSizes ) ;
           newDetailTableModels.Add( newDetailTableRow ) ;
           existedGroupIds.Add( detailTableRow.GroupId ) ;
         }
       }
 
       DetailTableViewModel newDetailTableViewModel = new( new ObservableCollection<DetailTableModel>( newDetailTableModels ), _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems, 
-        _detailTableViewModel.Levels, _detailTableViewModel.WireTypes, _detailTableViewModel.WireSizes, _detailTableViewModel.WireStrips, _detailTableViewModel.EarthTypes, _detailTableViewModel.EarthSizes,
+        _detailTableViewModel.Levels, _detailTableViewModel.WireTypes, _detailTableViewModel.WireStrips, _detailTableViewModel.EarthTypes, _detailTableViewModel.EarthSizes,
         _detailTableViewModel.Numbers, _detailTableViewModel.ConstructionClassificationTypes, _detailTableViewModel.SignalTypes, _detailTableViewModel.PlumbingSizes ) ;
       DataContext = newDetailTableViewModel ;
       DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;

@@ -3,8 +3,11 @@ using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
+using System.Windows.Controls ;
+using System.Windows.Controls.Primitives ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
+using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -13,6 +16,8 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using DataGrid = System.Windows.Controls.DataGrid ;
+using DataGridCell = System.Windows.Controls.DataGridCell ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -38,7 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public List<CreateDetailTableCommandBase.ComboboxItemType> Levels { get ; }
 
     public List<CreateDetailTableCommandBase.ComboboxItemType> WireTypes { get ; }
-    public List<CreateDetailTableCommandBase.ComboboxItemType> WireSizes { get ; set ; }
+    //public List<CreateDetailTableCommandBase.ComboboxItemType> WireSizes { get ; set ; }
     public List<CreateDetailTableCommandBase.ComboboxItemType> WireStrips { get ; set ; }
     
     public List<CreateDetailTableCommandBase.ComboboxItemType> EarthTypes { get ; }
@@ -52,7 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public List<CreateDetailTableCommandBase.ComboboxItemType> PlumbingSizes { get ; set ; }
 
     public DetailTableViewModel( ObservableCollection<DetailTableModel> detailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems,
-      List<CreateDetailTableCommandBase.ComboboxItemType> levels, List<CreateDetailTableCommandBase.ComboboxItemType> wireTypes, List<CreateDetailTableCommandBase.ComboboxItemType> wireSizes, List<CreateDetailTableCommandBase.ComboboxItemType> wireStrips,
+      List<CreateDetailTableCommandBase.ComboboxItemType> levels, List<CreateDetailTableCommandBase.ComboboxItemType> wireTypes, List<CreateDetailTableCommandBase.ComboboxItemType> wireStrips,
       List<CreateDetailTableCommandBase.ComboboxItemType> earthTypes, List<CreateDetailTableCommandBase.ComboboxItemType> earthSizes, List<CreateDetailTableCommandBase.ComboboxItemType> numbers, List<CreateDetailTableCommandBase.ComboboxItemType> constructionClassificationTypes,
       List<CreateDetailTableCommandBase.ComboboxItemType> signalTypes, List<CreateDetailTableCommandBase.ComboboxItemType> plumbingSizes )
     {
@@ -71,7 +76,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ConstructionItems = constructionItems ;
       Levels = levels ;
       WireTypes = wireTypes ;
-      WireSizes = wireSizes ;
+      //WireSizes = wireSizes ;
       WireStrips = wireStrips ;
       EarthTypes = earthTypes ;
       EarthSizes = earthSizes ;
@@ -533,6 +538,46 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       detailTableRow.IsParentRoute = true ;
       detailTableRow.IsReadOnly = false ;
       detailTableRow.IsReadOnlyPlumbingItems = true ;
+    }
+    
+    private static T? GetVisualChild<T>( Visual parent ) where T : Visual
+    {
+      var child = default( T ) ;
+      var numVisuals = VisualTreeHelper.GetChildrenCount( parent ) ;
+      for ( var i = 0 ; i < numVisuals ; i++ ) {
+        Visual v = (Visual) VisualTreeHelper.GetChild( parent, i ) ;
+        child = v as T ?? GetVisualChild<T>( v ) ;
+
+        if ( child != null ) {
+          break ;
+        }
+      }
+
+      return child ;
+    }
+
+    private static DataGridRow GetSelectedRow( DataGrid grid )
+    {
+      return (DataGridRow) grid.ItemContainerGenerator.ContainerFromItem( grid.SelectedItem ) ;
+    }
+
+    private static DataGridCell? GetCell( DataGrid grid, DataGridRow row, int column )
+    {
+      var presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
+
+      if ( presenter == null ) {
+        grid.ScrollIntoView( row, grid.Columns[ column ] ) ;
+        presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
+      }
+
+      var cell = (DataGridCell) presenter?.ItemContainerGenerator.ContainerFromIndex( column )! ;
+      return cell ;
+    }
+
+    public static DataGridCell? GetCell( DataGrid grid, int column )
+    {
+      DataGridRow rowContainer = GetSelectedRow( grid ) ;
+      return GetCell( grid, rowContainer, column ) ;
     }
   }
 }

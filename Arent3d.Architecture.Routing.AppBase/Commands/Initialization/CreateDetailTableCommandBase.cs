@@ -114,7 +114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) select new ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
 
-      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems, levels, wireTypes, new List<ComboboxItemType>(), new List<ComboboxItemType>(), earthTypes, new List<ComboboxItemType>(), 
+      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems, levels, wireTypes, new List<ComboboxItemType>(), earthTypes, new List<ComboboxItemType>(), 
         numbers, constructionClassificationTypes, signalTypes, new List<ComboboxItemType>() ) ;
       var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
       dialog.ShowDialog() ;
