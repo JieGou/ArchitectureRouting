@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
-        Title="Registration Of Board Data" Width="900" MinHeight="500" MinWidth="500">
+        Title="Registration Of Board Data" Height="800" Width="900" MinHeight="200" MinWidth="900">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -22,17 +22,18 @@
                 Height="27"/>
         
         <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Label Content="自動制御盤" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5"/>
-            <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" />
+            <Label Content="自動制御盤" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5"/>
+            <ComboBox Name="CmbAutoControlPanel" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbAutoControlPanel_TextChanged" KeyDown="CmbAutoControlPanel_KeyDown"/>
             <Label Content="信号取合い先" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-            <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27"/>        
+            <ComboBox Name="CmbSignalDestination" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbSignalDestination_TextChanged" KeyDown="CmbSignalDestination_KeyDown"/>        
             <Button Content="Search"
+                    Click="Button_Search"
                     Margin="20,5,5,5"
                     HorizontalAlignment="Right"
                     Width="80" />
         </StackPanel>
         
-        <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="1" ItemsSource="{Binding RegistrationOfBoardDataModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+        <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="1" ItemsSource="{Binding RegistrationOfBoardDataModels}" CanUserAddRows="False" AutoGenerateColumns="False" SelectionUnit="Cell">
         <DataGrid.Resources>
           <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
             <Setter Property="Padding" Value="-2"/>
@@ -45,7 +46,7 @@
             </Style.Triggers>
           </Style>
         </DataGrid.Resources>
-
+          
         <DataGrid.Columns>
 
           <DataGridTextColumn Header="自動制御盤" Binding="{Binding AutoControlPanel, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="250" />
@@ -57,12 +58,14 @@
 
         <Button Grid.Row="2" Grid.Column="0"
                 Content="Reset"
+                Click="Button_Reset"
                 Margin="10,5,90,5"
                 HorizontalAlignment="Right"
                 Width="80" 
                 Height="27"/>
         <Button Grid.Row="2" Grid.Column="0"
                 Content="OK"
+                Click="Button_OK"
                 Margin="10,5,5,5"
                 HorizontalAlignment="Right"
                 Width="80" 

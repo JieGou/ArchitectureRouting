@@ -14,10 +14,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
         {
             AutoControlPanel,
             SignalDestination,
-            StatusType,      
-            StatusNumber,    
-            MeasurementType, 
-            MeasurementNumber,
+            Kind1,      
+            Number1,    
+            Kind2, 
+            Number2,
             Remark,
             MaterialCode1,
             MaterialCode2
@@ -29,15 +29,15 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 
             var autoControlPanel = deserializer.GetString( SerializeField.AutoControlPanel ) ;
             var signalDestination = deserializer.GetString( SerializeField.SignalDestination ) ;
-            var statusType = deserializer.GetString( SerializeField.StatusType ) ;
-            var statusNumber = deserializer.GetString( SerializeField.StatusNumber ) ;
-            var measurementType = deserializer.GetString( SerializeField.MeasurementType ) ;
-            var measurementNumber = deserializer.GetString( SerializeField.MeasurementNumber ) ;
+            var kind1 = deserializer.GetString( SerializeField.Kind1 ) ;
+            var number1 = deserializer.GetString( SerializeField.Number1 ) ;
+            var kind2 = deserializer.GetString( SerializeField.Kind2 ) ;
+            var number2 = deserializer.GetString( SerializeField.Number2 ) ;
             var remark = deserializer.GetString( SerializeField.Remark ) ;
             var materialCode1 = deserializer.GetString( SerializeField.MaterialCode1 ) ;
             var materialCode2 = deserializer.GetString( SerializeField.MaterialCode2 ) ;
 
-            return new RegistrationOfBoardDataModel( autoControlPanel!, signalDestination!, statusType!, statusNumber!, measurementType!, measurementNumber!, remark!, materialCode1!, materialCode2! ) ;
+            return new RegistrationOfBoardDataModel( autoControlPanel!, signalDestination!, kind1!, number1!, kind2!, number2!, remark!, materialCode1!, materialCode2! ) ;
         }
 
         protected override ISerializerObject Serialize(Element storedElement, RegistrationOfBoardDataModel customTypeValue)
@@ -46,10 +46,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
 
             serializerObject.AddNonNull( SerializeField.AutoControlPanel, customTypeValue.AutoControlPanel ) ;
             serializerObject.AddNonNull( SerializeField.SignalDestination, customTypeValue.SignalDestination ) ;
-            serializerObject.AddNonNull( SerializeField.StatusType, customTypeValue.StatusType ) ;
-            serializerObject.AddNonNull( SerializeField.StatusNumber, customTypeValue.StatusNumber ) ;
-            serializerObject.AddNonNull( SerializeField.MeasurementType, customTypeValue.MeasurementType ) ;
-            serializerObject.AddNonNull( SerializeField.MeasurementNumber, customTypeValue.MeasurementNumber ) ;
+            serializerObject.AddNonNull( SerializeField.Kind1, customTypeValue.Kind1 ) ;
+            serializerObject.AddNonNull( SerializeField.Number1, customTypeValue.Number1 ) ;
+            serializerObject.AddNonNull( SerializeField.Kind2, customTypeValue.Kind2 ) ;
+            serializerObject.AddNonNull( SerializeField.Number2, customTypeValue.Number2 ) ;
             serializerObject.AddNonNull( SerializeField.Remark, customTypeValue.Remark ) ;
             serializerObject.AddNonNull( SerializeField.MaterialCode1, customTypeValue.MaterialCode1 ) ;
             serializerObject.AddNonNull( SerializeField.MaterialCode2, customTypeValue.MaterialCode2 ) ;
