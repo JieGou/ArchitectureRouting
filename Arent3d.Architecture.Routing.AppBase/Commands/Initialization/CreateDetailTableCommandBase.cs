@@ -114,8 +114,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) select new ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
 
-      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems, levels, wireTypes, new List<ComboboxItemType>(), earthTypes, new List<ComboboxItemType>(), 
-        numbers, constructionClassificationTypes, signalTypes, new List<ComboboxItemType>() ) ;
+      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes ) ;
       var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
       dialog.ShowDialog() ;
 
@@ -699,14 +698,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var constructionClassification = hiroiCdModel?.ConstructionClassification ;
         foreach ( var item in hiroiSetModels ) {
           List<string> listMaterialCode = new() ;
-          if ( ! string.IsNullOrEmpty( item.MaterialCode1 ) ) listMaterialCode.Add( item.MaterialCode1 ) ;
-          if ( ! string.IsNullOrEmpty( item.MaterialCode2 ) ) listMaterialCode.Add( item.MaterialCode2 ) ;
-          if ( ! string.IsNullOrEmpty( item.MaterialCode3 ) ) listMaterialCode.Add( item.MaterialCode3 ) ;
-          if ( ! string.IsNullOrEmpty( item.MaterialCode4 ) ) listMaterialCode.Add( item.MaterialCode4 ) ;
-          if ( ! string.IsNullOrEmpty( item.MaterialCode5 ) ) listMaterialCode.Add( item.MaterialCode5 ) ;
-          if ( ! string.IsNullOrEmpty( item.MaterialCode6 ) ) listMaterialCode.Add( item.MaterialCode6 ) ;
-          if ( ! string.IsNullOrEmpty( item.MaterialCode7 ) ) listMaterialCode.Add( item.MaterialCode7 ) ;
-          if ( ! string.IsNullOrEmpty( item.MaterialCode8 ) ) listMaterialCode.Add( item.MaterialCode8 ) ;
+          if ( ! string.IsNullOrEmpty( item.MaterialCode1 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode1 ).ToString() ) ;
+          if ( ! string.IsNullOrEmpty( item.MaterialCode2 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode2 ).ToString() ) ;
+          if ( ! string.IsNullOrEmpty( item.MaterialCode3 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode3 ).ToString() ) ;
+          if ( ! string.IsNullOrEmpty( item.MaterialCode4 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode4 ).ToString() ) ;
+          if ( ! string.IsNullOrEmpty( item.MaterialCode5 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode5 ).ToString() ) ;
+          if ( ! string.IsNullOrEmpty( item.MaterialCode6 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode6 ).ToString() ) ;
+          if ( ! string.IsNullOrEmpty( item.MaterialCode7 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode7 ).ToString() ) ;
+          if ( ! string.IsNullOrEmpty( item.MaterialCode8 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode8 ).ToString() ) ;
 
           if ( ! listMaterialCode.Any() ) continue ;
           var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;

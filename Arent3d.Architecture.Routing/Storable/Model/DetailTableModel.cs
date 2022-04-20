@@ -1,7 +1,6 @@
 ﻿using System ;
-using System.Collections.ObjectModel ;
+using System.Collections.Generic ;
 using System.ComponentModel ;
-using System.Linq ;
 using System.Runtime.CompilerServices ;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
@@ -42,9 +41,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public bool IsReadOnlyParameters { get ; set ; }
     public bool IsReadOnlyWireSizeAndWireStrip { get ; set ; }
     public bool IsReadOnlyPlumbingSize { get ; set ; }
-    private ObservableCollection<ComboboxItemType> _wireSizes = new() ;
-
-    public ObservableCollection<ComboboxItemType> WireSizes
+    private List<ComboboxItemType> _wireSizes = new() ;
+    public List<ComboboxItemType> WireSizes
     {
       get => _wireSizes ;
       set
@@ -53,6 +51,39 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         OnPropertyChanged( nameof( WireSizes ) ) ;
       }
     } 
+    
+    private List<ComboboxItemType> _wireStrips = new() ;
+    public List<ComboboxItemType> WireStrips
+    {
+      get => _wireStrips ;
+      set
+      {
+        _wireStrips = value ;
+        OnPropertyChanged( nameof( WireStrips ) ) ;
+      }
+    }
+    
+    private List<ComboboxItemType> _earthSizes = new() ;
+    public List<ComboboxItemType> EarthSizes
+    {
+      get => _earthSizes ;
+      set
+      {
+        _earthSizes = value ;
+        OnPropertyChanged( nameof( EarthSizes ) ) ;
+      }
+    } 
+    
+    private List<ComboboxItemType> _plumbingSizes = new() ;
+    public List<ComboboxItemType> PlumbingSizes
+    {
+      get => _plumbingSizes ;
+      set
+      {
+        _plumbingSizes = value ;
+        OnPropertyChanged( nameof( PlumbingSizes ) ) ;
+      }
+    }
 
     public DetailTableModel( 
       bool? calculationExclusion, 
@@ -161,7 +192,10 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       bool? isReadOnlyParameters,
       bool? isReadOnlyWireSizeAndWireStrip,
       bool? isReadOnlyPlumbingSize,
-      ObservableCollection<ComboboxItemType> wireSizes )
+      List<ComboboxItemType> wireSizes,
+      List<ComboboxItemType> wireStrips,
+      List<ComboboxItemType> earthSizes,
+      List<ComboboxItemType> plumbingSizes )
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -197,7 +231,10 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsReadOnlyParameters = isReadOnlyParameters ?? true ;
       IsReadOnlyWireSizeAndWireStrip = isReadOnlyWireSizeAndWireStrip ?? true ;
       IsReadOnlyPlumbingSize = isReadOnlyPlumbingSize ?? true ;
-      WireSizes = wireSizes.Any() ? wireSizes : new ObservableCollection<ComboboxItemType>() ;
+      WireSizes = wireSizes ;
+      WireStrips = wireStrips ;
+      EarthSizes = earthSizes ;
+      PlumbingSizes = plumbingSizes ;
     }
     
     public DetailTableModel( string? detailSymbol, string? detailSymbolId)

@@ -53,23 +53,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public List<CreateDetailTableCommandBase.ComboboxItemType> Levels { get ; }
 
     public List<CreateDetailTableCommandBase.ComboboxItemType> WireTypes { get ; }
-    //public List<CreateDetailTableCommandBase.ComboboxItemType> WireSizes { get ; set ; }
-    public List<CreateDetailTableCommandBase.ComboboxItemType> WireStrips { get ; set ; }
-    
+
     public List<CreateDetailTableCommandBase.ComboboxItemType> EarthTypes { get ; }
-    public List<CreateDetailTableCommandBase.ComboboxItemType> EarthSizes { get ; set ; }
 
     public List<CreateDetailTableCommandBase.ComboboxItemType> Numbers { get ; }
     
     public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionClassificationTypes { get ; }
 
     public List<CreateDetailTableCommandBase.ComboboxItemType> SignalTypes { get ; }
-    public List<CreateDetailTableCommandBase.ComboboxItemType> PlumbingSizes { get ; set ; }
 
     public DetailTableViewModel( ObservableCollection<DetailTableModel> detailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems,
-      List<CreateDetailTableCommandBase.ComboboxItemType> levels, List<CreateDetailTableCommandBase.ComboboxItemType> wireTypes, List<CreateDetailTableCommandBase.ComboboxItemType> wireStrips,
-      List<CreateDetailTableCommandBase.ComboboxItemType> earthTypes, List<CreateDetailTableCommandBase.ComboboxItemType> earthSizes, List<CreateDetailTableCommandBase.ComboboxItemType> numbers, List<CreateDetailTableCommandBase.ComboboxItemType> constructionClassificationTypes,
-      List<CreateDetailTableCommandBase.ComboboxItemType> signalTypes, List<CreateDetailTableCommandBase.ComboboxItemType> plumbingSizes )
+      List<CreateDetailTableCommandBase.ComboboxItemType> levels, List<CreateDetailTableCommandBase.ComboboxItemType> wireTypes, List<CreateDetailTableCommandBase.ComboboxItemType> earthTypes, 
+      List<CreateDetailTableCommandBase.ComboboxItemType> numbers, List<CreateDetailTableCommandBase.ComboboxItemType> constructionClassificationTypes, List<CreateDetailTableCommandBase.ComboboxItemType> signalTypes )
     {
       _detailTableModels = detailTableModels ;
       IsCreateDetailTableOnFloorPlanView = false ;
@@ -86,14 +81,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ConstructionItems = constructionItems ;
       Levels = levels ;
       WireTypes = wireTypes ;
-      //WireSizes = wireSizes ;
-      WireStrips = wireStrips ;
       EarthTypes = earthTypes ;
-      EarthSizes = earthSizes ;
       Numbers = numbers ;
       ConstructionClassificationTypes = constructionClassificationTypes ;
       SignalTypes = signalTypes ;
-      PlumbingSizes = plumbingSizes ;
     }
 
     private void SaveDetailTable()
@@ -244,6 +235,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         foreach ( var detailTableRow in detailTableRows ) {
           detailTableRow.PlumbingItems = parentDetailRow ;
         }
+      }
+    }
+    
+    public static void SetPlumbingSizesForDetailTableRows( List<ConduitsModel> conduitsModelData, IEnumerable<DetailTableModel> detailTableRowsWithSameDetailSymbolId, string plumbingType )
+    {
+      var plumbingSizesOfPlumbingType = conduitsModelData.Where( c => c.PipingType == plumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+      var plumbingSizes = ( from plumbingSize in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSize, plumbingSize ) ).ToList() ;
+      foreach ( var detailTableRow in detailTableRowsWithSameDetailSymbolId ) {
+        detailTableRow.PlumbingSizes = plumbingSizes ;
       }
     }
 
@@ -548,46 +548,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       detailTableRow.IsParentRoute = true ;
       detailTableRow.IsReadOnly = false ;
       detailTableRow.IsReadOnlyPlumbingItems = true ;
-    }
-    
-    private static T? GetVisualChild<T>( Visual parent ) where T : Visual
-    {
-      var child = default( T ) ;
-      var numVisuals = VisualTreeHelper.GetChildrenCount( parent ) ;
-      for ( var i = 0 ; i < numVisuals ; i++ ) {
-        Visual v = (Visual) VisualTreeHelper.GetChild( parent, i ) ;
-        child = v as T ?? GetVisualChild<T>( v ) ;
-
-        if ( child != null ) {
-          break ;
-        }
-      }
-
-      return child ;
-    }
-
-    private static DataGridRow GetSelectedRow( DataGrid grid )
-    {
-      return (DataGridRow) grid.ItemContainerGenerator.ContainerFromItem( grid.SelectedItem ) ;
-    }
-
-    private static DataGridCell? GetCell( DataGrid grid, DataGridRow row, int column )
-    {
-      var presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
-
-      if ( presenter == null ) {
-        grid.ScrollIntoView( row, grid.Columns[ column ] ) ;
-        presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
-      }
-
-      var cell = (DataGridCell) presenter?.ItemContainerGenerator.ContainerFromIndex( column )! ;
-      return cell ;
-    }
-
-    public static DataGridCell? GetCell( DataGrid grid, int column )
-    {
-      DataGridRow rowContainer = GetSelectedRow( grid ) ;
-      return GetCell( grid, rowContainer, column ) ;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged ;
