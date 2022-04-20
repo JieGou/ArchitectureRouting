@@ -486,9 +486,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
 
         var routesWithConstructionItemHasChanged = detailTableRowsChangeConstructionItems.Select( d => d.RouteName ).Distinct().ToList() ;
-        if ( _isMixConstructionItems )
-          DetailTableViewModel.UpdatePlumbingItemsAfterChangeConstructionItems( _detailTableViewModel.DetailTableModels, detailTableRow.RouteName, constructionItem.ToString() ) ;
-        else {
+        DetailTableViewModel.UpdatePlumbingItemsAfterChangeConstructionItems( _detailTableViewModel.DetailTableModels, detailTableRow.RouteName, constructionItem.ToString(), _isMixConstructionItems ) ;
+        if ( ! _isMixConstructionItems ) {
           #region Update Plumbing Type (Comment out)
           // var detailTableRowsWithSameRouteName = newDetailTableModels.Where( c => c.RouteName == detailTableRow.RouteName ).ToList() ;
           // foreach ( var detailTableRowWithSameRouteName in detailTableRowsWithSameRouteName ) {
@@ -595,7 +594,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
             detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
             detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsMixConstructionItems,
-            detailTableRow.CopyIndex, true, true, true, detailTableRow.WireSizes, detailTableRow.WireStrips, detailTableRow.EarthSizes, detailTableRow.PlumbingSizes ) ;
+            detailTableRow.CopyIndex, true, true, true, detailTableRow.WireSizes, detailTableRow.WireStrips,
+            detailTableRow.EarthSizes, detailTableRow.PlumbingSizes, detailTableRow.PlumbingItemTypes ) ;
           newDetailTableModels.Add( newDetailTableRow ) ;
           existedGroupIds.Add( detailTableRow.GroupId ) ;
         }

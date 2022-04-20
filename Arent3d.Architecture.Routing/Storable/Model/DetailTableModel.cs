@@ -84,6 +84,17 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         OnPropertyChanged( nameof( PlumbingSizes ) ) ;
       }
     }
+    
+    private List<ComboboxItemType> _plumbingItems = new() ;
+    public List<ComboboxItemType> PlumbingItemTypes
+    {
+      get => _plumbingItems ;
+      set
+      {
+        _plumbingItems = value ;
+        OnPropertyChanged( nameof( PlumbingItemTypes ) ) ;
+      }
+    }
 
     public DetailTableModel( 
       bool? calculationExclusion, 
@@ -195,7 +206,8 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       List<ComboboxItemType> wireSizes,
       List<ComboboxItemType> wireStrips,
       List<ComboboxItemType> earthSizes,
-      List<ComboboxItemType> plumbingSizes )
+      List<ComboboxItemType> plumbingSizes,
+      List<ComboboxItemType> plumbingItemTypes )
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -235,6 +247,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       WireStrips = wireStrips ;
       EarthSizes = earthSizes ;
       PlumbingSizes = plumbingSizes ;
+      PlumbingItemTypes = plumbingItemTypes ;
     }
     
     public DetailTableModel( string? detailSymbol, string? detailSymbolId)

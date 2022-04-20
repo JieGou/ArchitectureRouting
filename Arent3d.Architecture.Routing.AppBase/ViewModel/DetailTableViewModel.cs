@@ -139,13 +139,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static void UpdatePlumbingItemsAfterChangeConstructionItems( ObservableCollection<DetailTableModel> detailTableModels, string routeName, string constructionItems )
+    public static void UpdatePlumbingItemsAfterChangeConstructionItems( ObservableCollection<DetailTableModel> detailTableModels, string routeName, string constructionItems, bool isMixConstructionItems )
     {
-      var plumbingIdentityInfos = detailTableModels.Where( d => d.RouteName == routeName && d.IsParentRoute ).Select( d => d.PlumbingIdentityInfo ).Distinct() ;
+      var isParentDetailTableRow = detailTableModels.FirstOrDefault( d => d.RouteName == routeName && d.IsParentRoute ) != null ;
+      var plumbingIdentityInfos = detailTableModels.Where( d => d.RouteName == routeName ).Select( d => d.PlumbingIdentityInfo ).Distinct() ;
       foreach ( var plumbingIdentityInfo in plumbingIdentityInfos ) {
-        var detailTableRowsWithSamePlumbing = detailTableModels.Where( d => d.PlumbingIdentityInfo == plumbingIdentityInfo ) ;
-        foreach ( var detailTableRow in detailTableRowsWithSamePlumbing ) {
-          detailTableRow.PlumbingItems = constructionItems ;
+        var detailTableRowsWithSamePlumbing = detailTableModels.Where( d => d.PlumbingIdentityInfo == plumbingIdentityInfo ).ToList() ;
+        if ( ! detailTableRowsWithSamePlumbing.Any() ) continue ;
+        {
+          var plumbingItems = detailTableRowsWithSamePlumbing.Select( d => d.ConstructionItems ).Distinct() ;
+          var plumbingItemTypes = ( from plumbingItem in plumbingItems select new DetailTableModel.ComboboxItemType( plumbingItem, plumbingItem ) ).ToList() ;
+          foreach ( var detailTableRow in detailTableRowsWithSamePlumbing ) {
+            if ( isMixConstructionItems && isParentDetailTableRow ) {
+              detailTableRow.PlumbingItems = constructionItems ;
+            }
+            else if ( ! isMixConstructionItems ) {
+              detailTableRow.PlumbingItems = detailTableRow.ConstructionItems ;
+            }
+
+            detailTableRow.PlumbingItemTypes = plumbingItemTypes ;
+          }
         }
       }
     }
@@ -221,6 +234,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       foreach ( var detailTableRow in detailTableRowsWithSameDetailSymbolId ) {
         detailTableRow.PlumbingItems = detailTableRow.ConstructionItems ;
+        detailTableRow.PlumbingItemTypes = new List<DetailTableModel.ComboboxItemType> { new( detailTableRow.ConstructionItems, detailTableRow.ConstructionItems ) } ;
       }
     }
 
@@ -232,8 +246,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           .Select( g => g.ToList() ) ;
       foreach ( var detailTableRows in detailTableRowsGroupByPlumbingIdentityInfo ) {
         var parentDetailRow = detailTableRows.First().ConstructionItems ;
+        var plumbingItems = detailTableRows.Select( d => d.ConstructionItems ).Distinct() ;
+        var plumbingItemTypes = ( from plumbingItem in plumbingItems select new DetailTableModel.ComboboxItemType( plumbingItem, plumbingItem ) ).ToList() ;
         foreach ( var detailTableRow in detailTableRows ) {
           detailTableRow.PlumbingItems = parentDetailRow ;
+          detailTableRow.PlumbingItemTypes = plumbingItemTypes ;
         }
       }
     }
@@ -252,34 +269,44 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<DetailTableModel> sortedDetailTableModelsList = new() ;
       var detailTableModelsGroupByDetailSymbolId = detailTableModels.OrderBy( d => d.DetailSymbol ).GroupBy( d => d.DetailSymbolId ).Select( g => g.ToList() ) ;
       foreach ( var detailTableRowsGroupByDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
-        foreach ( var signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType ) ) ) {
+        var signalTypes = (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType )) ;
+        foreach ( var signalType in signalTypes ) {
           var detailTableRowsWithSameSignalType = detailTableRowsGroupByDetailSymbolId.Where( d => d.SignalType == signalType.GetFieldName() ) ;
-          IEnumerable<DetailTableModel> sortedDetailTableModels ;
-          if ( isMixConstructionItems ) {
-            sortedDetailTableModels = 
-              detailTableRowsWithSameSignalType
-                .OrderBy( x => x.PlumbingIdentityInfo )
-                .ThenByDescending( x => x.IsParentRoute )
-                .ThenByDescending( x => x.GroupId )
-                .GroupBy( x => x.DetailSymbolId )
-                .SelectMany( x => x ) ;
-          }
-          else {
-            sortedDetailTableModels = 
-              detailTableRowsWithSameSignalType
-                .OrderBy( x => x.ConstructionItems )
-                .ThenByDescending( x => x.PlumbingIdentityInfo )
-                .ThenByDescending( x => x.IsParentRoute )
-                .ThenByDescending( x => x.GroupId )
-                .GroupBy( x => x.DetailSymbolId )
-                .SelectMany( x => x ) ;
-          }
-
-          sortedDetailTableModelsList.AddRange( sortedDetailTableModels ) ;
+          SortDetailTableRows( sortedDetailTableModelsList, detailTableRowsWithSameSignalType, isMixConstructionItems ) ;
         }
+
+        var signalTypeNames = signalTypes.Select( s => s.GetFieldName() ) ;
+        var detailTableRowsNotHaveSignalType = detailTableRowsGroupByDetailSymbolId.Where( d => ! signalTypeNames.Contains( d.SignalType ) ) ;
+        SortDetailTableRows( sortedDetailTableModelsList, detailTableRowsNotHaveSignalType, isMixConstructionItems ) ;
       }
 
       detailTableModels = sortedDetailTableModelsList ;
+    }
+    
+    private static void SortDetailTableRows( List<DetailTableModel> sortedDetailTableModelsList, IEnumerable<DetailTableModel> detailTableRowsWithSameSignalType, bool isMixConstructionItems )
+    {
+      IEnumerable<DetailTableModel> sortedDetailTableModels ;
+      if ( isMixConstructionItems ) {
+        sortedDetailTableModels = 
+          detailTableRowsWithSameSignalType
+            .OrderBy( x => x.PlumbingIdentityInfo )
+            .ThenByDescending( x => x.IsParentRoute )
+            .ThenByDescending( x => x.GroupId )
+            .GroupBy( x => x.DetailSymbolId )
+            .SelectMany( x => x ) ;
+      }
+      else {
+        sortedDetailTableModels = 
+          detailTableRowsWithSameSignalType
+            .OrderBy( x => x.ConstructionItems )
+            .ThenByDescending( x => x.PlumbingIdentityInfo )
+            .ThenByDescending( x => x.IsParentRoute )
+            .ThenByDescending( x => x.GroupId )
+            .GroupBy( x => x.DetailSymbolId )
+            .SelectMany( x => x ) ;
+      }
+
+      sortedDetailTableModelsList.AddRange( sortedDetailTableModels ) ;
     }
     
     public static void SaveData( Document document, IReadOnlyCollection<DetailTableModel> detailTableRowsBySelectedDetailSymbols )

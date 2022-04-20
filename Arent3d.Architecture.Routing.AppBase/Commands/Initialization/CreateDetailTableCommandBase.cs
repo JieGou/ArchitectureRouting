@@ -316,47 +316,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool isMixConstructionItems )
     {
-      List<DetailTableModel> sortedDetailTableModelsList = new() ;
-      var detailTableModelsGroupByDetailSymbolId = detailTableModels.OrderBy( d => d.DetailSymbol ).GroupBy( d => d.DetailSymbolId ).Select( g => g.ToList() ) ;
-      foreach ( var detailTableRowsGroupByDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
-        foreach ( var signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) ) {
-          var detailTableRowsWithSameSignalType = detailTableRowsGroupByDetailSymbolId.Where( d => d.SignalType == signalType.GetFieldName() ) ;
-          IEnumerable<DetailTableModel> sortedDetailTableModels ;
-          if ( isMixConstructionItems ) {
-            sortedDetailTableModels = 
-              detailTableRowsWithSameSignalType
-                .OrderBy( x => x.PlumbingIdentityInfo )
-                .ThenByDescending( x => x.IsParentRoute )
-                .ThenByDescending( x => x.GroupId )
-                .GroupBy( x => x.DetailSymbolId )
-                .SelectMany( x => x ) ;
-          }
-          else {
-            sortedDetailTableModels = 
-              detailTableRowsWithSameSignalType
-                .OrderBy( x => x.ConstructionItems )
-                .ThenByDescending( x => x.PlumbingIdentityInfo )
-                .ThenByDescending( x => x.IsParentRoute )
-                .ThenByDescending( x => x.GroupId )
-                .GroupBy( x => x.DetailSymbolId )
-                .SelectMany( x => x ) ;
-          }
-
-          sortedDetailTableModelsList.AddRange( sortedDetailTableModels ) ;
-        }
-      }
-
-      detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
-    }
-    
-    private static void SortDetailTableModelByDetailSymbol( ref ObservableCollection<DetailTableModel> detailTableModels )
-    {
-      var sortedDetailTableModelsList = 
-        detailTableModels
-          .OrderBy( x => x.DetailSymbol )
-          .GroupBy( x => x.DetailSymbolId )
-          .SelectMany( x => x ).ToList() ;
-     
+      List<DetailTableModel> sortedDetailTableModelsList = detailTableModels.ToList() ;
+      DetailTableViewModel.SortDetailTableModel( ref sortedDetailTableModelsList, isMixConstructionItems ) ;
       detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
     }
 
