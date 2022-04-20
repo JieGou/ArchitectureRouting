@@ -343,8 +343,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTrayFitting ).FirstOrDefault() ?? throw new InvalidOperationException() ; // TODO may change in the future
 
-      if (false == symbol.IsActive) symbol.Activate();
-      var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
+      if ( false == symbol.IsActive ) symbol.Activate() ;
+      var instance = document.Create.NewFamilyInstance( location.Point, symbol, null, StructuralType.NonStructural ) ;
 
       // set cable tray Bend Radius
       bendRadius = cableTrayDefaultBendRadius == 0 ? ( RATIO_BEND_RADIUS * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;

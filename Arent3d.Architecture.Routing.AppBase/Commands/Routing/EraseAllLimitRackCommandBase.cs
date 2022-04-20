@@ -38,7 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           RemoveRackNotation( document, allLimitRack ) ;
-          document.Delete( allLimitRack ) ;
+          document.Delete( allLimitRack.Select(x => document.GetElement(x)).Select(x => x.Id).ToList() ) ;
           return Result.Succeeded ;
         } ) ;
       }
