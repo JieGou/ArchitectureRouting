@@ -1,10 +1,12 @@
 ﻿using System ;
 using System.Collections.ObjectModel ;
+using System.ComponentModel ;
 using System.Linq ;
+using System.Runtime.CompilerServices ;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
 {
-  public class DetailTableModel
+  public sealed class DetailTableModel : INotifyPropertyChanged
   {
     public bool CalculationExclusion { get ; set ; }
     public string Floor { get ; set ; }
@@ -40,7 +42,17 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public bool IsReadOnlyParameters { get ; set ; }
     public bool IsReadOnlyWireSizeAndWireStrip { get ; set ; }
     public bool IsReadOnlyPlumbingSize { get ; set ; }
-    public ObservableCollection<ComboboxItemType> WireSizes = new() ;
+    private ObservableCollection<ComboboxItemType> _wireSizes = new() ;
+
+    public ObservableCollection<ComboboxItemType> WireSizes
+    {
+      get => _wireSizes ;
+      set
+      {
+        _wireSizes = value ;
+        OnPropertyChanged( nameof( WireSizes ) ) ;
+      }
+    } 
 
     public DetailTableModel( 
       bool? calculationExclusion, 
@@ -237,6 +249,13 @@ namespace Arent3d.Architecture.Routing.Storable.Model
         Type = type ;
         Name = name ;
       }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged ;
+
+    private void OnPropertyChanged( [CallerMemberName] string? propertyName = null )
+    {
+      PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
     }
   }
 }

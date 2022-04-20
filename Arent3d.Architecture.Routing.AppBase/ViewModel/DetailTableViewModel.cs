@@ -1,8 +1,10 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
+using System.ComponentModel ;
 using System.IO ;
 using System.Linq ;
+using System.Runtime.CompilerServices ;
 using System.Windows.Controls ;
 using System.Windows.Controls.Primitives ;
 using System.Windows.Forms ;
@@ -21,12 +23,20 @@ using DataGridCell = System.Windows.Controls.DataGridCell ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
-  public class DetailTableViewModel : ViewModelBase
+  public sealed class DetailTableViewModel : ViewModelBase, INotifyPropertyChanged
   {
     private const string DefaultParentPlumbingType = "E" ;
     private const string NoPlumping = "配管なし" ;
 
-    public ObservableCollection<DetailTableModel> DetailTableModels { get ; set ; }
+    private ObservableCollection<DetailTableModel> _detailTableModels ;
+    public ObservableCollection<DetailTableModel> DetailTableModels { 
+      get => _detailTableModels ;
+      set
+      {
+        _detailTableModels = value ;
+        OnPropertyChanged( nameof(DetailTableModels) );
+      } 
+    }
 
     public bool IsCreateDetailTableOnFloorPlanView { get ; set ; }
     
@@ -61,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<CreateDetailTableCommandBase.ComboboxItemType> earthTypes, List<CreateDetailTableCommandBase.ComboboxItemType> earthSizes, List<CreateDetailTableCommandBase.ComboboxItemType> numbers, List<CreateDetailTableCommandBase.ComboboxItemType> constructionClassificationTypes,
       List<CreateDetailTableCommandBase.ComboboxItemType> signalTypes, List<CreateDetailTableCommandBase.ComboboxItemType> plumbingSizes )
     {
-      DetailTableModels = detailTableModels ;
+      _detailTableModels = detailTableModels ;
       IsCreateDetailTableOnFloorPlanView = false ;
 
       SaveDetailTableCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
@@ -578,6 +588,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       DataGridRow rowContainer = GetSelectedRow( grid ) ;
       return GetCell( grid, rowContainer, column ) ;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged ;
+
+    private void OnPropertyChanged( [CallerMemberName] string? propertyName = null )
+    {
+      PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) ) ;
     }
   }
 }
