@@ -94,7 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var groupCableTrays = GroupRacks( cableTrays ) ; 
 
       var newCableTrays = new List<FamilyInstance>() ;
-      var lines = new List<Line>() ;
+      var infoCableTrays = new List<(Line LocationLine, double Width)>() ;
       foreach ( var groupCableTray in groupCableTrays ) {
         var locationTempt = GetMaxLength( document, groupCableTray.Select(GetConnector).SelectMany(x => x).Select(x => x.Origin).ToList() ) ;
         if(null == locationTempt)
@@ -104,7 +104,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var cableTray = groupCableTray[ 0 ] ;
         newCableTrays.Add(cableTray);
         cableTray.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) ).Set( locationTempt.Length ) ;
-        lines.Add(locationTempt);
+        var width = cableTray.LookupParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble() ;
+        infoCableTrays.Add((locationTempt, width));
         var locationCableTray = ( cableTray.Location as LocationPoint )!.Point ;
         var pointNearest = locationTempt.GetEndPoint( 0 ).DistanceTo( locationCableTray ) < locationTempt.GetEndPoint( 1 ).DistanceTo( locationCableTray ) ? locationTempt.GetEndPoint( 0 ) : locationTempt.GetEndPoint( 1 ) ;
         ElementTransformUtils.MoveElement(document, cableTray.Id, new XYZ(pointNearest.X, pointNearest.Y, locationCableTray.Z) - locationCableTray);
@@ -113,72 +114,104 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         document.Delete( groupCableTray.Select( x => x.Id ).ToList() ) ;
       }
 
-      var width = cableTrays.First().LookupParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble() ;
-      var curves = ExtendCurves( document, lines, fittings ) ;
-      var curveLoops = GroupCurves( curves ).Select(x => CurveLoop.CreateViaThicken(x, width, XYZ.BasisZ)) ;
-      foreach ( var curveLoop in curveLoops ) {
-        foreach ( var curve in curveLoop ) {
-          document.Create.NewDetailCurve( document.ActiveView, curve ) ;
-        }
-      }
+      var inforCableTrays = ExtendCurves( document, infoCableTrays, fittings ) ;
+      var curveLoops = GroupCurves( inforCableTrays ).Select(x => CurveLoop.CreateViaThicken(x.CurveLoop, x.Width, XYZ.BasisZ)) ;
+      var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle(GraphicsStyleType.Projection) ;
+      CreateDetailLines( document, curveLoops, lineStyle ) ;
 
       return newCableTrays ;
     }
 
-    public static List<CurveLoop> GroupCurves( IEnumerable<Line> curves )
+    private static void CreateDetailLines( Document document, IEnumerable<CurveLoop> curveLoops, Element lineStyle )
     {
-      var cloneCurves = curves.ToList() ;
-      var curveLoops = new List<CurveLoop>() ;
+      foreach ( var curveLoop in curveLoops ) {
+        foreach ( var curve in curveLoop ) {
+          var detaiLine = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+          detaiLine.LineStyle = lineStyle ;
+        }
+      }
+      var category = Category.GetCategory(document, BuiltInCategory.OST_CableTrayFitting);
+      document.ActiveView.SetCategoryHidden(category.Id, true);
+    }
+    
+    private static Category GetLineStyle( Document document, string subCategoryName, Color color, int lineWeight )
+    {
+      var categories = document.Settings.Categories ;
+      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
+      Category subCategory ;
+      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
+        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
+        subCategory.LineColor = color ;
+        subCategory.SetLineWeight( lineWeight, GraphicsStyleType.Projection ) ;
+      }
+      else {
+        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+      }
+
+      return subCategory ;
+    }
+
+    public static IEnumerable<(CurveLoop CurveLoop, double Width)> GroupCurves( IEnumerable<(Line LocationLine, double Width)> inforCableTrays )
+    {
+      var cloneCurves = inforCableTrays.ToList() ;
+      var curveLoops = new List<(CurveLoop CurveLoop, double Width)>() ;
       while ( cloneCurves.Count > 0 ) {
-        var groupCurves = new List<Line> { cloneCurves[ 0 ] } ;
+        var groupCurves = new List<(Line LocationLine, double Width)> { cloneCurves[ 0 ] } ;
         cloneCurves.RemoveAt( 0 ) ;
         if ( cloneCurves.Count == 0 )
-          curveLoops.Add( CreateCurveLoop( groupCurves ) ) ;
+          curveLoops.Add( (CreateCurveLoop( groupCurves.Select(x => x.LocationLine) ), groupCurves[0].Width) ) ;
 
-        var count = groupCurves.Count ;
-        for ( var i = cloneCurves.Count - 1 ; i >= 0 ; i-- ) {
-          if ( groupCurves.Count == 1 ) {
-            if ( groupCurves[ 0 ].GetEndPoint( 0 ).DistanceTo( cloneCurves[ i ].GetEndPoint( 0 ) ) < GeometryUtil.Tolerance ) {
-              groupCurves = new List<Line> { ( groupCurves[ 0 ].CreateReversed() as Line )!, cloneCurves[ i ] } ;
-            }
-            else if ( groupCurves[ 0 ].GetEndPoint( 0 ).DistanceTo( cloneCurves[ i ].GetEndPoint( 1 ) ) < GeometryUtil.Tolerance ) {
-              groupCurves = new List<Line> { cloneCurves[ i ], groupCurves[ 0 ] } ;
-            }
-            else if ( groupCurves[ 0 ].GetEndPoint( 1 ).DistanceTo( cloneCurves[ i ].GetEndPoint( 0 ) ) < GeometryUtil.Tolerance ) {
-              groupCurves = new List<Line> { groupCurves[ 0 ], cloneCurves[ i ] } ;
-            }
-            else if ( groupCurves[ 0 ].GetEndPoint( 1 ).DistanceTo( cloneCurves[ i ].GetEndPoint( 1 ) ) < GeometryUtil.Tolerance ) {
-              groupCurves = new List<Line> { groupCurves[ 0 ], ( cloneCurves[ i ].CreateReversed() as Line )! } ;
-            }
-          }
-          else {
-            if ( groupCurves.Last().GetEndPoint( 1 ).DistanceTo( cloneCurves[ i ].GetEndPoint( 0 ) ) < GeometryUtil.Tolerance ) {
-              groupCurves.Add( cloneCurves[ i ] ) ;
-            }
-            else if ( groupCurves.Last().GetEndPoint( 1 ).DistanceTo( cloneCurves[ i ].GetEndPoint( 1 ) ) < GeometryUtil.Tolerance ) {
-              groupCurves.Add( ( cloneCurves[ i ].CreateReversed() as Line )! ) ;
-            }
-            else if ( groupCurves.First().GetEndPoint( 0 ).DistanceTo( cloneCurves[ i ].GetEndPoint( 0 ) ) < GeometryUtil.Tolerance ) {
-              groupCurves.Insert( 0, ( cloneCurves[ i ].CreateReversed() as Line )! ) ;
-            }
-            else if ( groupCurves.First().GetEndPoint( 0 ).DistanceTo( cloneCurves[ i ].GetEndPoint( 1 ) ) < GeometryUtil.Tolerance ) {
-              groupCurves.Insert( 0, cloneCurves[ i ] ) ;
-            }
-          }
-
-          if ( groupCurves.Count != count )
-            cloneCurves.RemoveAt( i ) ;
-
+        int count ;
+        do {
           count = groupCurves.Count ;
-        }
+          for ( var i = cloneCurves.Count - 1 ; i >= 0 ; i-- ) {
+            if ( groupCurves.Count == 1 ) {
+              if ( groupCurves[ 0 ].LocationLine.GetEndPoint( 0 ).DistanceTo( cloneCurves[ i ].LocationLine.GetEndPoint( 0 ) ) < GeometryUtil.Tolerance ) {
+                groupCurves = new List<(Line LocationLine, double Width)> { (( groupCurves[ 0 ].LocationLine.CreateReversed() as Line )!, groupCurves[ 0 ].Width), cloneCurves[ i ] } ;
+                cloneCurves.RemoveAt( i ) ;
+              }
+              else if ( groupCurves[ 0 ].LocationLine.GetEndPoint( 0 ).DistanceTo( cloneCurves[ i ].LocationLine.GetEndPoint( 1 ) ) < GeometryUtil.Tolerance ) {
+                groupCurves = new List<(Line LocationLine, double Width)> { cloneCurves[ i ], groupCurves[ 0 ] } ;
+                cloneCurves.RemoveAt( i ) ;
+              }
+              else if ( groupCurves[ 0 ].LocationLine.GetEndPoint( 1 ).DistanceTo( cloneCurves[ i ].LocationLine.GetEndPoint( 0 ) ) < GeometryUtil.Tolerance ) {
+                groupCurves = new List<(Line LocationLine, double Width)> { groupCurves[ 0 ], cloneCurves[ i ] } ;
+                cloneCurves.RemoveAt( i ) ;
+              }
+              else if ( groupCurves[ 0 ].LocationLine.GetEndPoint( 1 ).DistanceTo( cloneCurves[ i ].LocationLine.GetEndPoint( 1 ) ) < GeometryUtil.Tolerance ) {
+                groupCurves = new List<(Line LocationLine, double Width)> { groupCurves[ 0 ], (( cloneCurves[ i ].LocationLine.CreateReversed() as Line )!,  cloneCurves[ i ].Width) } ;
+                cloneCurves.RemoveAt( i ) ;
+              }
+            }
+            else {
+              if ( groupCurves.Last().LocationLine.GetEndPoint( 1 ).DistanceTo( cloneCurves[ i ].LocationLine.GetEndPoint( 0 ) ) < GeometryUtil.Tolerance ) {
+                groupCurves.Add( cloneCurves[ i ] ) ;
+                cloneCurves.RemoveAt( i ) ;
+              }
+              else if ( groupCurves.Last().LocationLine.GetEndPoint( 1 ).DistanceTo( cloneCurves[ i ].LocationLine.GetEndPoint( 1 ) ) < GeometryUtil.Tolerance ) {
+                groupCurves.Add( (( cloneCurves[ i ].LocationLine.CreateReversed() as Line )!, cloneCurves[ i ].Width) ) ;
+                cloneCurves.RemoveAt( i ) ;
+              }
+              else if ( groupCurves.First().LocationLine.GetEndPoint( 0 ).DistanceTo( cloneCurves[ i ].LocationLine.GetEndPoint( 0 ) ) < GeometryUtil.Tolerance ) {
+                groupCurves.Insert( 0, (( cloneCurves[ i ].LocationLine.CreateReversed() as Line )!, cloneCurves[ i ].Width) ) ;
+                cloneCurves.RemoveAt( i ) ;
+              }
+              else if ( groupCurves.First().LocationLine.GetEndPoint( 0 ).DistanceTo( cloneCurves[ i ].LocationLine.GetEndPoint( 1 ) ) < GeometryUtil.Tolerance ) {
+                groupCurves.Insert( 0, cloneCurves[ i ] ) ;
+                cloneCurves.RemoveAt( i ) ;
+              }
+            }
+          }
+        } while ( count != groupCurves.Count ) ;
         
-        curveLoops.Add( CreateCurveLoop( groupCurves ) ) ;
+        
+        curveLoops.Add( ( CreateCurveLoop( groupCurves.Select(x => x.LocationLine) ), groupCurves[0].Width) ) ;
       }
 
       return curveLoops ;
     }
 
-    private static CurveLoop CreateCurveLoop( List<Line> curves )
+    private static CurveLoop CreateCurveLoop( IEnumerable<Line> curves )
     {
       var curveLoop = new CurveLoop() ;
       foreach ( var curve in curves ) {
@@ -188,11 +221,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return curveLoop ;
     }
 
-    private static List<Line> ExtendCurves( Document document, List<Line> locationCableTrays, List<FamilyInstance> fittings )
+    private static List<(Line LocationLine, double Width)> ExtendCurves( Document document, List<(Line LocationLine, double Width)> infoCableTrays, List<FamilyInstance> fittings )
     {
-      var curves = new List<Line>() ;
-      foreach ( var locationCableTray in locationCableTrays ) {
-        var points = new List<XYZ> { locationCableTray.GetEndPoint( 0 ), locationCableTray.GetEndPoint( 1 ) } ;
+      var newInfoCableTrays = new List<(Line LocationLine, double Width)>() ;
+      foreach ( var infoCableTray in infoCableTrays ) {
+        var points = new List<XYZ> { infoCableTray.LocationLine.GetEndPoint( 0 ), infoCableTray.LocationLine.GetEndPoint( 1 ) } ;
         var newPoints = new List<XYZ>() ;
         foreach ( var fitting in fittings ) {
           var elbow = GetLengthElbow( fitting ) ;
@@ -204,14 +237,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
         points.AddRange(newPoints);
-        var line = GetMaxLength( document, points ) ;
-        if(null == line)
+        var locationLine = GetMaxLength( document, points ) ;
+        if(null == locationLine)
           continue;
         
-        curves.Add(line);
+        newInfoCableTrays.Add((locationLine, infoCableTray.Width));
       }
 
-      return curves ;
+      return newInfoCableTrays ;
     }
 
     private static (double Length, XYZ Point) GetLengthElbow( FamilyInstance fitting )
