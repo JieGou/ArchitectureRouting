@@ -108,6 +108,14 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Open End Point Mark" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     OpenEndPointMark,
+    
+    [NameOnRevit( "配電盤_version_2022" )]
+    [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
+    FromPowerConnector,
+    
+    [NameOnRevit( "スイッチボード_version_2022" )]
+    [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
+    ToPowerConnector,
   }
 
   public enum MechanicalRoutingFamilyType

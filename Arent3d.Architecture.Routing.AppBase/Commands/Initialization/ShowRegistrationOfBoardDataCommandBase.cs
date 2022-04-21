@@ -1,14 +1,14 @@
-﻿using System ;
-using System.Collections.Generic ;
-using System.Linq ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
-using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Arent3d.Architecture.Routing.AppBase.Forms;
+using Arent3d.Architecture.Routing.Extensions;
+using Arent3d.Revit;
+using Arent3d.Revit.I18n;
 using Arent3d.Revit.UI;
-using Arent3d.Utility ;
-using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Structure ;
+using Arent3d.Utility;
+using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 
 
@@ -95,23 +95,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         private Element GenerateConnector(UIDocument uiDocument, double originX, double originY, double originZ, Level level, bool isFromPowerConnector)
         {
-          var familySymbols = uiDocument.Document.GetAllElements<FamilySymbol>()
-            .OfCategory(BuiltInCategory.OST_ElectricalEquipment).ToList();
+            var symbol = isFromPowerConnector ? ( uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.FromPowerConnector ).FirstOrDefault() ) : ( uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ToPowerConnector ).FirstOrDefault() ) ;
 
-          ElementId id;
-
-          id = isFromPowerConnector ? new ElementId(196166) : new ElementId(175106);
-          
-          var symbol = uiDocument.Document.GetElement(id) as FamilySymbol;
-
-          var routingSymbol = symbol ?? throw new InvalidOperationException();
-
-          if (isFromPowerConnector)
-          {
-            routingSymbol.Instantiate(new XYZ(originX + 2, originY + 2, originZ + 50), level, StructuralType.NonStructural);
-          }
-          return routingSymbol.Instantiate(new XYZ(originX, originY, originZ), level, StructuralType.NonStructural);
+            var routingSymbol = symbol ?? throw new InvalidOperationException() ;
+            
+            return routingSymbol.Instantiate(new XYZ(originX, originY, originZ ), level, StructuralType.NonStructural) ;
         }
-
     }
 }
