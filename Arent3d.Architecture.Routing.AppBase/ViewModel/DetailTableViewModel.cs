@@ -500,6 +500,24 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public static void MoveDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel selectDetailTableRow, DetailTableViewModel detailTableViewModelSummary, DetailTableModel selectDetailTableRowSummary, bool isMoveUp )
     {
       var newDetailTableModels = new List<DetailTableModel>() ;
+      var selectDetailTableRowSummaryIndex = detailTableViewModelSummary.DetailTableModels.FindIndex( d => d == selectDetailTableRowSummary ) ;
+      if ( ( isMoveUp && selectDetailTableRowSummaryIndex == 0 ) || ( ! isMoveUp && selectDetailTableRowSummaryIndex == detailTableViewModelSummary.DetailTableModels.Count - 1 ) ) return ;
+      var tempDetailTableRowSummary = detailTableViewModelSummary.DetailTableModels.ElementAt( isMoveUp ? selectDetailTableRowSummaryIndex - 1 : selectDetailTableRowSummaryIndex + 1 ) ;
+      foreach ( var detailTableRow in detailTableViewModelSummary.DetailTableModels ) {
+        if ( detailTableRow == tempDetailTableRowSummary ) {
+          newDetailTableModels.Add( selectDetailTableRowSummary ) ;
+        }
+        else if ( detailTableRow == selectDetailTableRowSummary ) {
+          newDetailTableModels.Add( tempDetailTableRowSummary ) ;
+        }
+        else {
+          newDetailTableModels.Add( detailTableRow ) ;
+        }
+      }
+
+      detailTableViewModelSummary.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+      
+      newDetailTableModels = new List<DetailTableModel>() ;
       var selectDetailTableRowIndex = detailTableViewModel.DetailTableModels.FindIndex( d => d == selectDetailTableRow ) ;
       var tempDetailTableRow = detailTableViewModel.DetailTableModels.ElementAt( isMoveUp ? selectDetailTableRowIndex - 1 : selectDetailTableRowIndex + 1 ) ;
       foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
@@ -515,23 +533,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
-      
-      newDetailTableModels = new List<DetailTableModel>() ;
-      var selectDetailTableRowSummaryIndex = detailTableViewModelSummary.DetailTableModels.FindIndex( d => d == selectDetailTableRowSummary ) ;
-      var tempDetailTableRowSummary = detailTableViewModelSummary.DetailTableModels.ElementAt( isMoveUp ? selectDetailTableRowSummaryIndex - 1 : selectDetailTableRowSummaryIndex + 1 ) ;
-      foreach ( var detailTableRow in detailTableViewModelSummary.DetailTableModels ) {
-        if ( detailTableRow == tempDetailTableRowSummary ) {
-          newDetailTableModels.Add( selectDetailTableRowSummary ) ;
-        }
-        else if ( detailTableRow == selectDetailTableRowSummary ) {
-          newDetailTableModels.Add( tempDetailTableRowSummary ) ;
-        }
-        else {
-          newDetailTableModels.Add( detailTableRow ) ;
-        }
-      }
-
-      detailTableViewModelSummary.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
 
     public static void SplitPlumbing( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectDetailTableRows )
