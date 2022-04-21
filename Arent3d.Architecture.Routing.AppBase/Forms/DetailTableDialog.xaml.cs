@@ -275,22 +275,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void WireTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
-      var selectedWireType = comboBox.SelectedValue ;
-      if ( selectedWireType == null ) return ;
+      var wireType = comboBox.SelectedValue == null ? string.Empty : comboBox.SelectedValue.ToString() ;
+      if ( string.IsNullOrEmpty( wireType ) ) return ;
 
-      var wireSizesOfWireType = _wiresAndCablesModelData.Where( w => w.WireType == selectedWireType.ToString() ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
+      var wireSizesOfWireType = _wiresAndCablesModelData.Where( w => w.WireType == wireType ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
       var wireSizes = wireSizesOfWireType.Any() ? ( from wireSize in wireSizesOfWireType select new DetailTableModel.ComboboxItemType( wireSize, wireSize ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
 
       var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
       if ( selectedDetailTableRow != null ) {
-        selectedDetailTableRow.WireType = selectedWireType.ToString() ;
+        selectedDetailTableRow.WireType = wireType ;
         selectedDetailTableRow.IsReadOnlyWireSizeAndWireStrip = false ;
         selectedDetailTableRow.WireSizes = wireSizes ;
       }
 
       var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
       if ( selectedDetailTableRowSummary != null ) {
-        selectedDetailTableRowSummary.WireType = selectedWireType.ToString() ;
+        selectedDetailTableRowSummary.WireType = wireType ;
         selectedDetailTableRowSummary.IsReadOnlyWireSizeAndWireStrip = false ;
         selectedDetailTableRowSummary.WireSizes = wireSizes ;
       }
@@ -348,18 +348,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void WireBookSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
-      var selectedWireBook = comboBox.SelectedValue ;
-      if ( selectedWireBook == null ) return ;
+      var isNumberValue = int.TryParse( comboBox.Text, out var selectedWireBookText ) ;
+      if ( ! isNumberValue || ( isNumberValue && selectedWireBookText is < 1 or > 10 ) ) return ;
 
       var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) selectedDetailTableRow.WireBook = selectedWireBook.ToString() ;
+      if ( selectedDetailTableRow != null ) selectedDetailTableRow.WireBook = comboBox.Text ;
 
       var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.WireBook = selectedWireBook.ToString() ;
+      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.WireBook = comboBox.Text ;
 
       UpdateDataGridAndRemoveSelectedRow() ;
     }
-    
+
     private void EarthTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
