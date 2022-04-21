@@ -450,7 +450,7 @@
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingSize}" />
-                            <Setter Property="ItemsSource" Value="{Binding EarthSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Setter Property="ItemsSource" Value="{Binding PlumbingSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -469,7 +469,7 @@
                     <DataGridComboBoxColumn.EditingElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingSize}" />
-                            <Setter Property="ItemsSource" Value="{Binding EarthSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Setter Property="ItemsSource" Value="{Binding PlumbingSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             <EventSetter Event="SelectionChanged" Handler="PlumbingSizeSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">

@@ -1,6 +1,7 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.ComponentModel ;
+using System.Linq ;
 using System.Runtime.CompilerServices ;
 
 namespace Arent3d.Architecture.Routing.Storable.Model
@@ -130,7 +131,12 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       string? copyIndex,
       bool? isReadOnlyParameters,
       bool? isReadOnlyWireSizeAndWireStrip,
-      bool? isReadOnlyPlumbingSize )
+      bool? isReadOnlyPlumbingSize,
+      IEnumerable<string>? wireSizes,
+      IEnumerable<string>? wireStrips,
+      IEnumerable<string>? earthSizes,
+      IEnumerable<string>? plumbingSizes,
+      IEnumerable<string>? plumbingItemTypes)
     {
       CalculationExclusion = calculationExclusion ?? false ;
       Floor = floor ?? string.Empty ;
@@ -163,9 +169,14 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsReadOnlyPlumbingItems = isReadOnlyPlumbingItems ?? true ;
       IsMixConstructionItems = isMixConstructionItems ?? false ;
       CopyIndex = copyIndex ?? string.Empty ;
-      IsReadOnlyParameters = isReadOnlyParameters ?? true ;
-      IsReadOnlyWireSizeAndWireStrip = isReadOnlyWireSizeAndWireStrip ?? true ;
-      IsReadOnlyPlumbingSize = isReadOnlyPlumbingSize ?? true ;
+      IsReadOnlyParameters = isReadOnlyParameters ?? false ;
+      IsReadOnlyWireSizeAndWireStrip = isReadOnlyWireSizeAndWireStrip ?? false ;
+      IsReadOnlyPlumbingSize = isReadOnlyPlumbingSize ?? false ;
+      WireSizes = ( from wireSizeType in wireSizes select new ComboboxItemType( wireSizeType, wireSizeType ) ).ToList() ;
+      WireStrips = ( from wireStripType in wireStrips select new ComboboxItemType( wireStripType, wireStripType ) ).ToList() ;
+      EarthSizes = ( from earthSizeType in earthSizes select new ComboboxItemType( earthSizeType, earthSizeType ) ).ToList() ;
+      PlumbingSizes = ( from plumbingSizeType in plumbingSizes select new ComboboxItemType( plumbingSizeType, plumbingSizeType ) ).ToList() ;
+      PlumbingItemTypes = ( from plumbingItemType in plumbingItemTypes select new ComboboxItemType( plumbingItemType, plumbingItemType ) ).ToList() ;
     }
     
     public DetailTableModel( 
@@ -240,9 +251,9 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsReadOnlyPlumbingItems = isReadOnlyPlumbingItems ?? true ;
       IsMixConstructionItems = isMixConstructionItems ?? false ;
       CopyIndex = copyIndex ?? string.Empty ;
-      IsReadOnlyParameters = isReadOnlyParameters ?? true ;
-      IsReadOnlyWireSizeAndWireStrip = isReadOnlyWireSizeAndWireStrip ?? true ;
-      IsReadOnlyPlumbingSize = isReadOnlyPlumbingSize ?? true ;
+      IsReadOnlyParameters = isReadOnlyParameters ?? false ;
+      IsReadOnlyWireSizeAndWireStrip = isReadOnlyWireSizeAndWireStrip ?? false ;
+      IsReadOnlyPlumbingSize = isReadOnlyPlumbingSize ?? false ;
       WireSizes = wireSizes ;
       WireStrips = wireStrips ;
       EarthSizes = earthSizes ;

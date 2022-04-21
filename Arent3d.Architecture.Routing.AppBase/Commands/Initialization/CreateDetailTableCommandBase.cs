@@ -77,7 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
         
         if ( detailSymbolIdsOnDetailTableModels.Any() ) {
-          var detailTableModelRowsOnDetailTableStorable = detailTableModelsData.Where( d => detailSymbolIdsOnDetailTableModels.Contains( d.DetailSymbolId ) ) ;
+          var detailTableModelRowsOnDetailTableStorable = detailTableModelsData.Where( d => detailSymbolIdsOnDetailTableModels.Contains( d.DetailSymbolId ) ).ToList() ;
           foreach ( var detailTableRow in detailTableModelRowsOnDetailTableStorable ) {
             detailTableModels.Add( detailTableRow ) ;
           }
@@ -90,29 +90,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
-      var conduitTypes = ( from conduitTypeName in conduitTypeNames select new ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
-      conduitTypes.Add( new ComboboxItemType( NoPlumping, NoPlumping ) ) ;
+      var conduitTypes = ( from conduitTypeName in conduitTypeNames select new DetailTableModel.ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
+      conduitTypes.Add( new DetailTableModel.ComboboxItemType( NoPlumping, NoPlumping ) ) ;
 
       var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
-      var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
+      var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new DetailTableModel.ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
 
       var levelNames = doc.GetAllElements<Level>().OfCategory( BuiltInCategory.OST_Levels ).OrderBy( l => l.Elevation ).Select( l => l.Name ).ToList() ;
-      var levels = ( from levelName in levelNames select new ComboboxItemType( levelName, levelName ) ).ToList() ;
+      var levels = ( from levelName in levelNames select new DetailTableModel.ComboboxItemType( levelName, levelName ) ).ToList() ;
 
       var wireTypeNames = wiresAndCablesModelData.Select( w => w.WireType ).Distinct().ToList() ;
-      var wireTypes = ( from wireType in wireTypeNames select new ComboboxItemType( wireType, wireType ) ).ToList() ;
+      var wireTypes = ( from wireType in wireTypeNames select new DetailTableModel.ComboboxItemType( wireType, wireType ) ).ToList() ;
       
-      var earthTypes =  new List<ComboboxItemType>() { new( "IV", "IV" ), new ( "EM-IE", "EM-IE") } ;
+      var earthTypes =  new List<DetailTableModel.ComboboxItemType>() { new( "IV", "IV" ), new ( "EM-IE", "EM-IE") } ;
 
-      var numbers = new List<ComboboxItemType>() ;
+      var numbers = new List<DetailTableModel.ComboboxItemType>() ;
       for ( var i = 1; i <= 10; i++ ) {
-        numbers.Add( new ComboboxItemType( i.ToString(), i.ToString() ) ) ;
+        numbers.Add( new DetailTableModel.ComboboxItemType( i.ToString(), i.ToString() ) ) ;
       }
 
       var constructionClassificationTypeNames = hiroiSetCdMasterNormalModelData.Select( h => h.ConstructionClassification ).Distinct().ToList() ;
-      var constructionClassificationTypes = ( from constructionClassification in constructionClassificationTypeNames select new ComboboxItemType( constructionClassification, constructionClassification ) ).ToList() ;
+      var constructionClassificationTypes = ( from constructionClassification in constructionClassificationTypeNames select new DetailTableModel.ComboboxItemType( constructionClassification, constructionClassification ) ).ToList() ;
 
-      var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) select new ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
+      var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) select new DetailTableModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
 
       var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes ) ;
       var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
@@ -155,7 +155,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return Result.Cancelled ;
       }
     }
-    
+
     public enum SignalType
     {
       伝送幹線,
@@ -395,6 +395,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           detailTableRow.IsParentRoute = true ;
           detailTableRow.IsReadOnly = false ;
           detailTableRow.IsReadOnlyPlumbingItems = true ;
+          var plumbingSizesOfPlumbingType = conduitsModelData.Where( c => c.PipingType == plumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+          detailTableRow.PlumbingSizes = ( from plumbingSizeType in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSizeType, plumbingSizeType ) ).ToList() ;
         }
         else {
           var oldDetailTableRow = oldDetailTableRows.First() ;
@@ -405,6 +407,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           detailTableRow.IsParentRoute = oldDetailTableRow.IsParentRoute ;
           detailTableRow.IsReadOnly = oldDetailTableRow.IsReadOnly ;
           detailTableRow.IsReadOnlyPlumbingItems = oldDetailTableRow.IsReadOnlyPlumbingItems ;
+          var plumbingSizesOfPlumbingType = conduitsModelData.Where( c => c.PipingType == detailTableRow.PlumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+          detailTableRow.PlumbingSizes = ( from plumbingSizeType in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSizeType, plumbingSizeType ) ).ToList() ;
           if ( oldDetailTableRows.Count <= 1 ) continue ;
           oldDetailTableRows.Remove( oldDetailTableRow ) ;
           newDetailTableRows.AddRange( oldDetailTableRows ) ;
@@ -466,6 +470,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
               parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
               parentDetailRow.IsMixConstructionItems = isMixConstructionItems ;
+              parentDetailRow.IsReadOnlyPlumbingSize = false ;
               if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) )
                 detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
               else {
@@ -492,6 +497,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               currentDetailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( currentDetailTableRow, isMixConstructionItems ) ;
               currentDetailTableRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
               currentDetailTableRow.IsMixConstructionItems = isMixConstructionItems ;
+              currentDetailTableRow.IsReadOnlyPlumbingSize = false ;
               plumbingCount++ ;
             }
             else {
@@ -511,6 +517,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                 parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
                 parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
                 parentDetailRow.IsMixConstructionItems = isMixConstructionItems ;
+                parentDetailRow.IsReadOnlyPlumbingSize = false ;
                 if ( ! detailTableRowsGroupByPlumbingType.ContainsKey( parentDetailRow.PlumbingIdentityInfo ) ) {
                   detailTableRowsGroupByPlumbingType.Add( parentDetailRow.PlumbingIdentityInfo, childDetailRows ) ;
                 }
@@ -530,6 +537,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               currentDetailTableRow.IsParentRoute = false ;
               currentDetailTableRow.IsReadOnly = true ;
               currentDetailTableRow.IsMixConstructionItems = isMixConstructionItems ;
+              currentDetailTableRow.IsReadOnlyPlumbingSize = true ;
               childDetailRows.Add( currentDetailTableRow ) ;
             }
           }
@@ -540,6 +548,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             currentDetailTableRow.IsReadOnly = true ;
             currentDetailTableRow.IsReadOnlyPlumbingItems = true ;
             currentDetailTableRow.IsMixConstructionItems = false ;
+            currentDetailTableRow.IsReadOnlyPlumbingSize = true ;
           }
         }
 
@@ -673,15 +682,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           foreach ( var master in masterModels ) {
             var wireType = master.Type ;
             var wireSize = master.Size1 ;
-            var wireStrip = master.Size2 ;
-            var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && wireStrip == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && wireStrip == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
+            var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
+            var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == wireType && w.DiameterOrNominal == wireSize && ( ( w.NumberOfHeartsOrLogarithm == "0" && master.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && master.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
             if ( wiresAndCablesModel == null ) continue ;
             var signalType = wiresAndCablesModel.Classification ;
             var wireCrossSectionalArea = double.Parse( wiresAndCablesModel.CrossSectionalArea ) ;
+            
+            var wireSizesOfWireType = wiresAndCablesModelData.Where( w => w.WireType == wireType ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
+            var wireSizes = wireSizesOfWireType.Any() ? ( from wireSizeType in wireSizesOfWireType select new DetailTableModel.ComboboxItemType( wireSizeType, wireSizeType ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
+            
+            var wireStripsOfWireType = wiresAndCablesModelData.Where( w => w.WireType == wireType && w.DiameterOrNominal == wireSize ).Select( w => w.NumberOfHeartsOrLogarithm == "0" ? "-" : w.NumberOfHeartsOrLogarithm + w.COrP ).Distinct().ToList() ;
+            var wireStrips = wireStripsOfWireType.Any() ? ( from wireStripType in wireStripsOfWireType select new DetailTableModel.ComboboxItemType( wireStripType, wireStripType ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
+
+            var plumbingItemTypes = new List<DetailTableModel.ComboboxItemType> { new( constructionItem, constructionItem ) } ;
+            
             var detailTableRow = new DetailTableModel( false, floor, ceedCode, detailSymbolModel.DetailSymbol, detailSymbolModel.DetailSymbolId, wireType, wireSize, wireStrip, "1", 
               string.Empty, string.Empty, string.Empty, plumbingType, string.Empty, string.Empty, constructionClassification, signalType, 
               constructionItem, constructionItem, remark, wireCrossSectionalArea, detailSymbolModel.CountCableSamePosition, detailSymbolModel.RouteName, isEcoMode, isParentRoute, ! isParentRoute, 
-              string.Empty, string.Empty, true, mixConstructionItems, string.Empty, true, true, true ) ;
+              string.Empty, string.Empty, true, mixConstructionItems, string.Empty, false, false, false, wireSizes, wireStrips, new List<DetailTableModel.ComboboxItemType>(), new List<DetailTableModel.ComboboxItemType>(), plumbingItemTypes ) ;
             detailTableModels.Add( detailTableRow ) ;
           }
         }
@@ -693,18 +711,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableModelRowGroupMixConstructionItems = detailTableModelsData.FirstOrDefault( d => detailSymbolIds.Contains( d.DetailSymbolId ) && ! string.IsNullOrEmpty( d.GroupId ) && bool.Parse( d.GroupId.Split( '-' ).First() ) ) ;
       var detailTableModelRowGroupNoMixConstructionItems = detailTableModelsData.FirstOrDefault( d => detailSymbolIds.Contains( d.DetailSymbolId ) && ! string.IsNullOrEmpty( d.GroupId ) && ! bool.Parse( d.GroupId.Split( '-' ).First() ) ) ;
       return detailTableModelRowGroupNoMixConstructionItems == null && detailTableModelRowGroupMixConstructionItems != null ;
-    }
-
-    public class ComboboxItemType
-    {
-      public string Type { get ; }
-      public string Name { get ; }
-
-      public ComboboxItemType( string type, string name )
-      {
-        Type = type ;
-        Name = name ;
-      }
     }
   }
 }

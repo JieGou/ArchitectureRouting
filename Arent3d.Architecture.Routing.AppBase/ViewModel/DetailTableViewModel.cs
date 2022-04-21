@@ -5,21 +5,15 @@ using System.ComponentModel ;
 using System.IO ;
 using System.Linq ;
 using System.Runtime.CompilerServices ;
-using System.Windows.Controls ;
-using System.Windows.Controls.Primitives ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
-using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
-using DataGrid = System.Windows.Controls.DataGrid ;
-using DataGridCell = System.Windows.Controls.DataGridCell ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -46,25 +40,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public ICommand CreateDetailTableCommand { get ; }
 
-    public List<CreateDetailTableCommandBase.ComboboxItemType> ConduitTypes { get ;}
+    public List<DetailTableModel.ComboboxItemType> ConduitTypes { get ;}
 
-    public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionItems { get ; }
+    public List<DetailTableModel.ComboboxItemType> ConstructionItems { get ; }
     
-    public List<CreateDetailTableCommandBase.ComboboxItemType> Levels { get ; }
+    public List<DetailTableModel.ComboboxItemType> Levels { get ; }
 
-    public List<CreateDetailTableCommandBase.ComboboxItemType> WireTypes { get ; }
+    public List<DetailTableModel.ComboboxItemType> WireTypes { get ; }
 
-    public List<CreateDetailTableCommandBase.ComboboxItemType> EarthTypes { get ; }
+    public List<DetailTableModel.ComboboxItemType> EarthTypes { get ; }
 
-    public List<CreateDetailTableCommandBase.ComboboxItemType> Numbers { get ; }
+    public List<DetailTableModel.ComboboxItemType> Numbers { get ; }
     
-    public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionClassificationTypes { get ; }
+    public List<DetailTableModel.ComboboxItemType> ConstructionClassificationTypes { get ; }
 
-    public List<CreateDetailTableCommandBase.ComboboxItemType> SignalTypes { get ; }
+    public List<DetailTableModel.ComboboxItemType> SignalTypes { get ; }
 
-    public DetailTableViewModel( ObservableCollection<DetailTableModel> detailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems,
-      List<CreateDetailTableCommandBase.ComboboxItemType> levels, List<CreateDetailTableCommandBase.ComboboxItemType> wireTypes, List<CreateDetailTableCommandBase.ComboboxItemType> earthTypes, 
-      List<CreateDetailTableCommandBase.ComboboxItemType> numbers, List<CreateDetailTableCommandBase.ComboboxItemType> constructionClassificationTypes, List<CreateDetailTableCommandBase.ComboboxItemType> signalTypes )
+    public DetailTableViewModel( ObservableCollection<DetailTableModel> detailTableModels, List<DetailTableModel.ComboboxItemType> conduitTypes, List<DetailTableModel.ComboboxItemType> constructionItems,
+      List<DetailTableModel.ComboboxItemType> levels, List<DetailTableModel.ComboboxItemType> wireTypes, List<DetailTableModel.ComboboxItemType> earthTypes, 
+      List<DetailTableModel.ComboboxItemType> numbers, List<DetailTableModel.ComboboxItemType> constructionClassificationTypes, List<DetailTableModel.ComboboxItemType> signalTypes )
     {
       _detailTableModels = detailTableModels ;
       IsCreateDetailTableOnFloorPlanView = false ;
@@ -139,21 +133,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public static void UpdatePlumbingItemsAfterChangeConstructionItems( ObservableCollection<DetailTableModel> detailTableModels, string routeName, string constructionItems, bool isMixConstructionItems )
+    public static void UpdatePlumbingItemsAfterChangeConstructionItems( ObservableCollection<DetailTableModel> detailTableModels, string routeName, string constructionItems )
     {
-      var isParentDetailTableRow = detailTableModels.FirstOrDefault( d => d.RouteName == routeName && d.IsParentRoute ) != null ;
       var plumbingIdentityInfos = detailTableModels.Where( d => d.RouteName == routeName ).Select( d => d.PlumbingIdentityInfo ).Distinct() ;
       foreach ( var plumbingIdentityInfo in plumbingIdentityInfos ) {
         var detailTableRowsWithSamePlumbing = detailTableModels.Where( d => d.PlumbingIdentityInfo == plumbingIdentityInfo ).ToList() ;
         if ( ! detailTableRowsWithSamePlumbing.Any() ) continue ;
         {
+          var isParentDetailTableRow = detailTableRowsWithSamePlumbing.FirstOrDefault( d => d.RouteName == routeName && d.IsParentRoute ) != null ;
           var plumbingItems = detailTableRowsWithSamePlumbing.Select( d => d.ConstructionItems ).Distinct() ;
           var plumbingItemTypes = ( from plumbingItem in plumbingItems select new DetailTableModel.ComboboxItemType( plumbingItem, plumbingItem ) ).ToList() ;
           foreach ( var detailTableRow in detailTableRowsWithSamePlumbing ) {
-            if ( isMixConstructionItems && isParentDetailTableRow ) {
+            if ( detailTableRow.IsMixConstructionItems && isParentDetailTableRow ) {
               detailTableRow.PlumbingItems = constructionItems ;
             }
-            else if ( ! isMixConstructionItems ) {
+            else if ( ! detailTableRow.IsMixConstructionItems ) {
               detailTableRow.PlumbingItems = detailTableRow.ConstructionItems ;
             }
 
@@ -387,7 +381,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         copyDetailTableRow.ConstructionClassification, copyDetailTableRow.SignalType, copyDetailTableRow.ConstructionItems, copyDetailTableRow.PlumbingItems, copyDetailTableRow.Remark, 
         copyDetailTableRow.WireCrossSectionalArea, copyDetailTableRow.CountCableSamePosition, copyDetailTableRow.RouteName, copyDetailTableRow.IsEcoMode, copyDetailTableRow.IsParentRoute, 
         copyDetailTableRow.IsReadOnly, copyDetailTableRow.PlumbingIdentityInfo + index, string.Empty, copyDetailTableRow.IsReadOnlyPlumbingItems,
-        copyDetailTableRow.IsMixConstructionItems, index, copyDetailTableRow.IsReadOnlyParameters, true, copyDetailTableRow.IsReadOnlyParameters ) ;
+        copyDetailTableRow.IsMixConstructionItems, index, copyDetailTableRow.IsReadOnlyParameters, copyDetailTableRow.IsReadOnlyWireSizeAndWireStrip, copyDetailTableRow.IsReadOnlyPlumbingSize,
+        copyDetailTableRow.WireSizes, copyDetailTableRow.WireStrips, copyDetailTableRow.EarthSizes, copyDetailTableRow.PlumbingSizes, copyDetailTableRow.PlumbingItemTypes ) ;
       foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
         newDetailTableModels.Add( detailTableRow ) ;
         if ( detailTableRow == pasteDetailTableRow ) {
@@ -575,6 +570,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       detailTableRow.IsParentRoute = true ;
       detailTableRow.IsReadOnly = false ;
       detailTableRow.IsReadOnlyPlumbingItems = true ;
+      detailTableRow.IsReadOnlyPlumbingSize = false ;
+      detailTableRow.IsMixConstructionItems = false ;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged ;
