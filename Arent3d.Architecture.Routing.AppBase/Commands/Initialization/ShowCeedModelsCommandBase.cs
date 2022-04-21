@@ -25,7 +25,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
-
+      var defaultSymbolMagnification = doc.GetSetupPrintStorable().Scale ;
+      
       var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
 
       dlgCeedModel.ShowDialog() ;
@@ -48,43 +49,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 
-        ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-        var noteWidth = .05 ;
+        var textTypeId = TextNoteHelper.FindOrCreateTextNoteType( doc )!.Id ;
+        TextNoteOptions opts = new(textTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-        // make sure note width works for the text type
-        var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
-        var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
-        if ( noteWidth < minWidth ) {
-          noteWidth = minWidth ;
-        }
-        else if ( noteWidth > maxWidth ) {
-          noteWidth = maxWidth ;
-        }
-
-        TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
-
-        var txtPosition = new XYZ( originX - 2, originY + 4, heightOfConnector ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeedModel.SelectedDeviceSymbol, opts ) ;
+        var txtPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 4 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, dlgCeedModel.SelectedDeviceSymbol, opts ) ;
 
         // create group of selected element and new text note
         groupIds.Add( element.Id ) ;
         groupIds.Add( textNote.Id ) ;
         if ( ! string.IsNullOrEmpty( dlgCeedModel.SelectedCondition ) ) {
-          if ( dlgCeedModel.SelectedCondition.Length > 6 ) noteWidth += ( dlgCeedModel.SelectedCondition.Length - 6 ) * 0.007 ;
-          var txtConditionPosition = new XYZ( originX - 2, originY + 2.5, heightOfConnector ) ;
-          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeedModel.SelectedCondition, opts ) ;
+          var txtConditionPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
+          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, dlgCeedModel.SelectedCondition, opts ) ;
 
-          var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
-          if ( textNoteType == null ) {
-            Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
-            textNoteType = ( ele as TextNoteType )! ;
-            TextElementType textType = conditionTextNote.Symbol ;
-            const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
-            Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
-            textSize.Set( .005 ) ;
-          }
-
-          conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
           groupIds.Add( conditionTextNote.Id ) ;
         }
 
@@ -94,7 +71,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( ! groupIds.Any() ) return result ;
       using Transaction t = new ( doc, "Create connector group." ) ;
       t.Start() ;
-      var defaultSymbolMagnification = doc.GetSetupPrintStorable().Scale ;
       if ( element != null ) {
         var isHasParameterSwitch2DSymbol = element.HasParameter( switch2DSymbol ) ;
         if ( isHasParameterSwitch2DSymbol ) element.SetProperty( switch2DSymbol, true ) ;

@@ -112,7 +112,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         _setupPrintStorable.Scale = int.Parse( Scale ) ;
         _setupPrintStorable.Save() ;
 
-        var textNoteType = FindOrCreateTextNoteType( _uiDocument.Document ) ;
+        var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( _uiDocument.Document ) ;
         var viewPlanFilter = new FilteredElementCollector( _uiDocument.Document ) ;
         var viewPlans = viewPlanFilter.OfClass( typeof( ViewPlan ) ).OfType<ViewPlan>().Where( x => ! x.IsTemplate ) ;
         foreach ( var viewPlan in viewPlans ) {
@@ -135,28 +135,5 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
     }
     
-    private static TextNoteType? FindOrCreateTextNoteType(Document document)
-    {
-      const string rextNoteTypeName = "ARENT_2.7MM_0.75" ;
-      
-      var textNoteTypes = new FilteredElementCollector( document ).OfClass( typeof( TextNoteType ) ).OfType<TextNoteType>().EnumerateAll() ;
-      if ( ! textNoteTypes.Any() )
-        return null ;
-      
-      var textNoteType = textNoteTypes.SingleOrDefault( x => x.Name == rextNoteTypeName ) ;
-      if ( null != textNoteType ) 
-        return textNoteType ;
-      
-      textNoteType = textNoteTypes.First().Duplicate(rextNoteTypeName) as TextNoteType;
-      if ( null == textNoteType )
-        return null ;
-      
-      textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( 2.7.MillimetersToRevitUnits() ) ;
-      textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( 0.75 ) ;
-      textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( 0.6.MillimetersToRevitUnits() ) ;
-      textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
-
-      return textNoteType ;
-    }
   }
 }
