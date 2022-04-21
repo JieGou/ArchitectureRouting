@@ -109,7 +109,7 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     OpenEndPointMark,
     
-    [NameOnRevit( "配電盤_version_2022" )]
+    [NameOnRevit( "スイッチボード_version_2022" )]
     [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
     FromPowerConnector,
     
