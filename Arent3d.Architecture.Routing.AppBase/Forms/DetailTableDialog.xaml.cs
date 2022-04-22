@@ -321,11 +321,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void WireBookSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
-      var isNumberValue = int.TryParse( comboBox.Text, out var selectedWireBookText ) ;
+      var isNumberValue = int.TryParse( comboBox.SelectedValue.ToString(), out var selectedWireBookText ) ;
       if ( ! isNumberValue || ( isNumberValue && selectedWireBookText is < 1 or > 10 ) ) return ;
 
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
-        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.WireBook, comboBox.Text, new List<DetailTableModel.ComboboxItemType>() ) ;
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.WireBook, comboBox.SelectedValue.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
       }
 
       UpdateDataGridAndRemoveSelectedRow() ;
