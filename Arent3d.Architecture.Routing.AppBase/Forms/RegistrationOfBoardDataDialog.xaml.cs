@@ -53,24 +53,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
-      MessageBox.Show( "Please select 盤間配線確認表 file.", "Message" ) ;
-      OpenFileDialog openFileDialog = new() { Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false } ;
-      string filePath = string.Empty ;
-
-      if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
-        filePath = openFileDialog.FileName ;
-      }
-
+      string filePath = RegistrationOfBoardDataViewModel.GetFilePath() ;
       if ( string.IsNullOrEmpty( filePath ) ) return ;
-
       RegistrationOfBoardDataStorable registrationOfBoardDataStorable = _document.GetRegistrationOfBoardDataStorable() ;
-      {
-        List<RegistrationOfBoardDataModel> registrationOfBoardDataModelData = ExcelToModelConverter.GetAllRegistrationOfBoardDataModel( filePath ) ;
-        if ( ! registrationOfBoardDataModelData.Any() ) return ;
-        registrationOfBoardDataStorable.RegistrationOfBoardData = registrationOfBoardDataModelData ;
-
-        LoadData( registrationOfBoardDataStorable ) ;
-      }
+      List<RegistrationOfBoardDataModel> registrationOfBoardDataModelData = ExcelToModelConverter.GetAllRegistrationOfBoardDataModel( filePath ) ;
+      if ( ! registrationOfBoardDataModelData.Any() ) return ;
+      registrationOfBoardDataStorable.RegistrationOfBoardData = registrationOfBoardDataModelData ;
+      LoadData( registrationOfBoardDataStorable ) ;
     }
 
     private void LoadData( RegistrationOfBoardDataStorable registrationOfBoardDataStorable )
@@ -123,20 +112,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void SearchRegistrationOfBoardDataModels()
     {
       if ( _allRegistrationOfBoardDataModels == null ) return ;
-      if ( string.IsNullOrEmpty( _autoControlPanelSearch ) && string.IsNullOrEmpty( _signalDestinationSearch ) ) {
-        DtGrid.ItemsSource = _allRegistrationOfBoardDataModels.RegistrationOfBoardDataModels ;
-      }
-      else {
-        var registrationOfBoardDataModels = new List<RegistrationOfBoardDataModel>() ;
-        if ( ! string.IsNullOrEmpty( _autoControlPanelSearch ) && ! string.IsNullOrEmpty( _signalDestinationSearch ) )
-          registrationOfBoardDataModels = _allRegistrationOfBoardDataModels.RegistrationOfBoardDataModels.Where( c => c.AutoControlPanel.Contains( _autoControlPanelSearch ) && c.SignalDestination.Contains( _signalDestinationSearch ) ).ToList() ;
-        else if ( ! string.IsNullOrEmpty( _autoControlPanelSearch ) && string.IsNullOrEmpty( _signalDestinationSearch ) )
-          registrationOfBoardDataModels = _allRegistrationOfBoardDataModels.RegistrationOfBoardDataModels.Where( c => c.AutoControlPanel.Contains( _autoControlPanelSearch ) ).ToList() ;
-        else if ( string.IsNullOrEmpty( _autoControlPanelSearch ) && ! string.IsNullOrEmpty( _signalDestinationSearch ) )
-          registrationOfBoardDataModels = _allRegistrationOfBoardDataModels.RegistrationOfBoardDataModels.Where( c => c.SignalDestination.Contains( _signalDestinationSearch ) ).ToList() ;
-
-        DtGrid.ItemsSource = registrationOfBoardDataModels ;
-      }
+      DtGrid.ItemsSource = RegistrationOfBoardDataViewModel.FilterData( _allRegistrationOfBoardDataModels, _autoControlPanelSearch, _signalDestinationSearch ) ;
     }
 
     private void Button_Reset( object sender, RoutedEventArgs e )
@@ -159,16 +135,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void SaveBoardModelDisplayAndOnlyUsingCodeState()
     {
       if ( _allRegistrationOfBoardDataModels == null ) return ;
-      var registrationOfBoardDataStorable = _document.GetRegistrationOfBoardDataStorable() ;
-      try {
-        using Transaction t = new( _document, "Save data" ) ;
-        t.Start() ;
-        registrationOfBoardDataStorable.RegistrationOfBoardData = _allRegistrationOfBoardDataModels.RegistrationOfBoardDataModels ;
-        registrationOfBoardDataStorable.Save() ;
-        t.Commit() ;
-      }
-      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-      }
+      RegistrationOfBoardDataViewModel.Save(_document,_allRegistrationOfBoardDataModels);
     }
 
     private void Cell_DoubleClick( object sender, MouseButtonEventArgs e )
