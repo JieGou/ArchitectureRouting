@@ -61,7 +61,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private ( TextNote, string) CreateDetailSymbol( Document doc, DetailSymbolSettingDialog detailSymbolSettingDialog, XYZ firstPoint, string angle, bool isParentSymbol )
     {
-      const double baseLengthOfLine = 0.2 ;
+      var scale = doc.GetSetupPrintStorable().Scale ;
+      var baseLengthOfLine = 1d.MillimetersToRevitUnits()*scale ;
+      
       var isLeft = true ;
       var size = detailSymbolSettingDialog.HeightCharacter ;
       // create color using Color.FromArgb with RGB inputs
@@ -111,7 +113,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         firstPoint = nextP ;
       }
 
-      ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+      var defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+      doc.GetElement( defaultTextTypeId ).get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( baseLengthOfLine ) ;
       var noteWidth = ( size / 32.0 ) * ( 1.0 / 12.0 ) * detailSymbolSettingDialog.PercentWidth / 100 ;
 
       // make sure note width works for the text type
