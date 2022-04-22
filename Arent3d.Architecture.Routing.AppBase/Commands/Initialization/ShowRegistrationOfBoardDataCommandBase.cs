@@ -6,7 +6,6 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
@@ -28,20 +27,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( ! ( dlgRegistrationOfBoardDataModel.DialogResult ?? false ) ) return Result.Cancelled ;
       ICollection<ElementId> groupIds = new List<ElementId>() ;
       if ( string.IsNullOrEmpty( dlgRegistrationOfBoardDataModel.SelectedSignalDestination ) && string.IsNullOrEmpty( dlgRegistrationOfBoardDataModel.SelectedAutoControlPanel ) ) return Result.Succeeded ;
-      Element? elementFromToPower = null ;
-      Element? elementConnectorPower = null ;
 
 
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
         var uiDoc = commandData.Application.ActiveUIDocument ;
 
-        var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
+        var (originX, originY, _) = uiDoc.Selection.PickPoint( "配置場所を選択して下さい。" ) ;
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
 
-        elementFromToPower = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgRegistrationOfBoardDataModel.IsFromPowerConnector ) ;
-        elementConnectorPower = GeneratePowerConnector( uiDoc, originX, originY - 0.5, heightOfConnector + 100.0.MillimetersToRevitUnits(), level ) ;
+        var elementFromToPower = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgRegistrationOfBoardDataModel.IsFromPowerConnector ) ;
+        var elementConnectorPower = GeneratePowerConnector( uiDoc, originX, originY - 0.5, heightOfConnector + 100.0.MillimetersToRevitUnits(), level ) ;
 
         var registrationCode = dlgRegistrationOfBoardDataModel.SelectedAutoControlPanel + "-" + dlgRegistrationOfBoardDataModel.SelectedSignalDestination ;
 
@@ -59,7 +56,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           familyInstanceConnectorPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
         }
 
-        ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+        var defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
         var noteWidth = .05 ;
         // make sure note width works for the text type
         var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
@@ -71,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           noteWidth = maxWidth ;
         }
 
-        TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
+        TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
         var text = dlgRegistrationOfBoardDataModel.IsFromPowerConnector ? dlgRegistrationOfBoardDataModel.SelectedAutoControlPanel : dlgRegistrationOfBoardDataModel.SelectedSignalDestination ;
         var txtPosition = new XYZ( originX - 2, originY + 4, heightOfConnector ) ;
@@ -86,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       } ) ;
 
       if ( ! groupIds.Any() ) return result ;
-      using Transaction t = new( doc, "Create connector group." ) ;
+      using Transaction t = new(doc, "Create connector group.") ;
       t.Start() ;
       doc.Create.NewGroup( groupIds ) ;
       t.Commit() ;
@@ -94,14 +91,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return result ;
     }
 
-    private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, bool isFromPowerConnector )
+    private static Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, bool isFromPowerConnector )
     {
-      var symbol = isFromPowerConnector ? ( uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.FromPowerConnector ).FirstOrDefault() ) : ( uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ToPowerConnector ).FirstOrDefault() ) ;
+      var symbol = isFromPowerConnector ? uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.FromPowerEquipment ).FirstOrDefault() : uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ToPowerEquipment ).FirstOrDefault() ;
       var routingSymbol = symbol ?? throw new InvalidOperationException() ;
       return routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
     }
 
-    private Element GeneratePowerConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level )
+    private static Element GeneratePowerConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level )
     {
       var routingSymbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ConnectorOneSide ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       return routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
