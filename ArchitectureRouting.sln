@@ -17,12 +17,12 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug 2022|x64 = Debug 2022|x64
 		Release 2022|x64 = Release 2022|x64
+		Debug 2021|x64 = Debug 2021|x64
+		Release 2021|x64 = Release 2021|x64
 		Debug 2020|x64 = Debug 2020|x64
 		Release 2020|x64 = Release 2020|x64
 		Debug 2019|x64 = Debug 2019|x64
-		Debug 2021|x64 = Debug 2021|x64
 		Release 2019|x64 = Release 2019|x64
-		Release 2021|x64 = Release 2021|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{7C2209B4-5B23-4603-A1DA-30188A398230}.Debug 2022|x64.ActiveCfg = Debug 2022|x64
@@ -104,7 +104,7 @@ Global
 		{2B42C9AC-7F0A-40C3-84CD-BE689109D8F3}.Release 2019|x64.ActiveCfg = Release 2019|x64
 		{2B42C9AC-7F0A-40C3-84CD-BE689109D8F3}.Release 2019|x64.Build.0 = Release 2019|x64
 		{2B42C9AC-7F0A-40C3-84CD-BE689109D8F3}.Release 2021|x64.ActiveCfg = Release 2021|x64
-		{2B42C9AC-7F0A-40C3-84CD-BE689109D8F3}.Release 2021|x64.Build.0 = Release 2021|x64		
+		{2B42C9AC-7F0A-40C3-84CD-BE689109D8F3}.Release 2021|x64.Build.0 = Release 2021|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
