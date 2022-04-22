@@ -151,12 +151,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_OK( object sender, RoutedEventArgs e )
     {
-      SaveCeedModelNumberDisplayAndOnlyUsingCodeState() ;
+      SaveBoardModelDisplayAndOnlyUsingCodeState() ;
       DialogResult = true ;
       Close() ;
     }
 
-    private void SaveCeedModelNumberDisplayAndOnlyUsingCodeState()
+    private void SaveBoardModelDisplayAndOnlyUsingCodeState()
     {
       if ( _allRegistrationOfBoardDataModels == null ) return ;
       var registrationOfBoardDataStorable = _document.GetRegistrationOfBoardDataStorable() ;
@@ -185,7 +185,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedSignalDestination = dataContext?.SignalDestination ?? string.Empty ;
       if ( columnIndex == 0 ) IsFromPowerConnector = true ;
       if ( columnIndex == 1 ) IsFromPowerConnector = false ;
-      SaveCeedModelNumberDisplayAndOnlyUsingCodeState() ;
+      SaveBoardModelDisplayAndOnlyUsingCodeState() ;
       DialogResult = true ;
       Close() ;
     }
