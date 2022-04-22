@@ -41,9 +41,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedAutoControlPanel = string.Empty ;
       SelectedSignalDestination = string.Empty ;
 
-      var oldCeedStorable = _document.GetAllStorables<RegistrationOfBoardDataStorable>().FirstOrDefault() ;
-      if ( oldCeedStorable != null ) {
-        LoadData( oldCeedStorable ) ;
+      var oldRegistrationOfBoardDataStorable = _document.GetAllStorables<RegistrationOfBoardDataStorable>().FirstOrDefault() ;
+      if ( oldRegistrationOfBoardDataStorable != null ) {
+        LoadData( oldRegistrationOfBoardDataStorable ) ;
       }
 
       Style cellStyle = new( typeof( DataGridCell ) ) ;
