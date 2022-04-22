@@ -21,7 +21,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-      var selection = commandData.Application.ActiveUIDocument.Selection ;
 
       try {
         var rackNotationStorable = document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? document.GetRackNotationStorable() ;
@@ -38,7 +37,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
           var rackNotationModel = notation.Value.First() ;
           var oldEndLineLeaderId = rackNotationModel.EndLineLeaderId ;
-          if ( null == oldEndLineLeaderId ||
+          if ( string.IsNullOrEmpty(oldEndLineLeaderId) ||
                document.GetElement( oldEndLineLeaderId ) is not DetailLine detailLine )
             continue ;
           
