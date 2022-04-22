@@ -18,13 +18,13 @@ namespace Arent3d.Architecture.Routing.AppBase
           ? underLineText.GetEndPoint( 0 )
           : underLineText.GetEndPoint( 1 ) ;
 
-      var curves = GeometryHelper.IntersectCurveLeader( document, ( pointNearest, endPoint ) ) ;
+      if ( document.GetElement( detailLine.OwnerViewId ) is not ViewPlan viewPlan ) return ( string.Empty, new List<string>() ) ;
+      var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( new XYZ( pointNearest.X, pointNearest.Y, viewPlan.GenLevel.Elevation ), new XYZ( endPoint.X, endPoint.Y, viewPlan.GenLevel.Elevation ) ) } ) ;
       curves.Add( underLineText ) ;
 
-      var view = document.GetElement( detailLine.OwnerViewId ) as View;
-      var detailCurves = GeometryHelper.CreateDetailCurve( view, curves ) ;
+      var detailCurves = CreateDetailCurve( viewPlan, curves ) ;
       var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, endPoint ) ;
-      var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.detailCurve?.UniqueId ).ToList() ;
+      var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != curveClosestPoint.DetailCurve?.UniqueId ).ToList() ;
 
       document.Delete( detailLine.Id ) ;
       foreach ( var lineId in rackNotationModel.OrtherLineId ) {
@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.AppBase
         }
       }
 
-      return ( curveClosestPoint.detailCurve?.UniqueId ?? string.Empty, ortherLineId ) ;
+      return ( curveClosestPoint.DetailCurve?.UniqueId ?? string.Empty, ortherLineId ) ;
     }
     
     public static void SaveNotation(RackNotationStorable rackNotationStorable, TextNote textNote, string endLineLeaderId, IReadOnlyList<string> ortherLineId)
@@ -45,6 +45,23 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
       rackNotationStorable.Save() ;
+    }
+    
+    public static List<DetailCurve> CreateDetailCurve( View? view, IEnumerable<Curve> curves )
+    {
+      var detailCurves = new List<DetailCurve>() ;
+      if ( null == view )
+        return detailCurves ;
+
+      var graphicsStyle = view.Document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+
+      foreach ( var curve in curves ) {
+        var detailCurve = view.Document.Create.NewDetailCurve( view, curve ) ;
+        detailCurve.LineStyle = graphicsStyle ;
+        detailCurves.Add( detailCurve ) ;
+      }
+
+      return detailCurves ;
     }
   }
 }

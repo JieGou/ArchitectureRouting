@@ -186,6 +186,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( detailTable == null ) {
         detailTable = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_Conduit ) ) ;
         detailTable.Name = scheduleName ;
+        detailTable.TrySetProperty( ElectricalRoutingElementParameter.ScheduleBaseName, scheduleName ) ;
       }
 
       InsertDetailTableDataIntoSchedule( detailTable, detailTableModels, level ) ;
