@@ -10,6 +10,7 @@ namespace Arent3d.Architecture.Routing.AppBase
     public const string RextNoteTypeName = "ARENT_2.7MM_0.75" ;
     public static double TextSize => 2.7 ;
     public static double LeaderOffsetSheet => 0.6;
+    public static double TotalHeight => TextSize + 2 * LeaderOffsetSheet ;
     
     public static TextNoteType? FindOrCreateTextNoteType(Document document)
     {
