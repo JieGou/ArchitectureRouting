@@ -516,23 +516,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           noteLeader.Elbow = new XYZ( endPoint.X + ( isDirectionX ? baseLengthOfLine * 3 : -baseLengthOfLine * 4 ), noteLeader.Elbow.Y - minBaseLengthOfLine * 8.5, endPoint.Z ) ;
           noteLeader.End = endPoint ;
 
-          var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
           (string? endLineUniqueId, int? endPoint) endLineLeader = ( null, null ) ;
           var ortherLineId = new List<string>() ;
-          
-          if ( curves.Count > 1 && doc.ActiveView is ViewPlan) {
-            doc.Regenerate();
-            
-            if(noteLeader.Anchor.DistanceTo(noteLeader.Elbow) > doc.Application.ShortCurveTolerance)
+          if ( doc.ActiveView is ViewPlan viewPlan ) {
+            var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( new XYZ( noteLeader.Elbow.X, noteLeader.Elbow.Y, viewPlan.GenLevel.Elevation ), new XYZ( noteLeader.End.X, noteLeader.End.Y, viewPlan.GenLevel.Elevation ) ) } ) ;
+            doc.Regenerate() ;
+
+            if ( noteLeader.Anchor.DistanceTo( noteLeader.Elbow ) > doc.Application.ShortCurveTolerance )
               curves.Add( Line.CreateBound( noteLeader.Anchor, noteLeader.Elbow ) ) ;
 
-            var detailCurves = GeometryHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
+            var detailCurves = NotationHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
             var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, noteLeader.End ) ;
-            
-            endLineLeader = (curveClosestPoint.detailCurve?.UniqueId, curveClosestPoint.endPoint)  ;
-            ortherLineId = detailCurves.Select(x => x.UniqueId).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
-            
-            textNote.RemoveLeaders();
+
+            endLineLeader = ( curveClosestPoint.DetailCurve?.UniqueId, endPoint: curveClosestPoint.EndPoint ) ;
+            ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
+
+            textNote.RemoveLeaders() ;
           }
 
           foreach ( var item in racks ) {
