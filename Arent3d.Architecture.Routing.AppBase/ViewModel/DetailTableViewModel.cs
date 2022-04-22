@@ -574,6 +574,85 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       detailTableRow.IsReadOnlyPlumbingSize = false ;
       detailTableRow.IsMixConstructionItems = false ;
     }
+    
+    public enum EditedColumn
+    {
+      Floor,
+      WireType,
+      WireSize,
+      WireStrip,
+      WireBook,
+      EarthType,
+      EarthSize,
+      NumberOfGrounds,
+      PlumbingSize,
+      ConstructionClassification,
+      SignalType,
+      Remark
+    }
+
+    public static void ComboboxSelectionChanged( DetailTableViewModel detailTableViewModel, DetailTableViewModel detailTableViewModelSummary, DetailTableModel editedDetailTableRow, EditedColumn editedColumn, string changedValue, List<DetailTableModel.ComboboxItemType> itemSourceCombobox, double crossSectionalArea = 0 )
+    {
+      if ( ! string.IsNullOrEmpty( editedDetailTableRow.GroupId ) ) {
+        var detailTableRows = detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == editedDetailTableRow.GroupId ).ToList() ;
+        foreach ( var detailTableRow in detailTableRows ) {
+          UpdateDetailTableModelRow( detailTableRow, editedColumn, changedValue, crossSectionalArea, itemSourceCombobox ) ;
+        }
+      }
+      else {
+        var detailTableRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == editedDetailTableRow ) ;
+        if ( detailTableRow != null ) UpdateDetailTableModelRow( detailTableRow, editedColumn, changedValue, crossSectionalArea, itemSourceCombobox ) ;
+      }
+
+      var selectedDetailTableRowSummary = detailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == editedDetailTableRow ) ;
+      if ( selectedDetailTableRowSummary != null ) UpdateDetailTableModelRow( selectedDetailTableRowSummary, editedColumn, changedValue, crossSectionalArea, itemSourceCombobox ) ;
+    }
+
+    private static void UpdateDetailTableModelRow( DetailTableModel detailTableModelRow, EditedColumn editedColumn, string changedValue, double crossSectionalArea, List<DetailTableModel.ComboboxItemType> itemSourceCombobox )
+    {
+      switch ( editedColumn ) {
+        case EditedColumn.Floor:
+          detailTableModelRow.Floor = changedValue ;
+          break;
+        case EditedColumn.WireType:
+          detailTableModelRow.WireType = changedValue ;
+          detailTableModelRow.WireSizes = itemSourceCombobox ;
+          break;
+        case EditedColumn.WireSize:
+          detailTableModelRow.WireSize = changedValue ;
+          detailTableModelRow.WireStrips = itemSourceCombobox ;
+          break;
+        case EditedColumn.WireStrip:
+          detailTableModelRow.WireStrip = changedValue ;
+          detailTableModelRow.WireCrossSectionalArea = crossSectionalArea ;
+          break;
+        case EditedColumn.WireBook:
+          detailTableModelRow.WireBook = changedValue ;
+          break;
+        case EditedColumn.EarthType:
+          detailTableModelRow.EarthType = changedValue ;
+          detailTableModelRow.EarthSizes = itemSourceCombobox ;
+          break;
+        case EditedColumn.EarthSize:
+          detailTableModelRow.EarthSize = changedValue ;
+          break;
+        case EditedColumn.NumberOfGrounds:
+          detailTableModelRow.NumberOfGrounds = changedValue ;
+          break;
+        case EditedColumn.PlumbingSize:
+          detailTableModelRow.PlumbingSize = changedValue ;
+          break;
+        case EditedColumn.ConstructionClassification:
+          detailTableModelRow.ConstructionClassification = changedValue ;
+          break;
+        case EditedColumn.SignalType:
+          detailTableModelRow.SignalType = changedValue ;
+          break;
+        case EditedColumn.Remark :
+          detailTableModelRow.Remark = changedValue ;
+          break ;
+      }
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged ;
 

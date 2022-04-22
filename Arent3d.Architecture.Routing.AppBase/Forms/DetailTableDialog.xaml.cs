@@ -77,8 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( sender is not DataGrid dataGrid ) return ;
       var selectedItems = dataGrid.SelectedItems ;
       if ( selectedItems.Count <= 0 ) return ;
-      _selectedDetailTableRows.Clear() ;
-      _selectedDetailTableRowsSummary.Clear() ;
+      ResetSelectedItems() ;
       foreach ( var item in selectedItems ) {
         if ( item is not DetailTableModel detailTableRow ) continue ;
         if ( ! string.IsNullOrEmpty( detailTableRow.GroupId ) ) {
@@ -104,8 +103,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) return ;
       _copyDetailTableRow = _selectedDetailTableRows.First() ;
       _copyDetailTableRowSummary = _selectedDetailTableRowsSummary.First() ;
-      _selectedDetailTableRows.Clear() ;
-      _selectedDetailTableRowsSummary.Clear() ;
+      ResetSelectedItems() ;
     }
 
     private void BtnPasteLine_Click( object sender, RoutedEventArgs e )
@@ -123,8 +121,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void BtnSelectAll_Click( object sender, RoutedEventArgs e )
     {
-      _selectedDetailTableRows.Clear() ;
-      _selectedDetailTableRowsSummary.Clear() ;
       _selectedDetailTableRows = _detailTableViewModel.DetailTableModels.ToList() ;
       _selectedDetailTableRowsSummary = DetailTableViewModelSummary.DetailTableModels.ToList() ;
       DtGrid.SelectAll() ;
@@ -169,6 +165,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       DataContext = DetailTableViewModelSummary ;
       DtGrid.ItemsSource = DetailTableViewModelSummary.DetailTableModels ;
+      ResetSelectedItems() ;
+    }
+
+    private void ResetSelectedItems()
+    {
       _selectedDetailTableRows.Clear() ;
       _selectedDetailTableRowsSummary.Clear() ;
     }
@@ -263,12 +264,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedFloor = comboBox.SelectedValue ;
       if ( selectedFloor == null ) return ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) selectedDetailTableRow.Floor = selectedFloor.ToString() ;
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.Floor = selectedFloor.ToString() ;
-
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.Floor, selectedFloor.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
       UpdateDataGridAndRemoveSelectedRow() ;
     }
 
@@ -281,18 +279,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var wireSizesOfWireType = _wiresAndCablesModelData.Where( w => w.WireType == wireType ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
       var wireSizes = wireSizesOfWireType.Any() ? ( from wireSize in wireSizesOfWireType select new DetailTableModel.ComboboxItemType( wireSize, wireSize ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) {
-        selectedDetailTableRow.WireType = wireType ;
-        selectedDetailTableRow.IsReadOnlyWireSizeAndWireStrip = false ;
-        selectedDetailTableRow.WireSizes = wireSizes ;
-      }
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) {
-        selectedDetailTableRowSummary.WireType = wireType ;
-        selectedDetailTableRowSummary.IsReadOnlyWireSizeAndWireStrip = false ;
-        selectedDetailTableRowSummary.WireSizes = wireSizes ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.WireType, wireType, wireSizes ) ;
       }
 
       UpdateDataGridAndRemoveSelectedRow() ;
@@ -308,16 +296,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var wireStripsOfWireType = _wiresAndCablesModelData.Where( w => w.WireType == selectedDetailTableRow.WireType && w.DiameterOrNominal == selectedWireSize.ToString() ).Select( w => w.NumberOfHeartsOrLogarithm == "0" ? "-" : w.NumberOfHeartsOrLogarithm + w.COrP ).Distinct().ToList() ;
       var wireStrips = wireStripsOfWireType.Any() ? ( from wireStrip in wireStripsOfWireType select new DetailTableModel.ComboboxItemType( wireStrip, wireStrip ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
 
-      selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) {
-        selectedDetailTableRow.WireSize = selectedWireSize.ToString() ;
-        selectedDetailTableRow.WireStrips = wireStrips ;
-      }
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) {
-        selectedDetailTableRowSummary.WireSize = selectedWireSize.ToString() ;
-        selectedDetailTableRowSummary.WireStrips = wireStrips ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.WireSize, selectedWireSize.ToString(), wireStrips ) ;
       }
 
       UpdateDataGridAndRemoveSelectedRow() ;
@@ -329,17 +309,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedWireStrip = comboBox.SelectedValue ;
       var selectedDetailTableRow = (DetailTableModel) DtGrid.SelectedValue ;
       if ( string.IsNullOrEmpty( selectedDetailTableRow.WireType ) || string.IsNullOrEmpty( selectedDetailTableRow.WireSize )|| selectedWireStrip == null || string.IsNullOrEmpty( selectedWireStrip.ToString() ) ) return ;
+      
       var crossSectionalArea = Convert.ToDouble( _wiresAndCablesModelData.FirstOrDefault( w => w.WireType == selectedDetailTableRow.WireType && w.DiameterOrNominal == selectedDetailTableRow.WireSize && w.NumberOfHeartsOrLogarithm + w.COrP == selectedDetailTableRow.WireStrip )?.CrossSectionalArea ) ;
-      var detailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == selectedDetailTableRow ) ;
-      if ( detailTableRow != null ) {
-        detailTableRow.WireStrip = selectedWireStrip.ToString() ;
-        detailTableRow.WireCrossSectionalArea = crossSectionalArea ;
-      }
-
-      var detailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == selectedDetailTableRow ) ;
-      if ( detailTableRowSummary != null ) {
-        detailTableRowSummary.WireStrip = selectedWireStrip.ToString() ;
-        detailTableRowSummary.WireCrossSectionalArea = crossSectionalArea ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.WireStrip, selectedWireStrip.ToString(), new List<DetailTableModel.ComboboxItemType>(), crossSectionalArea ) ;
       }
 
       UpdateDataGridAndRemoveSelectedRow() ;
@@ -351,11 +324,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var isNumberValue = int.TryParse( comboBox.Text, out var selectedWireBookText ) ;
       if ( ! isNumberValue || ( isNumberValue && selectedWireBookText is < 1 or > 10 ) ) return ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) selectedDetailTableRow.WireBook = comboBox.Text ;
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.WireBook = comboBox.Text ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.WireBook, comboBox.Text, new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
 
       UpdateDataGridAndRemoveSelectedRow() ;
     }
@@ -366,18 +337,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedEarthType = comboBox.SelectedValue ;
       if ( selectedEarthType == null ) return ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
       var earthSizes = _wiresAndCablesModelData.Where( c => c.WireType == selectedEarthType.ToString() ).Select( c => c.DiameterOrNominal ).ToList() ;
       var earthSizeTypes = earthSizes.Any() ? ( from earthSize in earthSizes select new DetailTableModel.ComboboxItemType( earthSize, earthSize ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
-      if ( selectedDetailTableRow != null ) {
-        selectedDetailTableRow.EarthType = selectedEarthType.ToString() ;
-        selectedDetailTableRow.EarthSizes = earthSizeTypes ;
-      }
 
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) {
-        selectedDetailTableRowSummary.EarthType = selectedEarthType.ToString() ;
-        selectedDetailTableRowSummary.EarthSizes = earthSizeTypes ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.EarthType, selectedEarthType.ToString(), earthSizeTypes ) ;
       }
 
       UpdateDataGridAndRemoveSelectedRow() ;
@@ -389,11 +353,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedEarthSize = comboBox.SelectedValue ;
       if ( selectedEarthSize == null ) return ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) selectedDetailTableRow.EarthSize = selectedEarthSize.ToString() ;
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.EarthSize = selectedEarthSize.ToString() ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.EarthSize, selectedEarthSize.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
 
       UpdateDataGridAndRemoveSelectedRow() ;
     }
@@ -404,11 +366,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedNumberOfGrounds = comboBox.SelectedValue ;
       if ( selectedNumberOfGrounds == null ) return ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) selectedDetailTableRow.NumberOfGrounds = selectedNumberOfGrounds.ToString() ;
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.NumberOfGrounds = selectedNumberOfGrounds.ToString() ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.NumberOfGrounds, selectedNumberOfGrounds.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
 
       UpdateDataGridAndRemoveSelectedRow() ;
     }
@@ -419,26 +379,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedPlumbingSize = comboBox.SelectedValue ;
       if ( selectedPlumbingSize == null ) return ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) selectedDetailTableRow.PlumbingSize = selectedPlumbingSize.ToString() ;
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.PlumbingSize = selectedPlumbingSize.ToString() ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.PlumbingSize, selectedPlumbingSize.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
 
       UpdateDataGridAndRemoveSelectedRow() ;
     }
-    
+
     private void ConstructionClassificationSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
       var selectedConstructionClassification = comboBox.SelectedValue ;
       if ( selectedConstructionClassification == null ) return ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) selectedDetailTableRow.ConstructionClassification = selectedConstructionClassification.ToString() ;
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.ConstructionClassification = selectedConstructionClassification.ToString() ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.ConstructionClassification, selectedConstructionClassification.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
 
       UpdateDataGridAndRemoveSelectedRow() ;
     }
@@ -449,11 +405,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedSignalType = comboBox.SelectedValue ;
       if ( selectedSignalType == null ) return ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) selectedDetailTableRow.SignalType = selectedSignalType.ToString() ;
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == comboBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.SignalType = selectedSignalType.ToString() ;
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.SignalType, selectedSignalType.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
 
       UpdateDataGridAndRemoveSelectedRow() ;
     }
@@ -463,11 +417,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( sender is not TextBox textBox ) return ;
       var remark = textBox.Text ;
 
-      var selectedDetailTableRow = _detailTableViewModel.DetailTableModels.FirstOrDefault( d => d == textBox.DataContext ) ;
-      if ( selectedDetailTableRow != null ) selectedDetailTableRow.Remark = remark ;
-
-      var selectedDetailTableRowSummary = DetailTableViewModelSummary.DetailTableModels.FirstOrDefault( d => d == textBox.DataContext ) ;
-      if ( selectedDetailTableRowSummary != null ) selectedDetailTableRowSummary.Remark = remark ;
+      if ( textBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.Remark, remark, new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
 
       UpdateDataGridAndRemoveSelectedRow() ;
     }
@@ -560,8 +512,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       DetailTableViewModel.PlumbingSummary( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, _isMixConstructionItems ) ;
       CreateDetailTableViewModelByGroupId() ;
-      _selectedDetailTableRows.Clear() ;
-      _selectedDetailTableRowsSummary.Clear() ;
+      ResetSelectedItems() ;
       DtGrid.SelectedItems.Clear() ;
     }
     
@@ -570,8 +521,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! _selectedDetailTableRows.Any() ) return ;
       DetailTableViewModel.SplitPlumbing( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows ) ;
       CreateDetailTableViewModelByGroupId() ;
-      _selectedDetailTableRows.Clear() ;
-      _selectedDetailTableRowsSummary.Clear() ;
+      ResetSelectedItems() ;
       DtGrid.SelectedItems.Clear() ;
     }
 
