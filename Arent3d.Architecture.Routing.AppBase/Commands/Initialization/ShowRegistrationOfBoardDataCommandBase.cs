@@ -46,7 +46,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
           familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
           familyInstanceFromToPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
-          var elevationParameter = elementFromToPower.LookupParameter( "Elevation from Level" ) ;
+          var elevationParameter = elementFromToPower.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ) ;
           elevationParameter?.Set( 0.0 ) ;
         }
 
