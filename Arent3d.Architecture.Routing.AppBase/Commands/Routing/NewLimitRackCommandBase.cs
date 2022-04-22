@@ -8,7 +8,6 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
 using Arent3d.Architecture.Routing.StorableCaches ;
-using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Utility ;
 using Autodesk.Revit.ApplicationServices ;
 
@@ -34,6 +33,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private Dictionary<string, Dictionary<int, double>> routeMaxWidthCache =
       new Dictionary<string, Dictionary<int, double>>() ;
 
+    private static readonly double WidthCableTrayDefault2D = 300d.MillimetersToRevitUnits() ;
+    
     protected abstract AddInType GetAddInType() ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
@@ -115,7 +116,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       var inforCableTrays = ExtendCurves( document, infoCableTrays, fittings ) ;
-      var curveLoops = GroupCurves( inforCableTrays ).Select(x => CurveLoop.CreateViaThicken(x.CurveLoop, x.Width, XYZ.BasisZ)) ;
+      var curveLoops = GroupCurves( inforCableTrays ).Select(x => CurveLoop.CreateViaThicken(x.CurveLoop, WidthCableTrayDefault2D, XYZ.BasisZ)) ;
       var lineStyle = GetLineStyle( document, EraseAllLimitRackCommandBase.BoundaryCableTrayLineStyleName, new Color( 255, 0, 255 ), 5 ).GetGraphicsStyle(GraphicsStyleType.Projection) ;
       CreateDetailLines( document, curveLoops, lineStyle ) ;
 

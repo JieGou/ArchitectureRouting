@@ -8,7 +8,6 @@ using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
-using System.Windows.Media ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -27,7 +26,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
     private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
     private const double RATIO_BEND_RADIUS = 3.45 ;
-    private const string Notation = "CR (W:400)" ;
     private const char XChar = 'x' ;
 
     public static IReadOnlyDictionary<byte, string> RackTypes { get ; } = new Dictionary<byte, string> { { 0, "Normal Rack" }, { 1, "Limit Rack" } } ;
@@ -507,7 +505,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = isDirectionX ? HorizontalTextAlignment.Left : HorizontalTextAlignment.Right } ;
 
-          var notation = count > 1 ? Notation + xSymbol + racks.Count : Notation ;
+          var text = $"CR (W:{Math.Round(bendRadiusRack.RevitUnitsToMillimeters())})" ;
+          var notation = count > 1 ? text + xSymbol + racks.Count : text ;
           var txtPosition = new XYZ( isDirectionX ? x - baseLengthOfLine * 12 : x, y + baseLengthOfLine * 3, z ) ;
           var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, notation, opts ) ;
           CreateNewTextNoteType( doc, textNote ) ;
