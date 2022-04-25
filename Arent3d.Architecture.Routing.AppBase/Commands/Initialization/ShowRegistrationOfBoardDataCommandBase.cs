@@ -57,7 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         }
 
         var defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-        var noteWidth = .05 ;
+        var noteWidth = .12 ;
         // make sure note width works for the text type
         var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
         var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
@@ -71,7 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
         var text = dlgRegistrationOfBoardDataModel.IsFromPowerConnector ? dlgRegistrationOfBoardDataModel.SelectedAutoControlPanel : dlgRegistrationOfBoardDataModel.SelectedSignalDestination ;
-        var txtPosition = new XYZ( originX - 2, originY + 4, heightOfConnector ) ;
+        var txtPosition = new XYZ( originX - 2, originY + 2.5, heightOfConnector ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, text, opts ) ;
 
         // create group of selected element and new text note
