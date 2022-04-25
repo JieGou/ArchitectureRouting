@@ -229,17 +229,18 @@
                 <DataGridTemplateColumn Header="電線本数" Width="45" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding WireBook, Mode=OneWay}" />
+                            <TextBlock Text="{Binding WireBook, Mode=TwoWay}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
                         <DataTemplate>
                             <ComboBox SelectedValue="{Binding WireBook}"
-                                      Text="{Binding WireBook, Mode=OneWay}"
+                                      Text="{Binding WireBook, Mode=TwoWay}"
                                       DisplayMemberPath="Type" 
                                       SelectedValuePath="Name"
                                       ItemsSource="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                       SelectionChanged="WireBookSelectionChanged" 
+                                      LostKeyboardFocus="WireBookLostKeyboardFocus"
                                       IsEditable="True"
                                       IsReadOnly="{Binding IsReadOnlyParameters}"/>
                         </DataTemplate>
