@@ -30,7 +30,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public const string DwgExtension = ".dwg" ;
     public const string PngExtension = ".png" ;
-    public readonly string[] PatternSearchings = { $"*{DwgExtension}", $"*{PngExtension}" } ;
+    public const string PdfExtension = ".pdf" ;
+    public const string TifExtension = ".tif" ;
+    public readonly string[] PatternSearchings = { $"*{DwgExtension}", $"*{PngExtension}", $"*{PdfExtension}", $"*{TifExtension}" } ;
 
     private ObservableCollection<FolderModel>? _folders ;
 
@@ -287,7 +289,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         case DwgExtension :
           ImportDwgFile( _previewSelected ) ;
           break ;
-        case PngExtension :
+        case PngExtension or PdfExtension or TifExtension:
           ImportImageFile( _previewSelected ) ;
           break ;
       }
