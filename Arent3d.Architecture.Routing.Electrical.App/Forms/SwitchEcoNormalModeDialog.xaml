@@ -7,7 +7,7 @@
                 xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
                 mc:Ignorable="d"
                 WindowStartupLocation="CenterScreen"
-                Title="エコモード切替設定" Height="170" Width="280">
+                Title="エコモード切替設定" Height="220" Width="280">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150" />
@@ -15,6 +15,7 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="50" />
+            <RowDefinition Height="40" />
             <RowDefinition Height="40" />
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
@@ -36,20 +37,27 @@
             </ComboBox.Style>
         </ComboBox>
         <Button Grid.Row="0" Grid.Column="1"
-                Content="全体変更"
-                Click="Button_BtnApplyForProject_Click"
+                Content="初期設定変更"
+                Click="Button_BtnSetEcoModeDefault_Click"
                 Margin="10,15,0,5"
                 HorizontalAlignment="Left"
                 Width="100" />
-
+        
         <Button Grid.Row="1" Grid.Column="1"
+                Content="全体変更"
+                Click="Button_BtnApplyForProject_Click"
+                Margin="10,5,0,5"
+                HorizontalAlignment="Left"
+                Width="100" />
+
+        <Button Grid.Row="2" Grid.Column="1"
                 Content="範囲選択変更"
                 Click="Button_BtnApplyForARange_Click"
                 Margin="10,5,0,5"
                 HorizontalAlignment="Left"
                 Width="100" />
 
-        <Button Grid.Row="2" Grid.Column="1"
+        <Button Grid.Row="3" Grid.Column="1"
                 Content="キャンセル"
                 Click="Button_Cancel_Click"
                 Margin="10,5,0,5"

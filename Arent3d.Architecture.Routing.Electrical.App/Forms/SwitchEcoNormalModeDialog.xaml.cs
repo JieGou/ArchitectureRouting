@@ -36,6 +36,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
     } ;
 
     public bool? ApplyForProject ;
+    public bool? IsSetEcoDefaultValue ;
 
     private void Button_BtnApplyForProject_Click( object sender, RoutedEventArgs e )
     {
@@ -83,5 +84,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Forms
       ValueChanged?.Invoke( this, e ) ;
     }
     public event EventHandler? ValueChanged ;
+
+    private void Button_BtnSetEcoModeDefault_Click( object sender, RoutedEventArgs e )
+    {
+      IsSetEcoDefaultValue = true ;
+      DialogResult = true ;
+    }
   }
 }

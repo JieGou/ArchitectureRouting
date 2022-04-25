@@ -5,6 +5,8 @@ using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Electrical.App.Forms ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -25,6 +27,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   public class SwitchEcoNormalModeCommand : IExternalCommand
   {
     private const string TransactionName = "Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand" ;
+    private const string SetDefaultEcoModeTransactionName = "Electrical.App.Commands.Initialization.SetDefaultEcoModeCommand" ;
     private const string DialogResultSuccessKey = "Dialog.Electrical.ChangeMode.Success" ;
     private const string DialogResultTitleKey = "Dialog.Electrical.ChangeMode.Title" ;
     private const string SelectElementDialogMessageKey = "Dialog.Electrical.SelectElement.Message" ;
@@ -45,6 +48,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         {
           if ( dialog.DialogResult == false ) return Result.Cancelled ;
           bool? isEcoMode = dialog.SelectedMode == EcoNormalMode.EcoMode ;
+          if ( dialog.IsSetEcoDefaultValue.HasValue )
+            return SetEcoModeDefaultValue(commandData, ref message, dialog.SelectedMode == EcoNormalMode.EcoMode ) ;
           return dialog.ApplyForProject == true ? SwitchModeForProject( document, ref message, isEcoMode ?? false ) : SwitchModeForRange( commandData, ref message, isEcoMode ?? false ) ;
         }
       }
@@ -56,7 +61,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         return Result.Cancelled ;
       }
     }
-
+ 
     private static IList<Element> GetAllConduitInProject( Document document )
     {
       var familyInstances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).ToElements().ToList() ;
@@ -153,6 +158,38 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         document.Create.NewGroup( groupIds ) ;
       }
     }
+    
+     /// <summary>
+     /// Set default value for isEcoMode
+     /// </summary>
+     /// <param name="commandData"></param>
+     /// <param name="message"></param>
+     /// <param name="isEcoModel"></param>
+     /// <returns></returns>
+    private Result SetEcoModeDefaultValue(ExternalCommandData commandData, ref string message, bool isEcoModel )
+    {
+      try {
+        var uiDocument = commandData.Application.ActiveUIDocument ;
+        var document = uiDocument.Document ;
+
+        // Get data of eco setting from snoop DB
+        EcoSettingStorable ecoSettingStorable = document.GetEcoSettingStorable() ;
+
+        Transaction transaction = new Transaction( document, SetDefaultEcoModeTransactionName ) ;
+        transaction.Start() ;
+        ecoSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
+        ecoSettingStorable.Save(); 
+        transaction.Commit() ;
+        
+        SwitchModeForProject( document, ref message, isEcoModel ) ;
+        
+        return Result.Succeeded ; 
+      }
+      catch ( Exception exception ) {
+        CommandUtils.DebugAlertException( exception ) ;
+        return Result.Cancelled ;
+      }
+    }
   }
 
   public class FailurePreprocessor : IFailuresPreprocessor
@@ -168,4 +205,5 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       return FailureProcessingResult.Continue ;
     }
   }
+   
 }
