@@ -308,7 +308,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( sender is not ComboBox comboBox ) return ;
       var selectedWireStrip = comboBox.SelectedValue ;
       var selectedDetailTableRow = (DetailTableModel) DtGrid.SelectedValue ;
-      if ( string.IsNullOrEmpty( selectedDetailTableRow.WireType ) || string.IsNullOrEmpty( selectedDetailTableRow.WireSize )|| selectedWireStrip == null || string.IsNullOrEmpty( selectedWireStrip.ToString() ) ) return ;
+      if ( string.IsNullOrEmpty( selectedDetailTableRow.WireType ) || string.IsNullOrEmpty( selectedDetailTableRow.WireSize ) || selectedWireStrip == null || string.IsNullOrEmpty( selectedWireStrip.ToString() ) ) return ;
       
       var crossSectionalArea = Convert.ToDouble( _wiresAndCablesModelData.FirstOrDefault( w => w.WireType == selectedDetailTableRow.WireType && w.DiameterOrNominal == selectedDetailTableRow.WireSize && w.NumberOfHeartsOrLogarithm + w.COrP == selectedDetailTableRow.WireStrip )?.CrossSectionalArea ) ;
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
@@ -321,7 +321,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void WireBookSelectionChanged( object sender, SelectionChangedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
-      var isNumberValue = int.TryParse( comboBox.SelectedValue.ToString(), out var selectedWireBookText ) ;
+      var selectedWireBook = comboBox.SelectedValue ;
+      if( selectedWireBook == null ) return ;
+      var isNumberValue = int.TryParse( selectedWireBook.ToString(), out var selectedWireBookText ) ;
       if ( ! isNumberValue || ( isNumberValue && selectedWireBookText is < 1 or > 10 ) ) return ;
 
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {

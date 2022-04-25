@@ -420,6 +420,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var parentDetailTableRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.IsParentRoute && d.DetailSymbolId == detailTableRowsWithSameDetailSymbolId.First().DetailSymbolId ) ;
         var plumbingType = parentDetailTableRow == null ? DefaultParentPlumbingType : parentDetailTableRow.PlumbingType ;
         CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType, true, isMixConstructionItems ) ;
+        SetPlumbingSizesForDetailTableRows( conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType ) ;
 
         if ( isMixConstructionItems ) {
           SetGroupIdForDetailTableRowsMixConstructionItems( detailTableRowsWithSameDetailSymbolId ) ;
@@ -438,6 +439,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         foreach ( var otherDetailTableRows in otherDetailTableRowsWithSamePlumbingIdentityInfo ) {
           CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, otherDetailTableRows, plumbingType, true, otherDetailTableRows.First().IsMixConstructionItems ) ;
+          SetPlumbingSizesForDetailTableRows( conduitsModelData, otherDetailTableRows, plumbingType ) ;
           var isGroup = otherDetailTableRows.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null ;
           if ( isGroup ) {
             if ( isMixConstructionItems ) {
@@ -573,6 +575,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       detailTableRow.IsReadOnlyPlumbingItems = true ;
       detailTableRow.IsReadOnlyPlumbingSize = false ;
       detailTableRow.IsMixConstructionItems = false ;
+      if ( detailTableRow.PlumbingSizes.Any() ) return ;
+      {
+        var plumbingSizesOfPlumbingType = conduitsModelData.Where( c => c.PipingType == plumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+        detailTableRow.PlumbingSizes = ( from plumbingSize in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSize, plumbingSize ) ).ToList() ;
+      }
     }
     
     public enum EditedColumn
