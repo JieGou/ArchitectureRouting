@@ -498,13 +498,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             TextNote textNote ;
 
             const double multiple = 3 ;
+            var heightText = TextNoteHelper.TotalHeight.MillimetersToRevitUnits() ;
             if ( isDirectionX ) {
-              var vector = XYZ.BasisX * widthCableTray * multiple + XYZ.BasisY * widthCableTray * multiple + XYZ.BasisY * TextNoteHelper.TotalHeight.MillimetersToRevitUnits() * scale ;
+              var vector = (XYZ.BasisX * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText )* scale ;
               var transform = Transform.CreateTranslation( vector ) ;
               textNote = TextNote.Create( doc, doc.ActiveView.Id, transform.OfPoint( point ), notation, textNoteType.Id ) ;
             }
             else {
-              var vector = XYZ.BasisX.Negate() * widthCableTray * multiple + XYZ.BasisY * widthCableTray * multiple + XYZ.BasisY * TextNoteHelper.TotalHeight.MillimetersToRevitUnits() * scale ;
+              var vector = (XYZ.BasisX.Negate() * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText)* scale ;
               var transform = Transform.CreateTranslation( vector ) ;
               textNote = TextNote.Create( doc, doc.ActiveView.Id, transform.OfPoint( point ), notation, textNoteType.Id ) ;
               ElementTransformUtils.MirrorElements( doc, new List<ElementId> { textNote.Id }, Plane.CreateByNormalAndOrigin( XYZ.BasisX, textNote.Coord ), false ) ;
@@ -550,12 +551,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
     }
-    
-    private static Line CreateUnderLineText( TextNote textNote, double elevation )
+
+    public static Line CreateUnderLineText( TextNote textNote, double elevation )
     {
-      var height = ( textNote.Height + textNote.TextNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).AsDouble() ) * textNote.Document.ActiveView.Scale ;
+      var offset = textNote.TextNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).AsDouble() ;
+      var height = ( textNote.Height + offset ) * textNote.Document.ActiveView.Scale ;
       var coord = Transform.CreateTranslation( textNote.UpDirection.Negate() * height ).OfPoint( textNote.Coord ) ;
-      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * textNote.Width * textNote.Document.ActiveView.Scale ;
+      coord = Transform.CreateTranslation( ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? 1 : -1 ) * offset * textNote.Document.ActiveView.Scale * textNote.BaseDirection ).OfPoint( coord ) ;
+      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * ( textNote.Width + 2 * offset ) * textNote.Document.ActiveView.Scale ;
       var middle = Transform.CreateTranslation( textNote.BaseDirection * width ).OfPoint( coord ) ;
 
       return Line.CreateBound( new XYZ( coord.X, coord.Y, elevation ), new XYZ( middle.X, middle.Y, elevation ) ) ;
