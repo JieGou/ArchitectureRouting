@@ -312,7 +312,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         ElementTransformUtils.MoveElement( _uiDocument.Document, importInstance.Id, pickPoint - centerPoint ) ;
       }
       else {
-        var options = new DWGImportOptions { ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default } ;
+        var options = new DWGImportOptions { ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Millimeter, CustomScale = 100 } ;
         var result = _uiDocument.Document.Import( previewFile.Path, options, _uiDocument.ActiveView, out _ ) ;
         if ( ! result ) {
           System.Windows.MessageBox.Show( "図面ファイルが無効です。", "Arent Notification" ) ;
