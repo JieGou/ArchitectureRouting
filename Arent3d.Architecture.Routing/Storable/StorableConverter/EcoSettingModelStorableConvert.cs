@@ -1,5 +1,4 @@
-﻿using System.Linq ;
-using Arent3d.Architecture.Routing.Storable.Model ;
+﻿using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
@@ -19,7 +18,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var serializerObject = new SerializerObject<SerializeField>() ;
 
       serializerObject.Add( SerializeField.IsEcoMode, customTypeValue.IsEcoMode ) ;
-        
+
       return serializerObject ;
     }
 
@@ -28,8 +27,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
       var isEcoMode = deserializer.GetBool( SerializeField.IsEcoMode ) ;
-        
-      return new EcoSettingModel( isEcoMode!) ;
+
+      return new EcoSettingModel( isEcoMode! ) ;
     }
   }
 }

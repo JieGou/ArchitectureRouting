@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic ;
-using System.Linq ;
-using System.Runtime.InteropServices ;
+﻿using System.Runtime.InteropServices ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
@@ -14,9 +12,9 @@ namespace Arent3d.Architecture.Routing.Storable
   {
     public const string StorableName = "EcoSetting Model" ;
     private const string EcoValueField = "EcoValue" ;
-      
+
     public EcoSettingModel EcoSettingData { get ; private set ; }
-      
+
     public EcoSettingStorable( DataStorage owner ) : base( owner, false )
     {
       EcoSettingData = new EcoSettingModel() ;
@@ -34,13 +32,13 @@ namespace Arent3d.Architecture.Routing.Storable
     }
 
     protected override void SaveAllFields( FieldWriter writer )
-    { 
-      writer.SetSingle(  EcoValueField, EcoSettingData) ;
+    {
+      writer.SetSingle( EcoValueField, EcoSettingData ) ;
     }
 
     protected override void SetupAllFields( FieldGenerator generator )
-    { 
-      generator.SetSingle<EcoSettingModel>( EcoValueField  ) ;
+    {
+      generator.SetSingle<EcoSettingModel>( EcoValueField ) ;
     }
 
     public override string Name => StorableName ;

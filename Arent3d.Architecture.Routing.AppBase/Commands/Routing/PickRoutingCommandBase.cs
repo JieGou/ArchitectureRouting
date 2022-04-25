@@ -295,7 +295,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
       if ( GetAddInType() == AddInType.Electrical )
-        ElectricalCommandUtil.SetConstructionItemForCable( document, executeResultValue ) ;
+        ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }
 
     private static void ChangeFromConnectorAndToConnectorColor( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )

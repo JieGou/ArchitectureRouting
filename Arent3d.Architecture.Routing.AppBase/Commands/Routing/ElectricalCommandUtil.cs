@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -10,7 +11,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     private const string DefaultConstructionItem = "未設定" ;
 
-    public static void SetConstructionItemForCable( Document document, IReadOnlyCollection<Route> routes )
+    public static void SetPropertyForCable( Document document, IReadOnlyCollection<Route> routes )
     {
       Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       using Transaction t = new Transaction( document, "Set Construction item." ) ;
@@ -23,16 +24,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var fromEndPointKey = segment.FromEndPoint.Key ;
         var fromEndPointId = fromEndPointKey.GetElementUniqueId() ;
         if ( ! string.IsNullOrEmpty( fromEndPointId ) ) {
-          var fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == fromEndPointId ) ;
+          var fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements )
+            .FirstOrDefault( c => c.UniqueId == fromEndPointId ) ;
           if ( fromConnector != null && ( fromConnector.IsTerminatePoint() || fromConnector.IsPassPoint() ) ) {
-            fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId, out string? fromConnectorId ) ;
+            fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId,
+              out string? fromConnectorId ) ;
             if ( ! string.IsNullOrEmpty( fromConnectorId ) ) {
-              fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == fromConnectorId ) ;
+              fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements )
+                .FirstOrDefault( c => c.UniqueId == fromConnectorId ) ;
             }
           }
 
           if ( fromConnector != null ) {
-            fromConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
+            fromConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem,
+              out string? constructionItem ) ;
             if ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) {
               UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
               fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
@@ -43,26 +48,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var toEndPointKey = segment.ToEndPoint.Key ;
         var toEndPointId = toEndPointKey.GetElementUniqueId() ;
         if ( string.IsNullOrEmpty( toEndPointId ) ) continue ;
-        var toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == toEndPointId ) ;
+        var toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements )
+          .FirstOrDefault( c => c.UniqueId == toEndPointId ) ;
         if ( toConnector != null && ( toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) ) {
           toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorUniqueId, out string? connectorId ) ;
           if ( ! string.IsNullOrEmpty( connectorId ) ) {
-            toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == connectorId ) ;
+            toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements )
+              .FirstOrDefault( c => c.UniqueId == connectorId ) ;
           }
         }
 
         if ( toConnector == null ) continue ;
         {
-          toConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
+          toConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem,
+            out string? constructionItem ) ;
           if ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) {
             UnGroupConnector( document, toConnector, ref connectorGroups ) ;
             toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             constructionItem = DefaultConstructionItem ;
           }
 
-          var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
+          var isEcoMode = document.GetEcoSettingStorable().EcoSettingData.IsEcoMode ;
+          var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
+            .Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
           foreach ( var conduit in conduits ) {
             conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem! ) ;
+            conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode.ToString() ) ;
           }
         }
       }
@@ -71,7 +82,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       GroupConnector( document, connectorGroups ) ;
     }
 
-    private static void UnGroupConnector( Document document, Element connector, ref Dictionary<ElementId, List<ElementId>> connectorGroups )
+    private static void UnGroupConnector( Document document, Element connector,
+      ref Dictionary<ElementId, List<ElementId>> connectorGroups )
     {
       var parentGroup = document.GetElement( connector.GroupId ) as Group ;
       if ( parentGroup == null ) return ;
