@@ -453,7 +453,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var currentPlumbingCrossSectionalArea = 0.0 ;
         foreach ( var currentDetailTableRow in detailTableRows ) {
           if ( currentDetailTableRow.ConstructionClassification != noPlumpingConstructionClassification ) {
-            currentPlumbingCrossSectionalArea += ( currentDetailTableRow.WireCrossSectionalArea / percentage ) ;
+            currentPlumbingCrossSectionalArea += ( currentDetailTableRow.WireCrossSectionalArea / percentage * int.Parse( currentDetailTableRow.WireBook ) ) ;
 
             if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
               var plumbing = conduitsModels.Last() ;
@@ -469,6 +469,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               }
               parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
               parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
+              parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.Parse( parentDetailRow.WireBook ) ) ;
               parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
               parentDetailRow.IsMixConstructionItems = isMixConstructionItems ;
               parentDetailRow.IsReadOnlyPlumbingSize = false ;
@@ -496,6 +497,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               }
               currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
               currentDetailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( currentDetailTableRow, isMixConstructionItems ) ;
+              currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, int.Parse( currentDetailTableRow.WireBook ) ) ;
               currentDetailTableRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
               currentDetailTableRow.IsMixConstructionItems = isMixConstructionItems ;
               currentDetailTableRow.IsReadOnlyPlumbingSize = false ;
@@ -516,6 +518,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                 }
                 parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
                 parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
+                parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.Parse( parentDetailRow.WireBook ) ) ;
                 parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
                 parentDetailRow.IsMixConstructionItems = isMixConstructionItems ;
                 parentDetailRow.IsReadOnlyPlumbingSize = false ;
@@ -534,6 +537,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               currentDetailTableRow.PlumbingType = DefaultChildPlumbingSymbol ;
               currentDetailTableRow.PlumbingSize = DefaultChildPlumbingSymbol ;
               currentDetailTableRow.NumberOfPlumbing = DefaultChildPlumbingSymbol ;
+              currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, int.Parse( currentDetailTableRow.WireBook ) ) ;
               currentDetailTableRow.IsReadOnlyPlumbingItems = true ;
               currentDetailTableRow.IsParentRoute = false ;
               currentDetailTableRow.IsReadOnly = true ;
@@ -546,6 +550,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             currentDetailTableRow.PlumbingType = NoPlumping ;
             currentDetailTableRow.PlumbingSize = NoPlumbingSize ;
             currentDetailTableRow.NumberOfPlumbing = string.Empty ;
+            currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, int.Parse( currentDetailTableRow.WireBook ) ) ;
             currentDetailTableRow.IsReadOnly = true ;
             currentDetailTableRow.IsReadOnlyPlumbingItems = true ;
             currentDetailTableRow.IsMixConstructionItems = false ;

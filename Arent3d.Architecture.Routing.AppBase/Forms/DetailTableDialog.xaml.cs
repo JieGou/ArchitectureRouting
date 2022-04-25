@@ -310,7 +310,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var selectedDetailTableRow = (DetailTableModel) DtGrid.SelectedValue ;
       if ( string.IsNullOrEmpty( selectedDetailTableRow.WireType ) || string.IsNullOrEmpty( selectedDetailTableRow.WireSize ) || selectedWireStrip == null || string.IsNullOrEmpty( selectedWireStrip.ToString() ) ) return ;
       
-      var crossSectionalArea = Convert.ToDouble( _wiresAndCablesModelData.FirstOrDefault( w => w.WireType == selectedDetailTableRow.WireType && w.DiameterOrNominal == selectedDetailTableRow.WireSize && w.NumberOfHeartsOrLogarithm + w.COrP == selectedDetailTableRow.WireStrip )?.CrossSectionalArea ) ;
+      var crossSectionalArea = Convert.ToDouble( _wiresAndCablesModelData.FirstOrDefault( w => w.WireType == selectedDetailTableRow.WireType && w.DiameterOrNominal == selectedDetailTableRow.WireSize && ( w.NumberOfHeartsOrLogarithm + w.COrP == selectedWireStrip.ToString() || ( selectedWireStrip.ToString() == "-" && w.NumberOfHeartsOrLogarithm == "0" ) ) )?.CrossSectionalArea ) ;
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
         DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.WireStrip, selectedWireStrip.ToString(), new List<DetailTableModel.ComboboxItemType>(), crossSectionalArea ) ;
       }
@@ -520,8 +520,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void BtnSplitPlumbing_Click( object sender, RoutedEventArgs e )
     {
-      if ( ! _selectedDetailTableRows.Any() ) return ;
-      DetailTableViewModel.SplitPlumbing( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows ) ;
+      DetailTableViewModel.SplitPlumbing( _conduitsModelData, _detailTableViewModel ) ;
       CreateDetailTableViewModelByGroupId() ;
       ResetSelectedItems() ;
       DtGrid.SelectedItems.Clear() ;
@@ -529,6 +528,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void CreateDetailTableViewModelByGroupId()
     {
+      const char multiplicationSymbol = 'x' ;
       List<DetailTableModel> newDetailTableModels = new() ;
       List<string> existedGroupIds = new() ;
       foreach ( var detailTableRow in _detailTableViewModel.DetailTableModels ) {
@@ -540,14 +540,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           var detailTableRowWithSameWiringType = _detailTableViewModel.DetailTableModels.Where( d => d.GroupId == detailTableRow.GroupId ) ;
           var detailTableRowsGroupByRemark = detailTableRowWithSameWiringType.GroupBy( d => d.Remark ).ToDictionary( g => g.Key, g => g.ToList() ) ;
           List<string> newRemark = new() ;
-          var numberOfGrounds = 0 ;
+          var wireBook = 0 ;
           foreach ( var (remark, detailTableRowsWithSameRemark) in detailTableRowsGroupByRemark ) {
-            newRemark.Add( remark + ( detailTableRowsWithSameRemark.Count == 1 ? string.Empty : "x" + detailTableRowsWithSameRemark.Count ) ) ;
-            numberOfGrounds += detailTableRowsWithSameRemark.Count ;
+            var remarkArr = remark.Split( multiplicationSymbol ) ;
+            newRemark.Add( detailTableRowsWithSameRemark.Count == 1 ? remark : remark + multiplicationSymbol + detailTableRowsWithSameRemark.Count ) ;
+            wireBook += remarkArr.Length > 1 ? detailTableRowsWithSameRemark.Count * int.Parse( remarkArr.ElementAt( 1 ) ) : detailTableRowsWithSameRemark.Count ;
           }
 
           var newDetailTableRow = new DetailTableModel( detailTableRow.CalculationExclusion, detailTableRow.Floor, detailTableRow.CeedCode, detailTableRow.DetailSymbol, 
-            detailTableRow.DetailSymbolId, detailTableRow.WireType, detailTableRow.WireSize, detailTableRow.WireStrip, numberOfGrounds.ToString(), detailTableRow.EarthType, 
+            detailTableRow.DetailSymbolId, detailTableRow.WireType, detailTableRow.WireSize, detailTableRow.WireStrip, wireBook.ToString(), detailTableRow.EarthType, 
             detailTableRow.EarthSize, detailTableRow.NumberOfGrounds, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
             detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
             detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
