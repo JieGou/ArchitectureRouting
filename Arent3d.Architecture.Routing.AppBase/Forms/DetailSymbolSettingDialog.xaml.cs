@@ -43,7 +43,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       PercentWidth = Convert.ToInt32( CmbWidth.SelectedValue.ToString() ) ;
       SymbolFont = CmbFont.SelectedValue.ToString() ;
       SymbolStyle = CmbStyle.SelectedValue.ToString() ;
-      Offset = Convert.ToInt32( CmbOffset.SelectedValue.ToString() ) ;
+      // Offset = Convert.ToInt32( CmbOffset.SelectedValue.ToString() ) ;
       BackGround = CmbHideTextBackground.SelectedValue.ToString() == "On" ? 0 : 1 ;
       DialogResult = true ;
       Close() ;
@@ -75,8 +75,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbSpacing.SelectedItem = spacing[ 2 ] ;
       CmbLineSpacing.ItemsSource = spacing ;
       CmbLineSpacing.SelectedItem = spacing[ 5 ] ;
-      CmbOffset.ItemsSource = offset ;
-      CmbOffset.SelectedItem = offset.Last() ;
+      // CmbOffset.ItemsSource = offset ;
+      // CmbOffset.SelectedItem = offset.Last() ;
       CmbRedStampSize.ItemsSource = offset ;
       CmbRedStampSize.SelectedItem = offset.First() ;
 
