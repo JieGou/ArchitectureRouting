@@ -57,15 +57,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           toConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
           toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
 
-          if ( ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) || ( string.IsNullOrEmpty( isEcoMode ) && isEcoMode != null ) ) {
+          if ( string.IsNullOrEmpty( constructionItem)   ||  string.IsNullOrEmpty( isEcoMode )) {
             UnGroupConnector( document, toConnector, ref connectorGroups ) ;
 
-            if ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) {
+            if ( string.IsNullOrEmpty( constructionItem )) {
               toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
               constructionItem = DefaultConstructionItem ;
             }
 
-            if ( string.IsNullOrEmpty( isEcoMode ) && isEcoMode != null ) {
+            if ( string.IsNullOrEmpty( isEcoMode ) ) {
               isEcoMode = document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
               toConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode ) ;
             }
