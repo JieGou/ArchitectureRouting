@@ -4,6 +4,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.UI.Selection ;
@@ -40,8 +41,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         using var trans = new Transaction( document, "Create Arent Shaft" ) ;
         trans.Start() ;
 
+        var scaleSetup = document.GetSetupPrintStorable().Scale ;
+        var ratio = scaleSetup / 100d ;
+        
         var shaftProfile = new CurveArray() ;
-        var radius = 60d.MillimetersToRevitUnits() ;
+        var radius = 60d.MillimetersToRevitUnits()*ratio ;
         var cylinderCurve = Arc.Create( centerPoint, radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
         shaftProfile.Append( cylinderCurve ) ;
         document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
@@ -49,7 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         var symbolDirection = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolDirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException() ;
         if ( ! symbolDirection.IsActive ) symbolDirection.Activate() ;
 
-        var lengthDirection = 12000d.MillimetersToRevitUnits() ;
+        var lengthDirection = 12000d.MillimetersToRevitUnits()*ratio ;
         var transformRotation = Transform.CreateRotationAtPoint( document.ActiveView.ViewDirection, RotateAngle, centerPoint ) ;
         var bodyDirections = new List<Curve> { Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * radius ).OfPoint( centerPoint ), Transform.CreateTranslation( XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation ), Line.CreateBound( Transform.CreateTranslation( -XYZ.BasisX * radius ).OfPoint( centerPoint ), Transform.CreateTranslation( -XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation ) } ;
 
