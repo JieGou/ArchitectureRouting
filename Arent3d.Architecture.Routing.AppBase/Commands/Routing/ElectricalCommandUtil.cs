@@ -24,20 +24,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var fromEndPointKey = segment.FromEndPoint.Key ;
         var fromEndPointId = fromEndPointKey.GetElementUniqueId() ;
         if ( ! string.IsNullOrEmpty( fromEndPointId ) ) {
-          var fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements )
-            .FirstOrDefault( c => c.UniqueId == fromEndPointId ) ;
+          var fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == fromEndPointId ) ;
           if ( fromConnector != null && ( fromConnector.IsTerminatePoint() || fromConnector.IsPassPoint() ) ) {
-            fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId,
-              out string? fromConnectorId ) ;
+            fromConnector!.TryGetProperty( PassPointParameter.RelatedFromConnectorUniqueId, out string? fromConnectorId ) ;
             if ( ! string.IsNullOrEmpty( fromConnectorId ) ) {
-              fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements )
-                .FirstOrDefault( c => c.UniqueId == fromConnectorId ) ;
+              fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == fromConnectorId ) ;
             }
           }
 
           if ( fromConnector != null ) {
-            fromConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem,
-              out string? constructionItem ) ;
+            fromConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
             if ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) {
               UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
               fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
@@ -48,32 +44,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var toEndPointKey = segment.ToEndPoint.Key ;
         var toEndPointId = toEndPointKey.GetElementUniqueId() ;
         if ( string.IsNullOrEmpty( toEndPointId ) ) continue ;
-        var toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements )
-          .FirstOrDefault( c => c.UniqueId == toEndPointId ) ;
+        var toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == toEndPointId ) ;
         if ( toConnector != null && ( toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) ) {
           toConnector!.TryGetProperty( PassPointParameter.RelatedConnectorUniqueId, out string? connectorId ) ;
           if ( ! string.IsNullOrEmpty( connectorId ) ) {
-            toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements )
-              .FirstOrDefault( c => c.UniqueId == connectorId ) ;
+            toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).FirstOrDefault( c => c.UniqueId == connectorId ) ;
           }
         }
 
         if ( toConnector == null ) continue ;
         {
-          toConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem,
-            out string? constructionItem ) ;
-          if ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) {
+          toConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
+          toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
+
+          if ( ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) || ( string.IsNullOrEmpty( isEcoMode ) && isEcoMode != null ) ) {
             UnGroupConnector( document, toConnector, ref connectorGroups ) ;
-            toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
-            constructionItem = DefaultConstructionItem ;
+
+            if ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) {
+              toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+              constructionItem = DefaultConstructionItem ;
+            }
+
+            if ( string.IsNullOrEmpty( isEcoMode ) && isEcoMode != null ) {
+              isEcoMode = document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
+              toConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode ) ;
+            }
           }
 
-          var isEcoMode = document.GetEcoSettingStorable().EcoSettingData.IsEcoMode ;
-          var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits )
-            .Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
+          var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
           foreach ( var conduit in conduits ) {
             conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem! ) ;
-            conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode.ToString() ) ;
+            conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode! ) ;
           }
         }
       }
@@ -82,8 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       GroupConnector( document, connectorGroups ) ;
     }
 
-    private static void UnGroupConnector( Document document, Element connector,
-      ref Dictionary<ElementId, List<ElementId>> connectorGroups )
+    private static void UnGroupConnector( Document document, Element connector, ref Dictionary<ElementId, List<ElementId>> connectorGroups )
     {
       var parentGroup = document.GetElement( connector.GroupId ) as Group ;
       if ( parentGroup == null ) return ;

@@ -29,14 +29,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
-    protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom ) ;
+    protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty,
+      MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom ) ;
 
     protected override OperationResult<SelectState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var routingExecutor = GetRoutingExecutor() ;
 
-      var (powerConnector, sensorConnectors, sensorDirection, errorMessage ) = SelectionRangeRouteManager.SelectionRangeRoute( uiDocument ) ;
+      var (powerConnector, sensorConnectors, sensorDirection, errorMessage) = SelectionRangeRouteManager.SelectionRangeRoute( uiDocument ) ;
       if ( null != errorMessage ) return OperationResult<SelectState>.FailWithMessage( errorMessage ) ;
 
       var farthestSensorConnector = sensorConnectors.Last() ;
@@ -99,14 +100,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         MessageBox.Show( "Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope".GetDocumentStringByKeyOrDefault( document, "選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。" ), "Error" ) ;
         return new List<(string RouteName, RouteSegment Segment)>() ;
       }
-      
+
       var result = new List<(string RouteName, RouteSegment Segment)>( passPoints.Count * 2 + 1 ) ;
 
       // main route
       var powerConnectorEndPoint = new ConnectorEndPoint( powerConnector.GetTopConnectorOfConnectorFamily(), radius ) ;
       var powerConnectorEndPointKey = powerConnectorEndPoint.Key ;
       {
-        var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint)new PassPointEndPoint( pp ) ).ToList() ;
+        var secondFromEndPoints = EliminateSamePassPoints( footPassPoint, passPoints ).Select( pp => (IEndPoint) new PassPointEndPoint( pp ) ).ToList() ;
         var secondToEndPoints = secondFromEndPoints.Skip( 1 ).Append( new ConnectorEndPoint( sensorConnectors.Last().GetTopConnectorOfConnectorFamily(), radius ) ) ;
         var firstToEndPoint = secondFromEndPoints[ 0 ] ;
 
@@ -127,7 +128,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var segment = new RouteSegment( classificationInfo, systemType, curveType, branchEndPoint, connectorEndPoint, diameter, false, sensorFixedHeight, sensorFixedHeight, avoidType, null ) ;
         return ( subRouteName, segment ) ;
       } ) ) ;
-      
+
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
       allConnectors.AddRange( sensorConnectors ) ;
@@ -173,7 +174,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return false ;
     }
-    
+
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
