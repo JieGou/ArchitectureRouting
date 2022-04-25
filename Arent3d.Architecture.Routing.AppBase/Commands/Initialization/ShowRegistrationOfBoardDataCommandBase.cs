@@ -40,7 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var elementFromToPower = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgRegistrationOfBoardDataModel.IsFromPowerConnector ) ;
         var elementConnectorPower = GeneratePowerConnector( uiDoc, originX, originY - 0.5, heightOfConnector + 100.0.MillimetersToRevitUnits(), level ) ;
 
-        var registrationCode = dlgRegistrationOfBoardDataModel.SelectedAutoControlPanel + "-" + dlgRegistrationOfBoardDataModel.SelectedSignalDestination ;
+        var registrationCode = dlgRegistrationOfBoardDataModel.IsFromPowerConnector ? dlgRegistrationOfBoardDataModel.SelectedAutoControlPanel : dlgRegistrationOfBoardDataModel.SelectedSignalDestination ;
 
         if ( elementFromToPower is FamilyInstance familyInstanceFromToPower ) {
           familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
