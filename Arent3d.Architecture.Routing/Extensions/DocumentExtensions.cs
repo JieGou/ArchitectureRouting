@@ -38,6 +38,19 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
     
     /// <summary>
+    /// Get register symbol settings data from snoop DB.
+    /// </summary>
+    public static RegisterSymbolStorable GetRegisterSymbolStorable( this Document document )
+    {
+      try {
+        return RegisterSymbolStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( RegisterSymbolStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new RegisterSymbolStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
     /// Get CNS Setting data from snoop DB.
     /// </summary>
     public static CnsSettingStorable GetCnsSettingStorable( this Document document )
@@ -125,6 +138,19 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new DetailTableStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get text note data from snoop DB.
+    /// </summary>
+    public static BorderTextNoteStorable GetBorderTextNoteStorable( this Document document )
+    {
+      try {
+        return BorderTextNoteStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( BorderTextNoteStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new BorderTextNoteStorable( document ) ;
       }
     }
   }

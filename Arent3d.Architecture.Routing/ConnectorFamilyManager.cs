@@ -14,6 +14,8 @@ namespace Arent3d.Architecture.Routing
     private const string FamilyFolderName = @"ConnectorFamilies\2021" ;
 #elif REVIT2022
     private const string FamilyFolderName = @"ConnectorFamilies\2022" ;
+#elif REVIT2023
+    private const string FamilyFolderName = @"ConnectorFamilies\2023" ;
 #endif
       private static readonly string AssetPath = Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ), "Assets" ) ;
       

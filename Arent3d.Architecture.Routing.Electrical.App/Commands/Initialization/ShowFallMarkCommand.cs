@@ -5,10 +5,10 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Initialization.ChangeToNormalCommand", DefaultString = "Change to Normal" )]
+  [DisplayNameKey( "Electrical.App.Commands.Initialization.ShowFallMarkCommand", DefaultString = "Display\nFall Mark" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class ChangeToNormalCommand :  ChangeConduitModeCommandBase
+  public class ShowFallMarkCommand : ShowFallMarkCommandBase
   {
-    public ChangeToNormalCommand() => IsEcoMode = false ;
+    
   }
 }

@@ -32,11 +32,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private bool _isShowCeedModelNumber ;
     private bool _isShowOnlyUsingCode ;
     private CeedModel? _selectedCeedModel ;
-    public string SelectedDeviceSymbol { get ; set ; }
-    public string SelectedCondition { get ; set ; }
-    public string SelectedCeedCode { get ; set ; }
-    public string SelectedModelNumber { get ; set ; }
-    public string SelectedFloorPlanType { get ; set ; }
+    public string SelectedDeviceSymbol { get ; private set ; }
+    public string SelectedCondition { get ; private set ; }
+    public string SelectedCeedCode { get ; private set ; }
+    public string SelectedModelNumber { get ; private set ; }
+    public string SelectedFloorPlanType { get ; private set ; }
 
     public CeedModelDialog( UIApplication uiApplication ) : base( uiApplication )
     {
@@ -279,7 +279,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       
       progress.Finish() ;
-      MessageBox.Show( "Replaced floor plan symbol successfully.", "Message" ) ;
+      MessageBox.Show( "正常にモデルを置き換えました。", "Message" ) ;
+    }
+    
+    private void Button_ReplaceMultipleSymbols( object sender, RoutedEventArgs e )
+    {
+      CeedViewModel.ReplaceMultipleSymbols( _document, UIApplication, ref _allCeedModels, ref _usingCeedModel, ref DtGrid ) ;
     }
 
     private void LoadData( CeedStorable ceedStorable )
@@ -355,7 +360,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
     }
 
-    private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName)
+    private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName )
     {
       var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
       if ( ceedStorable == null ) return ;

@@ -1,12 +1,12 @@
 ﻿using Autodesk.Revit.DB ;
-using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
-using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
-using Autodesk.Revit.ApplicationServices ;
 using Autodesk.Revit.UI ;
 using System ;
+using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
+using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 {
@@ -16,110 +16,72 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
-      UIApplication uiApp = commandData.Application ;
-      UIDocument uiDocument = uiApp.ActiveUIDocument ;
-      Document document = uiDocument.Document ;
-      Application app = uiApp.Application ;
-      var selection = uiDocument.Selection ;
-      bool checkEx = false ;
+      var document = commandData.Application.ActiveUIDocument.Document ;
+      var selection = commandData.Application.ActiveUIDocument.Selection ;
+
       try {
-        // Pick first point 
-        XYZ firstPoint = selection.PickPoint( "Pick first point" ) ;
-        XYZ? secondPoint = null ;
-        // This is the object to render the guide line
-        CircleExternal circleExternal = new CircleExternal( uiApp ) ;
-        try {
-          // Add first point to list picked points
-          circleExternal.PickedPoints.Add( firstPoint ) ;
-          // Assign first point
-          circleExternal.DrawingServer.BasePoint = firstPoint ;
-          // Render the guide line
-          circleExternal.DrawExternal() ;
-
-          // Pick next point 
-          secondPoint = selection.PickPoint( "Pick next point" ) ;
-        }
-        catch ( Exception ) {
-          checkEx = true ;
-        }
-        finally {
-          // End to render guide line
-          circleExternal.Dispose() ;
+        if ( document.ActiveView.ViewType != ViewType.FloorPlan ) {
+          message = "Only created in floor plan view!" ;
+          return Result.Cancelled ;
         }
 
-        // If second point is null. Return failed to end command
-        if ( secondPoint == null || checkEx ) return Result.Failed ;
+        var centerPoint = selection.PickPoint( ObjectSnapTypes.Midpoints | ObjectSnapTypes.Centers, "Pick a point." ) ;
 
-        // Get height setting
-        HeightSettingStorable heightSetting = document.GetHeightSettingStorable() ;
-        var levels = heightSetting.Levels.OrderBy( x => x.Elevation ).ToList() ;
-        // Get lowest and highest level
-        Level? lowestLevel = levels.FirstOrDefault() ;
-        Level? highestLevel = levels.LastOrDefault() ;
-        if ( lowestLevel == null && highestLevel == null ) return Result.Failed ;
+        var dialog = new GetLevel( document ) ;
+        if ( false == dialog.ShowDialog() )
+          return Result.Succeeded ;
 
-        using ( Transaction trans = new Transaction( document, "Create Arent Shaft" ) ) {
-          trans.Start() ;
-
-          // Create CurveArray for NewOpening method from list selected points
-          CurveArray shaftProfile = app.Create.NewCurveArray() ;
-          double radius = firstPoint.DistanceTo( secondPoint ) ;
-          double startAngle = 0 ;
-          const double endAngle = Math.PI * 2 ;
-          XYZ xAxis = new XYZ( 1, 0, 0 ) ;
-          XYZ yAxis = new XYZ( 0, 1, 0 ) ;
-          if ( radius > 0.001 ) {
-            Curve cylinderCurve = Arc.Create( firstPoint, radius, startAngle, endAngle, xAxis, yAxis ) ;
-            shaftProfile.Append( cylinderCurve ) ;
-          }
-
-          // Create Shaft opening
-          Opening shaftOpening = document.Create.NewOpening( lowestLevel, highestLevel, shaftProfile ) ;
-          // Set offset from top
-          shaftOpening.get_Parameter( BuiltInParameter.WALL_TOP_OFFSET ).Set( 0 ) ;
-          // Set offset from base
-          shaftOpening.get_Parameter( BuiltInParameter.WALL_BASE_OFFSET ).Set( 0 ) ;
-          // Set base level is lowest level
-          shaftOpening.get_Parameter( BuiltInParameter.WALL_BASE_CONSTRAINT ).Set( lowestLevel!.Id ) ;
-          // Set top level is highest level
-          shaftOpening.get_Parameter( BuiltInParameter.WALL_HEIGHT_TYPE ).Set( highestLevel!.Id ) ;
-
-          var lengthOfDirectionCylindricalShaft = radius * 5 ;
-
-          if ( 2 * lengthOfDirectionCylindricalShaft <= document.Application.ShortCurveTolerance ) {
-            message = $"Direction symbol length must be greater than {document.Application.ShortCurveTolerance.RevitUnitsToMillimeters()}mm!" ;
-            return Result.Cancelled ;
-          }
-
-          var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.DirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-          if ( ! symbol.IsActive ) symbol.Activate() ;
-
-          if ( document.ActiveView.ViewType != ViewType.FloorPlan ) {
-            message = "Only created in floor plan view!" ;
-            return Result.Cancelled ;
-          }
-
-          //Place symbol family
-          var instance = document.Create.NewFamilyInstance( firstPoint, symbol, document.ActiveView ) ;
-          var axis = Line.CreateBound( firstPoint, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( firstPoint ) ) ;
-          ElementTransformUtils.RotateElement( document, instance.Id, axis, RotateAngle ) ;
-
-          //Set parameters
-          instance.LookupParameter( "Length End One" ).Set( lengthOfDirectionCylindricalShaft ) ;
-          instance.LookupParameter( "Length End Two" ).Set( lengthOfDirectionCylindricalShaft ) ;
-
-          //Create green circle on the outer shape of the shaft
-          var subCategory = GetLineStyle( document ) ;
-          var allFloorPlanView = document.GetAllElements<ViewPlan>().Where( v => v.GenLevel != null ).ToList() ;
-          foreach ( var viewPlan in allFloorPlanView ) {
-            var heightCircle = viewPlan.GenLevel.Elevation ;
-            var circleCurve = Arc.Create( new XYZ( firstPoint.X, firstPoint.Y, heightCircle ), radius, startAngle, endAngle, xAxis, yAxis ) ;
-            var greenCircle = document.Create.NewDetailCurve( viewPlan, circleCurve ) ;
-            greenCircle.LineStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-          }
-
-          trans.Commit() ;
+        var levels = dialog.GetSelectedLevels().Select( x => document.GetElement( x.Id ) ).OfType<Level>().OrderBy( x => x.Elevation ).EnumerateAll() ;
+        if ( ! levels.Any() ) {
+          message = "Please, select level in the dialog!" ;
+          return Result.Cancelled ;
         }
+
+        using var trans = new Transaction( document, "Create Arent Shaft" ) ;
+        trans.Start() ;
+
+        var shaftProfile = new CurveArray() ;
+        var radius = 60d.MillimetersToRevitUnits() ;
+        var cylinderCurve = Arc.Create( centerPoint, radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
+        shaftProfile.Append( cylinderCurve ) ;
+        document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
+
+        var symbolDirection = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolDirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+        if ( ! symbolDirection.IsActive ) symbolDirection.Activate() ;
+
+        var lengthDirection = 12000d.MillimetersToRevitUnits() ;
+        var transformRotation = Transform.CreateRotationAtPoint( document.ActiveView.ViewDirection, RotateAngle, centerPoint ) ;
+        var bodyDirections = new List<Curve> { Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * radius ).OfPoint( centerPoint ), Transform.CreateTranslation( XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation ), Line.CreateBound( Transform.CreateTranslation( -XYZ.BasisX * radius ).OfPoint( centerPoint ), Transform.CreateTranslation( -XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation ) } ;
+
+        var subCategoryForBodyDirection = GetLineStyle( document, "SubCategoryForDirectionCylindricalShaft", new Color( 255, 0, 255 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        var subCategoryForOuterShape = GetLineStyle( document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+
+        var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
+        foreach ( var viewPlan in viewPlans ) {
+          var transformTranslation = Transform.CreateTranslation( XYZ.BasisZ * ( viewPlan.GenLevel.Elevation - centerPoint.Z ) ) ;
+
+          IEnumerable<Curve> curvesBody ;
+          if ( viewPlans.IndexOf( viewPlan ) == 0 ) {
+            PlaceInstance( viewPlan, symbolDirection, bodyDirections[ 0 ], RotateAngle - Math.PI * 0.5 ) ;
+            curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 0 ].CreateTransformed( transformTranslation ) } ) ;
+          }
+          else if ( viewPlans.IndexOf( viewPlan ) == viewPlans.Count - 1 ) {
+            PlaceInstance( viewPlan, symbolDirection, bodyDirections[ 1 ], Math.PI * 0.5 + RotateAngle ) ;
+            curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 1 ].CreateTransformed( transformTranslation ) } ) ;
+          }
+          else {
+            PlaceInstance( viewPlan, symbolDirection, bodyDirections[ 0 ], RotateAngle - Math.PI * 0.5 ) ;
+            PlaceInstance( viewPlan, symbolDirection, bodyDirections[ 1 ], Math.PI * 0.5 + RotateAngle ) ;
+            curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, bodyDirections.Select( x => x.CreateTransformed( transformTranslation ) ).ToList() ) ;
+          }
+
+          curvesBody.ForEach( x => CreateDetailLine( viewPlan, subCategoryForBodyDirection, x ) ) ;
+
+          var circle = Arc.Create( new XYZ( centerPoint.X, centerPoint.Y, viewPlan.GenLevel.Elevation ), radius, 0, 2 * Math.PI, XYZ.BasisX, XYZ.BasisY ) ;
+          CreateDetailLine( viewPlan, subCategoryForOuterShape, circle ) ;
+        }
+
+        trans.Commit() ;
 
         return Result.Succeeded ;
       }
@@ -132,20 +94,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       }
     }
 
-    private Category GetLineStyle( Document doc )
+    private static void CreateDetailLine( View viewPlan, Element lineStyle, Curve curve )
     {
-      const string subCategoryName = "SubCategoryForCylindricalShaft" ;
-      var categories = doc.Settings.Categories ;
-      Category category = doc.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
+      var detailLineOne = viewPlan.Document.Create.NewDetailCurve( viewPlan, curve ) ;
+      detailLineOne.LineStyle = lineStyle ;
+    }
+
+    private static void PlaceInstance( View viewPlan, FamilySymbol symbolDirection, Curve halfBodyDirection, double angleRotate )
+    {
+      var pointBase = halfBodyDirection.GetEndPoint( 1 ) ;
+      var instance = viewPlan.Document.Create.NewFamilyInstance( pointBase, symbolDirection, viewPlan ) ;
+      var axis = Line.CreateBound( pointBase, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( pointBase ) ) ;
+      ElementTransformUtils.RotateElement( viewPlan.Document, instance.Id, axis, angleRotate ) ;
+    }
+
+    private static Category GetLineStyle( Document document, string subCategoryName, Color color, int lineWeight )
+    {
+      var categories = document.Settings.Categories ;
+      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
       Category subCategory ;
       if ( ! category.SubCategories.Contains( subCategoryName ) ) {
         subCategory = categories.NewSubcategory( category, subCategoryName ) ;
-        var newColor = new Color( 0, 250, 0 ) ;
-        subCategory.LineColor = newColor ;
-        subCategory.SetLineWeight( 7, GraphicsStyleType.Projection ) ;
+        subCategory.LineColor = color ;
+        subCategory.SetLineWeight( lineWeight, GraphicsStyleType.Projection ) ;
       }
-      else
+      else {
         subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+      }
 
       return subCategory ;
     }
