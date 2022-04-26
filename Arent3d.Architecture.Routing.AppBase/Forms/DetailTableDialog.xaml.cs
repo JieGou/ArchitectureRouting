@@ -219,7 +219,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           List<DetailTableModel> detailTableModels = _detailTableViewModel.DetailTableModels.Where( c => c.DetailSymbolId == detailTableRow.DetailSymbolId ).ToList() ;
 
           if ( plumbingType.ToString() == NoPlumping ) {
-            CreateDetailTableCommandBase.SetNoPlumbingDataForOneSymbol( ref detailTableModels, _isMixConstructionItems ) ;
+            CreateDetailTableCommandBase.SetNoPlumbingDataForOneSymbol( detailTableModels, _isMixConstructionItems ) ;
           }
           else {
             CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, plumbingType.ToString(), _isMixConstructionItems ) ;
@@ -525,7 +525,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void PlumbingSummary()
     {
-      DetailTableViewModel.PlumbingSummary( _conduitsModelData, _detailTableViewModel, _selectedDetailTableRows, _isMixConstructionItems ) ;
+      DetailTableViewModel.PlumbingSummary( _conduitsModelData, _detailSymbolStorable, _detailTableViewModel, _selectedDetailTableRows, _isMixConstructionItems, DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
       CreateDetailTableViewModelByGroupId() ;
       ResetSelectedItems() ;
       DtGrid.SelectedItems.Clear() ;
@@ -533,7 +533,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void BtnSplitPlumbing_Click( object sender, RoutedEventArgs e )
     {
-      DetailTableViewModel.SplitPlumbing( _conduitsModelData, _detailTableViewModel ) ;
+      DetailTableViewModel.SplitPlumbing( _conduitsModelData, _detailSymbolStorable, _detailTableViewModel, DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
       CreateDetailTableViewModelByGroupId() ;
       ResetSelectedItems() ;
       DtGrid.SelectedItems.Clear() ;

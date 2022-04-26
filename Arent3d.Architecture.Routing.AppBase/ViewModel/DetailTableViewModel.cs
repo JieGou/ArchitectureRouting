@@ -21,6 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     private const string DefaultParentPlumbingType = "E" ;
     private const string NoPlumping = "配管なし" ;
+    private const string NoPlumbingSize = "（なし）" ;
 
     private ObservableCollection<DetailTableModel> _detailTableModels ;
     public ObservableCollection<DetailTableModel> DetailTableModels { 
@@ -403,7 +404,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       detailTableViewModelSummary.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
 
-    public static void PlumbingSummary( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems )
+    public static void PlumbingSummary( List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableRows, bool isMixConstructionItems, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
       Dictionary<DetailTableModel, List<DetailTableModel>> sortDetailTableModel = new() ;
       var detailTableModelsGroupByDetailSymbolId = 
@@ -417,10 +418,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           .Where( d => plumbingIdentityInfos.Contains( d.PlumbingIdentityInfo ) && ! detailTableRowsWithSameDetailSymbolId.Contains( d ) )
           .GroupBy( d => d.PlumbingIdentityInfo )
           .Select( g => g.ToList() ) ;
-        var parentDetailTableRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.IsParentRoute && d.DetailSymbolId == detailTableRowsWithSameDetailSymbolId.First().DetailSymbolId ) ;
-        var plumbingType = parentDetailTableRow == null ? DefaultParentPlumbingType : parentDetailTableRow.PlumbingType ;
-        CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType, true, isMixConstructionItems ) ;
-        SetPlumbingSizesForDetailTableRows( conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType ) ;
+        var detailSymbolId = detailTableRowsWithSameDetailSymbolId.First().DetailSymbolId ;
+        var plumbingType = detailSymbolIdsWithPlumbingTypeHasChanged.SingleOrDefault( d => d.Key == detailSymbolId ).Value ;
+        if ( string.IsNullOrEmpty( plumbingType ) ) {
+          plumbingType = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.DetailSymbolId == detailSymbolId )?.PlumbingType ?? DefaultParentPlumbingType ;
+        }
+
+        if ( plumbingType == NoPlumping ) {
+          CreateDetailTableCommandBase.SetNoPlumbingDataForOneSymbol( detailTableRowsWithSameDetailSymbolId, isMixConstructionItems );
+        }
+        else {
+          CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType, true, isMixConstructionItems ) ;
+          SetPlumbingSizesForDetailTableRows( conduitsModelData, detailTableRowsWithSameDetailSymbolId, plumbingType ) ;
+        }
 
         if ( isMixConstructionItems ) {
           SetGroupIdForDetailTableRowsMixConstructionItems( detailTableRowsWithSameDetailSymbolId ) ;
@@ -438,8 +448,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
 
         foreach ( var otherDetailTableRows in otherDetailTableRowsWithSamePlumbingIdentityInfo ) {
-          CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, otherDetailTableRows, plumbingType, true, otherDetailTableRows.First().IsMixConstructionItems ) ;
-          SetPlumbingSizesForDetailTableRows( conduitsModelData, otherDetailTableRows, plumbingType ) ;
+          if ( plumbingType == NoPlumping ) {
+            CreateDetailTableCommandBase.SetNoPlumbingDataForOneSymbol( detailTableRowsWithSameDetailSymbolId, isMixConstructionItems );
+          }
+          else {
+            CreateDetailTableCommandBase.SetPlumbingDataForOneSymbol( conduitsModelData, otherDetailTableRows, plumbingType, true, otherDetailTableRows.First().IsMixConstructionItems ) ;
+            SetPlumbingSizesForDetailTableRows( conduitsModelData, otherDetailTableRows, plumbingType ) ;
+          }
+
           var isGroup = otherDetailTableRows.FirstOrDefault( d => ! string.IsNullOrEmpty( d.GroupId ) ) != null ;
           if ( isGroup ) {
             if ( isMixConstructionItems ) {
@@ -537,47 +553,63 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
 
-    public static void SplitPlumbing( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel )
+    public static void SplitPlumbing( List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, DetailTableViewModel detailTableViewModel, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
       foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
-        SetPlumbingDataForEachWiring( conduitsModelData, detailTableViewModel, detailTableRow ) ;
+        SetPlumbingDataForEachWiring( conduitsModelData, detailSymbolStorable, detailTableRow, detailSymbolIdsWithPlumbingTypeHasChanged ) ;
       }
     }
 
-    private static void SetPlumbingDataForEachWiring( List<ConduitsModel> conduitsModelData, DetailTableViewModel detailTableViewModel, DetailTableModel detailTableRow )
+    private static void SetPlumbingDataForEachWiring( List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, DetailTableModel detailTableRow, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
       const double percentage = 0.32 ;
       const int plumbingCount = 1 ;
-      var plumbingType = DefaultParentPlumbingType ;
-      var parentDetailTableRow = detailTableViewModel.DetailTableModels.FirstOrDefault( d => d.DetailSymbolId == detailTableRow.DetailSymbolId ) ;
-      if ( parentDetailTableRow != null ) plumbingType = parentDetailTableRow.PlumbingType ;
-      var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
-      var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
-      var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage * int.Parse( detailTableRow.WireBook ) ;
-      if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
-        var plumbing = conduitsModels.Last() ;
-        detailTableRow.PlumbingType = plumbingType ;
-        detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+      var plumbingType = detailSymbolIdsWithPlumbingTypeHasChanged.SingleOrDefault( d => d.Key == detailTableRow.DetailSymbolId ).Value ;
+      if ( string.IsNullOrEmpty( plumbingType ) ) {
+        plumbingType = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.DetailSymbolId == detailTableRow.DetailSymbolId )?.PlumbingType ?? DefaultParentPlumbingType ;
+      }
+      if ( plumbingType == NoPlumping ) {
+        detailTableRow.PlumbingType = NoPlumping ;
+        detailTableRow.PlumbingSize = NoPlumbingSize ;
+        detailTableRow.NumberOfPlumbing = string.Empty ;
+        detailTableRow.PlumbingIdentityInfo = CreateDetailTableCommandBase.GetDetailTableRowPlumbingIdentityInfo( detailTableRow, false ) ;
+        detailTableRow.GroupId = string.Empty ;
+        detailTableRow.Remark = GetRemark( detailTableRow.Remark, int.Parse( detailTableRow.WireBook ) ) ;
+        detailTableRow.IsParentRoute = true ;
+        detailTableRow.IsReadOnly = false ;
+        detailTableRow.IsReadOnlyPlumbingItems = true ;
+        detailTableRow.IsMixConstructionItems = false ;
+        detailTableRow.IsReadOnlyPlumbingSize = true ;
       }
       else {
-        var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
-        detailTableRow.PlumbingType = plumbingType ;
-        detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
-      }
+        var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
+        var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
+        var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage * int.Parse( detailTableRow.WireBook ) ;
+        if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
+          var plumbing = conduitsModels.Last() ;
+          detailTableRow.PlumbingType = plumbingType ;
+          detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+        }
+        else {
+          var plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
+          detailTableRow.PlumbingType = plumbingType ;
+          detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
+        }
 
-      detailTableRow.Remark = GetRemark( detailTableRow.Remark, int.Parse( detailTableRow.WireBook ) ) ;
-      detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
-      detailTableRow.PlumbingIdentityInfo = CreateDetailTableCommandBase.GetDetailTableRowPlumbingIdentityInfo( detailTableRow, false ) ;
-      detailTableRow.GroupId = string.Empty ;
-      detailTableRow.IsParentRoute = true ;
-      detailTableRow.IsReadOnly = false ;
-      detailTableRow.IsReadOnlyPlumbingItems = true ;
-      detailTableRow.IsReadOnlyPlumbingSize = false ;
-      detailTableRow.IsMixConstructionItems = false ;
-      if ( detailTableRow.PlumbingSizes.Any() ) return ;
-      {
-        var plumbingSizesOfPlumbingType = conduitsModelData.Where( c => c.PipingType == plumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
-        detailTableRow.PlumbingSizes = ( from plumbingSize in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSize, plumbingSize ) ).ToList() ;
+        detailTableRow.Remark = GetRemark( detailTableRow.Remark, int.Parse( detailTableRow.WireBook ) ) ;
+        detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
+        detailTableRow.PlumbingIdentityInfo = CreateDetailTableCommandBase.GetDetailTableRowPlumbingIdentityInfo( detailTableRow, false ) ;
+        detailTableRow.GroupId = string.Empty ;
+        detailTableRow.IsParentRoute = true ;
+        detailTableRow.IsReadOnly = false ;
+        detailTableRow.IsReadOnlyPlumbingItems = true ;
+        detailTableRow.IsReadOnlyPlumbingSize = false ;
+        detailTableRow.IsMixConstructionItems = false ;
+        if ( detailTableRow.PlumbingSizes.Any() ) return ;
+        {
+          var plumbingSizesOfPlumbingType = conduitsModelData.Where( c => c.PipingType == plumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+          detailTableRow.PlumbingSizes = ( from plumbingSize in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSize, plumbingSize ) ).ToList() ;
+        }
       }
     }
     
