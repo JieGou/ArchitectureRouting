@@ -29,6 +29,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public bool IsCreateDetailTableOnFloorPlanView { get ; set ; }
     
     public  bool IsCancelCreateDetailTable { get; set; }
+    
+    public bool IsAddReference { get ; set ; }
 
     public ICommand SaveDetailTableCommand { get; set; }
 
@@ -43,6 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       DetailTableModels = detailTableModels ;
       ReferenceDetailTableModels = referenceDetailTableModels ;
       IsCreateDetailTableOnFloorPlanView = false ;
+      IsAddReference = false ;
 
       SaveDetailTableCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
         ( p ) => { SaveDetailTable() ; } // Execute()
@@ -413,6 +416,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var referenceDetailTableModels = ExcelToModelConverter.GetReferenceDetailTableModels( filePath ) ;
       detailTableViewModel.ReferenceDetailTableModels = new ObservableCollection<DetailTableModel>( referenceDetailTableModels ) ;
+    }
+    
+    public static void AddReferenceDetailTableRows( DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableModels )
+    {
+      foreach ( var detailTableRow in selectedDetailTableModels ) {
+        detailTableViewModel.DetailTableModels.Add( detailTableRow ) ;
+      }
     }
   }
 }

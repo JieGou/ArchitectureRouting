@@ -151,6 +151,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DetailTableViewModel.ReadCtlFile( DetailTableViewModelSummary ) ;
       UpdateReferenceDetailTableModels() ;
     }
+    
+    private void BtnAddReference_Click( object sender, RoutedEventArgs e )
+    {
+      DialogResult = false ;
+      _detailTableViewModel.IsAddReference = true ;
+      DetailTableViewModelSummary.IsAddReference = true ;
+      Close() ;
+    }
+    
+    private void BtnAddReferenceRows_Click( object sender, RoutedEventArgs e )
+    {
+      if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
+      DetailTableViewModel.AddReferenceDetailTableRows( DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
+      DataContext = DetailTableViewModelSummary ;
+      DtGrid.ItemsSource = DetailTableViewModelSummary.DetailTableModels ;
+      _detailTableViewModel.DetailTableModels = DetailTableViewModelSummary.DetailTableModels ;
+      _selectedReferenceDetailTableRows.Clear() ;
+    }
 
     private void UpdateReferenceDetailTableModels()
     {

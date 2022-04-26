@@ -58,8 +58,8 @@
             <Button Grid.Row="13"  Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Click="BtnDeleteReferenceLine_Click" />
             <Button Grid.Row="14"  Width="100" Content="明細データ取込" Margin="5,5,5,5" Height="25" Click="BtnReadCtlFile_Click" />
             <Button Grid.Row="15"  Width="100" Content="同一明細行を選択" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="16"  Width="100" Content="参照" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="17"  Width="100" Content="明細追加" Margin="5,5,5,5" Height="25" />
+            <Button Grid.Row="16"  Width="100" Content="参照" Margin="5,5,5,5" Height="25" Click="BtnAddReference_Click" />
+            <Button Grid.Row="17"  Width="100" Content="明細追加" Margin="5,5,5,5" Height="25" Click="BtnAddReferenceRows_Click" />
         </Grid>
         <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Width="970" Height="30" Margin="20">
             <Grid.ColumnDefinitions>
