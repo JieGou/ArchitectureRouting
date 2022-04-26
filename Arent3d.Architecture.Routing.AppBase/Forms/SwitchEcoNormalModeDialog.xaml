@@ -1,13 +1,14 @@
-﻿<ui:RevitDialog x:Class="Arent3d.Architecture.Routing.Electrical.App.Forms.SwitchEcoNormalModeDialog"
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.SwitchEcoNormalModeDialog"
                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                 xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
-                xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
+                xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
                 mc:Ignorable="d"
                 WindowStartupLocation="CenterScreen"
-                Title="エコモード切替設定" Height="220" Width="280">
+                Title="エコモード切替設定" Height="220" Width="280"
+                d:DataContext="{d:DesignInstance {x:Type forms:DesignSwitchEcoNormalModeViewModel}, IsDesignTimeCreatable=True}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150" />
@@ -21,9 +22,8 @@
         </Grid.RowDefinitions>
 
         <ComboBox Name="EcoNormalModeComboBox"
-                  ItemsSource="{Binding EcoNormalModes, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}"
-                  SelectionChanged="EcoNormalModeComboBox_SelectionChanged"
-                  SelectedIndex="{Binding EcoNormalModeComboBoxIndex, RelativeSource={RelativeSource FindAncestor, AncestorType=forms:SwitchEcoNormalModeDialog}}"
+                  ItemsSource="{Binding EcoNormalModes}"
+                  SelectedIndex="{Binding SelectedEcoNormalModeIndex}" 
                   VerticalAlignment="Center"
                   DisplayMemberPath="Value"
                   Margin="10,15,0,5"
@@ -38,21 +38,24 @@
         </ComboBox>
         <Button Grid.Row="0" Grid.Column="1"
                 Content="初期設定変更"
-                Click="Button_BtnSetEcoModeDefault_Click"
+                Click="Button_OK_Click"
+                Command="{Binding SetDefaultCommand }"
                 Margin="10,15,0,5"
                 HorizontalAlignment="Left"
                 Width="100" />
         
         <Button Grid.Row="1" Grid.Column="1"
                 Content="全体変更"
-                Click="Button_BtnApplyForProject_Click"
+                Click="Button_OK_Click"
+                Command="{Binding ApplyAllProjectCommand }"
                 Margin="10,5,0,5"
                 HorizontalAlignment="Left"
                 Width="100" />
 
         <Button Grid.Row="2" Grid.Column="1"
                 Content="範囲選択変更"
-                Click="Button_BtnApplyForARange_Click"
+                Click="Button_OK_Click"
+                Command="{Binding ApplyRangeCommand }"
                 Margin="10,5,0,5"
                 HorizontalAlignment="Left"
                 Width="100" />
@@ -64,4 +67,4 @@
                 HorizontalAlignment="Left"
                 Width="100" />
     </Grid>
-</ui:RevitDialog>
+</Window>
