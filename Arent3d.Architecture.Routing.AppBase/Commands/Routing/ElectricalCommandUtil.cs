@@ -13,9 +13,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     public static void SetPropertyForCable( Document document, IReadOnlyCollection<Route> routes )
     {
-      Dictionary<ElementId, List<ElementId>> connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
+      var connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       using Transaction t = new Transaction( document, "Set Construction item." ) ;
       t.Start() ;
+      var defaultIsEcoModeValue = document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
       foreach ( var route in routes ) {
         var subRoute = route.SubRoutes.Last() ;
         var segment = subRoute.Segments.FirstOrDefault() ;
@@ -34,10 +35,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           if ( fromConnector != null ) {
             fromConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
-            if ( string.IsNullOrEmpty( constructionItem ) && constructionItem != null ) {
+            fromConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
+            if ( string.IsNullOrEmpty( constructionItem ) || string.IsNullOrEmpty( isEcoMode ) ) {
               UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
-              fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
             }
+
+            if ( string.IsNullOrEmpty( constructionItem ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            if ( string.IsNullOrEmpty( isEcoMode ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
           }
         }
 
@@ -57,18 +61,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           toConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
           toConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
 
-          if ( string.IsNullOrEmpty( constructionItem)   ||  string.IsNullOrEmpty( isEcoMode )) {
+          if ( string.IsNullOrEmpty( constructionItem ) || string.IsNullOrEmpty( isEcoMode ) ) {
             UnGroupConnector( document, toConnector, ref connectorGroups ) ;
+          }
 
-            if ( string.IsNullOrEmpty( constructionItem )) {
-              toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
-              constructionItem = DefaultConstructionItem ;
-            }
+          if ( string.IsNullOrEmpty( constructionItem ) ) {
+            toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            constructionItem = DefaultConstructionItem ;
+          }
 
-            if ( string.IsNullOrEmpty( isEcoMode ) ) {
-              isEcoMode = document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
-              toConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode ) ;
-            }
+          if ( string.IsNullOrEmpty( isEcoMode ) ) {
+            toConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
+            isEcoMode = defaultIsEcoModeValue ;
           }
 
           var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
