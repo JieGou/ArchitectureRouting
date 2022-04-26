@@ -1,9 +1,14 @@
+using System ;
+using System.Collections ;
 using System.Collections.Generic ;
+using System.Data ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
+using System.Windows.Controls.Primitives ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
+using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -12,6 +17,8 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using DataGrid = System.Windows.Controls.DataGrid ;
+using DataGridCell = System.Windows.Controls.DataGridCell ;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
@@ -32,6 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private bool _isShowCeedModelNumber ;
     private bool _isShowOnlyUsingCode ;
     private CeedModel? _selectedCeedModel ;
+    private List<CeedModel> _oldCeedModels ;
     public string SelectedDeviceSymbol { get ; private set ; }
     public string SelectedCondition { get ; private set ; }
     public string SelectedCeedCode { get ; private set ; }
@@ -54,14 +62,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedFloorPlanType = string.Empty ;
       _isShowCeedModelNumber = false ;
       _isShowOnlyUsingCode = false ;
+      _oldCeedModels = new List<CeedModel>() ;
 
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeedStorable != null ) {
         LoadData( oldCeedStorable ) ;
         _isShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
         _isShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
+        
+        var viewModel = new CeedViewModel( oldCeedStorable ) ;
+        _oldCeedModels = viewModel.CeedModels ;
       }
-      
+
       _ceedModelNumberColumn = DtGrid.Columns.SingleOrDefault( c => c.Header.ToString() == HeaderCeedModelNumberColumn ) ;
       CbShowCeedModelNumber.IsChecked = _isShowCeedModelNumber ;
 
@@ -80,6 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
         return ;
       }
+
       _selectedCeedModel = ( (DataGridRow) sender ).DataContext as CeedModel ;
       BtnReplaceSymbol.IsEnabled = true ;
     }
@@ -125,7 +138,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       _modelNumberSearch = ! string.IsNullOrEmpty( CmbModelNumbers.Text ) ? CmbModelNumbers.Text : string.Empty ;
     }
-    
+
     private void CmbModelNumbers_KeyDown( object sender, KeyEventArgs e )
     {
       if ( e.Key == Key.Enter ) {
@@ -229,7 +242,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         CbShowOnlyUsingCode.Visibility = Visibility.Hidden ;
         CbShowOnlyUsingCode.IsChecked = false ;
         _isShowOnlyUsingCode = false ;
-
+        ChangeColor() ;
         try {
           using Transaction t = new( _document, "Save data" ) ;
           t.Start() ;
@@ -260,6 +273,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         MessageBox.Show( "No connector family selected.", "Error" ) ;
         return ;
       }
+
       var connectorFamilyFileName = selectedConnectorFamily.ToString() ;
       var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
       if ( _selectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
@@ -277,11 +291,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         BtnReplaceSymbol.IsEnabled = false ;
         progressData?.ThrowIfCanceled() ;
       }
-      
+
       progress.Finish() ;
       MessageBox.Show( "正常にモデルを置き換えました。", "Message" ) ;
     }
-    
+
     private void Button_ReplaceMultipleSymbols( object sender, RoutedEventArgs e )
     {
       CeedViewModel.ReplaceMultipleSymbols( _document, UIApplication, ref _allCeedModels, ref _usingCeedModel, ref DtGrid ) ;
@@ -314,7 +328,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       LoadData( _allCeedModels ) ;
       _isShowOnlyUsingCode = false ;
     }
-    
+
     private void ShowCeedModelNumberColumn_Checked( object sender, RoutedEventArgs e )
     {
       if ( _ceedModelNumberColumn != null ) {
@@ -397,10 +411,85 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
         return ;
       }
+
       var ceedModel = newCeedModels.First( c => c == _selectedCeedModel ) ;
       if ( ceedModel == null ) return ;
       ceedModel.FloorPlanType = floorPlanType ;
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
+    }
+
+    private static DataGridRow GetRow( DataGrid grid, int index )
+    {
+      var row = (DataGridRow) grid.ItemContainerGenerator.ContainerFromIndex( index ) ;
+      if ( row == null ) {
+        // May be virtualized, bring into view and try again.
+        grid.UpdateLayout() ;
+        grid.ScrollIntoView( grid.Items[ index ] ) ;
+        row = (DataGridRow) grid.ItemContainerGenerator.ContainerFromIndex( index ) ;
+      }
+
+      return row ;
+    }
+
+    private static T? GetVisualChild<T>( Visual parent ) where T : Visual
+    {
+      var child = default( T ) ;
+      var numVisuals = VisualTreeHelper.GetChildrenCount( parent ) ;
+      for ( var i = 0 ; i < numVisuals ; i++ ) {
+        Visual v = (Visual) VisualTreeHelper.GetChild( parent, i ) ;
+        child = v as T ?? GetVisualChild<T>( v ) ;
+
+        if ( child != null ) {
+          break ;
+        }
+      }
+
+      return child ;
+    }
+
+    private static DataGridCell? GetCell( DataGrid grid, DataGridRow row, int column )
+    {
+      var presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
+
+      if ( presenter == null ) {
+        grid.ScrollIntoView( row, grid.Columns[ column ] ) ;
+        presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
+      }
+
+      var cell = (DataGridCell) presenter?.ItemContainerGenerator.ContainerFromIndex( column )! ;
+      return cell ;
+    }
+    
+    private void SetRedCellColor(string oldItem, string newItem, DataGridRow row , int column) 
+    {
+      if ( oldItem != newItem ) {
+        var cell = GetCell( DtGrid, row, column ) ;
+        if ( cell != null ) {
+          cell.Background = Brushes.Red ;
+        }
+      }
+    }
+
+    private void ChangeColor()
+    {
+      for ( int i = 0 ; i < DtGrid.Items.Count ; i++ ) {
+        var row = GetRow( DtGrid, i ) ;
+        CeedModel item = (CeedModel) row.Item ;
+        var oldCeedModels = _oldCeedModels ;
+        
+        var existCeedModels = oldCeedModels.Where( x => x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber ).ToList() ;
+
+        var itemExistCeedModel = existCeedModels.Find( x => x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber && x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol && x.ModelNumber == item.ModelNumber );
+
+        if ( itemExistCeedModel != null ) {
+          SetRedCellColor( string.IsNullOrEmpty( itemExistCeedModel.FloorPlanSymbol ) ? itemExistCeedModel.Base64FloorPlanImages : itemExistCeedModel.FloorPlanSymbol, string.IsNullOrEmpty( item.FloorPlanSymbol ) ? item.Base64FloorPlanImages : item.FloorPlanSymbol, row, 4 ) ;
+          SetRedCellColor( string.IsNullOrEmpty( itemExistCeedModel.InstrumentationSymbol ) ? itemExistCeedModel.Base64InstrumentationImageString : itemExistCeedModel.InstrumentationSymbol, string.IsNullOrEmpty( item.InstrumentationSymbol ) ? item.Base64InstrumentationImageString : item.InstrumentationSymbol, row, 4 ) ;
+          SetRedCellColor( itemExistCeedModel.Condition, item.Condition, row, 6 ) ;
+        }
+        else {
+          row.Background = Brushes.Orange ;
+        }
+      }
     }
   }
 }

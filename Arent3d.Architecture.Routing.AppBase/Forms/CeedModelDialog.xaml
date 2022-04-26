@@ -62,7 +62,7 @@
               Width="100" 
               Height="27"/>
       
-    <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
+    <DataGrid x:Name="DtGrid" Grid.ColumnSpan="2" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False"  EnableRowVirtualization="False">
         <DataGrid.Resources>
           <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
             <Setter Property="Padding" Value="-2"/>
