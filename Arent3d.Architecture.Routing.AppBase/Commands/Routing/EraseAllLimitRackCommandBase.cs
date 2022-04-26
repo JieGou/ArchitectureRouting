@@ -38,9 +38,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               allLimitRack.Add( cableTrayFitting.UniqueId ) ;
           }
 
-          RemoveRackNotation( document, allLimitRack ) ;
-          document.Delete( allLimitRack.Select(x => document.GetElement(x)).Select(x => x.Id).ToList() ) ;
-
+          if ( allLimitRack.Any() ) {
+            RemoveRackNotation( document, allLimitRack ) ;
+            document.Delete( allLimitRack.Select(x => document.GetElement(x)).Select(x => x.Id).ToList() ) ;
+          }
           RemoveBoundaryCableTray( document ) ;
           
           return Result.Succeeded ;
@@ -54,14 +55,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private static void RemoveBoundaryCableTray(Document document)
     {
-      var filter = new FilteredElementCollector( document ) ;
-      var curveElement = filter.OfClass( typeof( CurveElement ) ).OfType<CurveElement>().ToList() ;
-      if(!curveElement.Any())
-        return;
-
-      var curveFilters = curveElement.Where( x => null != x.LineStyle && ( x.LineStyle as GraphicsStyle )!.GraphicsStyleCategory.Name == BoundaryCableTrayLineStyleName ).ToList() ;
-      if ( curveFilters.Any() )
-        document.Delete( curveFilters.Select( x => x.Id ).ToList() ) ;
+      var curveFilterIds = new FilteredElementCollector( document )
+        .OfClass( typeof( CurveElement ) )
+        .OfType<CurveElement>()
+        .Where( x => null != x.LineStyle && ( x.LineStyle as GraphicsStyle )!.GraphicsStyleCategory.Name == BoundaryCableTrayLineStyleName )
+        .Select( x => x.Id )
+        .ToList() ;
+      if ( curveFilterIds.Any() )
+        document.Delete( curveFilterIds ) ;
     }
     
     private static void RemoveRackNotation( Document document, IEnumerable<string> rackUniqueIds )

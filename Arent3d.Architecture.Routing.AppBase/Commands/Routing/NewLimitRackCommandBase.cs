@@ -37,19 +37,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     protected abstract AddInType GetAddInType() ;
 
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
+    private const string TransactionKey = "TransactionName.Commands.Rack.CreateLimitCableRack" ;
+    private readonly string _transactioName = TransactionKey.GetAppStringByKeyOrDefault( "Create Limit Cable" ) ;
+
+    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       UIApplication uiApp = commandData.Application ;
       Application app = uiApp.Application ;
       try {
-        var result = document.Transaction(
-          "TransactionName.Commands.Rack.CreateLimitCableRack".GetAppStringByKeyOrDefault( "Create Limit Cable" ), _ =>
+        var result = document.Transaction(_transactioName, _ =>
           {
             var racks = new List<FamilyInstance>() ;
             var fittings = new List<FamilyInstance>() ;
-            var elements = document.CollectAllMultipliedRoutingElements( minNumberOfMultiplicity ) ;
+            var elements = document.CollectAllMultipliedRoutingElements( minNumberOfMultiplicity ).ToList() ;
             foreach ( var element in elements ) {
               var (mepCurve, subRoute) = element ;
               if ( RouteLength( subRoute.Route.RouteName, elements, document ) >= minLengthOfConduit ) {
@@ -101,14 +103,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if(null == locationTempt)
           continue;
 
-        locationTempt = IntersectFitting( locationTempt, fittings, torance ) ;
+        var locationAfterIntersect = IntersectFitting( locationTempt, fittings, torance ) ;
         var cableTray = groupCableTray[ 0 ] ;
         newCableTrays.Add(cableTray);
-        cableTray.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) ).Set( locationTempt.Length ) ;
+        cableTray.LookupParameter( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ) ).Set( locationAfterIntersect.Length ) ;
         var width = cableTray.LookupParameter( "Revit.Property.Builtin.TrayWidth".GetDocumentStringByKeyOrDefault( document, "トレイ幅" ) ).AsDouble() ;
-        infoCableTrays.Add((locationTempt, width));
+        infoCableTrays.Add((locationAfterIntersect, width));
         var locationCableTray = ( cableTray.Location as LocationPoint )!.Point ;
-        var pointNearest = locationTempt.GetEndPoint( 0 ).DistanceTo( locationCableTray ) < locationTempt.GetEndPoint( 1 ).DistanceTo( locationCableTray ) ? locationTempt.GetEndPoint( 0 ) : locationTempt.GetEndPoint( 1 ) ;
+        var pointNearest = locationAfterIntersect.GetEndPoint( 0 ).DistanceTo( locationCableTray ) < locationAfterIntersect.GetEndPoint( 1 ).DistanceTo( locationCableTray ) ? locationAfterIntersect.GetEndPoint( 0 ) : locationAfterIntersect.GetEndPoint( 1 ) ;
         ElementTransformUtils.MoveElement(document, cableTray.Id, new XYZ(pointNearest.X, pointNearest.Y, locationCableTray.Z) - locationCableTray);
         
         groupCableTray.RemoveAt( 0 ) ;
@@ -156,6 +158,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var cloneCurves = inforCableTrays.ToList() ;
       var curveLoops = new List<(CurveLoop CurveLoop, double Width)>() ;
+      // Algorithm to group interconnected curves
       while ( cloneCurves.Count > 0 ) {
         var groupCurves = new List<(Line LocationLine, double Width)> { cloneCurves[ 0 ] } ;
         cloneCurves.RemoveAt( 0 ) ;
@@ -163,6 +166,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           curveLoops.Add( (CreateCurveLoop( groupCurves.Select(x => x.LocationLine) ), groupCurves[0].Width) ) ;
 
         int count ;
+        // Algorithm to connect curves in the order specified by CurveLoop
         do {
           count = groupCurves.Count ;
           for ( var i = cloneCurves.Count - 1 ; i >= 0 ; i-- ) {
@@ -255,26 +259,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return connectors.Count == 0 ? (0, point) : ( point.DistanceTo( connectors[ 0 ].Origin ), point ) ;
     }
 
-    private static (List<FamilyInstance> CableTray, List<FamilyInstance> Fitting) ClassifyCableTray( List<FamilyInstance> racks )
-    {
-      var cableTrays = new List<FamilyInstance>() ;
-      var fittings = new List<FamilyInstance>() ;
-      
-      var familyNameFitting = NameOnRevitAttribute.ToDictionary<ElectricalRoutingFamilyType>()[ ElectricalRoutingFamilyType.CableTrayFitting ] ;
-      var familyNameCableTray = NameOnRevitAttribute.ToDictionary<ElectricalRoutingFamilyType>()[ ElectricalRoutingFamilyType.CableTray ] ;
-      
-      foreach ( var rack in racks ) {
-        if ( rack.Symbol.Family.Name ==  familyNameFitting) {
-          fittings.Add(rack);
-        }
-        else if ( rack.Symbol.Family.Name == familyNameCableTray ) {
-          cableTrays.Add(rack);
-        }
-      }
-
-      return ( cableTrays, fittings ) ;
-    }
-    
     private static List<List<FamilyInstance>> GroupRacks(IList<FamilyInstance> cableTrays)
     {
       var groupRacks = new List<List<FamilyInstance>>() ;
