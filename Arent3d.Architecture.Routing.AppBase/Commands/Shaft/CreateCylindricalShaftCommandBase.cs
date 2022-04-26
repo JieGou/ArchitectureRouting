@@ -50,9 +50,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         shaftProfile.Append( cylinderCurve ) ;
         document.Create.NewOpening( levels.First(), levels.Last(), shaftProfile ) ;
 
-        var symbolDirection = document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolDirectionCylindricalShaft ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-        if ( ! symbolDirection.IsActive ) symbolDirection.Activate() ;
-
         var lengthDirection = 12000d.MillimetersToRevitUnits()*ratio ;
         var transformRotation = Transform.CreateRotationAtPoint( document.ActiveView.ViewDirection, RotateAngle, centerPoint ) ;
         var bodyDirections = new List<Curve> { Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * radius ).OfPoint( centerPoint ), Transform.CreateTranslation( XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation ), Line.CreateBound( Transform.CreateTranslation( -XYZ.BasisX * radius ).OfPoint( centerPoint ), Transform.CreateTranslation( -XYZ.BasisX * lengthDirection * 0.5 ).OfPoint( centerPoint ) ).CreateTransformed( transformRotation ) } ;
@@ -66,16 +63,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
           IEnumerable<Curve> curvesBody ;
           if ( viewPlans.IndexOf( viewPlan ) == 0 ) {
-            PlaceInstance( viewPlan, symbolDirection, bodyDirections[ 0 ], RotateAngle - Math.PI * 0.5 ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio ) ;
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 0 ].CreateTransformed( transformTranslation ) } ) ;
           }
           else if ( viewPlans.IndexOf( viewPlan ) == viewPlans.Count - 1 ) {
-            PlaceInstance( viewPlan, symbolDirection, bodyDirections[ 1 ], Math.PI * 0.5 + RotateAngle ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio ) ;
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 1 ].CreateTransformed( transformTranslation ) } ) ;
           }
           else {
-            PlaceInstance( viewPlan, symbolDirection, bodyDirections[ 0 ], RotateAngle - Math.PI * 0.5 ) ;
-            PlaceInstance( viewPlan, symbolDirection, bodyDirections[ 1 ], Math.PI * 0.5 + RotateAngle ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio ) ;
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, bodyDirections.Select( x => x.CreateTransformed( transformTranslation ) ).ToList() ) ;
           }
 
@@ -95,6 +92,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       catch ( Exception e ) {
         message = e.Message ;
         return Result.Failed ;
+      }
+    }
+
+    private static void CreateSymbol(View viewPlan, XYZ point, double angle, double ratio)
+    {
+      var transform = Transform.CreateRotationAtPoint( XYZ.BasisZ, angle, point ) ;
+      var lineOne = Line.CreateBound( point, Transform.CreateTranslation( XYZ.BasisY * 1500d.MillimetersToRevitUnits() * ratio ).OfPoint( point ) ) ;
+      var lineTwo = Line.CreateBound( lineOne.GetEndPoint(1), Transform.CreateTranslation( XYZ.BasisX.Negate() * Math.Tan( 5 * Math.PI / 180 ) * lineOne.Length ).OfPoint( point ) ) ;
+      var lineThree = Line.CreateBound( lineTwo.GetEndPoint( 1 ), Transform.CreateTranslation( Transform.CreateRotation( XYZ.BasisZ, 30 * Math.PI / 180 ).OfVector( XYZ.BasisX ) * 500d.MillimetersToRevitUnits() * ratio ).OfPoint( lineTwo.GetEndPoint( 1 ) ) ) ;
+
+      var curves = new List<Curve> { lineOne.CreateTransformed(transform), lineTwo.CreateTransformed(transform), lineThree.CreateTransformed(transform) } ;
+      foreach ( var curve in curves ) {
+        viewPlan.Document.Create.NewDetailCurve( viewPlan, curve ) ;
       }
     }
 
