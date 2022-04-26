@@ -7,6 +7,7 @@ using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -22,6 +23,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string NoPlumping = "配管なし" ;
 
     public ObservableCollection<DetailTableModel> DetailTableModels { get ; set ; }
+    
+    public ObservableCollection<DetailTableModel> ReferenceDetailTableModels { get ; set ; }
 
     public bool IsCreateDetailTableOnFloorPlanView { get ; set ; }
     
@@ -35,9 +38,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public List<CreateDetailTableCommandBase.ComboboxItemType> ConstructionItems { get ; set ; }
 
-    public DetailTableViewModel( ObservableCollection<DetailTableModel> detailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems )
+    public DetailTableViewModel( ObservableCollection<DetailTableModel> detailTableModels, ObservableCollection<DetailTableModel> referenceDetailTableModels, List<CreateDetailTableCommandBase.ComboboxItemType> conduitTypes, List<CreateDetailTableCommandBase.ComboboxItemType> constructionItems )
     {
       DetailTableModels = detailTableModels ;
+      ReferenceDetailTableModels = referenceDetailTableModels ;
       IsCreateDetailTableOnFloorPlanView = false ;
 
       SaveDetailTableCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
@@ -65,8 +69,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( result != DialogResult.OK ) return ;
       string createText = string.Empty ;
       foreach ( var item in DetailTableModels ) {
-        string line = string.Join( ",", item.Floor, item.Remark, item.ConstructionClassification, item.ConstructionItems, item.DetailSymbol, item.EarthSize, item.EarthType, 
-          item.PlumbingSize, item.PlumbingType, item.PlumbingItems, item.WireBook, item.WireSize, item.WireStrip, item.WireType, item.NumberOfGrounds, item.NumberOfPlumbing ) ;
+        string line = string.Join( ",", item.Floor, item.CeedCode, item.DetailSymbol, item.DetailSymbolId, item.WireType, item.WireStrip, item.WireSize, item.WireBook, item.EarthType, item.EarthSize, item.NumberOfGrounds, 
+          item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.ConstructionClassification, item.SignalType, item.ConstructionItems, item.PlumbingItems, item.Remark, item.WireCrossSectionalArea, item.CountCableSamePosition,
+          item.RouteName, item.IsEcoMode, item.IsParentRoute, item.IsReadOnly, item.PlumbingIdentityInfo, item.GroupId, item.IsReadOnlyPlumbingItems, item.IsMixConstructionItems, item.CopyIndex ) ;
         createText += line.Trim() + Environment.NewLine ;
       }
 
@@ -386,6 +391,28 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
       }
+    }
+    
+    public static void DeleteReferenceDetailTableRows( DetailTableViewModel detailTableViewModel, List<DetailTableModel> selectedDetailTableModels )
+    {
+      foreach ( var selectedRow in selectedDetailTableModels ) {
+        var detailTableRow = detailTableViewModel.ReferenceDetailTableModels.FirstOrDefault( d => d == selectedRow ) ;
+        detailTableViewModel.ReferenceDetailTableModels.Remove( detailTableRow ) ;
+      }
+    }
+
+    public static void ReadCtlFile( DetailTableViewModel detailTableViewModel )
+    {
+      MessageBox.Show( "Please select ctl file.", "Message" ) ;
+      OpenFileDialog openFileDialog = new() { Filter = "Ctl files (*.ctl)|*.ctl", Multiselect = false } ;
+      string filePath = string.Empty ;
+      if ( openFileDialog.ShowDialog() == DialogResult.OK ) {
+        filePath = openFileDialog.FileName ;
+      }
+      
+      if ( string.IsNullOrEmpty( filePath ) ) return ;
+      var referenceDetailTableModels = ExcelToModelConverter.GetReferenceDetailTableModels( filePath ) ;
+      detailTableViewModel.ReferenceDetailTableModels = new ObservableCollection<DetailTableModel>( referenceDetailTableModels ) ;
     }
   }
 }

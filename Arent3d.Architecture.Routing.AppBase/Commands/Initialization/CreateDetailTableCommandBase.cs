@@ -92,7 +92,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
       var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
 
-      var viewModel = new DetailTableViewModel( detailTableModels, conduitTypes, constructionItems ) ;
+      var viewModel = new DetailTableViewModel( detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems ) ;
       var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, isMixConstructionItems ) ;
       dialog.ShowDialog() ;
 

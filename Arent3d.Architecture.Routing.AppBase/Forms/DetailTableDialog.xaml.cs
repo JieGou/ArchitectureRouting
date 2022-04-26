@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly DetailTableViewModel _detailTableViewModel ;
     private readonly DetailSymbolStorable _detailSymbolStorable ;
     private List<DetailTableModel> _selectedDetailTableRows ;
+    private List<DetailTableModel> _selectedReferenceDetailTableRows ;
     private DetailTableModel? _copyDetailTableRow ;
     public DetailTableViewModel DetailTableViewModelSummary { get ; set ; }
     public Dictionary<string, string> RoutesWithConstructionItemHasChanged { get ; }
@@ -49,6 +50,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DetailSymbolIdsWithPlumbingTypeHasChanged = new Dictionary<string, string>() ;
       _selectedDetailTableRows = new List<DetailTableModel>() ;
       _copyDetailTableRow = null ;
+      _selectedReferenceDetailTableRows = new List<DetailTableModel>() ;
 
       CreateDetailTableViewModelByGroupId() ;
       
@@ -80,6 +82,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         else {
           _selectedDetailTableRows.Add( detailTableRow ) ;
         }
+      }
+    }
+    
+    private void DtReferenceGrid_SelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      if ( sender is not DataGrid dataGrid ) return ;
+      var selectedItems = dataGrid.SelectedItems ;
+      if ( selectedItems.Count <= 0 ) return ;
+      _selectedReferenceDetailTableRows.Clear() ;
+      foreach ( var item in selectedItems ) {
+        if ( item is not DetailTableModel detailTableRow ) continue ;
+        _selectedReferenceDetailTableRows.Add( detailTableRow ) ;
       }
     }
 
@@ -117,6 +131,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _selectedDetailTableRows.Clear() ;
       _selectedDetailTableRows = _detailTableViewModel.DetailTableModels.ToList() ;
       DtGrid.SelectAll() ;
+    }
+
+    private void BtnReferenceSelectAll_Click( object sender, RoutedEventArgs e )
+    {
+      _selectedReferenceDetailTableRows = DetailTableViewModelSummary.ReferenceDetailTableModels.ToList() ;
+      DtReferenceGrid.SelectAll() ;
+    }
+    
+    private void BtnDeleteReferenceLine_Click( object sender, RoutedEventArgs e )
+    {
+      if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
+      DetailTableViewModel.DeleteReferenceDetailTableRows( DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
+      UpdateReferenceDetailTableModels() ;
+    }
+    
+    private void BtnReadCtlFile_Click( object sender, RoutedEventArgs e )
+    {
+      DetailTableViewModel.ReadCtlFile( DetailTableViewModelSummary ) ;
+      UpdateReferenceDetailTableModels() ;
+    }
+
+    private void UpdateReferenceDetailTableModels()
+    {
+      DataContext = DetailTableViewModelSummary ;
+      DtReferenceGrid.ItemsSource = DetailTableViewModelSummary.ReferenceDetailTableModels ;
+      _detailTableViewModel.ReferenceDetailTableModels = DetailTableViewModelSummary.ReferenceDetailTableModels ;
+      _selectedReferenceDetailTableRows.Clear() ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
@@ -327,7 +368,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
 
-      DetailTableViewModel newDetailTableViewModel = new( new ObservableCollection<DetailTableModel>( newDetailTableModels ), _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems ) ;
+      DetailTableViewModel newDetailTableViewModel = new( new ObservableCollection<DetailTableModel>( newDetailTableModels ), _detailTableViewModel.ReferenceDetailTableModels, _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems ) ;
       DataContext = newDetailTableViewModel ;
       DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
       DetailTableViewModelSummary = newDetailTableViewModel ;
