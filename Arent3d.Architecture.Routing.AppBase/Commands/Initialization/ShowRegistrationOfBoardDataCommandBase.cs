@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -21,24 +22,23 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
-
-      var dlgRegistrationOfBoardDataModel = new RegistrationOfBoardDataDialog( commandData.Application ) ;
-
+      var viewModel = new RegistrationOfBoardDataViewModel( commandData.Application.ActiveUIDocument.Document ) ;
+      var dlgRegistrationOfBoardDataModel = new RegistrationOfBoardDataDialog( viewModel ) ;
+      
       dlgRegistrationOfBoardDataModel.ShowDialog() ;
-      if ( ! ( dlgRegistrationOfBoardDataModel.DialogResult ?? false ) ) return Result.Cancelled ;
+      if ( ! ( dlgRegistrationOfBoardDataModel.DialogResult ?? false ) ) 
+        return Result.Cancelled ;
       ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( dlgRegistrationOfBoardDataModel.SelectedSignalDestination ) && string.IsNullOrEmpty( dlgRegistrationOfBoardDataModel.SelectedAutoControlPanel ) ) return Result.Succeeded ;
-
-
+      if ( string.IsNullOrEmpty( viewModel.CellSelectedAutoControlPanel ) && string.IsNullOrEmpty( viewModel.CellSelectedSignalDestination ) ) 
+        return Result.Succeeded ;
+      
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
         var uiDoc = commandData.Application.ActiveUIDocument ;
-
-        var (originX, originY, _) = uiDoc.Selection.PickPoint( "配置場所を選択して下さい。" ) ;
+        var (originX, originY, _) = uiDoc.Selection.PickPoint( StatusPrompt) ;
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-
-        var elementFromToPower = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgRegistrationOfBoardDataModel.IsFromPowerConnector ) ;
+        var elementFromToPower = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, viewModel.IsFromPowerConnector ) ;
         var elementConnectorPower = GeneratePowerConnector( uiDoc, originX, originY - 0.5, heightOfConnector + 100.0.MillimetersToRevitUnits(), level ) ;
 
         var registrationCode = viewModel.IsFromPowerConnector

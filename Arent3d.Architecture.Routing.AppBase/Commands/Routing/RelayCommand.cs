@@ -9,6 +9,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private readonly Predicate<T> _canExecute ;
     private readonly Action<T> _execute ;
 
+    public RelayCommand( Action<T> execute )
+    {
+      _canExecute = _ => true ;
+      _execute = execute ;
+    }
+    
     public RelayCommand( Predicate<T> canExecute, Action<T> execute )
     {
       _canExecute = canExecute ;
@@ -40,6 +46,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       add => CommandManager.RequerySuggested += value ;
       remove => CommandManager.RequerySuggested -= value ;
+    }
+  }
+
+  public class RelayCommand : RelayCommand<object>
+  {
+    public RelayCommand( Action execute ) : base( _ => execute() )
+    {
+    }
+
+    public RelayCommand( Predicate<object> canExecute, Action execute ) : base( canExecute, _ => execute() )
+    {
     }
   }
 }
