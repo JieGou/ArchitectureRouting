@@ -29,8 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
-    protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty,
-      MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom ) ;
+    protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom ) ;
 
     protected override OperationResult<SelectState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
