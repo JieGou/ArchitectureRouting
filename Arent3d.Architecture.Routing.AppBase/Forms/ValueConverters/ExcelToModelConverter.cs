@@ -577,7 +577,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         using StreamReader reader = new( path ) ;
         while ( ! reader.EndOfStream ) {
           var line = reader.ReadLine() ;
-          var values = line!.Split( ',' ) ;
+          var values = line!.Split( ';' ) ;
           if ( values.Length <= 29 ) continue ;
           var detailTableRow = new DetailTableModel( false, values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ],
             values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ], values[ 12 ],

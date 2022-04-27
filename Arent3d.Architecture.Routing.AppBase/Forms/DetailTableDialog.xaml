@@ -19,7 +19,7 @@
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
-                <RowDefinition Height="145"/>
+                <RowDefinition Height="125"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
@@ -52,12 +52,12 @@
             <Button Grid.Row="7"  Width="100" Content="上へ" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="8"  Width="100" Content="下へ" Margin="5,5,5,5" Height="25" />
             <Button Grid.Row="9"  Width="100" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnSelectAll_Click" />
-            <Label Grid.Row="10" Content="参照情報" Margin="0,120,5,0"/>
+            <Label Grid.Row="10" Content="参照情報" Margin="0,100,5,0"/>
             <Button Grid.Row="11"  Width="100" Content="▼" Margin="5,0,5,5" Height="25" />
             <Button Grid.Row="12"  Width="100" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnReferenceSelectAll_Click" />
             <Button Grid.Row="13"  Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Click="BtnDeleteReferenceLine_Click" />
             <Button Grid.Row="14"  Width="100" Content="明細データ取込" Margin="5,5,5,5" Height="25" Click="BtnReadCtlFile_Click" />
-            <Button Grid.Row="15"  Width="100" Content="同一明細行を選択" Margin="5,5,5,5" Height="25" />
+            <Button Grid.Row="15"  Width="100" Content="同一明細行を選択" Margin="5,5,5,5" Height="25" Click="BtnSelectDetailTableRowWithSameDetailSymbolId_Click"/>
             <Button Grid.Row="16"  Width="100" Content="参照" Margin="5,5,5,5" Height="25" Click="BtnAddReference_Click" />
             <Button Grid.Row="17"  Width="100" Content="明細追加" Margin="5,5,5,5" Height="25" Click="BtnAddReferenceRows_Click" />
         </Grid>

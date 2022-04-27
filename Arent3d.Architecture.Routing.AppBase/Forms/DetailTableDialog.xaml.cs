@@ -142,14 +142,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void BtnDeleteReferenceLine_Click( object sender, RoutedEventArgs e )
     {
       if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
-      DetailTableViewModel.DeleteReferenceDetailTableRows( DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
+      DetailTableViewModel.DeleteReferenceDetailTableRows( _detailTableViewModel, DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
       UpdateReferenceDetailTableModels() ;
     }
     
     private void BtnReadCtlFile_Click( object sender, RoutedEventArgs e )
     {
-      DetailTableViewModel.ReadCtlFile( DetailTableViewModelSummary ) ;
+      DetailTableViewModel.ReadCtlFile( _detailTableViewModel, DetailTableViewModelSummary ) ;
       UpdateReferenceDetailTableModels() ;
+    }
+    
+    private void BtnSelectDetailTableRowWithSameDetailSymbolId_Click( object sender, RoutedEventArgs e )
+    {
+      if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
+      var detailTableRowsWithSameDetailSymbolId = DetailTableViewModel.SelectDetailTableRowsWithSameDetailSymbolId( DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
+      _selectedReferenceDetailTableRows.Clear() ;
+      DtReferenceGrid.SelectedItems.Clear() ;
+      foreach ( var detailTableModelRow in detailTableRowsWithSameDetailSymbolId ) {
+        DtReferenceGrid.SelectedItems.Add( detailTableModelRow ) ;
+      }
     }
     
     private void BtnAddReference_Click( object sender, RoutedEventArgs e )
@@ -163,19 +174,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void BtnAddReferenceRows_Click( object sender, RoutedEventArgs e )
     {
       if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
-      DetailTableViewModel.AddReferenceDetailTableRows( DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
+      DetailTableViewModel.AddReferenceDetailTableRows( _detailTableViewModel, DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
       DataContext = DetailTableViewModelSummary ;
       DtGrid.ItemsSource = DetailTableViewModelSummary.DetailTableModels ;
-      _detailTableViewModel.DetailTableModels = DetailTableViewModelSummary.DetailTableModels ;
-      _selectedReferenceDetailTableRows.Clear() ;
     }
 
     private void UpdateReferenceDetailTableModels()
     {
       DataContext = DetailTableViewModelSummary ;
       DtReferenceGrid.ItemsSource = DetailTableViewModelSummary.ReferenceDetailTableModels ;
-      _detailTableViewModel.ReferenceDetailTableModels = DetailTableViewModelSummary.ReferenceDetailTableModels ;
       _selectedReferenceDetailTableRows.Clear() ;
+      DtReferenceGrid.SelectedItems.Clear() ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
@@ -358,40 +367,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void CreateDetailTableViewModelByGroupId()
     {
-      List<DetailTableModel> newDetailTableModels = new() ;
-      List<string> existedGroupIds = new() ;
-      foreach ( var detailTableRow in _detailTableViewModel.DetailTableModels ) {
-        if ( string.IsNullOrEmpty( detailTableRow.GroupId ) ) {
-          newDetailTableModels.Add( detailTableRow ) ;
-        }
-        else {
-          if ( existedGroupIds.Contains( detailTableRow.GroupId ) ) continue ;
-          var detailTableRowWithSameWiringType = _detailTableViewModel.DetailTableModels.Where( d => d.GroupId == detailTableRow.GroupId ) ;
-          var detailTableRowsGroupByRemark = detailTableRowWithSameWiringType.GroupBy( d => d.Remark ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-          List<string> newRemark = new() ;
-          var numberOfGrounds = 0 ;
-          foreach ( var (remark, detailTableRowsWithSameRemark) in detailTableRowsGroupByRemark ) {
-            newRemark.Add( remark + ( detailTableRowsWithSameRemark.Count == 1 ? string.Empty : "x" + detailTableRowsWithSameRemark.Count ) ) ;
-            numberOfGrounds += detailTableRowsWithSameRemark.Count ;
-          }
-
-          var newDetailTableRow = new DetailTableModel( detailTableRow.CalculationExclusion, detailTableRow.Floor, detailTableRow.CeedCode, detailTableRow.DetailSymbol, 
-            detailTableRow.DetailSymbolId, detailTableRow.WireType, detailTableRow.WireSize, detailTableRow.WireStrip, numberOfGrounds.ToString(), detailTableRow.EarthType, 
-            detailTableRow.EarthSize, detailTableRow.NumberOfGrounds, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
-            detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
-            detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
-            detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsMixConstructionItems, detailTableRow.CopyIndex ) ;
-          newDetailTableModels.Add( newDetailTableRow ) ;
-          existedGroupIds.Add( detailTableRow.GroupId ) ;
-        }
-      }
-
-      DetailTableViewModel newDetailTableViewModel = new( new ObservableCollection<DetailTableModel>( newDetailTableModels ), _detailTableViewModel.ReferenceDetailTableModels, _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems ) ;
+      List<DetailTableModel> newDetailTableModels = DetailTableViewModel.GroupDetailTableModels( _detailTableViewModel.DetailTableModels ) ;
+      List<DetailTableModel> newReferenceDetailTableModels = DetailTableViewModel.GroupDetailTableModels( _detailTableViewModel.ReferenceDetailTableModels ) ;
+      DetailTableViewModel newDetailTableViewModel = new( new ObservableCollection<DetailTableModel>( newDetailTableModels ), new ObservableCollection<DetailTableModel>( newReferenceDetailTableModels ), _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems ) ;
       DataContext = newDetailTableViewModel ;
       DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
       DetailTableViewModelSummary = newDetailTableViewModel ;
     }
-    
+
     private void UnGroupDetailTableRows( string groupId )
     {
       var detailTableModels = _detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) && d.GroupId == groupId ).ToList() ;
