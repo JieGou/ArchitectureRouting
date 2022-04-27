@@ -44,13 +44,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableModels = new ObservableCollection<DetailTableModel>() ;
       var detailSymbolStorable = doc.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
       var cnsStorable = doc.GetCnsSettingStorable() ;
-      bool isMixConstructionItems ;
       try {
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ).ToList() ;
         var pickedObjectIds = pickedObjects.Select( p => p.UniqueId ).ToList() ;
         var allDetailSymbolIdsOnDetailTableModels = detailTableModelsData.Select( d => d.DetailSymbolId ).Distinct().ToHashSet() ;
         var detailSymbolIdsOnDetailTableModels = detailSymbolStorable.DetailSymbolModelData.Where( x => pickedObjectIds.Contains( x.ConduitId ) && allDetailSymbolIdsOnDetailTableModels.Contains( x.DetailSymbolId ) ).Select( d => d.DetailSymbolId ).Distinct().ToList() ;
-        isMixConstructionItems = detailSymbolIdsOnDetailTableModels.Any() && CheckMixConstructionItems( detailTableModelsData, detailSymbolIdsOnDetailTableModels ) ;
+        var isMixConstructionItems = detailSymbolIdsOnDetailTableModels.Any() && CheckMixConstructionItems( detailTableModelsData, detailSymbolIdsOnDetailTableModels ) ;
         var detailSymbolModelsByDetailSymbolId = 
           detailSymbolStorable.DetailSymbolModelData
             .Where( x => pickedObjectIds.Contains( x.ConduitId ) && ! allDetailSymbolIdsOnDetailTableModels.Contains( x.DetailSymbolId ) )
@@ -81,77 +80,73 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
           SortDetailTableModelByDetailSymbol( ref detailTableModels ) ;
         }
+
+        var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
+        var conduitTypes = ( from conduitTypeName in conduitTypeNames select new ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
+        conduitTypes.Add( new ComboboxItemType( NoPlumping, NoPlumping ) ) ;
+
+        var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
+        var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
+
+        var viewModel = new DetailTableViewModel( detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems ) ;
+        var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, isMixConstructionItems ) ;
+        dialog.ShowDialog() ;
+
+        while ( dialog.DialogResult != null && ! dialog.DialogResult.Value && dialog.DetailTableViewModelSummary.IsAddReference ) {
+          DetailSymbolPickFilter detailSymbolFilter = new() ;
+          List<string> detailSymbolIds = new() ;
+          var pickedDetailSymbols = uiDoc.Selection.PickObjects( ObjectType.Element, detailSymbolFilter ) ;
+          foreach ( var pickedDetailSymbol in pickedDetailSymbols ) {
+            var detailSymbol = doc.GetAllElements<TextNote>().ToList().FirstOrDefault( x => x.Id == pickedDetailSymbol.ElementId ) ;
+            if ( detailSymbol != null && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
+              detailSymbolIds.Add( detailSymbol.UniqueId ) ;
+            }
+          }
+
+          viewModel.ReferenceDetailTableModels = CreateReferenceDetailTableModels( doc, detailSymbolStorable, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, detailTableModelsData, detailSymbolIds ) ;
+          viewModel.IsAddReference = false ;
+          dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, isMixConstructionItems ) ;
+          dialog.ShowDialog() ;
+        }
+
+        if ( dialog.DialogResult ?? false ) {
+          if ( dialog.RoutesWithConstructionItemHasChanged.Any() ) {
+            var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, dialog.RoutesWithConstructionItemHasChanged ) ;
+            if ( connectorGroups.Any() ) {
+              using Transaction transaction = new( doc, "Group connector" ) ;
+              transaction.Start() ;
+              foreach ( var (connectorId, textNoteIds) in connectorGroups ) {
+                // create group for updated connector (with new property) and related text note if any
+                List<ElementId> groupIds = new() { connectorId } ;
+                groupIds.AddRange( textNoteIds ) ;
+                doc.Create.NewGroup( groupIds ) ;
+              }
+
+              transaction.Commit() ;
+            }
+          }
+
+          if ( dialog.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
+            UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, dialog.DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
+          }
+
+          return doc.Transaction( "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
+          {
+            if ( ! viewModel.IsCreateDetailTableOnFloorPlanView && ! dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
+            var level = uiDoc.ActiveView.GenLevel ;
+            var detailTableData = viewModel.IsCreateDetailTableOnFloorPlanView ? viewModel.DetailTableModels : dialog.DetailTableViewModelSummary.DetailTableModels ;
+            CreateDetailTableSchedule( doc, detailTableData, level.Name ) ;
+            viewModel.IsCreateDetailTableOnFloorPlanView = false ;
+            dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView = false ;
+
+            return Result.Succeeded ;
+          } ) ;
+        }
+        else {
+          return Result.Cancelled ;
+        }
       }
       catch {
-        return Result.Cancelled ;
-      }
-
-      var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
-      var conduitTypes = ( from conduitTypeName in conduitTypeNames select new ComboboxItemType( conduitTypeName, conduitTypeName ) ).ToList() ;
-      conduitTypes.Add( new ComboboxItemType( NoPlumping, NoPlumping ) ) ;
-
-      var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
-      var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
-
-      var viewModel = new DetailTableViewModel( detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems ) ;
-      var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, isMixConstructionItems ) ;
-      dialog.ShowDialog() ;
-
-      while ( dialog.DialogResult != null && ! dialog.DialogResult.Value && dialog.DetailTableViewModelSummary.IsAddReference ) {
-        DetailSymbolPickFilter detailSymbolFilter = new() ;
-        List<string> detailSymbolIds = new() ;
-        // select multi detailSymbol
-        //var count = 0 ;
-        //while ( count < 2 ) {
-          var pickedDetailSymbol = uiDoc.Selection.PickObject( ObjectType.Element, detailSymbolFilter ) ;
-          var detailSymbol = doc.GetAllElements<TextNote>().ToList().FirstOrDefault( x => x.Id == pickedDetailSymbol.ElementId ) ;
-          if ( detailSymbol != null && ! detailSymbolIds.Contains( detailSymbol.UniqueId ) ) {
-             detailSymbolIds.Add( detailSymbol.UniqueId ) ;
-          }
-
-          //count++ ;
-        //}
-        
-        viewModel.ReferenceDetailTableModels = CreateReferenceDetailTableModels( doc, detailSymbolStorable, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, detailTableModelsData, detailSymbolIds ) ;
-        viewModel.IsAddReference = false ;
-        dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, isMixConstructionItems ) ;
-        dialog.ShowDialog() ;
-      }
-      
-      if ( dialog.DialogResult ?? false ) {
-        if ( dialog.RoutesWithConstructionItemHasChanged.Any() ) {
-          var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, dialog.RoutesWithConstructionItemHasChanged ) ;
-          if ( connectorGroups.Any() ) {
-            using Transaction transaction = new( doc, "Group connector" ) ;
-            transaction.Start() ;
-            foreach ( var (connectorId, textNoteIds) in connectorGroups ) {
-              // create group for updated connector (with new property) and related text note if any
-              List<ElementId> groupIds = new List<ElementId> { connectorId } ;
-              groupIds.AddRange( textNoteIds ) ;
-              doc.Create.NewGroup( groupIds ) ;
-            }
-
-            transaction.Commit() ;
-          }
-        }
-
-        if ( dialog.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
-          UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, dialog.DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
-        }
-
-        return doc.Transaction( "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
-        {
-          if ( ! viewModel.IsCreateDetailTableOnFloorPlanView && ! dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
-          var level = uiDoc.ActiveView.GenLevel ;
-          var detailTableData = viewModel.IsCreateDetailTableOnFloorPlanView ? viewModel.DetailTableModels : dialog.DetailTableViewModelSummary.DetailTableModels ;
-          CreateDetailTableSchedule( doc, detailTableData, level.Name ) ;
-          viewModel.IsCreateDetailTableOnFloorPlanView = false ;
-          dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView = false ;
-
-          return Result.Succeeded ;
-        } ) ;
-      }
-      else {
         return Result.Cancelled ;
       }
     }
