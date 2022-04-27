@@ -41,7 +41,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var elementFromToPower = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgRegistrationOfBoardDataModel.IsFromPowerConnector ) ;
         var elementConnectorPower = GeneratePowerConnector( uiDoc, originX, originY - 0.5, heightOfConnector + 100.0.MillimetersToRevitUnits(), level ) ;
 
-        var registrationCode = dlgRegistrationOfBoardDataModel.IsFromPowerConnector ? dlgRegistrationOfBoardDataModel.SelectedAutoControlPanel : dlgRegistrationOfBoardDataModel.SelectedSignalDestination ;
+        var registrationCode = viewModel.IsFromPowerConnector
+          ? viewModel.CellSelectedAutoControlPanel!
+          : viewModel.CellSelectedSignalDestination! ;
 
         if ( elementFromToPower is FamilyInstance familyInstanceFromToPower ) {
           familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
@@ -71,7 +73,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-        var text = dlgRegistrationOfBoardDataModel.IsFromPowerConnector ? dlgRegistrationOfBoardDataModel.SelectedAutoControlPanel : dlgRegistrationOfBoardDataModel.SelectedSignalDestination ;
+        var text = viewModel.IsFromPowerConnector 
+          ? viewModel.CellSelectedAutoControlPanel 
+          : viewModel.CellSelectedSignalDestination ;
         var txtPosition = new XYZ( originX - 2, originY + 2.5, heightOfConnector ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, text, opts ) ;
 
@@ -94,14 +98,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private static Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, bool isFromPowerConnector )
     {
-      var symbol = isFromPowerConnector ? uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.FromPowerEquipment ).FirstOrDefault() : uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ToPowerEquipment ).FirstOrDefault() ;
+      var symbol = isFromPowerConnector
+        ? uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.FromPowerEquipment ).FirstOrDefault()
+        : uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ToPowerEquipment ).FirstOrDefault() ;
       var routingSymbol = symbol ?? throw new InvalidOperationException() ;
       return routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
     }
 
     private static Element GeneratePowerConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level )
     {
-      var routingSymbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ConnectorOneSide ).FirstOrDefault() ?? throw new InvalidOperationException() ;
+      var routingSymbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.ConnectorOneSide )
+          .FirstOrDefault() ?? throw new InvalidOperationException() ;
       return routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
     }
   }
