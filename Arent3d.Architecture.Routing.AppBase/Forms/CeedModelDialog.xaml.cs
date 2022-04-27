@@ -1,11 +1,8 @@
 using System ;
-using System.Collections ;
 using System.Collections.Generic ;
-using System.Data ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
-using System.Windows.Controls.Primitives ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using System.Windows.Media ;
@@ -17,8 +14,6 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using DataGrid = System.Windows.Controls.DataGrid ;
-using DataGridCell = System.Windows.Controls.DataGridCell ;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
@@ -127,6 +122,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels != null )
         LoadData( ceedViewModels ) ;
+      ChangeColor() ;
     }
 
     private void CmbCeedModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
@@ -143,12 +139,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       if ( e.Key == Key.Enter ) {
         SearchCeedModels() ;
+        ChangeColor() ;
       }
     }
 
     private void Button_Search( object sender, RoutedEventArgs e )
     {
       SearchCeedModels() ;
+      ChangeColor() ;
     }
 
     private void SearchCeedModels()
@@ -418,73 +416,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
     }
 
-    private static DataGridRow GetRow( DataGrid grid, int index )
-    {
-      var row = (DataGridRow) grid.ItemContainerGenerator.ContainerFromIndex( index ) ;
-      if ( row == null ) {
-        // May be virtualized, bring into view and try again.
-        grid.UpdateLayout() ;
-        grid.ScrollIntoView( grid.Items[ index ] ) ;
-        row = (DataGridRow) grid.ItemContainerGenerator.ContainerFromIndex( index ) ;
-      }
-
-      return row ;
-    }
-
-    private static T? GetVisualChild<T>( Visual parent ) where T : Visual
-    {
-      var child = default( T ) ;
-      var numVisuals = VisualTreeHelper.GetChildrenCount( parent ) ;
-      for ( var i = 0 ; i < numVisuals ; i++ ) {
-        Visual v = (Visual) VisualTreeHelper.GetChild( parent, i ) ;
-        child = v as T ?? GetVisualChild<T>( v ) ;
-
-        if ( child != null ) {
-          break ;
-        }
-      }
-
-      return child ;
-    }
-
-    private static DataGridCell? GetCell( DataGrid grid, DataGridRow row, int column )
-    {
-      var presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
-
-      if ( presenter == null ) {
-        grid.ScrollIntoView( row, grid.Columns[ column ] ) ;
-        presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
-      }
-
-      var cell = (DataGridCell) presenter?.ItemContainerGenerator.ContainerFromIndex( column )! ;
-      return cell ;
-    }
-    
-    private void SetRedCellColor(string oldItem, string newItem, DataGridRow row , int column) 
-    {
-      if ( oldItem != newItem ) {
-        var cell = GetCell( DtGrid, row, column ) ;
-        if ( cell != null ) {
-          cell.Background = Brushes.Red ;
-        }
-      }
-    }
-
     private void ChangeColor()
     {
       for ( int i = 0 ; i < DtGrid.Items.Count ; i++ ) {
-        var row = GetRow( DtGrid, i ) ;
+        var row = CeedViewModel.GetRow( DtGrid, i ) ;
         CeedModel item = (CeedModel) row.Item ;
         var oldCeedModels = _oldCeedModels ;
-        
-        var existCeedModels = oldCeedModels.Where( x => x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber ).ToList() ;
-
-        var itemExistCeedModel = existCeedModels.Find( x => x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber && x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol && x.ModelNumber == item.ModelNumber );
-
+        var existCeedModels = oldCeedModels.Where( x =>
+          x.CeedSetCode == item.CeedSetCode &&
+          x.CeedModelNumber == item.CeedModelNumber ).ToList() ;
+        var itemExistCeedModel = existCeedModels.Find( x =>
+          x.CeedSetCode == item.CeedSetCode &&
+          x.CeedModelNumber == item.CeedModelNumber &&
+          x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol &&
+          x.ModelNumber == item.ModelNumber ) ;
         if ( itemExistCeedModel != null ) {
-          SetRedCellColor( string.IsNullOrEmpty( itemExistCeedModel.FloorPlanSymbol ) ? itemExistCeedModel.Base64FloorPlanImages : itemExistCeedModel.FloorPlanSymbol, string.IsNullOrEmpty( item.FloorPlanSymbol ) ? item.Base64FloorPlanImages : item.FloorPlanSymbol, row, 4 ) ;
-          SetRedCellColor( string.IsNullOrEmpty( itemExistCeedModel.InstrumentationSymbol ) ? itemExistCeedModel.Base64InstrumentationImageString : itemExistCeedModel.InstrumentationSymbol, string.IsNullOrEmpty( item.InstrumentationSymbol ) ? item.Base64InstrumentationImageString : item.InstrumentationSymbol, row, 4 ) ;
-          SetRedCellColor( itemExistCeedModel.Condition, item.Condition, row, 6 ) ;
+          CeedViewModel.SetCellColor( DtGrid, Brushes.Red,
+            string.IsNullOrEmpty( itemExistCeedModel.FloorPlanSymbol )
+              ? itemExistCeedModel.Base64FloorPlanImages
+              : itemExistCeedModel.FloorPlanSymbol,
+            string.IsNullOrEmpty( item.FloorPlanSymbol )
+              ? item.Base64FloorPlanImages
+              : item.FloorPlanSymbol, row, 4 ) ;
+          CeedViewModel.SetCellColor( DtGrid, Brushes.Red,
+            string.IsNullOrEmpty( itemExistCeedModel.InstrumentationSymbol )
+              ? itemExistCeedModel.Base64InstrumentationImageString
+              : itemExistCeedModel.InstrumentationSymbol,
+            string.IsNullOrEmpty( item.InstrumentationSymbol )
+              ? item.Base64InstrumentationImageString
+              : item.InstrumentationSymbol, row, 5 ) ;
+          CeedViewModel.SetCellColor( DtGrid, Brushes.Red, itemExistCeedModel.Condition,
+            item.Condition, row, 6 ) ;
         }
         else {
           row.Background = Brushes.Orange ;

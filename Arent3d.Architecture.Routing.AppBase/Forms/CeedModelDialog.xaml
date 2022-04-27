@@ -143,7 +143,7 @@
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
           
-          <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" Width="160" >
+          <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="160" Width="*" >
             <DataGridTextColumn.ElementStyle>
               <Style>                            
                 <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
