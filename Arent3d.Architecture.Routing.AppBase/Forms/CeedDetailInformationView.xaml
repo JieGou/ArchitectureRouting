@@ -1,4 +1,4 @@
-﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CeedDetailInformationDialog"
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CeedDetailInformationView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -28,7 +28,8 @@
                 <ColumnDefinition Width="200" />
             </Grid.ColumnDefinitions>
             <Label Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right" Content="セットコード" Margin="10,5,10,5" />
-            <TextBox Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center" Name="txtSetCode" TextChanged="TxtSetCode_OnTextChanged" Width="200" Height="27">
+            <TextBox Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center" TextChanged="TxtSetCode_OnTextChanged" Width="200" Height="27"
+                     Text="{Binding Path=SetCode, UpdateSourceTrigger=PropertyChanged}">
             </TextBox>
             <Label Grid.Row="0" Grid.Column="2" HorizontalAlignment="Right" Content="略名コード" Margin="20,5,5,5" />
             <TextBox Grid.Row="0" Grid.Column="3" Name="txtAbbreviationCode" VerticalContentAlignment="Center"  Width="200" Height="27"/>

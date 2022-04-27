@@ -13,7 +13,7 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class CeedDetailInformationDialog : Window
+  public partial class CeedDetailInformationView : Window
   {
     private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModel ;
     private readonly List<HiroiMasterModel> _hiroiMasterModel ;
@@ -24,9 +24,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private string _setCode ;
     private string _productCodeFormat = "{0:D6}" ;
 
-    public CeedDetailInformationDialog( Document document, string pickedText )
+    public CeedDetailInformationView( Document document, string pickedText )
     {
       InitializeComponent() ;
+      
       _document = document ;
       _setCode = pickedText ;
       _listCeedModel = document.GetAllStorables<CeedStorable>().FirstOrDefault()?.CeedModelData ?? new List<CeedModel>() ;
@@ -35,7 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _hiroiMasterModel = _csvStorable.HiroiMasterModelData ;
       _hiroiSetCdMasterModel = _csvStorable.HiroiSetCdMasterNormalModelData ;
 
-      txtSetCode.Text = _setCode ;
+      // txtSetCode.Text = _setCode ;
       LoadComboboxSelect() ;
     }
 
@@ -80,14 +81,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
 
-      CeedDetailInformationModel ceedDetailInformationModels = new CeedDetailInformationModel( queryData, "" ) ;
-      CeedDetailInformationViewModel viewModel = new CeedDetailInformationViewModel( ceedDetailInformationModels ) ;
-      DataContext = viewModel ;
+      // CeedDetailInformationModel ceedDetailInformationModels = new CeedDetailInformationModel( queryData, "" ) ;
+      // CeedDetailInformationViewModel viewModel = new CeedDetailInformationViewModel( ceedDetailInformationModels ) ;
+      // DataContext = viewModel ;
     }
 
     private void TxtSetCode_OnTextChanged( object sender, TextChangedEventArgs e )
     {
-      _setCode = txtSetCode.Text.Trim() ;
+      // _setCode = txtSetCode.Text.Trim() ;
 
       //Set selected value for combobox
       var hiroiSetCdMaster = _hiroiSetCdMasterModel.Find( x => x.SetCode == _setCode ) ;
