@@ -78,7 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
           foreach ( var conduit in conduits ) {
             conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem! ) ;
-            conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, isEcoMode! ) ;
+            conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
           }
         }
       }
