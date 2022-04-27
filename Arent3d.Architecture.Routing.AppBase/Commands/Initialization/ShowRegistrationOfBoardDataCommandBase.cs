@@ -16,6 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public abstract class ShowRegistrationOfBoardDataCommandBase : IExternalCommand
   {
     private const string DefaultConstructionItem = "未設定" ;
+    private const string StatusPrompt = "配置場所を選択して下さい。" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
