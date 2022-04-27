@@ -173,27 +173,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       List<int> pickUpNumbers = new List<int>() ;
       List<string> directionZ = new List<string>() ;
       List<string> constructionItems = new List<string>() ;
+      List<string?> isEcoModes = new List<string?>() ;
 
       List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
       foreach ( var connector in allConnector ) {
         connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
+        connector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
         constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem! ) ;
+        isEcoModes.Add( isEcoMode ) ;
       }
 
-      SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems ) ;
+      SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes ) ;
       var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       GetToConnectorsOfConduit( connectors, pickUpModels ) ;
       GetToConnectorsOfCables( connectors, pickUpModels ) ;
       return pickUpModels ;
     }
 
-    private void SetPickUpModels( List<PickUpModel> pickUpModels, List<Element> elements, ProductType productType, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, List<string> constructionItemList )
+    private void SetPickUpModels( List<PickUpModel> pickUpModels, List<Element> elements, ProductType productType, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, List<string> constructionItemList, List<string?> isEcoModeList )
     {
       var index = 0 ;
       foreach ( var connector in elements ) {
         if ( connector.LevelId == ElementId.InvalidElementId ) continue ;
         var element = _document.GetElement( connector.Id ) ;
-        string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
+        connector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? connectorIsEcoMode ) ;
+        var isEcoMode = productType == ProductType.Conduit ? isEcoModeList[ index ] : connectorIsEcoMode ;
         var item = string.Empty ;
         var floor = _document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ;
         var constructionItems = productType != ProductType.Cable ? constructionItemList[ index ] : DefaultConstructionItem ;
@@ -230,9 +234,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
             var ceedModelNumber = string.Empty ;
             // TODO: hiroisetcdmaster_normal.csvとhiroisetcdmaster_eco.csvの中身が全く一緒なので、hiroiSetCdMasterModelsに対してエコ/ノーマルモードの判定が必要ない
-            var hiroiSetCdMasterModels = !string.IsNullOrEmpty(isEcoMode) && bool.Parse( isEcoMode )
-                                                                ? _hiroiSetCdMasterEcoModels
-                                                                : _hiroiSetCdMasterNormalModels ;
+            var hiroiSetCdMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? _hiroiSetCdMasterEcoModels : _hiroiSetCdMasterNormalModels ;
             if ( hiroiSetCdMasterModels.Any() ) {
               var hiroiSetCdMasterModel = hiroiSetCdMasterModels.FirstOrDefault( h => h.SetCode == ceedSetCode ) ;
               if ( hiroiSetCdMasterModel != null ) {
@@ -240,15 +242,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
                 construction = productType == ProductType.Conduit ? hiroiSetCdMasterModel.ConstructionClassification : string.Empty ;
               }
             }
-            var hiroiSetMasterModels = !string.IsNullOrEmpty(isEcoMode) && bool.Parse( isEcoMode )
-                                                            ? _hiroiSetMasterEcoModels
-                                                            : _hiroiSetMasterNormalModels ;
+
+            var hiroiSetMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? _hiroiSetMasterEcoModels : _hiroiSetMasterNormalModels ;
             if ( hiroiSetMasterModels.Any() && ! string.IsNullOrEmpty( ceedModelNumber ) ) {
               var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
               if ( hiroiSetMasterModel != null ) {
                 var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
-                  foreach ( var ( materialCode, name) in materialCodes ) {
+                  foreach ( var (materialCode, name) in materialCodes ) {
                     specification = name ;
                     var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode ) ) ;
                     if ( hiroiMasterModel != null ) {
@@ -277,6 +278,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             }
           }
         }
+
         index++ ;
       }
     }
@@ -297,7 +299,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private List<string> GetCeedSetCodeOfElement( Element element )
     {
-      element.TryGetProperty(ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
+      element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
       return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( '-' ).ToList() : new List<string>() ;
     }
 
@@ -316,9 +318,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       List<int> pickUpNumbers = new List<int>() ;
       List<string> directionZ = new List<string>() ;
       List<string> constructionItems = new List<string>() ;
+      List<string?> isEcoModes = new List<string?>() ;
 
       var conduits = _document.GetAllElements<Conduit>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
       foreach ( var conduit in conduits ) {
+        conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
+        isEcoModes.Add( isEcoMode ) ;
         var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() ;
         var constructionItem = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.ConstructionItem".GetDocumentStringByKeyOrDefault( _document, "Construction Item" ) ).AsString() ;
         AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem ) ;
@@ -326,12 +331,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       var conduitFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
       foreach ( var conduitFitting in conduitFittings ) {
+        conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
+        isEcoModes.Add( isEcoMode ) ;
         var quantity = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( _document, "電線管長さ" ) ).AsDouble() ;
         var constructionItem = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.ConstructionItem".GetDocumentStringByKeyOrDefault( _document, "Construction Item" ) ).AsString() ;
         AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem ) ;
       }
 
-      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Conduit, quantities, pickUpNumbers, directionZ, constructionItems ) ;
+      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Conduit, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes ) ;
     }
 
     private void GetToConnectorsOfCables( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
@@ -341,6 +348,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       List<int> pickUpNumbers = new List<int>() ;
       List<string> directionZ = new List<string>() ;
       List<string> constructionItems = new List<string>() ;
+      List<string?> isEcoModes = new List<string?>() ;
 
       var cables = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.CableTrays ).Distinct().ToList() ;
       foreach ( var cable in cables ) {
@@ -353,7 +361,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         quantities.Add( Math.Round( quantity, 2 ) ) ;
       }
 
-      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Cable, quantities, pickUpNumbers, directionZ, constructionItems ) ;
+      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Cable, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes ) ;
     }
 
     private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems, string constructionItem )
