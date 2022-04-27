@@ -5,14 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
-        Title="CreateTableByFloors" Height="500" Width="800">
-    <Grid Margin="10">
+        Title="Create Table By Floors" Height="Auto" Width="800" SizeToContent="Height" ResizeMode="NoResize">
+    <Grid Margin="10 0 10 10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="50" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="300" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0">
+        <Grid Grid.Row="0" Margin="0 0 0 10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -25,21 +25,24 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <ListBox Grid.Column="0" VerticalAlignment="Top" Padding="5" ItemsSource="{Binding LevelList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}">
+            <ListBox Grid.Column="0" VerticalAlignment="Top" Padding="5" Height="300" ItemsSource="{Binding LevelList, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding LevelName}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-            <ComboBox Grid.Column="1"
-                  Margin="10 0 0 0"
-                  VerticalAlignment="Top" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
-                  ItemsSource="{Binding  TableTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                  SelectedItem="{Binding  SelectedTableType, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-                  IsSynchronizedWithCurrentItem="True"
-                  SelectedIndex="0">
-            </ComboBox>
+            <StackPanel Grid.Column="1" Orientation="Vertical">
+                <ComboBox Margin="10 0 0 0"
+                          VerticalAlignment="Top" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                          ItemsSource="{Binding TableTypes, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                          SelectedItem="{Binding SelectedTableType, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+                          IsSynchronizedWithCurrentItem="True"
+                          SelectedIndex="0">
+                </ComboBox>
+                <CheckBox x:Name="CheckBoxEachFloor" Margin="10 10 0 0" Content="Create a table for each floor"></CheckBox>
+            </StackPanel>
         </Grid>
        
         <StackPanel Grid.Row="2">
@@ -55,15 +58,15 @@
                 <Button Height="24"
                         Grid.Column="0" Grid.Row="0"
                         Content="Check" Click="CheckAll"
-                        Margin="0,10,3,0" />
+                        Margin="0,10,5,0" />
                 <Button Height="24"
                         Grid.Column="1" Grid.Row="0"
                         Content="Uncheck" Click="UncheckAll"
-                        Margin="3,10,3,0" />
+                        Margin="5,10,5,0" />
                 <Button Height="24"
                         Grid.Column="2" Grid.Row="0"
                         Content="Toggle" Click="ToggleAll"
-                        Margin="3,10,0,0" />
+                        Margin="5,10,0,0" />
             </Grid>
             <Button Content="Select" Height="32" Click="SelectButton_Click" Margin="0,10,0,0" />
         </StackPanel>

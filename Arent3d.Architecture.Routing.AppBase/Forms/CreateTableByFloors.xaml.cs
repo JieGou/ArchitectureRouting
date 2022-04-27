@@ -18,14 +18,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public ObservableCollection<LevelInfo> LevelList { get ; }
     public string SelectedTableType { get ; set ; } = "Detail Table" ;
 
+    public bool IsCreateTableEachFloors => CheckBoxEachFloor.IsChecked ?? false ;
+
     public CreateTableByFloors( Document doc )
     {
       InitializeComponent() ;
       LevelList = new ObservableCollection<LevelInfo>( doc.GetAllElements<Level>()
         .OfCategory( BuiltInCategory.OST_Levels ).Select( ToLevelInfo ).OrderBy( l => l.Elevation ) ) ;
-      TableTypes = new ObservableCollection<string>() ;
-      TableTypes.Add( "Detail Table" ) ;
-      TableTypes.Add( "Electrical Symbol Table" ) ;
+      TableTypes = new ObservableCollection<string> { "Detail Table", "Electrical Symbol Table" } ;
     }
 
     private static LevelInfo ToLevelInfo( Level level )
@@ -53,8 +53,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void SelectButton_Click( object sender, RoutedEventArgs e )
     {
-      this.DialogResult = true ;
-      this.Close() ;
+      DialogResult = true ;
+      Close() ;
     }
 
     private void SelectAll( bool select )

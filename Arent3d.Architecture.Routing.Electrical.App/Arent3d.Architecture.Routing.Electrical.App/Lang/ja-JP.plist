@@ -214,6 +214,9 @@
         <key>Electrical.App.Commands.Annotation.DoubleBorderCommand</key>
         <string>二重テキストボックス</string>
 
+        <key>Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand</key>
+        <string>Create Table&#xA;By Floors</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
