@@ -173,10 +173,5 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return false ;
     }
-
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
-    {
-      ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
-    }
   }
 }

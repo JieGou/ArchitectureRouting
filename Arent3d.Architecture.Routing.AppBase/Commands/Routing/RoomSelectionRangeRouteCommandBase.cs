@@ -473,10 +473,5 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       ElementId levelId = SelectionRangeRouteManager.GetTrueLevelId( document, pickRoom ) ;
       return RoomRouteManager.InsertPassPointElement( document, name, levelId, diameter, room, fromFixedHeight, isOutFromConnector, fromConnectorId, toConnectorId ) ;
     }
-
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
-    {
-      ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
-    }
   }
 }

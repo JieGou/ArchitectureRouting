@@ -229,6 +229,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
             supplement = ceedModel.Name ;
 
             var ceedModelNumber = string.Empty ;
+            // TODO: hiroisetcdmaster_normal.csvとhiroisetcdmaster_eco.csvの中身が全く一緒なので、hiroiSetCdMasterModelsに対してエコ/ノーマルモードの判定が必要ない
             var hiroiSetCdMasterModels = !string.IsNullOrEmpty(isEcoMode) && bool.Parse( isEcoMode )
                                                                 ? _hiroiSetCdMasterEcoModels
                                                                 : _hiroiSetCdMasterNormalModels ;
