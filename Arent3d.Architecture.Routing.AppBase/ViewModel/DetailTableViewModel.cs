@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( result != DialogResult.OK ) return ;
       string createText = string.Empty ;
       foreach ( var item in DetailTableModels ) {
-        string line = string.Join( ";", item.Floor, item.CeedCode, item.DetailSymbol, item.DetailSymbolId, item.WireType, item.WireStrip, item.WireSize, item.WireBook, item.EarthType, item.EarthSize, item.NumberOfGrounds, 
+        string line = string.Join( ";", item.Floor, item.CeedCode, item.DetailSymbol, item.DetailSymbolId, item.WireType, item.WireSize, item.WireStrip, item.WireBook, item.EarthType, item.EarthSize, item.NumberOfGrounds, 
           item.PlumbingType, item.PlumbingSize, item.NumberOfPlumbing, item.ConstructionClassification, item.SignalType, item.ConstructionItems, item.PlumbingItems, item.Remark, item.WireCrossSectionalArea, item.CountCableSamePosition,
           item.RouteName, item.IsEcoMode, item.IsParentRoute, item.IsReadOnly, item.PlumbingIdentityInfo, item.GroupId, item.IsReadOnlyPlumbingItems, item.IsMixConstructionItems, item.CopyIndex ) ;
         createText += line.Trim() + Environment.NewLine ;
@@ -526,7 +526,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           detailTableRow.EarthSize, detailTableRow.NumberOfGrounds, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
           detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, detailTableRow.Remark, 
           detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
-          detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo + "-" + index, detailTableRow.GroupId + "-" + index,
+          detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo + "-" + index, detailTableRow.GroupId,
           detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsMixConstructionItems, detailTableRow.CopyIndex + index ) ;
         if ( ! string.IsNullOrEmpty( detailTableRow.GroupId ) ) {
           var detailTableRowsOfGroup = detailTableViewModel.ReferenceDetailTableModels.Where( d => d.GroupId == detailTableRow.GroupId ) ;
