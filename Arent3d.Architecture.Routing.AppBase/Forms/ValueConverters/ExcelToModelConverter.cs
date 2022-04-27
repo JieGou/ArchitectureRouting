@@ -682,44 +682,46 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
         // Get list data
         for (var i = startRow; i <= endRow; i++)
         {
-          RegistrationOfBoardDataModel item = new RegistrationOfBoardDataModel();
-
           var autoControlPanel = workSheet.GetRow(i).GetCell(0);
           var autoControlPanelValue = GetCellValue(autoControlPanel);
-          item.AutoControlPanel = autoControlPanelValue;
-          
+
           var signalDestination = workSheet.GetRow(i).GetCell(1);
           var signalDestinationValue = GetCellValue(signalDestination);
-          item.SignalDestination = signalDestinationValue;
-          
+
           var kind1 = workSheet.GetRow(i).GetCell(2);
           var kind1Value = GetCellValue(kind1);
-          item.Kind1 = kind1Value;
           
           var number1 = workSheet.GetRow(i).GetCell(3);
           var number1Value = GetCellValue(number1);
-          item.Number1 = number1Value;
           
           var kind2 = workSheet.GetRow(i).GetCell(4);
           var kind2Value = GetCellValue(kind2);
-          item.Kind2 = kind2Value;
           
           var number2 = workSheet.GetRow(i).GetCell(5);
           var number2Value = GetCellValue(number2);
-          item.Number2 = number2Value;
-          
+
           var remark = workSheet.GetRow(i).GetCell(6);
           var remarkValue = GetCellValue(remark);
-          item.Remark = remarkValue;
           
           var materialCode1 = workSheet.GetRow(i).GetCell(7);
           var materialCode1Value = GetCellValue(materialCode1);
-          item.MaterialCode1 = materialCode1Value;
-
+          
           var materialCode2 = workSheet.GetRow(i).GetCell(8);
           var materialCode2Value = GetCellValue(materialCode2);
-          item.MaterialCode1 = materialCode2Value;
 
+          var item = new RegistrationOfBoardDataModel
+          {
+            AutoControlPanel = autoControlPanelValue,
+            SignalDestination = signalDestinationValue,
+            Kind1 = kind1Value,
+            Number1 = number1Value,
+            Kind2 = kind2Value,
+            Number2 = number2Value,
+            Remark = remarkValue,
+            MaterialCode1 = materialCode1Value,
+            MaterialCode2 = materialCode2Value
+          } ;
+          
           if (item.SignalDestination != "---")
           {
             registrationOfBoardDataModelData.Add(item);

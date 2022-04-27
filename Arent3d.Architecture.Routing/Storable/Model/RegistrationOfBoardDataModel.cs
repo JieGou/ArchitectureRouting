@@ -27,18 +27,5 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       MaterialCode1 = string.Empty ;
       MaterialCode2 = string.Empty ;
     }
-
-    public RegistrationOfBoardDataModel( string autoControlPanel, string signalDestination, string kind1, string number1, string kind2, string number2, string remark, string materialCode1, string materialCode2 )
-    {
-      AutoControlPanel = autoControlPanel ;
-      SignalDestination = signalDestination ;
-      Kind1 = kind1 ;
-      Number1 = number1 ;
-      Kind2 = kind2 ;
-      Number2 = number2 ;
-      Remark = remark ;
-      MaterialCode1 = materialCode1 ;
-      MaterialCode2 = materialCode2 ;
-    }
   }
 }

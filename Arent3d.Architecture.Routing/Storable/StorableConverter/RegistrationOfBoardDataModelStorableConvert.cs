@@ -35,7 +35,18 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var materialCode1 = deserializer.GetString( SerializeField.MaterialCode1 ) ;
       var materialCode2 = deserializer.GetString( SerializeField.MaterialCode2 ) ;
 
-      return new RegistrationOfBoardDataModel( autoControlPanel!, signalDestination!, kind1!, number1!, kind2!, number2!, remark!, materialCode1!, materialCode2! ) ;
+      return new RegistrationOfBoardDataModel
+      {
+        AutoControlPanel = autoControlPanel!,
+        SignalDestination = signalDestination!,
+        Kind1 = kind1!,
+        Number1 = number1!,
+        Kind2 = kind2!,
+        Number2 = number2!,
+        Remark = remark!,
+        MaterialCode1 = materialCode1!,
+        MaterialCode2 = materialCode2!
+      } ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, RegistrationOfBoardDataModel customTypeValue )
