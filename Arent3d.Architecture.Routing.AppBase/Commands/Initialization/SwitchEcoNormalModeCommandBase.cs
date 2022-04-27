@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public class SwitchEcoNormalModeCommandBase : IExternalCommand
   {
-    private const string TransactionName = "Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand" ;
+    private const string TransactionName = "Electrical.App.Commands.Initialization.SelectedSwitchEcoNormalMode" ;
     private const string SetDefaultEcoModeTransactionName = "Electrical.App.Commands.Initialization.SetDefaultEcoModeCommand" ;
     private const string DialogResultSuccessKey = "Dialog.Electrical.ChangeMode.Success" ;
     private const string DialogResultTitleKey = "Dialog.Electrical.ChangeMode.Title" ;
@@ -41,17 +41,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( dialog.DialogResult == false )
             return Result.Cancelled ;
 
-          bool isEcoMode = viewModel.SelectedEcoNormalModeItem == SwitchEcoNormalModeViewModel.EcoNormalMode.EcoMode ;
-          switch ( viewModel.SwitchEcoDialogResult ) {
-            case SwitchEcoNormalModeViewModel.SwitchEcoDialogEnumResult.ApplyRange :
-              return SwitchModeForRange( commandData, ref message, isEcoMode ) ;
-            case SwitchEcoNormalModeViewModel.SwitchEcoDialogEnumResult.SetDefault :
-              return SetEcoModeDefaultValue( commandData, ref message, isEcoMode ) ;
-            case SwitchEcoNormalModeViewModel.SwitchEcoDialogEnumResult.ApplyAllProject :
-              return SwitchModeForProject( document, ref message, isEcoMode ) ;
-          }
-
-          return Result.Cancelled ;
+          var isEcoMode = viewModel.SelectedEcoNormalModeItem == SwitchEcoNormalModeViewModel.EcoNormalMode.EcoMode ;
+          return viewModel.SelectedSwitchEcoNormalMode switch
+          {
+            SwitchEcoNormalModeViewModel.SwitchEcoNormalMode.ApplyForARange => SwitchModeForRange( commandData, ref message, isEcoMode ),
+            SwitchEcoNormalModeViewModel.SwitchEcoNormalMode.SetDefaultMode => SetEcoModeDefaultValue( commandData, ref message, isEcoMode ),
+            SwitchEcoNormalModeViewModel.SwitchEcoNormalMode.ApplyForProject => SwitchModeForProject( document, ref message, isEcoMode ),
+            _ => Result.Cancelled
+          } ;
         }
       }
       catch ( OperationCanceledException ) {

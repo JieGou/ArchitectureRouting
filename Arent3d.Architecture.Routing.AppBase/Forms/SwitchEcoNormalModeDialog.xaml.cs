@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
   }
   
-  public class DesignSwitchEcoNormalModeViewModel : SwitchEcoNormalModeViewModel
+  public abstract class DesignSwitchEcoNormalModeViewModel : SwitchEcoNormalModeViewModel
   { 
   }
 }
