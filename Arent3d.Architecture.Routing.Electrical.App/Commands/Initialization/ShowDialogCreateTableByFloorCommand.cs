@@ -49,88 +49,88 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     
     private Result CreateDetailTable( UIDocument uiDocument, List<ElementId> levelIds )
     {
-      const string defaultParentPlumbingType = "E" ;
-      var csvStorable = uiDocument.Document.GetCsvStorable() ;
-      var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData ;
-      var conduitsModelData = csvStorable.ConduitsModelData ;
-      var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
-      var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
-      var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
-      var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
-      var hiroiSetCdMasterEcoModelData = csvStorable.HiroiSetCdMasterEcoModelData ;
-      var ceedStorable = uiDocument.Document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      var detailTableModelsData = uiDocument.Document.GetDetailTableStorable().DetailTableModelData ;
-      var detailTableModels = new List<ObservableCollection<DetailTableModel>>() ;
-      var detailSymbolStorable = uiDocument.Document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
-      var cnsStorable = uiDocument.Document.GetCnsSettingStorable() ;
-      var allConduits = new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( Conduit ) ).OfType<Conduit>().AsEnumerable() ;
-      bool mixConstructionItems ;
-      foreach ( var levelId in levelIds ) {
-        try {
-          var detailTableModelsByFloors = new ObservableCollection<DetailTableModel>() ;
-          var conduitsByFloors = allConduits.Where( x => x.ReferenceLevel.Id == levelId ).ToList() ;
-          var elementsByFloors = conduitsByFloors.Cast<Element>().ToList() ;
-          var pickedObjectIds = conduitsByFloors.Select( p => p.UniqueId ).ToList() ;
-          var detailSymbolModelsByDetailSymbolId = detailSymbolStorable.DetailSymbolModelData
-            .Where( x => pickedObjectIds.Contains( x.ConduitId ) ).OrderBy( x => x.DetailSymbol )
-            .ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.IsParentSymbol ).GroupBy(
-              x => x.DetailSymbolId, ( key, p ) => new { DetailSymbolId = key, DetailSymbolModels = p.ToList() } ) ;
-          var detailSymbolIds = detailSymbolStorable.DetailSymbolModelData
-            .Where( x => pickedObjectIds.Contains( x.ConduitId ) ).Select( d => d.DetailSymbolId ).Distinct()
-            .ToHashSet() ;
-          mixConstructionItems = IsMixConstructionItems( detailTableModelsData, detailSymbolIds ) ;
-          foreach ( var detailSymbolModelByDetailSymbolId in detailSymbolModelsByDetailSymbolId ) {
-            var firstDetailSymbolModelByDetailSymbolId =
-              detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault() ;
-            var routeNames = detailSymbolModelByDetailSymbolId.DetailSymbolModels.Select( d => d.RouteName ).Distinct()
-              .ToList() ;
-            var parentRouteName = firstDetailSymbolModelByDetailSymbolId!.CountCableSamePosition == 1
-              ? firstDetailSymbolModelByDetailSymbolId.RouteName
-              : GetParentRouteName( doc, routeNames ) ;
-            if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
-              var parentDetailSymbolModel =
-                detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault(
-                  d => d.RouteName == parentRouteName ) ;
-              // AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData,
-              //   hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData,
-              //   hiroiMasterModelData, conduitsModelData, wiresAndCablesModelData, detailTableModelsData,
-              //   detailTableModelsByFloors, elementsByFloors, parentDetailSymbolModel!, true, mixConstructionItems ) ;
-              // routeNames = routeNames.Where( n => n != parentRouteName ).OrderByDescending( n => n ).ToList() ;
-            }
-      
-            foreach ( var childDetailSymbolModel in from routeName in routeNames
-                     select detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d =>
-                       d.RouteName == routeName ) ) {
-              // AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData,
-              //   hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData,
-              //   hiroiMasterModelData, conduitsModelData, wiresAndCablesModelData, detailTableModelsData,
-              //   detailTableModelsByFloors, elementsByFloors, childDetailSymbolModel, false, mixConstructionItems ) ;
-            }
-          }
-      
-          // SortDetailTableModel( ref detailTableModelsByFloors ) ;
-          // SetPlumbingData( conduitsModelData, ref detailTableModelsByFloors, defaultParentPlumbingType,
-            // mixConstructionItems ) ;
-          detailTableModels.Add( detailTableModelsByFloors ) ;
-        }
-        catch {
-          return Result.Cancelled ;
-        }
-      }
-      
-      return doc.Transaction(
-        "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
-        {
-          foreach ( var detailTableModelsByFloors in detailTableModels ) {
-            if ( detailTableModelsByFloors.Count > 0 ) {
-              var levelName = detailTableModelsByFloors[ 0 ].Floor ;
-              CreateDetailTableSchedule( doc, detailTableModelsByFloors, levelName ) ;
-              SaveDetailTableData( detailTableModelsByFloors, doc ) ;
-            }
-          }
-      
-          return Result.Succeeded ;
-        } ) ;
+      // const string defaultParentPlumbingType = "E" ;
+      // var csvStorable = uiDocument.Document.GetCsvStorable() ;
+      // var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData ;
+      // var conduitsModelData = csvStorable.ConduitsModelData ;
+      // var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
+      // var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
+      // var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
+      // var hiroiSetCdMasterNormalModelData = csvStorable.HiroiSetCdMasterNormalModelData ;
+      // var hiroiSetCdMasterEcoModelData = csvStorable.HiroiSetCdMasterEcoModelData ;
+      // var ceedStorable = uiDocument.Document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      // var detailTableModelsData = uiDocument.Document.GetDetailTableStorable().DetailTableModelData ;
+      // var detailTableModels = new List<ObservableCollection<DetailTableModel>>() ;
+      // var detailSymbolStorable = uiDocument.Document.GetAllStorables<DetailSymbolStorable>().FirstOrDefault() ?? doc.GetDetailSymbolStorable() ;
+      // var cnsStorable = uiDocument.Document.GetCnsSettingStorable() ;
+      // var allConduits = new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( Conduit ) ).OfType<Conduit>().AsEnumerable() ;
+      // bool mixConstructionItems ;
+      // foreach ( var levelId in levelIds ) {
+      //   try {
+      //     var detailTableModelsByFloors = new ObservableCollection<DetailTableModel>() ;
+      //     var conduitsByFloors = allConduits.Where( x => x.ReferenceLevel.Id == levelId ).ToList() ;
+      //     var elementsByFloors = conduitsByFloors.Cast<Element>().ToList() ;
+      //     var pickedObjectIds = conduitsByFloors.Select( p => p.UniqueId ).ToList() ;
+      //     var detailSymbolModelsByDetailSymbolId = detailSymbolStorable.DetailSymbolModelData
+      //       .Where( x => pickedObjectIds.Contains( x.ConduitId ) ).OrderBy( x => x.DetailSymbol )
+      //       .ThenByDescending( x => x.DetailSymbolId ).ThenByDescending( x => x.IsParentSymbol ).GroupBy(
+      //         x => x.DetailSymbolId, ( key, p ) => new { DetailSymbolId = key, DetailSymbolModels = p.ToList() } ) ;
+      //     var detailSymbolIds = detailSymbolStorable.DetailSymbolModelData
+      //       .Where( x => pickedObjectIds.Contains( x.ConduitId ) ).Select( d => d.DetailSymbolId ).Distinct()
+      //       .ToHashSet() ;
+      //     mixConstructionItems = IsMixConstructionItems( detailTableModelsData, detailSymbolIds ) ;
+      //     foreach ( var detailSymbolModelByDetailSymbolId in detailSymbolModelsByDetailSymbolId ) {
+      //       var firstDetailSymbolModelByDetailSymbolId =
+      //         detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault() ;
+      //       var routeNames = detailSymbolModelByDetailSymbolId.DetailSymbolModels.Select( d => d.RouteName ).Distinct()
+      //         .ToList() ;
+      //       var parentRouteName = firstDetailSymbolModelByDetailSymbolId!.CountCableSamePosition == 1
+      //         ? firstDetailSymbolModelByDetailSymbolId.RouteName
+      //         : GetParentRouteName( doc, routeNames ) ;
+      //       if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
+      //         var parentDetailSymbolModel =
+      //           detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault(
+      //             d => d.RouteName == parentRouteName ) ;
+      //         // AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData,
+      //         //   hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData,
+      //         //   hiroiMasterModelData, conduitsModelData, wiresAndCablesModelData, detailTableModelsData,
+      //         //   detailTableModelsByFloors, elementsByFloors, parentDetailSymbolModel!, true, mixConstructionItems ) ;
+      //         // routeNames = routeNames.Where( n => n != parentRouteName ).OrderByDescending( n => n ).ToList() ;
+      //       }
+      //
+      //       foreach ( var childDetailSymbolModel in from routeName in routeNames
+      //                select detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d =>
+      //                  d.RouteName == routeName ) ) {
+      //         // AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData,
+      //         //   hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData,
+      //         //   hiroiMasterModelData, conduitsModelData, wiresAndCablesModelData, detailTableModelsData,
+      //         //   detailTableModelsByFloors, elementsByFloors, childDetailSymbolModel, false, mixConstructionItems ) ;
+      //       }
+      //     }
+      //
+      //     // SortDetailTableModel( ref detailTableModelsByFloors ) ;
+      //     // SetPlumbingData( conduitsModelData, ref detailTableModelsByFloors, defaultParentPlumbingType,
+      //       // mixConstructionItems ) ;
+      //     detailTableModels.Add( detailTableModelsByFloors ) ;
+      //   }
+      //   catch {
+      //     return Result.Cancelled ;
+      //   }
+      // }
+      //
+      // return doc.Transaction(
+      //   "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
+      //   {
+      //     foreach ( var detailTableModelsByFloors in detailTableModels ) {
+      //       if ( detailTableModelsByFloors.Count > 0 ) {
+      //         var levelName = detailTableModelsByFloors[ 0 ].Floor ;
+      //         CreateDetailTableSchedule( doc, detailTableModelsByFloors, levelName ) ;
+      //         SaveDetailTableData( detailTableModelsByFloors, doc ) ;
+      //       }
+      //     }
+      //
+      //     return Result.Succeeded ;
+      //   } ) ;
       return Result.Succeeded ;
     }
 
