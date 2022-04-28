@@ -155,6 +155,20 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
     
     /// <summary>
+    /// Get text note data from snoop DB.
+    /// </summary>
+    public static RegistrationOfBoardDataStorable GetRegistrationOfBoardDataStorable( this Document document )
+    {
+      try {
+        return RegistrationOfBoardDataStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( RegistrationOfBoardDataStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new RegistrationOfBoardDataStorable( document ) ;
+      }
+    }
+
+    
+    /// <summary>
     /// Get eco default setting from DB
     /// </summary>
     public static EcoSettingStorable GetEcoSettingStorable( this Document document )
