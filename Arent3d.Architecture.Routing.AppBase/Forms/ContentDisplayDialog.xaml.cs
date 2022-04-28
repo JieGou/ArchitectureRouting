@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Close() ;
     }
   }
-
+ 
   public abstract class DesignPickUpViewModel : PickUpViewModel
   {
     protected DesignPickUpViewModel( Document document ) : base( document )
