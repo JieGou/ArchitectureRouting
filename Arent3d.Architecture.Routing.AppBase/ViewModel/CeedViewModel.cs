@@ -324,7 +324,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return child ;
     }
 
-    private static DataGridCell? GetCell( DataGrid grid, DataGridRow row, int column )
+    public static DataGridCell? GetCell( DataGrid grid, DataGridRow row, int column )
     {
       var presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
 

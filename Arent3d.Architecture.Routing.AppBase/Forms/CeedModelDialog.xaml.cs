@@ -14,6 +14,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using DataGridCell = System.Windows.Controls.DataGridCell ;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs ;
 using MessageBox = System.Windows.MessageBox ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
@@ -122,7 +123,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels != null )
         LoadData( ceedViewModels ) ;
-      ChangeColor() ;
     }
 
     private void CmbCeedModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
@@ -139,14 +139,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       if ( e.Key == Key.Enter ) {
         SearchCeedModels() ;
-        ChangeColor() ;
       }
     }
 
     private void Button_Search( object sender, RoutedEventArgs e )
     {
       SearchCeedModels() ;
-      ChangeColor() ;
     }
 
     private void SearchCeedModels()
@@ -240,7 +238,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         CbShowOnlyUsingCode.Visibility = Visibility.Hidden ;
         CbShowOnlyUsingCode.IsChecked = false ;
         _isShowOnlyUsingCode = false ;
-        ChangeColor() ;
         try {
           using Transaction t = new( _document, "Save data" ) ;
           t.Start() ;
@@ -415,7 +412,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ceedModel.FloorPlanType = floorPlanType ;
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
     }
-
+    
     private void ChangeColor()
     {
       for ( int i = 0 ; i < DtGrid.Items.Count ; i++ ) {
@@ -452,6 +449,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           row.Background = Brushes.Orange ;
         }
       }
+    }
+    
+    private void UnChangeColor()
+    {
+      for ( int i = 0 ; i < DtGrid.Items.Count ; i++ ) {
+        var row = CeedViewModel.GetRow( DtGrid, i ) ;
+        for ( int j = 0 ; j < 7 ; j++ ) {
+          CeedViewModel.GetCell( DtGrid,row, j )?.ClearValue( DataGridCell.BackgroundProperty );
+        }
+        row.ClearValue( DataGridRow.BackgroundProperty );
+      }
+    }
+    
+    private void ShowDiff_Checked( object sender, RoutedEventArgs e )
+    {
+      ChangeColor() ;
+      CbShowDiff.IsChecked = true;
+    }
+
+    private void ShowDiff_UnChecked( object sender, RoutedEventArgs e )
+    {
+      UnChangeColor() ;
+      CbShowDiff.IsChecked = false ;
     }
   }
 }

@@ -45,7 +45,8 @@
 
       <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="False" Content="使用するものだけ表示" Width="130" HorizontalAlignment="Left" Margin="230, 10, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden" />
       <CheckBox Grid.Row="1" Name="CbShowCeedModelNumber" IsChecked="False" Content="CeeD型番の表示" Width="120" HorizontalAlignment="Right" Margin="0, 10, 0, 0" Checked="ShowCeedModelNumberColumn_Checked" Unchecked="ShowCeedModelNumberColumn_UnChecked" />
-      
+      <CheckBox Grid.Row="1" Name="CbShowDiff"  IsChecked="False" Content="差分表示" Width="80" HorizontalAlignment="Right" Margin="0, 10, 130, 0" Checked="ShowDiff_Checked" Unchecked="ShowDiff_UnChecked" />
+     
       <Button Grid.Row="1" x:Name="BtnReplaceSymbol"
               Content="モデル置き換え"
               Click="Button_ReplaceSymbol"
