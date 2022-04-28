@@ -2,6 +2,7 @@
 using System.Linq ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -49,14 +50,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       if ( string.IsNullOrEmpty( pickedText ) ) 
         return Result.Cancelled ;
-      
-      var dialog = new CeedDetailInformationView( document, pickedText ) ;
-      dialog.ShowDialog() ;
-      if ( dialog.DialogResult ?? false ) {
-        return Result.Succeeded ;
-      }
 
-      return Result.Cancelled ;
+      var dataContext = new CeedDetailInformationViewModel( document, pickedText ) ;
+      var ceedDetailInformationView = new CeedDetailInformationView { DataContext = dataContext};
+      ceedDetailInformationView.ShowDialog() ;
+      
+      return dataContext.DialogResult ? Result.Succeeded : Result.Cancelled ;
     }
 
     private class TextNotePickFilter : ISelectionFilter
