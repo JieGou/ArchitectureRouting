@@ -88,18 +88,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       get { return _constructionClassificationSelected ??= HiroiSetCdMasterModels.Find( x => x.SetCode == SetCode )?.ConstructionClassification ?? string.Empty ; }
       set
       {
-        var result = HiroiSetCdMasterModels.Find( x => x.SetCode == value.ToUpper() ) ;
+        var result = HiroiSetCdMasterModels.Find( x => x.SetCode == SetCode.ToUpper() ) ;
         if ( null == result )
           return ;
 
-        if ( result.ConstructionClassification == _constructionClassificationSelected )
+        if ( result.ConstructionClassification.Equals(value) )
           return ;
-
-        _constructionClassificationSelected = result.ConstructionClassification ;
-        OnPropertyChanged() ;
 
         result.ConstructionClassification = value ;
         CsvStorable.HiroiSetCdMasterNormalModelData = HiroiSetCdMasterModels ;
+        
+        _constructionClassificationSelected = result.ConstructionClassification ;
+        OnPropertyChanged() ;
 
         try {
           using var transaction = new Transaction( _document, "Update Construction Classification" ) ;
