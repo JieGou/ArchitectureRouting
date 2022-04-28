@@ -331,13 +331,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       UpdateDataGridAndRemoveSelectedRow() ;
     }
     
-    private void WireBookLostKeyboardFocus( object sender, KeyboardFocusChangedEventArgs e )
+    private void WireBookLostFocus( object sender, RoutedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
       var wireBook = comboBox.Text ;
       if( string.IsNullOrEmpty( wireBook ) ) return ;
       var isNumberValue = int.TryParse( wireBook, out var selectedWireBookInt ) ;
-      if ( ! isNumberValue || ( isNumberValue && selectedWireBookInt < 1 ) ) return ;
+      if ( ! isNumberValue || ( isNumberValue && selectedWireBookInt < 1 ) ) {
+        comboBox.Text = string.Empty ;
+        return ;
+      }
 
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
         DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.WireBook, wireBook!, new List<DetailTableModel.ComboboxItemType>() ) ;
@@ -383,6 +386,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
         DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.NumberOfGrounds, selectedNumberOfGrounds.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
+
+      UpdateDataGridAndRemoveSelectedRow() ;
+    }
+    
+    private void NumberOfGroundsLostFocus( object sender, RoutedEventArgs e )
+    {
+      if ( sender is not ComboBox comboBox ) return ;
+      var numberOfGrounds = comboBox.Text ;
+      if( string.IsNullOrEmpty( numberOfGrounds ) ) return ;
+      var isNumberValue = int.TryParse( numberOfGrounds, out var numberOfGroundsInt ) ;
+      if ( ! isNumberValue || ( isNumberValue && numberOfGroundsInt < 1 ) ) {
+        comboBox.Text = string.Empty ;
+        return ;
+      }
+      
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.NumberOfGrounds, numberOfGrounds!, new List<DetailTableModel.ComboboxItemType>() ) ;
       }
 
       UpdateDataGridAndRemoveSelectedRow() ;
@@ -554,15 +575,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           var detailTableRowsGroupByRemark = detailTableRowWithSameWiringType.GroupBy( d => d.Remark ).ToDictionary( g => g.Key, g => g.ToList() ) ;
           List<string> newRemark = new() ;
           var wireBook = 0 ;
+          var numberOfGrounds = 0 ;
           foreach ( var (remark, detailTableRowsWithSameRemark) in detailTableRowsGroupByRemark ) {
             var remarkArr = remark.Split( multiplicationSymbol ) ;
             newRemark.Add( detailTableRowsWithSameRemark.Count == 1 ? remark : remark + multiplicationSymbol + detailTableRowsWithSameRemark.Count ) ;
             wireBook += remarkArr.Length > 1 ? detailTableRowsWithSameRemark.Count * int.Parse( remarkArr.ElementAt( 1 ) ) : detailTableRowsWithSameRemark.Count ;
+            foreach ( var detailTableRowWithSameRemark in detailTableRowsWithSameRemark ) {
+              if ( ! string.IsNullOrEmpty( detailTableRowWithSameRemark.NumberOfGrounds ) ) {
+                numberOfGrounds += int.Parse( detailTableRowWithSameRemark.NumberOfGrounds ) ;
+              }
+            }
           }
 
           var newDetailTableRow = new DetailTableModel( detailTableRow.CalculationExclusion, detailTableRow.Floor, detailTableRow.CeedCode, detailTableRow.DetailSymbol, 
             detailTableRow.DetailSymbolId, detailTableRow.WireType, detailTableRow.WireSize, detailTableRow.WireStrip, wireBook.ToString(), detailTableRow.EarthType, 
-            detailTableRow.EarthSize, detailTableRow.NumberOfGrounds, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
+            detailTableRow.EarthSize, numberOfGrounds > 0 ? numberOfGrounds.ToString() : string.Empty, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
             detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
             detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
             detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsMixConstructionItems,
