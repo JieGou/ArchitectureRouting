@@ -48,7 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       remove => CommandManager.RequerySuggested -= value ;
     }
   }
-  
+
   public class RelayCommand : RelayCommand<object>
   {
     public RelayCommand( Action execute ) : base( _ => execute() )
