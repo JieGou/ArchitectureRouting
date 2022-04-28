@@ -53,10 +53,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       Conduit,
       ConduitFitting
     }
-    
+
     public List<PickUpModel> PickUpModels { get ; set ; } = new List<PickUpModel>() ;
 
-    #endregion 
+    #endregion
 
     #region Constructor
 
@@ -102,7 +102,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     #endregion
- 
+
     #region Bussiness Function
 
     private List<PickUpModel> GetPickUpData()
@@ -332,14 +332,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var toConnector = GetToConnectorOfRoute( allConnectors, routeName ) ;
       if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
 
-      //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
+      //Case connector is Power type, check ceedCode of toConnector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
-        var fromConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
-        if ( fromConnector == null || fromConnector.GroupId == ElementId.InvalidElementId ) return false ;
-
-        fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfFromConnector ) ;
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
-        var registrationOfBoardDataModel = _registrationOfBoardDataModels.FirstOrDefault( x => x.AutoControlPanel == ceedCodeOfFromConnector && x.SignalDestination == ceedCodeOfToConnector ) ;
+        var registrationOfBoardDataModel = _registrationOfBoardDataModels.FirstOrDefault( x => x.SignalDestination == ceedCodeOfToConnector ) ;
         if ( registrationOfBoardDataModel == null )
           return false ;
 
