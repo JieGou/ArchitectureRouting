@@ -20,7 +20,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   public class PickUpViewModel : NotifyPropertyChanged
   {
     #region Variants
-
     private const string DefaultConstructionItem = "未設定" ;
     private readonly Document _document ;
     private List<PickUpModel> _pickUpModels ;
@@ -102,9 +101,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     #endregion
-
+    
     #region Bussiness Function
-
     private List<PickUpModel> GetPickUpData()
     {
       List<PickUpModel> pickUpModels = new List<PickUpModel>() ;
@@ -112,27 +110,31 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<int> pickUpNumbers = new List<int>() ;
       List<string> directionZ = new List<string>() ;
       List<string> constructionItems = new List<string>() ;
+      List<string?> isEcoModes = new List<string?>() ;
 
       List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
       foreach ( var connector in allConnector ) {
         connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
+        connector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
         constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem! ) ;
+        isEcoModes.Add( isEcoMode ) ;
       }
 
-      SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, null ) ;
+      SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null ) ;
       var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       GetToConnectorsOfConduit( connectors, pickUpModels ) ;
       GetToConnectorsOfCables( connectors, pickUpModels ) ;
       return pickUpModels ;
     }
 
-    private void SetPickUpModels( List<PickUpModel> pickUpModels, List<Element> elements, ProductType productType, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, List<string> constructionItemList, Dictionary<string, string>? dictMaterialCode )
+    private void SetPickUpModels( List<PickUpModel> pickUpModels, List<Element> elements, ProductType productType, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, List<string> constructionItemList, List<string?> isEcoModeList, Dictionary<string, string>? dictMaterialCode )
     {
       var index = 0 ;
       foreach ( var connector in elements ) {
         if ( connector.LevelId == ElementId.InvalidElementId ) continue ;
         var element = _document.GetElement( connector.Id ) ;
-        string isEcoMode = element.LookupParameter( "IsEcoMode" ).AsString() ;
+        connector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? connectorIsEcoMode ) ;
+        var isEcoMode = productType == ProductType.Conduit ? isEcoModeList[ index ] : connectorIsEcoMode ;
         var item = string.Empty ;
         var floor = _document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ;
         var constructionItems = productType != ProductType.Cable ? constructionItemList[ index ] : DefaultConstructionItem ;
@@ -168,6 +170,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             supplement = ceedModel.Name ;
 
             var ceedModelNumber = string.Empty ;
+            // TODO: hiroisetcdmaster_normal.csvとhiroisetcdmaster_eco.csvの中身が全く一緒なので、hiroiSetCdMasterModelsに対してエコ/ノーマルモードの判定が必要ない
             var hiroiSetCdMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? _hiroiSetCdMasterEcoModels : _hiroiSetCdMasterNormalModels ;
             if ( hiroiSetCdMasterModels.Any() ) {
               var hiroiSetCdMasterModel = hiroiSetCdMasterModels.FirstOrDefault( h => h.SetCode == ceedSetCode ) ;
@@ -187,10 +190,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                     classification, pickUpNumber, direction ) ;
                 }
               }
-            }
+            } 
           }
         }
-
+        
         //Set pickupModel in case productType is Conduit and connector is Power
         if ( productType == ProductType.Conduit && dictMaterialCode != null && dictMaterialCode.Any() && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
           modelNumber = "" ;
@@ -233,7 +236,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
     }
-
+    
     private Dictionary<string, string> GetMaterialCodes( HiroiSetMasterModel hiroiSetMasterNormalModel )
     {
       Dictionary<string, string> materialCodes = new Dictionary<string, string>() ;
@@ -253,7 +256,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
       return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( '-' ).ToList() : new List<string>() ;
     }
-
+  
     private void GetToConnectorsOfConduit( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
     {
       _pickUpNumber = 1 ;
@@ -263,10 +266,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<int> pickUpNumbers = new List<int>() ;
       List<string> directionZ = new List<string>() ;
       List<string> constructionItems = new List<string>() ;
+      List<string?> isEcoModes = new List<string?>() ;
       Dictionary<string, string> dictMaterialCode = new Dictionary<string, string>() ;
 
       var conduits = _document.GetAllElements<Conduit>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
       foreach ( var conduit in conduits ) {
+        conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
+        isEcoModes.Add( isEcoMode ) ;
         var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() ;
         var constructionItem = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.ConstructionItem".GetDocumentStringByKeyOrDefault( _document, "Construction Item" ) ).AsString() ;
         AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem, dictMaterialCode ) ;
@@ -274,12 +280,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       var conduitFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
       foreach ( var conduitFitting in conduitFittings ) {
+        conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
+        isEcoModes.Add( isEcoMode ) ;
         var quantity = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( _document, "電線管長さ" ) ).AsDouble() ;
         var constructionItem = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.ConstructionItem".GetDocumentStringByKeyOrDefault( _document, "Construction Item" ) ).AsString() ;
         AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem, dictMaterialCode ) ;
       }
 
-      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Conduit, quantities, pickUpNumbers, directionZ, constructionItems, dictMaterialCode ) ;
+      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Conduit, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, dictMaterialCode ) ;
     }
 
     private void GetToConnectorsOfCables( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
@@ -289,6 +297,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<int> pickUpNumbers = new List<int>() ;
       List<string> directionZ = new List<string>() ;
       List<string> constructionItems = new List<string>() ;
+      List<string?> isEcoModes = new List<string?>() ;
 
       var cables = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.CableTrays ).Distinct().ToList() ;
       foreach ( var cable in cables ) {
@@ -301,11 +310,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         quantities.Add( Math.Round( quantity, 2 ) ) ;
       }
 
-      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Cable, quantities, pickUpNumbers, directionZ, constructionItems, null ) ;
+      SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Cable, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null ) ;
     }
 
-    private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems,
-      string constructionItem, Dictionary<string, string> dictMaterialCode )
+    private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems, string constructionItem, Dictionary<string, string> dictMaterialCode )
     {
       var routeName = conduit.GetRouteName() ;
       if ( string.IsNullOrEmpty( routeName ) ) return ;
@@ -327,12 +335,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem ) ;
     }
 
-    private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers, Dictionary<string, string> dictMaterialCode )
+    private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers, Dictionary<string, string> dictMaterialCode  )
     {
       var toConnector = GetToConnectorOfRoute( allConnectors, routeName ) ;
       if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
-
-      //Case connector is Power type, check ceedCode of toConnector existed in _registrationOfBoardDataModels then get material 
+      
+      //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
         var registrationOfBoardDataModel = _registrationOfBoardDataModels.FirstOrDefault( x => x.SignalDestination == ceedCodeOfToConnector ) ;
@@ -345,8 +353,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( registrationOfBoardDataModel.MaterialCode2.Length > 2 && ! dictMaterialCode.ContainsKey( registrationOfBoardDataModel.MaterialCode2.Substring( 2 ) ) )
           dictMaterialCode.Add( registrationOfBoardDataModel.MaterialCode2.Substring( 2 ), registrationOfBoardDataModel.Kind2 ) ;
       }
-
-
+      
       pickUpConnectors.Add( toConnector ) ;
       if ( ! _pickUpNumbers.ContainsValue( routeName ) ) {
         _pickUpNumbers.Add( _pickUpNumber, routeName ) ;
@@ -409,9 +416,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var sumQuantity = pickUpModelByProductCode.PickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
           var pickUpModel = pickUpModelByProductCode.PickUpModels.FirstOrDefault() ;
           if ( pickUpModel == null ) continue ;
-          PickUpModel newPickUpModel = new PickUpModel( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification,
-            pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction,
-            pickUpModel.ProductCode ) ;
+          PickUpModel newPickUpModel = new PickUpModel( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction, pickUpModel.ProductCode ) ;
           pickUpModels.Add( newPickUpModel ) ;
         }
       }
@@ -421,33 +426,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private Element? GetToConnectorOfRoute( IReadOnlyCollection<Element> allConnectors, string routeName )
     {
-      return GetConnectorOfRoute( allConnectors, routeName, false ) ;
-    }
-
-    /// <summary>
-    /// Get toConnector or fromConnector base routName
-    /// </summary>
-    /// <param name="allConnectors"></param>
-    /// <param name="routeName"></param>
-    /// <param name="isFrom"></param>
-    /// <returns></returns>
-    private Element? GetConnectorOfRoute( IReadOnlyCollection<Element> allConnectors, string routeName, bool isFrom )
-    {
       var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
       foreach ( var conduit in conduitsOfRoute ) {
-        var endPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
-        if ( ! endPoint.Any() ) continue ;
-        var endPointKey = endPoint.First().Key ;
-        var elementId = endPointKey.GetElementUniqueId() ;
-        if ( string.IsNullOrEmpty( elementId ) ) continue ;
-        var connector = allConnectors.FirstOrDefault( c => c.UniqueId == elementId ) ;
-        if ( connector == null || connector.IsTerminatePoint() || connector.IsPassPoint() ) continue ;
-        return connector ;
+        var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
+        if ( ! toEndPoint.Any() ) continue ;
+        var toEndPointKey = toEndPoint.First().Key ;
+        var toElementId = toEndPointKey.GetElementUniqueId() ;
+        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
+        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
+        return toConnector ;
       }
 
       return null ;
     }
-
     #endregion
 
     #region Command Method
