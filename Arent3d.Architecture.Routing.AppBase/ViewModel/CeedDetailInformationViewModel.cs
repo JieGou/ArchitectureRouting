@@ -17,10 +17,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class CeedDetailInformationViewModel : NotifyPropertyChanged
   {
+    
     private readonly Document _document ;
 
     private CeedDetailInformationModel? _ceedDetailInformationModel ;
-
     public CeedDetailInformationModel CeedDetailInformationModel
     {
       get { return _ceedDetailInformationModel ??= new CeedDetailInformationModel( new ObservableCollection<QueryData>(), string.Empty ) ; }
@@ -47,7 +47,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public List<HiroiSetCdMasterModel> HiroiSetCdMasterModels => _hiroiSetCdMasterModels ??= CsvStorable.HiroiSetCdMasterNormalModelData ;
 
     private string? _setCode ;
-
     public string SetCode
     {
       get => _setCode ??= string.Empty ;
@@ -61,7 +60,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     private ObservableCollection<string>? _constructionClassifications ;
-
     public ObservableCollection<string> ConstructionClassifications
     {
       get
@@ -82,7 +80,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     private string? _constructionClassificationSelected ;
-
     public string ConstructionClassificationSelected
     {
       get { return _constructionClassificationSelected ??= HiroiSetCdMasterModels.Find( x => x.SetCode == SetCode )?.ConstructionClassification ?? string.Empty ; }
@@ -258,5 +255,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     #endregion
+    
   }
 }
