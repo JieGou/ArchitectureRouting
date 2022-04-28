@@ -155,7 +155,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void BtnReadCtlFile_Click( object sender, RoutedEventArgs e )
     {
-      DetailTableViewModel.ReadCtlFile( _detailTableViewModel, DetailTableViewModelSummary ) ;
+      DetailTableViewModel.ReadCtlFile( _conduitsModelData, _wiresAndCablesModelData, _detailTableViewModel, DetailTableViewModelSummary ) ;
       UpdateReferenceDetailTableModels() ;
     }
     

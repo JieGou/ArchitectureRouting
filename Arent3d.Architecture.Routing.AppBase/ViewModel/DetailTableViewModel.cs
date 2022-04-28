@@ -39,6 +39,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public bool IsCreateDetailTableOnFloorPlanView { get ; set ; }
     
     public  bool IsCancelCreateDetailTable { get; set; }
+    
+    public bool IsAddReference { get ; set ; }
 
     public ICommand SaveDetailTableCommand { get; }
 
@@ -67,6 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _detailTableModels = detailTableModels ;
       ReferenceDetailTableModels = referenceDetailTableModels ;
       IsCreateDetailTableOnFloorPlanView = false ;
+      IsAddReference = false ;
 
       SaveDetailTableCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
         ( p ) => { SaveDetailTable() ; } // Execute()
@@ -374,9 +377,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var detailTableRows = detailTableViewModel.DetailTableModels.Where( d => ! deletedDetailTableRows.Contains( d ) ) ;
       detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( detailTableRows ) ;
       
-      foreach ( var selectedItem in selectedDetailTableModelsSummary ) {
-        detailTableViewModelSummary.DetailTableModels.Remove( selectedItem ) ;
-      }
+      var detailTableRowsSummary = detailTableViewModelSummary.DetailTableModels.Where( d => ! selectedDetailTableModelsSummary.Contains( d ) ) ;
+      detailTableViewModelSummary.DetailTableModels = new ObservableCollection<DetailTableModel>( detailTableRowsSummary ) ;
     }
 
     public static void PasteDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel copyDetailTableRow, DetailTableModel pasteDetailTableRow, DetailTableViewModel detailTableViewModelSummary, DetailTableModel pasteDetailTableRowSummary )
@@ -746,7 +748,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return detailTableRowsWithSameDetailSymbolId ;
     }
 
-    public static void ReadCtlFile( DetailTableViewModel detailTableViewModel, DetailTableViewModel detailTableViewModelSummary )
+    public static void ReadCtlFile( List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData, DetailTableViewModel detailTableViewModel, DetailTableViewModel detailTableViewModelSummary )
     {
       MessageBox.Show( "Please select ctl file.", "Message" ) ;
       OpenFileDialog openFileDialog = new() { Filter = "Ctl files (*.ctl)|*.ctl", Multiselect = false } ;
@@ -757,6 +759,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var referenceDetailTableModels = ExcelToModelConverter.GetReferenceDetailTableModels( filePath ) ;
+      GetValuesForParametersOfDetailTableModels( referenceDetailTableModels, conduitsModelData, wiresAndCablesModelData ) ;
       detailTableViewModelSummary.ReferenceDetailTableModels = new ObservableCollection<DetailTableModel>( referenceDetailTableModels ) ;
       List<DetailTableModel> unGroupDetailTableModels = new() ;
       foreach ( var detailTableRow in referenceDetailTableModels ) {
@@ -833,11 +836,43 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, remarkRow, 
         detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, false, 
         true, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, true, detailTableRow.IsMixConstructionItems, string.Empty,
-        detailTableRow.IsReadOnlyParameters, detailTableRow.IsReadOnlyWireSizeAndWireStrip, detailTableRow.IsReadOnlyPlumbingSize, detailTableRow.WireSizes, detailTableRow.WireStrips, 
+        detailTableRow.IsReadOnlyParameters, detailTableRow.IsReadOnlyWireSizeAndWireStrip, true, detailTableRow.WireSizes, detailTableRow.WireStrips, 
         detailTableRow.EarthSizes, detailTableRow.PlumbingSizes, detailTableRow.PlumbingItemTypes) ;
       return newDetailTableRow ;
     }
-    
+
+    private static void GetValuesForParametersOfDetailTableModels( List<DetailTableModel> detailTableModels, List<ConduitsModel> conduitsModelData, List<WiresAndCablesModel> wiresAndCablesModelData )
+    {
+      var detailTableRowsGroupByDetailSymbolId = detailTableModels.GroupBy( d => d.DetailSymbolId ).Select( d => d.ToList() ) ;
+      foreach ( var detailTableRowsWithSameDetailSymbolId in detailTableRowsGroupByDetailSymbolId ) {
+        var parentDetailTableRow = detailTableRowsWithSameDetailSymbolId.FirstOrDefault( d => d.IsParentRoute ) ;
+        var plumbingType = parentDetailTableRow == null ? DefaultParentPlumbingType : parentDetailTableRow.PlumbingType ;
+        var plumbingSizesOfPlumbingType = plumbingType == NoPlumping ? new List<string>() { NoPlumbingSize } 
+            : conduitsModelData.Where( c => c.PipingType == plumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+        var plumbingSizes = ( from plumbingSize in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSize, plumbingSize ) ).ToList() ;
+        var detailTableRowsGroupByPlumbingIdentityInfo = detailTableRowsWithSameDetailSymbolId.GroupBy( d => d.PlumbingIdentityInfo ).Select( d => d.ToList() ) ;
+        foreach ( var detailTableRowsWithSamePlumbing in detailTableRowsGroupByPlumbingIdentityInfo ) {
+          var constructionItems = detailTableRowsWithSamePlumbing.Select( d => d.ConstructionItems ).Distinct().ToList() ;
+          var plumbingItemTypes = constructionItems.Any() ? ( from plumbingItem in constructionItems select new DetailTableModel.ComboboxItemType( plumbingItem, plumbingItem ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
+          foreach ( var detailTableRow in detailTableRowsWithSamePlumbing ) {
+            var wireSizesOfWireType = wiresAndCablesModelData.Where( w => w.WireType == detailTableRow.WireType ).Select( w => w.DiameterOrNominal ).Distinct().ToList() ;
+            var wireSizes = wireSizesOfWireType.Any() ? ( from wireSizeType in wireSizesOfWireType select new DetailTableModel.ComboboxItemType( wireSizeType, wireSizeType ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
+              
+            var wireStripsOfWireType = wiresAndCablesModelData.Where( w => w.WireType == detailTableRow.WireType && w.DiameterOrNominal == detailTableRow.WireSize ).Select( w => w.NumberOfHeartsOrLogarithm == "0" ? "-" : w.NumberOfHeartsOrLogarithm + w.COrP ).Distinct().ToList() ;
+            var wireStrips = wireStripsOfWireType.Any() ? ( from wireStripType in wireStripsOfWireType select new DetailTableModel.ComboboxItemType( wireStripType, wireStripType ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
+            
+            detailTableRow.WireSizes = wireSizes ;
+            detailTableRow.WireStrips = wireStrips ;
+            detailTableRow.PlumbingSizes = plumbingSizes ;
+            detailTableRow.PlumbingItemTypes = detailTableRow.IsMixConstructionItems ? plumbingItemTypes : new List<DetailTableModel.ComboboxItemType> { new( detailTableRow.ConstructionItems, detailTableRow.ConstructionItems ) } ;
+            if ( string.IsNullOrEmpty( detailTableRow.EarthType ) ) continue ;
+            var earthSizes = wiresAndCablesModelData.Where( c => c.WireType == detailTableRow.EarthType ).Select( c => c.DiameterOrNominal ).ToList() ;
+            detailTableRow.EarthSizes = earthSizes.Any() ? ( from earthSize in earthSizes select new DetailTableModel.ComboboxItemType( earthSize, earthSize ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
+          }
+        }
+      }
+    }
+
     public static void AddReferenceDetailTableRows( DetailTableViewModel detailTableViewModel, DetailTableViewModel detailTableViewModelSummary, List<DetailTableModel> selectedDetailTableModels )
     {
       var index = DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
