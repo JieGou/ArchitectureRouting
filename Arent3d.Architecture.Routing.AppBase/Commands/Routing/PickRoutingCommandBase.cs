@@ -18,6 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class PickRoutingCommandBase : RoutingCommandBase<PickRoutingCommandBase.PickState>
   {
     public record PickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
+
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
     protected abstract AddInType GetAddInType() ;
@@ -26,7 +27,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected abstract DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo ) ;
     protected abstract MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType ) ;
+
     protected abstract (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom ) ;
+
     protected abstract string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) ;
 
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
@@ -96,6 +99,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return sv ;
     }
+
     private static RoutePropertyDialog ShowDialog( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, addInType, fromLevelId, toLevelId ) ;
@@ -108,13 +112,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
       var (fromPickResult, toPickResult, routeProperty, classificationInfo) = pickState ;
-      
+
       RouteGenerator.CorrectEnvelopes( document ) ;
       ChangeFromConnectorAndToConnectorColor( document, fromPickResult, toPickResult ) ;
 
       if ( null != fromPickResult.SubRoute ) {
         return CreateNewSegmentListForRoutePick( fromPickResult, toPickResult, false, routeProperty, classificationInfo ) ;
       }
+
       if ( null != toPickResult.SubRoute ) {
         return CreateNewSegmentListForRoutePick( toPickResult, fromPickResult, true, routeProperty, classificationInfo ) ;
       }
@@ -202,6 +207,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
         }
       }
+
       if ( null != otherSegments2 ) {
         foreach ( var tuple in otherSegments2 ) {
           yield return tuple ;
@@ -219,6 +225,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           affectedRouteSet.Add( route ) ;
           affectedRouteSet.UnionWith( route.CollectAllDescendantBranches() ) ;
         }
+
         affectedRouteSet.ExceptWith( changedRoutes ) ;
 
         foreach ( var tuple in affectedRouteSet.ToSegmentsWithName() ) {
@@ -295,7 +302,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
       if ( GetAddInType() == AddInType.Electrical )
-        ElectricalCommandUtil.SetConstructionItemForCable( document, executeResultValue ) ;
+        ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }
 
     private static void ChangeFromConnectorAndToConnectorColor( Document document, ConnectorPicker.IPickResult fromPickResult, ConnectorPicker.IPickResult toPickResult )
@@ -304,7 +311,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var fromConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault( c => c.Id == fromPickResult.PickedElement.Id ) ;
       if ( fromConnector != null )
         connectors.Add( fromConnector ) ;
-      
+
       var toConnector = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).FirstOrDefault( c => c.Id == toPickResult.PickedElement.Id ) ;
       if ( toConnector != null )
         connectors.Add( toConnector ) ;
