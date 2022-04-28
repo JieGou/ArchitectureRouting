@@ -14,6 +14,7 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
@@ -30,7 +31,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public const string DwgExtension = ".dwg" ;
     public const string PngExtension = ".png" ;
-    public readonly string[] PatternSearchings = { $"*{DwgExtension}", $"*{PngExtension}" } ;
+    public const string PdfExtension = ".pdf" ;
+    public const string TifExtension = ".tif" ;
+    public readonly string[] PatternSearchings = { $"*{DwgExtension}", $"*{PngExtension}", $"*{PdfExtension}", $"*{TifExtension}" } ;
 
     private ObservableCollection<FolderModel>? _folders ;
 
@@ -287,7 +290,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         case DwgExtension :
           ImportDwgFile( _previewSelected ) ;
           break ;
-        case PngExtension :
+        case PngExtension or PdfExtension or TifExtension:
           ImportImageFile( _previewSelected ) ;
           break ;
       }
@@ -310,7 +313,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         ElementTransformUtils.MoveElement( _uiDocument.Document, importInstance.Id, pickPoint - centerPoint ) ;
       }
       else {
-        var options = new DWGImportOptions { ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default } ;
+        var options = new DWGImportOptions { ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default, CustomScale = _uiDocument.ActiveView.Scale } ;
         var result = _uiDocument.Document.Import( previewFile.Path, options, _uiDocument.ActiveView, out _ ) ;
         if ( ! result ) {
           System.Windows.MessageBox.Show( "図面ファイルが無効です。", "Arent Notification" ) ;

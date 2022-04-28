@@ -1,4 +1,5 @@
-﻿using Arent3d.Architecture.Routing.AppBase ;
+﻿using System.Collections.Generic ;
+using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
@@ -41,6 +42,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType()
     {
       return MEPSystemClassificationInfo.CableTrayConduit ;
+    }
+
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    {
+      ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }
   }
 }
