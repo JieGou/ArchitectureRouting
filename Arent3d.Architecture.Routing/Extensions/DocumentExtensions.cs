@@ -153,5 +153,19 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new BorderTextNoteStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get eco default setting from DB
+    /// </summary>
+    public static EcoSettingStorable GetEcoSettingStorable( this Document document )
+    {
+      try {
+        return EcoSettingStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( EcoSettingStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new EcoSettingStorable( document ) ;
+      }
+    }
   }
 }
