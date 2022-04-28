@@ -46,11 +46,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<HiroiSetCdMasterModel>? _hiroiSetCdMasterModels ;
     public List<HiroiSetCdMasterModel> HiroiSetCdMasterModels => _hiroiSetCdMasterModels ??= CsvStorable.HiroiSetCdMasterNormalModelData ;
 
-    private string _setCode ;
+    private string? _setCode ;
 
     public string SetCode
     {
-      get => _setCode ;
+      get => _setCode ??= string.Empty ;
       set
       {
         _setCode = value.Trim() ?? string.Empty ;
@@ -118,7 +118,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public CeedDetailInformationViewModel( Document document, string pickedText )
     {
       _document = document ;
-      _setCode = pickedText ;
+      SetCode = pickedText ;
     }
 
     #region Commands
