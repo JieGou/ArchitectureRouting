@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="明細表作成" Height="980" Width="1110" ResizeMode="NoResize">
+        Title="明細表作成" Height="980" Width="1150" ResizeMode="NoResize">
     <Grid>
         <Grid VerticalAlignment="Top"  HorizontalAlignment="Right">
             <Grid.RowDefinitions>
@@ -28,10 +28,10 @@
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
             </Grid.RowDefinitions>
-            <Button Grid.Row="0"  Width="100" Content="行追加" Margin="5,25,5,5" Height="25" />
-            <Button Grid.Row="1"  Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Click="BtnDeleteLine_Click"/>
-            <Button Grid.Row="2"  Width="100" Content="コピー" Margin="5,5,5,5" Height="25" Click="BtnCopyLine_Click"/>
-            <Button Grid.Row="3"  Width="100" Content="挿入貼付" Margin="5,5,5,5" Height="25" Click="BtnPasteLine_Click"/>
+            <Button Grid.Row="0"  Width="100" Content="行追加" Margin="5,25,5,5" Height="25" Click="BtnAdd_Click" />
+            <Button Grid.Row="1"  Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Click="BtnDeleteLine_Click" />
+            <Button Grid.Row="2"  Width="100" Content="コピー" Margin="5,5,5,5" Height="25" Click="BtnCopyLine_Click" />
+            <Button Grid.Row="3"  Width="100" Content="挿入貼付" Margin="5,5,5,5" Height="25" Click="BtnPasteLine_Click" />
             <Button Grid.Row="4"  Width="100" Margin="5,5,5,5" Height="45" Click="BtnPlumbingSummary_Click">
                 <Button.Content>
                     <StackPanel Orientation="Vertical">
@@ -48,9 +48,9 @@
                     </StackPanel>
                 </Button.Content>
             </Button>
-            <Button Grid.Row="6"  Width="100" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="7"  Width="100" Content="上へ" Margin="5,5,5,5" Height="25" />
-            <Button Grid.Row="8"  Width="100" Content="下へ" Margin="5,5,5,5" Height="25" />
+            <Button Grid.Row="6"  Width="100" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" Click="BtnSplitPlumbing_Click" />
+            <Button Grid.Row="7"  Width="100" Content="上へ" Margin="5,5,5,5" Height="25" Click="BtnMoveUp_Click" />
+            <Button Grid.Row="8"  Width="100" Content="下へ" Margin="5,5,5,5" Height="25" Click="BtnMoveDown_Click" />
             <Button Grid.Row="9"  Width="100" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnSelectAll_Click" />
             <Label Grid.Row="10" Content="参照情報" Margin="0,100,5,0"/>
             <Button Grid.Row="11"  Width="100" Content="▼" Margin="5,0,5,5" Height="25" />
@@ -70,7 +70,7 @@
             <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Width="950" Height="390" RowHeight="25" Margin="20, 70" ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
+        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Width="1000" Height="390" RowHeight="25" Margin="20, 70" ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtGrid_SelectionChanged" >
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
@@ -97,16 +97,285 @@
             </DataGrid.CellStyle>
 
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="計算除外" Width="30" Binding="{Binding CalculationExclusion}" CanUserSort="False" />
-                <DataGridTextColumn Header="フロア" Width="45" Binding="{Binding Floor, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" />
+                <DataGridCheckBoxColumn Header="計算除外" Width="30" Binding="{Binding CalculationExclusion}" CanUserSort="False"/>
+                
+                <DataGridComboBoxColumn Header="フロア" Width="45"
+                                        SelectedValueBinding="{Binding Floor}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.Levels, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding Floor, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.Levels, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="FloorSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+                
                 <DataGridTextColumn Header="明細記号" Width="45" Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電線種類" Width="70" Binding="{Binding WireType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電線サイズ" Width="45" Binding="{Binding WireSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電線条数" Width="45" Binding="{Binding WireStrip, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="電線本数" Width="45" Binding="{Binding WireBook, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="アース種類" Width="15" Binding="{Binding EarthType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="アースサイズ" Width="15" Binding="{Binding EarthSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="アース本数" Width="15" Binding="{Binding NumberOfGrounds, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                
+                <DataGridTemplateColumn Header="電線種類" Width="45" CanUserSort="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding WireType, Mode=OneWay}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox SelectedValue="{Binding WireType}"
+                                      Text="{Binding WireType, Mode=OneWay}"
+                                      DisplayMemberPath="Type" 
+                                      SelectedValuePath="Name"
+                                      ItemsSource="{Binding Path=DataContext.WireTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                      SelectionChanged="WireTypeSelectionChanged" 
+                                      IsEditable="True"
+                                      IsReadOnly="{Binding IsReadOnlyParameters}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridComboBoxColumn Header="電線サイズ" Width="45"
+                                        SelectedValueBinding="{Binding WireSize}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
+                            <Setter Property="ItemsSource" Value="{Binding WireSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding WireSize, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
+                            <Setter Property="ItemsSource" Value="{Binding WireSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <EventSetter Event="SelectionChanged" Handler="WireSizeSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+
+                <DataGridComboBoxColumn Header="電線条数" Width="45"
+                                        SelectedValueBinding="{Binding WireStrip}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
+                            <Setter Property="ItemsSource" Value="{Binding WireStrips, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding WireStrip, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyWireSizeAndWireStrip}" />
+                            <Setter Property="ItemsSource" Value="{Binding WireStrips, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <EventSetter Event="SelectionChanged" Handler="WireStripSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+
+                <DataGridTemplateColumn Header="電線本数" Width="45" CanUserSort="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding WireBook, Mode=TwoWay}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox SelectedValue="{Binding WireBook}"
+                                      Text="{Binding WireBook, Mode=TwoWay}"
+                                      DisplayMemberPath="Type" 
+                                      SelectedValuePath="Name"
+                                      ItemsSource="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                      SelectionChanged="WireBookSelectionChanged" 
+                                      LostKeyboardFocus="WireBookLostKeyboardFocus"
+                                      IsEditable="True"
+                                      IsReadOnly="{Binding IsReadOnlyParameters}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+                
+                <DataGridComboBoxColumn Header="アース種類" Width="45"
+                                        SelectedValueBinding="{Binding EarthType}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.EarthTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding EarthType, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.EarthTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="EarthTypeSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+
+                <DataGridComboBoxColumn Header="アースサイズ" Width="45"
+                                        SelectedValueBinding="{Binding EarthSize}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding EarthSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding EarthSize, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding EarthSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <EventSetter Event="SelectionChanged" Handler="EarthSizeSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+                
+                <DataGridComboBoxColumn Header="アース本数" Width="45"
+                                        SelectedValueBinding="{Binding NumberOfGrounds}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding NumberOfGrounds, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.Numbers, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="NumberOfGroundsSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+                
                 <DataGridComboBoxColumn Header="配管種類" Width="45"
                                         SelectedValueBinding="{Binding PlumbingType}"
                                         DisplayMemberPath="Type"
@@ -145,10 +414,126 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>    
-                <DataGridTextColumn Header="配管サイズ" Width="45" Binding="{Binding PlumbingSize, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                
+                <DataGridComboBoxColumn Header="配管サイズ" Width="45"
+                                        SelectedValueBinding="{Binding PlumbingSize}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingSize}" />
+                            <Setter Property="ItemsSource" Value="{Binding PlumbingSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding PlumbingSize, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingSize}" />
+                            <Setter Property="ItemsSource" Value="{Binding PlumbingSizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <EventSetter Event="SelectionChanged" Handler="PlumbingSizeSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+                
                 <DataGridTextColumn Header="配管本数" Width="45" Binding="{Binding NumberOfPlumbing, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="施工区分" Width="45" Binding="{Binding ConstructionClassification, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="信号種別" Width="70" Binding="{Binding SignalType, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                
+                <DataGridComboBoxColumn Header="施工区分" Width="45"
+                                        SelectedValueBinding="{Binding ConstructionClassification}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionClassificationTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding ConstructionClassification, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionClassificationTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="ConstructionClassificationSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+                
+                <DataGridComboBoxColumn Header="信号種別" Width="45"
+                                        SelectedValueBinding="{Binding SignalType}"
+                                        DisplayMemberPath="Type"
+                                        SelectedValuePath="Name"
+                                        CanUserSort="False">
+                    <DataGridComboBoxColumn.ElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.SignalTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <TextBlock Text="{Binding SignalType, Mode=OneWay}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.ElementStyle>
+                    <DataGridComboBoxColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type ComboBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.SignalTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <EventSetter Event="SelectionChanged" Handler="SignalTypeSelectionChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridComboBoxColumn.EditingElementStyle>
+                </DataGridComboBoxColumn>
+                
                 <DataGridComboBoxColumn Header="工事項目" Width="90"
                                         SelectedValueBinding="{Binding ConstructionItems}"
                                         DisplayMemberPath="Type"
@@ -166,6 +551,7 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
+                
                 <DataGridComboBoxColumn Header="配管工事項目" Width="90"
                                         SelectedValueBinding="{Binding PlumbingItems}"
                                         DisplayMemberPath="Type"
@@ -174,7 +560,7 @@
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingItems}" />
-                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Setter Property="ItemsSource" Value="{Binding PlumbingItemTypes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -193,7 +579,7 @@
                     <DataGridComboBoxColumn.EditingElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyPlumbingItems}" />
-                            <Setter Property="ItemsSource" Value="{Binding Path=DataContext.ConstructionItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                            <Setter Property="ItemsSource" Value="{Binding PlumbingItemTypes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                             <EventSetter Event="SelectionChanged" Handler="PlumbingItemsSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
@@ -204,11 +590,40 @@
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" IsReadOnly="True" />
+                
+                <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" >
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="TextBox.IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="RoyalBlue" />
+                                        <Setter Property="BorderBrush" Value="RoyalBlue" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="{x:Type TextBox}">
+                            <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
+                            <EventSetter Event="LostKeyboardFocus" Handler="RemarkChanged" />
+                            <Style.Triggers>
+                                <Trigger Property="IsReadOnly" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
         
-        <DataGrid x:Name="DtReferenceGrid" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="950" Height="390" RowHeight="25" Margin="20, 70" 
+        <DataGrid x:Name="DtReferenceGrid" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="1000" Height="390" RowHeight="25" Margin="20, 70" 
                   ItemsSource="{Binding ReferenceDetailTableModels}" 
                   CanUserAddRows="False" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtReferenceGrid_SelectionChanged" >
@@ -269,7 +684,7 @@
                     <ColumnDefinition Width="130" />
                     <ColumnDefinition Width="130" />
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" x:Name="btnSave"
+                <Button Grid.Column="0"
                         Content="保存"
                         Margin="5,5,5,5"
                         HorizontalAlignment="Right"
@@ -278,16 +693,16 @@
                         Click="BtnSave_OnClick"
                         Height="27"
                         Width="110" />
-            <Button Grid.Column="1" x:Name="btnSaveAndCreate"
-                    Content="保存＆明細表作成"
+            <Button Grid.Column="1"
+                    Content="明細表作成"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
                     DockPanel.Dock="Right"
-                    Command="{Binding SaveAndCreateDetailTableCommand}"
-                    Click="BtnSaveAndCreate_OnClick"
+                    Command="{Binding CreateDetailTableCommand}"
+                    Click="BtnCreateDetailTable_OnClick"
                     Height="27"
                     Width="110" />
-            <Button Grid.Column="2" x:Name="btnCompleted"
+            <Button Grid.Column="2"
                     Content="終了"
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
