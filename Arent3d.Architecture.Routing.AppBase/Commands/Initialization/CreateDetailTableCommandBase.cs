@@ -130,27 +130,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
           dialog.ShowDialog() ;
         }
-        
-        if ( dialog.RoutesWithConstructionItemHasChanged.Any() ) {
-          var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, dialog.RoutesWithConstructionItemHasChanged ) ;
-          if ( connectorGroups.Any() ) {
-            using Transaction transaction = new( doc, "Group connector" ) ;
-            transaction.Start() ;
-            foreach ( var (connectorId, textNoteIds) in connectorGroups ) {
-              // create group for updated connector (with new property) and related text note if any
-              List<ElementId> groupIds = new() { connectorId } ;
-              groupIds.AddRange( textNoteIds ) ;
-              doc.Create.NewGroup( groupIds ) ;
-            }
 
-            transaction.Commit() ;
+        if ( detailSymbolIdsOnDetailTableModels.Any() || dialog.DialogResult == true ) {
+          if ( dialog.RoutesWithConstructionItemHasChanged.Any() ) {
+            var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, dialog.RoutesWithConstructionItemHasChanged ) ;
+            if ( connectorGroups.Any() ) {
+              using Transaction transaction = new( doc, "Group connector" ) ;
+              transaction.Start() ;
+              foreach ( var (connectorId, textNoteIds) in connectorGroups ) {
+                // create group for updated connector (with new property) and related text note if any
+                List<ElementId> groupIds = new() { connectorId } ;
+                groupIds.AddRange( textNoteIds ) ;
+                doc.Create.NewGroup( groupIds ) ;
+              }
+
+              transaction.Commit() ;
+            }
+          }
+          
+          if ( dialog.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
+            UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, dialog.DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
           }
         }
 
-        if ( dialog.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
-          UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, dialog.DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
-        }
-        
         if ( dialog.DialogResult ?? false ) {
           return doc.Transaction( "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
           {
@@ -458,7 +460,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           detailTableRow.IsParentRoute = true ;
           detailTableRow.IsReadOnly = false ;
           detailTableRow.IsReadOnlyPlumbingItems = true ;
-          var plumbingSizesOfPlumbingType = conduitsModelData.Where( c => c.PipingType == plumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+          var plumbingSizesOfPlumbingType = conduitsModels.Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
           detailTableRow.PlumbingSizes = ( from plumbingSizeType in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSizeType, plumbingSizeType ) ).ToList() ;
         }
         else {
@@ -503,6 +505,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       if ( plumbingType == NoPlumping ) return ;
       var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
       var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
+      var plumbingSizesOfPlumbingType = conduitsModels.Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+      var plumbingSizes = ( from plumbingSize in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSize, plumbingSize ) ).ToList() ;
       var detailTableModelsBySignalType = isMixConstructionItems ? detailTableModelsByDetailSymbolId.GroupBy( d => d.SignalType ).Select( g =>  g.ToList()).ToList() : detailTableModelsByDetailSymbolId.GroupBy( d => new {d.SignalType, d.ConstructionItems} ).Select( g =>  g.ToList()).ToList();
 
       foreach ( var detailTableRows in detailTableModelsBySignalType ) {
@@ -530,6 +534,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               else {
                 parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
               }
+
+              parentDetailRow.PlumbingSizes = plumbingSizes ;
               parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
               parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
               parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.Parse( parentDetailRow.WireBook ) ) ;
@@ -558,6 +564,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               else {
                 currentDetailTableRow.PlumbingType = currentDetailTableRow == detailTableRows.First() ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
               }
+              
+              currentDetailTableRow.PlumbingSizes = plumbingSizes ;
               currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
               currentDetailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( currentDetailTableRow, isMixConstructionItems ) ;
               currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, int.Parse( currentDetailTableRow.WireBook ) ) ;
@@ -579,6 +587,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                 else {
                   parentDetailRow.PlumbingType = parentDetailRow.IsParentRoute ? plumbingType : plumbingType + DefaultChildPlumbingSymbol ;
                 }
+                
+                parentDetailRow.PlumbingSizes = plumbingSizes ;
                 parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
                 parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
                 parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.Parse( parentDetailRow.WireBook ) ) ;
@@ -598,6 +608,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
               if ( currentDetailTableRow == detailTableRows.FirstOrDefault( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) continue ;
               currentDetailTableRow.PlumbingType = DefaultChildPlumbingSymbol ;
+              currentDetailTableRow.PlumbingSizes = plumbingSizes ;
               currentDetailTableRow.PlumbingSize = DefaultChildPlumbingSymbol ;
               currentDetailTableRow.NumberOfPlumbing = DefaultChildPlumbingSymbol ;
               currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, int.Parse( currentDetailTableRow.WireBook ) ) ;
@@ -611,6 +622,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
           else {
             currentDetailTableRow.PlumbingType = NoPlumping ;
+            currentDetailTableRow.PlumbingSizes = plumbingSizes ;
             currentDetailTableRow.PlumbingSize = NoPlumbingSize ;
             currentDetailTableRow.NumberOfPlumbing = string.Empty ;
             currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, int.Parse( currentDetailTableRow.WireBook ) ) ;

@@ -291,7 +291,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           }
           else {
             CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, plumbingType.ToString(), _isMixConstructionItems ) ;
-            DetailTableViewModel.SetPlumbingSizesForDetailTableRows( _conduitsModelData, detailTableModels, plumbingType.ToString() ) ;
           }
 
           var detailTableRowsHaveGroupId = detailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) ).ToList() ;
