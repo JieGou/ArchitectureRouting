@@ -39,6 +39,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( ShowCeedModelsCommand ), OnlyInitialized = true )]
           private static class ShowCeedModelsCommandButton { }
+          
+          [Button( typeof( ShowRegistrationOfBoardDataCommand ), OnlyInitialized = true )]
+          private static class RegistrationOfBoardDataCommandButton { }
 
           [Button( typeof( ChangeFamilyGradeCommand ), OnlyInitialized = true )]
           private static class ChangeFamilyGradeCommandButton { }
@@ -146,9 +149,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         {
           [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
           private static class SelectionRangeRouteCommandButton { }
+          
+          [Button( typeof( SelectionRangeRouteWithHeightAdjustmentCommand ), OnlyInitialized = true )]
+          private static class SelectionRangeRouteWithHeightAdjustmentCommandButton { }
         
           [Button( typeof( RoomSelectionRangeRouteCommand ), OnlyInitialized = true )]
-          private static class RoomSelectionRangeRouteCommandButton { } 
+          private static class RoomSelectionRangeRouteCommandButton { }
         }
 
         [Button( typeof( InsertPassPointCommand ), OnlyInitialized = true )]

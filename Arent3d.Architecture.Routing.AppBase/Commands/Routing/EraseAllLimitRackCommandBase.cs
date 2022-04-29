@@ -14,6 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class EraseAllLimitRackCommandBase : IExternalCommand
   {
+    public static string BoundaryCableTrayLineStyleName = "BoundaryCableTray" ;
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -24,21 +25,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         {
           var cableTrays = document.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTray ) ;
           var cableTrayFittings = document.GetAllFamilyInstances( ElectricalRoutingFamilyType.CableTrayFitting ) ;
-          var allLimitRack = new List<ElementId>() ;
+          var allLimitRack = new List<string>() ;
           foreach ( var cableTray in cableTrays ) {
             var comment = cableTray.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ) ).AsString() ;
             if ( comment == NewRackCommandBase.RackTypes[ 1 ] )
-              allLimitRack.Add( cableTray.Id ) ;
+              allLimitRack.Add( cableTray.UniqueId ) ;
           }
 
           foreach ( var cableTrayFitting in cableTrayFittings ) {
             var comment = cableTrayFitting.ParametersMap.get_Item( "Revit.Property.Builtin.RackType".GetDocumentStringByKeyOrDefault( document, "Rack Type" ) ).AsString() ;
             if ( comment == NewRackCommandBase.RackTypes[ 1 ] )
-              allLimitRack.Add( cableTrayFitting.Id ) ;
+              allLimitRack.Add( cableTrayFitting.UniqueId ) ;
           }
 
-          RemoveRackNotation( document, allLimitRack ) ;
-          document.Delete( allLimitRack ) ;
+          if ( allLimitRack.Any() ) {
+            RemoveRackNotation( document, allLimitRack ) ;
+            document.Delete( allLimitRack.Select(x => document.GetElement(x)).Select(x => x.Id).ToList() ) ;
+          }
+          RemoveBoundaryCableTray( document ) ;
+          
           return Result.Succeeded ;
         } ) ;
       }
@@ -47,14 +52,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return Result.Failed ;
       }
     }
+
+    private static void RemoveBoundaryCableTray(Document document)
+    {
+      var curveFilterIds = new FilteredElementCollector( document )
+        .OfClass( typeof( CurveElement ) )
+        .OfType<CurveElement>()
+        .Where( x => null != x.LineStyle && ( x.LineStyle as GraphicsStyle )!.GraphicsStyleCategory.Name == BoundaryCableTrayLineStyleName )
+        .Select( x => x.Id )
+        .ToList() ;
+      if ( curveFilterIds.Any() )
+        document.Delete( curveFilterIds ) ;
+    }
     
-    private static void RemoveRackNotation( Document document, List<ElementId> elementIds )
+    private static void RemoveRackNotation( Document document, IEnumerable<string> rackUniqueIds )
     {
       var rackNotationStorable = document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? document.GetRackNotationStorable() ;
       if ( ! rackNotationStorable.RackNotationModelData.Any() ) return ;
       var rackNotationModels = new List<RackNotationModel>() ;
-      List<string> rackIds = elementIds.Select( i => i.IntegerValue.ToString() ).ToList() ;
-      foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData.Where( d => rackIds.Contains( d.RackId ) ).ToList() ) {
+      foreach ( var rackNotationModel in rackNotationStorable.RackNotationModelData.Where( d => rackUniqueIds.Contains( d.RackId ) ).ToList() ) {
         // delete notation
         var notationId = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_TextNotes ).Where( e => e.UniqueId == rackNotationModel.NotationId ).Select( t => t.Id ).FirstOrDefault() ;
         if ( notationId != null ) 

@@ -69,8 +69,6 @@ namespace Arent3d.Architecture.Routing
 
     private static FilterElement CreateElementFilter<TFamilyTypeEnum>( Document document, string filterName ) where TFamilyTypeEnum : Enum
     {
-      var familyNameParamId = new ElementId( BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM ) ;
-
       var categoryFilters = new List<ElementId>() ;
       var elementFilters = new List<ElementFilter>() ;
 
@@ -81,8 +79,8 @@ namespace Arent3d.Architecture.Routing
         var familyCategory = field.GetCustomAttribute<FamilyCategoryAttribute>() ;
         if ( null == familyCategory ) continue ;
 
-        var filterRule = ParameterFilterRuleFactory.CreateEqualsRule( familyNameParamId, RoutingFamilyName, true ) ;
-        elementFilters.Add( new ElementParameterFilter( filterRule ) ) ;
+        var familyNameFilter = BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM.CreateEqualsRule( RoutingFamilyName ).ToFilter() ;
+        elementFilters.Add( familyNameFilter ) ;
 
         categoryFilters.Add( new ElementId( familyCategory.Category ) ) ;
       }

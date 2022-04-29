@@ -8,7 +8,6 @@ using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
-using System.Windows.Media ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -27,7 +26,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static readonly double maxDistanceTolerance = ( 20.0 ).MillimetersToRevitUnits() ;
     private const double BendRadiusSettingForStandardFamilyType = 20.5 ;
     private const double RATIO_BEND_RADIUS = 3.45 ;
-    private const string Notation = "CR (W:400)" ;
     private const char XChar = 'x' ;
 
     public static IReadOnlyDictionary<byte, string> RackTypes { get ; } = new Dictionary<byte, string> { { 0, "Normal Rack" }, { 1, "Limit Rack" } } ;
@@ -343,8 +341,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTrayFitting ).FirstOrDefault() ?? throw new InvalidOperationException() ; // TODO may change in the future
 
-      if (false == symbol.IsActive) symbol.Activate();
-      var instance = document.Create.NewFamilyInstance(location.Point, symbol, null, StructuralType.NonStructural);
+      if ( false == symbol.IsActive ) symbol.Activate() ;
+      var instance = document.Create.NewFamilyInstance( location.Point, symbol, null, StructuralType.NonStructural ) ;
 
       // set cable tray Bend Radius
       bendRadius = cableTrayDefaultBendRadius == 0 ? ( RATIO_BEND_RADIUS * diameter.RevitUnitsToMillimeters() + BendRadiusSettingForStandardFamilyType ).MillimetersToRevitUnits() : cableTrayDefaultBendRadius ;
@@ -507,7 +505,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = isDirectionX ? HorizontalTextAlignment.Left : HorizontalTextAlignment.Right } ;
 
-          var notation = count > 1 ? Notation + xSymbol + racks.Count : Notation ;
+          var text = $"CR (W:{Math.Round(bendRadiusRack.RevitUnitsToMillimeters())})" ;
+          var notation = count > 1 ? text + xSymbol + racks.Count : text ;
           var txtPosition = new XYZ( isDirectionX ? x - baseLengthOfLine * 12 : x, y + baseLengthOfLine * 3, z ) ;
           var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, notation, opts ) ;
           CreateNewTextNoteType( doc, textNote ) ;
@@ -516,23 +515,22 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           noteLeader.Elbow = new XYZ( endPoint.X + ( isDirectionX ? baseLengthOfLine * 3 : -baseLengthOfLine * 4 ), noteLeader.Elbow.Y - minBaseLengthOfLine * 8.5, endPoint.Z ) ;
           noteLeader.End = endPoint ;
 
-          var curves = GeometryHelper.IntersectCurveLeader( doc, ( noteLeader.Elbow, noteLeader.End ) ) ;
           (string? endLineUniqueId, int? endPoint) endLineLeader = ( null, null ) ;
           var ortherLineId = new List<string>() ;
-          
-          if ( curves.Count > 1 && doc.ActiveView is ViewPlan) {
-            doc.Regenerate();
-            
-            if(noteLeader.Anchor.DistanceTo(noteLeader.Elbow) > doc.Application.ShortCurveTolerance)
+          if ( doc.ActiveView is ViewPlan viewPlan ) {
+            var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( new XYZ( noteLeader.Elbow.X, noteLeader.Elbow.Y, viewPlan.GenLevel.Elevation ), new XYZ( noteLeader.End.X, noteLeader.End.Y, viewPlan.GenLevel.Elevation ) ) } ) ;
+            doc.Regenerate() ;
+
+            if ( noteLeader.Anchor.DistanceTo( noteLeader.Elbow ) > doc.Application.ShortCurveTolerance )
               curves.Add( Line.CreateBound( noteLeader.Anchor, noteLeader.Elbow ) ) ;
 
-            var detailCurves = GeometryHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
+            var detailCurves = NotationHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
             var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, noteLeader.End ) ;
-            
-            endLineLeader = (curveClosestPoint.detailCurve?.UniqueId, curveClosestPoint.endPoint)  ;
-            ortherLineId = detailCurves.Select(x => x.UniqueId).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
-            
-            textNote.RemoveLeaders();
+
+            endLineLeader = ( curveClosestPoint.DetailCurve?.UniqueId, endPoint: curveClosestPoint.EndPoint ) ;
+            ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
+
+            textNote.RemoveLeaders() ;
           }
 
           foreach ( var item in racks ) {
