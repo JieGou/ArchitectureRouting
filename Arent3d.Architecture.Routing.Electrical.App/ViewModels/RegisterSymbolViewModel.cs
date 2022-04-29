@@ -15,7 +15,10 @@ using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
+using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Microsoft.WindowsAPICodePack.Shell ;
@@ -138,7 +141,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           _previewSelected = Previews.SingleOrDefault( x => x.IsSelected ) ;
           if ( null != _previewSelected ) {
             ExternalEventHandler?.AddAction( Import )?.Raise() ;
-            wd.Close();
+            wd.Close() ;
           }
           else {
             System.Windows.MessageBox.Show( "Please, select a file at the preview!", "Arent Notification" ) ;
@@ -290,7 +293,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         case DwgExtension :
           ImportDwgFile( _previewSelected ) ;
           break ;
-        case PngExtension or PdfExtension or TifExtension:
+        case PngExtension or PdfExtension or TifExtension :
           ImportImageFile( _previewSelected ) ;
           break ;
       }
@@ -313,7 +316,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         ElementTransformUtils.MoveElement( _uiDocument.Document, importInstance.Id, pickPoint - centerPoint ) ;
       }
       else {
-        var options = new DWGImportOptions { ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default, CustomScale = _uiDocument.ActiveView.Scale } ;
+        var options = new DWGImportOptions
+        {
+          ReferencePoint = pickPoint,
+          ThisViewOnly = true,
+          Placement = ImportPlacement.Centered,
+          Unit = ImportUnit.Default,
+          CustomScale = _uiDocument.ActiveView.Scale
+        } ;
         var result = _uiDocument.Document.Import( previewFile.Path, options, _uiDocument.ActiveView, out _ ) ;
         if ( ! result ) {
           System.Windows.MessageBox.Show( "図面ファイルが無効です。", "Arent Notification" ) ;
@@ -357,6 +367,80 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 #endif
 
       transaction.Commit() ;
+    }
+
+    private void RegisterConnector(Document document)
+    {
+      const string electricalEquipment = @"C:\ProgramData\Autodesk\RVT 2023\Family Templates\English\Metric Electrical Equipment.rft" ;
+      const string genericAnnotationPath = @"C:\ProgramData\Autodesk\RVT 2023\Family Templates\English\Annotations\Metric Generic Annotation.rft" ;
+      const string importCADPath = @"C:\Users\quang\Downloads\電気シンボル\9.dwg" ;
+
+      var documentAnnotation = document.Application.NewFamilyDocument( genericAnnotationPath ) ;
+ 
+      using var tsAnnotation = new Transaction( documentAnnotation ) ;
+
+      tsAnnotation.Start( "Import CAD" ) ;
+      var option = new DWGImportOptions() { Placement = ImportPlacement.Origin, ThisViewOnly = true, ReferencePoint = XYZ.Zero, Unit = ImportUnit.Default } ;
+      var viewSheet = documentAnnotation.GetAllElements<ViewSheet>().FirstOrDefault() ;
+      documentAnnotation.Delete( documentAnnotation.GetAllElements<TextNote>().Select( x => x.Id ).ToList() ) ;
+      documentAnnotation.Import( importCADPath, option, viewSheet, out _ ) ;
+      tsAnnotation.Commit() ;
+
+      var temPath = Path.Combine( Path.GetTempPath(), $"{Path.GetFileNameWithoutExtension( importCADPath )}.rfa" ) ;
+      documentAnnotation.SaveAs( temPath, new SaveAsOptions() { MaximumBackups = 1, OverwriteExistingFile = true } ) ;
+      documentAnnotation.Close( true ) ;
+
+      var documentElectrical = document.Application.NewFamilyDocument( electricalEquipment ) ;
+
+      using var tsElectrical = new Transaction( documentElectrical ) ;
+
+      tsElectrical.Start( "Load Family" ) ;
+      var viewPlan = documentElectrical.GetAllElements<ViewPlan>().FirstOrDefault() ;
+      viewPlan!.Scale = 1 ;
+      documentElectrical.LoadFamily( temPath, new FamilyLoadOptions(), out var family ) ;
+      var familySymbol = new FilteredElementCollector( documentElectrical ).WherePasses( new FamilySymbolFilter( family.Id ) ).OfType<FamilySymbol>().FirstOrDefault() ;
+      if ( ! familySymbol!.IsActive )
+        familySymbol.Activate() ;
+      var familyInstance = documentElectrical.FamilyCreate.NewFamilyInstance( XYZ.Zero, familySymbol, viewPlan.GenLevel, StructuralType.NonStructural ) ;
+      tsElectrical.Commit() ;
+
+      tsElectrical.Start( "Add Parameter" ) ;
+      var solid = CreateCubeSolid() ;
+      var freeFormElement = FreeFormElement.Create( documentElectrical, solid ) ;
+      var elementVisibility = new FamilyElementVisibility( FamilyElementVisibilityType.Model ) { IsShownInFrontBack = false, IsShownInLeftRight = false, IsShownInPlanRCPCut = false, IsShownInTopBottom = false } ;
+      freeFormElement.SetVisibility( elementVisibility ) ;
+      var freeFormParameter = freeFormElement.get_Parameter( BuiltInParameter.MATERIAL_ID_PARAM ) ;
+      var familyParameter = documentElectrical.FamilyManager.AddParameter( "Material", GroupTypeId.Materials, SpecTypeId.Reference.Material, false ) ;
+      documentElectrical.FamilyManager.AssociateElementParameterToFamilyParameter( freeFormParameter, familyParameter ) ;
+      tsElectrical.Commit() ;
+
+      tsElectrical.Start( "Create Connector" ) ;
+      var plannarFace = GetPlanarFaceTop( freeFormElement ) ;
+      ConnectorElement.CreateElectricalConnector( documentElectrical, ElectricalSystemType.UndefinedSystemType, plannarFace.Reference ) ;
+      tsElectrical.Commit() ;
+
+      documentElectrical.SaveAs( @"C:\Users\quang\Desktop\Electrical.rfa", new SaveAsOptions() { MaximumBackups = 1, OverwriteExistingFile = true } ) ;
+      documentElectrical.Close( true ) ;
+    }
+    
+    private static Solid CreateCubeSolid()
+    {
+      var halfLength = UnitUtils.ConvertToInternalUnits(100, UnitTypeId.Millimeters) * 0.5;
+      var lineOne = Line.CreateBound(XYZ.BasisX * halfLength + XYZ.BasisY.Negate() * halfLength, XYZ.BasisX * halfLength + XYZ.BasisY * halfLength);
+      var lineTwo = Line.CreateBound(XYZ.BasisX * halfLength + XYZ.BasisY * halfLength, XYZ.BasisX.Negate() * halfLength + XYZ.BasisY * halfLength);
+      var lineThree = Line.CreateBound(XYZ.BasisX.Negate() * halfLength + XYZ.BasisY * halfLength, XYZ.BasisX.Negate() * halfLength + XYZ.BasisY.Negate() * halfLength);
+      var lineFour = Line.CreateBound(XYZ.BasisX.Negate() * halfLength + XYZ.BasisY.Negate() * halfLength, XYZ.BasisX * halfLength + XYZ.BasisY.Negate() * halfLength);
+      var curveLoop = CurveLoop.Create(new List<Curve>() { lineOne, lineTwo, lineThree, lineFour });
+      return GeometryCreationUtilities.CreateExtrusionGeometry(new List<CurveLoop>() { curveLoop }, XYZ.BasisZ.Negate(), halfLength * 2);
+    }
+
+    private static PlanarFace GetPlanarFaceTop(FreeFormElement freeFormElement)
+    {
+      var option = new Options
+      {
+        ComputeReferences = true
+      };
+      return freeFormElement.get_Geometry(option).OfType<Solid>().Select(x => x.Faces.OfType<PlanarFace>()).SelectMany(x => x).MaxBy(x => x.Origin.Z)!;
     }
 
     #endregion
