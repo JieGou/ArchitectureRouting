@@ -4,82 +4,87 @@
                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                 xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
-                mc:Ignorable="d"
-                WindowStartupLocation="CenterScreen"
-                Title="Load CSV Files" Height="370" Width="300">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
-            <RowDefinition Height="40"/>
-            <RowDefinition Height="40"/>
-            <RowDefinition Height="40"/>
-            <RowDefinition Height="40"/>
-            <RowDefinition Height="40"/>
-            <RowDefinition Height="40"/>
-            <RowDefinition Height="35"/>
-        </Grid.RowDefinitions>
-        
-        <Button Grid.Row="0" x:Name="BtnLoadWiresAndCablesData"
-                Content="電線・ケーブル一覧読み込み"
-                Click="Button_LoadWiresAndCablesData"
-                Margin="10,15,0,5"
-                HorizontalAlignment="Left"
-                Width="265" />
-        
-        <Button Grid.Row="1" x:Name="BtnLoadConduitsData"
-                Content="電線管一覧読み込み"
-                Click="Button_LoadConduitsData"
-                Margin="10,5,0,5"
-                HorizontalAlignment="Left"
-                Width="265" />
-        
-        <Button Grid.Row="2" x:Name="BtnLoadHiroiSetMasterNormalData"
-                Content="Load Hiroi Set Master Normal Data"
-                Click="Button_LoadHiroiSetMasterNormalData"
-                Margin="10,5,0,5"
-                HorizontalAlignment="Left"
-                Width="265" />
-        
-        <Button Grid.Row="3" x:Name="BtnLoadHiroiSetMasterEcoData"
-                Content="Load Hiroi Set Master Eco Data"
-                Click="Button_LoadHiroiSetMasterEcoData"
-                Margin="10,5,0,5"
-                HorizontalAlignment="Left"
-                Width="265" />
-        
-        <Button Grid.Row="4" x:Name="BtnLoadHiroiSetCdMasterNormalData"
-                Content="Load Hiroi Set Cd Master Normal Data"
-                Click="Button_LoadHiroiSetCdMasterNormalData"
-                Margin="10,5,0,5"
-                HorizontalAlignment="Left"
-                Width="265" /> 
-        
-        <Button Grid.Row="5" x:Name="BtnLoadHiroiSetCdMasterEcoData"
-                Content="Load Hiroi Set Cd Master Eco Data"
-                Click="Button_LoadHiroiSetCdMasterEcoData"
-                Margin="10,5,0,5"
-                HorizontalAlignment="Left"
-                Width="265" />
-        
-        <Button Grid.Row="6" x:Name="BtnLoadHiroiMasterData"
-                Content="Load Hiroi Master Data"
-                Click="Button_LoadHiroiMasterData"
-                Margin="10,5,0,5"
-                HorizontalAlignment="Left"
-                Width="265" />
-        
-        <Button Grid.Row="7" x:Name="BtnLoadAll"
-                Content="一括読込"
-                Click="BtnLoadAll_OnClick"
-                Margin="10,5,10,5"
-                HorizontalAlignment="Left"
-                Width="80" />
-        
-        <Button Grid.Row="7" x:Name="BtnSave"
-                Content="Save"
-                Click="Button_Save"
-                Margin="10,5,10,5"
-                HorizontalAlignment="Right"
-                Width="80" />
-    </Grid>
+                WindowStartupLocation="CenterScreen" ResizeMode="NoResize" UseLayoutRounding="True"
+                Title="Load CSV Files" Height="Auto" Width="300" SizeToContent="Height">
+    <Border Margin="10 0 10 10">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Button Grid.Row="0" x:Name="BtnLoadWiresAndCablesData"
+                    Content="電線・ケーブル一覧読み込み"
+                    Click="Button_LoadWiresAndCablesData"
+                    Padding="5" Margin="0 0 0 10"
+                    HorizontalAlignment="Stretch" />
+
+            <Button Grid.Row="1" x:Name="BtnLoadConduitsData"
+                    Content="電線管一覧読み込み"
+                    Click="Button_LoadConduitsData"
+                    Padding="5" Margin="0 0 0 10"
+                    HorizontalAlignment="Stretch" />
+
+            <Button Grid.Row="2" x:Name="BtnLoadHiroiSetMasterNormalData"
+                    Content="Load Hiroi Set Master Normal Data"
+                    Click="Button_LoadHiroiSetMasterNormalData"
+                    Padding="5" Margin="0 0 0 10"
+                    HorizontalAlignment="Stretch" />
+
+            <Button Grid.Row="3" x:Name="BtnLoadHiroiSetMasterEcoData"
+                    Content="Load Hiroi Set Master Eco Data"
+                    Click="Button_LoadHiroiSetMasterEcoData"
+                    Padding="5" Margin="0 0 0 10"
+                    HorizontalAlignment="Stretch" />
+
+            <Button Grid.Row="4" x:Name="BtnLoadHiroiSetCdMasterNormalData"
+                    Content="Load Hiroi Set Cd Master Normal Data"
+                    Click="Button_LoadHiroiSetCdMasterNormalData"
+                    Padding="5" Margin="0 0 0 10"
+                    HorizontalAlignment="Stretch" />
+
+            <Button Grid.Row="5" x:Name="BtnLoadHiroiSetCdMasterEcoData"
+                    Content="Load Hiroi Set Cd Master Eco Data"
+                    Click="Button_LoadHiroiSetCdMasterEcoData"
+                    Padding="5" Margin="0 0 0 10"
+                    HorizontalAlignment="Stretch" />
+
+            <Button Grid.Row="6" x:Name="BtnLoadHiroiMasterData"
+                    Content="Load Hiroi Master Data"
+                    Click="Button_LoadHiroiMasterData"
+                    Padding="5" Margin="0 0 0 10"
+                    HorizontalAlignment="Stretch" />
+
+            <Grid Grid.Row="7">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" x:Name="BtnLoadAll"
+                        Content="一括読込"
+                        Click="BtnLoadAll_OnClick"
+                        Padding="5" Margin="0 0 7 0"
+                        HorizontalAlignment="Stretch" />
+                    
+                <Button Grid.Column="1" x:Name="BtnFromSource"
+                        Content="Form Source"
+                        Click="BtnFromSource_OnClick"
+                        Padding="5" Margin="4 0 4 0"
+                        HorizontalAlignment="Stretch" />
+
+                <Button Grid.Column="2" x:Name="BtnSave"
+                         Content="Save"
+                         Click="Button_Save"
+                         Padding="5" Margin="7 0 0 0"
+                         HorizontalAlignment="Stretch" />
+            </Grid>
+        </Grid>
+    </Border>
 </ui:RevitDialog>
