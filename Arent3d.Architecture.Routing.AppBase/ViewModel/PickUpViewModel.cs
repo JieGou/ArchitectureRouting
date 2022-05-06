@@ -197,6 +197,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         //Set pickupModel in case productType is Conduit and connector is Power
         if ( productType == ProductType.Conduit && dictMaterialCode != null && dictMaterialCode.Any() && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
           modelNumber = "" ;
+          element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
+          specification2 = ceedCodeOfToConnector ?? String.Empty ;
           PickUpModelBaseOnMaterialCode( dictMaterialCode!, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
             classification, pickUpNumber, direction ) ;
         }
