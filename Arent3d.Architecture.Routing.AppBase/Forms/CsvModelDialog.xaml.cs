@@ -50,6 +50,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void Button_Save( object sender, RoutedEventArgs e )
     {
+      SaveData() ;
+
+      DialogResult = true ;
+      Close() ;
+    }
+    
+    private void BtnFromSource_OnClick( object sender, RoutedEventArgs e )
+    {
+      DialogResult = true ;
+      Close() ;
+      
+      var folderPath = GetFolderCsvPath() ;
+      if(null == folderPath)
+        return;
+      LoadData( folderPath ) ;
+      Directory.Delete(folderPath, true);
+      SaveData() ;
+    }
+
+    private void SaveData()
+    {
       using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
       progress.Message = "Saving data..." ;
       using ( var progressData = progress?.Reserve( 0.5 ) ) {
@@ -103,11 +124,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
         progressData?.ThrowIfCanceled() ;
       }
-
-      DialogResult = true ;
-      Close() ;
     }
-
+    
     private void Button_LoadWiresAndCablesData( object sender, RoutedEventArgs e )
     {
       _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
@@ -342,18 +360,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         return;
       LoadData( dialog.SelectedPath ) ;
     }
-    
-    private void BtnFromSource_OnClick( object sender, RoutedEventArgs e )
-    {
-      this.Hide();
-      var folderPath = GetFolderCsvPath() ;
-      if(null == folderPath)
-        return;
-      LoadData( folderPath ) ;
-      Directory.Delete(folderPath, true);
-      this.ShowDialog();
-    }
-    
+
     private string? GetFolderCsvPath()
     {
       var fileData = AssetManager.ReadFileEmbededSource( CompressionFileName ) ;
