@@ -201,6 +201,16 @@ namespace Arent3d.Architecture.Routing.AppBase
       return ( min.DetailCurve, min.Point.EndPoint ) ;
     }
 
+    public static Line CreateUnderLineText( TextNote textNote, XYZ basePoint )
+    {
+      var height = ( textNote.Height + textNote.TextNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).AsDouble() ) * textNote.Document.ActiveView.Scale ;
+      var coord = Transform.CreateTranslation( textNote.UpDirection.Negate() * height ).OfPoint( textNote.Coord ) ;
+      var width = ( textNote.HorizontalAlignment == HorizontalTextAlignment.Right ? -1 : 1 ) * textNote.Width * textNote.Document.ActiveView.Scale / 2 ;
+      var middle = Transform.CreateTranslation( textNote.BaseDirection * width ).OfPoint( coord ) ;
+
+      return Line.CreateBound( new XYZ( coord.X, coord.Y, basePoint.Z ), new XYZ( middle.X, middle.Y, basePoint.Z ) ) ;
+    }
+
     public static CurveLoop GetOutlineTextNote( TextNote textNote )
     {
       var offset = textNote.TextNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).AsDouble() ;

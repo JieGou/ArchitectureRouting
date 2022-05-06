@@ -49,6 +49,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
       var instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? _ ) ) return ;
       instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+       
+      //Set value for isEcoMode property from default value in DB
+      if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
+      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
+ 
       if ( ConnectorType == null ) return ;
       instance.SetConnectorFamilyType( ConnectorType ?? ConnectorFamilyType.Sensor ) ;
     }
