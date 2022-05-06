@@ -319,7 +319,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if(!familySymbol.IsActive)
         familySymbol.Activate();
       var instance = _uiDocument.Document.Create.NewFamilyInstance( pickPoint, familySymbol, _uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
-      instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( 2000d.MillimetersToRevitUnits() ) ;
+      
+      var heightOfConnector = _uiDocument.Document.GetHeightSettingStorable()[ _uiDocument.ActiveView.GenLevel ].HeightOfConnectors.MillimetersToRevitUnits() ;
+      instance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( heightOfConnector ) ;
 
       transaction.Commit() ;
     }
