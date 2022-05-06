@@ -8,6 +8,7 @@ using System.Windows.Controls ;
 using System.Windows.Controls.Primitives ;
 using System.Windows.Forms ;
 using System.Windows.Media ;
+using System.Windows.Threading ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -336,15 +337,32 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var cell = (DataGridCell) presenter?.ItemContainerGenerator.ContainerFromIndex( column )! ;
       return cell ;
     }
-    
-    public static void SetCellColor(DataGrid grid, SolidColorBrush colorBrush, string oldItem, string newItem, DataGridRow row , int column) 
+
+    public static bool SetCellColor(DataGrid grid, SolidColorBrush colorBrush, string oldItem, string newItem, DataGridRow row , int column) 
     {
       if ( oldItem != newItem ) {
         var cell = GetCell( grid, row, column ) ;
         if ( cell != null ) {
           cell.Background = colorBrush ;
+          return true ;
         }
       }
+
+      return false ;
+    }
+
+    public static void SetRedCellColor( DataGrid grid, DataGridRow row, int column )
+    {
+      var cell = GetCell( grid, row, column ) ;
+      if ( cell != null ) {
+        cell.Background = Brushes.Red ;
+      }
+    }
+    
+    public static bool IsDiffCell( string oldItem, string newItem )
+    {
+      if ( oldItem != newItem ) return true ;
+      return false ;
     }
   }
 }

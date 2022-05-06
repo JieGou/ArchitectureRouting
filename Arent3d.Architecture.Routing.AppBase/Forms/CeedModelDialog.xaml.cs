@@ -36,6 +36,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private bool _isShowOnlyUsingCode ;
     private CeedModel? _selectedCeedModel ;
     private List<CeedModel> _oldCeedModels ;
+    private List<int> _rowIndex ;
+    private List<string> _cellIndex ;
     public string SelectedDeviceSymbol { get ; private set ; }
     public string SelectedCondition { get ; private set ; }
     public string SelectedCeedCode { get ; private set ; }
@@ -59,15 +61,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _isShowCeedModelNumber = false ;
       _isShowOnlyUsingCode = false ;
       _oldCeedModels = new List<CeedModel>() ;
+      _rowIndex = new List<int>() ;
+      _cellIndex = new List<string>() ;
 
       var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( oldCeedStorable != null ) {
         LoadData( oldCeedStorable ) ;
         _isShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
         _isShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
-        
         var viewModel = new CeedViewModel( oldCeedStorable ) ;
         _oldCeedModels = viewModel.CeedModels ;
+        _rowIndex = oldCeedStorable.RowIndex ;
+        _cellIndex = oldCeedStorable.CellIndex ;
       }
 
       _ceedModelNumberColumn = DtGrid.Columns.SingleOrDefault( c => c.Header.ToString() == HeaderCeedModelNumberColumn ) ;
@@ -79,6 +84,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       rowStyle.Setters.Add( new EventSetter( MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
       rowStyle.Setters.Add( new EventSetter( MouseLeftButtonUpEvent, new MouseButtonEventHandler( Row_MouseLeftButtonUp ) ) ) ;
       DtGrid.RowStyle = rowStyle ;
+      
+      Loaded += OnLoaded;
+    }
+    
+    private void OnLoaded(object sender, EventArgs args){
+      if (! _oldCeedModels.Any() ) {
+        CbShowDiff.IsChecked = false ;
+      }
+      else {
+        CbShowDiff.IsChecked = true ;
+        ChangeColorInit( _rowIndex, _cellIndex );
+      }
+
+      Loaded -= OnLoaded;
     }
 
     private void Row_MouseLeftButtonUp( object sender, MouseButtonEventArgs e )
@@ -304,6 +323,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DtGrid.ItemsSource = viewModel.CeedModels ;
       CmbCeedModelNumbers.ItemsSource = viewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = viewModel.ModelNumbers ;
+      CheckDiff(viewModel.CeedModels) ;
+      CbShowDiff.IsChecked = false ;
       if ( ! ceedStorable.CeedModelUsedData.Any() ) return ;
       _usingCeedModel = new CeedViewModel( ceedStorable, ceedStorable.CeedModelUsedData ) ;
       CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
@@ -362,6 +383,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         t.Start() ;
         ceedStorable.IsShowCeedModelNumber = _isShowCeedModelNumber ;
         ceedStorable.IsShowOnlyUsingCode = _isShowOnlyUsingCode ;
+        ceedStorable.RowIndex = _rowIndex ;
+        ceedStorable.CellIndex = _cellIndex ;
         ceedStorable.Save() ;
         t.Commit() ;
       }
@@ -464,7 +487,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void ShowDiff_Checked( object sender, RoutedEventArgs e )
     {
-      ChangeColor() ;
+      ChangeColorInit( _rowIndex, _cellIndex );
+     //ChangeColor();
       CbShowDiff.IsChecked = true;
     }
 
@@ -472,6 +496,84 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       UnChangeColor() ;
       CbShowDiff.IsChecked = false ;
+    }
+
+    private void ChangeColorInit( List<int> rowIndex, List<string> cellIndex )
+    {
+      foreach ( var index in rowIndex ) {
+        var row = CeedViewModel.GetRow( DtGrid, index ) ;
+        row.Background = Brushes.Orange ;
+      }
+
+      foreach ( var index in cellIndex ) {
+        var value = index.Split( ',' ) ;
+        var rowCellIndex = Int32.Parse( value[ 0 ] ) ;
+        var columnCellIndex = Int32.Parse( value[ 1 ] ) ;
+        var row = CeedViewModel.GetRow( DtGrid, rowCellIndex ) ;
+        CeedViewModel.SetRedCellColor( DtGrid, row, columnCellIndex ) ;
+      }
+    }
+    
+    private void CheckDiff(List<CeedModel> ceedModels)
+    {
+      _rowIndex.Clear();
+      _cellIndex.Clear();
+      for ( int i = 0 ; i < ceedModels.Count() ; i++ ) {
+        CeedModel item = ceedModels[ i ] ;
+        var oldCeedModels = _oldCeedModels ;
+        var existCeedModels = oldCeedModels.Where( x =>
+            x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber )
+          .ToList() ;
+        var itemExistCeedModel = existCeedModels.Find( x =>
+          x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber &&
+          x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol &&
+          x.ModelNumber == item.ModelNumber ) ;
+        if ( itemExistCeedModel != null ) {
+          var column4 = CeedViewModel.IsDiffCell( 
+            string.IsNullOrEmpty( itemExistCeedModel.FloorPlanSymbol )
+              ? itemExistCeedModel.Base64FloorPlanImages
+              : itemExistCeedModel.FloorPlanSymbol,
+            string.IsNullOrEmpty( item.FloorPlanSymbol )
+              ? item.Base64FloorPlanImages
+              : item.FloorPlanSymbol ) ;
+          var column5 = CeedViewModel.IsDiffCell( 
+            string.IsNullOrEmpty( itemExistCeedModel.InstrumentationSymbol )
+              ? itemExistCeedModel.Base64InstrumentationImageString
+              : itemExistCeedModel.InstrumentationSymbol,
+            string.IsNullOrEmpty( item.InstrumentationSymbol )
+              ? item.Base64InstrumentationImageString
+              : item.InstrumentationSymbol ) ;
+          var column6 = CeedViewModel.IsDiffCell( 
+            itemExistCeedModel.Condition, item.Condition ) ;
+          
+          if ( column4 == true ) {
+            var value = i + "," + 4 ;
+            if ( ! _cellIndex.Contains( value ) ) {
+              _cellIndex.Add( value ) ;
+            }
+          }
+          
+          if ( column5 == true ) {
+            var value = i + "," + 5 ;
+            if ( ! _cellIndex.Contains( value ) ) {
+              _cellIndex.Add( value ) ;
+            }
+          }
+          
+          if ( column6 == true ) {
+            var value = i + "," + 6 ;
+            if ( ! _cellIndex.Contains( value ) ) {
+              _cellIndex.Add( value ) ;
+            }
+          }
+          
+        }
+        else {
+          if ( ! _rowIndex.Contains( i ) ) {
+            _rowIndex.Add( i ) ;
+          }
+        }
+      }
     }
   }
 }
