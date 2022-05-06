@@ -115,7 +115,11 @@ namespace Arent3d.Architecture.Routing
 
     [NameOnRevit( "信号取合い先" )]
     [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
-    ToPowerEquipment
+    ToPowerEquipment,
+    
+    [NameOnRevit( "Circle Annotation" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericAnnotation )]
+    CircleAnnotation
   }
 
   public enum MechanicalRoutingFamilyType
