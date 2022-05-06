@@ -103,6 +103,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
           [Button( typeof( DoubleBorderCommand ), OnlyInitialized = true )]
           private static class DoubleBorderCommandButton { }
+          
+          [Button( typeof( SymbolInformationCommand ), OnlyInitialized = true )]
+          private static class SymbolInformationCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]

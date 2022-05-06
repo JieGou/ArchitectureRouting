@@ -115,7 +115,11 @@ namespace Arent3d.Architecture.Routing
 
     [NameOnRevit( "信号取合い先" )]
     [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
-    ToPowerEquipment
+    ToPowerEquipment,
+    
+    [NameOnRevit( "Symbol Star" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    SymbolStar,
   }
 
   public enum MechanicalRoutingFamilyType

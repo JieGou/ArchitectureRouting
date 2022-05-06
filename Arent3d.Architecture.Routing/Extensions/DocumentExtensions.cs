@@ -182,5 +182,21 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new EcoSettingStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get all symbolInformation data
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    public static SymbolInformationStorable GetSymbolInformationStorable( this Document document )
+    {
+      try {
+        return SymbolInformationStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( SymbolInformationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new SymbolInformationStorable( document ) ;
+      }
+    }
   }
 }
