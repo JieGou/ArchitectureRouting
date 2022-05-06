@@ -109,25 +109,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, string floorPlanType )
     {
+      FamilyInstance instance;
       if ( ! string.IsNullOrEmpty( floorPlanType ) ) {
         var connectorOneSideFamilyTypeNames = ( (ConnectorOneSideFamilyType[]) Enum.GetValues( typeof( ConnectorOneSideFamilyType ) ) ).Select( f => f.GetFieldName() ).ToHashSet() ;
         if ( connectorOneSideFamilyTypeNames.Contains( floorPlanType ) ) {
           var connectorOneSideFamilyType = GetConnectorFamilyType( floorPlanType ) ;
           var symbol = uiDocument.Document.GetFamilySymbols( connectorOneSideFamilyType ).FirstOrDefault() ?? ( uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ) ;
-          return symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+          instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+          SetIsEcoMode( uiDocument, instance );
+          return instance ;
         }
         else {
           if ( new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == floorPlanType ) is Family family ) {
             foreach ( ElementId familySymbolId in (IEnumerable<ElementId>) family.GetFamilySymbolIds() ) {
               var symbol = uiDocument.Document.GetElementById<FamilySymbol>( familySymbolId ) ?? throw new InvalidOperationException() ;
-              return symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+              instance = symbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+              SetIsEcoMode( uiDocument, instance );
+              return instance ;
             }
           }
         }
       }
 
       var routingSymbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-      return routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+      instance = routingSymbol.Instantiate( new XYZ( originX, originY, originZ ), level, StructuralType.NonStructural ) ;
+      SetIsEcoMode( uiDocument, instance );
+      return instance ;
     }
 
     private ConnectorOneSideFamilyType GetConnectorFamilyType( string floorPlanType )
@@ -139,6 +146,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       return connectorOneSideFamilyType ;
+    }
+
+    private void SetIsEcoMode(UIDocument uiDocument, FamilyInstance instance)
+    { 
+      if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
+      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
     }
   }
 }
