@@ -198,8 +198,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) return ;
       var selectedDetailTableRow = _selectedDetailTableRows.First() ;
       var selectedDetailTableRowSummary = _selectedDetailTableRowsSummary.First() ;
-      DetailTableViewModel.MoveDetailTableRow( _detailTableViewModel, selectedDetailTableRow, DetailTableViewModelSummary, selectedDetailTableRowSummary, isMoveUp ) ;
-      UpdateDataGridAndRemoveSelectedRow() ;
+      var isMove = DetailTableViewModel.MoveDetailTableRow( _detailTableViewModel, selectedDetailTableRow, DetailTableViewModelSummary, selectedDetailTableRowSummary, isMoveUp ) ;
+      if ( isMove ) UpdateDataGridAndRemoveSelectedRow() ;
     }
 
     private void PlumpingTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -577,10 +577,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           var wireBook = 0 ;
           var numberOfGrounds = 0 ;
           foreach ( var (remark, detailTableRowsWithSameRemark) in detailTableRowsGroupByRemark ) {
-            var remarkArr = remark.Split( multiplicationSymbol ) ;
             newRemark.Add( detailTableRowsWithSameRemark.Count == 1 ? remark : remark + multiplicationSymbol + detailTableRowsWithSameRemark.Count ) ;
-            wireBook += remarkArr.Length > 1 ? detailTableRowsWithSameRemark.Count * int.Parse( remarkArr.ElementAt( 1 ) ) : detailTableRowsWithSameRemark.Count ;
             foreach ( var detailTableRowWithSameRemark in detailTableRowsWithSameRemark ) {
+              if ( ! string.IsNullOrEmpty( detailTableRowWithSameRemark.WireBook ) ) {
+                wireBook += int.Parse( detailTableRowWithSameRemark.WireBook ) ;
+              }
               if ( ! string.IsNullOrEmpty( detailTableRowWithSameRemark.NumberOfGrounds ) ) {
                 numberOfGrounds += int.Parse( detailTableRowWithSameRemark.NumberOfGrounds ) ;
               }
