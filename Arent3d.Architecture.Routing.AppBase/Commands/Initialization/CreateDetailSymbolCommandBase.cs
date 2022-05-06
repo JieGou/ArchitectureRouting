@@ -61,7 +61,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private ( TextNote, string) CreateDetailSymbol( Document doc, DetailSymbolSettingDialog detailSymbolSettingDialog, XYZ firstPoint, string angle, bool isParentSymbol )
     {
-      var scale = doc.GetSetupPrintStorable().Scale ;
+      var data = doc.GetSetupPrintStorable() ;
+      var scale = data.Scale * data.Ratio;
       var baseLengthOfLine = 1d.MillimetersToRevitUnits()*scale ;
       
       var isLeft = true ;

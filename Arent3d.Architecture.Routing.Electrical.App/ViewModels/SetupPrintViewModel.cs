@@ -80,6 +80,26 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public ExternalEventHandler? ExternalEventHandler { get ; set ; }
 
+    private Dictionary<Func<int, bool>, double>? _mapping ;
+    public Dictionary<Func<int, bool>, double> Mapping
+    {
+      get
+      {
+        return _mapping ??= _mapping = new Dictionary<Func<int, bool>, double>
+        {
+          { sc => 0 < sc && sc <= 20, 200 / 100d },
+          { sc => 20 < sc && sc <= 30, 166.7 / 100d },
+          { sc => 30 < sc && sc <= 50, 133.3 / 100d },
+          { sc => 50 < sc && sc <= 60, 133.3 / 100d },
+          { sc => 60 < sc && sc <= 150, 100 / 100d },
+          { sc => 150 < sc && sc <= 250, 76.7 / 100d },
+          { sc => 250 < sc && sc <= 500, 76.7 / 100d },
+          { sc => 500 < sc && sc <= 1000, 50 / 100d },
+          { sc => 1000 < sc && sc <= 9999, 50 / 100d }
+        } ;
+      }
+    }
+
     public SetupPrintViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
@@ -92,7 +112,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       {
         return new RelayCommand<Window>( wd => null != wd, wd =>
         {
-          if ( ! int.TryParse( Scale, out var result ) )
+          if ( ! int.TryParse( Scale, out var result ) && result is <= 0 or > 9999)
             TaskDialog.Show( "Arent Inc", "Invalid scale for the view plan!") ;
 
           Scale = $"{result}" ;
@@ -110,6 +130,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
         _setupPrintStorable.TitleBlockTypeId = TitleBlock!.TitleBlockId ;
         _setupPrintStorable.Scale = int.Parse( Scale ) ;
+        _setupPrintStorable.Ratio = Mapping.SingleOrDefault( x => x.Key( _setupPrintStorable.Scale ) ).Value ;
         _setupPrintStorable.Save() ;
 
         var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( _uiDocument.Document ) ;

@@ -446,7 +446,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      var defaultSymbolMagnification = doc.GetSetupPrintStorable().Scale ;
+      var data = doc.GetSetupPrintStorable() ;
+      var defaultSymbolMagnification = data.Scale * data.Ratio;
       
       if ( directionXRacks.Any() ) {
         foreach ( var (key, value) in directionXRacks ) {

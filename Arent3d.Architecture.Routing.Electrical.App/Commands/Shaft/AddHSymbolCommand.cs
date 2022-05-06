@@ -66,7 +66,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
         using var transaction = new Transaction( document ) ;
         transaction.Start( "Electrical.App.Commands.Shaft.AddHSymbolCommand".GetAppStringByKeyOrDefault( "Create Sign Cylindrical Shaft" ) ) ;
 
-        var scaleSetup = document.GetSetupPrintStorable().Scale ;
+        var data = document.GetSetupPrintStorable() ;
+        var scaleSetup = data.Scale * data.Ratio;
         var ratio = scaleSetup / 100d ;
         foreach ( var viewPlan in viewPlans ) {
           CreateSymbolCenter( viewPlan, centerPoint, ratio ) ;

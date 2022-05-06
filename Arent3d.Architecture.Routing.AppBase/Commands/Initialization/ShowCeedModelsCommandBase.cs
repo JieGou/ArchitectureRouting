@@ -25,7 +25,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
-      var defaultSymbolMagnification = doc.GetSetupPrintStorable().Scale ;
+      var data = doc.GetSetupPrintStorable() ;
+      var defaultSymbolMagnification = data.Scale * data.Ratio;
       
       var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
 
