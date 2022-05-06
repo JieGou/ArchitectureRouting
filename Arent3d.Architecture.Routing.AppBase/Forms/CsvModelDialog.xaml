@@ -17,6 +17,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Button Grid.Row="0" x:Name="BtnLoadWiresAndCablesData"
@@ -72,18 +73,22 @@
                         Click="BtnLoadAll_OnClick"
                         Padding="5" Margin="0 0 7 0"
                         HorizontalAlignment="Stretch" />
-                    
-                <Button Grid.Column="1" x:Name="BtnFromSource"
-                        Content="Form Source"
+                <Button Grid.Column="2" x:Name="BtnSave"
+                        Content="Save"
+                        Click="Button_Save"
+                        Padding="5" Margin="7 0 0 0"
+                        HorizontalAlignment="Stretch" />
+            </Grid>
+            <Grid Grid.Row="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" x:Name="BtnFromSource"
+                        Content="デフォルト読込"
                         Click="BtnFromSource_OnClick"
-                        Padding="5" Margin="4 0 4 0"
+                        Padding="5" Margin="0 40 0 0"
                         HorizontalAlignment="Stretch" />
 
-                <Button Grid.Column="2" x:Name="BtnSave"
-                         Content="Save"
-                         Click="Button_Save"
-                         Padding="5" Margin="7 0 0 0"
-                         HorizontalAlignment="Stretch" />
             </Grid>
         </Grid>
     </Border>
