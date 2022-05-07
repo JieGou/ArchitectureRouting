@@ -2,25 +2,22 @@
 using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
-using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
+using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
 {
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Annotation.CircleAnnotationCommand", DefaultString = "Circle \nText Box" )]
-  [Image( "resources/Initialize-32.bmp", ImageType = Revit.UI.ImageType.Large )]
+  [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class CircleAnnotationCommand : IExternalCommand
   {
     private const string TransactionName = "Electrical.App.Commands.Annotation.CircleAnnotationCommandTrans" ;
-    private const string CircleAnnotationName = "Circle Annotation" ;
-    private const string StatusPrompt = "配置場所を選択して下さい。" ;
-
+    private const string CircleAnnotationName = "Circle Annotation" ;  
+    
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
@@ -28,27 +25,38 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
         var uiDocument = application.ActiveUIDocument ;
         var document = uiDocument.Document ;
 
-        using var transaction = new Transaction( document ) ;
-        transaction.Start( TransactionName ) ;
-        
-        var (originX, originY, _) = uiDocument.Selection.PickPoint( StatusPrompt) ;
-        var level = uiDocument.ActiveView.GenLevel ;
-        var heightOfConnector = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        GenerateCircleAnnotation( uiDocument, new XYZ(originX, originY, heightOfConnector), level) ;
-         
-        transaction.Commit() ;
+        string path = AssetManager.GetElectricalFamilyPath( CircleAnnotationName ) ;
+        FilteredElementCollector notes = new FilteredElementCollector( document ) ;
+        notes.OfCategory( BuiltInCategory.OST_GenericAnnotation ).OfClass( typeof( FamilySymbol ) ) ;
+        FamilySymbol? circleAnnotation = notes.FirstOrDefault( x => x.Name.Equals( CircleAnnotationName ) ) as FamilySymbol ;
+        if ( null == circleAnnotation ) {
+          var transaction = new Transaction( document ) ;
+          transaction.Start( TransactionName ) ;
+          document.LoadFamily( path, out _ ) ;
+          circleAnnotation = notes.FirstOrDefault( x => x.Name.Equals( CircleAnnotationName ) ) as FamilySymbol ;
+          transaction.Commit() ;
+        }
+
+        if ( null != circleAnnotation ) {
+          ElementId catId = new ElementId( BuiltInCategory.OST_DetailComponents ) ;
+          if ( document.IsDefaultFamilyTypeIdValid( catId, circleAnnotation.Id ) ) {
+            document.SetDefaultFamilyTypeId( catId, circleAnnotation.Id ) ;
+          }
+        }
+        else {
+          MessageBox.Show( "Can't load circle annotation!", "Info" ) ;
+        }
+
+        var textCommandId = RevitCommandId.LookupPostableCommandId( PostableCommand.Symbol ) ;
+        if ( application.CanPostCommand( textCommandId ) )
+          application.PostCommand( textCommandId ) ;
+
         return Result.Succeeded ;
       }
       catch ( Exception e ) {
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
-    }
-    
-    private static Element GenerateCircleAnnotation( UIDocument uiDocument, XYZ xyz, Level level )
-    {
-      var routingSymbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.CircleAnnotation ).FirstOrDefault() ?? throw new InvalidOperationException() ;
-      return routingSymbol.Instantiate( xyz, level, StructuralType.NonStructural ) ;
     }
   }
 }
