@@ -8,7 +8,7 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "f7988621-c765-43d7-a536-19ce5bc4e5ac" )]
+  [Guid( "2294442b-f6ba-4568-a48d-11b557d8f975" )]
   [StorableVisibility( AppInfo.VendorId )]
   public class CeedStorable : StorableBase
   {
@@ -18,26 +18,22 @@ namespace Arent3d.Architecture.Routing.Storable
     private const string IsShowCeedModelNumberField = "IsShowCeedModelNumber" ;
     private const string ConnectorFamilyUploadField = "ConnectorFamilyUpload" ;
     private const string IsShowOnlyUsingCodeField = "IsShowOnlyUsingCode" ;
-    private const string RowIndexField = "RowIndex" ;
-    private const string CellIndexField = "CellIndex" ;
+    private const string OldCeedModelField = "OldCeedModel" ;
 
     public List<CeedModel> CeedModelData { get ; set ; }
     public List<CeedModel> CeedModelUsedData { get ; set ; }
     public bool IsShowCeedModelNumber { get ; set ; }
     public List<string> ConnectorFamilyUploadData { get ; set ; }
     public bool IsShowOnlyUsingCode { get ; set ; }
-
-    public List<int> RowIndex { get ; set ; }
     
-    public List<string> CellIndex { get ; set ; }
+    public List<CeedModel> OldCeedModelData { get ; set ; }
 
     public CeedStorable( DataStorage owner ) : base( owner, false )
     {
       CeedModelData = new List<CeedModel>() ;
       CeedModelUsedData = new List<CeedModel>() ;
       ConnectorFamilyUploadData = new List<string>() ;
-      RowIndex = new List<int>() ;
-      CellIndex = new List<string>() ;
+      OldCeedModelData = new List<CeedModel>() ;
     }
 
     public CeedStorable( Document document ) : base( document, false )
@@ -45,8 +41,7 @@ namespace Arent3d.Architecture.Routing.Storable
       CeedModelData = new List<CeedModel>() ;
       CeedModelUsedData = new List<CeedModel>() ;
       ConnectorFamilyUploadData = new List<string>() ;
-      RowIndex = new List<int>() ;
-      CellIndex = new List<string>() ;
+      OldCeedModelData = new List<CeedModel>() ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
@@ -56,8 +51,7 @@ namespace Arent3d.Architecture.Routing.Storable
       IsShowCeedModelNumber = reader.GetSingle<bool>( IsShowCeedModelNumberField ) ;
       ConnectorFamilyUploadData = reader.GetArray<string>( ConnectorFamilyUploadField ).ToList() ;
       IsShowOnlyUsingCode = reader.GetSingle<bool>( IsShowOnlyUsingCodeField ) ;
-      RowIndex = reader.GetArray<int>( RowIndexField ).ToList() ;
-      CellIndex = reader.GetArray<string>( CellIndexField ).ToList() ;
+      OldCeedModelData = reader.GetArray<CeedModel>( OldCeedModelField ).ToList() ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
@@ -67,8 +61,7 @@ namespace Arent3d.Architecture.Routing.Storable
       writer.SetSingle(  IsShowCeedModelNumberField, IsShowCeedModelNumber) ;
       writer.SetArray( ConnectorFamilyUploadField, ConnectorFamilyUploadData ) ;
       writer.SetSingle(  IsShowOnlyUsingCodeField, IsShowOnlyUsingCode) ;
-      writer.SetArray( RowIndexField, RowIndex ) ;
-      writer.SetArray( CellIndexField, CellIndex ) ;
+      writer.SetArray( OldCeedModelField, OldCeedModelData ) ;
     }
 
     protected override void SetupAllFields( FieldGenerator generator )
@@ -78,8 +71,7 @@ namespace Arent3d.Architecture.Routing.Storable
       generator.SetSingle<bool>( IsShowCeedModelNumberField  ) ;
       generator.SetArray<string>( ConnectorFamilyUploadField ) ;
       generator.SetSingle<bool>( IsShowOnlyUsingCodeField  ) ;
-      generator.SetArray<int>( RowIndexField ) ;
-      generator.SetArray<string>( CellIndexField ) ;
+      generator.SetArray<CeedModel>( OldCeedModelField ) ;
     }
 
     public override string Name => StorableName ;
