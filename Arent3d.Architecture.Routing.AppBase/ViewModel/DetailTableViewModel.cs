@@ -905,15 +905,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var detailTableRowsGroupByRemark = detailTableRowWithSameWiringType.GroupBy( d => d.Remark ).ToDictionary( g => g.Key, g => g.ToList() ) ;
           List<string> newRemark = new() ;
           var wireBook = 0 ;
+          var numberOfGrounds = 0 ;
           foreach ( var (remark, detailTableRowsWithSameRemark) in detailTableRowsGroupByRemark ) {
-            var remarkArr = remark.Split( multiplicationSymbol ) ;
             newRemark.Add( detailTableRowsWithSameRemark.Count == 1 ? remark : remark + multiplicationSymbol + detailTableRowsWithSameRemark.Count ) ;
-            wireBook += remarkArr.Length > 1 ? detailTableRowsWithSameRemark.Count * int.Parse( remarkArr.ElementAt( 1 ) ) : detailTableRowsWithSameRemark.Count ;
+            foreach ( var detailTableRowWithSameRemark in detailTableRowsWithSameRemark ) {
+              if ( ! string.IsNullOrEmpty( detailTableRowWithSameRemark.WireBook ) ) {
+                wireBook += int.Parse( detailTableRowWithSameRemark.WireBook ) ;
+              }
+              if ( ! string.IsNullOrEmpty( detailTableRowWithSameRemark.NumberOfGrounds ) ) {
+                numberOfGrounds += int.Parse( detailTableRowWithSameRemark.NumberOfGrounds ) ;
+              }
+            }
           }
 
           var newDetailTableRow = new DetailTableModel( detailTableRow.CalculationExclusion, detailTableRow.Floor, detailTableRow.CeedCode, detailTableRow.DetailSymbol, 
-            detailTableRow.DetailSymbolId, detailTableRow.WireType, detailTableRow.WireSize, detailTableRow.WireStrip, wireBook.ToString(), detailTableRow.EarthType, 
-            detailTableRow.EarthSize, detailTableRow.NumberOfGrounds, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
+            detailTableRow.DetailSymbolId, detailTableRow.WireType, detailTableRow.WireSize, detailTableRow.WireStrip, wireBook > 0 ? wireBook.ToString() : string.Empty, detailTableRow.EarthType, 
+            detailTableRow.EarthSize, numberOfGrounds > 0 ? numberOfGrounds.ToString() : string.Empty, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
             detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
             detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
             detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsMixConstructionItems,
