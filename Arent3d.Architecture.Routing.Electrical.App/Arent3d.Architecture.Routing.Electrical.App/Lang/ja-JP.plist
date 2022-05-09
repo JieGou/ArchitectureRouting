@@ -435,7 +435,9 @@
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>グレード</string>
-        
+
+        <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
+        <string>盤登録</string>
     </dict>
 </plist>
 
