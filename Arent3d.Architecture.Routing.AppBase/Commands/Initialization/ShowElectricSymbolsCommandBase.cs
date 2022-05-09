@@ -43,34 +43,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var uiDoc = commandData.Application.ActiveUIDocument ;
       var ceedStorable = doc.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable == null ) return Result.Cancelled ;
-      var csvStorable = doc.GetCsvStorable() ;
-      var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
-      var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
-      var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
-      var detailTableModelData = doc.GetDetailTableStorable().DetailTableModelData ;
-      var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
       var electricalSymbolModels = new List<ElectricalSymbolModel>() ;
-      var errorMess = string.Empty ;
       try {
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ) ;
-        var routePicked = pickedObjects.Select( e => e.GetRouteName() ).Distinct().ToList() ;
-        foreach ( var routeName in routePicked ) {
-          var fromConnectorInfoAndToConnectorInfo = GetFromConnectorInfoAndToConnectorInfo( doc, allConnectors, routeName!, ref errorMess ) ;
-          if ( ! string.IsNullOrEmpty( errorMess ) ) {
-            message = errorMess ;
-            return Result.Cancelled ;
-          }
-
-          var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.ModelNumber ) ;
-          var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.ModelNumber ) ;
-          if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
-          var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
-          if ( detailTableModelsByRouteName.Any() ) {
-            InsertDataFromDetailTableModelIntoElectricalSymbolModel( electricalSymbolModels, detailTableModelsByRouteName, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ;
-          }
-          else {
-            InsertDataFromRegularDatabaseIntoElectricalSymbolModel( hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ;
-          }
+        var errorMess = CreateElectricalSymbolModels( doc, ceedStorable, electricalSymbolModels, pickedObjects ) ;
+        if ( ! string.IsNullOrEmpty( errorMess ) ) {
+          message = errorMess ;
+          return Result.Cancelled ;
         }
       }
       catch {
@@ -79,12 +58,46 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       return doc.Transaction( "TransactionName.Commands.Initialization.ShowElectricSymbolsCommand".GetAppStringByKeyOrDefault( "Create electrical schedule" ), _ =>
       {
-        CreateElectricalSchedule( doc, electricalSymbolModels ) ;
+        var level = doc.ActiveView.GenLevel.Name ;
+        CreateElectricalSchedule( doc, electricalSymbolModels, level ) ;
         return Result.Succeeded ;
       } ) ;
     }
 
-    private void InsertDataFromDetailTableModelIntoElectricalSymbolModel( List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
+    public static string CreateElectricalSymbolModels( Document doc, CeedStorable ceedStorable, List<ElectricalSymbolModel> electricalSymbolModels, IEnumerable<Element> conduits )
+    {
+      var csvStorable = doc.GetCsvStorable() ;
+      var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData ;
+      var hiroiSetMasterNormalModelData = csvStorable.HiroiSetMasterNormalModelData ;
+      var hiroiSetMasterEcoModelData = csvStorable.HiroiSetMasterEcoModelData ;
+      var hiroiMasterModelData = csvStorable.HiroiMasterModelData ;
+      var detailTableModelData = doc.GetDetailTableStorable().DetailTableModelData ;
+      var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
+      var errorMess = string.Empty ;
+      
+      var routePicked = conduits.Select( e => e.GetRouteName() ).Distinct().ToList() ;
+      foreach ( var routeName in routePicked ) {
+        var fromConnectorInfoAndToConnectorInfo = GetFromConnectorInfoAndToConnectorInfo( doc, allConnectors, routeName!, ref errorMess ) ;
+        if ( ! string.IsNullOrEmpty( errorMess ) ) {
+          return errorMess ;
+        }
+
+        var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.ModelNumber ) ;
+        var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.ModelNumber ) ;
+        if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
+        var detailTableModelsByRouteName = detailTableModelData.Where( d => d.RouteName == routeName ).ToList() ;
+        if ( detailTableModelsByRouteName.Any() ) {
+          InsertDataFromDetailTableModelIntoElectricalSymbolModel( electricalSymbolModels, detailTableModelsByRouteName, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ;
+        }
+        else {
+          InsertDataFromRegularDatabaseIntoElectricalSymbolModel( wiresAndCablesModelData, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ;
+        }
+      }
+
+      return string.Empty ;
+    }
+
+    private static void InsertDataFromDetailTableModelIntoElectricalSymbolModel( List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
     {
       const string defaultChildPlumbingSymbol = "↑" ;
       const string noPlumping = "配管なし" ;
@@ -114,39 +127,43 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void InsertDataFromRegularDatabaseIntoElectricalSymbolModel( List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<Element> allConnectors, List<ElectricalSymbolModel> electricalSymbolModels, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
+    private static void InsertDataFromRegularDatabaseIntoElectricalSymbolModel( List<WiresAndCablesModel> wiresAndCablesModelData, List<HiroiSetMasterModel> hiroiSetMasterEcoModelData, List<HiroiSetMasterModel> hiroiSetMasterNormalModelData, List<HiroiMasterModel> hiroiMasterModelData, List<Element> allConnectors, List<ElectricalSymbolModel> electricalSymbolModels, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
     {
       const string defaultPlumbingType = "配管なし" ;
       if ( toConnectorCeedModel == null ) return ;
       var isEcoMode = string.Empty ;
-      var wireType = string.Empty ;
-      var wireSize = string.Empty ;
-      var wireStrip = string.Empty ;
       var endConnector = allConnectors.First( c => c.UniqueId == toConnectorUniqueId ) ;
       endConnector?.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out isEcoMode ) ;
       var hiroiSetModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode! ) ? hiroiSetMasterEcoModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) : hiroiSetMasterNormalModelData.Where( x => x.ParentPartModelNumber.Contains( toConnectorCeedModel.CeedModelNumber ) ).Skip( 1 ) ;
       foreach ( var item in hiroiSetModels ) {
         List<string> listMaterialCode = new() ;
-        if ( ! string.IsNullOrWhiteSpace( item.MaterialCode1 ) ) {
-          listMaterialCode.Add( int.Parse( item.MaterialCode1 ).ToString() ) ;
-        }
+        if ( ! string.IsNullOrEmpty( item.MaterialCode1 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode1 ).ToString() ) ;
+        if ( ! string.IsNullOrEmpty( item.MaterialCode2 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode2 ).ToString() ) ;
+        if ( ! string.IsNullOrEmpty( item.MaterialCode3 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode3 ).ToString() ) ;
+        if ( ! string.IsNullOrEmpty( item.MaterialCode4 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode4 ).ToString() ) ;
+        if ( ! string.IsNullOrEmpty( item.MaterialCode5 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode5 ).ToString() ) ;
+        if ( ! string.IsNullOrEmpty( item.MaterialCode6 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode6 ).ToString() ) ;
+        if ( ! string.IsNullOrEmpty( item.MaterialCode7 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode7 ).ToString() ) ;
+        if ( ! string.IsNullOrEmpty( item.MaterialCode8 ) ) listMaterialCode.Add( int.Parse( item.MaterialCode8 ).ToString() ) ;
 
         if ( ! listMaterialCode.Any() ) continue ;
         var masterModels = hiroiMasterModelData.Where( x => listMaterialCode.Contains( int.Parse( x.Buzaicd ).ToString() ) ) ;
         foreach ( var master in masterModels ) {
-          wireType = master.Type ;
-          wireSize = master.Size1 ;
-          wireStrip = master.Size2 ;
+          var wiresAndCablesModel = wiresAndCablesModelData.FirstOrDefault( w => w.WireType == master.Type && w.DiameterOrNominal == master.Size1 && ( ( w.NumberOfHeartsOrLogarithm == "0" && master.Size2 == "0" ) || ( w.NumberOfHeartsOrLogarithm != "0" && master.Size2 == w.NumberOfHeartsOrLogarithm + w.COrP ) ) ) ;
+          if ( wiresAndCablesModel == null ) continue ;
+          var wireType = master.Type ;
+          var wireSize = master.Size1 ;
+          var wireStrip = string.IsNullOrEmpty( master.Size2 ) || master.Size2 == "0" ? "-" : master.Size2 ;
+          
+          if ( fromConnectorCeedModel != null ) {
+            var startElectricalSymbolModel = new ElectricalSymbolModel( fromConnectorUniqueId, fromConnectorCeedModel.FloorPlanType, fromConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, string.Empty ) ;
+            electricalSymbolModels.Add( startElectricalSymbolModel ) ;
+          }
+
+          var endElectricalSymbolModel = new ElectricalSymbolModel( toConnectorUniqueId, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, string.Empty ) ;
+          electricalSymbolModels.Add( endElectricalSymbolModel ) ;
         }
       }
-
-      if ( fromConnectorCeedModel != null ) {
-        var startElectricalSymbolModel = new ElectricalSymbolModel( fromConnectorUniqueId, fromConnectorCeedModel.FloorPlanType, fromConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, string.Empty ) ;
-        electricalSymbolModels.Add( startElectricalSymbolModel ) ;
-      }
-
-      var endElectricalSymbolModel = new ElectricalSymbolModel( toConnectorUniqueId, toConnectorCeedModel.FloorPlanType, toConnectorCeedModel.GeneralDisplayDeviceSymbol, wireType, wireSize, wireStrip, defaultPlumbingType, string.Empty ) ;
-      electricalSymbolModels.Add( endElectricalSymbolModel ) ;
     }
 
     private static ( string fromConnectorUniqueId, ConnectorInfo fromConnectorInfo, string toConnectorUniqueId, ConnectorInfo toConnectorInfo) GetFromConnectorInfoAndToConnectorInfo( Document document, IReadOnlyCollection<Element> allConnectors, string routeName, ref string errorMess )
@@ -188,16 +205,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       connector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) ;
       if ( string.IsNullOrEmpty( ceedCode ) ) return new ConnectorInfo( string.Empty, string.Empty, string.Empty ) ;
-      var ceedCodeInfo = ceedCode!.Split( '-' ).ToList() ;
+      var ceedCodeInfo = ceedCode!.Split( ':' ).ToList() ;
       var ceedSetCode = ceedCodeInfo.First() ;
       var deviceSymbol = ceedCodeInfo.Count > 1 ? ceedCodeInfo.ElementAt( 1 ) : string.Empty ;
       var modelNumber = ceedCodeInfo.Count > 2 ? ceedCodeInfo.ElementAt( 2 ) : string.Empty ;
       return new ConnectorInfo( ceedSetCode, deviceSymbol, modelNumber ) ;
     }
 
-    private static void CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels )
+    public static void CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels, string level )
     {
-      string scheduleName = "Revit.Electrical.Schedule.Name".GetDocumentStringByKeyOrDefault( document, "Electrical Symbol Table" ) + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
+      string scheduleName = "Revit.Electrical.Schedule.Name".GetDocumentStringByKeyOrDefault( document, "Electrical Symbol Table" ) + " - " + level + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
       var electricalSchedule = document.GetAllElements<ViewSchedule>().SingleOrDefault( v => v.Name.Contains( scheduleName ) ) ;
       if ( electricalSchedule == null ) {
         electricalSchedule = ViewSchedule.CreateSchedule( document, new ElementId( BuiltInCategory.OST_ElectricalFixtures ) ) ;
@@ -250,10 +267,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       var electricalSymbolModelsGroupByUniqueId = electricalSymbolModels.GroupBy( d => d.UniqueId ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-      List<string> floorPlanSymbols = new List<string>() ;
-      List<string> generalDisplayDeviceSymbols = new List<string>() ;
-      List<string> wiringTypes = new List<string>() ;
-      List<string> plumingTypes = new List<string>() ;
+      List<string> floorPlanSymbols = new() ;
+      List<string> generalDisplayDeviceSymbols = new() ;
+      List<string> wiringTypes = new() ;
+      List<string> plumingTypes = new() ;
       SummarizeElectricalSymbolByUniqueId( electricalSymbolModelsGroupByUniqueId, floorPlanSymbols, generalDisplayDeviceSymbols, wiringTypes, plumingTypes ) ;
 
       for ( var i = 0 ; i < defaultColumnCount ; i++ ) {
