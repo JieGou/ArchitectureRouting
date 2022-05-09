@@ -398,6 +398,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var detailTableModelsGroupByDetailSymbolId = 
         detailTableViewModel.DetailTableModels
           .Where( selectedDetailTableRows.Contains )
+          .Where( d => ! string.IsNullOrEmpty( d.WireType ) && ! string.IsNullOrEmpty( d.WireSize ) && ! string.IsNullOrEmpty( d.WireStrip ) && ! string.IsNullOrEmpty( d.WireBook ) && ! string.IsNullOrEmpty( d.SignalType ) && ! string.IsNullOrEmpty( d.ConstructionItems ) && ! string.IsNullOrEmpty( d.Remark ) )
           .GroupBy( d => d.DetailSymbolId )
           .Select( g => g.ToList() ) ;
       foreach ( var detailTableRowsWithSameDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
@@ -501,11 +502,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       detailTableViewModelSummary.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
     }
     
-    public static void MoveDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel selectDetailTableRow, DetailTableViewModel detailTableViewModelSummary, DetailTableModel selectDetailTableRowSummary, bool isMoveUp )
+    public static bool MoveDetailTableRow( DetailTableViewModel detailTableViewModel, DetailTableModel selectDetailTableRow, DetailTableViewModel detailTableViewModelSummary, DetailTableModel selectDetailTableRowSummary, bool isMoveUp )
     {
       var newDetailTableModels = new List<DetailTableModel>() ;
       var selectDetailTableRowSummaryIndex = detailTableViewModelSummary.DetailTableModels.FindIndex( d => d == selectDetailTableRowSummary ) ;
-      if ( ( isMoveUp && selectDetailTableRowSummaryIndex == 0 ) || ( ! isMoveUp && selectDetailTableRowSummaryIndex == detailTableViewModelSummary.DetailTableModels.Count - 1 ) ) return ;
+      if ( ( isMoveUp && selectDetailTableRowSummaryIndex == 0 ) || ( ! isMoveUp && selectDetailTableRowSummaryIndex == detailTableViewModelSummary.DetailTableModels.Count - 1 ) ) return false ;
       var tempDetailTableRowSummary = detailTableViewModelSummary.DetailTableModels.ElementAt( isMoveUp ? selectDetailTableRowSummaryIndex - 1 : selectDetailTableRowSummaryIndex + 1 ) ;
       foreach ( var detailTableRow in detailTableViewModelSummary.DetailTableModels ) {
         if ( detailTableRow == tempDetailTableRowSummary ) {
@@ -537,11 +538,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       detailTableViewModel.DetailTableModels = new ObservableCollection<DetailTableModel>( newDetailTableModels ) ;
+      return true ;
     }
 
     public static void SplitPlumbing( List<ConduitsModel> conduitsModelData, DetailSymbolStorable detailSymbolStorable, DetailTableViewModel detailTableViewModel, Dictionary<string, string> detailSymbolIdsWithPlumbingTypeHasChanged )
     {
-      foreach ( var detailTableRow in detailTableViewModel.DetailTableModels ) {
+      var detailTableModels = detailTableViewModel.DetailTableModels.Where( d => ! string.IsNullOrEmpty( d.WireType ) && ! string.IsNullOrEmpty( d.WireSize ) && ! string.IsNullOrEmpty( d.WireStrip ) 
+                                                                                 && ! string.IsNullOrEmpty( d.WireBook ) && ! string.IsNullOrEmpty( d.SignalType ) && ! string.IsNullOrEmpty( d.ConstructionItems ) && ! string.IsNullOrEmpty( d.Remark ) ) ;
+      foreach ( var detailTableRow in detailTableModels ) {
         SetPlumbingDataForEachWiring( conduitsModelData, detailSymbolStorable, detailTableRow, detailSymbolIdsWithPlumbingTypeHasChanged ) ;
       }
     }
@@ -554,13 +558,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( plumbingType ) ) {
         plumbingType = detailSymbolStorable.DetailSymbolModelData.FirstOrDefault( s => s.DetailSymbolId == detailTableRow.DetailSymbolId )?.PlumbingType ?? DefaultParentPlumbingType ;
       }
+      var wireBook = string.IsNullOrEmpty( detailTableRow.WireBook ) ? 1 : int.Parse( detailTableRow.WireBook ) ;
       if ( plumbingType == NoPlumping ) {
         detailTableRow.PlumbingType = NoPlumping ;
         detailTableRow.PlumbingSize = NoPlumbingSize ;
         detailTableRow.NumberOfPlumbing = string.Empty ;
         detailTableRow.PlumbingIdentityInfo = CreateDetailTableCommandBase.GetDetailTableRowPlumbingIdentityInfo( detailTableRow, false ) ;
         detailTableRow.GroupId = string.Empty ;
-        detailTableRow.Remark = GetRemark( detailTableRow.Remark, int.Parse( detailTableRow.WireBook ) ) ;
+        detailTableRow.Remark = GetRemark( detailTableRow.Remark, wireBook ) ;
         detailTableRow.IsParentRoute = true ;
         detailTableRow.IsReadOnly = false ;
         detailTableRow.IsReadOnlyPlumbingItems = true ;
@@ -570,7 +575,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       else {
         var conduitsModels = conduitsModelData.Where( c => c.PipingType == plumbingType ).OrderBy( c => double.Parse( c.InnerCrossSectionalArea ) ).ToList() ;
         var maxInnerCrossSectionalArea = conduitsModels.Select( c => double.Parse( c.InnerCrossSectionalArea ) ).Max() ;
-        var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage * int.Parse( detailTableRow.WireBook ) ;
+        var currentPlumbingCrossSectionalArea = detailTableRow.WireCrossSectionalArea / percentage * wireBook ;
         if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
           var plumbing = conduitsModels.Last() ;
           detailTableRow.PlumbingType = plumbingType ;
@@ -582,7 +587,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           detailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
         }
 
-        detailTableRow.Remark = GetRemark( detailTableRow.Remark, int.Parse( detailTableRow.WireBook ) ) ;
+        detailTableRow.Remark = GetRemark( detailTableRow.Remark, wireBook ) ;
         detailTableRow.NumberOfPlumbing = plumbingCount.ToString() ;
         detailTableRow.PlumbingIdentityInfo = CreateDetailTableCommandBase.GetDetailTableRowPlumbingIdentityInfo( detailTableRow, false ) ;
         detailTableRow.GroupId = string.Empty ;

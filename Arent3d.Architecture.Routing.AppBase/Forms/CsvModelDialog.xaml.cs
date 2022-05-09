@@ -1,16 +1,16 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.IO ;
+using System.IO.Compression ;
 using System.Linq ;
-using System.Reflection ;
 using System.Text ;
-using System.Threading ;
 using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
+using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -31,6 +31,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private List<HiroiMasterModel> _allHiroiMasterModels ;
     private List<CeedModel> _ceedModelData ;
 
+    private const string CompressionFileName = "Csv File.zip" ;
+
     public CsvModelDialog( UIApplication uiApplication ) : base( uiApplication )
     {
       InitializeComponent() ;
@@ -47,6 +49,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     }
 
     private void Button_Save( object sender, RoutedEventArgs e )
+    {
+      SaveData() ;
+
+      DialogResult = true ;
+      Close() ;
+    }
+    
+    private void BtnFromSource_OnClick( object sender, RoutedEventArgs e )
+    {
+      DialogResult = true ;
+      Close() ;
+      
+      var folderPath = GetFolderCsvPath() ;
+      if(null == folderPath)
+        return;
+      LoadData( folderPath ) ;
+      Directory.Delete(folderPath, true);
+      SaveData() ;
+    }
+
+    private void SaveData()
     {
       using var progress = ProgressBar.ShowWithNewThread( UIApplication ) ;
       progress.Message = "Saving data..." ;
@@ -101,11 +124,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
         progressData?.ThrowIfCanceled() ;
       }
-
-      DialogResult = true ;
-      Close() ;
     }
-
+    
     private void Button_LoadWiresAndCablesData( object sender, RoutedEventArgs e )
     {
       _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
@@ -336,6 +356,58 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var dialog = new FolderBrowserDialog() ;
       dialog.ShowNewFolderButton = false ;
       dialog.ShowDialog() ;
+      if ( string.IsNullOrEmpty( dialog.SelectedPath ) ) 
+        return;
+      LoadData( dialog.SelectedPath ) ;
+    }
+
+    private string? GetFolderCsvPath()
+    {
+      var fileData = AssetManager.ReadFileEmbededSource( CompressionFileName ) ;
+      if ( null == fileData )
+        return null ;
+
+      var directoryPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(CompressionFileName));
+      ExtractFilesToFolder( directoryPath, fileData ) ;
+
+      return directoryPath ;
+    }
+    
+    private void ExtractFilesToFolder(string directoryPath, byte[] zippedBuffer)
+    {
+      if (Directory.Exists(directoryPath))
+      {
+        string[] filePaths = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly);
+        if (filePaths.Length > 0)
+        {
+          foreach (var filePath in filePaths)
+          {
+            File.SetAttributes(filePath, FileAttributes.Normal);
+            File.Delete(filePath);
+          }
+        }
+      }
+      else {
+        Directory.CreateDirectory( directoryPath ) ;
+      }
+      using var zippedStream = new MemoryStream(zippedBuffer);
+      using var zipArchive = new ZipArchive(zippedStream);
+      foreach (var zipArchiveEntry in zipArchive.Entries) {
+        if ( string.IsNullOrEmpty( zipArchiveEntry.Name ) ) continue ;
+        var pathFileName = Path.Combine(directoryPath, zipArchiveEntry.Name);
+        if (!File.Exists(pathFileName)) {
+          zipArchiveEntry.ExtractToFile(pathFileName);
+        }
+        else if (File.GetLastAccessTime(pathFileName) <= zipArchiveEntry.LastWriteTime)
+        {
+          File.SetAttributes(pathFileName, FileAttributes.Normal);
+          zipArchiveEntry.ExtractToFile(pathFileName, true);
+        }
+      }
+    }
+    
+    private void LoadData(string folderPath)
+    {
       string[] fileNames = new[]
       {
         "hiroimaster.csv", 
@@ -356,7 +428,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       correctMessage.AppendLine( defaultCorrectMessage ) ;
       errorMessage.AppendLine( defaultErrorMessage ) ;
       foreach ( var fileName in fileNames ) {
-        var path = Path.Combine( dialog.SelectedPath, fileName ) ;
+        var path = Path.Combine( folderPath, fileName ) ;
         if ( File.Exists( path ) ) {
           bool isGetDataWithoutError ;
           switch ( fileName ) {
@@ -435,10 +507,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
 
       // load 【CeeD】セットコード一覧表 and 機器記号一覧表 files
-      var ceedCodeXlsxFilePath = Path.Combine( dialog.SelectedPath, ceedCodeFile + ".xlsx" ) ;
-      var ceedCodeXlsFilePath = Path.Combine( dialog.SelectedPath, ceedCodeFile + ".xls" ) ;
-      var equipmentSymbolsXlsxFilePath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xlsx" ) ;
-      var equipmentSymbolsXlsFilePath = Path.Combine( dialog.SelectedPath, equipmentSymbolsFile + ".xls" ) ;
+      var ceedCodeXlsxFilePath = Path.Combine( folderPath, ceedCodeFile + ".xlsx" ) ;
+      var ceedCodeXlsFilePath = Path.Combine( folderPath, ceedCodeFile + ".xls" ) ;
+      var equipmentSymbolsXlsxFilePath = Path.Combine( folderPath, equipmentSymbolsFile + ".xlsx" ) ;
+      var equipmentSymbolsXlsFilePath = Path.Combine( folderPath, equipmentSymbolsFile + ".xls" ) ;
       if ( File.Exists( ceedCodeXlsxFilePath ) ) {
         isLoadedCeedFile = LoadCeedCodeFile( correctMessage, errorMessage, ceedCodeFile, equipmentSymbolsFile, ceedCodeXlsxFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath ) ;
       }
@@ -457,8 +529,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( string.IsNullOrEmpty( resultMessage.Trim() ) ) {
         resultMessage = "指定されたフォルダに条件に一致するファイルが存在しません。" ;
       }
-      MessageBox.Show(
-        resultMessage,"Result Message" ) ;
+      MessageBox.Show( resultMessage,"Result Message" ) ;
     }
 
     private bool LoadCeedCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceedCodeFile, string equipmentSymbolsFile, string ceedCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath )

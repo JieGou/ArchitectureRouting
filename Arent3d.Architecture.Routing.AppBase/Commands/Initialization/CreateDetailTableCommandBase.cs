@@ -263,6 +263,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const int maxCharOfCell = 4 ;
       const double minColumnWidth = 0.05 ;
       var rowData = 1 ;
+      var maxCharOfWireTypeCell = 0 ;
       var maxCharOfPlumbingTypeCell = 0 ;
       var maxCharOfRemarkCell = 0 ;
 
@@ -286,6 +287,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( i != 2 ) tsdHeader.InsertColumn( i ) ;
       }
 
+      detailTableModels = detailTableModels.Where( d => ! string.IsNullOrEmpty( d.WireType ) && ! string.IsNullOrEmpty( d.WireSize ) ).ToList() ;
       var detailTableModelsGroupByDetailSymbol = detailTableModels.GroupBy( d => d.DetailSymbol ).ToDictionary( g => g.Key, g => g.ToList() ) ;
       var rowCount = detailTableModels.Count + detailTableModelsGroupByDetailSymbol.Count ;
       for ( var i = 0 ; i < rowCount ; i++ ) {
@@ -304,15 +306,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         rowData++ ;
         foreach ( var rowDetailTableModel in detailTableModelsSameWithDetailSymbol ) {
           var wireType = rowDetailTableModel.WireType + rowDetailTableModel.WireSize ;
-          var wireStrip = string.IsNullOrEmpty( rowDetailTableModel.WireStrip ) ? string.Empty : "－" + rowDetailTableModel.WireStrip ;
+          var wireStrip = string.IsNullOrEmpty( rowDetailTableModel.WireStrip ) || rowDetailTableModel.WireStrip == "-" ? "－" : "－" + rowDetailTableModel.WireStrip ;
+          var wireBook = string.IsNullOrEmpty( rowDetailTableModel.WireBook ) ? "x1" : "x" + rowDetailTableModel.WireBook ;
           var (plumbingType, numberOfPlumbing) = GetPlumbingType( rowDetailTableModel.ConstructionClassification, rowDetailTableModel.PlumbingType, rowDetailTableModel.PlumbingSize, rowDetailTableModel.NumberOfPlumbing, ref isSetPipeForCoWindingWiring ) ;
           tsdHeader.SetCellText( rowData, 0, wireType ) ;
           tsdHeader.SetCellText( rowData, 1, wireStrip ) ;
-          tsdHeader.SetCellText( rowData, 2, "x" + rowDetailTableModel.WireBook ) ;
+          tsdHeader.SetCellText( rowData, 2, wireBook ) ;
           tsdHeader.SetCellText( rowData, 3, plumbingType ) ;
           tsdHeader.SetCellText( rowData, 4, numberOfPlumbing ) ;
           tsdHeader.SetCellText( rowData, 5, rowDetailTableModel.Remark ) ;
 
+          if ( wireType.Length > maxCharOfWireTypeCell ) maxCharOfWireTypeCell = wireType.Length ;
           if ( plumbingType.Length > maxCharOfPlumbingTypeCell ) maxCharOfPlumbingTypeCell = plumbingType.Length ;
           if ( rowDetailTableModel.Remark.Length > maxCharOfRemarkCell ) maxCharOfRemarkCell = rowDetailTableModel.Remark.Length ;
           rowData++ ;
@@ -322,7 +326,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       for ( var i = 0 ; i <= columnCount ; i++ ) {
         var columnWidth = i switch
         {
-          0 => minColumnWidth * 2,
+          0 when maxCharOfWireTypeCell > maxCharOfCell => minColumnWidth * Math.Ceiling( (double) maxCharOfWireTypeCell / maxCharOfCell ),
           3 when maxCharOfPlumbingTypeCell > maxCharOfCell => minColumnWidth * Math.Ceiling( (double) maxCharOfPlumbingTypeCell / maxCharOfCell ),
           5 when maxCharOfRemarkCell > maxCharOfCell => minColumnWidth * Math.Ceiling( (double) maxCharOfRemarkCell / maxCharOfCell ),
           _ => minColumnWidth
@@ -519,8 +523,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         parentDetailRow.IsReadOnly = false ;
         var currentPlumbingCrossSectionalArea = 0.0 ;
         foreach ( var currentDetailTableRow in detailTableRows ) {
+          var wireBook = string.IsNullOrEmpty( currentDetailTableRow.WireBook ) ? 1 : int.Parse( currentDetailTableRow.WireBook ) ;
           if ( currentDetailTableRow.ConstructionClassification != noPlumpingConstructionClassification ) {
-            currentPlumbingCrossSectionalArea += ( currentDetailTableRow.WireCrossSectionalArea / percentage * int.Parse( currentDetailTableRow.WireBook ) ) ;
+            currentPlumbingCrossSectionalArea += ( currentDetailTableRow.WireCrossSectionalArea / percentage * wireBook ) ;
 
             if ( currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
               var plumbing = conduitsModels.Last() ;
@@ -538,7 +543,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               parentDetailRow.PlumbingSizes = plumbingSizes ;
               parentDetailRow.PlumbingSize = plumbing.Size.Replace( "mm", "" ) ;
               parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
-              parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.Parse( parentDetailRow.WireBook ) ) ;
+              parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, wireBook ) ;
               parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
               parentDetailRow.IsMixConstructionItems = isMixConstructionItems ;
               parentDetailRow.IsReadOnlyPlumbingSize = false ;
@@ -549,11 +554,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               }
 
               childDetailRows = new List<DetailTableModel>() ;
-              plumbingCount++ ;
+              var parentWireBook = string.IsNullOrEmpty( parentDetailRow.WireBook ) ? 1 : int.Parse( parentDetailRow.WireBook ) ;
+              if ( parentWireBook > 1 && parentDetailRow.WireCrossSectionalArea / percentage * wireBook > maxInnerCrossSectionalArea ) {
+                var wireCountInPlumbing = (int) ( maxInnerCrossSectionalArea / ( currentDetailTableRow.WireCrossSectionalArea / percentage ) ) ;
+                plumbingCount += (int) Math.Ceiling( (double) wireBook / wireCountInPlumbing ) ;
+              }
+              else {
+                plumbingCount++ ;
+              }
               parentDetailRow = currentDetailTableRow ;
-              currentPlumbingCrossSectionalArea = currentDetailTableRow.WireCrossSectionalArea / percentage ;
-              if ( currentDetailTableRow != detailTableRows.Last(  d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) continue ;
-              plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea - currentDetailTableRow.WireCrossSectionalArea ) ;
+              currentPlumbingCrossSectionalArea = currentDetailTableRow.WireCrossSectionalArea / percentage * wireBook ;
+              if ( currentDetailTableRow != detailTableRows.Last( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) continue ;
+              if ( wireBook > 1 && currentPlumbingCrossSectionalArea > maxInnerCrossSectionalArea ) {
+                plumbing = conduitsModels.Last() ;
+                var wireCountInPlumbing = (int) ( maxInnerCrossSectionalArea / ( currentDetailTableRow.WireCrossSectionalArea / percentage ) ) ;
+                plumbingCount += (int) Math.Ceiling( (double) wireBook / wireCountInPlumbing ) ;
+              }
+              else {
+                plumbing = conduitsModels.FirstOrDefault( c => double.Parse( c.InnerCrossSectionalArea ) >= currentPlumbingCrossSectionalArea ) ;
+                plumbingCount++ ;
+              }
+
               if ( currentDetailTableRow != detailTableRows.First( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
                 currentDetailTableRow.IsParentRoute = false ;
                 currentDetailTableRow.IsReadOnly = true ;
@@ -568,11 +589,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               currentDetailTableRow.PlumbingSizes = plumbingSizes ;
               currentDetailTableRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
               currentDetailTableRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( currentDetailTableRow, isMixConstructionItems ) ;
-              currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, int.Parse( currentDetailTableRow.WireBook ) ) ;
+              currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, wireBook ) ;
               currentDetailTableRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
               currentDetailTableRow.IsMixConstructionItems = isMixConstructionItems ;
               currentDetailTableRow.IsReadOnlyPlumbingSize = false ;
-              plumbingCount++ ;
             }
             else {
               if ( currentDetailTableRow == detailTableRows.Last( d => d.ConstructionClassification != noPlumpingConstructionClassification ) ) {
@@ -591,7 +611,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
                 parentDetailRow.PlumbingSizes = plumbingSizes ;
                 parentDetailRow.PlumbingSize = plumbing!.Size.Replace( "mm", "" ) ;
                 parentDetailRow.PlumbingIdentityInfo = GetDetailTableRowPlumbingIdentityInfo( parentDetailRow, isMixConstructionItems ) ;
-                parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, int.Parse( parentDetailRow.WireBook ) ) ;
+                parentDetailRow.Remark = DetailTableViewModel.GetRemark( parentDetailRow.Remark, wireBook ) ;
                 parentDetailRow.IsReadOnlyPlumbingItems = ! isMixConstructionItems ;
                 parentDetailRow.IsMixConstructionItems = isMixConstructionItems ;
                 parentDetailRow.IsReadOnlyPlumbingSize = false ;
@@ -611,7 +631,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
               currentDetailTableRow.PlumbingSizes = plumbingSizes ;
               currentDetailTableRow.PlumbingSize = DefaultChildPlumbingSymbol ;
               currentDetailTableRow.NumberOfPlumbing = DefaultChildPlumbingSymbol ;
-              currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, int.Parse( currentDetailTableRow.WireBook ) ) ;
+              currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, wireBook ) ;
               currentDetailTableRow.IsReadOnlyPlumbingItems = true ;
               currentDetailTableRow.IsParentRoute = false ;
               currentDetailTableRow.IsReadOnly = true ;
@@ -625,7 +645,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             currentDetailTableRow.PlumbingSizes = plumbingSizes ;
             currentDetailTableRow.PlumbingSize = NoPlumbingSize ;
             currentDetailTableRow.NumberOfPlumbing = string.Empty ;
-            currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, int.Parse( currentDetailTableRow.WireBook ) ) ;
+            currentDetailTableRow.Remark = DetailTableViewModel.GetRemark( currentDetailTableRow.Remark, wireBook ) ;
             currentDetailTableRow.IsReadOnly = true ;
             currentDetailTableRow.IsReadOnlyPlumbingItems = true ;
             currentDetailTableRow.IsMixConstructionItems = false ;

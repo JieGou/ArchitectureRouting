@@ -266,8 +266,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ! _selectedDetailTableRows.Any() || ! _selectedDetailTableRowsSummary.Any() ) return ;
       var selectedDetailTableRow = _selectedDetailTableRows.First() ;
       var selectedDetailTableRowSummary = _selectedDetailTableRowsSummary.First() ;
-      DetailTableViewModel.MoveDetailTableRow( _detailTableViewModel, selectedDetailTableRow, DetailTableViewModelSummary, selectedDetailTableRowSummary, isMoveUp ) ;
-      UpdateDataGridAndRemoveSelectedRow() ;
+      var isMove = DetailTableViewModel.MoveDetailTableRow( _detailTableViewModel, selectedDetailTableRow, DetailTableViewModelSummary, selectedDetailTableRowSummary, isMoveUp ) ;
+      if ( isMove ) UpdateDataGridAndRemoveSelectedRow() ;
     }
 
     private void PlumpingTypeSelectionChanged( object sender, SelectionChangedEventArgs e )
@@ -398,13 +398,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       UpdateDataGridAndRemoveSelectedRow() ;
     }
     
-    private void WireBookLostKeyboardFocus( object sender, KeyboardFocusChangedEventArgs e )
+    private void WireBookLostFocus( object sender, RoutedEventArgs e )
     {
       if ( sender is not ComboBox comboBox ) return ;
       var wireBook = comboBox.Text ;
       if( string.IsNullOrEmpty( wireBook ) ) return ;
       var isNumberValue = int.TryParse( wireBook, out var selectedWireBookInt ) ;
-      if ( ! isNumberValue || ( isNumberValue && selectedWireBookInt < 1 ) ) return ;
+      if ( ! isNumberValue || ( isNumberValue && selectedWireBookInt < 1 ) ) {
+        comboBox.Text = string.Empty ;
+        return ;
+      }
 
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
         DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.WireBook, wireBook!, new List<DetailTableModel.ComboboxItemType>() ) ;
@@ -450,6 +453,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
       if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
         DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.NumberOfGrounds, selectedNumberOfGrounds.ToString(), new List<DetailTableModel.ComboboxItemType>() ) ;
+      }
+
+      UpdateDataGridAndRemoveSelectedRow() ;
+    }
+    
+    private void NumberOfGroundsLostFocus( object sender, RoutedEventArgs e )
+    {
+      if ( sender is not ComboBox comboBox ) return ;
+      var numberOfGrounds = comboBox.Text ;
+      if( string.IsNullOrEmpty( numberOfGrounds ) ) return ;
+      var isNumberValue = int.TryParse( numberOfGrounds, out var numberOfGroundsInt ) ;
+      if ( ! isNumberValue || ( isNumberValue && numberOfGroundsInt < 1 ) ) {
+        comboBox.Text = string.Empty ;
+        return ;
+      }
+      
+      if ( comboBox.DataContext is DetailTableModel editedDetailTableRow ) {
+        DetailTableViewModel.ComboboxSelectionChanged( _detailTableViewModel, DetailTableViewModelSummary, editedDetailTableRow, DetailTableViewModel.EditedColumn.NumberOfGrounds, numberOfGrounds!, new List<DetailTableModel.ComboboxItemType>() ) ;
       }
 
       UpdateDataGridAndRemoveSelectedRow() ;

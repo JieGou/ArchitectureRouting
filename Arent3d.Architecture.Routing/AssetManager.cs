@@ -1,4 +1,5 @@
 using System.IO ;
+using System.Linq ;
 using System.Reflection ;
 
 namespace Arent3d.Architecture.Routing
@@ -69,6 +70,24 @@ namespace Arent3d.Architecture.Routing
     private static string GetPath( string folderName, string fileName )
     {
       return Path.Combine( AssetPath, folderName, fileName ) ;
+    }
+    
+    public static byte[]? ReadFileEmbededSource(string fileName )
+    {
+      var assembly = Assembly.GetExecutingAssembly() ;
+      
+      var resourceFullName = assembly.GetManifestResourceNames().FirstOrDefault(element => element.EndsWith(fileName));
+      if ( string.IsNullOrEmpty( resourceFullName ) )
+        return null ;
+
+      using var stream = assembly.GetManifestResourceStream(resourceFullName);
+      if ( null == stream )
+        return null ;
+
+      var fileData = new byte[stream.Length];
+      stream.Read(fileData, 0, fileData.Length);
+
+      return fileData ;
     }
   }
 }
