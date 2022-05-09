@@ -442,6 +442,8 @@
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>Grade </string>
-      
+        
+        <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
+        <string>Registration Of&#xA;Board Data</string>
     </dict>
 </plist>

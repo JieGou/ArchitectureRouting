@@ -62,7 +62,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         if ( element3D is FamilyInstance familyInstance ) {
           curveLoopOrigin = GetBoundaryBoundingBox( familyInstance.get_BoundingBox( null ), elevation ) ;
-          curveLoopOffset = CurveLoop.CreateViaOffset( curveLoopOrigin, 200d.MillimetersToRevitUnits(), viewDirection ) ;
+          curveLoopOffset = CurveLoop.CreateViaOffset( curveLoopOrigin, 100d.MillimetersToRevitUnits(), viewDirection ) ;
         }
         else {
           if ( element3D.Location is not LocationCurve { Curve: Line line } )
@@ -79,7 +79,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
           switch ( element3D ) {
             case CableTray cableTray :
-              curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 600d.MillimetersToRevitUnits() + cableTray.Width, viewDirection ) ;
+              curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 200d.MillimetersToRevitUnits() + cableTray.Width, viewDirection ) ;
               break ;
             case Conduit conduit :
             {

@@ -44,9 +44,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     {
       return MEPSystemClassificationInfo.CableTrayConduit ;
     }
+
     protected override (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom )
     {
       return PickCommandUtil.CreateBranchingRouteEndPoint( newPickResult, anotherPickResult, routeProperty, classificationInfo, AppCommandSettings.FittingSizeCalculator, newPickIsFrom ) ;
+    }
+
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    {
+      ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }
   }
 }

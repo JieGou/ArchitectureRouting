@@ -326,11 +326,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private static void SummarizeElectricalSymbolByUniqueId( Dictionary<string, List<ElectricalSymbolModel>> electricalSymbolModelsGroupByUniqueId, List<string> floorPlanSymbols, List<string> generalDisplayDeviceSymbols, List<string> wiringTypes, List<string> plumingTypes )
     {
       foreach ( var (_, electricalSymbolModels) in electricalSymbolModelsGroupByUniqueId ) {
-        List<string> wiringAndPlumbingTypes = new List<string>() ;
+        List<string> wiringAndPlumbingTypes = new() ;
         var detailTableModel = electricalSymbolModels.FirstOrDefault() ;
         foreach ( var item in electricalSymbolModels ) {
           var count = electricalSymbolModels.Count( d => d.WireType == item.WireType && d.WireSize == item.WireSize && d.WireStrip == item.WireStrip && d.PipingType + d.PipingSize == item.PipingType + item.PipingSize ) ;
-          string wiringType = string.IsNullOrEmpty( item.WireStrip ) ? $"{item.WireType + item.WireSize,-15}{"x " + count,28}" : $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
+          string wiringType = string.IsNullOrEmpty( item.WireStrip ) || item.WireStrip == "-" ? $"{item.WireType + item.WireSize,-15}{"x " + count,15}" : $"{item.WireType + item.WireSize,-15}{"－" + item.WireStrip + " x " + count,15}" ;
           string plumbingType = "(" + item.PipingType + item.PipingSize + ")" ;
           if ( wiringAndPlumbingTypes.Contains( wiringType + "-" + plumbingType ) ) continue ;
           wiringAndPlumbingTypes.Add( wiringType + "-" + plumbingType ) ;

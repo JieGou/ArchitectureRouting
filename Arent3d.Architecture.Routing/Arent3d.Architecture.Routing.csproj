@@ -63,6 +63,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Assets\CSVs\Csv File.rar" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\CSVs\Csv File.zip" />
+    <EmbeddedResource Include="Assets\CSVs\Csv File.zip" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Assets\Families\2022\Electrical\Metric Generic Annotation.rft" />
     <EmbeddedResource Include="Assets\Families\2022\Electrical\Metric Generic Annotation.rft" />
     <None Remove="Assets\Families\2022\Electrical\Metric Electrical Equipment.rft" />
