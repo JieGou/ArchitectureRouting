@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.IO ;
 using System.Linq ;
+using System.Windows ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
@@ -33,12 +34,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterEcoModels ;
     private Dictionary<int, string> _pickUpNumbers ;
     private int _pickUpNumber ;
-
-    public ICommand ExportFileCommand => new RelayCommand( ExportFile ) ;
-    public ICommand SaveCommand => new RelayCommand( Save ) ;
-    public ICommand DeleteCommand => new RelayCommand( Delete ) ;
+ 
+    public RelayCommand<Window> ExportFileCommand => new ( ExportFile ) ;
+    public RelayCommand<Window> SaveCommand => new( Save ) ;
+    public RelayCommand<Window> DeleteCommand => new( Delete ) ;
     public ICommand UpdateCommand => new RelayCommand( Update ) ;
-    public ICommand DisplaySwitchingCommand => new RelayCommand( DisplaySwitching ) ;
+    public RelayCommand<Window> DisplaySwitchingCommand => new( DisplaySwitching ) ; 
+    public RelayCommand<Window> CancelCommand => new(Cancel) ;
 
     public enum ProductType
     {
@@ -446,7 +448,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     #region Command Method
 
-    private void ExportFile()
+    private void ExportFile(Window window)
     {
       const string fileName = "file_name.dat" ;
       SaveFileDialog saveFileDialog = new SaveFileDialog { FileName = fileName, Filter = "CSV files (*.dat)|*.dat", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
@@ -483,9 +485,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       catch ( Exception ex ) {
         MessageBox.Show( "Export data failed because " + ex, "Error Message" ) ;
       }
+      window.DialogResult = true ;
+      window.Close();
     }
 
-    private void Save()
+    private void Save(Window window)
     {
       try {
         using Transaction t = new Transaction( _document, "Save data" ) ;
@@ -493,22 +497,34 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _pickUpStorable.AllPickUpModelData = _pickUpModels ;
         _pickUpStorable.Save() ;
         t.Commit() ;
+        window.DialogResult = true ;
       }
       catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
         MessageBox.Show( "Save Data Failed.", "Error Message" ) ;
+        window.DialogResult = false ;
       }
     }
 
-    private void DisplaySwitching()
+    private void DisplaySwitching(Window window)
     {
+      window.DialogResult = true ;
+      window.Close();
     }
 
     private void Update()
     {
     }
-
-    private void Delete()
+    
+    private void Cancel(Window window)
     {
+      window.DialogResult = false ;
+      window.Close();
+    }
+
+    private void Delete(Window window)
+    {
+      window.DialogResult = true ;
+      window.Close();
     }
 
     #endregion

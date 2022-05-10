@@ -5,9 +5,9 @@ using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
-  public partial class ContentDisplayDialog
+  public partial class PickupDialog
   {
-    public ContentDisplayDialog( PickUpViewModel pickUpViewModel )
+    public PickupDialog( PickUpViewModel pickUpViewModel )
     { 
       InitializeComponent() ;
       DataContext = pickUpViewModel ;
@@ -16,13 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void DataGrid_LoadingRow( object sender, DataGridRowEventArgs e )
     {
       e.Row.Header = ( e.Row.GetIndex() + 1 ).ToString() ;
-    }
-
-    private void CloseDialog( object sender, RoutedEventArgs e )
-    {
-      DialogResult = true ;
-      Close() ;
-    }
+    } 
   }
  
   public abstract class DesignPickUpViewModel : PickUpViewModel

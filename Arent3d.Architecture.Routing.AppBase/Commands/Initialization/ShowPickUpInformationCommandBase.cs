@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
       PickUpViewModel pickUpViewModel = new PickUpViewModel( document ) ;
-      var pickUpDialog = new ContentDisplayDialog( pickUpViewModel ) ;
+      var pickUpDialog = new PickupDialog( pickUpViewModel ) ;
       if(!pickUpViewModel.PickUpModels.Any())
         return Result.Cancelled ;
       
