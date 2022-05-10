@@ -16,13 +16,14 @@ using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
+using static Arent3d.Architecture.Routing.AppBase.Commands.Initialization.ShowElectricSymbolsCommandBase ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class CreateDetailTableCommandBase : IExternalCommand
   {
-    const string DefaultParentPlumbingType = "E" ;
-    public const string DefaultConstructionItems = "未設定" ;
+    private const string DefaultParentPlumbingType = "E" ;
+    private const string DefaultConstructionItems = "未設定" ;
     private const string DefaultChildPlumbingSymbol = "↑" ;
     private const string NoPlumping = "配管なし" ;
     private const string NoPlumbingSize = "（なし）" ;
@@ -96,7 +97,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             if ( ! viewModel.IsCreateDetailTableOnFloorPlanView && ! dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
             var level = uiDoc.ActiveView.GenLevel ;
             var detailTableData = viewModel.IsCreateDetailTableOnFloorPlanView ? viewModel.DetailTableModels : dialog.DetailTableViewModelSummary.DetailTableModels ;
-            CreateDetailTableSchedule( doc, detailTableData, level.Name ) ;
+            var scheduleName = CreateDetailTableSchedule( doc, detailTableData, level.Name ) ;
+            MessageBox.Show( string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ), "Message" ) ;
             viewModel.IsCreateDetailTableOnFloorPlanView = false ;
             dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView = false ;
 
@@ -186,7 +188,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       導圧管類
     }
 
-    public static void CreateDetailTableSchedule( Document document, IReadOnlyCollection<DetailTableModel> detailTableModels, string levelName )
+    public static string CreateDetailTableSchedule( Document document, IReadOnlyCollection<DetailTableModel> detailTableModels, string levelName )
     {
       string scheduleName = "Revit.Detail.Table.Name".GetDocumentStringByKeyOrDefault( document, "Detail Table" ) + " - " + levelName + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
       var detailTable = document.GetAllElements<ViewSchedule>().SingleOrDefault( v => v.Name.Contains( scheduleName ) ) ;
@@ -197,7 +199,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       InsertDetailTableDataIntoSchedule( detailTable, detailTableModels ) ;
-      MessageBox.Show( "集計表 \"" + scheduleName + "\" を作成しました", "Message" ) ;
+      return scheduleName ;
     }
 
     private static void InsertDetailTableDataIntoSchedule( ViewSchedule viewSchedule, IReadOnlyCollection<DetailTableModel> detailTableModels )

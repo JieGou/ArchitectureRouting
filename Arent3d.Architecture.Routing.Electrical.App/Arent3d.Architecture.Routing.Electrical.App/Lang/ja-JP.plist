@@ -380,6 +380,9 @@
 
         <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.NormalMode</key>
         <string>ノーマルモード</string>
+
+        <key>Revit.Electrical.CreateSchedule.Message</key>
+        <string>集計表 "{0}" を作成しました</string>
         
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>

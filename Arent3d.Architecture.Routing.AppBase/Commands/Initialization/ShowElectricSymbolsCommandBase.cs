@@ -22,6 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public class ShowElectricSymbolsCommandBase : IExternalCommand
   {
     private const int HeaderRowCount = 3 ;
+    public const string CreateScheduleSuccessfullyMessage = "集計表 \"'{0}'\" を作成しました" ;
 
     private readonly struct ConnectorInfo
     {
@@ -59,7 +60,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return doc.Transaction( "TransactionName.Commands.Initialization.ShowElectricSymbolsCommand".GetAppStringByKeyOrDefault( "Create electrical schedule" ), _ =>
       {
         var level = doc.ActiveView.GenLevel.Name ;
-        CreateElectricalSchedule( doc, electricalSymbolModels, level ) ;
+        var scheduleName = CreateElectricalSchedule( doc, electricalSymbolModels, level ) ;
+        MessageBox.Show( string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ), "Message" ) ;
         return Result.Succeeded ;
       } ) ;
     }
@@ -212,7 +214,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return new ConnectorInfo( ceedSetCode, deviceSymbol, modelNumber ) ;
     }
 
-    public static void CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels, string level )
+    public static string CreateElectricalSchedule( Document document, List<ElectricalSymbolModel> electricalSymbolModels, string level )
     {
       string scheduleName = "Revit.Electrical.Schedule.Name".GetDocumentStringByKeyOrDefault( document, "Electrical Symbol Table" ) + " - " + level + DateTime.Now.ToString( " yyyy-MM-dd HH-mm-ss" ) ;
       var electricalSchedule = document.GetAllElements<ViewSchedule>().SingleOrDefault( v => v.Name.Contains( scheduleName ) ) ;
@@ -223,7 +225,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       CreateScheduleData( document, electricalSchedule, electricalSymbolModels ) ;
-      MessageBox.Show( "集計表 \"" + scheduleName + "\" を作成しました", "Message" ) ;
+      return scheduleName ;
     }
 
     private enum ScheduleColumns

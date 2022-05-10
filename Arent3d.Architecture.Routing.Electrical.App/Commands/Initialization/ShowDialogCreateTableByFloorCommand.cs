@@ -9,8 +9,8 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.UI ;
 using System.Collections.Generic ;
-using System.Collections.ObjectModel ;
 using System.Linq ;
+using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Autodesk.Revit.Attributes ;
 using static Arent3d.Architecture.Routing.AppBase.Commands.Initialization.CreateDetailTableCommandBase ;
@@ -19,9 +19,9 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
 {
-  [Transaction(TransactionMode.Manual)]
-  [DisplayNameKey("Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand", DefaultString = "Create Table\nBy Floors")]
-  [Image("resources/Initialize-32.bmp", ImageType = ImageType.Large)]
+  [Transaction( TransactionMode.Manual )]
+  [DisplayNameKey( "Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand", DefaultString = "Create Table\nBy Floors" )]
+  [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class ShowDialogCreateTableByFloorCommand : IExternalCommand
   {
     private const string DetailTableType = "Detail Table" ;
@@ -37,7 +37,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       dialog.ShowDialog() ;
       if ( ! dialog.DialogResult ?? true )
         return Result.Cancelled ;
-      
+
       var tableType = dialog.SelectedTableType ;
       var levelIds = dialog.LevelList.Where( t => t.IsSelected ).Select( p => p.LevelId ).ToList() ;
       var allConduits = new FilteredElementCollector( doc ).OfClass( typeof( Conduit ) ).OfType<Conduit>().ToList() ;
@@ -59,6 +59,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       try {
         return doc.Transaction( "TransactionName.Commands.Routing.ShowDialogCreateTableByFloorCommand".GetAppStringByKeyOrDefault( "Create detail table" ), _ =>
         {
+          var message = string.Empty ;
           foreach ( var levelId in levelIds ) {
             var conduitsByFloor = allConduits.Where( x => x.ReferenceLevel.Id == levelId ).ToList() ;
             var elementsByFloor = conduitsByFloor.Cast<Element>().ToList() ;
@@ -67,17 +68,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
             if ( ! detailTableModels.Any() ) continue ;
             if ( isCreateTableEachFloors ) {
               var level = detailTableModels.FirstOrDefault( d => ! string.IsNullOrEmpty( d.Floor ) )?.Floor ?? string.Empty ;
-              CreateDetailTableSchedule( doc, detailTableModels, level ) ;
+              var scheduleName = CreateDetailTableSchedule( doc, detailTableModels, level ) ;
+              message += string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ) + "\n" ;
             }
 
             detailTableModelsOfAllFloors.AddRange( detailTableModels ) ;
           }
-          
+
           if ( ! isCreateTableEachFloors ) {
-            CreateDetailTableSchedule( doc, detailTableModelsOfAllFloors, AllFloors ) ;
+            var scheduleName = CreateDetailTableSchedule( doc, detailTableModelsOfAllFloors, AllFloors ) ;
+            message = string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ) ;
           }
 
           SaveDetailTableData( detailTableModelsOfAllFloors, doc ) ;
+          MessageBox.Show( message, "Message" ) ;
           return Result.Succeeded ;
         } ) ;
       }
@@ -94,6 +98,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
       try {
         return doc.Transaction( "TransactionName.Commands.Routing.ShowDialogCreateTableByFloorCommand".GetAppStringByKeyOrDefault( "Create electrical symbol table" ), _ =>
         {
+          var message = string.Empty ;
           foreach ( var levelId in levelIds ) {
             List<ElectricalSymbolModel> electricalSymbolModels = new() ;
             var conduitsByFloor = allConduits.Where( x => x.ReferenceLevel.Id == levelId ).ToList() ;
@@ -102,16 +107,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
             if ( ! string.IsNullOrEmpty( errorMess ) || ! electricalSymbolModels.Any() ) continue ;
             if ( isCreateTableEachFloors ) {
               var level = doc.GetElement( levelId ).Name ;
-              CreateElectricalSchedule( doc, electricalSymbolModels, level ) ;
+              var scheduleName = CreateElectricalSchedule( doc, electricalSymbolModels, level ) ;
+              message += string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ) + "\n" ;
             }
             else {
               electricalTableOfAllFloors.AddRange( electricalSymbolModels ) ;
             }
           }
 
-          if ( isCreateTableEachFloors ) return Result.Succeeded ;
-          if ( electricalTableOfAllFloors.Any() )
-            CreateElectricalSchedule( doc, electricalTableOfAllFloors, AllFloors ) ;
+          if ( ! isCreateTableEachFloors && electricalTableOfAllFloors.Any() ) {
+            var scheduleName = CreateElectricalSchedule( doc, electricalTableOfAllFloors, AllFloors ) ;
+            message = string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ) ;
+          }
+
+          MessageBox.Show( message, "Message" ) ;
           return Result.Succeeded ;
         } ) ;
       }
@@ -127,7 +136,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
         {
           if ( ! detailTableModels.Any() ) return ;
           var existedDetailSymbolIds = detailTableStorable.DetailTableModelData.Select( d => d.DetailSymbolId ).Distinct().ToList() ;
-          var itemNotInDb = detailTableStorable.DetailTableModelData.Where( d => ! existedDetailSymbolIds.Contains( d.DetailSymbolId ) ).ToList() ;
+          var itemNotInDb = detailTableModels.Where( d => ! existedDetailSymbolIds.Contains( d.DetailSymbolId ) ).ToList() ;
           if ( itemNotInDb.Any() ) detailTableStorable.DetailTableModelData.AddRange( itemNotInDb ) ;
         }
         detailTableStorable.Save() ;
