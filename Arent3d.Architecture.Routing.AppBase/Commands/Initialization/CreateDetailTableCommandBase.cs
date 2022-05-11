@@ -125,8 +125,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
           }
 
-          viewModel.ReferenceDetailTableModels = CreateReferenceDetailTableModels( doc, detailSymbolStorable, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, detailTableModelsData, detailSymbolIds ) ;
-          viewModel.IsAddReference = false ;
+          var referenceDetailTableModels = CreateReferenceDetailTableModels( doc, detailSymbolStorable, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, wiresAndCablesModelData, conduitsModelData, detailTableModelsData, detailSymbolIds ) ;
+          foreach ( var referenceDetailTableModelRow in referenceDetailTableModels ) {
+            viewModel.ReferenceDetailTableModels.Add( referenceDetailTableModelRow ) ;
+          }
+          
           dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
           dialog.ShowDialog() ;
         }
@@ -209,8 +212,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       if ( detailSymbolIdsOnDetailTableModels.Any() ) {
+        var index = "-" + DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
         var detailTableModelRowsOnDetailTableStorable = detailTableModelsData.Where( d => detailSymbolIdsOnDetailTableModels.Contains( d.DetailSymbolId ) ).ToList() ;
         foreach ( var detailTableRow in detailTableModelRowsOnDetailTableStorable ) {
+          if ( ! string.IsNullOrEmpty( detailTableRow.GroupId ) ) detailTableRow.GroupId += index ;
+          detailTableRow.PlumbingIdentityInfo += index ;
           detailTableModels.Add( detailTableRow ) ;
         }
       }

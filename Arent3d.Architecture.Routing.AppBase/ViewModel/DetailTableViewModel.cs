@@ -742,21 +742,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( string.IsNullOrEmpty( filePath ) ) return ;
       var referenceDetailTableModels = ExcelToModelConverter.GetReferenceDetailTableModels( filePath ) ;
       GetValuesForParametersOfDetailTableModels( referenceDetailTableModels, conduitsModelData, wiresAndCablesModelData ) ;
-      detailTableViewModelSummary.ReferenceDetailTableModels = new ObservableCollection<DetailTableModel>( referenceDetailTableModels ) ;
-      List<DetailTableModel> unGroupDetailTableModels = new() ;
+      var index = "-" + DateTime.Now.ToString( "yyyyMMddHHmmss.fff" ) ;
       foreach ( var detailTableRow in referenceDetailTableModels ) {
+        if ( ! string.IsNullOrEmpty( detailTableRow.GroupId ) ) detailTableRow.GroupId += index ;
+        detailTableRow.PlumbingIdentityInfo += index ;
         if ( detailTableRow.Remark.Contains( ',' ) || detailTableRow.Remark.Contains( 'x' ) ) {
-          AddUnGroupDetailTableRows( unGroupDetailTableModels, detailTableRow ) ;
+          AddUnGroupDetailTableRows( detailTableViewModel.ReferenceDetailTableModels, detailTableRow ) ;
         }
         else {
-          unGroupDetailTableModels.Add( detailTableRow ) ;
+          detailTableViewModel.ReferenceDetailTableModels.Add( detailTableRow ) ;
         }
+        detailTableViewModelSummary.ReferenceDetailTableModels.Add( detailTableRow ) ;
       }
-
-      detailTableViewModel.ReferenceDetailTableModels = new ObservableCollection<DetailTableModel>( unGroupDetailTableModels ) ;
     }
 
-    private static void AddUnGroupDetailTableRows( List<DetailTableModel> unGroupDetailTableModels, DetailTableModel detailTableRow )
+    private static void AddUnGroupDetailTableRows( ObservableCollection<DetailTableModel> unGroupDetailTableModels, DetailTableModel detailTableRow )
     {
       var remarks = detailTableRow.Remark.Split( ',' ) ;
       var isParentDetailRow = ! detailTableRow.IsParentRoute ;
