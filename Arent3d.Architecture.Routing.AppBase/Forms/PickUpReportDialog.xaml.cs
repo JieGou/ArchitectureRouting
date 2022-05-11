@@ -4,6 +4,7 @@ using System.IO ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Forms ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
@@ -170,7 +171,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private List<string> GetConstructionItemList()
     {
       var constructionItemList = new List<string>() ;
-      foreach ( var pickUpModel in _pickUpModels.Where( pickUpModel => ! constructionItemList.Contains( pickUpModel.ConstructionItems ) && pickUpModel.EquipmentType == ContentDisplayDialog.ProductType.Conduit.GetFieldName() ) ) {
+      foreach ( var pickUpModel in _pickUpModels.Where( pickUpModel => ! constructionItemList.Contains( pickUpModel.ConstructionItems ) && pickUpModel.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() ) ) {
         constructionItemList.Add( pickUpModel.ConstructionItems ) ;
       }
 
@@ -280,7 +281,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
             rowStart += 3 ;
             foreach ( var code in codeList ) {
-              var conduitPickUpModels = _pickUpModels.Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.Floor == level && p.EquipmentType == ContentDisplayDialog.ProductType.Conduit.GetFieldName() ).GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
+              var conduitPickUpModels = _pickUpModels.Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.Floor == level && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() ).GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
               foreach ( var conduitPickUpModel in conduitPickUpModels ) {
                 rowStart = AddConfirmationPickUpRow( conduitPickUpModel.PickUpModels, sheet, rowStart, xssfCellStyles ) ;
               }
@@ -331,7 +332,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
           rowStart = 4 ;
           foreach ( var code in codeList ) {
-            var conduitPickUpModels = _pickUpModels.Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.EquipmentType == ContentDisplayDialog.ProductType.Conduit.GetFieldName() ).GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
+            var conduitPickUpModels = _pickUpModels.Where( p => p.ConstructionItems == sheetName && p.Specification2 == code && p.EquipmentType == PickUpViewModel.ProductType.Conduit.GetFieldName() ).GroupBy( x => x.ProductCode, ( key, p ) => new { ProductCode = key, PickUpModels = p.ToList() } ) ;
             foreach ( var conduitPickUpModel in conduitPickUpModels ) {
               rowStart = AddSummaryPickUpRow( conduitPickUpModel.PickUpModels, sheet, rowStart, levelColumns, index, xssfCellStyles ) ;
             }
