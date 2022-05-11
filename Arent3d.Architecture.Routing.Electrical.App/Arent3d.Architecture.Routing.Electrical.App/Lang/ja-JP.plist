@@ -67,6 +67,9 @@
         <key>Electrical.App.Commands.Routing.AdjustLeaderCommand</key>
         <string>Adjust Leader</string>
 
+        <key>Electrical.App.Commands.Routing.ChangeLocationTypeCommand</key>
+        <string>Change&#xA;Location Type</string>
+
         <key>Electrical.App.Commands.Rack.ExportRacksCommand</key>
         <string>Export&#xA;PS</string>
 

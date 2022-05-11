@@ -7,15 +7,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
 {
   public static class FilterHelper
   {
+    public const string LocationTypeParameterName = "Location Type" ;
     public static void InitialFilters(Document document)
     {
-      const string parameterName = "Location Type" ;
-      
       using var transactionGroup = new TransactionGroup( document ) ;
       transactionGroup.Start("Add Filter") ;
         
       var categorySet = CreateCategorySet( document ) ;
-      var (notify, parameterGuid) = ShareParameterHelper.FindOrCreateShareParameter( document, parameterName, categorySet ) ;
+      var (notify, parameterGuid) = ShareParameterHelper.FindOrCreateShareParameter( document, LocationTypeParameterName, categorySet ) ;
       if ( ! string.IsNullOrEmpty( notify ) ) {
         transactionGroup.RollBack() ;
         return ;
@@ -87,7 +86,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
       return filters ;
     }
     
-    private static CategorySet CreateCategorySet( Document document )
+    public static CategorySet CreateCategorySet( Document document )
     {
       var categorySet = new CategorySet() ;
       categorySet.Insert( Category.GetCategory( document, BuiltInCategory.OST_Conduit ) ) ;
