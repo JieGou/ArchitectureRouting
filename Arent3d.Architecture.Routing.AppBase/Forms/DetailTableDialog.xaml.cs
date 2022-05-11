@@ -13,6 +13,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -60,6 +61,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _selectedReferenceDetailTableRows = new List<DetailTableModel>() ;
 
       CreateDetailTableViewModelByGroupId() ;
+      HideReferenceDataGrid( ! viewModel.IsAddReference ) ;
+      viewModel.IsAddReference = false ;
       
       var rowStyle = new Style( typeof( DataGridRow ) ) ;
       rowStyle.Setters.Add( new EventSetter( MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
@@ -103,6 +106,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         if ( item is not DetailTableModel detailTableRow ) continue ;
         _selectedReferenceDetailTableRows.Add( detailTableRow ) ;
       }
+    }
+    
+    private void BtnHideReferenceDataGrid_Click( object sender, RoutedEventArgs e )
+    {
+      if ( BtnReferenceSelectAll.Visibility == Visibility.Visible ) {
+        HideReferenceDataGrid( true ) ;
+      }
+      else if ( BtnReferenceSelectAll.Visibility == Visibility.Hidden ) {
+        HideReferenceDataGrid( false ) ;
+      }
+    }
+
+    private void HideReferenceDataGrid( bool isVisible )
+    {
+      BtnReferenceSelectAll.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnDeleteReferenceLine.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnReadCtlFile.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnSelectDetailTableRowWithSameDetailSymbolId.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnAddReference.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnAddReferenceRows.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      DtReferenceGrid.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      DtReferenceGrid.Height = isVisible ? 0 : 370 ;
+      DetailTableWindow.Height = isVisible ? 590 : 980 ;
+      if ( isVisible ) return ;
+      DetailTableWindow.WindowStartupLocation = WindowStartupLocation.Manual ;
+      DetailTableWindow.Top = 50 ;
+      DetailTableWindow.Left = 400 ;
     }
 
     private void BtnDeleteLine_Click( object sender, RoutedEventArgs e )
@@ -636,6 +666,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DataContext = newDetailTableViewModel ;
       DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
       DetailTableViewModelSummary = newDetailTableViewModel ;
+      if ( _detailTableViewModel.ReferenceDetailTableModels.Any() ) {
+        DtReferenceGrid.ItemsSource = newDetailTableViewModel.ReferenceDetailTableModels ;
+      }
     }
     
     private void UnGroupDetailTableRows( string groupId )

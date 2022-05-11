@@ -4,10 +4,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
+        x:Name="DetailTableWindow"
         WindowStartupLocation="CenterScreen"
         Title="明細表作成" Height="980" Width="1150" ResizeMode="NoResize">
     <Grid>
-        <Grid VerticalAlignment="Top"  HorizontalAlignment="Right">
+        <Grid VerticalAlignment="Top" HorizontalAlignment="Right">
             <Grid.RowDefinitions>
                 <RowDefinition Height="55"/>
                 <RowDefinition Height="35"/>
@@ -19,7 +20,7 @@
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
-                <RowDefinition Height="125"/>
+                <RowDefinition Height="40"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
@@ -52,14 +53,14 @@
             <Button Grid.Row="7"  Width="100" Content="上へ" Margin="5,5,5,5" Height="25" Click="BtnMoveUp_Click" />
             <Button Grid.Row="8"  Width="100" Content="下へ" Margin="5,5,5,5" Height="25" Click="BtnMoveDown_Click" />
             <Button Grid.Row="9"  Width="100" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnSelectAll_Click" />
-            <Label Grid.Row="10" Content="参照情報" Margin="0,100,5,0"/>
-            <Button Grid.Row="11"  Width="100" Content="▼" Margin="5,0,5,5" Height="25" />
-            <Button Grid.Row="12"  Width="100" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnReferenceSelectAll_Click" />
-            <Button Grid.Row="13"  Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Click="BtnDeleteReferenceLine_Click" />
-            <Button Grid.Row="14"  Width="100" Content="明細データ取込" Margin="5,5,5,5" Height="25" Click="BtnReadCtlFile_Click" />
-            <Button Grid.Row="15"  Width="100" Content="同一明細行を選択" Margin="5,5,5,5" Height="25" Click="BtnSelectDetailTableRowWithSameDetailSymbolId_Click"/>
-            <Button Grid.Row="16"  Width="100" Content="参照" Margin="5,5,5,5" Height="25" Click="BtnAddReference_Click" />
-            <Button Grid.Row="17"  Width="100" Content="明細追加" Margin="5,5,5,5" Height="25" Click="BtnAddReferenceRows_Click" />
+            <Label Grid.Row="10" Content="参照情報" Margin="0,15,5,0"/>
+            <Button Grid.Row="11"  Width="100" Content="▼" Margin="5,0,5,5" Height="25" Click="BtnHideReferenceDataGrid_Click"/>
+            <Button Grid.Row="12" x:Name="BtnReferenceSelectAll" Width="100" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnReferenceSelectAll_Click" />
+            <Button Grid.Row="13" x:Name="BtnDeleteReferenceLine" Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Click="BtnDeleteReferenceLine_Click" />
+            <Button Grid.Row="14" x:Name="BtnReadCtlFile" Width="100" Content="明細データ取込" Margin="5,5,5,5" Height="25" Click="BtnReadCtlFile_Click" />
+            <Button Grid.Row="15" x:Name="BtnSelectDetailTableRowWithSameDetailSymbolId" Width="100" Content="同一明細行を選択" Margin="5,5,5,5" Height="25" Click="BtnSelectDetailTableRowWithSameDetailSymbolId_Click"/>
+            <Button Grid.Row="16" x:Name="BtnAddReference" Width="100" Content="参照" Margin="5,5,5,5" Height="25" Click="BtnAddReference_Click" />
+            <Button Grid.Row="17" x:Name="BtnAddReferenceRows" Width="100" Content="明細追加" Margin="5,5,5,5" Height="25" Click="BtnAddReferenceRows_Click" />
         </Grid>
         <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Width="970" Height="30" Margin="20">
             <Grid.ColumnDefinitions>
@@ -70,7 +71,7 @@
             <TextBox Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left"  Width="300" VerticalAlignment="Center" Height="25"/>
         </Grid>
 
-        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Width="1000" Height="390" RowHeight="25" Margin="20, 70" ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
+        <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Width="1000" Height="410" RowHeight="25" Margin="20, 70" ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtGrid_SelectionChanged" >
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
@@ -605,7 +606,7 @@
             </DataGrid.Columns>
         </DataGrid>
         
-        <DataGrid x:Name="DtReferenceGrid" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="1000" Height="390" RowHeight="25" Margin="20, 70" 
+        <DataGrid x:Name="DtReferenceGrid" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="1000" Height="370" RowHeight="25" Margin="20, 70" 
                   ItemsSource="{Binding ReferenceDetailTableModels}" 
                   CanUserAddRows="False" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtReferenceGrid_SelectionChanged" >
