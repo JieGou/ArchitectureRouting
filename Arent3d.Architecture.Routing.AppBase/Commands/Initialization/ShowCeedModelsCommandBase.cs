@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -26,13 +27,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string symbolMagnification = "シンボル倍率" ;
       const double defaultSymbolMagnification = 100.0 ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
-
-      var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
+      
+      var viewModel = new CeedViewModel1( commandData ) ;
+      var dlgCeedModel = new CeedModelDialog( viewModel ) ;
+      
+      //var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
 
       dlgCeedModel.ShowDialog() ;
       if ( ! ( dlgCeedModel.DialogResult ?? false ) ) return Result.Cancelled ;
       ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( dlgCeedModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
+      if ( string.IsNullOrEmpty( viewModel.SelectedDeviceSymbol ) ) return Result.Succeeded ;
       Element? element = null ;
       var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
       {
@@ -41,8 +45,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var (originX, originY, originZ) = uiDoc.Selection.PickPoint( "Connectorの配置場所を選択して下さい。" ) ;
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, dlgCeedModel.SelectedFloorPlanType ) ;
-        var ceedCode = dlgCeedModel.SelectedCeedCode + "-" + dlgCeedModel.SelectedDeviceSymbol + "-" + dlgCeedModel.SelectedModelNumber ;
+        element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
+        var ceedCode = viewModel.SelectedCeedCode + "-" + viewModel.SelectedDeviceSymbol + "-" + viewModel.SelectedModelNum ;
         if ( element is FamilyInstance familyInstance ) {
           element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
@@ -65,15 +69,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
         var txtPosition = new XYZ( originX - 2, originY + 4, heightOfConnector ) ;
-        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, dlgCeedModel.SelectedDeviceSymbol, opts ) ;
+        var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, viewModel.SelectedDeviceSymbol, opts ) ;
 
         // create group of selected element and new text note
         groupIds.Add( element.Id ) ;
         groupIds.Add( textNote.Id ) ;
-        if ( ! string.IsNullOrEmpty( dlgCeedModel.SelectedCondition ) ) {
-          if ( dlgCeedModel.SelectedCondition.Length > 6 ) noteWidth += ( dlgCeedModel.SelectedCondition.Length - 6 ) * 0.007 ;
+        if ( ! string.IsNullOrEmpty( viewModel.SelectedCondition ) ) {
+          if ( viewModel.SelectedCondition?.Length > 6 ) noteWidth += ( viewModel.SelectedCondition.Length - 6 ) * 0.007 ;
           var txtConditionPosition = new XYZ( originX - 2, originY + 2.5, heightOfConnector ) ;
-          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, dlgCeedModel.SelectedCondition, opts ) ;
+          var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, noteWidth, viewModel.SelectedCondition, opts ) ;
 
           var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
           if ( textNoteType == null ) {

@@ -1,12 +1,14 @@
-﻿<ui:RevitDialog x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CeedModelDialog"
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.CeedModelDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:ui="clr-namespace:Arent3d.Revit.UI;assembly=Arent3d.Revit.UI"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="CeeD Models" Height="800" Width="900" MinHeight="200" MinWidth="900">
+        Title="CeeD Models" Height="800" Width="900" MinHeight="200" MinWidth="900"
+        d:DataContext="{d:DesignInstance {x:Type local:DesignCeedViewModel}, IsDesignTimeCreatable=True}">
   <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
@@ -33,9 +35,15 @@
     
       <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right">
         <Label Content="CeeD型番" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5" Visibility="Hidden"/>
-        <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" KeyDown="CmbModelNumbers_KeyDown" Visibility="Hidden"/>
+        <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27"  Visibility="Hidden"
+                  KeyDown="CmbModelNumbers_KeyDown" 
+                  ItemsSource="{Binding CeedModelNumber}"
+                  SelectedIndex="{Binding SelectedCeedModelNumberIndex}"/>
         <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-        <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" KeyDown="CmbModelNumbers_KeyDown"/>        
+        <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" 
+                  KeyDown="CmbModelNumbers_KeyDown"
+                  ItemsSource="{Binding ModelNumber}"
+                  SelectedIndex="{Binding SelectedModelNumberIndex}" />        
         <Button Content="Search"
                 Click="Button_Search"
                 Margin="20,5,5,5"
@@ -43,9 +51,9 @@
                 Width="80" />
       </StackPanel>
 
-      <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="False" Content="使用するものだけ表示" Width="130" HorizontalAlignment="Left" Margin="230, 10, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden" />
-      <CheckBox Grid.Row="1" Name="CbShowCeedModelNumber" IsChecked="False" Content="CeeD型番の表示" Width="120" HorizontalAlignment="Right" Margin="0, 10, 0, 0" Checked="ShowCeedModelNumberColumn_Checked" Unchecked="ShowCeedModelNumberColumn_UnChecked" />
-      <CheckBox Grid.Row="1" Name="CbShowDiff"  IsChecked="False" Content="差分表示" Width="80" HorizontalAlignment="Right" Margin="0, 10, 130, 0" Checked="ShowDiff_Checked" Unchecked="ShowDiff_UnChecked" />
+      <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="{Binding IsShowOnlyUsingCode, Mode=TwoWay}" Content="使用するものだけ表示" Width="130" HorizontalAlignment="Left" Margin="230, 10, 0, 0"  Visibility="Hidden" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked"/>
+      <CheckBox Grid.Row="1" Name="CbShowCeedModelNumber" IsChecked="{Binding IsShowCeedModelNumber, Mode=TwoWay}" Content="CeeD型番の表示" Width="120" HorizontalAlignment="Right" Margin="0, 10, 0, 0" Checked="ShowCeedModelNumberColumn_Checked" Unchecked="ShowCeedModelNumberColumn_UnChecked" />
+      <CheckBox Grid.Row="1" Name="CbShowDiff"  IsChecked="{Binding IsShowDiff, Mode=TwoWay}" Content="差分表示" Width="80" HorizontalAlignment="Right" Margin="0, 10, 130, 0" Checked="ShowDiff_Checked" Unchecked="ShowDiff_UnChecked" />
      
       <Button Grid.Row="1" x:Name="BtnReplaceSymbol"
               Content="モデル置き換え"
@@ -53,7 +61,8 @@
               Margin="10,5,10,10"
               HorizontalAlignment="Left"
               Width="100" 
-              Height="27"/>
+              Height="27"
+              IsEnabled="False"/>
       
       <Button Grid.Row="1"
               Content="モデル一括置換"
@@ -157,6 +166,7 @@
       
       <Button Grid.Row="3" Grid.Column="0"
               Content="Reset"
+              Command="{Binding ResetCommand}"
               Click="Button_Reset"
               Margin="10,5,90,5"
               HorizontalAlignment="Right"
@@ -170,4 +180,4 @@
               Width="80" 
               Height="27"/>
     </Grid>
-</ui:RevitDialog>
+</Window>
