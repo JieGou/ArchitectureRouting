@@ -15,7 +15,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ShowCeedModelsCommandBase : IExternalCommand
   {
-    private const string ConditionTextNoteTypeName = "1.5 mm" ;
+    private const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
+    private const string ConditionTextNoteTypeName = "1.5mm_ConditionText" ;
     private const string DefaultConstructionItem = "未設定" ;
 
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
@@ -56,6 +57,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var txtPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 4 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, dlgCeedModel.SelectedDeviceSymbol, opts ) ;
 
+        var deviceSymbolTextNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
+        if ( deviceSymbolTextNoteType == null ) {
+          var elementType = textNote.TextNoteType.Duplicate( DeviceSymbolTextNoteTypeName ) ;
+          deviceSymbolTextNoteType = elementType as TextNoteType ;
+          deviceSymbolTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+          deviceSymbolTextNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
+        }
+
+        if ( deviceSymbolTextNoteType != null ) textNote.ChangeTypeId( deviceSymbolTextNoteType.Id ) ;
+
         // create group of selected element and new text note
         groupIds.Add( element.Id ) ;
         groupIds.Add( textNote.Id ) ;
@@ -63,6 +74,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           var txtConditionPosition = new XYZ( originX - 2 * TextNoteHelper.TextSize.MillimetersToRevitUnits() * defaultSymbolMagnification, originY + ( 1.5 + 2 * TextNoteHelper.TextSize ).MillimetersToRevitUnits() * defaultSymbolMagnification, heightOfConnector ) ;
           var conditionTextNote = TextNote.Create( doc, doc.ActiveView.Id, txtConditionPosition, dlgCeedModel.SelectedCondition, opts ) ;
 
+          var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ConditionTextNoteTypeName, tt.Name ) ) ;
+          if ( textNoteType == null ) {
+            Element ele = conditionTextNote.TextNoteType.Duplicate( ConditionTextNoteTypeName ) ;
+            textNoteType = ( ele as TextNoteType )! ;
+            TextElementType textType = conditionTextNote.Symbol ;
+            const BuiltInParameter paraIndex = BuiltInParameter.TEXT_SIZE ;
+            Parameter textSize = textNoteType.get_Parameter( paraIndex ) ;
+            textSize.Set( .005 ) ;
+            textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+            textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
+          }
+
+          conditionTextNote.ChangeTypeId( textNoteType.Id ) ;
           groupIds.Add( conditionTextNote.Id ) ;
         }
 
