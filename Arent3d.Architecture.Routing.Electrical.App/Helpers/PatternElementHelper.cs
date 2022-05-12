@@ -1,37 +1,37 @@
 ﻿using System.Collections.Generic ;
 using Arent3d.Revit ;
-using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
 {
   public static class PatternElementHelper
   {
-    public static readonly List<string> PatternNames = new List<string>()
+    public static readonly Dictionary<int, string> PatternNames = new()
     {
-      "天井隠蔽配管", // 00
-      "床隠蔽配管", // 01
-      "露出配管", // 02
-      "天井内ケーブル配線", // 03
-      "ケーブルラック配線", // 04
-      "ケーブル配線（配管レス）", // 05
-      "冷媒配管共巻", // 06
-      "フリーアクセス内配線", // 07
-      "ケーブルピット内配線", //08
-      "地中埋設配管" //09
+      { 01, "天井隠蔽配管" },
+      { 02, "床隠蔽配管" },
+      { 03, "露出配管" },
+      { 04, "天井内ケーブル配線" },
+      { 05, "ケーブルラック配線" },
+      { 06, "ケーブル配線（配管レス）" },
+      { 07, "冷媒配管共巻" },
+      { 08, "フリーアクセス内配線" },
+      { 09, "ケーブルピット内配線" },
+      { 10, "地中埋設配管" }
     } ;
+
     public static List<(string PatternName, ElementId PatternId)> GetLinePatterns( Document document )
     {
       using var transaction = new Transaction( document ) ;
       transaction.Start( "Create Line Pattern" ) ;
-      
-      // 00
-      var linePatterns = new List<(string PatternName, ElementId PatternId)> { new(PatternNames[0], LinePatternElement.GetSolidPatternId()) } ;
 
       // 01
-      var patternElementTwo = LinePatternElement.GetLinePatternElementByName( document, PatternNames[1] ) ;
+      var linePatterns = new List<(string PatternName, ElementId PatternId)> { new(PatternNames[ 01 ], LinePatternElement.GetSolidPatternId()) } ;
+
+      // 02
+      var patternElementTwo = LinePatternElement.GetLinePatternElementByName( document, PatternNames[ 02 ] ) ;
       if ( null == patternElementTwo ) {
-        var linePattern = new LinePattern( PatternNames[1] ) ;
+        var linePattern = new LinePattern( PatternNames[ 02 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
           new(LinePatternSegmentType.Dash, 10d.MillimetersToRevitUnits()), 
@@ -40,11 +40,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         patternElementTwo = LinePatternElement.Create( document, linePattern ) ;
       }
       linePatterns.Add( ( patternElementTwo.GetLinePattern().Name, patternElementTwo.Id ) ) ;
-      
-      // 02
-      var patternElementThree = LinePatternElement.GetLinePatternElementByName( document, PatternNames[2] ) ;
+
+      // 03
+      var patternElementThree = LinePatternElement.GetLinePatternElementByName( document, PatternNames[ 03 ] ) ;
       if ( null == patternElementThree ) {
-        var linePattern = new LinePattern( PatternNames[2] ) ;
+        var linePattern = new LinePattern( PatternNames[ 03 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
           new(LinePatternSegmentType.Dash, 4d.MillimetersToRevitUnits()), 
@@ -53,17 +53,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         patternElementThree = LinePatternElement.Create( document, linePattern ) ;
       }
       linePatterns.Add( ( patternElementThree.GetLinePattern().Name, patternElementThree.Id ) ) ;
-      
-      // 03
-      linePatterns.Add( ( PatternNames[3], LinePatternElement.GetSolidPatternId() ) ) ;
-      
+
       // 04
-      var patternElementFive = LinePatternElement.GetLinePatternElementByName( document, PatternNames[4] ) ;
+      linePatterns.Add( ( PatternNames[ 04 ], LinePatternElement.GetSolidPatternId() ) ) ;
+
+      // 05
+      var patternElementFive = LinePatternElement.GetLinePatternElementByName( document, PatternNames[ 05 ] ) ;
       if ( null == patternElementFive ) {
-        var linePattern = new LinePattern( PatternNames[4] ) ;
+        var linePattern = new LinePattern( PatternNames[ 05 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()), 
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
@@ -71,70 +71,70 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         patternElementFive = LinePatternElement.Create( document, linePattern ) ;
       }
       linePatterns.Add( ( patternElementFive.GetLinePattern().Name, patternElementFive.Id ) ) ;
-      
-      // 05
-      linePatterns.Add( ( PatternNames[5], LinePatternElement.GetSolidPatternId() ) ) ;
-      
+
       // 06
-      var patternElementSeven = LinePatternElement.GetLinePatternElementByName( document, PatternNames[6] ) ;
+      linePatterns.Add( ( PatternNames[ 06 ], LinePatternElement.GetSolidPatternId() ) ) ;
+
+      // 07
+      var patternElementSeven = LinePatternElement.GetLinePatternElementByName( document, PatternNames[ 07 ] ) ;
       if ( null == patternElementSeven ) {
-        var linePattern = new LinePattern( PatternNames[6] ) ;
+        var linePattern = new LinePattern( PatternNames[ 07 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
         } ) ;
         patternElementSeven = LinePatternElement.Create( document, linePattern ) ;
       }
       linePatterns.Add( ( patternElementSeven.GetLinePattern().Name, patternElementSeven.Id ) ) ;
-      
-      // 07
-      var patternElementEight = LinePatternElement.GetLinePatternElementByName( document, PatternNames[7] ) ;
+
+      // 08
+      var patternElementEight = LinePatternElement.GetLinePatternElementByName( document, PatternNames[ 08 ] ) ;
       if ( null == patternElementEight ) {
-        var linePattern = new LinePattern( PatternNames[7] ) ;
+        var linePattern = new LinePattern( PatternNames[ 08 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
         } ) ;
         patternElementEight = LinePatternElement.Create( document, linePattern ) ;
       }
       linePatterns.Add( ( patternElementEight.GetLinePattern().Name, patternElementEight.Id ) ) ;
-      
-      // 08
-      var patternElementNine = LinePatternElement.GetLinePatternElementByName( document, PatternNames[8] ) ;
+
+      // 09
+      var patternElementNine = LinePatternElement.GetLinePatternElementByName( document, PatternNames[ 09 ] ) ;
       if ( null == patternElementNine ) {
-        var linePattern = new LinePattern( PatternNames[8] ) ;
+        var linePattern = new LinePattern( PatternNames[ 09 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
         } ) ;
         patternElementNine = LinePatternElement.Create( document, linePattern ) ;
       }
       linePatterns.Add( ( patternElementNine.GetLinePattern().Name, patternElementNine.Id ) ) ;
-      
-      // 09
-      var patternElementTen = LinePatternElement.GetLinePatternElementByName( document, PatternNames[9] ) ;
+
+      // 10
+      var patternElementTen = LinePatternElement.GetLinePatternElementByName( document, PatternNames[ 10 ] ) ;
       if ( null == patternElementTen ) {
-        var linePattern = new LinePattern( PatternNames[9] ) ;
+        var linePattern = new LinePattern( PatternNames[ 10 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
         } ) ;
         patternElementTen = LinePatternElement.Create( document, linePattern ) ;
@@ -142,7 +142,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
       linePatterns.Add( ( patternElementTen.GetLinePattern().Name, patternElementTen.Id ) ) ;
 
       transaction.Commit() ;
-      
+
       return linePatterns ;
     }
   }
