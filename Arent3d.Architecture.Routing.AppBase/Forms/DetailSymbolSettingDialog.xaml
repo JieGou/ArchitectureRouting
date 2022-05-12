@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Title="コマンドプロパティ" Height="600" Width="500">
+        Title="コマンドプロパティ" Height="565" Width="500">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="100" />
@@ -35,7 +35,7 @@
                     <RowDefinition Height="35" />
                     <RowDefinition Height="35" />
                     <RowDefinition Height="35" />
-                    <RowDefinition Height="35" />
+                    <!-- <RowDefinition Height="35" /> -->
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="200" />
@@ -49,21 +49,21 @@
                 <ComboBox Grid.Row="2" Grid.Column="1" Name="CmbSpacing" IsEditable="False" Width="230" Height="27" />
                 <Label Grid.Row="3" Grid.Column="0" Content="行間隔" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
                 <ComboBox Grid.Row="3" Grid.Column="1" Name="CmbLineSpacing" IsEditable="False" Width="230" Height="27" />
-                <Label Grid.Row="4" Grid.Column="0" Content="オフセット" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
-                <ComboBox Grid.Row="4" Grid.Column="1" Name="CmbOffset" IsEditable="False" Width="230" Height="27" />
-                <Label Grid.Row="5" Grid.Column="0" Content="フォント" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
-                <ComboBox Grid.Row="5" Grid.Column="1" Name="CmbFont" IsEditable="False" Width="230" Height="27" />
-                <Label Grid.Row="6" Grid.Column="0" Content="スタイル" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
-                <ComboBox Grid.Row="6" Grid.Column="1" Name="CmbStyle" IsEditable="False" Width="230" Height="27" />
-                <Label Grid.Row="7" Grid.Column="0" Content="文字背景を隠す" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
-                <ComboBox Grid.Row="7" Grid.Column="1" Name="CmbHideTextBackground" IsEditable="False" Width="165" Height="27" HorizontalAlignment="Left" />
-                <TextBox Grid.Row="7" Grid.Column="1" Name="TbHideTextBackground" Text="On/Off" Width="60" Height="27" IsReadOnly="True" HorizontalAlignment="Right" />
-                <Label Grid.Row="8" Grid.Column="0" Content="矢印種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
-                <ComboBox Grid.Row="8" Grid.Column="1" Name="CmbArrowType" IsEditable="False" Width="230" Height="27" />
-                <Label Grid.Row="9" Grid.Column="0" Content="角度" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
-                <ComboBox Grid.Row="9" Grid.Column="1" Name="CmbAngle" IsEditable="False" Width="230" Height="27" />
-                <Label Grid.Row="10" Grid.Column="0" Content="朱印サイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
-                <ComboBox Grid.Row="10" Grid.Column="1" Name="CmbRedStampSize" IsEditable="False" Width="230" Height="27" />
+                <!-- <Label Grid.Row="4" Grid.Column="0" Content="オフセット" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/> -->
+                <!-- <ComboBox Grid.Row="4" Grid.Column="1" Name="CmbOffset" IsEditable="False" Width="230" Height="27" /> -->
+                <Label Grid.Row="4" Grid.Column="0" Content="フォント" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
+                <ComboBox Grid.Row="4" Grid.Column="1" Name="CmbFont" IsEditable="False" Width="230" Height="27" />
+                <Label Grid.Row="5" Grid.Column="0" Content="スタイル" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
+                <ComboBox Grid.Row="5" Grid.Column="1" Name="CmbStyle" IsEditable="False" Width="230" Height="27" />
+                <Label Grid.Row="6" Grid.Column="0" Content="文字背景を隠す" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
+                <ComboBox Grid.Row="6" Grid.Column="1" Name="CmbHideTextBackground" IsEditable="False" Width="165" Height="27" HorizontalAlignment="Left" />
+                <TextBox Grid.Row="6" Grid.Column="1" Name="TbHideTextBackground" Text="On/Off" Width="60" Height="27" IsReadOnly="True" HorizontalAlignment="Right" />
+                <Label Grid.Row="7" Grid.Column="0" Content="矢印種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
+                <ComboBox Grid.Row="7" Grid.Column="1" Name="CmbArrowType" IsEditable="False" Width="230" Height="27" />
+                <Label Grid.Row="8" Grid.Column="0" Content="角度" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
+                <ComboBox Grid.Row="8" Grid.Column="1" Name="CmbAngle" IsEditable="False" Width="230" Height="27" />
+                <Label Grid.Row="9" Grid.Column="0" Content="朱印サイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="200"/>
+                <ComboBox Grid.Row="9" Grid.Column="1" Name="CmbRedStampSize" IsEditable="False" Width="230" Height="27" />
             </Grid>
         </GroupBox>
         <Button Grid.Row="2" x:Name="BtnOK"
