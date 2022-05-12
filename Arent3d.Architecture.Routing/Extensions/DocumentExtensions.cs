@@ -198,5 +198,21 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new SymbolInformationStorable( document ) ;
       }
     }
+    
+    /// <summary>
+    /// Get all CeedDetail data
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    public static CeedDetailStorable GetCeedDetailStorable( this Document document )
+    {
+      try {
+        return CeedDetailStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( CeedDetailStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new CeedDetailStorable( document ) ;
+      }
+    }
   }
 }

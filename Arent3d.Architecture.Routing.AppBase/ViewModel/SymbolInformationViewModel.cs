@@ -1,145 +1,118 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
+using System.ComponentModel ;
 using System.Linq ;
+using System.Windows.Data ;
 using System.Windows.Forms ;
+using System.Windows.Input ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
-  public enum SymbolKindEnum
-  {
-    Start,
-    Rectangle,
-    Triangle,
-  }
-
-  public enum SymbolCoordinateEnum
-  {
-    Center,
-    Left,
-    Right,
-  }
-
   public class SymbolInformationViewModel : NotifyPropertyChanged
   {
     private Document? _document ;
 
-    public SymbolInformationModel? SymbolInformation { get ; set ; }
+
+    public ICommand AddCeedDetailCommand => new RelayCommand( AddCeedDetail ) ;
+    public ICommand DeleteCeedDetailCommand => new RelayCommand( DeleteCeedDetail ) ;
+
+    public SymbolInformationModel SymbolInformation { get ; set ; }
+
+    #region SymbolSetting
+
     public readonly Array SymbolKinds = Enum.GetValues( typeof( SymbolKindEnum ) ) ;
     public readonly Array SymbolCoordinates = Enum.GetValues( typeof( SymbolCoordinateEnum ) ) ;
+    public readonly Array SymbolColors = new int[] { 1, 2, 3, 4, 5 } ;
+
+    public SymbolKindEnum SelectedSymbolKind
+    {
+      get => (SymbolKindEnum) Enum.Parse( typeof( SymbolKindEnum ), SymbolInformation.SymbolKind! ) ;
+      set => SymbolInformation.SymbolKind = value.GetFieldName() ;
+    }
+
+    public SymbolCoordinateEnum SelectedSymbolCoordinate
+    {
+      get => (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), SymbolInformation.SymbolCoordinate! ) ;
+      set => SymbolInformation.SymbolCoordinate = value.GetFieldName() ;
+    }
+
+    #endregion
+
+    #region CeedDetail Setting
 
     private CsvStorable? _csvStorable ;
     public CsvStorable CsvStorable => _csvStorable ??= _document!.GetCsvStorable() ;
 
-    private IEnumerable<CeedModel>? _ceedModels ;
-    public IEnumerable<CeedModel> CeedModels => _ceedModels ??= _document!.GetAllStorables<CeedStorable>().FirstOrDefault()?.CeedModelData ?? new List<CeedModel>() ;
+    private List<HiroiMasterModel>? _hiroiMasterModels ;
+    public List<HiroiMasterModel> HiroiMasterModels => _hiroiMasterModels ??= CsvStorable.HiroiMasterModelData ;
 
-    private List<HiroiSetMasterModel>? _hiroiSetMasterNormalModels ;
-    public List<HiroiSetMasterModel> HiroiSetMasterNormalModels => _hiroiSetMasterNormalModels ??= CsvStorable.HiroiSetMasterNormalModelData ;
+    private ObservableCollection<CeedDetailModel> _ceedDetailList = new() ;
+    public CeedDetailModel? CeedDetailSelected { get ; set ; }
 
-    private IEnumerable<HiroiMasterModel>? _hiroiMasterModels ;
-    public IEnumerable<HiroiMasterModel> HiroiMasterModels => _hiroiMasterModels ??= CsvStorable.HiroiMasterModelData ;
-
-    private List<HiroiSetCdMasterModel>? _hiroiSetCdMasterModels ;
-    public List<HiroiSetCdMasterModel> HiroiSetCdMasterModels => _hiroiSetCdMasterModels ??= CsvStorable.HiroiSetCdMasterNormalModelData ;
-
-    private CeedDetailInformationModel? _ceedDetailInformationModel ;
-
-    public CeedDetailInformationModel CeedDetailInformationModel
+    public ObservableCollection<CeedDetailModel> CeedDetailList
     {
-      get { return _ceedDetailInformationModel ??= new CeedDetailInformationModel( new ObservableCollection<QueryData>(), string.Empty ) ; }
+      get => _ceedDetailList ;
       set
       {
-        _ceedDetailInformationModel = value ;
-        OnPropertyChanged() ;
+        _ceedDetailList = value ;
+        OnPropertyChanged( "CeedDetailList" ) ;
+      }
+    } 
+      
+    public ObservableCollection<string> ConstructionClassificationTypeList
+    {
+      get ;
+      set ;
+    }
+
+    #endregion
+
+
+    #region Command
+
+    private void AddCeedDetail()
+    {
+      var hiroiMasterViewModel = new HiroiMasterViewModel( _document, HiroiMasterModels ) ;
+      var hiroiMasterDialog = new HiroiMasterDialog( hiroiMasterViewModel ) ;
+      if ( true == hiroiMasterDialog.ShowDialog() ) {
+        var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", 100, "m", this.SymbolInformation.Id, "数量" ) ;
+        CeedDetailList.Add( ceedDetailModel ) ;
+        CollectionViewSource.GetDefaultView(CeedDetailList).Refresh();
       }
     }
 
-    private string? _setCode ; 
-    public string SetCode
+    private void DeleteCeedDetail()
     {
-      get => _setCode ??= string.Empty ;
-      set
-      {
-        _setCode = value.Trim() ?? string.Empty ;
-        ConstructionClassificationSelected = HiroiSetCdMasterModels.Find( x => x.SetCode == _setCode )?.ConstructionClassification ?? string.Empty ;
-        //LoadData() ;
-        OnPropertyChanged() ;
-      }
+      if ( null != CeedDetailSelected )
+        CeedDetailList.Remove( CeedDetailSelected ) ;
     }
 
-    private ObservableCollection<string>? _constructionClassifications ;
+    #endregion
 
-    public ObservableCollection<string> ConstructionClassifications
-    {
-      get
-      {
-        if ( null != _constructionClassifications )
-          return _constructionClassifications ;
 
-        var values = HiroiSetCdMasterModels.Select( x => x.ConstructionClassification ).Distinct() ;
-        _constructionClassifications = new ObservableCollection<string>( values ) ;
-
-        return _constructionClassifications ;
-      }
-      set
-      {
-        _constructionClassifications = value ;
-        OnPropertyChanged() ;
-      }
-    }
-
-    private string? _constructionClassificationSelected ;
-
-    public string ConstructionClassificationSelected
-    {
-      get { return _constructionClassificationSelected ??= HiroiSetCdMasterModels.Find( x => x.SetCode == SetCode )?.ConstructionClassification ?? string.Empty ; }
-      set
-      {
-        var result = HiroiSetCdMasterModels.Find( x => x.SetCode == SetCode.ToUpper() ) ;
-        if ( null == result )
-          return ;
-
-        if ( result.ConstructionClassification.Equals( value ) )
-          return ;
-
-        result.ConstructionClassification = value ;
-        CsvStorable.HiroiSetCdMasterNormalModelData = HiroiSetCdMasterModels ;
-
-        _constructionClassificationSelected = result.ConstructionClassification ;
-        OnPropertyChanged() ;
-
-        try {
-          using var transaction = new Transaction( _document, "Update Construction Classification" ) ;
-          transaction.Start() ;
-          CsvStorable.Save() ;
-          transaction.Commit() ;
-        }
-        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
-          MessageBox.Show( "Failed to update the construction classification.", "Error Message" ) ;
-        }
-      }
-    }
-
-    public SymbolInformationViewModel()
-    {
-    }
-
-    public SymbolInformationViewModel( Document? document, string? setCode = null )
-    {
-      _document = document ;
-      SetCode = setCode ?? string.Empty ;
-    }
-    
     public SymbolInformationViewModel( Document? document, SymbolInformationModel? symbolInformationModel )
     {
       _document = document ;
-      SymbolInformation = symbolInformationModel ?? new SymbolInformationModel(null, null, null  ) ;
+      SymbolInformation = symbolInformationModel ?? new SymbolInformationModel() ;
+       
+      if ( ! string.IsNullOrEmpty( SymbolInformation.Id ) && SymbolInformation.Id != "-1" ) {
+        CeedDetailList = new ObservableCollection<CeedDetailModel>( _document!.GetCeedDetailStorable().AllCeedDetailModelData.FindAll( x => x.ParentId == SymbolInformation.Id ) ?? new List<CeedDetailModel>() ) ;
+      }
+      else {
+        CeedDetailList = new ObservableCollection<CeedDetailModel>() ;
+      }
+
+      ConstructionClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( CreateDetailTableCommandBase.ConstructionClassificationType ) ).ToList());
     }
   }
 }
