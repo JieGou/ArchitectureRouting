@@ -55,7 +55,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
       const string groupName = "Electrical" ;
       var definitionGroup = definitionFile.Groups.get_Item( groupName ) ?? definitionFile.Groups.Create( groupName ) ;
       if ( definitionGroup.Definitions.get_Item( shareParameterName ) is not ExternalDefinition externalDefinition ) {
+#if (REVIT2020 || REVIT2019 || REVIT2021)
+        var externalDefinitionCreationOptions = new ExternalDefinitionCreationOptions( shareParameterName, ParameterType.Text ) ;
+#else
         var externalDefinitionCreationOptions = new ExternalDefinitionCreationOptions( shareParameterName, SpecTypeId.String.Text ) ;
+#endif
         externalDefinition = ( definitionGroup.Definitions.Create( externalDefinitionCreationOptions ) as ExternalDefinition )! ;
       }
 
