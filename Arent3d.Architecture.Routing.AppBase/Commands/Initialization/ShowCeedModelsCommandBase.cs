@@ -28,11 +28,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const double defaultSymbolMagnification = 100.0 ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
       
-      var viewModel = new CeedViewModel1( commandData ) ;
+      var viewModel = new CeedViewModel( commandData ) ;
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
       
-      //var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
-
       dlgCeedModel.ShowDialog() ;
       if ( ! ( dlgCeedModel.DialogResult ?? false ) ) return Result.Cancelled ;
       ICollection<ElementId> groupIds = new List<ElementId>() ;
