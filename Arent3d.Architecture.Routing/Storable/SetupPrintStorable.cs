@@ -38,14 +38,22 @@ namespace Arent3d.Architecture.Routing.Storable
     {
       TitleBlockTypeId = reader.GetSingle<int>( TitleBlockTypeIdField ) ;
       Scale = reader.GetSingle<int>( ScaleField ) ;
+#if (REVIT2020 || REVIT2019)
+      Ratio = reader.GetSingle<double>( RatioField, Autodesk.Revit.DB.DisplayUnitType.DUT_MILLIMETERS ) ;
+#else
       Ratio = reader.GetSingle<double>( RatioField, UnitTypeId.Millimeters ) ;
+#endif
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
       writer.SetSingle(TitleBlockTypeIdField, TitleBlockTypeId);
       writer.SetSingle( ScaleField, Scale ) ;
+#if (REVIT2020 || REVIT2019)
+      writer.SetSingle( RatioField, Ratio, Autodesk.Revit.DB.DisplayUnitType.DUT_MILLIMETERS ) ;
+#else
       writer.SetSingle( RatioField, Ratio, UnitTypeId.Millimeters ) ;
+#endif
     }
 
     protected override void SetupAllFields( FieldGenerator generator )

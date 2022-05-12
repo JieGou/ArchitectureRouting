@@ -42,7 +42,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         trans.Start() ;
 
         var data = document.GetSetupPrintStorable() ;
-        var scaleSetup = data.Scale * data.Ratio;
+        var scaleSetup = data.Scale;
         var ratio = scaleSetup / 100d ;
         
         var shaftProfile = new CurveArray() ;
