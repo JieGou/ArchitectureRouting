@@ -13,6 +13,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
@@ -29,6 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private readonly DetailSymbolStorable _detailSymbolStorable ;
     private List<DetailTableModel> _selectedDetailTableRows ;
     private List<DetailTableModel> _selectedDetailTableRowsSummary ;
+    private List<DetailTableModel> _selectedReferenceDetailTableRows ;
     private DetailTableModel? _copyDetailTableRow ;
     private DetailTableModel? _copyDetailTableRowSummary ;
     public DetailTableViewModel DetailTableViewModelSummary { get ; set ; }
@@ -56,8 +58,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _selectedDetailTableRowsSummary = new List<DetailTableModel>() ;
       _copyDetailTableRow = null ;
       _copyDetailTableRowSummary = null ;
+      _selectedReferenceDetailTableRows = new List<DetailTableModel>() ;
 
       CreateDetailTableViewModelByGroupId() ;
+      HideReferenceDataGrid( ! viewModel.IsAddReference ) ;
+      viewModel.IsAddReference = false ;
       
       var rowStyle = new Style( typeof( DataGridRow ) ) ;
       rowStyle.Setters.Add( new EventSetter( MouseDoubleClickEvent, new MouseButtonEventHandler( Row_DoubleClick ) ) ) ;
@@ -89,6 +94,45 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
         _selectedDetailTableRowsSummary.Add( detailTableRow ) ;
       }
+    }
+    
+    private void DtReferenceGrid_SelectionChanged( object sender, SelectionChangedEventArgs e )
+    {
+      if ( sender is not DataGrid dataGrid ) return ;
+      var selectedItems = dataGrid.SelectedItems ;
+      if ( selectedItems.Count <= 0 ) return ;
+      _selectedReferenceDetailTableRows.Clear() ;
+      foreach ( var item in selectedItems ) {
+        if ( item is not DetailTableModel detailTableRow ) continue ;
+        _selectedReferenceDetailTableRows.Add( detailTableRow ) ;
+      }
+    }
+    
+    private void BtnHideReferenceDataGrid_Click( object sender, RoutedEventArgs e )
+    {
+      if ( BtnReferenceSelectAll.Visibility == Visibility.Visible ) {
+        HideReferenceDataGrid( true ) ;
+      }
+      else if ( BtnReferenceSelectAll.Visibility == Visibility.Hidden ) {
+        HideReferenceDataGrid( false ) ;
+      }
+    }
+
+    private void HideReferenceDataGrid( bool isVisible )
+    {
+      BtnReferenceSelectAll.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnDeleteReferenceLine.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnReadCtlFile.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnSelectDetailTableRowWithSameDetailSymbolId.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnAddReference.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      BtnAddReferenceRows.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      DtReferenceGrid.Visibility = isVisible ? Visibility.Hidden : Visibility.Visible ;
+      DtReferenceGrid.Height = isVisible ? 0 : 370 ;
+      DetailTableWindow.Height = isVisible ? 590 : 980 ;
+      if ( isVisible ) return ;
+      DetailTableWindow.WindowStartupLocation = WindowStartupLocation.Manual ;
+      DetailTableWindow.Top = 50 ;
+      DetailTableWindow.Left = 400 ;
     }
 
     private void BtnDeleteLine_Click( object sender, RoutedEventArgs e )
@@ -124,6 +168,60 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _selectedDetailTableRows = _detailTableViewModel.DetailTableModels.ToList() ;
       _selectedDetailTableRowsSummary = DetailTableViewModelSummary.DetailTableModels.ToList() ;
       DtGrid.SelectAll() ;
+    }
+
+    private void BtnReferenceSelectAll_Click( object sender, RoutedEventArgs e )
+    {
+      _selectedReferenceDetailTableRows = DetailTableViewModelSummary.ReferenceDetailTableModels.ToList() ;
+      DtReferenceGrid.SelectAll() ;
+    }
+    
+    private void BtnDeleteReferenceLine_Click( object sender, RoutedEventArgs e )
+    {
+      if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
+      DetailTableViewModel.DeleteReferenceDetailTableRows( _detailTableViewModel, DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
+      UpdateReferenceDetailTableModels() ;
+    }
+    
+    private void BtnReadCtlFile_Click( object sender, RoutedEventArgs e )
+    {
+      DetailTableViewModel.ReadCtlFile( _conduitsModelData, _wiresAndCablesModelData, _detailTableViewModel, DetailTableViewModelSummary ) ;
+      UpdateReferenceDetailTableModels() ;
+    }
+    
+    private void BtnSelectDetailTableRowWithSameDetailSymbolId_Click( object sender, RoutedEventArgs e )
+    {
+      if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
+      var detailTableRowsWithSameDetailSymbolId = DetailTableViewModel.SelectDetailTableRowsWithSameDetailSymbolId( DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
+      _selectedReferenceDetailTableRows.Clear() ;
+      DtReferenceGrid.SelectedItems.Clear() ;
+      foreach ( var detailTableModelRow in detailTableRowsWithSameDetailSymbolId ) {
+        DtReferenceGrid.SelectedItems.Add( detailTableModelRow ) ;
+      }
+    }
+    
+    private void BtnAddReference_Click( object sender, RoutedEventArgs e )
+    {
+      DialogResult = false ;
+      _detailTableViewModel.IsAddReference = true ;
+      DetailTableViewModelSummary.IsAddReference = true ;
+      Close() ;
+    }
+    
+    private void BtnAddReferenceRows_Click( object sender, RoutedEventArgs e )
+    {
+      if ( ! _selectedReferenceDetailTableRows.Any() ) return ;
+      DetailTableViewModel.AddReferenceDetailTableRows( _detailTableViewModel, DetailTableViewModelSummary, _selectedReferenceDetailTableRows ) ;
+      DataContext = DetailTableViewModelSummary ;
+      DtGrid.ItemsSource = DetailTableViewModelSummary.DetailTableModels ;
+    }
+
+    private void UpdateReferenceDetailTableModels()
+    {
+      DataContext = DetailTableViewModelSummary ;
+      DtReferenceGrid.ItemsSource = DetailTableViewModelSummary.ReferenceDetailTableModels ;
+      _selectedReferenceDetailTableRows.Clear() ;
+      DtReferenceGrid.SelectedItems.Clear() ;
     }
 
     private void BtnSave_OnClick( object sender, RoutedEventArgs e )
@@ -223,7 +321,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
           }
           else {
             CreateDetailTableCommandBase.SetPlumbingData( _conduitsModelData, ref detailTableModels, plumbingType.ToString(), _isMixConstructionItems ) ;
-            DetailTableViewModel.SetPlumbingSizesForDetailTableRows( _conduitsModelData, detailTableModels, plumbingType.ToString() ) ;
           }
 
           var detailTableRowsHaveGroupId = detailTableModels.Where( d => ! string.IsNullOrEmpty( d.GroupId ) ).ToList() ;
@@ -562,50 +659,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void CreateDetailTableViewModelByGroupId()
     {
-      const char multiplicationSymbol = 'x' ;
-      List<DetailTableModel> newDetailTableModels = new() ;
-      List<string> existedGroupIds = new() ;
-      foreach ( var detailTableRow in _detailTableViewModel.DetailTableModels ) {
-        if ( string.IsNullOrEmpty( detailTableRow.GroupId ) ) {
-          newDetailTableModels.Add( detailTableRow ) ;
-        }
-        else {
-          if ( existedGroupIds.Contains( detailTableRow.GroupId ) ) continue ;
-          var detailTableRowWithSameWiringType = _detailTableViewModel.DetailTableModels.Where( d => d.GroupId == detailTableRow.GroupId ) ;
-          var detailTableRowsGroupByRemark = detailTableRowWithSameWiringType.GroupBy( d => d.Remark ).ToDictionary( g => g.Key, g => g.ToList() ) ;
-          List<string> newRemark = new() ;
-          var wireBook = 0 ;
-          var numberOfGrounds = 0 ;
-          foreach ( var (remark, detailTableRowsWithSameRemark) in detailTableRowsGroupByRemark ) {
-            newRemark.Add( detailTableRowsWithSameRemark.Count == 1 ? remark : remark + multiplicationSymbol + detailTableRowsWithSameRemark.Count ) ;
-            foreach ( var detailTableRowWithSameRemark in detailTableRowsWithSameRemark ) {
-              if ( ! string.IsNullOrEmpty( detailTableRowWithSameRemark.WireBook ) ) {
-                wireBook += int.Parse( detailTableRowWithSameRemark.WireBook ) ;
-              }
-              if ( ! string.IsNullOrEmpty( detailTableRowWithSameRemark.NumberOfGrounds ) ) {
-                numberOfGrounds += int.Parse( detailTableRowWithSameRemark.NumberOfGrounds ) ;
-              }
-            }
-          }
-
-          var newDetailTableRow = new DetailTableModel( detailTableRow.CalculationExclusion, detailTableRow.Floor, detailTableRow.CeedCode, detailTableRow.DetailSymbol, 
-            detailTableRow.DetailSymbolId, detailTableRow.WireType, detailTableRow.WireSize, detailTableRow.WireStrip, wireBook.ToString(), detailTableRow.EarthType, 
-            detailTableRow.EarthSize, numberOfGrounds > 0 ? numberOfGrounds.ToString() : string.Empty, detailTableRow.PlumbingType, detailTableRow.PlumbingSize, detailTableRow.NumberOfPlumbing, 
-            detailTableRow.ConstructionClassification, detailTableRow.SignalType, detailTableRow.ConstructionItems, detailTableRow.PlumbingItems, string.Join( ", ", newRemark ), 
-            detailTableRow.WireCrossSectionalArea, detailTableRow.CountCableSamePosition, detailTableRow.RouteName, detailTableRow.IsEcoMode, detailTableRow.IsParentRoute, 
-            detailTableRow.IsReadOnly, detailTableRow.PlumbingIdentityInfo, detailTableRow.GroupId, detailTableRow.IsReadOnlyPlumbingItems, detailTableRow.IsMixConstructionItems,
-            detailTableRow.CopyIndex, detailTableRow.IsReadOnlyParameters, detailTableRow.IsReadOnlyWireSizeAndWireStrip, detailTableRow.IsReadOnlyPlumbingSize, detailTableRow.WireSizes, detailTableRow.WireStrips,
-            detailTableRow.EarthSizes, detailTableRow.PlumbingSizes, detailTableRow.PlumbingItemTypes ) ;
-          newDetailTableModels.Add( newDetailTableRow ) ;
-          existedGroupIds.Add( detailTableRow.GroupId ) ;
-        }
-      }
-
-      DetailTableViewModel newDetailTableViewModel = new( new ObservableCollection<DetailTableModel>( newDetailTableModels ), _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems, 
+      List<DetailTableModel> newDetailTableModels = DetailTableViewModel.GroupDetailTableModels( _detailTableViewModel.DetailTableModels ) ;
+      List<DetailTableModel> newReferenceDetailTableModels = DetailTableViewModel.GroupDetailTableModels( _detailTableViewModel.ReferenceDetailTableModels ) ;
+      DetailTableViewModel newDetailTableViewModel = new( new ObservableCollection<DetailTableModel>( newDetailTableModels ),  new ObservableCollection<DetailTableModel>( newReferenceDetailTableModels ), _detailTableViewModel.ConduitTypes, _detailTableViewModel.ConstructionItems, 
         _detailTableViewModel.Levels, _detailTableViewModel.WireTypes, _detailTableViewModel.EarthTypes, _detailTableViewModel.Numbers, _detailTableViewModel.ConstructionClassificationTypes, _detailTableViewModel.SignalTypes ) ;
       DataContext = newDetailTableViewModel ;
       DtGrid.ItemsSource = newDetailTableViewModel.DetailTableModels ;
       DetailTableViewModelSummary = newDetailTableViewModel ;
+      if ( _detailTableViewModel.ReferenceDetailTableModels.Any() ) {
+        DtReferenceGrid.ItemsSource = newDetailTableViewModel.ReferenceDetailTableModels ;
+      }
     }
     
     private void UnGroupDetailTableRows( string groupId )
