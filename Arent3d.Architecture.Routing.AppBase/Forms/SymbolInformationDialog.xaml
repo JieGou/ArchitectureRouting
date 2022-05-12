@@ -104,7 +104,7 @@
                         </StackPanel>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <CheckBox Content="Square Letter" Margin="10 0 10 0" Width="100"
-                                      IsChecked="{Binding SymbolInformation.Visible}" />
+                                      IsChecked="{Binding SymbolInformation.IsShowText}" />
                             <TextBox Width="280" Height="20" Text="{Binding SymbolInformation.Description}" />
                         </StackPanel>
                         <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center">

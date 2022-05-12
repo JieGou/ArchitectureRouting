@@ -89,10 +89,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           if ( selectedItemIsSymbolInformation == false ) {
-            xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
-            symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfConnector ) ) ;
-            model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
-            symbolInformations.Add( model ) ;
+            try {
+              xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
+              symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfConnector ) ) ;
+              model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
+              symbolInformations.Add( model ) ;
+            }
+            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+              return Result.Cancelled ;
+            }
           }
 
           var viewModel = new SymbolInformationViewModel( document, model ) ;
@@ -119,9 +124,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 document.Delete( textNote.Id ) ;
             }
 
+
             CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfConnector ), oldParentGroup ) ;
             OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
             ogs.SetProjectionLineColor( DictSymbolColor[ model.Color ] ) ;
+            ogs.SetProjectionLineWeight( 5 ) ;
             document.ActiveView.SetElementOverrides( symbolInformationInstance!.Id, ogs ) ;
           }
 
@@ -187,40 +194,43 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="oldParentGroup"></param>
     private void CreateGroupSymbolInformation( Document document, ElementId symbolInformationInstanceId, SymbolInformationModel model, XYZ xyz, Group? oldParentGroup )
     {
-      var noteWidth = .05 ;
-      var anchor = (SymbolCoordinateEnum)Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
-      XYZ txtPosition ;
-      switch ( anchor ) {
-        case SymbolCoordinateEnum.Top :
-          txtPosition = new XYZ( xyz.X - 1, xyz.Y + 1, xyz.Z ) ;
-          break ;
-        case SymbolCoordinateEnum.Left :
-          txtPosition = new XYZ( xyz.X - model.Height, xyz.Y + 0.1, xyz.Z ) ;
-          break ;
-        case SymbolCoordinateEnum.Right :
-          txtPosition = new XYZ( xyz.X + model.Height / 3, xyz.Y + 0.1, xyz.Z ) ;
-          break ;
-        default :
-          txtPosition = new XYZ( xyz.X - 1, xyz.Y - 1, xyz.Z ) ;
-          break ;
+      ICollection<ElementId> groupIds = new List<ElementId>() ;
+      groupIds.Add( symbolInformationInstanceId ) ;
+
+      if ( model.IsShowText && ! string.IsNullOrEmpty( model.Description ) ) {
+        var noteWidth = .05 ;
+        var anchor = (SymbolCoordinateEnum)Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
+        XYZ txtPosition ;
+        switch ( anchor ) {
+          case SymbolCoordinateEnum.Top :
+            txtPosition = new XYZ( xyz.X - 1, xyz.Y + 1, xyz.Z ) ;
+            break ;
+          case SymbolCoordinateEnum.Left :
+            txtPosition = new XYZ( xyz.X - model.Height, xyz.Y + 0.1, xyz.Z ) ;
+            break ;
+          case SymbolCoordinateEnum.Right :
+            txtPosition = new XYZ( xyz.X + model.Height / 3, xyz.Y + 0.1, xyz.Z ) ;
+            break ;
+          default :
+            txtPosition = new XYZ( xyz.X - 1, xyz.Y - 1, xyz.Z ) ;
+            break ;
+        }
+
+
+        ElementId defaultTextTypeId = document.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+
+        // make sure note width works for the text type
+        var minWidth = TextElement.GetMinimumAllowedWidth( document, defaultTextTypeId ) ;
+        var maxWidth = TextElement.GetMaximumAllowedWidth( document, defaultTextTypeId ) ;
+        noteWidth = noteWidth < minWidth ? minWidth : ( noteWidth > maxWidth ? maxWidth : noteWidth ) ;
+
+        TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left, VerticalAlignment = VerticalTextAlignment.Middle, KeepRotatedTextReadable = true } ;
+
+        var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, noteWidth, model.Description, opts ) ;
+        textNote.SetOverriddenColor( DictSymbolColor[ model.Color ] ) ;
+        groupIds.Add( textNote.Id ) ;
       }
 
-
-      ICollection<ElementId> groupIds = new List<ElementId>() ;
-      ElementId defaultTextTypeId = document.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-
-      // make sure note width works for the text type
-      var minWidth = TextElement.GetMinimumAllowedWidth( document, defaultTextTypeId ) ;
-      var maxWidth = TextElement.GetMaximumAllowedWidth( document, defaultTextTypeId ) ;
-      noteWidth = noteWidth < minWidth ? minWidth : ( noteWidth > maxWidth ? maxWidth : noteWidth ) ;
-
-      TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left, VerticalAlignment = VerticalTextAlignment.Middle, KeepRotatedTextReadable = true } ;
-
-      var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, noteWidth, model.Description, opts ) ;
-      textNote.SetOverriddenColor( DictSymbolColor[ model.Color ] ) ;
-
-      groupIds.Add( symbolInformationInstanceId ) ;
-      groupIds.Add( textNote.Id ) ;
       document.Create.NewGroup( groupIds ) ;
     }
   }

@@ -24,7 +24,7 @@
     public int Color { get ; set ; } = 3 ;
     public string Description { get ; set ; } = string.Empty ;
     public double CharacterHeight { get ; set ; } = 1 ; 
-    public bool Visible { get ; set ; } = false ;
+    public bool IsShowText { get ; set ; } = true ;
     public bool IsEco { get ; set ; } = false ;
 
     public SymbolInformationModel()
@@ -32,7 +32,7 @@
       
     }
       
-    public SymbolInformationModel( string? id,  string? symbolKind, string? symbolCoordinate, double? height, double? percent, int? color, bool? visible, string? description, double? characterHeight , bool? isEco)
+    public SymbolInformationModel( string? id,  string? symbolKind, string? symbolCoordinate, double? height, double? percent, int? color, bool? isShowText, string? description, double? characterHeight , bool? isEco)
     {
       Id = id ?? "-1" ;
       SymbolKind = symbolKind ?? SymbolKindEnum.Start.ToString() ;
@@ -40,7 +40,7 @@
       Height = height ?? 3  ;
       Percent = percent ?? 90 ;
       Color = color ?? 3;
-      Visible = visible ?? false ;
+      IsShowText = isShowText ?? false ;
       Description = description ?? string.Empty ;
       CharacterHeight = characterHeight ?? 1 ;
       IsEco = isEco ?? false ;
