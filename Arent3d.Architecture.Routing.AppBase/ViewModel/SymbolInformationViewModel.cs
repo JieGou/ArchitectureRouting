@@ -33,16 +33,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public readonly Array SymbolKinds = Enum.GetValues( typeof( SymbolKindEnum ) ) ;
     public readonly Array SymbolCoordinates = Enum.GetValues( typeof( SymbolCoordinateEnum ) ) ;
     public readonly Array SymbolColors = new int[] { 1, 2, 3, 4, 5 } ;
-
+     
     public SymbolKindEnum SelectedSymbolKind
     {
-      get => (SymbolKindEnum) Enum.Parse( typeof( SymbolKindEnum ), SymbolInformation.SymbolKind! ) ;
+      get => (SymbolKindEnum)Enum.Parse( typeof( SymbolKindEnum ), SymbolInformation.SymbolKind! ) ;
       set => SymbolInformation.SymbolKind = value.GetFieldName() ;
     }
 
     public SymbolCoordinateEnum SelectedSymbolCoordinate
     {
-      get => (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), SymbolInformation.SymbolCoordinate! ) ;
+      get => (SymbolCoordinateEnum)Enum.Parse( typeof( SymbolCoordinateEnum ), SymbolInformation.SymbolCoordinate! ) ;
       set => SymbolInformation.SymbolCoordinate = value.GetFieldName() ;
     }
 
@@ -67,13 +67,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _ceedDetailList = value ;
         OnPropertyChanged( "CeedDetailList" ) ;
       }
-    } 
-      
-    public ObservableCollection<string> ConstructionClassificationTypeList
-    {
-      get ;
-      set ;
     }
+
+    public ObservableCollection<string> ConstructionClassificationTypeList { get ; set ; }
 
     #endregion
 
@@ -87,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       if ( true == hiroiMasterDialog.ShowDialog() ) {
         var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", 100, "m", this.SymbolInformation.Id, "数量" ) ;
         CeedDetailList.Add( ceedDetailModel ) ;
-        CollectionViewSource.GetDefaultView(CeedDetailList).Refresh();
+        CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
       }
     }
 
@@ -104,7 +100,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       _document = document ;
       SymbolInformation = symbolInformationModel ?? new SymbolInformationModel() ;
-       
+
       if ( ! string.IsNullOrEmpty( SymbolInformation.Id ) && SymbolInformation.Id != "-1" ) {
         CeedDetailList = new ObservableCollection<CeedDetailModel>( _document!.GetCeedDetailStorable().AllCeedDetailModelData.FindAll( x => x.ParentId == SymbolInformation.Id ) ?? new List<CeedDetailModel>() ) ;
       }
@@ -112,7 +108,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CeedDetailList = new ObservableCollection<CeedDetailModel>() ;
       }
 
-      ConstructionClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( CreateDetailTableCommandBase.ConstructionClassificationType ) ).ToList());
+      ConstructionClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( CreateDetailTableCommandBase.ConstructionClassificationType ) ).ToList() ) ;
     }
   }
 }
