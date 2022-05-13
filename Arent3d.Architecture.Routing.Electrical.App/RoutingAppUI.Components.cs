@@ -116,6 +116,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( ShowFromToTreeCommand ), OnlyInitialized = true )]
           private static class ShowFromToTreeCommandButton { }
+          
+          [Button( typeof( ShowPressureGuidingTubeSettingCommand ), OnlyInitialized = true )]
+          private static class ShowPressureGuidingTubeSettingButton { }
         }
       }
 
