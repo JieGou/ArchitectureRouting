@@ -34,8 +34,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         var linePattern = new LinePattern( PatternNames[ 02 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 10d.MillimetersToRevitUnits()), 
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
+          new(LinePatternSegmentType.Dash, 2d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits())
         } ) ;
         patternElementTwo = LinePatternElement.Create( document, linePattern ) ;
       }
@@ -47,8 +47,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         var linePattern = new LinePattern( PatternNames[ 03 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 4d.MillimetersToRevitUnits()), 
-          new(LinePatternSegmentType.Space, 4d.MillimetersToRevitUnits())
+          new(LinePatternSegmentType.Dash, 2d.MillimetersToRevitUnits()), 
+          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
         } ) ;
         patternElementThree = LinePatternElement.Create( document, linePattern ) ;
       }
@@ -63,8 +63,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         var linePattern = new LinePattern( PatternNames[ 05 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Dash, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()), 
           new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
         } ) ;
@@ -81,12 +81,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         var linePattern = new LinePattern( PatternNames[ 07 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Dash, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits())
         } ) ;
         patternElementSeven = LinePatternElement.Create( document, linePattern ) ;
       }
@@ -98,12 +98,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         var linePattern = new LinePattern( PatternNames[ 08 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Dash, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits())
         } ) ;
         patternElementEight = LinePatternElement.Create( document, linePattern ) ;
       }
@@ -115,12 +115,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         var linePattern = new LinePattern( PatternNames[ 09 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Dash, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits())
         } ) ;
         patternElementNine = LinePatternElement.Create( document, linePattern ) ;
       }
@@ -132,10 +132,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Helpers
         var linePattern = new LinePattern( PatternNames[ 10 ] ) ;
         linePattern.SetSegments( new List<LinePatternSegment>
         {
-          new(LinePatternSegmentType.Dash, 6d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Dash, 2d.MillimetersToRevitUnits()),
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits()),
           new(LinePatternSegmentType.Dot, 0d.MillimetersToRevitUnits()),
-          new(LinePatternSegmentType.Space, 2d.MillimetersToRevitUnits())
+          new(LinePatternSegmentType.Space, 1d.MillimetersToRevitUnits())
         } ) ;
         patternElementTen = LinePatternElement.Create( document, linePattern ) ;
       }
