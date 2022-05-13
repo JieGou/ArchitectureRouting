@@ -55,6 +55,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
         OnPropertyChanged() ;
       }
     }
+    
+    private int _scale ;
+
+    public int Scale
+    {
+      get => _scale ;
+      set
+      {
+        _scale = value ;
+        OnPropertyChanged() ;
+      }
+    }
 
     public ImportDwgMappingModel( string fileName, string floorName, double floorHeight )
     {
@@ -63,6 +75,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _fileName = ! string.IsNullOrEmpty( fileName ) ? Path.GetFileName( fileName ) : "" ;
       _floorName = floorName ;
       _floorHeight = floorHeight ;
+    }
+    
+    public ImportDwgMappingModel( string fileName, string floorName, double floorHeight, int scale )
+    {
+      Id = Guid.NewGuid().ToString() ;
+      _fullFilePath = fileName ;
+      _fileName = ! string.IsNullOrEmpty( fileName ) ? Path.GetFileName( fileName ) : "" ;
+      _floorName = floorName ;
+      _floorHeight = floorHeight ;
+      _scale = scale ;
     }
   }
 }
