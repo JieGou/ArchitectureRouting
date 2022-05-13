@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
+      const string grade3 = "グレード3" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var data = doc.GetSetupPrintStorable() ;
       var defaultSymbolMagnification = data.Scale * data.Ratio;
@@ -101,6 +102,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( isHasParameterSwitch2DSymbol ) element.SetProperty( switch2DSymbol, true ) ;
         var isHasParameterSymbolMagnification = element.HasParameter( symbolMagnification ) ;
         if ( isHasParameterSymbolMagnification ) element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
+        var isHasParameterGrade = element.HasParameter( grade3 ) ;
+        if ( isHasParameterGrade ) element.SetProperty( grade3, doc.GetDefaultSettingStorable().GradeSettingData.IsInGrade3Mode ) ;
       }
       doc.Create.NewGroup( groupIds ) ;
       t.Commit() ;
@@ -152,7 +155,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void SetIsEcoMode(UIDocument uiDocument, FamilyInstance instance)
     { 
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
-      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
+      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
     }
   }
 }
