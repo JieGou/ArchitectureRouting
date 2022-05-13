@@ -12,11 +12,17 @@ namespace Arent3d.Architecture.Routing.AppBase
   {
     public const double Tolerance = 0.0001 ;
 
-    public static IList<Curve> GetCurvesAfterIntersection( ViewPlan viewPlan, IList<Curve> bodyDirections)
+    public static IList<Curve> GetCurvesAfterIntersection( ViewPlan viewPlan, IList<Curve> bodyDirections, List<Type>? excludingTypes = null)
     {
       var elevation = viewPlan.GenLevel.Elevation ;
-      var classFilter2Ds = new ElementMulticlassFilter( new List<Type> { typeof( Wire ), typeof( TextNote ) } ) ;
-      var classFilter3Ds = new ElementMulticlassFilter( new List<Type> { typeof( CableTray ), typeof( Conduit ), typeof( FamilyInstance ) } ) ;
+      var type2Ds = new List<Type> { typeof( Wire ), typeof( TextNote ) } ;
+      if(null != excludingTypes)
+        type2Ds = type2Ds.Except( excludingTypes ).ToList() ;
+      var classFilter2Ds = new ElementMulticlassFilter( type2Ds ) ;
+      var type3Ds = new List<Type> { typeof( CableTray ), typeof( Conduit ), typeof( FamilyInstance ) } ;
+      if(null != excludingTypes)
+        type3Ds = type3Ds.Except( excludingTypes ).ToList() ;
+      var classFilter3Ds = new ElementMulticlassFilter( type3Ds ) ;
       var outlineCurve = GetOutlineFromCurve( viewPlan, bodyDirections.Select( x => x.Tessellate() ).SelectMany( x => x ).ToList() ) ;
       var boxFilter = new BoundingBoxIntersectsFilter( outlineCurve ) ;
 
@@ -79,14 +85,14 @@ namespace Arent3d.Architecture.Routing.AppBase
 
           switch ( element3D ) {
             case CableTray cableTray :
-              curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 200d.MillimetersToRevitUnits() + cableTray.Width, viewDirection ) ;
+              curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 100d.MillimetersToRevitUnits() + cableTray.Width, viewDirection ) ;
               break ;
             case Conduit conduit :
             {
               var outSizePara = conduit.get_Parameter( BuiltInParameter.RBS_CONDUIT_OUTER_DIAM_PARAM ) ;
               if ( null == outSizePara )
                 continue ;
-              curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 400d.MillimetersToRevitUnits() + outSizePara.AsDouble(), viewDirection ) ;
+              curveLoopOffset = CurveLoop.CreateViaThicken( locationElement, 100d.MillimetersToRevitUnits() + outSizePara.AsDouble(), viewDirection ) ;
               break ;
             }
           }

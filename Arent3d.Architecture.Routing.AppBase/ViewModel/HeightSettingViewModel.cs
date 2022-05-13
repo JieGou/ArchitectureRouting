@@ -14,7 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public HeightSettingViewModel( HeightSettingStorable settingStorables )
     {
       SettingStorable = settingStorables ;
-      HeightSettingModels = settingStorables.HeightSettingsData.Values.ToList() ;
+      HeightSettingModels = settingStorables.HeightSettingsData.Values.OrderByDescending( h => h.Elevation ).ToList() ;
     }
   }
 }
