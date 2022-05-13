@@ -1,5 +1,7 @@
 ﻿using System ;
+using System.IO ;
 using System.Linq ;
+using System.Reflection ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Revit.UI ;
@@ -16,8 +18,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
   public class CircleAnnotationCommand : IExternalCommand
   {
     private const string TransactionName = "Electrical.App.Commands.Annotation.CircleAnnotationCommandTrans" ;
-    private const string CircleAnnotationName = "Circle Annotation" ;  
-    
+    private const string CircleAnnotationName = "Circle Annotation" ;
+
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
@@ -25,7 +27,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
         var uiDocument = application.ActiveUIDocument ;
         var document = uiDocument.Document ;
 
-        string path = AssetManager.GetElectricalFamilyPath( CircleAnnotationName ) ;
+        string? path = GetCircleAnnotationPath() ;
+        if ( string.IsNullOrEmpty( path ) )
+          return Result.Failed ;
+
         FilteredElementCollector notes = new FilteredElementCollector( document ) ;
         notes.OfCategory( BuiltInCategory.OST_GenericAnnotation ).OfClass( typeof( FamilySymbol ) ) ;
         FamilySymbol? circleAnnotation = notes.FirstOrDefault( x => x.Name.Equals( CircleAnnotationName ) ) as FamilySymbol ;
@@ -57,6 +62,33 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
         CommandUtils.DebugAlertException( e ) ;
         return Result.Failed ;
       }
+    }
+
+    private string? GetFamilyPath( Assembly assembly, string familyName )
+    {
+      var resourceFullName = assembly.GetManifestResourceNames().FirstOrDefault( element => element.EndsWith( familyName ) ) ;
+      if ( string.IsNullOrEmpty( resourceFullName ) )
+        return null ;
+
+      using var stream = assembly.GetManifestResourceStream( resourceFullName ) ;
+      if ( null == stream )
+        return null ;
+
+      var fileData = new byte[ stream.Length ] ;
+      var read = stream.Read( fileData, 0, fileData.Length ) ;
+
+      var pathFamily = Path.Combine( Path.GetTempPath(), familyName ) ;
+      File.WriteAllBytes( pathFamily, fileData ) ;
+
+      return pathFamily ;
+    }
+
+    private string? GetCircleAnnotationPath()
+    {
+      Type t = typeof( Arent3d.Architecture.Routing.AppInfo ) ;
+      var assembly = t.Assembly ;
+
+      return GetFamilyPath( assembly, CircleAnnotationName + ".rfa" ) ;
     }
   }
 }
