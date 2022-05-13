@@ -170,16 +170,16 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
     
     /// <summary>
-    /// Get eco default setting from DB
+    /// Get default default setting from DB
     /// </summary>
-    public static EcoSettingStorable GetEcoSettingStorable( this Document document )
+    public static DefaultSettingStorable GetDefaultSettingStorable( this Document document )
     {
       try {
-        return EcoSettingStorableCache.Get( DocumentKey.Get( document ) )
-          .FindOrCreate( EcoSettingStorable.StorableName ) ;
+        return DefaultSettingStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( DefaultSettingStorable.StorableName ) ;
       }
       catch ( InvalidOperationException ) {
-        return new EcoSettingStorable( document ) ;
+        return new DefaultSettingStorable( document ) ;
       }
     }
     

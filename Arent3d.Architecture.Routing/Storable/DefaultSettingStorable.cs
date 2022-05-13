@@ -6,39 +6,47 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "02c5ecef-4b60-4c36-bbf0-61bc7b566034" )]
+  [Guid( "75f2c2a1-3fe3-45cf-8ea7-bcf083750bfb" )]
   [StorableVisibility( AppInfo.VendorId )]
-  public class EcoSettingStorable : StorableBase
+  public class DefaultSettingStorable : StorableBase
   {
-    public const string StorableName = "EcoSetting Model" ;
+    public const string StorableName = "Default Setting Model" ;
     private const string EcoValueField = "EcoValue" ;
+    private const string GradeValueField = "GradeValue" ;
 
     public EcoSettingModel EcoSettingData { get ; private set ; }
+    
+    public GradeSettingModel GradeSettingData { get ; private set ; }
 
-    public EcoSettingStorable( DataStorage owner ) : base( owner, false )
+    public DefaultSettingStorable( DataStorage owner ) : base( owner, false )
     {
       EcoSettingData = new EcoSettingModel() ;
+      GradeSettingData = new GradeSettingModel() ;
     }
 
-    public EcoSettingStorable( Document document ) : base( document, false )
+    public DefaultSettingStorable( Document document ) : base( document, false )
     {
       EcoSettingData = new EcoSettingModel() ;
+      GradeSettingData = new GradeSettingModel() ;
     }
 
     protected override void LoadAllFields( FieldReader reader )
     {
       var dataSaved = reader.GetSingle<EcoSettingModel>( EcoValueField ) ;
       EcoSettingData = dataSaved ;
+      GradeSettingData = reader.GetSingle<GradeSettingModel>( GradeValueField ) ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
     {
       writer.SetSingle( EcoValueField, EcoSettingData ) ;
+      writer.SetSingle( GradeValueField, GradeSettingData ) ;
     }
 
     protected override void SetupAllFields( FieldGenerator generator )
     {
       generator.SetSingle<EcoSettingModel>( EcoValueField ) ;
+      generator.SetSingle<GradeSettingModel>( GradeValueField ) ;
     }
 
     public override string Name => StorableName ;
