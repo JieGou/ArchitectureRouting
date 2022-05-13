@@ -45,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void OnLoaded( object sender, EventArgs args )
     {
-      ViewModel.ChangeColor();
+      CbShowDiff.IsChecked = true ;
       Loaded -= OnLoaded ;
     }
 

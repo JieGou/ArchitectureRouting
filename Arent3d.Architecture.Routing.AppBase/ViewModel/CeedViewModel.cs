@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     public bool IsShowOnlyUsingCode { get ; set ; }
 
-    public bool IsShowDiff { get ; set ; } = true ;
+    public bool IsShowDiff { get ; set ; } 
     
     public bool IsExistUsingCode { get ; set ; }
 
@@ -117,9 +117,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       AddModelNumber( CeedModels ) ;
       if ( ceedStorable.CeedModelUsedData.Any() ) 
         _usingCeedModel = ceedStorable.CeedModelUsedData ;
-
-      if(IsShowDiff) 
-        ChangeColor() ;
     }
 
     private void LoadData( List<CeedModel> ceedModels, CeedStorable? ceedStorable = null )
@@ -185,11 +182,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var ceedModelData =
           ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
         if ( ! ceedModelData.Any() ) return ;
+        _isInit = false ;
+        CheckChangeColor( ceedModelData );
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
         ceedStorable.IsShowOnlyUsingCode = false ;
-        
-        _isInit = false ;
         LoadData( ceedStorable ) ;
         checkBox.Visibility = Visibility.Hidden ;
         checkBox.IsChecked = false ;
@@ -279,7 +276,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         usingCeedModel = usingCeedModel.Distinct().ToList() ;
         _usingCeedModel = usingCeedModel ;
-        LoadData(usingCeedModel, ceedStorable  ) ;
+        CheckChangeColor( _usingCeedModel );
+        LoadData(_usingCeedModel, ceedStorable  ) ;
         checkBox.Visibility = Visibility.Visible ;
         checkBox.IsChecked = true ;
 
@@ -651,37 +649,48 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
     
-    public void ChangeColor()
+    public void CheckChangeColor(List<CeedModel> ceedModels)
     {
-      for ( int i = 0 ; i < DtGrid.Items.Count ; i++ ) {
-        var row = GetRow( DtGrid, i ) ;
-        CeedModel item = (CeedModel) row.Item ;
+      for ( int i = 0 ; i < ceedModels.Count() ; i++ ) {
+        CeedModel item = ceedModels[ i ] ;
         var existCeedModels = _isInit ? _oldCeedModels : _usedCeedModels ;
         var itemExistCeedModel = existCeedModels.Find( x =>
           x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber &&
           x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol &&
           x.ModelNumber == item.ModelNumber ) ;
         if ( itemExistCeedModel != null ) {
-          SetCellColor( DtGrid, Brushes.Red,
+          item.IsEditFloorPlan = IsChange(
             string.IsNullOrEmpty( itemExistCeedModel.FloorPlanSymbol )
               ? itemExistCeedModel.Base64FloorPlanImages
               : itemExistCeedModel.FloorPlanSymbol,
             string.IsNullOrEmpty( item.FloorPlanSymbol )
               ? item.Base64FloorPlanImages
-              : item.FloorPlanSymbol, row, 4 ) ;
-          SetCellColor( DtGrid, Brushes.Red,
+              : item.FloorPlanSymbol ) ;
+          item.IsEditInstrumentation = IsChange(
             string.IsNullOrEmpty( itemExistCeedModel.InstrumentationSymbol )
               ? itemExistCeedModel.Base64InstrumentationImageString
               : itemExistCeedModel.InstrumentationSymbol,
             string.IsNullOrEmpty( item.InstrumentationSymbol )
               ? item.Base64InstrumentationImageString
-              : item.InstrumentationSymbol, row, 5 ) ;
-          SetCellColor( DtGrid, Brushes.Red, itemExistCeedModel.Condition,
-            item.Condition, row, 6 ) ;
+              : item.InstrumentationSymbol ) ;
+          item.IsEditCondition = IsChange( itemExistCeedModel.Condition, item.Condition ) ;
         }
         else {
-          row.Background = Brushes.Orange ;
+          // row.Background = Brushes.Orange ;
+          item.IsAdded = true ;
         }
+      }
+    }
+
+    public void ChangeColor()
+    {
+      for ( int i = 0 ; i < DtGrid.Items.Count ; i++ ) {
+        var row = GetRow( DtGrid, i ) ;
+        CeedModel item = (CeedModel) row.Item ;
+        if(item.IsAdded)  row.Background = Brushes.Orange ;
+        else if (item.IsEditFloorPlan ) SetCellRedColor( DtGrid, row, 4 ) ;
+        else if (item.IsEditInstrumentation)  SetCellRedColor( DtGrid, row, 5 ) ;
+        else if (item.IsEditCondition)  SetCellRedColor( DtGrid, row, 6 ) ;
       }
     }
 
@@ -697,15 +706,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
       
     }
-    
-    private void SetCellColor(DataGrid grid, SolidColorBrush colorBrush, string oldItem, string newItem, DataGridRow row , int column) 
+
+    private void SetCellRedColor(DataGrid grid, DataGridRow row , int column) 
     {
-      if ( oldItem != newItem ) {
-        var cell = GetCell( grid, row, column ) ;
+      var cell = GetCell( grid, row, column ) ;
         if ( cell != null ) {
-          cell.Background = colorBrush ;
+          cell.Background = Brushes.Red ;
         }
-      }
+    }
+    
+    private bool IsChange(string oldItem, string newItem)
+    {
+      return oldItem != newItem ;
     }
     
     private DataGridRow GetRow( DataGrid grid, int index )

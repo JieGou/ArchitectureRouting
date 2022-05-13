@@ -26,6 +26,11 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public string Base64FloorPlanImages { get ; set ; }
     public BitmapImage? FloorPlanImages { get ; set ; }
     public List<BitmapImage?>? InstrumentationImages { get ; set ; }
+    
+    public bool IsAdded { get ; set ; }
+    public bool IsEditFloorPlan { get ; set ; }
+    public bool IsEditInstrumentation { get ; set ; }
+    public bool IsEditCondition{ get ; set ; }
 
     public CeedModel( string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType )
     {
@@ -105,6 +110,40 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       if ( InstrumentationImages == null || ! InstrumentationImages.Any() ) return ;
       var tempImage = ( from item in InstrumentationImages select ConvertBitmapToBase64( item ) ).ToList() ;
       Base64InstrumentationImageString = string.Join( "||", tempImage ) ;
+    }
+    
+    public CeedModel( string ceedModelNumber, string ceedSetCode, string generalDisplayDeviceSymbol, string modelNumber, string floorPlanSymbol, string instrumentationSymbol, string name, string condition, string base64InstrumentationImageString, string base64FloorPlanImages, string floorPlanType, 
+      bool? isAdded, bool? isEditFloorPlan, bool? isEditInstrumentation, bool? isEditCondition)
+    {
+      const string dummySymbol = "Dummy" ;
+      CeedModelNumber = ceedModelNumber ;
+      CeedSetCode = ceedSetCode ;
+      GeneralDisplayDeviceSymbol = generalDisplayDeviceSymbol ;
+      ModelNumber = modelNumber ;
+      FloorPlanSymbol = floorPlanSymbol ;
+      InstrumentationSymbol = instrumentationSymbol ;
+      Name = name ;
+      Condition = condition ;
+      FloorPlanType = floorPlanType ;
+      Base64InstrumentationImageString = base64InstrumentationImageString ;
+      Base64FloorPlanImages = base64FloorPlanImages ;
+      InstrumentationImages = null ;
+      FloorPlanImages = null ;
+      IsAdded = isAdded??false ;
+      IsEditFloorPlan = isEditFloorPlan??false  ;
+      IsEditInstrumentation = isEditInstrumentation??false  ;
+      IsEditCondition = isEditCondition??false  ;
+      if ( floorPlanSymbol != dummySymbol ) {
+        var temporaryFloorPlanImage = new BitmapImage() ;
+        if ( FloorPlanImages == null && ! string.IsNullOrEmpty( Base64FloorPlanImages ) ) {
+          temporaryFloorPlanImage = BitmapToImageSource( Base64StringToBitmap( Base64FloorPlanImages ) ) ;
+        }
+
+        FloorPlanImages = temporaryFloorPlanImage ;
+      }
+      if ( InstrumentationImages != null || string.IsNullOrEmpty( Base64InstrumentationImageString ) ) return ;
+      var listBimapImage = ( from image in Base64InstrumentationImageString.Split( new string[] { "||" }, StringSplitOptions.None ) select Base64StringToBitmap( image ) into bmpFromString select BitmapToImageSource( bmpFromString ) ).ToList() ;
+      InstrumentationImages = listBimapImage ;
     }
 
     private static BitmapImage? BitmapToImageSource( Bitmap? bitmap )
