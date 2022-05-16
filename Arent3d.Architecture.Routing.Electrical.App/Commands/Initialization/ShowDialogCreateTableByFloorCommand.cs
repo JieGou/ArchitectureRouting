@@ -103,8 +103,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
             List<ElectricalSymbolModel> electricalSymbolModels = new() ;
             var conduitsByFloor = allConduits.Where( x => x.ReferenceLevel.Id == levelId ).ToList() ;
             var elementsByFloor = conduitsByFloor.Cast<Element>().ToList() ;
-            var errorMess = CreateElectricalSymbolModels( doc, ceedStorable!, electricalSymbolModels, elementsByFloor ) ;
-            if ( ! string.IsNullOrEmpty( errorMess ) || ! electricalSymbolModels.Any() ) continue ;
+            CreateElectricalSymbolModels( doc, ceedStorable!, electricalSymbolModels, elementsByFloor ) ;
+            if ( ! electricalSymbolModels.Any() ) continue ;
             if ( isCreateTableEachFloors ) {
               var level = doc.GetElement( levelId ).Name ;
               var scheduleName = CreateElectricalSchedule( doc, electricalSymbolModels, level ) ;

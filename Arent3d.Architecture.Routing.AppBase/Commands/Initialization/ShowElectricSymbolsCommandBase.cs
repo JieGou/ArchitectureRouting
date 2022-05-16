@@ -47,9 +47,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var electricalSymbolModels = new List<ElectricalSymbolModel>() ;
       try {
         var pickedObjects = uiDoc.Selection.PickElementsByRectangle( ConduitSelectionFilter.Instance, "ドラックで複数コンジットを選択して下さい。" ).Where( p => p is Conduit ) ;
-        var errorMess = CreateElectricalSymbolModels( doc, ceedStorable, electricalSymbolModels, pickedObjects ) ;
-        if ( ! string.IsNullOrEmpty( errorMess ) ) {
-          message = errorMess ;
+        CreateElectricalSymbolModels( doc, ceedStorable, electricalSymbolModels, pickedObjects ) ;
+        if ( ! electricalSymbolModels.Any() ) {
           return Result.Cancelled ;
         }
       }
@@ -66,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       } ) ;
     }
 
-    public static string CreateElectricalSymbolModels( Document doc, CeedStorable ceedStorable, List<ElectricalSymbolModel> electricalSymbolModels, IEnumerable<Element> conduits )
+    public static void CreateElectricalSymbolModels( Document doc, CeedStorable ceedStorable, List<ElectricalSymbolModel> electricalSymbolModels, IEnumerable<Element> conduits )
     {
       var csvStorable = doc.GetCsvStorable() ;
       var wiresAndCablesModelData = csvStorable.WiresAndCablesModelData ;
@@ -76,14 +75,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var detailTableModelData = doc.GetDetailTableStorable().DetailTableModelData ;
       var allConnectors = doc.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).ToList() ;
       var errorMess = string.Empty ;
-      
+
       var routePicked = conduits.Select( e => e.GetRouteName() ).Distinct().ToList() ;
       foreach ( var routeName in routePicked ) {
         var fromConnectorInfoAndToConnectorInfo = GetFromConnectorInfoAndToConnectorInfo( doc, allConnectors, routeName!, ref errorMess ) ;
         if ( ! string.IsNullOrEmpty( errorMess ) ) {
-          return errorMess ;
+          errorMess = string.Empty ;
+          continue ;
         }
-
         var fromConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.fromConnectorInfo.ModelNumber ) ;
         var toConnectorCeedModel = ceedStorable.CeedModelData.FirstOrDefault( x => x.CeedSetCode == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.CeedSetCode && x.GeneralDisplayDeviceSymbol == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.DeviceSymbol && x.ModelNumber == fromConnectorInfoAndToConnectorInfo.toConnectorInfo.ModelNumber ) ;
         if ( fromConnectorCeedModel == null && toConnectorCeedModel == null ) continue ;
@@ -95,8 +94,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           InsertDataFromRegularDatabaseIntoElectricalSymbolModel( wiresAndCablesModelData, hiroiSetMasterEcoModelData, hiroiSetMasterNormalModelData, hiroiMasterModelData, allConnectors, electricalSymbolModels, fromConnectorCeedModel, toConnectorCeedModel, fromConnectorInfoAndToConnectorInfo.fromConnectorUniqueId, fromConnectorInfoAndToConnectorInfo.toConnectorUniqueId ) ;
         }
       }
-
-      return string.Empty ;
     }
 
     private static void InsertDataFromDetailTableModelIntoElectricalSymbolModel( List<ElectricalSymbolModel> electricalSymbolModels, List<DetailTableModel> detailTableModelsByRouteName, CeedModel? fromConnectorCeedModel, CeedModel? toConnectorCeedModel, string fromConnectorUniqueId, string toConnectorUniqueId )
@@ -175,14 +172,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       Element? toConnector = null ;
       foreach ( var conduit in conduitsOfRoute ) {
         var fromEndPoint = conduit.GetNearestEndPoints( true ).ToList() ;
-        if ( ! fromEndPoint.Any() ) continue ;
-        var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;
-        var fromUniqueId = fromEndPointKey?.GetElementUniqueId() ;
-        if ( string.IsNullOrEmpty( fromUniqueId ) ) continue ;
-        var fromElement = allConnectors.FirstOrDefault( c => c.UniqueId == fromUniqueId ) ;
-        if ( fromElement != null && ! fromElement.IsTerminatePoint() && ! fromElement.IsPassPoint() )
-          fromConnector = fromElement ;
-
+        if ( fromEndPoint.Any() ) {
+          var fromEndPointKey = fromEndPoint.FirstOrDefault()?.Key ;
+          var fromUniqueId = fromEndPointKey?.GetElementUniqueId() ;
+          if ( ! string.IsNullOrEmpty( fromUniqueId ) ) {
+            var fromElement = allConnectors.FirstOrDefault( c => c.UniqueId == fromUniqueId ) ;
+            if ( fromElement != null && ! fromElement.IsTerminatePoint() && ! fromElement.IsPassPoint() )
+              fromConnector = fromElement ;
+          }
+        }
+        
         var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
         var toEndPointKey = toEndPoint.FirstOrDefault()?.Key ;
@@ -194,7 +193,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
 
       if ( fromConnector == null || toConnector == null ) {
-        errorMess = routeName + " is not connected." ;
+        errorMess = routeName ;
         return ( string.Empty, new ConnectorInfo( string.Empty, string.Empty, string.Empty ), string.Empty, new ConnectorInfo( string.Empty, string.Empty, string.Empty ) ) ;
       }
 
