@@ -41,8 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
         using var trans = new Transaction( document, "Create Arent Shaft" ) ;
         trans.Start() ;
 
-        var data = document.GetSetupPrintStorable() ;
-        var scaleSetup = data.Scale;
+        var scaleSetup = document.ActiveView.Scale ;
         var ratio = scaleSetup / 100d ;
         
         var shaftProfile = new CurveArray() ;

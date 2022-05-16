@@ -2,6 +2,7 @@
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
@@ -66,8 +67,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
         using var transaction = new Transaction( document ) ;
         transaction.Start( "Electrical.App.Commands.Shaft.AddHSymbolCommand".GetAppStringByKeyOrDefault( "Create Sign Cylindrical Shaft" ) ) ;
 
-        var data = document.GetSetupPrintStorable() ;
-        var scaleSetup = data.Scale * data.Ratio;
+        var scaleSetup = ImportDwgMappingModel.GetDefaultSymbolMagnification( document ) ;
         var ratio = scaleSetup / 100d ;
         foreach ( var viewPlan in viewPlans ) {
           CreateSymbolCenter( viewPlan, centerPoint, ratio ) ;

@@ -9,6 +9,7 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.DB.Electrical ;
 using System.Collections.Generic ;
 using System.Windows.Media ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
@@ -446,8 +447,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      var data = doc.GetSetupPrintStorable() ;
-      var defaultSymbolMagnification = data.Scale * data.Ratio;
+      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       
       if ( directionXRacks.Any() ) {
         foreach ( var (key, value) in directionXRacks ) {

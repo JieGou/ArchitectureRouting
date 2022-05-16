@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -27,8 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string symbolMagnification = "シンボル倍率" ;
       const string grade3 = "グレード3" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
-      var data = doc.GetSetupPrintStorable() ;
-      var defaultSymbolMagnification = data.Scale * data.Ratio;
+      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       
       var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
 
