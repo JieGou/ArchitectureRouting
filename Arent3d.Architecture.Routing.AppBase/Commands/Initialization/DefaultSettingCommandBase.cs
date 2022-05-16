@@ -74,8 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       try {
         Transaction transaction = new( document, SetDefaultEcoModeTransactionName ) ;
         transaction.Start() ;
-        var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) )
-          .Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3 ) ).ToList() ;
+        var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3 ) ).ToList() ;
         foreach ( var instance in instances ) {
           instance.SetProperty( Grade3, isInGrade3Mode ) ;
         }
@@ -84,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         defaultSettingStorable.GradeSettingData.IsInGrade3Mode = isInGrade3Mode ;
         defaultSettingStorable.Save() ;
         transaction.Commit() ;
-        
+
         return Result.Succeeded ;
       }
       catch ( Exception exception ) {
@@ -145,6 +144,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           if ( null != viewPlan.ViewTemplateId && doc.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != importDwgMappingModel.Scale ) {
             viewTemplate.Scale = importDwgMappingModel.Scale ;
           }
+
           importDwgLevel.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
           doc.Import( importDwgMappingModel.FullFilePath, dwgImportOptions, viewPlan, out ElementId importElementId ) ;
           if ( i == 0 ) firstViewPlan = viewPlan ;
@@ -173,6 +173,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         create3DTrans.Commit() ;
 
         #endregion
+
         return Result.Succeeded ;
       }
       catch ( Exception exception ) {

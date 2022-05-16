@@ -1,51 +1,51 @@
 ﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.DefaultSettingDialog"
-                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                mc:Ignorable="d"
-                WindowStartupLocation="CenterScreen"
-                Title="DefaultSettingDialog" Height="400" Width="1000" ResizeMode="NoResize">
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        Title="DefaultSettingDialog" Height="400" Width="1000" ResizeMode="NoResize">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        
-        <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" Margin="10,5,10,5" >
-            <Label Content="Eco/Normal Mode" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+
+        <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" Margin="10,5,10,5">
+            <Label Content="Eco/Normal Mode" HorizontalAlignment="Left" VerticalAlignment="Center" />
             <ComboBox ItemsSource="{Binding EcoNormalModes}"
                       SelectedIndex="{Binding SelectedEcoNormalModeIndex}"
-                      DisplayMemberPath="Value" 
+                      DisplayMemberPath="Value"
                       Margin="10,0,0,0"
                       Width="150">
                 <ComboBox.Style>
                     <Style TargetType="{x:Type ComboBox}">
-                        <Setter Property="Visibility" Value="Visible"/>
-                        <Setter Property="Height" Value="20"/>
-                        <Setter Property="FontSize" Value="12"/>
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="FontSize" Value="12" />
                     </Style>
                 </ComboBox.Style>
             </ComboBox>
             <Label Content="Grade Mode" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
             <ComboBox ItemsSource="{Binding GradeModeTypes}"
                       SelectedIndex="{Binding SelectedGradeModeIndex}"
-                      HorizontalAlignment="Left" 
+                      HorizontalAlignment="Left"
                       DisplayMemberPath="Value"
                       Width="170"
-                      Margin="10,0,0,0" >
+                      Margin="10,0,0,0">
                 <ComboBox.Style>
                     <Style TargetType="{x:Type ComboBox}">
-                        <Setter Property="Visibility" Value="Visible"/>
-                        <Setter Property="Height" Value="20"/>
-                        <Setter Property="FontSize" Value="12"/>
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="FontSize" Value="12" />
                     </Style>
                 </ComboBox.Style>
-            </ComboBox> 
+            </ComboBox>
         </StackPanel>
 
-        <Grid Grid.Row="1" Margin="10,0,10,10" VerticalAlignment="Top" >
+        <Grid Grid.Row="1" Margin="10,0,10,10" VerticalAlignment="Top">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="110" />
@@ -61,7 +61,7 @@
                             Click="BtnAdd_Click"
                             Width="90" />
                 </StackPanel>
-                
+
                 <DataGrid Grid.Column="1" x:Name="DataGridDwg"
                           Height="260"
                           Background="White"
@@ -121,7 +121,7 @@
                 </DataGrid>
             </Grid>
         </Grid>
-        
+
         <Button Grid.Row="2"
                 Content="Apply"
                 HorizontalAlignment="Right"

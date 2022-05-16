@@ -3,12 +3,10 @@ using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
-using System.Windows ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
@@ -29,55 +27,51 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       EcoMode,
       NormalMode
     }
-    
+
     public enum GradeModes
     {
       Grade3,
       Grade1Grade2
     }
 
-    public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string> 
-    { 
-      [ EcoNormalMode.NormalMode ] = NormalModeKey.GetAppStringByKeyOrDefault( NormalModeDefaultString ),
-      [ EcoNormalMode.EcoMode ] = EcoModeKey.GetAppStringByKeyOrDefault( EcoModeDefaultString ) 
-    } ;
+    public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string> { [ EcoNormalMode.NormalMode ] = NormalModeKey.GetAppStringByKeyOrDefault( NormalModeDefaultString ), [ EcoNormalMode.EcoMode ] = EcoModeKey.GetAppStringByKeyOrDefault( EcoModeDefaultString ) } ;
 
-    public IReadOnlyDictionary<GradeModes, string> GradeModeTypes { get ; } = new Dictionary<GradeModes, string>
-    {
-      [ GradeModes.Grade3 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}3", 
-      [ GradeModes.Grade1Grade2 ] = $"{GradeKey.GetAppStringByKeyOrDefault(GradeDefaultString)}1-2",
-    } ;
-    
+    public IReadOnlyDictionary<GradeModes, string> GradeModeTypes { get ; } = new Dictionary<GradeModes, string> { [ GradeModes.Grade3 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}3", [ GradeModes.Grade1Grade2 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}1-2", } ;
+
     public int SelectedEcoNormalModeIndex { get ; set ; }
     public EcoNormalMode SelectedEcoNormalMode => 0 == SelectedEcoNormalModeIndex ? EcoNormalMode.NormalMode : EcoNormalMode.EcoMode ;
     public int SelectedGradeModeIndex { get ; set ; }
     public GradeModes SelectedGradeMode => 0 == SelectedGradeModeIndex ? GradeModes.Grade3 : GradeModes.Grade1Grade2 ;
 
     private ObservableCollection<ImportDwgMappingModel> _importDwgMappingModels ;
-    public ObservableCollection<ImportDwgMappingModel> ImportDwgMappingModels { 
+
+    public ObservableCollection<ImportDwgMappingModel> ImportDwgMappingModels
+    {
       get => _importDwgMappingModels ;
       set
       {
         _importDwgMappingModels = value ;
-        OnPropertyChanged();
-      } 
+        OnPropertyChanged() ;
+      }
     }
 
     private List<FileComboboxItemType> _fileItems ;
-    public List<FileComboboxItemType> FileItems { 
+
+    public List<FileComboboxItemType> FileItems
+    {
       get => _fileItems ;
       set
       {
         _fileItems = value ;
-        OnPropertyChanged();
-      } 
+        OnPropertyChanged() ;
+      }
     }
 
-    private int Scale  { get ; }
-    
+    private int Scale { get ; }
+
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
     public ICommand AddImportDwgMappingModelCommand => new RelayCommand( AddImportDwgMappingModel ) ;
-    
+
     public DefaultSettingViewModel( bool isEcoMode, bool isInGrade3Mode, int scale )
     {
       SelectedEcoNormalModeIndex = isEcoMode ? 1 : 0 ;
@@ -86,7 +80,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _fileItems = new List<FileComboboxItemType>() ;
       Scale = scale ;
     }
-    
+
     public void AddImportDwgMappingModel()
     {
       const int floorHeightDistance = 3000 ;
@@ -95,7 +89,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
       _importDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale ) ) ;
     }
-    
+
     public void LoadDwgFile( ImportDwgMappingModel selectedItem )
     {
       OpenFileDialog openFileDialog = new() { Filter = "DWG files (*.dwg )|*.dwg", Multiselect = false } ;
@@ -108,7 +102,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       importDwgMappingModel.FileName = Path.GetFileName( fileName ) ;
     }
 
-    public void LoadDwgFiles()
+    private void LoadDwgFiles()
     {
       OpenFileDialog openFileDialog = new() { Filter = "DWG files (*.dwg )|*.dwg", Multiselect = true } ;
       if ( openFileDialog.ShowDialog() != DialogResult.OK ) return ;
@@ -128,7 +122,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       UpdateDefaultFloorHeight() ;
     }
-    
+
     private void UpdateDefaultFloorHeight()
     {
       const int floorHeightDistance = 3000 ;

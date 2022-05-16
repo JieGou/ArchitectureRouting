@@ -4,7 +4,6 @@ using System.Windows ;
 using System.Windows.Controls ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using ComboBox = System.Windows.Controls.ComboBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
