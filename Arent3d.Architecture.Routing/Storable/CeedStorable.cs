@@ -8,7 +8,7 @@ using Autodesk.Revit.DB.ExtensibleStorage ;
 
 namespace Arent3d.Architecture.Routing.Storable
 {
-  [Guid( "2294442b-f6ba-4568-a48d-11b557d8f975" )]
+  [Guid( "545beff2-e712-4583-b6bf-ce15145b9910" )]
   [StorableVisibility( AppInfo.VendorId )]
   public class CeedStorable : StorableBase
   {
@@ -18,7 +18,6 @@ namespace Arent3d.Architecture.Routing.Storable
     private const string IsShowCeedModelNumberField = "IsShowCeedModelNumber" ;
     private const string ConnectorFamilyUploadField = "ConnectorFamilyUpload" ;
     private const string IsShowOnlyUsingCodeField = "IsShowOnlyUsingCode" ;
-    private const string OldCeedModelField = "OldCeedModel" ;
 
     public List<CeedModel> CeedModelData { get ; set ; }
     public List<CeedModel> CeedModelUsedData { get ; set ; }
@@ -51,7 +50,6 @@ namespace Arent3d.Architecture.Routing.Storable
       IsShowCeedModelNumber = reader.GetSingle<bool>( IsShowCeedModelNumberField ) ;
       ConnectorFamilyUploadData = reader.GetArray<string>( ConnectorFamilyUploadField ).ToList() ;
       IsShowOnlyUsingCode = reader.GetSingle<bool>( IsShowOnlyUsingCodeField ) ;
-      OldCeedModelData = reader.GetArray<CeedModel>( OldCeedModelField ).ToList() ;
     }
 
     protected override void SaveAllFields( FieldWriter writer )
@@ -61,7 +59,6 @@ namespace Arent3d.Architecture.Routing.Storable
       writer.SetSingle(  IsShowCeedModelNumberField, IsShowCeedModelNumber) ;
       writer.SetArray( ConnectorFamilyUploadField, ConnectorFamilyUploadData ) ;
       writer.SetSingle(  IsShowOnlyUsingCodeField, IsShowOnlyUsingCode) ;
-      writer.SetArray( OldCeedModelField, OldCeedModelData ) ;
     }
 
     protected override void SetupAllFields( FieldGenerator generator )
@@ -71,7 +68,6 @@ namespace Arent3d.Architecture.Routing.Storable
       generator.SetSingle<bool>( IsShowCeedModelNumberField  ) ;
       generator.SetArray<string>( ConnectorFamilyUploadField ) ;
       generator.SetSingle<bool>( IsShowOnlyUsingCodeField  ) ;
-      generator.SetArray<CeedModel>( OldCeedModelField ) ;
     }
 
     public override string Name => StorableName ;

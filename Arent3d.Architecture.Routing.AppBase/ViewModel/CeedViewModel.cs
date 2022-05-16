@@ -38,9 +38,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly ExternalCommandData _commandData ;
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
-    private bool _isInit = true ;
     private List<CeedModel> _usedCeedModels ;
-    private List<CeedModel> _oldCeedModels ;
 
     public DataGrid DtGrid  ;
     
@@ -87,14 +85,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _ceedModels = new() ;
         _usingCeedModel = new List<CeedModel>() ;
         _usedCeedModels = new List<CeedModel>() ;
-        _oldCeedModels  = new List<CeedModel>() ;
         CeedModels = new() ;
       }
       else {
         CeedStorable = oldCeedStorable ;
         _ceedModels = oldCeedStorable.CeedModelData ;
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
-        _oldCeedModels = oldCeedStorable.OldCeedModelData ;
         _usedCeedModels = oldCeedStorable.CeedModelData ;
         CeedModels = new( _ceedModels ) ;
         IsShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
@@ -182,7 +178,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var ceedModelData =
           ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
         if ( ! ceedModelData.Any() ) return ;
-        _isInit = false ;
         CheckChangeColor( ceedModelData );
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
@@ -192,7 +187,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         checkBox.IsChecked = false ;
         IsShowOnlyUsingCode = false ;
         IsShowDiff = true ;
-        _oldCeedModels = _usedCeedModels ;
 
         try {
           using Transaction t = new( _document, "Save data" ) ;
@@ -222,7 +216,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         t.Start() ;
         ceedStorable.IsShowCeedModelNumber = IsShowCeedModelNumber ;
         ceedStorable.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
-        ceedStorable.OldCeedModelData = _oldCeedModels ;
         ceedStorable.Save() ;
         t.Commit() ;
       }
@@ -653,7 +646,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       for ( int i = 0 ; i < ceedModels.Count() ; i++ ) {
         CeedModel item = ceedModels[ i ] ;
-        var existCeedModels = _isInit ? _oldCeedModels : _usedCeedModels ;
+        var existCeedModels =  _usedCeedModels ;
         var itemExistCeedModel = existCeedModels.Find( x =>
           x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber &&
           x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol &&
@@ -701,7 +694,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         for ( int j = 0 ; j < 7 ; j++ ) {
           GetCell( DtGrid, row, j )?.ClearValue( DataGridCell.BackgroundProperty ) ;
         }
-
+      
         row.ClearValue( DataGridRow.BackgroundProperty ) ;
       }
       
