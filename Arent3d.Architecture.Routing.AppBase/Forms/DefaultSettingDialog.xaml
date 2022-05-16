@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        mc:Ignorable="d"
+        mc:Ignorable="d" x:Name="WdDefaultSettingDialog"
         WindowStartupLocation="CenterScreen"
         Title="DefaultSettingDialog" Height="400" Width="1000" ResizeMode="NoResize">
     <Grid>
@@ -58,11 +58,11 @@
                             Margin="0, 0,0,10"
                             Width="90" />
                     <Button Content="階追加"
-                            Click="BtnAdd_Click"
+                            Command="{Binding AddImportDwgMappingModelCommand}"
                             Width="90" />
                 </StackPanel>
 
-                <DataGrid Grid.Column="1" x:Name="DataGridDwg"
+                <DataGrid Grid.Column="1"
                           Height="260"
                           Background="White"
                           ItemsSource="{Binding ImportDwgMappingModels}"
@@ -104,10 +104,11 @@
                                 </Style>
                             </DataGridComboBoxColumn.EditingElementStyle>
                         </DataGridComboBoxColumn>
-                        <DataGridTextColumn Header="図面スケール" Width="100" CanUserSort="False">
+                        <DataGridTextColumn Header="図面スケール" Width="100" CanUserSort="False" >
                             <DataGridTextColumn.Binding>
                                 <Binding Path="Scale" NotifyOnTargetUpdated="True"
-                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True">
+                                </Binding>
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
                         <DataGridTemplateColumn Header="" Width="130" CanUserSort="False">
@@ -126,7 +127,8 @@
                 Content="Apply"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
-                Click="Button_Apply_Click"
+                Command="{ Binding ApplyCommand}"
+                CommandParameter="{Binding ElementName=WdDefaultSettingDialog}"
                 Margin="10,0,10,10"
                 Width="100" />
     </Grid>

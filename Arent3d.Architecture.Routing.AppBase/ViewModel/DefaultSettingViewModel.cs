@@ -3,6 +3,7 @@ using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
 using System.Text.RegularExpressions ;
+using System.Windows ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
@@ -81,13 +82,31 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       Scale = scale ;
     }
 
-    public void AddImportDwgMappingModel()
+    private void AddImportDwgMappingModel()
     {
       const int floorHeightDistance = 3000 ;
-      if ( ! _importDwgMappingModels.Any() ) return ;
-      var importDwgMappingModels = _importDwgMappingModels.ToList() ;
+      if ( ! ImportDwgMappingModels.Any() ) return ;
+      var importDwgMappingModels = ImportDwgMappingModels.ToList() ;
       var currentMaxHeight = importDwgMappingModels.Max( x => x.FloorHeight ) ;
-      _importDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale ) ) ;
+      ImportDwgMappingModels.Add( new ImportDwgMappingModel( string.Empty, string.Empty, currentMaxHeight + floorHeightDistance, Scale ) ) ;
+    }
+
+    public ICommand ApplyCommand
+    {
+      get
+      {
+        return new RelayCommand<Window>( wd => null != wd, wd =>
+        {
+          //To do check scale validation
+          wd.DialogResult = true ;
+          wd.Close() ;
+        } ) ;
+      }
+    }
+    
+    public void DeleteImportDwgMappingItem( ImportDwgMappingModel selectedItem )
+    {
+      ImportDwgMappingModels.Remove( selectedItem ) ;
     }
 
     public void LoadDwgFile( ImportDwgMappingModel selectedItem )
@@ -95,8 +114,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       OpenFileDialog openFileDialog = new() { Filter = "DWG files (*.dwg )|*.dwg", Multiselect = false } ;
       if ( openFileDialog.ShowDialog() != DialogResult.OK ) return ;
       var fileName = openFileDialog.FileName ;
-      _fileItems.Add( new FileComboboxItemType( fileName ) ) ;
-      var importDwgMappingModel = _importDwgMappingModels.FirstOrDefault( d => d == selectedItem ) ;
+      FileItems.Add( new FileComboboxItemType( fileName ) ) ;
+      var importDwgMappingModel = ImportDwgMappingModels.FirstOrDefault( d => d == selectedItem ) ;
       if ( importDwgMappingModel == null ) return ;
       importDwgMappingModel.FullFilePath = fileName ;
       importDwgMappingModel.FileName = Path.GetFileName( fileName ) ;
@@ -106,17 +125,19 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       OpenFileDialog openFileDialog = new() { Filter = "DWG files (*.dwg )|*.dwg", Multiselect = true } ;
       if ( openFileDialog.ShowDialog() != DialogResult.OK ) return ;
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>() ;
+      FileItems = new List<FileComboboxItemType>() ;
       foreach ( var fileName in openFileDialog.FileNames ) {
-        _fileItems.Add( new FileComboboxItemType( fileName ) ) ;
+        FileItems.Add( new FileComboboxItemType( fileName ) ) ;
         if ( fileName.Contains( "B1" ) ) {
-          _importDwgMappingModels.Add( new ImportDwgMappingModel( fileName, $"B1F", 0, Scale ) ) ;
+          ImportDwgMappingModels.Add( new ImportDwgMappingModel( fileName, $"B1F", 0, Scale ) ) ;
         }
         else if ( fileName.Contains( "PH1" ) ) {
-          _importDwgMappingModels.Add( new ImportDwgMappingModel( fileName, $"PH1F", 0, Scale ) ) ;
+          ImportDwgMappingModels.Add( new ImportDwgMappingModel( fileName, $"PH1F", 0, Scale ) ) ;
         }
         else {
           var floorNumber = Regex.Match( fileName, @"\d+階" ).Value.Replace( "階", "" ) ;
-          if ( int.TryParse( floorNumber, out _ ) ) _importDwgMappingModels.Add( new ImportDwgMappingModel( fileName, $"{floorNumber}F", 0, Scale ) ) ;
+          if ( int.TryParse( floorNumber, out _ ) ) ImportDwgMappingModels.Add( new ImportDwgMappingModel( fileName, $"{floorNumber}F", 0, Scale ) ) ;
         }
       }
 
@@ -140,21 +161,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         { "9F", 40300 },
         { "10F", 44700 }
       } ;
-      foreach ( var importDwgMappingModel in _importDwgMappingModels ) {
+      foreach ( var importDwgMappingModel in ImportDwgMappingModels ) {
         var (key, value) = defaultHeights.FirstOrDefault( x => x.Key.Equals( importDwgMappingModel.FloorName ) ) ;
         if ( key != null ) {
           importDwgMappingModel.FloorHeight = value ;
         }
         else {
-          importDwgMappingModel.FloorHeight = _importDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
+          importDwgMappingModel.FloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
         }
       }
 
-      var maxFloorHeight = _importDwgMappingModels.Max( x => x.FloorHeight ) ;
-      var pH1FFloor = _importDwgMappingModels.FirstOrDefault( x => x.FloorName.Equals( "PH1F" ) ) ;
+      var maxFloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) ;
+      var pH1FFloor = ImportDwgMappingModels.FirstOrDefault( x => x.FloorName.Equals( "PH1F" ) ) ;
       if ( pH1FFloor != null ) pH1FFloor.FloorHeight = maxFloorHeight + 6500 ;
 
-      _importDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( _importDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ) ;
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ) ;
     }
   }
 }
