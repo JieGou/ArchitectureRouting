@@ -70,6 +70,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( RegisterSymbolCommand ), OnlyInitialized = true )]
           private static class RegisterSymbolCommandButton { }
           
+          [Button( typeof( SetupPrintCommand ), OnlyInitialized = true )]
+          private static class SetupPrintCommandButton { }
+          
           [Button( typeof( ShowDialogCreateTableByFloorCommand ), OnlyInitialized = true )]
           private static class ShowDialogCreateTableByFloorCommandButton { }
         }
