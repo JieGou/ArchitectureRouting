@@ -111,7 +111,11 @@ namespace Arent3d.Architecture.Routing
 
     [NameOnRevit( "信号取合い先" )]
     [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
-    ToPowerEquipment
+    ToPowerEquipment,
+     
+    [NameOnRevit( "Pressure End Point" )]
+    [FamilyCategory( BuiltInCategory.OST_GenericModel )]
+    PressureEndPoint,
   }
 
   public enum MechanicalRoutingFamilyType

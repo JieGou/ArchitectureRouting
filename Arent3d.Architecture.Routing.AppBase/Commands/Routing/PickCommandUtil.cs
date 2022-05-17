@@ -58,6 +58,40 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new TerminatePointEndPoint( element.Document, string.Empty, pos, dir, preferredRadius, element.UniqueId ) ;
     }
     
+    public static IEndPoint GetEndPoint( ConnectorPicker.IPickResult pickResult, FamilyInstance endPoint, bool useConnectorDiameter )
+    {
+      var preferredRadius = pickResult.PickedConnector?.Radius ;
+      if ( pickResult.PickedConnector is { } connector ) return new ConnectorEndPoint( connector, useConnectorDiameter ? null : preferredRadius ) ;
+
+      var element = pickResult.PickedElement ;
+      var pos = pickResult.GetOrigin() ; 
+      var point = ( endPoint.Location as LocationPoint )!.Point ;
+      var dir = GetPreferredDirection( pos, point) ;
+
+      return new TerminatePointEndPoint( element.Document, string.Empty, pos, dir, preferredRadius, element.UniqueId ) ;
+    }
+    
+    public static IEndPoint GetEndPoint( Document document, FamilyInstance startPoint, FamilyInstance endPoint, double preferredRadius, bool useConnectorDiameter )
+    { 
+      var pos = ( startPoint.Location as LocationPoint )!.Point ; 
+      var point = ( endPoint.Location as LocationPoint )!.Point ;
+      var dir = GetPreferredDirection( pos, point) ;
+
+      return new TerminatePointEndPoint( document, string.Empty, pos, dir, preferredRadius, startPoint.UniqueId ) ;
+    }
+    
+    public static IEndPoint GetEndPoint( FamilyInstance endPoint, ConnectorPicker.IPickResult pickResult, bool useConnectorDiameter )
+    {
+      var preferredRadius = pickResult.PickedConnector?.Radius ; 
+      
+      var element = pickResult.PickedElement ;
+      var pos = ( endPoint.Location as LocationPoint )!.Point ; 
+      var point = pickResult.GetOrigin() ;
+      var dir = GetPreferredDirection( pos, point) ;
+
+      return new TerminatePointEndPoint( element.Document, string.Empty, pos, dir, preferredRadius, endPoint.UniqueId ) ;
+    }
+    
 
     private static XYZ GetPreferredDirection( XYZ pos, XYZ anotherPos )
     {
