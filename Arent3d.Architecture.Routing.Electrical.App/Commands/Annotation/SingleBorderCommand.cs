@@ -1,4 +1,5 @@
 ﻿using System.Linq ;
+using Arent3d.Architecture.Routing.Electrical.App.Commands.Updater ;
 using Arent3d.Revit;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
@@ -31,6 +32,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
 
       if(document.IsDefaultElementTypeIdValid(ElementTypeGroup.TextNoteType, textNoteType.Id))
         document.SetDefaultElementTypeId(ElementTypeGroup.TextNoteType, textNoteType.Id);
+      
+      var textNoteUpdater = new TextNoteUpdater( document.Application.ActiveAddInId ) ;
+      if ( ! UpdaterRegistry.IsUpdaterRegistered( textNoteUpdater.GetUpdaterId() ) ) {
+        UpdaterRegistry.RegisterUpdater( textNoteUpdater, document ) ;
+        var filter = new ElementClassFilter( typeof( TextNote ) ) ;
+        var changeType = ChangeType.ConcatenateChangeTypes( Element.GetChangeTypeElementAddition(), Element.GetChangeTypeElementDeletion() ) ;
+        UpdaterRegistry.AddTrigger( textNoteUpdater.GetUpdaterId(), document, filter, ChangeType.ConcatenateChangeTypes( Element.GetChangeTypeAny(), changeType ) ) ;
+      }
 
       transaction.Commit() ;
       
@@ -54,7 +63,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Annotation
       if ( null == textNoteType )
         return null ;
       
-      textNoteType.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 1 ) ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_SIZE ).Set( 2.5.MillimetersToRevitUnits() ) ;
       textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( 0.6.MillimetersToRevitUnits() ) ;
       textNoteType.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 1 ) ;
