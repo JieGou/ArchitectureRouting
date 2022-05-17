@@ -54,9 +54,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ViewModel.Load(CbShowOnlyUsingCode);
       if ( CbShowDiff.IsChecked == false ) {
         CbShowDiff.IsChecked = true ;
-      } else {
-        ViewModel.ChangeColor();
-      }
+      } 
       BtnReplaceSymbol.IsEnabled = false ;
     }
 
@@ -149,16 +147,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private void Button_ReplaceMultipleSymbols( object sender, RoutedEventArgs e )
     {
       ViewModel.ReplaceMultipleSymbols( DtGrid ) ;
-    }
-    
-    private void ShowDiff_Checked( object sender, RoutedEventArgs e )
-    {
-      ViewModel.ChangeColor() ;
-    }
-  
-    private void ShowDiff_UnChecked( object sender, RoutedEventArgs e )
-    {
-      ViewModel.UnChangeColor() ;
     }
   }
 

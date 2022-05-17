@@ -125,8 +125,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       AddModelNumber( CeedModels ) ;
-      if(IsShowDiff) 
-        ChangeColor() ;
     }
 
     private void AddModelNumber( IReadOnlyCollection<CeedModel> ceedModels )
@@ -233,8 +231,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       foreach ( var dataModel in dataModels ) {
         CeedModels.Add( dataModel ) ;
       }
-      if(IsShowDiff)
-        ChangeColor() ;
     }
     
     private void Reset()
@@ -269,7 +265,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         usingCeedModel = usingCeedModel.Distinct().ToList() ;
         _usingCeedModel = usingCeedModel ;
-        CheckChangeColor( _usingCeedModel );
         LoadData(_usingCeedModel, ceedStorable  ) ;
         checkBox.Visibility = Visibility.Visible ;
         checkBox.IsChecked = true ;
@@ -359,8 +354,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
        if ( ceedModel == null ) return ;
        ceedModel.FloorPlanType = floorPlanType ;
        dataGrid.ItemsSource = new ObservableCollection<CeedModel> ( newCeedModels );
-       if(IsShowDiff)
-         ChangeColor() ;
      }
      
     public void ReplaceSymbol(DataGrid dataGrid, Button button )
@@ -613,8 +606,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
 
       dtGrid.ItemsSource =  newCeedModels  ;
-      if(IsShowDiff)
-        ChangeColor() ;
       return true ;
     }
 
@@ -675,84 +666,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public void ChangeColor()
-    {
-      for ( int i = 0 ; i < DtGrid.Items.Count ; i++ ) {
-        var row = GetRow( DtGrid, i ) ;
-        CeedModel item = (CeedModel) row.Item ;
-        if(item.IsAdded)  row.Background = Brushes.Orange ;
-        else if (item.IsEditFloorPlan ) SetCellRedColor( DtGrid, row, 4 ) ;
-        else if (item.IsEditInstrumentation)  SetCellRedColor( DtGrid, row, 5 ) ;
-        else if (item.IsEditCondition)  SetCellRedColor( DtGrid, row, 6 ) ;
-      }
-    }
-
-    public void UnChangeColor()
-    {
-      for ( int i = 0 ; i < DtGrid.Items.Count ; i++ ) {
-        var row = GetRow( DtGrid, i ) ;
-        for ( int j = 0 ; j < 7 ; j++ ) {
-          GetCell( DtGrid, row, j )?.ClearValue( DataGridCell.BackgroundProperty ) ;
-        }
-      
-        row.ClearValue( DataGridRow.BackgroundProperty ) ;
-      }
-      
-    }
-
-    private void SetCellRedColor(DataGrid grid, DataGridRow row , int column) 
-    {
-      var cell = GetCell( grid, row, column ) ;
-        if ( cell != null ) {
-          cell.Background = Brushes.Red ;
-        }
-    }
-    
     private bool IsChange(string oldItem, string newItem)
     {
       return oldItem != newItem ;
-    }
-    
-    private DataGridRow GetRow( DataGrid grid, int index )
-    {
-      var row = (DataGridRow) grid.ItemContainerGenerator.ContainerFromIndex( index ) ;
-      if ( row == null ) {
-        // May be virtualized, bring into view and try again.
-        grid.UpdateLayout() ;
-        grid.ScrollIntoView( grid.Items[ index ] ) ;
-        row = (DataGridRow) grid.ItemContainerGenerator.ContainerFromIndex( index ) ;
-      }
-
-      return row ;
-    }
-
-    private T? GetVisualChild<T>( Visual parent ) where T : Visual
-    {
-      var child = default( T ) ;
-      var numVisuals = VisualTreeHelper.GetChildrenCount( parent ) ;
-      for ( var i = 0 ; i < numVisuals ; i++ ) {
-        Visual v = (Visual) VisualTreeHelper.GetChild( parent, i ) ;
-        child = v as T ?? GetVisualChild<T>( v ) ;
-
-        if ( child != null ) {
-          break ;
-        }
-      }
-
-      return child ;
-    }
-
-    private DataGridCell? GetCell( DataGrid grid, DataGridRow row, int column )
-    {
-      var presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
-
-      if ( presenter == null ) {
-        grid.ScrollIntoView( row, grid.Columns[ column ] ) ;
-        presenter = GetVisualChild<DataGridCellsPresenter>( row ) ;
-      }
-
-      var cell = (DataGridCell) presenter?.ItemContainerGenerator.ContainerFromIndex( column )! ;
-      return cell ;
     }
   }
 }
