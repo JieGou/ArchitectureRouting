@@ -461,7 +461,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       var bold = 0 ;
       var italic = 0 ;
       var underline = 0 ;
-      string strStyleName = "TNT-" + symbolFont + "-" + color + "-" + size + "-" + background + "-" + widthScale + "%" ;
+      string strStyleName = "DetailSymbol-TNT-" + symbolFont + "-" + color + "-" + size + "-" + background + "-" + widthScale + "%" ;
       if ( symbolStyle == FontStyle.Bold.GetFieldName() ) {
         strStyleName += "-Bold" ;
         bold = 1 ;
@@ -490,6 +490,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_UNDERLINE ).Set( underline ) ;
         textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( 1d.MillimetersToRevitUnits() ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( (double) widthScale / 100 ) ;
+        textNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
       }
 
       // Change the text notes type to the new type
