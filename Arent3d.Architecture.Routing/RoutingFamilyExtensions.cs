@@ -93,10 +93,6 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_CableTrayFitting )]
     CableTrayFitting,
 
-    [NameOnRevit( "Symbol Direction Cylindrical Shaft" )]
-    [FamilyCategory( BuiltInCategory.OST_DetailComponents )]
-    SymbolDirectionCylindricalShaft,
-
     [NameOnRevit( "Arent Room" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     Room,
@@ -115,7 +111,7 @@ namespace Arent3d.Architecture.Routing
 
     [NameOnRevit( "信号取合い先" )]
     [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
-    ToPowerEquipment
+    ToPowerEquipment,
   }
 
   public enum MechanicalRoutingFamilyType

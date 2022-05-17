@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
@@ -12,7 +13,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       TextNote textNote, DetailLine detailLine )
     {
       var endPoint = detailLine.GeometryCurve.GetEndPoint( rackNotationModel.EndPoint ) ;
-      var underLineText = GeometryHelper.CreateUnderLineText( textNote, endPoint ) ;
+      var underLineText = NewRackCommandBase.CreateUnderLineText( textNote, endPoint.Z ) ;
       var pointNearest =
         underLineText.GetEndPoint( 0 ).DistanceTo( endPoint ) < underLineText.GetEndPoint( 1 ).DistanceTo( endPoint )
           ? underLineText.GetEndPoint( 0 )

@@ -69,6 +69,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( RegisterSymbolCommand ), OnlyInitialized = true )]
           private static class RegisterSymbolCommandButton { }
+          
+          [Button( typeof( SetupPrintCommand ), OnlyInitialized = true )]
+          private static class SetupPrintCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
@@ -103,6 +106,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
           [Button( typeof( DoubleBorderCommand ), OnlyInitialized = true )]
           private static class DoubleBorderCommandButton { }
+          
+          [Button( typeof( CircleAnnotationCommand ), OnlyInitialized = true )]
+          private static class CircleAnnotationCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]

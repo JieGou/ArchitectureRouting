@@ -3,6 +3,7 @@ using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
@@ -65,8 +66,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
         using var transaction = new Transaction( document ) ;
         transaction.Start( "Electrical.App.Commands.Shaft.AddHSymbolCommand".GetAppStringByKeyOrDefault( "Create Sign Cylindrical Shaft" ) ) ;
 
+        var data = document.GetSetupPrintStorable() ;
+        var scaleSetup = data.Scale * data.Ratio;
+        var ratio = scaleSetup / 100d ;
         foreach ( var viewPlan in viewPlans ) {
-          CreateSymbolCenter( viewPlan, centerPoint ) ;
+          CreateSymbolCenter( viewPlan, centerPoint, ratio ) ;
         }
 
         transaction.Commit() ;
@@ -82,14 +86,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
       }
     }
 
-    private static void CreateSymbolCenter( View viewPlan, XYZ centerPoint )
+    private static void CreateSymbolCenter( View viewPlan, XYZ centerPoint, double ratio )
     {
       var lineStyle = GetLineStyle( viewPlan.Document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-      var lineOne = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * 200d.MillimetersToRevitUnits() ).OfPoint( centerPoint ), Transform.CreateTranslation( -XYZ.BasisX * 200d.MillimetersToRevitUnits() ).OfPoint( centerPoint ) ) ;
+      var lineOne = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisX * 200d.MillimetersToRevitUnits() * ratio ).OfPoint( centerPoint ), Transform.CreateTranslation( -XYZ.BasisX * 200d.MillimetersToRevitUnits() * ratio ).OfPoint( centerPoint ) ) ;
       CreateDetailLine( viewPlan, lineStyle, lineOne ) ;
-      var lineTwo = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 1 ) ), Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 1 ) ) ) ;
+      var lineTwo = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() * ratio ).OfPoint( lineOne.GetEndPoint( 1 ) ), Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() * ratio ).OfPoint( lineOne.GetEndPoint( 1 ) ) ) ;
       CreateDetailLine( viewPlan, lineStyle, lineTwo ) ;
-      var lineThree = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 0 ) ), Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() ).OfPoint( lineOne.GetEndPoint( 0 ) ) ) ;
+      var lineThree = Line.CreateBound( Transform.CreateTranslation( XYZ.BasisY * 60d.MillimetersToRevitUnits() * ratio ).OfPoint( lineOne.GetEndPoint( 0 ) ), Transform.CreateTranslation( -XYZ.BasisY * 60d.MillimetersToRevitUnits() * ratio ).OfPoint( lineOne.GetEndPoint( 0 ) ) ) ;
       CreateDetailLine( viewPlan, lineStyle, lineThree ) ;
     }
 
