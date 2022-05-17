@@ -15,7 +15,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ShowCeedModelsCommandBase : IExternalCommand
   {
-    private const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
+    public const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
     private const string ConditionTextNoteTypeName = "1.5mm_ConditionText" ;
     private const string DefaultConstructionItem = "未設定" ;
 
