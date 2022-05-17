@@ -29,6 +29,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return new LeakRoutingCommandBase.DialogInitValues( classificationInfo, RouteMEPSystem.GetSystemType( document, connector ), curveType, connector.GetDiameter() ) ;
     }
     
+    protected override MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType )
+    {
+      return MEPSystemClassificationInfo.CableTrayConduit ;
+    }
+    
     protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => curveType.Category.Name ;
   }
 }

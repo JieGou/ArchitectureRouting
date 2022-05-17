@@ -16,8 +16,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public LeakRouteDialog()
     {
       InitializeComponent() ;
+      WindowStartupLocation = WindowStartupLocation.CenterScreen ;
       CmbCreationMode.ItemsSource = ListCreationMode ;
       CmbCreationMode.SelectedIndex = 0 ;
+      TxtHeight.Text = "1000" ;
     }
     
     private void Button_Create( object sender, RoutedEventArgs e )
