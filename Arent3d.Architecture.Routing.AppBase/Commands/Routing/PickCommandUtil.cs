@@ -71,16 +71,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new TerminatePointEndPoint( element.Document, string.Empty, pos, dir, preferredRadius, element.UniqueId ) ;
     }
     
-    public static IEndPoint GetEndPoint( Document document, FamilyInstance startPoint, FamilyInstance endPoint, double preferredRadius, bool useConnectorDiameter, bool invertDir )
-    { 
-      var pos = ( startPoint.Location as LocationPoint )!.Point ; 
-      var point = ( endPoint.Location as LocationPoint )!.Point ;
-      var dir = invertDir ? GetPreferredDirection( point,pos) : GetPreferredDirection( pos, point) ;
-
-      return new TerminatePointEndPoint( document, string.Empty, pos, dir, preferredRadius, startPoint.UniqueId ) ;
-    }
-    
-    public static IEndPoint GetEndPoint( FamilyInstance endPoint, ConnectorPicker.IPickResult pickResult, bool useConnectorDiameter )
+    public static IEndPoint GetEndPoint( FamilyInstance endPoint, ConnectorPicker.IPickResult pickResult )
     {
       var preferredRadius = pickResult.PickedConnector?.Radius ; 
       
@@ -92,7 +83,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return new TerminatePointEndPoint( element.Document, string.Empty, pos, dir, preferredRadius, endPoint.UniqueId ) ;
     }
     
+    public static IEndPoint GetEndPoint( Document document, FamilyInstance startPoint, FamilyInstance endPoint, double preferredRadius )
+    { 
+      var pos = ( startPoint.Location as LocationPoint )!.Point ; 
+      var point = ( endPoint.Location as LocationPoint )!.Point ; 
+      var dir = GetPreferredDirection( pos,point) ;
 
+      return new TerminatePointEndPoint( document, string.Empty, pos, dir, preferredRadius, startPoint.UniqueId ) ;
+    }
+     
     private static XYZ GetPreferredDirection( XYZ pos, XYZ anotherPos )
     {
       var dir = anotherPos - pos ;

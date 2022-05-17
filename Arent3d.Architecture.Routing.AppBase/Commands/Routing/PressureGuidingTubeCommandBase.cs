@@ -21,7 +21,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PressureGuidingTubeCommandBase : RoutingCommandBase<PressureGuidingTubeCommandBase.PressureGuidingTubePickState>
   {
-    public record PressureGuidingTubePickState( ConnectorPicker.IPickResult FromPickResult, List<FamilyInstance> ToPickResult, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
+    public record PressureGuidingTubePickState( ConnectorPicker.IPickResult FromPickResult, List<FamilyInstance> ListSelectedPoint, IRouteProperty PropertyDialog, MEPSystemClassificationInfo ClassificationInfo ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
@@ -59,14 +59,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
           var level = document.GetElementById<Level>( fromPickResult.GetLevelId() ) ;
           var height = document.GetHeightSettingStorable()[ level! ].HeightOfConnectors.MillimetersToRevitUnits() + pressureSettingViewModel.PressureGuidingTube.Height.MillimetersToRevitUnits() ;
-          List<FamilyInstance> toPickResult = new List<FamilyInstance>() ;
+          List<FamilyInstance> selectedPointList = new List<FamilyInstance>() ;
           int numberOfPoint = 0 ;
 
           using ( uiDocument.SetTempColor( fromPickResult ) ) {
             //Automatic: Select one point only
             if ( pressureSettingViewModel.SelectedCreationMode == CreationModeEnum.自動モード ) {
               var xyz = uiDocument.Selection.PickPoint( "Click the end point" ) ;
-              toPickResult.Add( CreatePressureEndPoint( document, level!, new XYZ( xyz.X, xyz.Y, height ) ) ) ;
+              selectedPointList.Add( CreatePressureEndPoint( document, level!, new XYZ( xyz.X, xyz.Y, height ) ) ) ;
             }
             //Manual: Select many point
             else {
@@ -74,7 +74,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 while ( true ) {
                   numberOfPoint++ ;
                   var xyz = uiDocument.Selection.PickPoint( "Click the end point number " + numberOfPoint.ToString() ) ;
-                  toPickResult.Add( CreatePressureEndPoint( document, level!, new XYZ( xyz.X, xyz.Y, height ) ) ) ;
+                  selectedPointList.Add( CreatePressureEndPoint( document, level!, new XYZ( xyz.X, xyz.Y, height ) ) ) ;
                 }
               }
               catch ( OperationCanceledException ) {
@@ -83,14 +83,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
           }
 
-          var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, toPickResult ) ;
+          var property = ShowPropertyDialog( uiDocument.Document, fromPickResult, selectedPointList ) ;
           if ( true != property?.DialogResult ) return OperationResult<PressureGuidingTubePickState>.Cancelled ;
  
           var classificationInfo = GetMEPSystemClassificationInfoFromSystemType( property.GetSystemType() ) ;
           if ( ( fromPickResult.PickedConnector ) is { } connector && MEPSystemClassificationInfo.From( connector ) is { } connectorClassificationInfo )
             classificationInfo = connectorClassificationInfo ;
 
-          return new OperationResult<PressureGuidingTubePickState>( new PressureGuidingTubePickState( fromPickResult, toPickResult, property, classificationInfo! ) ) ;
+          return new OperationResult<PressureGuidingTubePickState>( new PressureGuidingTubePickState( fromPickResult, selectedPointList, property, classificationInfo! ) ) ;
         }
         catch {
           MessageBox.Show( "Generate pressure guiding tube failed.", "Error Message" ) ;
@@ -103,14 +103,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PressureGuidingTubePickState state )
     {
-      var (fromPickResult, toPickResult, routeProperty, classificationInfo) = state ;
+      var (fromPickResult, selectedPointList, routeProperty, classificationInfo) = state ;
 
       RouteGenerator.CorrectEnvelopes( document ) ;
 
-      return CreateNewSegmentList( document, fromPickResult, toPickResult, routeProperty, classificationInfo ) ;
+      return CreateNewSegmentList( document, fromPickResult, selectedPointList, routeProperty, classificationInfo ) ;
     }
  
-    private IRoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, List<FamilyInstance> toPickResult )
+    private IRoutePropertyDialog? ShowPropertyDialog( Document document, ConnectorPicker.IPickResult fromPickResult, List<FamilyInstance> selectedPointList )
     {
       var fromLevelId = GetTrueLevelId( document, fromPickResult ) ; 
 
@@ -156,40 +156,39 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return sv ;
     }
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, List<FamilyInstance> toPickResultList, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, List<FamilyInstance> selectedPointList, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
       List<(string RouteName, RouteSegment Segment)> routeSegments = new List<(string RouteName, RouteSegment Segment)>() ;
-      var useConnectorDiameter = UseConnectorDiameter() ;
       var preferredRadius = fromPickResult.PickedConnector?.Radius ;
-      for ( var i = 0 ; i < toPickResultList.Count ; i++ ) {
-        routeSegments.AddRange( i == 0 ? CreateNewSegmentList( document, fromPickResult, toPickResultList[ 0 ], routeProperty, classificationInfo ) : CreateNewSegmentList( document, toPickResultList[ i - 1 ], toPickResultList[ i ], routeProperty, classificationInfo, preferredRadius ?? 1.0 ) ) ;
+      for ( var i = 0 ; i < selectedPointList.Count ; i++ ) {
+        routeSegments.AddRange( i == 0 ? CreateNewSegmentList( document, fromPickResult, selectedPointList[ 0 ], routeProperty, classificationInfo ) : CreateNewSegmentList( document, selectedPointList[ i - 1 ], selectedPointList[ i ], routeProperty, classificationInfo, preferredRadius ?? 0.05 ) ) ;
       }
        
       return routeSegments ;
     }
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, FamilyInstance toPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, FamilyInstance selectedPoint, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
       var useConnectorDiameter = UseConnectorDiameter() ;
-      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter ) ;
-      var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult, useConnectorDiameter ) ;
+      var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, selectedPoint, useConnectorDiameter ) ;
+      var toEndPoint = PickCommandUtil.GetEndPoint( selectedPoint, fromPickResult ) ;
       var fromOrigin = fromPickResult.GetOrigin() ;
       var fromConnectorId = fromPickResult.PickedElement.UniqueId ;
-      var toConnectorId = toPickResult.UniqueId ;
+      var toConnectorId = selectedPoint.UniqueId ;
 
       var routeSegments = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, fromOrigin, fromConnectorId, toConnectorId, routeProperty, classificationInfo ) ;
 
       return routeSegments ;
     }
 
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, FamilyInstance fromPickResult, FamilyInstance toPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, double preferredRadius )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, FamilyInstance fromPoint, FamilyInstance toPoint, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, double preferredRadius )
     {
       var useConnectorDiameter = UseConnectorDiameter() ; 
-      var fromEndPoint = PickCommandUtil.GetEndPoint( document, fromPickResult, toPickResult, preferredRadius, useConnectorDiameter, false ) ;
-      var toEndPoint = PickCommandUtil.GetEndPoint( document, toPickResult, fromPickResult, preferredRadius, useConnectorDiameter, true  ) ;
-      var fromOrigin = ( fromPickResult.Location as LocationPoint )!.Point ;
-      var fromConnectorId = fromPickResult.UniqueId ;
-      var toConnectorId = toPickResult.UniqueId ;
+      var fromEndPoint = PickCommandUtil.GetEndPoint( document, fromPoint, toPoint, preferredRadius ) ;
+      var toEndPoint = PickCommandUtil.GetEndPoint( document, toPoint, fromPoint, preferredRadius  ) ;
+      var fromOrigin = ( fromPoint.Location as LocationPoint )!.Point ;
+      var fromConnectorId = fromPoint.UniqueId ;
+      var toConnectorId = toPoint.UniqueId ;
 
       var routeSegments = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, fromOrigin, fromConnectorId, toConnectorId, routeProperty, classificationInfo ) ;
 
@@ -242,7 +241,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
-      //Change conduit color
+      //Change conduit color to yellow RGB(255,255,0)
       using Transaction t = new Transaction( document, "Change conduit color" ) ;
       t.Start() ;
       OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
