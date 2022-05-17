@@ -64,16 +64,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
           IEnumerable<Curve> curvesBody ;
           if ( viewPlans.IndexOf( viewPlan ) == 0 ) {
-            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForBodyDirection ) ;
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 0 ].CreateTransformed( transformTranslation ) } ) ;
           }
           else if ( viewPlans.IndexOf( viewPlan ) == viewPlans.Count - 1 ) {
-            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForBodyDirection ) ;
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 1 ].CreateTransformed( transformTranslation ) } ) ;
           }
           else {
-            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio ) ;
-            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForBodyDirection ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForBodyDirection ) ;
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, bodyDirections.Select( x => x.CreateTransformed( transformTranslation ) ).ToList() ) ;
           }
 
@@ -96,7 +96,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
       }
     }
 
-    private static void CreateSymbol(View viewPlan, XYZ point, double angle, double ratio)
+    private static void CreateSymbol(View viewPlan, XYZ point, double angle, double ratio, Element lineStyle)
     {
       var transform = Transform.CreateRotationAtPoint( XYZ.BasisZ, angle, point ) ;
       var lineOne = Line.CreateBound( point, Transform.CreateTranslation( XYZ.BasisY * 1500d.MillimetersToRevitUnits() * ratio ).OfPoint( point ) ) ;
@@ -105,7 +105,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
       var curves = new List<Curve> { lineOne.CreateTransformed(transform), lineTwo.CreateTransformed(transform), lineThree.CreateTransformed(transform) } ;
       foreach ( var curve in curves ) {
-        viewPlan.Document.Create.NewDetailCurve( viewPlan, curve ) ;
+        CreateDetailLine( viewPlan, lineStyle, curve ) ;
       }
     }
 
