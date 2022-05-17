@@ -1,10 +1,8 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
-using System.ComponentModel ;
 using System.Linq ;
 using System.Windows ;
-using System.Windows.Data ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
@@ -90,8 +88,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       _document = document ;
       HiroiMasterList = new ObservableCollection<HiroiMasterModel>( hiroiMasterList ) ;
-      HiroiMasterListDisplay = HiroiMasterList ; 
-      //this._view = new ListCollectionView( HiroiMasterListDisplay ) ; 
+      HiroiMasterListDisplay = HiroiMasterList ;  
     }
   } 
 }
