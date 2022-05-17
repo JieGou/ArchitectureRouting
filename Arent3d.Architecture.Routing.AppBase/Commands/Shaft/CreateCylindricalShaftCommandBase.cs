@@ -57,6 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
         var subCategoryForBodyDirection = GetLineStyle( document, "SubCategoryForDirectionCylindricalShaft", new Color( 255, 0, 255 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         var subCategoryForOuterShape = GetLineStyle( document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        var subCategoryForSymbol = GetLineStyle( document, "SubCategoryForSymbol", new Color( 0, 0, 0 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
 
         var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
         foreach ( var viewPlan in viewPlans ) {
@@ -64,16 +65,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
           IEnumerable<Curve> curvesBody ;
           if ( viewPlans.IndexOf( viewPlan ) == 0 ) {
-            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForBodyDirection ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForSymbol ) ;
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 0 ].CreateTransformed( transformTranslation ) } ) ;
           }
           else if ( viewPlans.IndexOf( viewPlan ) == viewPlans.Count - 1 ) {
-            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForBodyDirection ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForSymbol ) ;
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { bodyDirections[ 1 ].CreateTransformed( transformTranslation ) } ) ;
           }
           else {
-            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForBodyDirection ) ;
-            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForBodyDirection ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 0 ].GetEndPoint( 1 ), RotateAngle - Math.PI * 0.5, ratio, subCategoryForSymbol ) ;
+            CreateSymbol( viewPlan, bodyDirections[ 1 ].GetEndPoint( 1 ), Math.PI * 0.5 + RotateAngle, ratio, subCategoryForSymbol ) ;
             curvesBody = GeometryHelper.GetCurvesAfterIntersection( viewPlan, bodyDirections.Select( x => x.CreateTransformed( transformTranslation ) ).ToList() ) ;
           }
 
@@ -113,14 +114,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
     {
       var detailLineOne = viewPlan.Document.Create.NewDetailCurve( viewPlan, curve ) ;
       detailLineOne.LineStyle = lineStyle ;
-    }
-
-    private static void PlaceInstance( View viewPlan, FamilySymbol symbolDirection, Curve halfBodyDirection, double angleRotate )
-    {
-      var pointBase = halfBodyDirection.GetEndPoint( 1 ) ;
-      var instance = viewPlan.Document.Create.NewFamilyInstance( pointBase, symbolDirection, viewPlan ) ;
-      var axis = Line.CreateBound( pointBase, Transform.CreateTranslation( XYZ.BasisZ ).OfPoint( pointBase ) ) ;
-      ElementTransformUtils.RotateElement( viewPlan.Document, instance.Id, axis, angleRotate ) ;
     }
 
     private static Category GetLineStyle( Document document, string subCategoryName, Color color, int lineWeight )
