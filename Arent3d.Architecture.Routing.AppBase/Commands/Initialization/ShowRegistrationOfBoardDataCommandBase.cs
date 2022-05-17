@@ -78,6 +78,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           : viewModel.CellSelectedSignalDestination ;
         var txtPosition = new XYZ( originX - 2, originY + 2.5, heightOfConnector ) ;
         var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, text, opts ) ;
+        var textNoteType = new FilteredElementCollector( doc ).OfClass( typeof( TextNoteType ) ).WhereElementIsElementType().Cast<TextNoteType>().FirstOrDefault( tt => Equals( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName, tt.Name ) ) ;
+        if ( textNoteType == null ) {
+          var elementType = textNote.TextNoteType.Duplicate( ShowCeedModelsCommandBase.DeviceSymbolTextNoteTypeName ) ;
+          textNoteType = elementType as TextNoteType ;
+          textNoteType?.get_Parameter( BuiltInParameter.TEXT_BOX_VISIBILITY ).Set( 0 ) ;
+          textNoteType?.get_Parameter( BuiltInParameter.TEXT_BACKGROUND ).Set( 0 ) ;
+        }
+
+        if ( textNoteType != null ) textNote.ChangeTypeId( textNoteType.Id ) ;
 
         // create group of selected element and new text note
         groupIds.Add( elementFromToPower.Id ) ;
