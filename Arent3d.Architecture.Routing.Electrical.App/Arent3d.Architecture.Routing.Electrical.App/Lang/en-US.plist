@@ -208,12 +208,6 @@
         <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
         <string>Room Range Wiring</string>
 
-        <key>Electrical.App.Commands.Initialization.RegisterSymbolCommand</key>
-        <string>Register Symbol</string>
-
-        <key>Electrical.App.Commands.Initialization.SetupPrintCommand</key>
-        <string>Scale Setting</string>
-
         <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
         <string>Simple Border&#xA;Text Box</string>
 
@@ -451,5 +445,8 @@
         
         <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
         <string>Registration Of&#xA;Board Data</string>
+
+        <key>Electrical.App.Commands.Routing.LeakRoutingCommand</key>
+        <string>Leak Routing</string>
     </dict>
 </plist>
