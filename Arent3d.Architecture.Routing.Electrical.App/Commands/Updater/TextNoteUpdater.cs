@@ -38,14 +38,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
           if ( null != doubleTextNote ) {
             textNoteId = doubleTextNote.Id ;
             var curves = GetDoubleBorderTextNote( doubleTextNote ) ;
-            borderIds = ( from curve in curves select document.Create.NewDetailCurve( document.ActiveView, curve ) into detailLine select $"{detailLine.Id.IntegerValue}" ).ToList() ;
+            borderIds = CreateDetailCurve(document, curves) ;
           }
 
           var singleTextNote = GetTextNote( document, data.GetAddedElementIds().First(), SingleBorderCommand.TextNoteTypeName ) ;
           if ( null != singleTextNote ) {
             textNoteId = singleTextNote.Id ;
             var curves = GetSingleBorderTextNote( singleTextNote ) ;
-            borderIds = ( from curve in curves select document.Create.NewDetailCurve( document.ActiveView, curve ) into detailLine select $"{detailLine.Id.IntegerValue}" ).ToList() ;
+            borderIds = CreateDetailCurve(document, curves) ;
           }
 
           if ( null == borderIds || null == textNoteId ) 
@@ -62,14 +62,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
           if ( null != doubleTextNote ) {
             textNoteId = doubleTextNote.Id ;
             var curves = GetDoubleBorderTextNote( doubleTextNote ) ;
-            borderIds = ( from curve in curves select document.Create.NewDetailCurve( document.ActiveView, curve ) into detailLine select $"{detailLine.Id.IntegerValue}" ).ToList() ;
+            borderIds = CreateDetailCurve(document, curves) ;
           }
           
           var singleTextNote = GetTextNote( document, data.GetModifiedElementIds().First(), SingleBorderCommand.TextNoteTypeName ) ;
           if ( null != singleTextNote ) {
             textNoteId = singleTextNote.Id ;
             var curves = GetSingleBorderTextNote( singleTextNote ) ;
-            borderIds = ( from curve in curves select document.Create.NewDetailCurve( document.ActiveView, curve ) into detailLine select $"{detailLine.Id.IntegerValue}" ).ToList() ;
+            borderIds = CreateDetailCurve(document, curves) ;
           }
 
           if ( null != borderIds && null != textNoteId ) {
@@ -161,6 +161,19 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Updater
       var curveLoopOffset = CurveLoop.CreateViaOffset(curveLoop, -0.5.MillimetersToRevitUnits() * textNote.Document.ActiveView.Scale, textNote.Document.ActiveView.ViewDirection);
       curves.AddRange(curveLoopOffset.OfType<Curve>());
       return curves ;
+    }
+
+    public List<string> CreateDetailCurve( Document document, IEnumerable<Curve> curves )
+    {
+      var linePattern = LinePatternElement.GetLinePatternElementByName( document, "<Medium Lines>" ) ;
+      var curveIds = new List<string>() ;
+      var graphicStyle = document.Settings.Categories.get_Item( BuiltInCategory.OST_CurvesMediumLines ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+      foreach ( var curve in curves ) {
+        var dl = document.Create.NewDetailCurve( document.ActiveView, curve ) ;
+        dl.LineStyle = graphicStyle;
+        curveIds.Add($"{dl.Id.IntegerValue}");
+      }
+      return curveIds ;
     }
   }
 }
