@@ -18,16 +18,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class SymbolInformationCommandBase : IExternalCommand
   {
-    public Dictionary<int, Color> DictSymbolColor =>
-      new()
-      {
-        { 1, new Color( 240, 160, 140 ) },
-        { 2, new Color( 220, 245, 150 ) },
-        { 3, new Color( 150, 250, 150 ) },
-        { 4, new Color( 220, 220, 150 ) },
-        { 5, new Color( 90, 140, 220 ) }
-      } ;
-
     /// <summary>
     /// Get selected objects, check if the first is SymbolInformation or not.
     /// 1. If that one is SymbolInformation => show dialog 
@@ -47,14 +37,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var symbolInformationStorable = document.GetSymbolInformationStorable() ;
         var symbolInformations = symbolInformationStorable.AllSymbolInformationModelData ;
         var level = uiDocument.ActiveView.GenLevel ;
-        var heightOfConnector = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+        var heightOfSymbol = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         SymbolInformationModel? model = null ;
         FamilyInstance? symbolInformationInstance = null ;
-        XYZ xyz = XYZ.Zero ;
+        var xyz = XYZ.Zero ;
 
         return document.Transaction( "Electrical.App.Commands.Routing.SymbolInformationCommand", _ =>
         {
-          bool selectedItemIsSymbolInformation = false ;
+          var selectedItemIsSymbolInformation = false ;
           TextNote? textNote = null ;
           Group? oldParentGroup = null ;
           if ( uiDocument.Selection.GetElementIds().Count > 0 ) {
@@ -79,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                     xyz = element.Location is LocationPoint pPoint ? pPoint.Point : XYZ.Zero ;
                   }
 
-                  symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfConnector ) ) ;
+                  symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
                   model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
                   symbolInformations.Add( model ) ;
                   selectedItemIsSymbolInformation = true ;
@@ -91,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( selectedItemIsSymbolInformation == false ) {
             try {
               xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
-              symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfConnector ) ) ;
+              symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
               model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
               symbolInformations.Add( model ) ;
             }
@@ -125,11 +115,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             }
 
 
-            CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfConnector ), oldParentGroup ) ;
+            CreateGroupSymbolInformation( document, symbolInformationInstance!.Id, model, new XYZ( xyz.X, xyz.Y, heightOfSymbol ), oldParentGroup ) ;
             OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
-            ogs.SetProjectionLineColor( DictSymbolColor[ model.Color ] ) ;
+            ogs.SetProjectionLineColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
             ogs.SetProjectionLineWeight( 5 ) ;
             document.ActiveView.SetElementOverrides( symbolInformationInstance!.Id, ogs ) ;
+          }
+          else if ( selectedItemIsSymbolInformation == false ) {
+            document.Delete( symbolInformationInstance?.Id ) ;
           }
 
           return Result.Succeeded ;
@@ -159,7 +152,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var txtId = txtGroup.GetMemberIds().FirstOrDefault() ;
             var txtNode = document.GetElement( txtId ) ;
             if ( txtNode != null ) {
-              textNote = (TextNote)txtNode ;
+              textNote = (TextNote) txtNode ;
             }
           }
 
@@ -199,7 +192,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       if ( model.IsShowText && ! string.IsNullOrEmpty( model.Description ) ) {
         var noteWidth = .05 ;
-        var anchor = (SymbolCoordinateEnum)Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
+        var anchor = (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
         XYZ txtPosition ;
         switch ( anchor ) {
           case SymbolCoordinateEnum.Top :
@@ -227,7 +220,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left, VerticalAlignment = VerticalTextAlignment.Middle, KeepRotatedTextReadable = true } ;
 
         var textNote = TextNote.Create( document, document.ActiveView.Id, txtPosition, noteWidth, model.Description, opts ) ;
-        textNote.SetOverriddenColor( DictSymbolColor[ model.Color ] ) ;
+        textNote.SetOverriddenColor( SymbolColor.DictSymbolColor[ model.Color ] ) ;
         groupIds.Add( textNote.Id ) ;
       }
 

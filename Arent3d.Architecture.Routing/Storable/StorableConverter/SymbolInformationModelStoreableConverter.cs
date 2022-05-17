@@ -31,7 +31,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var symbolCoordinate = deserializer.GetString( SerializeField.SymbolCoordinate ) ;
       var height = deserializer.GetDouble( SerializeField.Height ) ;
       var percent = deserializer.GetDouble( SerializeField.Percent ) ;
-      var color = deserializer.GetInt( SerializeField.Color ) ;
+      var color = deserializer.GetString( SerializeField.Color ) ;
       var description = deserializer.GetString( SerializeField.Description ) ;
       var characterHeight = deserializer.GetDouble( SerializeField.CharacterHeight ) ;
       var isShowText = deserializer.GetBool( SerializeField.IsShowText ) ; 
@@ -49,7 +49,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.SymbolCoordinate, customTypeValue.SymbolCoordinate ) ;
       serializerObject.Add( SerializeField.Height, customTypeValue.Height ) ;
       serializerObject.Add( SerializeField.Percent, customTypeValue.Percent ) ;
-      serializerObject.Add( SerializeField.Color, customTypeValue.Color ) ;
+      serializerObject.AddNonNull( SerializeField.Color, customTypeValue.Color ) ;
       serializerObject.AddNonNull( SerializeField.Description, customTypeValue.Description ) ;
       serializerObject.Add( SerializeField.CharacterHeight, customTypeValue.CharacterHeight ) ;
       serializerObject.Add( SerializeField.IsShowText, customTypeValue.IsShowText ) ;  

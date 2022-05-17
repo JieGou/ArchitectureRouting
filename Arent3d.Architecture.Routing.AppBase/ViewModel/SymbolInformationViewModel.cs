@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.ComponentModel ;
+using System.Globalization ;
 using System.Linq ;
 using System.Windows.Data ;
 using System.Windows.Forms ;
@@ -20,8 +21,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class SymbolInformationViewModel : NotifyPropertyChanged
   {
-    private Document? _document ;
-
+    private const double QuantityDefault = 100 ;
+    private const string UnitDefault = "m" ;
+    private const string TrajectoryDefault = "100" ;
+     
+    private Document? _document ; 
 
     public ICommand AddCeedDetailCommand => new RelayCommand( AddCeedDetail ) ;
     public ICommand DeleteCeedDetailCommand => new RelayCommand( DeleteCeedDetail ) ;
@@ -31,8 +35,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     #region SymbolSetting
 
     public readonly Array SymbolKinds = Enum.GetValues( typeof( SymbolKindEnum ) ) ;
-    public readonly Array SymbolCoordinates = Enum.GetValues( typeof( SymbolCoordinateEnum ) ) ;
-    public readonly Array SymbolColors = new int[] { 1, 2, 3, 4, 5 } ;
+    public readonly Array SymbolCoordinates = Enum.GetValues( typeof( SymbolCoordinateEnum ) ) ; 
+    public readonly Array SymbolColors = SymbolColor.DictSymbolColor.Keys.ToArray() ;
      
     public SymbolKindEnum SelectedSymbolKind
     {
@@ -72,8 +76,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ObservableCollection<string> ConstructionClassificationTypeList { get ; set ; }
 
     #endregion
-
-
+ 
     #region Command
 
     private void AddCeedDetail()
@@ -81,7 +84,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var hiroiMasterViewModel = new HiroiMasterViewModel( _document, HiroiMasterModels ) ;
       var hiroiMasterDialog = new HiroiMasterDialog( hiroiMasterViewModel ) ;
       if ( true == hiroiMasterDialog.ShowDialog() ) {
-        var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", 100, "m", this.SymbolInformation.Id, "数量" ) ;
+        var ceedDetailModel = new CeedDetailModel( hiroiMasterViewModel.HiroiMasterSelected?.Buzaicd, hiroiMasterViewModel.HiroiMasterSelected?.Hinmei, hiroiMasterViewModel.HiroiMasterSelected?.Kikaku, "", QuantityDefault, UnitDefault, this.SymbolInformation.Id, TrajectoryDefault ) ;
         CeedDetailList.Add( ceedDetailModel ) ;
         CollectionViewSource.GetDefaultView( CeedDetailList ).Refresh() ;
       }
@@ -94,15 +97,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     #endregion
-
-
+ 
     public SymbolInformationViewModel( Document? document, SymbolInformationModel? symbolInformationModel )
     {
       _document = document ;
       SymbolInformation = symbolInformationModel ?? new SymbolInformationModel() ;
 
       if ( ! string.IsNullOrEmpty( SymbolInformation.Id ) && SymbolInformation.Id != "-1" ) {
-        CeedDetailList = new ObservableCollection<CeedDetailModel>( _document!.GetCeedDetailStorable().AllCeedDetailModelData.FindAll( x => x.ParentId == SymbolInformation.Id ) ?? new List<CeedDetailModel>() ) ;
+        CeedDetailList = new ObservableCollection<CeedDetailModel>( _document!.GetCeedDetailStorable().AllCeedDetailModelData.FindAll( x => x.ParentId == SymbolInformation.Id ) ) ;
       }
       else {
         CeedDetailList = new ObservableCollection<CeedDetailModel>() ;

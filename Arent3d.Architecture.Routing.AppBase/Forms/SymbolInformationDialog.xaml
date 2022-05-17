@@ -34,10 +34,10 @@
         <!--Filter-->
         <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10 0">
             <Label Content="セットコード" Margin="10,5" />
-            <ComboBox Width="100" Height="22" ItemsSource="{Binding SetCodes}" SelectedItem="{Binding SetCodeSelected}" />
+            <ComboBox Width="100" Height="22" ItemsSource="{Binding SetCodes}" SelectedItem="{Binding SetCodeSelected}" VerticalContentAlignment="Center" />
             <Button Content="内容確認-登録（F2）" Height="22" Margin="10, 5" />
             <Label HorizontalAlignment="Right" Content="略名コード" Margin="10,5" />
-            <ComboBox Width="100" Height="22" ItemsSource="{Binding ConstructionClassificationTypeList}" />
+            <ComboBox Width="100" Height="22" ItemsSource="{Binding ConstructionClassificationTypeList}" VerticalContentAlignment="Center" />
             <Label Content="部材コード" Margin="10,5" />
             <ComboBox Width="100" VerticalContentAlignment="Center" ItemsSource="{Binding MaterialCodes}"
                       Height="22" Margin="10,5" />
@@ -95,24 +95,24 @@
                             <ComboBox Width="70" Height="22" VerticalContentAlignment="Center" Name="CbSymbolKind"
                                       SelectedItem="{Binding SelectedSymbolKind}" />
                             <Label Content="Height" />
-                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Height}" />
+                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Height}" VerticalContentAlignment="Center" />
                             <Label Content="mm Percent" />
-                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Percent}" />
+                            <TextBox Width="50" Height="22" Text="{Binding SymbolInformation.Percent}" VerticalContentAlignment="Center"/>
                             <Label Content="% Color" />
-                            <ComboBox Width="50" Height="22" Name="CbSymbolColor"
+                            <ComboBox Width="70" Height="22" Name="CbSymbolColor" VerticalContentAlignment="Center"
                                       SelectedItem="{Binding SymbolInformation.Color}" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <CheckBox Content="Square Letter" Margin="10 0 10 0" Width="100"
-                                      IsChecked="{Binding SymbolInformation.IsShowText}" />
-                            <TextBox Width="280" Height="20" Text="{Binding SymbolInformation.Description}" />
+                                      IsChecked="{Binding SymbolInformation.IsShowText}" VerticalContentAlignment="Center" />
+                            <TextBox Width="325" Height="20" Text="{Binding SymbolInformation.Description}" VerticalContentAlignment="Center" />
                         </StackPanel>
                         <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center">
                             <Label Content="Coordinate" />
                             <ComboBox Width="70" Height="22" Name="CbSymbolCoordinate"
-                                      SelectedItem="{Binding SelectedSymbolCoordinate}" />
-                            <Label Content="Height" Margin="20 0 5 0" />
-                            <TextBox Width="100" Height="22" Text="{Binding SymbolInformation.CharacterHeight}" />
+                                      SelectedItem="{Binding SelectedSymbolCoordinate}" VerticalContentAlignment="Center" />
+                            <Label Content="Text Height" Margin="20 0 5 0" />
+                            <TextBox Width="100" Height="22" Text="{Binding SymbolInformation.CharacterHeight}" VerticalContentAlignment="Center" />
                         </StackPanel>
                     </Grid>
                     <!--Preview-->
