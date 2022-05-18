@@ -78,20 +78,18 @@ namespace Arent3d.Architecture.Routing
 
     [Family( "Arent Room", BuiltInCategory.OST_GenericModel )]
     Room,
-    
+
     [Family( "Fall Mark", BuiltInCategory.OST_GenericModel )]
     FallMark,
-    
+
     [Family( "Open End Point Mark", BuiltInCategory.OST_GenericModel )]
     OpenEndPointMark,
 
-    [NameOnRevit( "自動制御盤" )]
-    [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
+    [Family( "自動制御盤", BuiltInCategory.OST_ElectricalEquipment )]
     FromPowerEquipment,
 
-    [NameOnRevit( "信号取合い先" )]
-    [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
-    ToPowerEquipment,
+    [Family( "信号取合い先", BuiltInCategory.OST_ElectricalEquipment )]
+    ToPowerEquipment
   }
 
   public enum MechanicalRoutingFamilyType
