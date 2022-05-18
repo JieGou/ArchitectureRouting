@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private const string Mode2 = "矩形モード" ;
     private List<string> ListCreationMode = new List<string>{Mode1,Mode2} ;
     public int createMode ;
-    public int height ;
+    public double height ;
     public LeakRouteDialog()
     {
       InitializeComponent() ;
@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void Button_Create( object sender, RoutedEventArgs e )
     {
-      height = Int32.Parse( TxtHeight.Text) ;
+      height = Double.Parse( TxtHeight.Text) ;
       createMode = CmbCreationMode.SelectedIndex ;
       DialogResult = true ;
       Close() ;
@@ -32,8 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
     private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
     {
-      Regex regex = new Regex("[^0-9]+");
-      e.Handled = regex.IsMatch(e.Text);
+     
     }
   }
 }
