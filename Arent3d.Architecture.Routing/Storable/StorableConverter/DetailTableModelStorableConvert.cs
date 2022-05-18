@@ -1,4 +1,5 @@
-﻿using Arent3d.Architecture.Routing.Storable.Model ;
+﻿using System.Linq ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Arent3d.Utility.Serialization ;
 using Autodesk.Revit.DB ;
@@ -40,7 +41,15 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       GroupId,
       IsReadOnlyPlumbingItems,
       IsMixConstructionItems,
-      CopyIndex
+      CopyIndex,
+      IsReadOnlyParameters,
+      IsReadOnlyWireSizeAndWireStrip,
+      IsReadOnlyPlumbingSize,
+      WireSizes,
+      WireStrips,
+      EarthSizes,
+      PlumbingSizes,
+      PlumbingItemTypes
     }
 
     protected override DetailTableModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -78,10 +87,19 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var isReadOnlyPlumbingItems = deserializer.GetBool( SerializeField.IsReadOnlyPlumbingItems ) ;
       var isMixConstructionItems = deserializer.GetBool( SerializeField.IsMixConstructionItems ) ;
       var copyIndex = deserializer.GetString( SerializeField.CopyIndex ) ;
+      var isReadOnlyParameters = deserializer.GetBool( SerializeField.IsReadOnlyParameters ) ;
+      var isReadOnlyWireSizeAndWireStrip = deserializer.GetBool( SerializeField.IsReadOnlyWireSizeAndWireStrip ) ;
+      var isReadOnlyPlumbingSize = deserializer.GetBool( SerializeField.IsReadOnlyPlumbingSize ) ;
+      var wireSizes = deserializer.GetNonNullStringArray( SerializeField.WireSizes ) ;
+      var wireStrips = deserializer.GetNonNullStringArray( SerializeField.WireStrips ) ;
+      var earthSizes = deserializer.GetNonNullStringArray( SerializeField.EarthSizes ) ;
+      var plumbingSizes = deserializer.GetNonNullStringArray( SerializeField.PlumbingSizes ) ;
+      var plumbingItemTypes = deserializer.GetNonNullStringArray( SerializeField.PlumbingItemTypes ) ;
 
       return new DetailTableModel( calculationExclusion, floor, ceedCode, detailSymbol, detailSymbolId, wireType, wireSize, wireStrip, wireBook, earthType, earthSize, numberOfGrounds, plumbingType,
         plumbingSize, numberOfPlumbing, constructionClassification, signalType, constructionItems, plumbingItems, remark, wireCrossSectionalArea, countCableSamePosition, routeName, isEcoMode,
-        isParentRoute, isReadOnly, plumbingIdentityInfo, groupId, isReadOnlyPlumbingItems, isMixConstructionItems, copyIndex ) ;
+        isParentRoute, isReadOnly, plumbingIdentityInfo, groupId, isReadOnlyPlumbingItems, isMixConstructionItems, copyIndex, isReadOnlyParameters, isReadOnlyWireSizeAndWireStrip, isReadOnlyPlumbingSize,
+        wireSizes, wireStrips, earthSizes, plumbingSizes, plumbingItemTypes ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, DetailTableModel customTypeValue )
@@ -119,6 +137,14 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.Add( SerializeField.IsReadOnlyPlumbingItems, customTypeValue.IsReadOnlyPlumbingItems ) ;
       serializerObject.Add( SerializeField.IsMixConstructionItems, customTypeValue.IsMixConstructionItems ) ;
       serializerObject.AddNonNull( SerializeField.CopyIndex, customTypeValue.CopyIndex ) ;
+      serializerObject.Add( SerializeField.IsReadOnlyParameters, customTypeValue.IsReadOnlyParameters ) ;
+      serializerObject.Add( SerializeField.IsReadOnlyWireSizeAndWireStrip, customTypeValue.IsReadOnlyWireSizeAndWireStrip ) ;
+      serializerObject.Add( SerializeField.IsReadOnlyPlumbingSize, customTypeValue.IsReadOnlyPlumbingSize ) ;
+      serializerObject.AddNonNull( SerializeField.WireSizes, customTypeValue.WireSizes.Select( w => w.Name ) ) ;
+      serializerObject.AddNonNull( SerializeField.WireStrips, customTypeValue.WireStrips.Select( w => w.Name ) ) ;
+      serializerObject.AddNonNull( SerializeField.EarthSizes, customTypeValue.EarthSizes.Select( w => w.Name ) ) ;
+      serializerObject.AddNonNull( SerializeField.PlumbingSizes, customTypeValue.PlumbingSizes.Select( w => w.Name ) ) ;
+      serializerObject.AddNonNull( SerializeField.PlumbingItemTypes, customTypeValue.PlumbingItemTypes.Select( w => w.Name ) ) ;
 
       return serializerObject ;
     }

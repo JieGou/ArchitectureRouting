@@ -569,6 +569,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       return modelNumbers ;
     }
 
+    public static List<DetailTableModel> GetReferenceDetailTableModels( string path )
+    {
+      var referenceDetailTableModels = new List<DetailTableModel>() ;
+
+      try {
+        using StreamReader reader = new( path ) ;
+        while ( ! reader.EndOfStream ) {
+          var line = reader.ReadLine() ;
+          var values = line!.Split( ';' ) ;
+          if ( values.Length <= 29 ) continue ;
+          var detailTableRow = new DetailTableModel( false, values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ],
+            values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ], values[ 12 ],
+            values[ 13 ], values[ 14 ], values[ 15 ], values[ 16 ], values[ 17 ], values[ 18 ], double.Parse( values[ 19 ] ),
+            int.Parse( values[ 20 ] ), values[ 21 ], values[ 22 ], bool.Parse( values[ 23 ] ), bool.Parse( values[ 24 ] ), values[ 25 ],
+            values[ 26 ], bool.Parse( values[ 27 ] ), bool.Parse( values[ 28 ] ), values[ 29 ] ) ;
+          referenceDetailTableModels.Add( detailTableRow ) ;
+        }
+
+        reader.Close() ;
+        reader.Dispose() ;
+      }
+      catch ( Exception ) {
+        return new List<DetailTableModel>() ;
+      }
+
+      return referenceDetailTableModels ;
+    }
+
     private static string GetCellValue( ICell? cell )
     {
       string cellValue = string.Empty ;
@@ -647,6 +675,98 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
       }
 
       return symbolImages ;
+    }
+
+    public static List<RegistrationOfBoardDataModel> GetAllRegistrationOfBoardDataModel(string path)
+    {
+      List<RegistrationOfBoardDataModel> registrationOfBoardDataModelData = new List<RegistrationOfBoardDataModel>();
+
+      var extension = Path.GetExtension(path);
+      using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+      try
+      {
+        ISheet? workSheet = null;
+        switch (string.IsNullOrEmpty(extension))
+        {
+          case false when extension == ".xls":
+          {
+            HSSFWorkbook wb = new HSSFWorkbook(fs);
+            workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt(wb.ActiveSheetIndex) : wb.GetSheetAt(1);
+            break;
+          }
+          case false when extension == ".xlsx":
+          {
+            XSSFWorkbook wb = new XSSFWorkbook(fs);
+            workSheet = wb.NumberOfSheets < 2 ? wb.GetSheetAt(wb.ActiveSheetIndex) : wb.GetSheetAt(1);
+            break;
+          }
+        }
+
+        if (workSheet == null) return registrationOfBoardDataModelData;
+
+        const int startRow = 7;
+        var endRow = workSheet.LastRowNum;
+
+        // Get list data
+        for (var i = startRow; i <= endRow; i++)
+        {
+          var autoControlPanel = workSheet.GetRow(i).GetCell(0);
+          var autoControlPanelValue = GetCellValue(autoControlPanel);
+
+          var signalDestination = workSheet.GetRow(i).GetCell(1);
+          var signalDestinationValue = GetCellValue(signalDestination);
+
+          var kind1 = workSheet.GetRow(i).GetCell(2);
+          var kind1Value = GetCellValue(kind1);
+          
+          var number1 = workSheet.GetRow(i).GetCell(3);
+          var number1Value = GetCellValue(number1);
+          
+          var kind2 = workSheet.GetRow(i).GetCell(4);
+          var kind2Value = GetCellValue(kind2);
+          
+          var number2 = workSheet.GetRow(i).GetCell(5);
+          var number2Value = GetCellValue(number2);
+
+          var remark = workSheet.GetRow(i).GetCell(6);
+          var remarkValue = GetCellValue(remark);
+          
+          var materialCode1 = workSheet.GetRow(i).GetCell(7);
+          var materialCode1Value = GetCellValue(materialCode1);
+          
+          var materialCode2 = workSheet.GetRow(i).GetCell(8);
+          var materialCode2Value = GetCellValue(materialCode2);
+
+          var item = new RegistrationOfBoardDataModel
+          {
+            AutoControlPanel = autoControlPanelValue,
+            SignalDestination = signalDestinationValue,
+            Kind1 = kind1Value,
+            Number1 = number1Value,
+            Kind2 = kind2Value,
+            Number2 = number2Value,
+            Remark = remarkValue,
+            MaterialCode1 = materialCode1Value,
+            MaterialCode2 = materialCode2Value
+          } ;
+          
+          if (item.SignalDestination != "---")
+          {
+            registrationOfBoardDataModelData.Add(item);
+          }
+        }
+      }
+      catch (Exception)
+      {
+        return new List<RegistrationOfBoardDataModel>();
+      }
+      finally
+      {
+        fs.Close();
+        fs.Dispose();
+      }
+
+      return registrationOfBoardDataModelData;
     }
   }
 

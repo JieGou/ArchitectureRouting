@@ -84,6 +84,14 @@ namespace Arent3d.Architecture.Routing
     
     [Family( "Open End Point Mark", BuiltInCategory.OST_GenericModel )]
     OpenEndPointMark,
+
+    [NameOnRevit( "自動制御盤" )]
+    [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
+    FromPowerEquipment,
+
+    [NameOnRevit( "信号取合い先" )]
+    [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
+    ToPowerEquipment,
   }
 
   public enum MechanicalRoutingFamilyType
@@ -248,9 +256,9 @@ namespace Arent3d.Architecture.Routing
         if ( new FilteredElementCollector( document ).OfClass( typeof( Family ) ).SingleOrDefault( f => f.Name == connectorFamilyName ) is Family connectorFamily )
           connectorFamilyIds.Add( connectorFamily.Id ) ;
       }
-        
+
       document.Delete( connectorFamilyIds ) ;
-    } 
+    }
 
     public static void MakeCertainAllElectricalRoutingFamilies( this Document document ) => document.MakeCertainAllFamilies<ElectricalRoutingFamilyType>( AssetManager.GetElectricalFamilyPath, true ) ;
     public static void EraseAllElectricalRoutingFamilies( this Document document ) => document.UnloadAllFamilies<ElectricalRoutingFamilyType>() ;
@@ -272,6 +280,7 @@ namespace Arent3d.Architecture.Routing
 
       return document.Create.NewFamilyInstance( position, symbol, level, structuralType ) ;
     }
+
     public static FamilyInstance Instantiate( this FamilySymbol symbol, XYZ position, StructuralType structuralType )
     {
       var document = symbol.Document ;
