@@ -116,6 +116,10 @@ namespace Arent3d.Architecture.Routing
     [NameOnRevit( "Pressure End Point" )]
     [FamilyCategory( BuiltInCategory.OST_GenericModel )]
     PressureEndPoint,
+    
+    [NameOnRevit( "Pressure Connector" )]
+    [FamilyCategory( BuiltInCategory.OST_ElectricalFixtures )]
+    PressureConnector,
   }
 
   public enum MechanicalRoutingFamilyType

@@ -57,6 +57,45 @@ namespace Arent3d.Architecture.Routing.AppBase
         tr.Commit() ;
       }
     }
+    
+    public CreateConnector( UIDocument uiDocument, Element element, AddInType addInType )
+    {
+      var tempInstanceIds = new List<ElementId>() ;
+
+      var familyInstance = element as FamilyInstance ;
+      var connectorAndElementPairs = ( null != familyInstance ) ? GetConnectorAndConnectorElementPair( familyInstance, addInType ).EnumerateAll() : Array.Empty<(Connector, ConnectorElement)>() ;
+      int orgTransparency ;
+      using ( var tr = new Transaction( element.Document ) ) {
+        tr.Start( "Create connector points and origin for pick" ) ;
+
+        if ( null != familyInstance ) {
+          foreach ( var (conn, connElm) in connectorAndElementPairs ) {
+            if ( AddConnectorFamily( conn, connElm, familyInstance, null ) is { } instance ) {
+              tempInstanceIds.Add( instance.Id ) ;
+            }
+          } 
+        }
+        
+        if ( ( familyInstance?.GetTotalTransform().Origin ?? ( element.Location as LocationPoint )?.Point ) is { } point ) {
+          var instanceOrg = element.Document.AddTerminatePoint( element.GetRouteName()!, point, XYZ.BasisX, null, element.GetLevelId() ) ;
+          tempInstanceIds.Add( instanceOrg.Id ) ;
+        }
+        
+        orgTransparency = SetElementTransparency( element, 50 ) ;
+        tr.Commit() ;
+      } 
+      
+      _pickedConnector = element.GetConnectors().FirstOrDefault( ) ;
+
+      using ( var tr = new Transaction( element.Document ) ) {
+        tr.Start( "Delete connector points and origin for pick" ) ;
+
+        SetElementTransparency( element, orgTransparency ) ;
+        element.Document.Delete( tempInstanceIds ) ;
+
+        tr.Commit() ;
+      }
+    }
 
     private static FamilyInstance? AddConnectorFamily( Connector conn, ConnectorElement connElm, FamilyInstance familyInstance, Connector? firstConnector )
     {
