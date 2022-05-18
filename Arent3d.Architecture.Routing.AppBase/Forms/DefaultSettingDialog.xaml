@@ -75,19 +75,32 @@
                                     <Button Click="DeleteImportDwgMappingItem">Delete</Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsDeleted}" />
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="階" Width="100" CanUserSort="False">
+                        
+                        <DataGridTextColumn Header="階" Width="100" CanUserSort="False" >
                             <DataGridTextColumn.Binding>
                                 <Binding Path="FloorName" NotifyOnTargetUpdated="True"
                                          UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
+                            <DataGridTextColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsEnabled}" />
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
                         </DataGridTextColumn>
+                        
                         <DataGridTextColumn Header="階の高" Width="100" CanUserSort="False">
                             <DataGridTextColumn.Binding>
                                 <Binding Path="FloorHeight" NotifyOnTargetUpdated="True"
                                          UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
+                        
                         <DataGridComboBoxColumn Header="DWGファイル" Width="350"
                                                 SelectedValueBinding="{Binding FileName}"
                                                 DisplayMemberPath="FileName"
@@ -103,7 +116,13 @@
                                     <Setter Property="ItemsSource" Value="{Binding Path=DataContext.FileItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
                                 </Style>
                             </DataGridComboBoxColumn.EditingElementStyle>
+                            <DataGridComboBoxColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsEnabled}" />
+                                </Style>
+                            </DataGridComboBoxColumn.CellStyle>
                         </DataGridComboBoxColumn>
+
                         <DataGridTextColumn Header="図面スケール" Width="100" CanUserSort="False" >
                             <DataGridTextColumn.Binding>
                                 <Binding Path="Scale" NotifyOnTargetUpdated="True"
@@ -111,12 +130,18 @@
                                 </Binding>
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="" Width="130" CanUserSort="False">
+                        
+                        <DataGridTemplateColumn Header="" Width="130" CanUserSort="False" >
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Click="SelectDwgFile">Select DWG File</Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsEnabled}" />
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>

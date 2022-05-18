@@ -2,14 +2,12 @@
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
-using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
-using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using View = Autodesk.Revit.DB.View ;
@@ -19,23 +17,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   public class DefaultSettingCommandBase : IExternalCommand
   {
     private const string SetDefaultEcoModeTransactionName = "Electrical.App.Commands.Initialization.SetDefaultModeCommand" ;
-    private const string DialogResultSuccessKey = "Dialog.Electrical.ChangeMode.Success" ;
-    private const string DialogResultTitleKey = "Dialog.Electrical.ChangeMode.Title" ;
-    private const string UpdateDataSuccessMessage = "Update data success." ;
-    private const string ElectricalChangeModeTitle = "Change mode result" ;
     private const string Grade3 = "グレード3" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
         var document = commandData.Application.ActiveUIDocument.Document ;
+        var activeViewName = document.ActiveView.Name ;
         // Get data of default setting from snoop DB
         DefaultSettingStorable defaultSettingStorable = document.GetDefaultSettingStorable() ;
         SetupPrintStorable setupPrintStorable = document.GetSetupPrintStorable() ;
-        var isEcoMode = defaultSettingStorable.EcoSettingData.IsEcoMode ;
-        var isInGrade3Mode = defaultSettingStorable.GradeSettingData.IsInGrade3Mode ;
         var scale = setupPrintStorable.Scale ;
-        var viewModel = new DefaultSettingViewModel( isEcoMode, isInGrade3Mode, scale ) ;
+        var viewModel = new DefaultSettingViewModel( defaultSettingStorable, scale, activeViewName ) ;
         var dialog = new DefaultSettingDialog( viewModel ) ;
         dialog.ShowDialog() ;
         {
@@ -43,13 +36,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             return Result.Cancelled ;
 
           viewModel = dialog.ViewModel ;
-          isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
-          isInGrade3Mode = viewModel.SelectedGradeMode == DefaultSettingViewModel.GradeModes.Grade3 ;
-          var setDefaultModeResult = SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, isInGrade3Mode ) ;
-          if ( setDefaultModeResult == Result.Cancelled ) return Result.Cancelled ;
+          var isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
+          var isInGrade3Mode = viewModel.SelectedGradeMode == DefaultSettingViewModel.GradeModes.Grade3 ;
+          var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
+          var deletedFloorName = viewModel.DeletedFloorName ;
+          SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, isInGrade3Mode, importDwgMappingModels, deletedFloorName ) ;
 
-          var loadDwgAndSetScaleResult = LoadDwgAndSetScale( commandData, viewModel.ImportDwgMappingModels, viewModel.FileItems ) ;
-          return loadDwgAndSetScaleResult ;
+          if ( deletedFloorName.Any() ) {
+            RemoveViews( document, deletedFloorName ) ;
+          }
+          
+          LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
+          return Result.Succeeded ;
         }
       }
       catch ( OperationCanceledException ) {
@@ -60,16 +58,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return Result.Cancelled ;
       }
     }
-
-    /// <summary>
-    /// Set default value for isEcoMode and grade mode
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="defaultSettingStorable"></param>
-    /// <param name="isEcoModel"></param>
-    /// <param name="isInGrade3Mode"></param>
-    /// <returns></returns>
-    private Result SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, bool isInGrade3Mode )
+    
+    private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, bool isInGrade3Mode, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
     {
       try {
         Transaction transaction = new( document, SetDefaultEcoModeTransactionName ) ;
@@ -81,23 +71,46 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
         defaultSettingStorable.GradeSettingData.IsInGrade3Mode = isInGrade3Mode ;
+        if ( importDwgMappingModels.Any() ) {
+          UpdateImportDwgMappingModels( defaultSettingStorable, importDwgMappingModels, deletedFloorName ) ;
+        }
+
         defaultSettingStorable.Save() ;
         transaction.Commit() ;
-
-        return Result.Succeeded ;
       }
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
-        return Result.Cancelled ;
       }
     }
 
-    private Result LoadDwgAndSetScale( ExternalCommandData commandData, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<FileComboboxItemType> fileItems )
+    private void UpdateImportDwgMappingModels( DefaultSettingStorable defaultSettingStorable, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
+    {
+      if ( deletedFloorName.Any() ) {
+        foreach ( var floorName in deletedFloorName ) {
+          var deletedImportDwgMappingModel = defaultSettingStorable.ImportDwgMappingData.SingleOrDefault( i => i.FloorName == floorName ) ;
+          defaultSettingStorable.ImportDwgMappingData.Remove( deletedImportDwgMappingModel ) ;
+        }
+      }
+      foreach ( var item in importDwgMappingModels ) {
+        var oldImportDwgMappingModel = defaultSettingStorable.ImportDwgMappingData.SingleOrDefault( i => i.FloorName == item.FloorName ) ;
+        if ( oldImportDwgMappingModel == null ) {
+          defaultSettingStorable.ImportDwgMappingData.Add( new Storable.Model.ImportDwgMappingModel( item.Id, item.FullFilePath, item.FileName, item.FloorName, item.FloorHeight, item.Scale ) ) ;
+        }
+        else {
+          oldImportDwgMappingModel.FloorHeight = item.FloorHeight ;
+          oldImportDwgMappingModel.Scale = item.Scale ;
+        }
+      }
+
+      defaultSettingStorable.ImportDwgMappingData = defaultSettingStorable.ImportDwgMappingData.OrderBy( x => x.FloorHeight ).ToList() ;
+    }
+
+    private void LoadDwgAndSetScale( ExternalCommandData commandData, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<FileComboboxItemType> fileItems )
     {
       try {
-        if ( ! importDwgMappingModels.Any() ) return Result.Succeeded ;
+        if ( ! importDwgMappingModels.Any() ) return ;
         var completeImportDwgMappingModels = importDwgMappingModels.Where( x => ! string.IsNullOrEmpty( x.FloorName ) && ! string.IsNullOrEmpty( x.FileName ) ).ToList() ;
-        if ( ! completeImportDwgMappingModels.Any() ) return Result.Succeeded ;
+        if ( ! completeImportDwgMappingModels.Any() ) return ;
         foreach ( var importDwgMappingModel in completeImportDwgMappingModels ) {
           var fileItem = fileItems.FirstOrDefault( x => x.FileName.Equals( importDwgMappingModel.FileName ) ) ;
           importDwgMappingModel.FullFilePath = fileItem != null ? fileItem.FullFilePath : "" ;
@@ -134,10 +147,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             importDwgLevel.Name = levelName ;
           }
 
+          var isNewView = false ;
           var viewPlan = allCurrentViewPlans.FirstOrDefault( x => x.Name.Equals( importDwgMappingModel.FloorName ) ) as ViewPlan ;
           if ( viewPlan == null ) {
             viewPlan = ViewPlan.Create( doc, viewFamily.Id, importDwgLevel.Id ) ;
             viewPlan.Name = importDwgMappingModel.FloorName ;
+            isNewView = true ;
           }
 
           viewPlan.Scale = importDwgMappingModel.Scale ;
@@ -146,7 +161,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           }
 
           importDwgLevel.SetProperty( BuiltInParameter.LEVEL_ELEV, importDwgMappingModel.FloorHeight.MillimetersToRevitUnits() ) ;
-          doc.Import( importDwgMappingModel.FullFilePath, dwgImportOptions, viewPlan, out ElementId importElementId ) ;
+          if ( isNewView ) doc.Import( importDwgMappingModel.FullFilePath, dwgImportOptions, viewPlan, out ElementId importElementId ) ;
           if ( i == 0 ) firstViewPlan = viewPlan ;
         }
 
@@ -173,18 +188,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         create3DTrans.Commit() ;
 
         #endregion
-
-        return Result.Succeeded ;
       }
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
-        return Result.Cancelled ;
       }
     }
 
-    private void ShowResult( string message )
+    private void RemoveViews( Document document, List<string> deletedFloorName )
     {
-      MessageBox.Show( string.IsNullOrEmpty( message ) ? DialogResultSuccessKey.GetAppStringByKeyOrDefault( UpdateDataSuccessMessage ) : message, DialogResultTitleKey.GetAppStringByKeyOrDefault( ElectricalChangeModeTitle ), MessageBoxButtons.OK ) ;
+      try {
+        var deletedViewIds = document.GetAllElements<View>().Where( e => deletedFloorName.Contains( e.Name ) ).Select( e => e.Id ).ToList() ;
+        if ( ! deletedViewIds.Any() ) return ;
+        var removeViewsTrans = new Transaction( document, "Remove Views " ) ;
+        removeViewsTrans.Start() ;
+        document.Delete( deletedViewIds ) ;
+        removeViewsTrans.Commit() ;
+      }
+      catch ( Exception exception ) {
+        CommandUtils.DebugAlertException( exception ) ;
+      }
     }
   }
 }

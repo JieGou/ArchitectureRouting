@@ -9,6 +9,7 @@ using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 
@@ -69,17 +70,39 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     private int Scale { get ; }
+    
+    private readonly List<ImportDwgMappingModel> _oldImportDwgMappingModels ;
+    private readonly List<FileComboboxItemType> _oldFileItems ;
+    public List<string> DeletedFloorName { get ; set ; }
 
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
     public ICommand AddImportDwgMappingModelCommand => new RelayCommand( AddImportDwgMappingModel ) ;
 
-    public DefaultSettingViewModel( bool isEcoMode, bool isInGrade3Mode, int scale )
+    public DefaultSettingViewModel( DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName )
     {
-      SelectedEcoNormalModeIndex = isEcoMode ? 1 : 0 ;
-      SelectedGradeModeIndex = isInGrade3Mode ? 0 : 1 ;
+      SelectedEcoNormalModeIndex = defaultSettingStorable.EcoSettingData.IsEcoMode ? 1 : 0 ;
+      SelectedGradeModeIndex = defaultSettingStorable.GradeSettingData.IsInGrade3Mode ? 0 : 1 ;
       _importDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>() ;
       _fileItems = new List<FileComboboxItemType>() ;
+      _oldImportDwgMappingModels = new List<ImportDwgMappingModel>() ;
+      _oldFileItems = new List<FileComboboxItemType>() ;
+      DeletedFloorName = new List<string>() ;
       Scale = scale ;
+      GetImportDwgMappingModelsAndFileItems( defaultSettingStorable, activeViewName  ) ;
+    }
+
+    private void GetImportDwgMappingModelsAndFileItems( DefaultSettingStorable defaultSettingStorable, string activeViewName )
+    {
+      foreach ( var item in defaultSettingStorable.ImportDwgMappingData ) {
+        var isDeleted = item.FloorName != activeViewName ;
+        var importDwgMappingModel = new ImportDwgMappingModel( item, isDeleted ) ;
+        _oldImportDwgMappingModels.Add( importDwgMappingModel ) ;
+        ImportDwgMappingModels.Add( importDwgMappingModel ) ;
+
+        var fileItem = new FileComboboxItemType( item.FullFilePath ) ;
+        _oldFileItems.Add( fileItem ) ;
+        FileItems.Add( fileItem ) ;
+      }
     }
 
     private void AddImportDwgMappingModel()
@@ -107,6 +130,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public void DeleteImportDwgMappingItem( ImportDwgMappingModel selectedItem )
     {
       ImportDwgMappingModels.Remove( selectedItem ) ;
+      _oldImportDwgMappingModels.Remove( selectedItem ) ;
+      if ( ! DeletedFloorName.Contains( selectedItem.FloorName ) ) {
+        DeletedFloorName.Add( selectedItem.FloorName ) ;
+      }
     }
 
     public void LoadDwgFile( ImportDwgMappingModel selectedItem )
@@ -125,8 +152,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       OpenFileDialog openFileDialog = new() { Filter = "DWG files (*.dwg )|*.dwg", Multiselect = true } ;
       if ( openFileDialog.ShowDialog() != DialogResult.OK ) return ;
-      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>() ;
-      FileItems = new List<FileComboboxItemType>() ;
+      ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( _oldImportDwgMappingModels ) ;
+      FileItems = _oldFileItems ;
       foreach ( var fileName in openFileDialog.FileNames ) {
         FileItems.Add( new FileComboboxItemType( fileName ) ) ;
         if ( fileName.Contains( "B1" ) ) {

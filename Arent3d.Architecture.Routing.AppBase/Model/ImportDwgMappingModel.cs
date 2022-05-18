@@ -70,6 +70,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       }
     }
     
+    private bool _isEnabled ;
+    public bool IsEnabled 
+    { 
+      get => _isEnabled ;
+      set
+      {
+        _isEnabled = value ;
+        OnPropertyChanged() ;
+      } 
+    }
+
+    private bool _isDeleted ;
+    public bool IsDeleted
+    { 
+      get => _isDeleted ;
+      set
+      {
+        _isDeleted = value ;
+        OnPropertyChanged() ;
+      } 
+    }
+    
     public string this[ string columnName ]
     {
       get
@@ -88,6 +110,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _fileName = ! string.IsNullOrEmpty( fileName ) ? Path.GetFileName( fileName ) : "" ;
       _floorName = floorName ;
       _floorHeight = floorHeight ;
+      _isEnabled = true ;
+      _isDeleted = true ;
     }
 
     public ImportDwgMappingModel( string fileName, string floorName, double floorHeight, int scale )
@@ -98,6 +122,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       _floorName = floorName ;
       _floorHeight = floorHeight ;
       _scale = scale ;
+      _isEnabled = true ;
+      _isDeleted = true ;
+    }
+    
+    public ImportDwgMappingModel( Storable.Model.ImportDwgMappingModel item, bool isNotDeleted )
+    {
+      Id = item.Id ;
+      _fullFilePath = item.FullFilePath ;
+      _fileName = item.FileName ;
+      _floorName = item.FloorName ;
+      _floorHeight = item.FloorHeight ;
+      _scale = item.Scale ;
+      _isEnabled = false ;
+      _isDeleted = isNotDeleted ;
     }
 
     public static double GetDefaultSymbolMagnification( Document document )
