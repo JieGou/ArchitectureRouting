@@ -1,4 +1,5 @@
-﻿using System.Linq ;
+﻿using System.Collections.Generic ;
+using System.Linq ;
 using System.Windows ;
 using Autodesk.Revit.DB ;
 using System.Collections.ObjectModel ;
@@ -16,16 +17,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   {
     public ObservableCollection<string> TableTypes { get ; set ; }
     public ObservableCollection<LevelInfo> LevelList { get ; }
-    public string SelectedTableType { get ; set ; } = "Detail Table" ;
+    public string SelectedTableType { get ; set ; }
 
     public bool IsCreateTableEachFloors => CheckBoxEachFloor.IsChecked ?? false ;
 
-    public CreateTableByFloors( Document doc )
+    public CreateTableByFloors( Document doc , IEnumerable<string> tableTypes)
     {
       InitializeComponent() ;
       LevelList = new ObservableCollection<LevelInfo>( doc.GetAllElements<Level>()
         .OfCategory( BuiltInCategory.OST_Levels ).Select( ToLevelInfo ).OrderBy( l => l.Elevation ) ) ;
-      TableTypes = new ObservableCollection<string> { "Detail Table", "Electrical Symbol Table" } ;
+      TableTypes = new ObservableCollection<string>(tableTypes) ;
+      SelectedTableType = TableTypes.FirstOrDefault() ?? string.Empty ;
     }
 
     private static LevelInfo ToLevelInfo( Level level )

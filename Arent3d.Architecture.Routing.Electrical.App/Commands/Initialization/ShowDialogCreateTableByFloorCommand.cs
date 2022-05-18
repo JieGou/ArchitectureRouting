@@ -24,16 +24,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class ShowDialogCreateTableByFloorCommand : IExternalCommand
   {
-    private const string DetailTableType = "Detail Table" ;
-    private const string ElectricalSymbolTableType = "Electrical Symbol Table" ;
-    private const string AllFloors = "All Floors" ;
+    private const string DetailTableType = "明細表" ;
+    private const string ElectricalSymbolTableType = "電気シンボル表" ;
+    private const string AllFloors = "全部の階" ;
+    private static readonly string[] TableTypes = { DetailTableType, ElectricalSymbolTableType } ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var doc = uiDocument.Document ;
 
-      var dialog = new CreateTableByFloors( uiDocument.Document ) ;
+      var dialog = new CreateTableByFloors( uiDocument.Document, TableTypes ) ;
       dialog.ShowDialog() ;
       if ( ! dialog.DialogResult ?? true )
         return Result.Cancelled ;
