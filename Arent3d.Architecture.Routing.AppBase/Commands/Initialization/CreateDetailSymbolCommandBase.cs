@@ -18,6 +18,7 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Application = Autodesk.Revit.ApplicationServices.Application ;
 using Color = Autodesk.Revit.DB.Color ;
+using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {

@@ -16,6 +16,7 @@ using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Utility ;
 using Autodesk.Revit.ApplicationServices ;
+using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 using TextElement = Autodesk.Revit.DB.TextElement ;
 using Transform = Autodesk.Revit.DB.Transform ;
 
