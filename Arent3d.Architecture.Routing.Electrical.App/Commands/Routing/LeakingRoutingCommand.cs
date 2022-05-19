@@ -17,9 +17,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
   {
     protected override string GetTransactionNameKey() => "Electrical.App.Commands.Routing.LeakRoutingCommand" ;
 
-    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
-
     protected override AddInType GetAddInType() => AppCommandSettings.AddInType ;
+
+    protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
     protected override DialogInitValues? CreateSegmentDialogDefaultValuesWithConnector( Document document, Connector connector, MEPSystemClassificationInfo classificationInfo )
     {
@@ -31,11 +31,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     protected override MEPSystemClassificationInfo? GetMEPSystemClassificationInfoFromSystemType( MEPSystemType? systemType )
     {
       return MEPSystemClassificationInfo.Undefined ;
-    }
-
-    protected override (IEndPoint EndPoint, IReadOnlyCollection<(string RouteName, RouteSegment Segment)>? OtherSegments) CreateEndPointOnSubRoute( ConnectorPicker.IPickResult newPickResult, ConnectorPicker.IPickResult anotherPickResult, IRouteProperty routeProperty, MEPSystemClassificationInfo classificationInfo, bool newPickIsFrom )
-    {
-      return PickCommandUtil.CreateBranchingRouteEndPoint( newPickResult, anotherPickResult, routeProperty, classificationInfo, AppCommandSettings.FittingSizeCalculator, newPickIsFrom ) ;
     }
 
     protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => curveType.Category.Name ;

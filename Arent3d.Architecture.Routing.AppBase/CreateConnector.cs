@@ -57,6 +57,42 @@ namespace Arent3d.Architecture.Routing.AppBase
         tr.Commit() ;
       }
     }
+    
+    public CreateConnector( Document document, FamilyInstance familyInstance, AddInType addInType )
+    {
+      var tempInstanceIds = new List<ElementId>() ;
+
+      var connectorAndElementPairs = GetConnectorAndConnectorElementPair( familyInstance, addInType ).EnumerateAll() ;
+      int orgTransparency ;
+      using ( var tr = new Transaction( document ) ) {
+        tr.Start( "Create connector points and origin for pick" ) ;
+
+        foreach ( var (conn, connElm) in connectorAndElementPairs ) {
+          if ( AddConnectorFamily( conn, connElm, familyInstance, null ) is { } instance ) {
+            tempInstanceIds.Add( instance.Id ) ;
+          }
+        }
+
+        if ( ( familyInstance.GetTotalTransform().Origin ?? ( familyInstance.Location as LocationPoint )?.Point ) is { } point ) {
+          var instanceOrg = document.AddTerminatePoint( familyInstance.GetRouteName()!, point, XYZ.BasisX, null, familyInstance.GetLevelId() ) ;
+          tempInstanceIds.Add( instanceOrg.Id ) ;
+        }
+
+        orgTransparency = SetElementTransparency( familyInstance, 50 ) ;
+        tr.Commit() ;
+      } 
+
+      _pickedConnector = familyInstance.GetConnectors().FirstOrDefault( ) ;
+
+      using ( var tr = new Transaction( document ) ) {
+        tr.Start( "Delete connector points and origin for pick" ) ;
+
+        SetElementTransparency( familyInstance, orgTransparency ) ;
+        document.Delete( tempInstanceIds ) ;
+
+        tr.Commit() ;
+      }
+    }
 
     private static FamilyInstance? AddConnectorFamily( Connector conn, ConnectorElement connElm, FamilyInstance familyInstance, Connector? firstConnector )
     {
