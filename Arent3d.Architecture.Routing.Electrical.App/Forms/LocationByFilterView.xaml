@@ -1,8 +1,8 @@
-﻿<Window x:Class="Arent3d.Architecture.Routing.Electrical.App.Forms.ChangeLocationTypeView"
+﻿<Window x:Class="Arent3d.Architecture.Routing.Electrical.App.Forms.LocationByFilterView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Change Location Type" Height="Auto" Width="400" UseLayoutRounding="True" Topmost="True"
-        WindowStartupLocation="CenterScreen" SizeToContent="Height" x:Name="ChangeLocationTypeWindow" ResizeMode="NoResize">
+        WindowStartupLocation="CenterScreen" SizeToContent="Height" ResizeMode="NoResize">
     <Border Margin="15 10 15 15">
         <Grid>
             <Grid.RowDefinitions>
@@ -20,7 +20,7 @@
             <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Margin="0 15 0 0" Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button Content="Select Elements" Padding="7.5" Width="120" FontWeight="Bold"
                         Command="{Binding OkCommand}"
-                        CommandParameter="{Binding ElementName=ChangeLocationTypeWindow}"/>
+                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}} }"/>
             </StackPanel>
         </Grid>
     </Border>

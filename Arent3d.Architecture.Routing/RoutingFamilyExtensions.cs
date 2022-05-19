@@ -115,7 +115,19 @@ namespace Arent3d.Architecture.Routing
 
     [NameOnRevit( "信号取合い先" )]
     [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
-    ToPowerEquipment
+    ToPowerEquipment,
+    
+    [NameOnRevit( "漏水帯（布）" )]
+    [FamilyCategory( BuiltInCategory.OST_DetailComponents )]
+    DetailComponent01,
+    
+    [NameOnRevit( "漏水帯（発色）" )]
+    [FamilyCategory( BuiltInCategory.OST_DetailComponents )]
+    DetailComponent02,
+    
+    [NameOnRevit( "漏水帯（塩ビ）" )]
+    [FamilyCategory( BuiltInCategory.OST_DetailComponents )]
+    DetailComponent03
   }
 
   public enum MechanicalRoutingFamilyType

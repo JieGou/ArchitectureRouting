@@ -271,8 +271,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         [Button( typeof( AdjustLeaderCommand ), OnlyInitialized = true )]
         private static class AdjustLeaderCommandButton { }
         
-        [Button( typeof( ChangeLocationTypeCommand ), OnlyInitialized = true )]
-        private static class ChangeLocationTypeCommandButton { }
+        [Button( typeof( LocationByFilterCommand ), OnlyInitialized = true )]
+        private static class LocationByFilterCommandButton { }
+        
+        [Button( typeof( LocationByDetailCommand ), OnlyInitialized = true )]
+        private static class LocationByDetailCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Shafts" )]

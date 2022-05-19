@@ -12,7 +12,6 @@ namespace Arent3d.Architecture.Routing.Storable
     public const string StorableName = "Change Location Type" ;
     
     private const string LocationTypeField = "LocationType" ;
-    
     public string LocationType { get ; set ; }
     
 

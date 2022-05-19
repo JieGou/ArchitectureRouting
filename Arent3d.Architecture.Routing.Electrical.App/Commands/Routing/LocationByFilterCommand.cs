@@ -11,9 +11,9 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.ChangeLocationTypeCommand", DefaultString = "Change\nLocation Type" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.LocationByFilterCommand", DefaultString = "Location\nBy Filter" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class ChangeLocationTypeCommand : IExternalCommand
+  public class LocationByFilterCommand : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -26,9 +26,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
         }
 
         var externalEventHandler = new ExternalEventHandler() ;
-        var viewModel = new ChangeLocationTypeViewModel( uiDocument ) { ExternalEventHandler = externalEventHandler } ;
+        var viewModel = new LocationByFilterViewModel( uiDocument ) { ExternalEventHandler = externalEventHandler } ;
         externalEventHandler.ExternalEvent = ExternalEvent.Create( viewModel.ExternalEventHandler ) ;
-        var view = new ChangeLocationTypeView { DataContext = viewModel } ;
+        var view = new LocationByFilterView { DataContext = viewModel } ;
         view.Show() ;
 
         return Result.Succeeded ;

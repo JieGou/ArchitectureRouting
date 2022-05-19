@@ -260,5 +260,23 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       return false ;
     }
+
+    public static Line? GetMaxLengthLine( Line firstLine, Line secondLine )
+    {
+      var lines = new List<Line> { firstLine, secondLine } ;
+      if(firstLine.GetEndPoint(0).DistanceTo(secondLine.GetEndPoint(0)) > Tolerance)
+        lines.Add(Line.CreateBound(firstLine.GetEndPoint(0), secondLine.GetEndPoint(0)));
+      
+      if(firstLine.GetEndPoint(0).DistanceTo(secondLine.GetEndPoint(1)) > Tolerance)
+        lines.Add(Line.CreateBound(firstLine.GetEndPoint(0), secondLine.GetEndPoint(1)));
+      
+      if(firstLine.GetEndPoint(1).DistanceTo(secondLine.GetEndPoint(0)) > Tolerance)
+        lines.Add(Line.CreateBound(firstLine.GetEndPoint(1), secondLine.GetEndPoint(0)));
+      
+      if(firstLine.GetEndPoint(1).DistanceTo(secondLine.GetEndPoint(1)) > Tolerance)
+        lines.Add(Line.CreateBound(firstLine.GetEndPoint(1), secondLine.GetEndPoint(1)));
+
+      return lines.MaxBy( x => x.Length ) ;
+    }
   }
 }

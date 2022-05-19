@@ -121,8 +121,11 @@
         <key>Electrical.App.Commands.Routing.AdjustLeaderCommand</key>
         <string>Adjust Leader</string>
 
-        <key>Electrical.App.Commands.Routing.ChangeLocationTypeCommand</key>
-        <string>Change&#xA;Location Type</string>
+        <key>Electrical.App.Commands.Routing.LocationByFilterCommand</key>
+        <string>Location&#xA;By Filter</string>
+
+        <key>Electrical.App.Commands.Routing.LocationByDetailCommand</key>
+        <string>Location&#xA;By Detail</string>
 
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
