@@ -300,6 +300,80 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       IsReadOnlyPlumbingSize = false ;
     }
     
+    public DetailTableModel( 
+      bool? calculationExclusion, 
+      string? floor, 
+      string? ceedCode,
+      string? detailSymbol,
+      string? detailSymbolId,
+      string? wireType, 
+      string? wireSize, 
+      string? wireStrip, 
+      string? wireBook,
+      string? earthType,
+      string? earthSize,
+      string? numberOfGrounds,
+      string? plumbingType,
+      string? plumbingSize,
+      string? numberOfPlumbing,
+      string? constructionClassification,
+      string? signalType,
+      string? constructionItems,
+      string? plumbingItems,
+      string? remark,
+      double? wireCrossSectionalArea,
+      int? countCableSamePosition,
+      string? routeName,
+      string? isEcoMode,
+      bool? isParentRoute,
+      bool? isReadOnly,  
+      string? plumbingIdentityInfo,
+      string? groupId,
+      bool? isReadOnlyPlumbingItems,
+      bool? isMixConstructionItems,
+      string? copyIndex )
+    {
+      CalculationExclusion = calculationExclusion ?? false ;
+      Floor = floor ?? string.Empty ;
+      CeedCode = ceedCode ?? string.Empty ;
+      DetailSymbol = detailSymbol ?? string.Empty ;
+      DetailSymbolId = detailSymbolId ?? string.Empty ;
+      WireType = wireType ?? string.Empty ;
+      WireSize = wireSize ?? string.Empty ;
+      WireStrip = wireStrip ?? string.Empty ;
+      WireBook = wireBook ?? string.Empty ;
+      EarthType = earthType ?? string.Empty ;
+      EarthSize = earthSize ?? string.Empty ;
+      NumberOfGrounds = numberOfGrounds ?? string.Empty ;
+      PlumbingType = plumbingType ?? string.Empty ;
+      PlumbingSize = plumbingSize ?? string.Empty ;
+      NumberOfPlumbing = numberOfPlumbing ?? string.Empty ;
+      ConstructionClassification = constructionClassification ?? string.Empty ;
+      SignalType = signalType ?? string.Empty ;
+      ConstructionItems = constructionItems ?? string.Empty ;
+      PlumbingItems = plumbingItems ?? string.Empty ;
+      Remark = remark ?? string.Empty ;
+      WireCrossSectionalArea = wireCrossSectionalArea ?? 0 ;
+      CountCableSamePosition = countCableSamePosition ?? 1 ;
+      RouteName = routeName ?? string.Empty ;
+      IsEcoMode = isEcoMode ?? string.Empty ;
+      IsParentRoute = isParentRoute ?? false ;
+      IsReadOnly = isReadOnly ?? true ;
+      PlumbingIdentityInfo = plumbingIdentityInfo ?? string.Empty ;
+      GroupId = groupId ?? string.Empty ;
+      IsReadOnlyPlumbingItems = isReadOnlyPlumbingItems ?? true ;
+      IsMixConstructionItems = isMixConstructionItems ?? false ;
+      CopyIndex = copyIndex ?? string.Empty ;
+      IsReadOnlyParameters = false ;
+      IsReadOnlyWireSizeAndWireStrip = false ;
+      IsReadOnlyPlumbingSize = isReadOnly ?? false ;
+      WireSizes = new List<ComboboxItemType>() ;
+      WireStrips = new List<ComboboxItemType>() ;
+      EarthSizes = new List<ComboboxItemType>() ;
+      PlumbingSizes = new List<ComboboxItemType>() ;
+      PlumbingItemTypes = new List<ComboboxItemType>() ;
+    }
+    
     public class ComboboxItemType
     {
       public string Type { get ; }

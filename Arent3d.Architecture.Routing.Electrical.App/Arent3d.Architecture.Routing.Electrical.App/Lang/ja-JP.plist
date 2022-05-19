@@ -214,11 +214,20 @@
         <key>Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand</key>
         <string>エコモード切替</string>
 
+        <key>Electrical.App.Commands.Initialization.RegisterSymbolCommand</key>
+        <string>シンボル登録</string>
+
+        <key>Electrical.App.Commands.Initialization.SetupPrintCommand</key>
+        <string>尺度設定</string>
+
         <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
         <string>一重テキストボックス</string>
 
         <key>Electrical.App.Commands.Annotation.DoubleBorderCommand</key>
         <string>二重テキストボックス</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand</key>
+        <string>階毎の表作成</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -383,6 +392,9 @@
 
         <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.NormalMode</key>
         <string>ノーマルモード</string>
+
+        <key>Revit.Electrical.CreateSchedule.Message</key>
+        <string>集計表 "{0}" を作成しました</string>
         
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
