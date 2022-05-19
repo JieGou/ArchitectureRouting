@@ -73,16 +73,13 @@ namespace Arent3d.Architecture.Routing
       var elementFilters = new List<ElementFilter>() ;
 
       foreach ( var field in typeof( TFamilyTypeEnum ).GetFields() ) {
-        var nameOnRevit = field.GetCustomAttribute<NameOnRevitAttribute>() ;
-        if ( null == nameOnRevit ) continue ;
-
-        var familyCategory = field.GetCustomAttribute<FamilyCategoryAttribute>() ;
-        if ( null == familyCategory ) continue ;
+        var familyAttribute = field.GetCustomAttribute<FamilyAttribute>() ;
+        if ( null == familyAttribute ) continue ;
 
         var familyNameFilter = BuiltInParameter.SYMBOL_FAMILY_NAME_PARAM.CreateEqualsRule( RoutingFamilyName ).ToFilter() ;
         elementFilters.Add( familyNameFilter ) ;
 
-        categoryFilters.Add( new ElementId( familyCategory.Category ) ) ;
+        categoryFilters.Add( new ElementId( familyAttribute.Category ) ) ;
       }
 
 

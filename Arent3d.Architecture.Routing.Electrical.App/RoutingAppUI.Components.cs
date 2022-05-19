@@ -88,6 +88,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( ShowElectricSymbolsCommand ), OnlyInitialized = true )]
           private static class ShowElectricSymbolsCommandButton { }
+          
+          [Button( typeof( ShowDialogCreateTableByFloorCommand ), OnlyInitialized = true )]
+          private static class ShowDialogCreateTableByFloorCommandButton { }
 
           [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
           private static class ShowPickUpInformationCommandButton { }
@@ -106,6 +109,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
           [Button( typeof( DoubleBorderCommand ), OnlyInitialized = true )]
           private static class DoubleBorderCommandButton { }
+          
+          [Button( typeof( CircleAnnotationCommand ), OnlyInitialized = true )]
+          private static class CircleAnnotationCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]

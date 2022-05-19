@@ -127,7 +127,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       var element = document.GetElement( pickedObject?.ElementId ) ;
       if ( null == element ) return null ;
 
-      var connId = element.GetPropertyInt( RoutingFamilyLinkedParameter.RouteConnectorRelationIds ) ;
+      var connId = element.GetPropertyInt( RoutingFamilyLinkedParameter.RouteConnectorRelationId ) ;
 
       return eleConn.GetConnectors().FirstOrDefault( conn => conn.Id == connId ) ;
     }
