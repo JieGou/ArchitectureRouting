@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
       _pickedConnector = ConnectorPicker.GetInOutConnector( uiDocument, element, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
-
+       
       using ( var tr = new Transaction( element.Document ) ) {
         tr.Start( "Delete connector points and origin for pick" ) ;
 
@@ -58,43 +58,31 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
     
-    public CreateConnector( UIDocument uiDocument, Element element, AddInType addInType )
+    /// <summary>
+    /// Get connector for pressure guiding tube. Select connector depend on position between selected point and the first connector.
+    /// </summary>
+    /// <param name="element"></param>
+    /// <param name="firstConnector"></param>
+    /// <param name="addInType"></param>
+    public CreateConnector( Element element, Connector? firstConnector, AddInType addInType )
     {
-      var tempInstanceIds = new List<ElementId>() ;
-
-      var familyInstance = element as FamilyInstance ;
-      var connectorAndElementPairs = ( null != familyInstance ) ? GetConnectorAndConnectorElementPair( familyInstance, addInType ).EnumerateAll() : Array.Empty<(Connector, ConnectorElement)>() ;
-      int orgTransparency ;
-      using ( var tr = new Transaction( element.Document ) ) {
-        tr.Start( "Create connector points and origin for pick" ) ;
-
-        if ( null != familyInstance ) {
-          foreach ( var (conn, connElm) in connectorAndElementPairs ) {
-            if ( AddConnectorFamily( conn, connElm, familyInstance, null ) is { } instance ) {
-              tempInstanceIds.Add( instance.Id ) ;
-            }
-          } 
+      string connectorType = string.Empty ;
+      if ( null != firstConnector ) {
+        var xyzFirst = firstConnector.Origin ;
+        var xyzElement = ( element.Location as LocationPoint )!.Point ;
+        if ( xyzFirst.Y <= xyzElement.Y ) {
+          connectorType = "Bottom" ;
         }
-        
-        if ( ( familyInstance?.GetTotalTransform().Origin ?? ( element.Location as LocationPoint )?.Point ) is { } point ) {
-          var instanceOrg = element.Document.AddTerminatePoint( element.GetRouteName()!, point, XYZ.BasisX, null, element.GetLevelId() ) ;
-          tempInstanceIds.Add( instanceOrg.Id ) ;
+        else {
+          connectorType = "Top" ;
         }
-        
-        orgTransparency = SetElementTransparency( element, 50 ) ;
-        tr.Commit() ;
-      } 
-      
-      _pickedConnector = element.GetConnectors().FirstOrDefault( ) ;
-
-      using ( var tr = new Transaction( element.Document ) ) {
-        tr.Start( "Delete connector points and origin for pick" ) ;
-
-        SetElementTransparency( element, orgTransparency ) ;
-        element.Document.Delete( tempInstanceIds ) ;
-
-        tr.Commit() ;
       }
+      
+      if(!string.IsNullOrEmpty( connectorType ))
+        _pickedConnector = element.GetConnectors().FirstOrDefault(x=>x.Description.Contains( connectorType )) ;
+      else {
+        _pickedConnector = element.GetConnectors().FirstOrDefault() ;
+      } 
     }
 
     private static FamilyInstance? AddConnectorFamily( Connector conn, ConnectorElement connElm, FamilyInstance familyInstance, Connector? firstConnector )

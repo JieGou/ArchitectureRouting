@@ -32,9 +32,9 @@ namespace Arent3d.Architecture.Routing.AppBase
       bool IsCompatibleTo( Element element ) ;
     }
 
-    public static IPickResult CreatePressureConnector( UIDocument uiDocument, Element element, AddInType addInType )
+    public static IPickResult CreatePressureConnector( UIDocument uiDocument, Element element, Connector? firstConnector, AddInType addInType )
     {
-      var connector = new CreateConnector( uiDocument, element, addInType ) ;
+      var connector = new CreateConnector( element, firstConnector, addInType ) ;
       return new ConnectorPickResult( element, connector.GetPickedConnector()! ) ;
     }
     
