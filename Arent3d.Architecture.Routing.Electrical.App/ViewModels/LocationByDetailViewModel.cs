@@ -29,7 +29,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public ObservableCollection<string> TypeNames
     {
-      get { return _typeNames ??= new ObservableCollection<string>( ComponentHelper.RepeatNames.Keys ) ; }
+      get
+      {
+        if ( null != _typeNames ) return _typeNames ;
+        var typeNames = ComponentHelper.RepeatNames.Select(x => x.Key).ToList() ;
+        PatternElementHelper.PatternNames.Select(x => x.Value).ToList().ForEach(x => typeNames.Add(x));
+        _typeNames = new ObservableCollection<string>( typeNames ) ;
+        return _typeNames ;
+      }
       set
       {
         _typeNames = value ;
@@ -84,30 +91,63 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     private void ChangeLocationType()
     {
-      var familySymbol = _uiDocument.Document.GetAllTypes<FamilySymbol>( x => x.Name == ComponentHelper.RepeatNames[ TypeNameSelected ] ).FirstOrDefault() ;
-      if ( null == familySymbol )
-        return ;
-
       var elements = SelectElements() ;
       if ( ! elements.Any() )
         return ;
 
       var (lines, curves) = GetLocationConduits( elements ) ;
+      
+      if ( ComponentHelper.RepeatNames.Keys.Contains( TypeNameSelected ) ) {
+        var familySymbol = _uiDocument.Document.GetAllTypes<FamilySymbol>( x => x.Name == ComponentHelper.RepeatNames[ TypeNameSelected ] ).FirstOrDefault() ;
+        if ( null == familySymbol )
+          return ;
 
-      using var transaction = new Transaction( _uiDocument.Document ) ;
-      transaction.Start( "Change Location Type" ) ;
+        using var transaction = new Transaction( _uiDocument.Document ) ;
+        transaction.Start( "Change Location Type" ) ;
 
-      if(!familySymbol.IsActive)
-        familySymbol.Activate();
+        if(!familySymbol.IsActive)
+          familySymbol.Activate();
 
-      curves.ForEach( x => { _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x ) ; } ) ;
-      lines.ForEach( x => { _uiDocument.Document.Create.NewFamilyInstance( x, familySymbol, _uiDocument.ActiveView ) ; } ) ;
+        curves.ForEach( x => { _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x ) ; } ) ;
+        lines.ForEach( x => { _uiDocument.Document.Create.NewFamilyInstance( x, familySymbol, _uiDocument.ActiveView ) ; } ) ;
 
-      _uiDocument.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
-      _settingStorable.LocationType = TypeNameSelected ;
-      _settingStorable.Save();
+        _uiDocument.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+        _settingStorable.LocationType = TypeNameSelected ;
+        _settingStorable.Save();
 
-      transaction.Commit() ;
+        transaction.Commit() ;
+      }
+      else {
+        var (patternName, patternId) = PatternElementHelper.GetLinePatterns( _uiDocument.Document ).SingleOrDefault(x => x.PatternName == TypeNameSelected) ;
+        
+        using var transaction = new Transaction( _uiDocument.Document ) ;
+        transaction.Start( "Change Location Type" ) ;
+
+        Category? category = null ;
+        if(_uiDocument.Document.Settings.Categories.Contains(patternName))
+          category = _uiDocument.Document.Settings.Categories.get_Item( patternName ) ;
+        
+        if ( null == category ) {
+          var parent = Category.GetCategory( _uiDocument.Document, BuiltInCategory.OST_Lines ) ;
+          category = _uiDocument.Document.Settings.Categories.NewSubcategory( parent, TypeNameSelected ) ;
+          category.SetLinePatternId(patternId, GraphicsStyleType.Projection);
+        }
+
+        var graphicsStyle = category.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        
+        curves.ForEach( x => { _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x ) ; } ) ;
+        lines.ForEach( x =>
+        {
+          var detailCurve = _uiDocument.Document.Create.NewDetailCurve(_uiDocument.ActiveView, x) ;
+          detailCurve.LineStyle = graphicsStyle ;
+        } ) ;
+
+        _uiDocument.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+        _settingStorable.LocationType = TypeNameSelected ;
+        _settingStorable.Save();
+        
+        transaction.Commit() ;
+      }
     }
 
     private List<Element> SelectElements()
