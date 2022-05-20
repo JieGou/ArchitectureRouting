@@ -91,14 +91,14 @@ namespace Arent3d.Architecture.Routing
     [Family( "信号取合い先", BuiltInCategory.OST_ElectricalEquipment )]
     ToPowerEquipment,
     
-    [Family( "漏水帯（布）", BuiltInCategory.OST_DetailComponents )]
-    DetailComponent01,
+    [Family( "Circle Repeat", BuiltInCategory.OST_DetailComponents )]
+    CircleRepeat,
     
-    [Family( "漏水帯（発色）", BuiltInCategory.OST_DetailComponents )]
-    DetailComponent02,
+    [Family( "Square Repeat", BuiltInCategory.OST_DetailComponents )]
+    SquareRepeat,
     
-    [Family( "漏水帯（塩ビ）", BuiltInCategory.OST_DetailComponents )]
-    DetailComponent03
+    [Family( "Vertical Repeat", BuiltInCategory.OST_DetailComponents )]
+    VerticalRepeat
   }
 
   public enum MechanicalRoutingFamilyType
