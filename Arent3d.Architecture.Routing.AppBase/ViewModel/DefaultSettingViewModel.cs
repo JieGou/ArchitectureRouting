@@ -12,6 +12,7 @@ using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
+using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -77,8 +78,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
     public ICommand AddImportDwgMappingModelCommand => new RelayCommand( AddImportDwgMappingModel ) ;
-
-    public DefaultSettingViewModel( DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName )
+    public DefaultSettingViewModel( DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName)
     {
       SelectedEcoNormalModeIndex = defaultSettingStorable.EcoSettingData.IsEcoMode ? 1 : 0 ;
       SelectedGradeModeIndex = defaultSettingStorable.GradeSettingData.IsInGrade3Mode ? 0 : 1 ;
@@ -94,7 +94,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void GetImportDwgMappingModelsAndFileItems( DefaultSettingStorable defaultSettingStorable, string activeViewName )
     {
       foreach ( var item in defaultSettingStorable.ImportDwgMappingData ) {
-        var isDeleted = item.FloorName != activeViewName ;
+        var isDeleted = true ;
         var importDwgMappingModel = new ImportDwgMappingModel( item, isDeleted ) ;
         _oldImportDwgMappingModels.Add( importDwgMappingModel ) ;
         ImportDwgMappingModels.Add( importDwgMappingModel ) ;
@@ -129,6 +129,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     public void DeleteImportDwgMappingItem( ImportDwgMappingModel selectedItem )
     {
+      if ( ImportDwgMappingModels.Count() == 2 ) {
+        ImportDwgMappingModels.First( x => x.Id != selectedItem.Id ).IsDeleted = false ;
+      }
+      
       ImportDwgMappingModels.Remove( selectedItem ) ;
       _oldImportDwgMappingModels.Remove( selectedItem ) ;
       if ( ! DeletedFloorName.Contains( selectedItem.FloorName ) ) {
@@ -194,13 +198,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           importDwgMappingModel.FloorHeight = value ;
         }
         else {
-          importDwgMappingModel.FloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
+          if(importDwgMappingModel.IsEnabled)
+            importDwgMappingModel.FloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) + floorHeightDistance ;
         }
       }
 
+      
       var maxFloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) ;
       var pH1FFloor = ImportDwgMappingModels.FirstOrDefault( x => x.FloorName.Equals( "PH1F" ) ) ;
-      if ( pH1FFloor != null ) pH1FFloor.FloorHeight = maxFloorHeight + 6500 ;
+      if ( pH1FFloor is { IsEnabled: true }) pH1FFloor.FloorHeight = maxFloorHeight + 6500 ;
 
       ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ) ;
     }

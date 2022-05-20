@@ -8,6 +8,7 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using View = Autodesk.Revit.DB.View ;
@@ -22,12 +23,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
-        var document = commandData.Application.ActiveUIDocument.Document ;
+        var uiDocument = commandData.Application.ActiveUIDocument ;
+        var document = uiDocument.Document ;
         var activeViewName = document.ActiveView.Name ;
         // Get data of default setting from snoop DB
         DefaultSettingStorable defaultSettingStorable = document.GetDefaultSettingStorable() ;
         SetupPrintStorable setupPrintStorable = document.GetSetupPrintStorable() ;
         var scale = setupPrintStorable.Scale ;
+
+        if ( ! defaultSettingStorable.ImportDwgMappingData.Any() ) {
+          var listFloorsDefault = new ObservableCollection<ImportDwgMappingModel>(GetFloorsDefault(document)) ;
+          UpdateImportDwgMappingModels(defaultSettingStorable, listFloorsDefault, new List<string>()) ;
+        }
+        
         var viewModel = new DefaultSettingViewModel( defaultSettingStorable, scale, activeViewName ) ;
         var dialog = new DefaultSettingDialog( viewModel ) ;
         dialog.ShowDialog() ;
@@ -43,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
           SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, isInGrade3Mode, importDwgMappingModels, deletedFloorName ) ;
 
           if ( deletedFloorName.Any() ) {
-            RemoveViews( document, deletedFloorName ) ;
+            RemoveViews( document, deletedFloorName, uiDocument ) ;
           }
           
           LoadDwgAndSetScale( commandData, importDwgMappingModels, viewModel.FileItems ) ;
@@ -57,6 +65,25 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         CommandUtils.DebugAlertException( exception ) ;
         return Result.Cancelled ;
       }
+    }
+    
+    private List<ImportDwgMappingModel> GetFloorsDefault(Document doc)
+    {
+      List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( doc )
+        .OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>()
+        .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+      var importDwgMappingModels = new List<ImportDwgMappingModel>() ;
+      foreach ( var view in views ) {
+        var fileName = string.Empty ;
+        var floorName = view.Name ;
+        HeightSettingStorable settingStorables = doc.GetHeightSettingStorable() ;
+        var height = settingStorables.HeightSettingsData.Values.FirstOrDefault( x => x.LevelId.ToString() == view.GenLevel.Id.ToString() )?.Elevation ?? 0 ;
+        var scale = view.Scale ;
+
+        importDwgMappingModels.Add( new ImportDwgMappingModel( fileName, floorName, height, scale ) ) ;
+      }
+      
+      return importDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ;
     }
     
     private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, bool isInGrade3Mode, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
@@ -194,11 +221,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    private void RemoveViews( Document document, List<string> deletedFloorName )
+    private void RemoveViews( Document document, List<string> deletedFloorName, UIDocument uiDocument )
     {
       try {
         var deletedViewIds = document.GetAllElements<View>().Where( e => deletedFloorName.Contains( e.Name ) ).Select( e => e.Id ).ToList() ;
+        
+        List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( uiDocument.Document )
+          .OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>()
+          .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+        List<ViewPlan> viewsTemp = new List<ViewPlan>() ;
+        foreach ( var view in views ) {
+          bool isExist = false ;
+          foreach ( var deletedViewId in deletedViewIds ) {
+            if ( view.Id == deletedViewId ) {
+              isExist = true ;
+              break ;
+            }
+          }
+
+          if ( ! isExist ) {
+            viewsTemp.Add( view ) ;
+          }
+        }
+        
         if ( ! deletedViewIds.Any() ) return ;
+        if ( viewsTemp.Any() ) {
+          var pCurrView = uiDocument.ActiveView ;
+          uiDocument.RequestViewChange( pCurrView ) ;
+          uiDocument.ActiveView = viewsTemp[ 0 ] ;
+        }
+
         var removeViewsTrans = new Transaction( document, "Remove Views " ) ;
         removeViewsTrans.Start() ;
         document.Delete( deletedViewIds ) ;
