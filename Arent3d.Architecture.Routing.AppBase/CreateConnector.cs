@@ -58,7 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
 
-    public CreateConnector( Element element, XYZ? previousXyz, XYZ? nextXyz, AddInType addInType )
+    public CreateConnector( Element element, XYZ? previousXyz, XYZ? nextXyz )
     { 
       var xyzElement = ( element.Location as LocationPoint )!.Point ;
       var connectorType = string.Empty ;
