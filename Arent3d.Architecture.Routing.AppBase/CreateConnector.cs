@@ -65,7 +65,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       var distanceX = Math.Abs( prevPoint.X - nextPoint.X ) ;
       var distanceY = Math.Abs( prevPoint.Y - nextPoint.Y ) ;
       if ( distanceX == 0 ) {
-        connectorType = prevPoint.Y > nextPoint.Y ? "Front" : "Back" ;
+        connectorType = prevPoint.Y < nextPoint.Y ? "Front" : "Back" ;
       }
       else if ( distanceY == 0 ) {
         connectorType = prevPoint.X < nextPoint.X ? "Left" : "Right" ;
