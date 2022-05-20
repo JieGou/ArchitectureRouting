@@ -57,32 +57,21 @@ namespace Arent3d.Architecture.Routing.AppBase
         tr.Commit() ;
       }
     }
-    
-    /// <summary>
-    /// Get connector for pressure guiding tube. Select connector depend on position between selected point and the first connector.
-    /// </summary>
-    /// <param name="element"></param>
-    /// <param name="firstConnector"></param>
-    /// <param name="addInType"></param>
-    public CreateConnector( Element element, Connector? firstConnector, AddInType addInType )
-    {
-      string connectorType = string.Empty ;
-      if ( null != firstConnector ) {
-        var xyzFirst = firstConnector.Origin ;
-        var xyzElement = ( element.Location as LocationPoint )!.Point ;
-        if ( xyzFirst.Y <= xyzElement.Y ) {
-          connectorType = "Bottom" ;
-        }
-        else {
-          connectorType = "Top" ;
-        }
+
+    public CreateConnector( Element element, XYZ? previousXyz, XYZ? nextXyz, AddInType addInType )
+    { 
+      var xyzElement = ( element.Location as LocationPoint )!.Point ;
+      var connectorType = string.Empty ;
+      
+      if ( null != previousXyz ) {
+        connectorType = previousXyz.Y <= xyzElement.Y ? "Bottom" : "Top" ;
       }
       
-      if(!string.IsNullOrEmpty( connectorType ))
-        _pickedConnector = element.GetConnectors().FirstOrDefault(x=>x.Description.Contains( connectorType )) ;
-      else {
-        _pickedConnector = element.GetConnectors().FirstOrDefault() ;
-      } 
+      if ( null != nextXyz ) {
+        connectorType = nextXyz.X <= xyzElement.X ? "Left" : "Right" ;
+      }
+      
+      _pickedConnector = !string.IsNullOrEmpty( connectorType ) ? element.GetConnectors().FirstOrDefault(x=>x.Description.Contains( connectorType )) : element.GetConnectors().FirstOrDefault() ; 
     }
 
     private static FamilyInstance? AddConnectorFamily( Connector conn, ConnectorElement connElm, FamilyInstance familyInstance, Connector? firstConnector )

@@ -20,8 +20,11 @@ using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledEx
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class PressureGuidingTubeCommandBase : RoutingCommandBase<PressureGuidingTubeCommandBase.PressureGuidingTubePickState>
-  { 
-    public record PressureGuidingTubePickState( ConnectorPicker.IPickResult FromPickResult, List<ConnectorPicker.IPickResult> ListSelectedPoint, RouteProperties RouteProperties, MEPSystemClassificationInfo ClassificationInfo ) ;
+  {
+    private double _height = 0 ;
+    private Dictionary<XYZ, FamilyInstance> _dictTempElement = new Dictionary<XYZ, FamilyInstance>() ;
+
+    public record PressureGuidingTubePickState( ConnectorPicker.IPickResult FromPickResult, List<XYZ> ListSelectedPoint, RouteProperties RouteProperties, MEPSystemClassificationInfo ClassificationInfo ) ;
 
     protected abstract AddInType GetAddInType() ;
     private bool UseConnectorDiameter() => ( AddInType.Electrical != GetAddInType() ) ;
@@ -51,16 +54,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var routingExecutor = GetRoutingExecutor() ;
           var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
           var level = document.GetElementById<Level>( fromPickResult.GetLevelId() ) ;
-          var height = pressureSettingViewModel.PressureGuidingTube.Height.MillimetersToRevitUnits() ;
-          var selectedPointList = new List<ConnectorPicker.IPickResult>() ;
+          _height = pressureSettingViewModel.PressureGuidingTube.Height.MillimetersToRevitUnits() ;
+          //var selectedPointList = new List<ConnectorPicker.IPickResult>() ;
+          var selectedPointList = new List<XYZ>() ;
           var numberOfPoint = 0 ;
 
           using ( uiDocument.SetTempColor( fromPickResult ) ) {
             //Automatic: Select one point only
             if ( pressureSettingViewModel.SelectedCreationMode == CreationModeEnum.自動モード ) {
               var xyz = uiDocument.Selection.PickPoint( "Click the end point" ) ;
-              var element = GeneratePressureConnector( document, level!, new XYZ( xyz.X, xyz.Y, height ) ) ;
-              selectedPointList.Add( ConnectorPicker.CreatePressureConnector( uiDocument, element, fromPickResult.PickedConnector, AddInType.Electrical ) ) ;
+              selectedPointList.Add( xyz ) ;
+              var element = GeneratePressureConnector( document, level!, new XYZ( xyz.X, xyz.Y, _height ) ) ;
+              _dictTempElement.Add( xyz, element ) ;
+              //selectedPointList.Add( ConnectorPicker.CreatePressureConnector( uiDocument, element, fromPickResult.PickedConnector, AddInType.Electrical ) ) ;
             }
             //Manual: Select many point
             else {
@@ -68,8 +74,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 while ( true ) {
                   numberOfPoint++ ;
                   var xyz = uiDocument.Selection.PickPoint( "Click the end point number " + numberOfPoint ) ;
-                  var element = GeneratePressureConnector( document, level!, new XYZ( xyz.X, xyz.Y, height ) ) ;
-                  selectedPointList.Add( ConnectorPicker.CreatePressureConnector( uiDocument, element, fromPickResult.PickedConnector, AddInType.Electrical ) ) ;
+                  selectedPointList.Add( xyz ) ;
+                  var element = GeneratePressureConnector( document, level!, new XYZ( xyz.X, xyz.Y, _height ) ) ;
+                  _dictTempElement.Add( xyz, element ) ;
+                  //selectedPointList.Add( ConnectorPicker.CreatePressureConnector( uiDocument, element, fromPickResult.PickedConnector, AddInType.Electrical ) ) ;
                 }
               }
               catch ( OperationCanceledException ) {
@@ -77,8 +85,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               }
             }
           }
- 
-          var properties = InitRoutProperties( document, height, fromPickResult.PickedConnector?.GetDiameter() ) ;
+
+          var properties = InitRoutProperties( document, _height, fromPickResult.PickedConnector?.GetDiameter() ) ;
           MEPSystemClassificationInfo classificationInfo = MEPSystemClassificationInfo.Undefined ;
           if ( ( fromPickResult.PickedConnector ) is { } connector && MEPSystemClassificationInfo.From( connector ) is { } connectorClassificationInfo )
             classificationInfo = connectorClassificationInfo ;
@@ -102,7 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <returns></returns>
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PressureGuidingTubePickState state )
     {
-      var (fromPickResult, selectedPointList, routeProperty, classificationInfo) = state ;  
+      var (fromPickResult, selectedPointList, routeProperty, classificationInfo) = state ;
       return CreateNewSegmentList( document, fromPickResult, selectedPointList, routeProperty, classificationInfo ) ;
     }
 
@@ -115,7 +123,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="routeProperty"></param>
     /// <param name="classificationInfo"></param>
     /// <returns></returns>
-    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, List<ConnectorPicker.IPickResult> selectedPointList, RouteProperties routeProperty, MEPSystemClassificationInfo classificationInfo )
+    //private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, List<ConnectorPicker.IPickResult> selectedPointList, RouteProperties routeProperty, MEPSystemClassificationInfo classificationInfo )
+    private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, ConnectorPicker.IPickResult fromPickResult, List<XYZ> selectedPointList, RouteProperties routeProperty, MEPSystemClassificationInfo classificationInfo )
     {
       List<(string RouteName, RouteSegment Segment)> routeSegments = new List<(string RouteName, RouteSegment Segment)>() ;
       var preferredRadius = fromPickResult.PickedConnector?.Radius ;
@@ -124,6 +133,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return routeSegments ;
+    }
+
+    private (string RouteName, RouteSegment Segment) CreateNewSegment( Document document, ConnectorPicker.IPickResult fromPickResult, XYZ selectedPoint, RouteProperties routeProperty, MEPSystemClassificationInfo classificationInfo )
+    {
+      var element = _dictTempElement[ selectedPoint ] ;
+      var toPicked = ConnectorPicker.CreatePressureConnector( element, fromPickResult.PickedConnector?.Origin, null, GetAddInType() ) ;
+      return CreateNewSegment( document, fromPickResult, toPicked, routeProperty, classificationInfo ) ;
+    }
+
+    private (string RouteName, RouteSegment Segment) CreateNewSegment( Document document, XYZ fromPoint, XYZ toPoint, RouteProperties routeProperty, MEPSystemClassificationInfo classificationInfo )
+    {
+      var elementFrom = _dictTempElement[ fromPoint ] ;
+      var fromPick = ConnectorPicker.CreatePressureConnector( elementFrom, null, toPoint, GetAddInType() ) ;
+
+      var elementTo = _dictTempElement[ toPoint ] ;
+      var toPick = ConnectorPicker.CreatePressureConnector( elementTo, fromPoint, null, GetAddInType() ) ;
+
+      return CreateNewSegment( document, fromPick, toPick, routeProperty, classificationInfo ) ;
     }
 
     /// <summary>
@@ -170,8 +197,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var toFixedHeight = routeProperty.ToFixedHeight ;
       var avoidType = routeProperty.AvoidType ?? AvoidType.Whichever ;
       var shaftElementUniqueId = routeProperty.Shaft?.UniqueId ;
- 
-      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) )  ;
+
+      return ( name, new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeight, toFixedHeight, avoidType, shaftElementUniqueId ) ) ;
     }
 
     private static int GetRouteNameIndex( RouteCache routes, string? targetName )
@@ -204,9 +231,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
-      //Change conduit color to yellow RGB(255,255,0)
       using Transaction t = new Transaction( document, "Change conduit color" ) ;
       t.Start() ;
+
+      //Change conduit color to yellow RGB(255,255,0)
       OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
       ogs.SetProjectionLineColor( new Color( 255, 255, 0 ) ) ;
       foreach ( var route in executeResultValue ) {
@@ -217,6 +245,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           //conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
         }
       }
+
+      //Delete template element of selected points except the last one.
+      var listDel = _dictTempElement.Values.Select( x => x.Id ).ToList() ;
+      listDel.RemoveAt( listDel.Count - 1 ) ;
+      document.Delete( listDel ) ;
 
       t.Commit() ;
     }

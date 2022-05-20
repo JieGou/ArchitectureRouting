@@ -72,10 +72,7 @@ namespace Arent3d.Architecture.Routing
 
     [Family( "Cable Tray Elbow", BuiltInCategory.OST_CableTrayFitting )]
     CableTrayFitting,
-
-    [Family( "Symbol Direction Cylindrical Shaft", BuiltInCategory.OST_DetailComponents )]
-    SymbolDirectionCylindricalShaft,
-
+  
     [Family( "Arent Room", BuiltInCategory.OST_GenericModel )]
     Room,
 
