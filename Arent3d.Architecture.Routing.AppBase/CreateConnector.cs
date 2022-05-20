@@ -57,41 +57,31 @@ namespace Arent3d.Architecture.Routing.AppBase
         tr.Commit() ;
       }
     }
-    
-    public CreateConnector( Document document, FamilyInstance familyInstance, AddInType addInType )
+
+    public CreateConnector( FamilyInstance familyInstance, XYZ prevPoint )
     {
-      var tempInstanceIds = new List<ElementId>() ;
-
-      var connectorAndElementPairs = GetConnectorAndConnectorElementPair( familyInstance, addInType ).EnumerateAll() ;
-      int orgTransparency ;
-      using ( var tr = new Transaction( document ) ) {
-        tr.Start( "Create connector points and origin for pick" ) ;
-
-        foreach ( var (conn, connElm) in connectorAndElementPairs ) {
-          if ( AddConnectorFamily( conn, connElm, familyInstance, null ) is { } instance ) {
-            tempInstanceIds.Add( instance.Id ) ;
-          }
-        }
-
-        if ( ( familyInstance.GetTotalTransform().Origin ?? ( familyInstance.Location as LocationPoint )?.Point ) is { } point ) {
-          var instanceOrg = document.AddTerminatePoint( familyInstance.GetRouteName()!, point, XYZ.BasisX, null, familyInstance.GetLevelId() ) ;
-          tempInstanceIds.Add( instanceOrg.Id ) ;
-        }
-
-        orgTransparency = SetElementTransparency( familyInstance, 50 ) ;
-        tr.Commit() ;
-      } 
-
-      _pickedConnector = familyInstance.GetConnectors().FirstOrDefault( ) ;
-
-      using ( var tr = new Transaction( document ) ) {
-        tr.Start( "Delete connector points and origin for pick" ) ;
-
-        SetElementTransparency( familyInstance, orgTransparency ) ;
-        document.Delete( tempInstanceIds ) ;
-
-        tr.Commit() ;
+      string connectorType ;
+      var nextPoint = ( familyInstance.Location as LocationPoint )!.Point ;
+      var distanceX = Math.Abs( prevPoint.X - nextPoint.X ) ;
+      var distanceY = Math.Abs( prevPoint.Y - nextPoint.Y ) ;
+      if ( distanceX == 0 ) {
+        connectorType = prevPoint.Y > nextPoint.Y ? "Front" : "Back" ;
       }
+      else if ( distanceY == 0 ) {
+        connectorType = prevPoint.X < nextPoint.X ? "Left" : "Right" ;
+      }
+      else {
+        if ( distanceX > distanceY ) {
+          connectorType = prevPoint.X < nextPoint.X ? "Left" : "Right" ;
+        }
+        else {
+          connectorType = prevPoint.Y < nextPoint.Y ? "Front" : "Back" ;
+        }
+      }
+      
+      _pickedConnector = ! string.IsNullOrEmpty( connectorType ) 
+        ? familyInstance.GetConnectors().FirstOrDefault( x => x.Description.Contains( connectorType ) ) 
+        : familyInstance.GetConnectors().FirstOrDefault() ;
     }
 
     private static FamilyInstance? AddConnectorFamily( Connector conn, ConnectorElement connElm, FamilyInstance familyInstance, Connector? firstConnector )

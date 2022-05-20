@@ -68,9 +68,9 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
     
-    public static IPickResult GetConnectorPickResult( Document document, AddInType addInType, FamilyInstance element )
+    public static IPickResult GetConnectorPickResult( FamilyInstance element, XYZ prevPoint )
     {
-      var connector = new CreateConnector( document, element, addInType ) ;
+      var connector = new CreateConnector( element, prevPoint ) ;
       return new ConnectorPickResult( element, connector.GetPickedConnector()! ) ;
     }
 

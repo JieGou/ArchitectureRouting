@@ -4,6 +4,7 @@ using System.Linq ;
 using System.Text.RegularExpressions ;
 using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
@@ -19,8 +20,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class LeakRoutingCommandBase : RoutingCommandBase<LeakRoutingCommandBase.LeakState>
   {
-    private static readonly double MaxDistanceTolerance = ( 500.0 ).MillimetersToRevitUnits() ;
-    private const string JBoxConnectorType = "JBOX" ;
+    private static readonly double MaxDistanceTolerance = ( 300.0 ).MillimetersToRevitUnits() ;
+    private const string JBoxConnectorType = "JB" ;
     private const string ErrorMessageIsNotJBoxConnector = "Selected connector isn't JBOX connector." ;
     private const string ErrorMessageOneJBoxConnector = "One JBOX connector are selected." ;
     private bool UseConnectorDiameter() => ( AddInType.Electrical != GetAddInType() ) ;
@@ -38,6 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override OperationResult<LeakState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
+      UIApplication uiApp = commandData.Application;
       UIDocument uiDocument = commandData.Application.ActiveUIDocument ;
       Document document = uiDocument.Document ;
       try {
@@ -57,28 +59,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         XYZ fromPoint = fromPickResult.GetOrigin() ;
         var pickPoints = new List<XYZ>() ;
+        
         if ( sv.CreateMode == 0 ) {
+          XYZ? nextPoint = null ;
+          LineExternal lineExternal = new( uiApp ) ;
+          XYZ prevPoint = fromPickResult.GetOrigin() ;
           while ( true ) {
             try {
-              XYZ point = uiDocument.Selection.PickPoint( "Pick points then press escape to cause an exception ahem...exit selection" ) ;
-              pickPoints.Add( point ) ;
+              lineExternal.PickedPoints.Add( prevPoint ) ;
+              var tmp = prevPoint ;
+              while ( prevPoint != nextPoint ) {
+                lineExternal.DrawingServer.BasePoint = tmp ;
+                lineExternal.DrawExternal() ;
+                nextPoint = uiDocument.Selection.PickPoint( "Pick next point" ) ;
+                if ( prevPoint.DistanceTo( nextPoint ) > 0.1 )
+                  pickPoints.Add( nextPoint ) ;
+                else {
+                  break ;
+                }
+                tmp = nextPoint ;
+              }
             }
             catch {
               break ; // TODO: might not be correct. Was : Exit While
             }
+            finally {
+              lineExternal.Dispose() ;
+            }
           }
         }
         else {
-          // var selectedElement = uiDocument.Selection.PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "Select JBOX connector" ).Where( p => p is FamilyInstance ).ToList() ;
-          // var jBoxConnectors = selectedElement.Where( e => e.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) && ! string.IsNullOrEmpty( ceedCode ) && ceedCode!.Contains( JBoxConnectorType ) ).ToList() ;
-          // if ( jBoxConnectors.Count == 1 ) {
-          //   var fromFamilyInstance = ( jBoxConnectors.First() as FamilyInstance ) ! ;
-          //   fromPickResult = ConnectorPicker.GetConnectorPickResult( document, GetAddInType(), fromFamilyInstance ) ;
-          // }
-          // else {
-          //   MessageBox.Show( ErrorMessageOneJBoxConnector, "Message" ) ;
-          //   return OperationResult<LeakState>.Cancelled ;
-          // }
           var fromConnectorWidth = fromConnector.ParametersMap.get_Item( "W" ).AsDouble() * 1.5 ;
           XYZ secondPoint = uiDocument.Selection.PickPoint( "Pick points then press escape to cause an exception ahem...exit selection" ) ;
           var mpt = ( fromPoint + secondPoint ) * 0.5 ;
@@ -98,7 +108,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var prevYPoint = count > 1 ? pickPoints[ count - 2 ].Y : fromPoint.Y ;
         var toPick = CreateLeakEndPoint( document, level!, new XYZ( pickPoints[ count - 1 ].X, pickPoints[ count - 1 ].Y, height ), prevYPoint ) ;
 
-        var toPickResult = ConnectorPicker.GetConnectorPickResult( document, GetAddInType(), toPick ) ;
+        var toPickResult = ConnectorPicker.GetConnectorPickResult( toPick, pickPoints[count - 2] ) ;
 
         var property = CreateRouteProperties( document, fromPickResult, toPickResult, height ) ;
 
@@ -191,49 +201,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var distanceX = Math.Abs( fromPoint.X - toPoint.X ) ;
         var distanceY = Math.Abs( fromPoint.Y - toPoint.Y ) ;
         if ( distanceX == 0 ) {
+          if ( distanceY <= MaxDistanceTolerance ) continue ;
           direction = fromPoint.Y < toPoint.Y ? new Vector3d( 0, 1, 0 ) : new Vector3d( 0, -1, 0 ) ;
           toPosition = fromPoint.Y < toPoint.Y ? new XYZ( toPoint.X, toPoint.Y - MaxDistanceTolerance, height ) : new XYZ( toPoint.X, toPoint.Y + MaxDistanceTolerance, height ) ;
         }
         else if ( distanceY == 0 ) {
+          if ( distanceX <= MaxDistanceTolerance ) continue ;
           direction = fromPoint.X < toPoint.X ? new Vector3d( 1, 0, 0 ) : new Vector3d( -1, 0, 0 ) ;
           toPosition = fromPoint.X < toPoint.X ? new XYZ( toPoint.X - MaxDistanceTolerance, toPoint.Y, height ) : new XYZ( toPoint.X + MaxDistanceTolerance, toPoint.Y, height ) ;
         }
         else {
           if ( distanceX > distanceY ) {
+            if ( distanceX <= MaxDistanceTolerance ) continue ;
             direction = fromPoint.X < toPoint.X ? new Vector3d( 1, 0, 0 ) : new Vector3d( -1, 0, 0 ) ;
             toPosition = fromPoint.X < toPoint.X ? new XYZ( toPoint.X - MaxDistanceTolerance, toPoint.Y, height ) : new XYZ( toPoint.X + MaxDistanceTolerance, toPoint.Y, height ) ;
           }
           else {
+            if ( distanceY <= MaxDistanceTolerance ) continue ;
             direction = fromPoint.Y < toPoint.Y ? new Vector3d( 0, 1, 0 ) : new Vector3d( 0, -1, 0 ) ;
             toPosition = fromPoint.Y < toPoint.Y ? new XYZ( toPoint.X, toPoint.Y - MaxDistanceTolerance, height ) : new XYZ( toPoint.X, toPoint.Y + MaxDistanceTolerance, height ) ;
           }
-        }
-
-        var passPoint = document.AddPassPoint( routeName, toPosition, direction.normalized.ToXYZRaw(), radius, level.Id ) ;
-        passPoint.SetProperty( PassPointParameter.RelatedFromConnectorUniqueId, fromConnectorId ) ;
-        passPoint.SetProperty( PassPointParameter.RelatedConnectorUniqueId, toConnectorId ) ;
-        passPoints.Add( new PassPointEndPoint( passPoint ) ) ;
-        fromPoint = toPoint ;
-      }
-
-      return passPoints ;
-    }
-
-    private static List<PassPointEndPoint> InsertPassPointOfRectangleMode( Document document, IEndPoint fromEndPoint, List<XYZ> toPoints, string routeName, Level level, double radius, string fromConnectorId, string toConnectorId, double height )
-    {
-      var passPoints = new List<PassPointEndPoint>() ;
-      XYZ fromPoint = fromEndPoint.RoutingStartPosition ;
-      foreach ( var toPoint in toPoints ) {
-        XYZ toPosition ;
-        Vector3d direction ;
-        var distanceX = Math.Abs( fromPoint.X - toPoint.X ) ;
-        if ( distanceX == 0 ) {
-          direction = fromPoint.Y < toPoint.Y ? new Vector3d( 0, 1, 0 ) : new Vector3d( 0, -1, 0 ) ;
-          toPosition = fromPoint.Y < toPoint.Y ? new XYZ( toPoint.X, toPoint.Y - MaxDistanceTolerance, height ) : new XYZ( toPoint.X, toPoint.Y + MaxDistanceTolerance, height ) ;
-        }
-        else {
-          direction = fromPoint.X < toPoint.X ? new Vector3d( 1, 0, 0 ) : new Vector3d( -1, 0, 0 ) ;
-          toPosition = fromPoint.X < toPoint.X ? new XYZ( toPoint.X - MaxDistanceTolerance, toPoint.Y, height ) : new XYZ( toPoint.X + MaxDistanceTolerance, toPoint.Y, height ) ;
         }
 
         var passPoint = document.AddPassPoint( routeName, toPosition, direction.normalized.ToXYZRaw(), radius, level.Id ) ;
@@ -266,15 +253,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         if ( CreateSegmentDialogDefaultValuesWithConnector( document, connector, classificationInfo ) is not { } initValues ) return null ;
 
-        return CreateRouteProperties( document, initValues, fromLevelId, toLevelId, height ) ;
+        return CreateRouteProperties( document, initValues, height ) ;
       }
 
       return CreateRouteProperties( document, GetAddInType(), fromLevelId, toLevelId ) ;
     }
 
-    protected RouteProperties CreateRouteProperties( Document document, DialogInitValues initValues, ElementId fromLevelId, ElementId toLevelId, double height )
+    protected RouteProperties CreateRouteProperties( Document document, DialogInitValues initValues, double height )
     {
-      var routeProperty = new RouteProperties( document, initValues.SystemType, initValues.CurveType, initValues.Diameter, true, true, FixedHeight.CreateOrNull( FixedHeightType.Ceiling, height ), null, null, AvoidType.Whichever, null ) ;
+      var routeProperty = new RouteProperties( document, initValues.SystemType, initValues.CurveType, initValues.Diameter, false, true, FixedHeight.CreateOrNull( FixedHeightType.Ceiling, height ), null, null, AvoidType.Whichever, null ) ;
 
       return routeProperty ;
     }
@@ -298,14 +285,28 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private FamilyInstance CreateLeakEndPoint( Document document, Level level, XYZ position, double prevYPoint )
     {
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.ToJboxConnector ).FirstOrDefault() ?? throw new Exception() ;
-      using Transaction t = new Transaction( document, "Create to JBOX connector" ) ;
+      using Transaction t = new( document, "Create to JBOX connector" ) ;
       t.Start() ;
       var familyInstance = symbol.Instantiate( position, level, StructuralType.NonStructural ) ;
-      // var locationPoint = ( familyInstance.Location as LocationPoint )!.Point ;
-      // var angleRotate = prevYPoint > locationPoint.Y ? Math.PI / 2 : -Math.PI / 2 ;
-      // ElementTransformUtils.RotateElement( document, familyInstance.Id, Line.CreateBound( locationPoint, new XYZ( locationPoint.X, locationPoint.Y, locationPoint.Z + 1 ) ), angleRotate ) ;
       t.Commit() ;
       return familyInstance ;
+    }
+    
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    {
+      //Change conduit color to yellow RGB(255,255,0)
+      using Transaction t = new( document, "Change conduit color" ) ;
+      t.Start() ;
+      OverrideGraphicSettings ogs = new() ;
+      ogs.SetProjectionLineColor( new Color( 255, 215, 0 ) ) ;
+      foreach ( var route in executeResultValue ) {
+        var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
+        foreach ( var conduit in conduits ) {
+          document.ActiveView.SetElementOverrides( conduit.Id, ogs ) ;
+        }
+      }
+
+      t.Commit() ;
     }
   }
 }

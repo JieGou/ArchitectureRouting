@@ -113,7 +113,7 @@ namespace Arent3d.Architecture.Routing
     [FamilyCategory( BuiltInCategory.OST_ElectricalEquipment )]
     ToPowerEquipment,
     
-    [NameOnRevit( "Jbox Connector" )]
+    [NameOnRevit( "Jbox To Connector" )]
     [FamilyCategory( BuiltInCategory.OST_ElectricalFixtures )]
     ToJboxConnector
   }
