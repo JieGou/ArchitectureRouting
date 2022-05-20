@@ -382,7 +382,7 @@ namespace Arent3d.Architecture.Routing
       var instance = document.CreateFamilyInstance( routingFamilyType, position, StructuralType.NonStructural, true, document.GetElementById<Level>( conn.Owner.LevelId ) ) ;
       var id = conn.Id ;
 
-      instance.SetProperty( RoutingFamilyLinkedParameter.RouteConnectorRelationIds, id ) ;
+      instance.SetProperty( RoutingFamilyLinkedParameter.RouteConnectorRelationId, id ) ;
 
 
       var elevationAngle = Math.Atan2( direction.Z, Math.Sqrt( direction.X * direction.X + direction.Y * direction.Y ) ) ;
