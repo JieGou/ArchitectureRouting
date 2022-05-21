@@ -4,18 +4,23 @@ using System.Linq ;
 using System.Text.RegularExpressions ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.StorableCaches ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Revit.UI ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Electrical ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using MathLib ;
+using Line = Autodesk.Revit.DB.Line ;
 using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -23,7 +28,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public abstract class PressureGuidingTubeCommandBase : RoutingCommandBase<PressureGuidingTubeCommandBase.PressureGuidingTubePickState>
   {
     private double _height = 0 ;
-    private static readonly double MaxDistanceTolerance = ( 300.0 ).MillimetersToRevitUnits() ;
+    private string _anotationContent = string.Empty ;
+    private static readonly double MaxDistanceTolerance = ( 1.0 ).MillimetersToRevitUnits() ;
 
     public record PressureGuidingTubePickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, List<XYZ> ListSelectedPoint, RouteProperties RouteProperties, MEPSystemClassificationInfo ClassificationInfo ) ;
 
@@ -34,6 +40,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override OperationResult<PressureGuidingTubePickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
+      UIApplication uiApp = commandData.Application;
       UIDocument uiDocument = commandData.Application.ActiveUIDocument ;
       Document document = uiDocument.Document ;
 
@@ -56,32 +63,47 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
           var level = document.GetElementById<Level>( fromPickResult.GetLevelId() ) ;
           _height = fromPickResult.GetOrigin().Z - level!.Elevation + pressureSettingViewModel.PressureGuidingTube.Height.MillimetersToRevitUnits() ;
+          _anotationContent = pressureSettingViewModel.SelectedTubeType.GetFieldName() ;
           var selectedPointList = new List<XYZ>() ;
           var numberOfPoint = 0 ;
 
           using ( uiDocument.SetTempColor( fromPickResult ) ) {
+            LineExternal lineExternal = new( uiApp ) ;
+            XYZ prevPoint = fromPickResult.GetOrigin() ;
+            lineExternal.PickedPoints.Add( prevPoint ) ;
+            var tmp = prevPoint ;
             //Automatic: Select one point only
             if ( pressureSettingViewModel.SelectedCreationMode == CreationModeEnum.自動モード ) {
+              lineExternal.DrawingServer.BasePoint = tmp ;
+              lineExternal.DrawExternal() ;
               var xyz = uiDocument.Selection.PickPoint( "Click the end point" ) ;
-              selectedPointList.Add( new XYZ( xyz.X, xyz.Y, _height ) ) ; 
+              
+              selectedPointList.Add( new XYZ( xyz.X, xyz.Y, _height ) ) ;
+              lineExternal.Dispose();
             }
             //Manual: Select many point
             else {
               try {
                 while ( true ) {
                   numberOfPoint++ ;
-                  var xyz = uiDocument.Selection.PickPoint( "Click the end point number " + numberOfPoint + ". Press Esc to end command.") ;
-                  selectedPointList.Add( new XYZ( xyz.X, xyz.Y, _height ) ) ;  
+                  lineExternal.DrawingServer.BasePoint = tmp ;
+                  lineExternal.DrawExternal() ;
+                  var xyz = uiDocument.Selection.PickPoint( "Click the end point number " + numberOfPoint + ". Press Esc to end command." ) ;
+                  selectedPointList.Add( new XYZ( xyz.X, xyz.Y, _height ) ) ;
+                  tmp = xyz ;
                 }
               }
               catch ( OperationCanceledException ) {
                 //end select point 
               }
+              finally {
+                lineExternal.Dispose();
+              }
             }
           }
 
           numberOfPoint = selectedPointList.Count ;
-          var endElement = GeneratePressureConnector( document, level!, selectedPointList[numberOfPoint - 1] ) ;
+          var endElement = GeneratePressureConnector( document, level!, selectedPointList[ numberOfPoint - 1 ] ) ;
           var toPickResult = ConnectorPicker.CreatePressureConnector( endElement, numberOfPoint > 1 ? selectedPointList[ numberOfPoint - 2 ] : fromPickResult.GetOrigin(), null ) ;
           var properties = InitRoutProperties( document, level.Id ) ;
           var classificationInfo = MEPSystemClassificationInfo.Undefined ;
@@ -115,7 +137,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var toConnectorId = toPickResult.PickedElement.UniqueId ;
       return CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, selectedPointList, routeProperty, classificationInfo, fromConnectorId, toConnectorId ) ;
     }
-    
+
     /// <summary>
     /// Create segment of new route
     /// </summary>
@@ -139,7 +161,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var name = nameBase + "_" + nextIndex ;
       routes.FindOrCreate( name ) ;
 
-      var diameter = routeProperty.Diameter ?? (16.0).MillimetersToRevitUnits() ;
+      var diameter = routeProperty.Diameter ?? ( 16.0 ).MillimetersToRevitUnits() ;
       var isRoutingOnPipeSpace = routeProperty.IsRouteOnPipeSpace ?? false ;
       var fromFixedHeight = routeProperty.FromFixedHeight ;
       var toFixedHeight = routeProperty.ToFixedHeight ;
@@ -222,7 +244,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return passPoints ;
-    } 
+    }
 
     private static int GetRouteNameIndex( RouteCache routes, string? targetName )
     {
@@ -258,17 +280,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       t.Start() ;
 
       //Change conduit color to yellow RGB(255,255,0)
+      Element? conduitUseToAddAnnotation = null ;
       OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
       ogs.SetProjectionLineColor( new Color( 255, 255, 0 ) ) ;
       foreach ( var route in executeResultValue ) {
         var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
+        conduitUseToAddAnnotation = conduits.Count > 0 ? conduits.Count > 1 ? conduits[ 1 ] : conduits[ 0 ] : null ;
         foreach ( var conduit in conduits ) {
-          document.ActiveView.SetElementOverrides( conduit.Id, ogs ) ;
+          document.ActiveView.SetElementOverrides( conduit.Id, ogs ) ; 
           //conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem! ) ;
           //conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
         }
       }
-  
+
+      //Create annotation 
+      if ( conduitUseToAddAnnotation != null ) {
+        var data = document.GetSetupPrintStorable() ;
+        var defaultSymbolMagnification = data.Scale * data.Ratio ;
+        CreateNotation( document, conduitUseToAddAnnotation, _anotationContent, true, defaultSymbolMagnification ) ;
+      }
+
       t.Commit() ;
     }
 
@@ -283,8 +314,43 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, GetAddInType(), elementId, elementId ) ;
       var routeProperty = new RouteProperties( document, routeChoiceSpec ) ;
+
+      return routeProperty ;
+    }
+
+    private static void CreateNotation( Document doc, Element element, string notation, bool isDirectionX, double scale )
+    {
+      if ( doc.ActiveView is not ViewPlan viewPlan ) return ;
       
-      return routeProperty ; 
+      var curve = ( element.Location as LocationCurve )!.Curve ;
+      var point = new XYZ( 0.5 * ( curve.GetEndPoint( 0 ).X + curve.GetEndPoint( 1 ).X ), 0.5 * ( curve.GetEndPoint( 0 ).Y + curve.GetEndPoint( 1 ).Y ), curve.GetEndPoint( 0 ).Z ) ;
+      var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( doc ) ;
+      if ( null == textNoteType ) return ;
+       
+      const double multiple = 3 ;
+      var heightText = TextNoteHelper.TotalHeight.MillimetersToRevitUnits() ;
+      var vector = ( XYZ.BasisX * heightText * multiple + XYZ.BasisY * heightText * multiple + XYZ.BasisY * heightText ) * scale ;
+      var transform = Transform.CreateTranslation( vector ) ;
+      var textNote = TextNote.Create( doc, doc.ActiveView.Id, transform.OfPoint( point ), notation, textNoteType.Id ) ;
+
+      doc.Regenerate() ;
+
+      var underLineTextNote = NewRackCommandBase.CreateUnderLineText( textNote, viewPlan.GenLevel.Elevation ) ;
+      var nearestPoint = underLineTextNote.GetEndPoint( 0 ).DistanceTo( point ) > underLineTextNote.GetEndPoint( 1 ).DistanceTo( point ) ? underLineTextNote.GetEndPoint( 1 ) : underLineTextNote.GetEndPoint( 0 ) ;
+      var curves = GeometryHelper.GetCurvesAfterIntersection( viewPlan, new List<Curve> { Line.CreateBound( nearestPoint, new XYZ( point.X, point.Y, viewPlan.GenLevel.Elevation ) ) }, new List<Type> { typeof( CableTray ) } ) ;
+      curves.Add( underLineTextNote ) ;
+      
+      var detailCurves = NotationHelper.CreateDetailCurve( doc.ActiveView, curves ) ;
+      var curveClosestPoint = GeometryHelper.GetCurveClosestPoint( detailCurves, point ) ;
+      
+      (string? endLineUniqueId, int? endPoint) endLineLeader = ( curveClosestPoint.DetailCurve?.UniqueId, endPoint: curveClosestPoint.EndPoint ) ;
+      var ortherLineId = detailCurves.Select( x => x.UniqueId ).Where( x => x != endLineLeader.endLineUniqueId ).ToList() ;
+      
+      var rackNotationStorable = doc.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? doc.GetRackNotationStorable() ;
+      
+      var rackNotationModel = new RackNotationModel( element.UniqueId, textNote.UniqueId, element.UniqueId, string.Empty, isDirectionX, null, endLineLeader.endLineUniqueId, endLineLeader.endPoint, ortherLineId ) ;
+      rackNotationStorable.RackNotationModelData.Add( rackNotationModel ) ;
+      rackNotationStorable.Save() ;
     }
   }
 }
