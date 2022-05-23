@@ -258,7 +258,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<string> GetCeedSetCodeOfElement( Element element )
     {
       element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
-      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( '-' ).ToList() : new List<string>() ;
+      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':' ).ToList() : new List<string>() ;
     }
   
     private void GetToConnectorsOfConduit( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
@@ -341,13 +341,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers, Dictionary<string, string> dictMaterialCode  )
     {
-      var toConnector = GetToConnectorOfRoute( allConnectors, routeName ) ;
-      if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
+      var fromConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
+      if ( fromConnector == null || fromConnector.GroupId == ElementId.InvalidElementId ) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
-      if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
-        toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
-        var registrationOfBoardDataModel = _registrationOfBoardDataModels.FirstOrDefault( x => x.SignalDestination == ceedCodeOfToConnector ) ;
+      if ( ( (FamilyInstance) fromConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
+        fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfFromConnector ) ;
+        var registrationOfBoardDataModel = _registrationOfBoardDataModels.FirstOrDefault( x => x.AutoControlPanel == ceedCodeOfFromConnector ) ;
         if ( registrationOfBoardDataModel == null )
           return false ;
 
@@ -358,7 +358,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           dictMaterialCode.Add( registrationOfBoardDataModel.MaterialCode2.Substring( 2 ), registrationOfBoardDataModel.Kind2 ) ;
       }
       
-      pickUpConnectors.Add( toConnector ) ;
+      pickUpConnectors.Add( fromConnector ) ;
       if ( ! _pickUpNumbers.ContainsValue( routeName ) ) {
         _pickUpNumbers.Add( _pickUpNumber, routeName ) ;
         pickUpNumbers.Add( _pickUpNumber ) ;
@@ -433,6 +433,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
       foreach ( var conduit in conduitsOfRoute ) {
         var toEndPoint = conduit.GetNearestEndPoints( false ).ToList() ;
+        if ( ! toEndPoint.Any() ) continue ;
+        var toEndPointKey = toEndPoint.First().Key ;
+        var toElementId = toEndPointKey.GetElementUniqueId() ;
+        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        var toConnector = allConnectors.FirstOrDefault( c => c.UniqueId == toElementId ) ;
+        if ( toConnector == null || toConnector.IsTerminatePoint() || toConnector.IsPassPoint() ) continue ;
+        return toConnector ;
+      }
+
+      return null ;
+    }
+    
+    private Element? GetConnectorOfRoute( IReadOnlyCollection<Element> allConnectors, string routeName, bool isFrom )
+    {
+      var conduitsOfRoute = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == routeName ).ToList() ;
+      foreach ( var conduit in conduitsOfRoute ) {
+        var toEndPoint = conduit.GetNearestEndPoints( isFrom ).ToList() ;
         if ( ! toEndPoint.Any() ) continue ;
         var toEndPointKey = toEndPoint.First().Key ;
         var toElementId = toEndPointKey.GetElementUniqueId() ;

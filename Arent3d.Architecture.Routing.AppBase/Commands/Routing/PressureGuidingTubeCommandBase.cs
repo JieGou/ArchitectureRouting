@@ -163,7 +163,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( toPoints.Count > 1 ) {
         var height = toEndPoint.RoutingStartPosition.Z ;
         var toEndPointsWithoutLast = toPoints.Take( toPoints.Count() - 1 ).ToList() ;
-        var passPointEndPoints = InsertPassPointElement( document, fromEndPoint, toEndPointsWithoutLast, name, level, diameter / 2, fromConnectorId, toConnectorId, height ) ;
+        var passPointEndPoints = InsertPassPointElement( document, fromEndPoint, toEndPointsWithoutLast, name, level, diameter / 10, fromConnectorId, toConnectorId, height ) ;
         //var passPointEndPoints = GetPassPoint( document, fromEndPoint, toEndPointsWithoutLast, level, diameter / 2, height ) ;
         routeToEndPoints.AddRange( passPointEndPoints ) ;
         routeFromEndPoints.AddRange( routeToEndPoints ) ;
