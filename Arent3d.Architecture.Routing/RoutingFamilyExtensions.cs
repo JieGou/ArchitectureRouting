@@ -89,10 +89,7 @@ namespace Arent3d.Architecture.Routing
     ToPowerEquipment,
         
     [Family( "Pressure End Point", BuiltInCategory.OST_ElectricalFixtures )]
-    PressureConnector,
-    
-    [Family( "Pressure Temp Point", BuiltInCategory.OST_ElectricalFixtures )]
-    PressureTempConnector,
+    PressureConnector, 
   }
 
   public enum MechanicalRoutingFamilyType

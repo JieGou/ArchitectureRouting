@@ -64,7 +64,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       var connectorType = string.Empty ;
       
       if ( null != previousXyz ) {
-        if ( Math.Abs( previousXyz.Y - xyzElement.Y ) < tolerance.MillimetersToRevitUnits() ) //same Y
+        if ( Math.Abs( previousXyz.Y - xyzElement.Y ) < tolerance ) //same Y
           connectorType = previousXyz.X < xyzElement.X ? "Left" : "Right" ;
         else
           connectorType = previousXyz.Y < xyzElement.Y ? "Bottom" : "Top" ;

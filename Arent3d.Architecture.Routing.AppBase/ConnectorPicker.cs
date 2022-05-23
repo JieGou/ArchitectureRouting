@@ -34,7 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     public static IPickResult CreatePressureConnector( Element element, XYZ? previousPoint, XYZ? nextPoint)
     {
-      var connector = new CreateConnector( element, previousPoint, nextPoint, 10.0 ) ;
+      var connector = new CreateConnector( element, previousPoint, nextPoint, 1.0 ) ;
       return new ConnectorPickResult( element, connector.GetPickedConnector()! ) ;
     }
     
