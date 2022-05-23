@@ -7,7 +7,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
   [Transaction( TransactionMode.Manual )]
   [DisplayNameKey( "Electrical.App.Commands.Initialization.ExportDWGCommand", DefaultString = "Export DWG" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class ExportDWGCommand : ExportDWGCommandBase
+  public class ExportDwgCommand : ExportDwgCommandBase
   {
   }
 }

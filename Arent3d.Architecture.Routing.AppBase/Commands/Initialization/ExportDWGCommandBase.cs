@@ -15,7 +15,7 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
-  public class ExportDWGCommandBase : IExternalCommand
+  public class ExportDwgCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         return document.Transaction( "Electrical.App.Commands.Initialization.ExportDWGCommandBase".GetAppStringByKeyOrDefault( "Export DWG" ), _ =>
         {
           var viewModel = new LayerNameSettingViewModel( document ) ;
-          var dlgLayerNameSettingDialog= new LayerNameSettingDialog( viewModel ) ;
+          var dlgLayerNameSettingDialog = new LayerNameSettingDialog( viewModel ) ;
           dlgLayerNameSettingDialog.ShowDialog() ;
           if ( ! ( dlgLayerNameSettingDialog.DialogResult ?? false ) ) return Result.Cancelled ;
           return Result.Succeeded ;
