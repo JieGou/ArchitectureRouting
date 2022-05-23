@@ -86,7 +86,16 @@ namespace Arent3d.Architecture.Routing
     FromPowerEquipment,
 
     [Family( "信号取合い先", BuiltInCategory.OST_ElectricalEquipment )]
-    ToPowerEquipment
+    ToPowerEquipment,
+    
+    [Family( "LeakageZoneCloth", BuiltInCategory.OST_DetailComponents )]
+    CircleRepeat,
+    
+    [Family( "LeakageZoneColoring", BuiltInCategory.OST_DetailComponents )]
+    SquareRepeat,
+    
+    [Family( "LeakageZonePvc", BuiltInCategory.OST_DetailComponents )]
+    VerticalRepeat
   }
 
   public enum MechanicalRoutingFamilyType
