@@ -15,7 +15,7 @@ using Autodesk.Revit.UI.Selection ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 {
-  public class LocationByFilterViewModel : NotifyPropertyChanged
+  public class ChangeWireSymbolUsingFilterViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
     private readonly LocationTypeStorable _settingStorable ;
@@ -53,7 +53,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       get { return _filterCategories ??= FilterHelper.CreateCategorySet( _uiDocument.Document ).OfType<Category>().ToList() ; }
     }
 
-    public LocationByFilterViewModel( UIDocument uiDocument )
+    public ChangeWireSymbolUsingFilterViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
       _settingStorable = _uiDocument.Document.GetLocationTypeStorable() ;

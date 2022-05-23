@@ -20,10 +20,19 @@ using MoreLinq ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 {
-  public class LocationByDetailViewModel : NotifyPropertyChanged
+  public class ChangeWireSymbolUsingDetailItemViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
     private readonly LocationTypeStorable _settingStorable ;
+
+    private Dictionary<string, string>? _wireSymbolOptions ;
+
+    public Dictionary<string, string> WireSymbolOptions => _wireSymbolOptions ??= new Dictionary<string, string>
+    {
+      { "漏水帯（布）", "Circle Repeat" }, 
+      { "漏水帯（発色）", "Square Repeat" }, 
+      { "漏水帯（塩ビ）", "Vertical Repeat" }
+    } ;
 
     private ObservableCollection<string>? _typeNames ;
 
@@ -32,7 +41,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       get
       {
         if ( null != _typeNames ) return _typeNames ;
-        var typeNames = ComponentHelper.RepeatNames.Select(x => x.Key).ToList() ;
+        var typeNames = WireSymbolOptions.Select(x => x.Key).ToList() ;
         PatternElementHelper.PatternNames.Select(x => x.Value).ToList().ForEach(x => typeNames.Add(x));
         _typeNames = new ObservableCollection<string>( typeNames ) ;
         return _typeNames ;
@@ -65,7 +74,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         return 0.5 * ( connectors[ 0 ].Origin + connectors[ 1 ].Origin ) ;
       } ;
 
-    public LocationByDetailViewModel( UIDocument uiDocument )
+    public ChangeWireSymbolUsingDetailItemViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
       _settingStorable = _uiDocument.Document.GetLocationTypeStorable() ;
@@ -100,8 +109,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
       var (lines, curves) = GetLocationConduits( elements ) ;
       
-      if ( ComponentHelper.RepeatNames.Keys.Contains( TypeNameSelected ) ) {
-        var familySymbol = _uiDocument.Document.GetAllTypes<FamilySymbol>( x => x.Name == ComponentHelper.RepeatNames[ TypeNameSelected ] ).FirstOrDefault() ;
+      if ( WireSymbolOptions.Keys.Contains( TypeNameSelected ) ) {
+        var familySymbol = _uiDocument.Document.GetAllTypes<FamilySymbol>( x => x.Name == WireSymbolOptions[ TypeNameSelected ] ).FirstOrDefault() ;
         if ( null == familySymbol )
           return ;
 
@@ -114,11 +123,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         curves.ForEach( x => { _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x ) ; } ) ;
         lines.ForEach( x => { _uiDocument.Document.Create.NewFamilyInstance( x, familySymbol, _uiDocument.ActiveView ) ; } ) ;
 
-        _uiDocument.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
-        
-        _settingStorable.LocationType = TypeNameSelected ;
-        _settingStorable.Save();
-
         transaction.Commit() ;
       }
       else {
@@ -127,17 +131,17 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         using var transaction = new Transaction( _uiDocument.Document ) ;
         transaction.Start( "Change Location Type" ) ;
 
-        Category? category = null ;
-        if(_uiDocument.Document.Settings.Categories.Contains(patternName))
-          category = _uiDocument.Document.Settings.Categories.get_Item( patternName ) ;
-        
-        if ( null == category ) {
-          var parent = Category.GetCategory( _uiDocument.Document, BuiltInCategory.OST_Lines ) ;
-          category = _uiDocument.Document.Settings.Categories.NewSubcategory( parent, TypeNameSelected ) ;
-          category.SetLinePatternId(patternId, GraphicsStyleType.Projection);
+        var category = _uiDocument.Document.Settings.Categories.get_Item(BuiltInCategory.OST_Lines) ;
+        Category subCategory ;
+        if ( ! category.SubCategories.Contains( patternName ) ) {
+          subCategory = _uiDocument.Document.Settings.Categories.NewSubcategory( category, patternName ) ;
+          subCategory.SetLinePatternId(patternId, GraphicsStyleType.Projection);
         }
-
-        var graphicsStyle = category.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        else {
+          subCategory = category.SubCategories.get_Item( patternName ) ;
+        }
+        
+        var graphicsStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         
         curves.ForEach( x => { _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x ) ; } ) ;
         lines.ForEach( x =>
@@ -145,15 +149,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           var detailCurve = _uiDocument.Document.Create.NewDetailCurve(_uiDocument.ActiveView, x) ;
           detailCurve.LineStyle = graphicsStyle ;
         } ) ;
-
-        _uiDocument.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
-        
-        _settingStorable.LocationType = TypeNameSelected ;
-        _settingStorable.Save();
         
         transaction.Commit() ;
       }
 
+      using var trans = new Transaction( _uiDocument.Document ) ;
+      trans.Start( "Hidden Element" ) ;
+      _uiDocument.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+
+      var conduitCategory = _uiDocument.Document.Settings.Categories.get_Item( BuiltInCategory.OST_Conduit ) ;
+      if(conduitCategory?.SubCategories.get_Item("Drop") is {} subCat)
+        _uiDocument.ActiveView.SetCategoryHidden(subCat.Id, true);
+        
+      _settingStorable.LocationType = TypeNameSelected ;
+      _settingStorable.Save();
+      trans.Commit() ;
+      
       RefreshView() ;
 
       transactionGroup.Assimilate() ;
@@ -183,7 +194,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       var fittingVerticals = conduitFittings.Where( x => Math.Abs( x.GetTransform().OfVector( XYZ.BasisZ ).Z ) < GeometryUtil.Tolerance ).ToList() ;
 
       var lineConduits = curveConduits.OfType<Line>().ToList() ;
-      var lineVerticalFittings = GetLineVerticalFittings( _uiDocument.Document, fittingVerticals ) ;
+      var lineVerticalFittings = GetLineVerticalFittings( fittingVerticals ) ;
 
       lineConduits.AddRange( lineVerticalFittings ) ;
       var lines = ConnectLines( lineConduits ) ;
@@ -199,7 +210,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       return GetCurveFromElements( document, fittingHorizontals ) ;
     }
 
-    private List<Line> GetLineVerticalFittings( Document document, IEnumerable<FamilyInstance> fittingVerticals )
+    private List<Line> GetLineVerticalFittings( IEnumerable<FamilyInstance> fittingVerticals )
     {
       var comparer = new XyzComparer() ;
       var connectors = fittingVerticals.DistinctBy( x => ( (LocationPoint) x.Location ).Point, comparer ).Select( x => x.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ) ;

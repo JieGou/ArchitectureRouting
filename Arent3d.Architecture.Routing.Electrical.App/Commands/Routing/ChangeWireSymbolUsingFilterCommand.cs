@@ -11,11 +11,11 @@ using ImageType = Arent3d.Revit.UI.ImageType ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.LocationByDetailCommand", DefaultString = "Location\nBy Detail" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.ChangeWireSymbolUsingFilterCommand", DefaultString = "Location\nBy Filter" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
-  public class LocationByDetailCommand : IExternalCommand
+  public class ChangeWireSymbolUsingFilterCommand : IExternalCommand
   {
-    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elementSet )
+    public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
         var uiDocument = commandData.Application.ActiveUIDocument ;
@@ -24,11 +24,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
           message = "Only active in the view plan!" ;
           return Result.Cancelled ;
         }
-        
+
         var externalEventHandler = new ExternalEventHandler() ;
-        var viewModel = new LocationByDetailViewModel( uiDocument ) { ExternalEventHandler = externalEventHandler } ;
+        var viewModel = new ChangeWireSymbolUsingFilterViewModel( uiDocument ) { ExternalEventHandler = externalEventHandler } ;
         externalEventHandler.ExternalEvent = ExternalEvent.Create( viewModel.ExternalEventHandler ) ;
-        var view = new LocationByDetailView { DataContext = viewModel } ;
+        var view = new ChangeWireSymbolUsingFilterView { DataContext = viewModel } ;
         view.Show() ;
 
         return Result.Succeeded ;

@@ -2,9 +2,9 @@
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Forms
 {
-  public partial class LocationByDetailView : Window
+  public partial class ChangeWireSymbolUsingDetailItemView : Window
   {
-    public LocationByDetailView()
+    public ChangeWireSymbolUsingDetailItemView()
     {
       InitializeComponent() ;
     }
