@@ -95,6 +95,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if ( ! elements.Any() )
         return ;
 
+      using var transactionGroup = new TransactionGroup( _uiDocument.Document ) ;
+      transactionGroup.Start( "Change Type" ) ;
+
       var (lines, curves) = GetLocationConduits( elements ) ;
       
       if ( ComponentHelper.RepeatNames.Keys.Contains( TypeNameSelected ) ) {
@@ -112,6 +115,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         lines.ForEach( x => { _uiDocument.Document.Create.NewFamilyInstance( x, familySymbol, _uiDocument.ActiveView ) ; } ) ;
 
         _uiDocument.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+        
         _settingStorable.LocationType = TypeNameSelected ;
         _settingStorable.Save();
 
@@ -143,11 +147,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         } ) ;
 
         _uiDocument.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+        
         _settingStorable.LocationType = TypeNameSelected ;
         _settingStorable.Save();
         
         transaction.Commit() ;
       }
+
+      RefreshView() ;
+
+      transactionGroup.Assimilate() ;
     }
 
     private List<Element> SelectElements()
@@ -290,6 +299,22 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             break ;
         }
       }
+    }
+
+    private void RefreshView()
+    {
+      if ( _uiDocument.ActiveView.DetailLevel != ViewDetailLevel.Fine ) 
+        return ;
+      
+      using var transaction = new Transaction( _uiDocument.Document ) ;
+      
+      transaction.Start( "Detail Level Coarse" ) ;
+      _uiDocument.ActiveView.DetailLevel = ViewDetailLevel.Coarse ;
+      transaction.Commit() ;
+      
+      transaction.Start( "Detail Level Fine" ) ;
+      _uiDocument.ActiveView.DetailLevel = ViewDetailLevel.Fine ;
+      transaction.Commit() ;
     }
 
     #endregion
