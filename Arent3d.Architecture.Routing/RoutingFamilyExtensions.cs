@@ -87,7 +87,16 @@ namespace Arent3d.Architecture.Routing
 
     [Family( "信号取合い先", BuiltInCategory.OST_ElectricalEquipment )]
     ToPowerEquipment,
-
+    
+    [Family( "LeakageZoneCloth", BuiltInCategory.OST_DetailComponents )]
+    CircleRepeat,
+    
+    [Family( "LeakageZoneColoring", BuiltInCategory.OST_DetailComponents )]
+    SquareRepeat,
+    
+    [Family( "LeakageZonePvc", BuiltInCategory.OST_DetailComponents )]
+    VerticalRepeat,
+    
     [Family( "Jbox To Connector", BuiltInCategory.OST_ElectricalFixtures )]
     ToJboxConnector,
     
