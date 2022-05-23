@@ -91,7 +91,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         else {
           var isHasParameterWidth = fromConnector.HasParameter( "W" ) ;
           var fromConnectorWidth = ( isHasParameterWidth ? fromConnector.ParametersMap.get_Item( "W" ).AsDouble() : DefaultWidthJBoxConnector ) * 1.5 ;
-          XYZ secondPoint = uiDocument.Selection.PickPoint( "Pick points then press escape to cause an exception ahem...exit selection" ) ;
+          XYZ secondPoint = uiDocument.Selection.PickPoint( "Pick point" ) ;
           var mpt = ( fromPoint + secondPoint ) * 0.5 ;
           var currView = document.ActiveView ;
           var plane = Plane.CreateByNormalAndOrigin( currView.RightDirection, mpt ) ;
@@ -103,6 +103,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
         var count = pickPoints.Count() ;
+        if ( count < 1 ) return OperationResult<LeakState>.Cancelled ;
         var level = document.GetElementById<Level>( fromPickResult.GetLevelId() ) ;
         var height = fromPoint.Z - level!.Elevation + sv.RouteHeight.MillimetersToRevitUnits() ;
 
@@ -145,12 +146,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var fromConnectorId = fromPickResult.PickedElement.UniqueId ;
       var toConnectorId = toPickResult.PickedElement.UniqueId ;
 
-      var routeSegment = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, toPickPoints, routeMode, routeProperty, classificationInfo, fromConnectorId, toConnectorId ) ;
+      var routeSegment = CreateSegmentOfNewRoute( document, fromEndPoint, toEndPoint, toPickPoints, routeProperty, classificationInfo, fromConnectorId, toConnectorId ) ;
 
       return routeSegment ;
     }
 
-    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, List<XYZ> toPoints, int routeMode, RouteProperties routeProperty, MEPSystemClassificationInfo classificationInfo, string fromConnectorId, string toConnectorId )
+    private List<(string RouteName, RouteSegment Segment)> CreateSegmentOfNewRoute( Document document, IEndPoint fromEndPoint, IEndPoint toEndPoint, List<XYZ> toPoints, RouteProperties routeProperty, MEPSystemClassificationInfo classificationInfo, string fromConnectorId, string toConnectorId )
     {
       var systemType = routeProperty.SystemType ;
       var curveType = routeProperty.CurveType ;
@@ -177,7 +178,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var toEndPointsWithoutLast = toPoints.Take( toPoints.Count() - 1 ).ToList() ;
         var passPointEndPoints = InsertPassPointElement( document, fromEndPoint, toEndPointsWithoutLast, name, level, diameter / 2, fromConnectorId, toConnectorId, height ) ;
         routeToEndPoints.AddRange( passPointEndPoints ) ;
-        routeFromEndPoints.AddRange( routeToEndPoints ) ;
+        routeFromEndPoints.AddRange( passPointEndPoints ) ;
       }
 
       routeToEndPoints.Add( toEndPoint ) ;
@@ -294,15 +295,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
     {
-      //Change conduit color to yellow RGB(255,255,0)
       using Transaction t = new( document, "Change conduit color" ) ;
       t.Start() ;
       OverrideGraphicSettings ogs = new() ;
       ogs.SetProjectionLineColor( new Color( 255, 215, 0 ) ) ;
+      var arentFamilyType = document.GetFamilySymbols( ElectricalRoutingFamilyType.ArentConduitFittingType ).FirstOrDefault() ;
+
       foreach ( var route in executeResultValue ) {
         var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
         foreach ( var conduit in conduits ) {
+          //Change conduit color to yellow RGB(255,215,0)
           document.ActiveView.SetElementOverrides( conduit.Id, ogs ) ;
+          //Change conduit fitting bend radius = 1 mm
+          if ( conduit is not FamilyInstance conduitFitting || arentFamilyType == null ) continue ;
+          conduitFitting.Symbol = arentFamilyType ;
         }
       }
 

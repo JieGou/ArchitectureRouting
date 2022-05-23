@@ -89,7 +89,10 @@ namespace Arent3d.Architecture.Routing
     ToPowerEquipment,
 
     [Family( "Jbox To Connector", BuiltInCategory.OST_ElectricalFixtures )]
-    ToJboxConnector
+    ToJboxConnector,
+    
+    [Family( "M_電線管エルボ - 鉄鋼 - Arent", BuiltInCategory.OST_ConduitFitting )]
+    ArentConduitFittingType
   }
 
   public enum MechanicalRoutingFamilyType
