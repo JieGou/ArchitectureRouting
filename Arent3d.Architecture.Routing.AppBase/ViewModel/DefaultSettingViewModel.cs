@@ -13,6 +13,7 @@ using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.UI ;
+using MessageBox = System.Windows.MessageBox ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -129,10 +130,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     
     public void DeleteImportDwgMappingItem( ImportDwgMappingModel selectedItem )
     {
-      if ( ImportDwgMappingModels.Count() == 2 ) {
-        ImportDwgMappingModels.First( x => x.Id != selectedItem.Id ).IsDeleted = false ;
-      }
-      
       ImportDwgMappingModels.Remove( selectedItem ) ;
       _oldImportDwgMappingModels.Remove( selectedItem ) ;
       if ( ! DeletedFloorName.Contains( selectedItem.FloorName ) ) {

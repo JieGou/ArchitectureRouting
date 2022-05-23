@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.Linq ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -19,6 +20,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     private const string SetDefaultEcoModeTransactionName = "Electrical.App.Commands.Initialization.SetDefaultModeCommand" ;
     private const string Grade3 = "グレード3" ;
+    private const string ArentDummyViewName = "Arent Dummy" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -31,11 +33,27 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         SetupPrintStorable setupPrintStorable = document.GetSetupPrintStorable() ;
         var scale = setupPrintStorable.Scale ;
 
-        if ( ! defaultSettingStorable.ImportDwgMappingData.Any() ) {
-          var listFloorsDefault = new ObservableCollection<ImportDwgMappingModel>(GetFloorsDefault(document)) ;
-          UpdateImportDwgMappingModels(defaultSettingStorable, listFloorsDefault, new List<string>()) ;
-        }
+        var listFloorsDefault = new ObservableCollection<ImportDwgMappingModel>(GetFloorsDefault(document)) ;
         
+        if( defaultSettingStorable.ImportDwgMappingData.Any())
+          try {
+            Transaction transaction = new( document, "Remove" ) ;
+            transaction.Start() ;
+            foreach ( var floorPlan in defaultSettingStorable.ImportDwgMappingData.ToList() ) {
+              var existFloorPlan = listFloorsDefault.FirstOrDefault( x => x.FloorName == floorPlan.FloorName ) ;
+              if ( existFloorPlan == null ) {
+                defaultSettingStorable.ImportDwgMappingData.Remove( floorPlan ) ;
+              }
+            }
+            defaultSettingStorable.Save() ;
+            transaction.Commit() ;
+          }
+          catch ( Exception exception ) {
+            CommandUtils.DebugAlertException( exception ) ;
+          }
+        else 
+          UpdateImportDwgMappingModels(defaultSettingStorable, listFloorsDefault, new List<string>()) ;
+
         var viewModel = new DefaultSettingViewModel( defaultSettingStorable, scale, activeViewName ) ;
         var dialog = new DefaultSettingDialog( viewModel ) ;
         dialog.ShowDialog() ;
@@ -215,6 +233,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         create3DTrans.Commit() ;
 
         #endregion
+        
+        #region Remove view Arent dummy
+        var removeArentDummyView = new Transaction( doc ) ;
+        removeArentDummyView.SetName( "Import" ) ;
+        removeArentDummyView.Start() ;
+        List<ViewPlan> viewPlans = new List<ViewPlan>( new FilteredElementCollector( doc )
+          .OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>()
+          .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+
+        if ( viewPlans.Count( x => x.Name != ArentDummyViewName ) > 1 ) {
+          var viewIdArentDummyView = viewPlans.Where( x => x.Name == ArentDummyViewName ).Select( p=>p.Id ).ToList() ;
+          doc.Delete( viewIdArentDummyView ) ;
+        }
+        removeArentDummyView.Commit() ;
+        #endregion
       }
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
@@ -224,33 +257,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void RemoveViews( Document document, List<string> deletedFloorName, UIDocument uiDocument )
     {
       try {
-        var deletedViewIds = document.GetAllElements<View>().Where( e => deletedFloorName.Contains( e.Name ) ).Select( e => e.Id ).ToList() ;
-        
-        List<ViewPlan> views = new List<ViewPlan>( new FilteredElementCollector( uiDocument.Document )
-          .OfClass( typeof( ViewPlan ) ).Cast<ViewPlan>()
-          .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
-        List<ViewPlan> viewsTemp = new List<ViewPlan>() ;
-        foreach ( var view in views ) {
-          bool isExist = false ;
-          foreach ( var deletedViewId in deletedViewIds ) {
-            if ( view.Id == deletedViewId ) {
-              isExist = true ;
-              break ;
+        var deletedViewIds = document.GetAllElements<View>()
+          .Where( e => deletedFloorName.Contains( e.Name ) ).Select( e => e.Id ).ToList() ;
+        List<ViewPlan> views = new List<ViewPlan>(
+          new FilteredElementCollector( uiDocument.Document ).OfClass( typeof( ViewPlan ) )
+            .Cast<ViewPlan>()
+            .Where<ViewPlan>( v => v.CanBePrinted && ViewType.FloorPlan == v.ViewType ) ) ;
+        if (views.Count() == deletedViewIds.Count()) {
+          ArentViewDummy( uiDocument ) ;
+        }
+        else {
+          List<ViewPlan> viewsTemp = new List<ViewPlan>() ;
+          foreach ( var view in views ) {
+            bool isExist = false ;
+            foreach ( var deletedViewId in deletedViewIds ) {
+              if ( view.Id == deletedViewId ) {
+                isExist = true ;
+                break ;
+              }
+            }
+
+            if ( ! isExist ) {
+              viewsTemp.Add( view ) ;
             }
           }
 
-          if ( ! isExist ) {
-            viewsTemp.Add( view ) ;
+          if ( ! deletedViewIds.Any() ) return ;
+          if ( viewsTemp.Any() ) {
+            var pCurrView = uiDocument.ActiveView ;
+            uiDocument.RequestViewChange( pCurrView ) ;
+            uiDocument.ActiveView = viewsTemp[ 0 ] ;
           }
         }
-        
-        if ( ! deletedViewIds.Any() ) return ;
-        if ( viewsTemp.Any() ) {
-          var pCurrView = uiDocument.ActiveView ;
-          uiDocument.RequestViewChange( pCurrView ) ;
-          uiDocument.ActiveView = viewsTemp[ 0 ] ;
-        }
-
         var removeViewsTrans = new Transaction( document, "Remove Views " ) ;
         removeViewsTrans.Start() ;
         document.Delete( deletedViewIds ) ;
@@ -259,6 +297,46 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       catch ( Exception exception ) {
         CommandUtils.DebugAlertException( exception ) ;
       }
+    }
+
+    private void ArentViewDummy( UIDocument uiDocument )
+    {
+      var doc = uiDocument.Document ;
+      var importTrans = new Transaction( doc ) ;
+      importTrans.SetName( "Import" ) ;
+      importTrans.Start() ;
+      const double floorHeight = 0 ;
+      const string floorName = ArentDummyViewName ;
+      const int scale = 100 ;
+      var importOptions = new DWGImportOptions
+      {
+        ColorMode = ImportColorMode.Preserved,
+        CustomScale = 0.0,
+        Unit = ImportUnit.Default,
+        OrientToView = true,
+        Placement = ImportPlacement.Origin,
+        ThisViewOnly = false,
+        VisibleLayersOnly = false
+      } ;
+      var viewFamily = new FilteredElementCollector( doc ).OfClass( typeof( ViewFamilyType ) ).Cast<ViewFamilyType>().First( x => x.ViewFamily == ViewFamily.FloorPlan ) ;
+     // var levelName = "Level " + floorName ;
+      
+      var level = Level.Create( doc, floorHeight) ;
+     // level.Name = levelName ;
+      
+      var viewPlan = ViewPlan.Create( doc, viewFamily.Id, level.Id ) ;
+      viewPlan.Name = floorName ;
+
+      viewPlan.Scale = scale ;
+      if ( null != viewPlan.ViewTemplateId && doc.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != scale) {
+        viewTemplate.Scale = scale;
+      }
+      level.SetProperty( BuiltInParameter.LEVEL_ELEV, floorHeight.MillimetersToRevitUnits() ) ;
+      importTrans.Commit() ;
+      
+      var pCurrView = uiDocument.ActiveView ;
+      uiDocument.RequestViewChange( pCurrView ) ;
+      uiDocument.ActiveView = viewPlan ;
     }
   }
 }
