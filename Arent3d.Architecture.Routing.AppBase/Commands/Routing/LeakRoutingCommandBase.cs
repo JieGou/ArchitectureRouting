@@ -14,16 +14,18 @@ using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using MathLib ;
-using Line = Autodesk.Revit.DB.Line ;
+using OperationCanceledException = Autodesk.Revit.Exceptions.OperationCanceledException ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public abstract class LeakRoutingCommandBase : RoutingCommandBase<LeakRoutingCommandBase.LeakState>
   {
     private static readonly double MaxDistanceTolerance = ( 300.0 ).MillimetersToRevitUnits() ;
+    private static readonly double DefaultWidthJBoxConnector = ( 200.0 ).MillimetersToRevitUnits() ;
+    private const double MinDistancePoints = 0.1 ;
     private const string JBoxConnectorType = "JB" ;
     private const string ErrorMessageIsNotJBoxConnector = "Selected connector isn't JBOX connector." ;
-    private const string ErrorMessageOneJBoxConnector = "One JBOX connector are selected." ;
+
     private bool UseConnectorDiameter() => ( AddInType.Electrical != GetAddInType() ) ;
 
     public record LeakState( ConnectorPicker.IPickResult fromConnectorResult, ConnectorPicker.IPickResult toConnectorResult, List<XYZ> PickPoints, double height, int routeMode, RouteProperties RouteProperty, MEPSystemClassificationInfo ClassificationInfo ) ;
@@ -61,35 +63,34 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var pickPoints = new List<XYZ>() ;
         
         if ( sv.CreateMode == 0 ) {
-          XYZ? nextPoint = null ;
           LineExternal lineExternal = new( uiApp ) ;
           XYZ prevPoint = fromPickResult.GetOrigin() ;
-          while ( true ) {
-            try {
-              lineExternal.PickedPoints.Add( prevPoint ) ;
-              var tmp = prevPoint ;
-              while ( prevPoint != nextPoint ) {
-                lineExternal.DrawingServer.BasePoint = tmp ;
-                lineExternal.DrawExternal() ;
-                nextPoint = uiDocument.Selection.PickPoint( "Pick next point" ) ;
-                if ( prevPoint.DistanceTo( nextPoint ) > 0.1 )
-                  pickPoints.Add( nextPoint ) ;
-                else {
-                  break ;
-                }
-                tmp = nextPoint ;
+          try {
+            lineExternal.PickedPoints.Add( prevPoint ) ;
+            while ( true ) {
+              lineExternal.DrawingServer.BasePoint = prevPoint ;
+              lineExternal.DrawExternal() ;
+              var nextPoint = uiDocument.Selection.PickPoint( "Pick next point" ) ;
+              if ( prevPoint.DistanceTo( nextPoint ) > MinDistancePoints )
+                pickPoints.Add( nextPoint ) ;
+              else {
+                // when prevPoint = nextPoint, to exits from the while loop
+                break ;
               }
+
+              prevPoint = nextPoint ;
             }
-            catch {
-              break ; // TODO: might not be correct. Was : Exit While
-            }
-            finally {
-              lineExternal.Dispose() ;
-            }
+          }
+          catch ( OperationCanceledException ) {
+            // when the user hits ESC, to exits from the while loop
+          }
+          finally {
+            lineExternal.Dispose() ;
           }
         }
         else {
-          var fromConnectorWidth = fromConnector.ParametersMap.get_Item( "W" ).AsDouble() * 1.5 ;
+          var isHasParameterWidth = fromConnector.HasParameter( "W" ) ;
+          var fromConnectorWidth = ( isHasParameterWidth ? fromConnector.ParametersMap.get_Item( "W" ).AsDouble() : DefaultWidthJBoxConnector ) * 1.5 ;
           XYZ secondPoint = uiDocument.Selection.PickPoint( "Pick points then press escape to cause an exception ahem...exit selection" ) ;
           var mpt = ( fromPoint + secondPoint ) * 0.5 ;
           var currView = document.ActiveView ;
@@ -105,10 +106,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var level = document.GetElementById<Level>( fromPickResult.GetLevelId() ) ;
         var height = fromPoint.Z - level!.Elevation + sv.RouteHeight.MillimetersToRevitUnits() ;
 
-        var prevYPoint = count > 1 ? pickPoints[ count - 2 ].Y : fromPoint.Y ;
-        var toPick = CreateLeakEndPoint( document, level!, new XYZ( pickPoints[ count - 1 ].X, pickPoints[ count - 1 ].Y, height ), prevYPoint ) ;
+        var prevToPoint = count > 1 ? pickPoints[ count - 2 ] : fromPoint ;
+        var toPick = CreateLeakEndPoint( document, level!, new XYZ( pickPoints[ count - 1 ].X, pickPoints[ count - 1 ].Y, height ) ) ;
 
-        var toPickResult = ConnectorPicker.GetConnectorPickResult( toPick, pickPoints[count - 2] ) ;
+        var toPickResult = ConnectorPicker.GetConnectorPickResult( toPick, prevToPoint ) ;
 
         var property = CreateRouteProperties( document, fromPickResult, toPickResult, height ) ;
 
@@ -122,7 +123,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return OperationResult<LeakState>.Cancelled ;
       }
     }
-
 
     private MEPSystemClassificationInfo? GetMEPSystemClassificationInfo( ConnectorPicker.IPickResult fromPickResult, MEPSystemType? systemType )
     {
@@ -282,7 +282,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return document.GuessLevel( pickResult.GetOrigin() ).Id ;
     }
 
-    private FamilyInstance CreateLeakEndPoint( Document document, Level level, XYZ position, double prevYPoint )
+    private FamilyInstance CreateLeakEndPoint( Document document, Level level, XYZ position )
     {
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.ToJboxConnector ).FirstOrDefault() ?? throw new Exception() ;
       using Transaction t = new( document, "Create to JBOX connector" ) ;
