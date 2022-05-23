@@ -88,13 +88,13 @@ namespace Arent3d.Architecture.Routing
     [Family( "信号取合い先", BuiltInCategory.OST_ElectricalEquipment )]
     ToPowerEquipment,
     
-    [Family( "Circle Repeat", BuiltInCategory.OST_DetailComponents )]
+    [Family( "LeakageZoneCloth", BuiltInCategory.OST_DetailComponents )]
     CircleRepeat,
     
-    [Family( "Square Repeat", BuiltInCategory.OST_DetailComponents )]
+    [Family( "LeakageZoneColoring", BuiltInCategory.OST_DetailComponents )]
     SquareRepeat,
     
-    [Family( "Vertical Repeat", BuiltInCategory.OST_DetailComponents )]
+    [Family( "LeakageZonePvc", BuiltInCategory.OST_DetailComponents )]
     VerticalRepeat
   }
 
