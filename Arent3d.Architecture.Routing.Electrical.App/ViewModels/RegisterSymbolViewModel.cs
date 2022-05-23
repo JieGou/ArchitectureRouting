@@ -35,8 +35,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private readonly bool _isExistBrowseFolderPath ;
     private readonly bool _isExistFolderSelectedPath ;
 
-    private const string ElectricalFixturePrefix = "Arent_Electrical-Fixture_" ;
-    private const string GenericAnnotationPrefix = "Arent_Generic-Annotation_" ;
+    private const string ElectricalFixturePrefix = "Arent_Symbol-CAD_" ;
+    private const string ScaleParameterName = "Scale" ;
 
     public const string DwgExtension = ".dwg" ;
     public const string PngExtension = ".png" ;
@@ -364,82 +364,77 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     private FamilySymbol? RegisterConnector(Document document, PreviewModel previewModel, bool isOverride)
     {
-      var electricalEquipmentfamilySymbol = document.GetAllTypes<FamilySymbol>( x => x.Family.Name == $"{ElectricalFixturePrefix}{Path.GetFileNameWithoutExtension(previewModel.FileName)}" ).FirstOrDefault() ;
-      if ( null != electricalEquipmentfamilySymbol && ! isOverride )
-        return electricalEquipmentfamilySymbol ;
+      var electricalFixtureFamilySymbol = document.GetAllTypes<FamilySymbol>( x => x.Family.Name == $"{ElectricalFixturePrefix}{Path.GetFileNameWithoutExtension(previewModel.FileName)}" ).FirstOrDefault() ;
+      if ( null != electricalFixtureFamilySymbol && ! isOverride )
+        return electricalFixtureFamilySymbol ;
 
       var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault( x => x.GetName().Name == "Arent3d.Architecture.Routing" ) ;
       if ( null == assembly )
         return null ;
       
-      var annotationTemplateFamilyPath = GetFamilyPath( assembly, "Metric Generic Annotation.rft" ) ;
-      if ( string.IsNullOrEmpty( annotationTemplateFamilyPath ) )
+      var electricalFixtureTemplateFamilyPath = GetFamilyPath( assembly, "Metric Electrical Fixture.rft" ) ;
+      if ( string.IsNullOrEmpty( electricalFixtureTemplateFamilyPath ) )
         return null ;
       
-      var annotationDocument = document.Application.NewFamilyDocument( annotationTemplateFamilyPath ) ;
-      File.Delete(annotationTemplateFamilyPath);
+      var electricalFixtureDocument = document.Application.NewFamilyDocument( electricalFixtureTemplateFamilyPath ) ;
+      File.Delete(electricalFixtureTemplateFamilyPath);
  
       var option = new DWGImportOptions { Placement = ImportPlacement.Origin, ThisViewOnly = true, ReferencePoint = XYZ.Zero, Unit = ImportUnit.Default } ;
-      var viewSheet = annotationDocument.GetAllInstances<ViewSheet>().FirstOrDefault() ;
-      if ( null == viewSheet )
-        return null ;
-      using var annotationTransaction = new Transaction( annotationDocument ) ;
-      
-      annotationTransaction.Start( "Import CAD" ) ;
-      annotationDocument.Delete( annotationDocument.GetAllInstances<TextNote>().Select( x => x.Id ).ToList() ) ;
-      annotationDocument.Import( previewModel.Path, option, viewSheet, out _ ) ;
-      annotationTransaction.Commit() ;
-
-      var annotationFamilyPath = Path.Combine( Path.GetTempPath(), $"{GenericAnnotationPrefix}{Path.GetFileNameWithoutExtension(previewModel.FileName)}.rfa" ) ;
-      annotationDocument.SaveAs( annotationFamilyPath, new SaveAsOptions { MaximumBackups = 1, OverwriteExistingFile = true } ) ;
-      annotationDocument.Close( true ) ;
-
-      var electricalTemplateFamilyPath = GetFamilyPath( assembly, "Metric Electrical Fixture.rft" ) ;
-      if ( string.IsNullOrEmpty( electricalTemplateFamilyPath ) )
+      var viewPlan = electricalFixtureDocument.GetAllElements<ViewPlan>().FirstOrDefault(x => x.Name == "Ref. Level") ;
+      if ( null == viewPlan )
         return null ;
       
-      var electricalDocument = document.Application.NewFamilyDocument( electricalTemplateFamilyPath ) ;
-      File.Delete(electricalTemplateFamilyPath);
+      using var electricalFixtureTransaction = new Transaction( electricalFixtureDocument ) ;
       
-      var viewPlan = electricalDocument.GetAllElements<ViewPlan>().FirstOrDefault(x => x.Name == "Ref. Level") ;
-      using var electricalTransaction = new Transaction( electricalDocument ) ;
-
-      electricalTransaction.Start( "Load Family" ) ;
-      viewPlan!.Scale = 1 ;
-      electricalDocument.LoadFamily( annotationFamilyPath, new FamilyLoadOptions(), out var annotationFamily ) ;
-      File.Delete(annotationFamilyPath);
-      var annotationFamilySymbol = new FilteredElementCollector( electricalDocument ).WherePasses( new FamilySymbolFilter( annotationFamily.Id ) ).OfType<FamilySymbol>().FirstOrDefault() ;
-      if ( ! annotationFamilySymbol!.IsActive )
-        annotationFamilySymbol.Activate() ;
-      electricalDocument.FamilyCreate.NewFamilyInstance(XYZ.Zero, annotationFamilySymbol, viewPlan);
-      electricalTransaction.Commit() ;
-
-      electricalTransaction.Start( "Add Parameter" ) ;
+      electricalFixtureTransaction.Start( "Import CAD" ) ;
+      electricalFixtureDocument.Import( previewModel.Path, option, viewPlan, out var importInstanceElementId ) ;
+      if ( null == importInstanceElementId )
+        return null ;
+      electricalFixtureTransaction.Commit() ;
+      
+      electricalFixtureTransaction.Start( "Create Solid" ) ;
       var solid = CreateCubeSolid() ;
-      var freeFormElement = FreeFormElement.Create( electricalDocument, solid ) ;
+      var freeFormElement = FreeFormElement.Create( electricalFixtureDocument, solid ) ;
       var elementVisibility = new FamilyElementVisibility( FamilyElementVisibilityType.Model ) { IsShownInFrontBack = false, IsShownInLeftRight = false, IsShownInPlanRCPCut = false, IsShownInTopBottom = false } ;
       freeFormElement.SetVisibility( elementVisibility ) ;
-      var freeFormParameter = freeFormElement.get_Parameter( BuiltInParameter.MATERIAL_ID_PARAM ) ;
-      var familyParameter = electricalDocument.FamilyManager.AddParameter( "Material", GroupTypeId.Materials, SpecTypeId.Reference.Material, false ) ;
-      electricalDocument.FamilyManager.AssociateElementParameterToFamilyParameter( freeFormParameter, familyParameter ) ;
-      electricalTransaction.Commit() ;
+      electricalFixtureTransaction.Commit() ;
+      
+      electricalFixtureTransaction.Start( "Binding Parameter" ) ;
+      var materialFreeFormParameter = freeFormElement.get_Parameter( BuiltInParameter.MATERIAL_ID_PARAM ) ;
+      var materialFamilyParameter = electricalFixtureDocument.FamilyManager.AddParameter( "Material", GroupTypeId.Materials, SpecTypeId.Reference.Material, false ) ;
+      if(electricalFixtureDocument.FamilyManager.CanElementParameterBeAssociated(materialFreeFormParameter))
+        electricalFixtureDocument.FamilyManager.AssociateElementParameterToFamilyParameter( materialFreeFormParameter, materialFamilyParameter ) ;
+      
+      var importType = electricalFixtureDocument.GetElement( electricalFixtureDocument.GetElement( importInstanceElementId ).GetTypeId() ) ;
+      var scaleFactorImportParameter = importType.get_Parameter( BuiltInParameter.IMPORT_SCALE ) ;
+      var scaleFactorFamilyParameter = electricalFixtureDocument.FamilyManager.AddParameter( ScaleParameterName, GroupTypeId.General, SpecTypeId.Number, false ) ;
+      if(electricalFixtureDocument.FamilyManager.CanElementParameterBeAssociated(scaleFactorImportParameter))
+        electricalFixtureDocument.FamilyManager.AssociateElementParameterToFamilyParameter( scaleFactorImportParameter, scaleFactorFamilyParameter ) ;
+      electricalFixtureTransaction.Commit() ;
 
-      electricalTransaction.Start( "Create Connector" ) ;
+      electricalFixtureTransaction.Start( "Create Connector" ) ;
       var plannarFace = GetPlanarFaceTop( freeFormElement ) ;
-      ConnectorElement.CreateElectricalConnector( electricalDocument, ElectricalSystemType.UndefinedSystemType, plannarFace.Reference ) ;
-      electricalTransaction.Commit() ;
-
-      var electricalFamilyPath = Path.Combine( Path.GetTempPath(), $"{ElectricalFixturePrefix}{Path.GetFileNameWithoutExtension(previewModel.FileName)}.rfa" ) ;
-      electricalDocument.SaveAs( electricalFamilyPath, new SaveAsOptions { MaximumBackups = 1, OverwriteExistingFile = true } ) ;
-      electricalDocument.Close( true ) ;
+      ConnectorElement.CreateElectricalConnector( electricalFixtureDocument, ElectricalSystemType.UndefinedSystemType, plannarFace.Reference ) ;
+      electricalFixtureTransaction.Commit() ;
+      
+      electricalFixtureTransaction.Start( "New Type" ) ;
+      electricalFixtureDocument.FamilyManager.NewType( "100" ) ;
+      var scaleParameter = electricalFixtureDocument.FamilyManager.get_Parameter( ScaleParameterName ) ;
+      electricalFixtureDocument.FamilyManager.Set(scaleParameter, 100);
+      electricalFixtureTransaction.Commit() ;
+      
+      var electricalFixtureFamilyPath = Path.Combine( Path.GetTempPath(), $"{ElectricalFixturePrefix}{Path.GetFileNameWithoutExtension(previewModel.FileName)}.rfa" ) ;
+      electricalFixtureDocument.SaveAs( electricalFixtureFamilyPath, new SaveAsOptions { MaximumBackups = 1, OverwriteExistingFile = true } ) ;
+      electricalFixtureDocument.Close( true ) ;
 
       using var transaction = new Transaction( document ) ;
       transaction.Start( "Load Family" ) ;
-      document.LoadFamily( electricalFamilyPath, new FamilyLoadOptions(), out var electricalFamily ) ;
-      File.Delete(electricalFamilyPath);
+      document.LoadFamily( electricalFixtureFamilyPath, new FamilyLoadOptions(), out var electricalFamily ) ;
+      File.Delete(electricalFixtureFamilyPath);
       transaction.Commit() ;
-      electricalEquipmentfamilySymbol =  new FilteredElementCollector( document ).WherePasses( new FamilySymbolFilter( electricalFamily.Id ) ).OfType<FamilySymbol>().FirstOrDefault() ;
-      return electricalEquipmentfamilySymbol ;
+      
+      electricalFixtureFamilySymbol =  new FilteredElementCollector( document ).WherePasses( new FamilySymbolFilter( electricalFamily.Id ) ).OfType<FamilySymbol>().FirstOrDefault() ;
+      return electricalFixtureFamilySymbol ;
     }
 
     private string? GetFamilyPath(Assembly assembly, string familyName )
