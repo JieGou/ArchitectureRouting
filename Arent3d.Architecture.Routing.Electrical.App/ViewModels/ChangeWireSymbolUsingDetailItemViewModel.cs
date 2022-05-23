@@ -157,9 +157,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       trans.Start( "Hidden Element" ) ;
       _uiDocument.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
 
-      var conduitCategory = _uiDocument.Document.Settings.Categories.get_Item( BuiltInCategory.OST_Conduit ) ;
-      if(conduitCategory?.SubCategories.get_Item("Drop") is {} subCat)
-        _uiDocument.ActiveView.SetCategoryHidden(subCat.Id, true);
+      var dropCategory = Category.GetCategory(_uiDocument.Document, BuiltInCategory.OST_ConduitDrop);
+      if(null != dropCategory)
+        _uiDocument.ActiveView.SetCategoryHidden(dropCategory.Id, true);
         
       _settingStorable.LocationType = TypeNameSelected ;
       _settingStorable.Save();
