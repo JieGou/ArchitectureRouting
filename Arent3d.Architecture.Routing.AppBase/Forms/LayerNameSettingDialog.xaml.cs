@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic ;
+using System.Windows ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
 {
   public partial class LayerNameSettingDialog 
   {
+    private LayerNameSettingViewModel ViewModel => (LayerNameSettingViewModel)DataContext ;
     public LayerNameSettingDialog(LayerNameSettingViewModel viewModel)
     {
       InitializeComponent() ;
@@ -15,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   
   public abstract class DesignExportDwgViewModel : LayerNameSettingViewModel
   {
-    protected DesignExportDwgViewModel( List<Layer> layers ) : base( layers )
+    protected DesignExportDwgViewModel() : base(default!)
     {
     }
   }

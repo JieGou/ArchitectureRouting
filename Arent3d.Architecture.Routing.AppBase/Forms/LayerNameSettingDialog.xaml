@@ -8,7 +8,7 @@
         x:Name="LayerNameDialog"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="LayerNameSettingDialog" Height="450" Width="400"
+        Title="LayerNameSettingDialog" Height="450" Width="600"
         d:DataContext="{d:DesignInstance {x:Type local:DesignExportDwgViewModel}, IsDesignTimeCreatable=True}">
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -16,7 +16,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         
-        <DataGrid Grid.Row="0" Grid.Column="0" ItemsSource="{Binding Layers}" CanUserAddRows="False" AutoGenerateColumns="False" HeadersVisibility="None">
+        <DataGrid Grid.Row="0" Grid.Column="0" ItemsSource="{Binding Layers}" CanUserAddRows="False" AutoGenerateColumns="False" HeadersVisibility="None" SelectionUnit="Cell">
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell">
                     <Setter Property="FontSize" Value="15"/>
@@ -34,15 +34,26 @@
             </DataGrid.CellStyle>
             
             <DataGrid.Columns>
-                <DataGridTextColumn Binding="{Binding Name}" CanUserSort="True" IsReadOnly="False" Width="*"/>
+                <DataGridTextColumn Binding="{Binding FamilyName}" CanUserSort="True" IsReadOnly="true" Width="400">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style>                            
+                            <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
+                            <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+                            <Setter Property="TextBlock.FontSize" Value="14"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding LayerName}" CanUserSort="True" IsReadOnly="False" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
         
         <StackPanel Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Center" Height="27" Margin="0,10,0,0">
-            <Button Content="OK"
+            <Button Content="EXPORT FILE DWG"
                     CommandParameter="{Binding ElementName=LayerNameDialog}"
-                    Command="{Binding UpdateCommand}" IsDefault="True"
-                    Width="80"/>
+                    Command="{Binding ExportFileDwgCommand}" IsDefault="True"
+                    Width="120"
+                    Margin="0 0 10 0"
+                    />
         </StackPanel>
     </Grid>
 </Window>
