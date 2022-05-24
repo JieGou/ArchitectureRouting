@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       FixReducers( document, executor, executionResult.Value ) ;
 
       // execute after route command
-      AfterRouteGenerated( document, executionResult.Value ) ;
+      AfterRouteGenerated( document, executionResult.Value, result ) ;
 
       return ExecutionResult.Succeeded ;
     }
@@ -173,7 +173,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <returns>Routing from-to records.</returns>
     protected abstract IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, TUIResult state ) ;
 
-    protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected virtual void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, TUIResult result )
     {
     }
   }
