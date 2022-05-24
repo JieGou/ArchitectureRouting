@@ -22,6 +22,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly string _settingFilePath ;
 
     public ObservableCollection<Layer> Layers { get ; }
+    
+    public string LayerNames { get; set ; }
 
     public RelayCommand<Window> ExportFileDwgCommand => new(ExportDwg) ;
 
@@ -32,6 +34,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _newLayerNames = new List<Layer>() ;
       _oldLayerNames = new List<Layer>() ;
       Layers = new ObservableCollection<Layer>() ;
+      LayerNames = String.Empty ;
       var layers = GetLayerNames( _settingFilePath ) ;
       if ( ! layers.Any() ) return ;
       _newLayerNames = layers ;
@@ -69,7 +72,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       // replace text
       var encoding = GetEncoding( _settingFilePath ) ;
       ReplaceLayerNames( _oldLayerNames, _newLayerNames, _settingFilePath, encoding ) ;
-
+      
+      // Delete layers
+      DeleteLayers(LayerNames) ;
+      
       // export dwg
       _document.Export( filePath, fileName, viewIds, options ) ;
 
@@ -77,6 +83,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       window.DialogResult = true ;
       window.Close() ;
     }
+    
+    private void DeleteLayers( string stringListLayer )
+    {
+      var listLayer = stringListLayer.Split( ',' ).Select( p => p.Trim() ).ToList() ;
+      var categories = _document.Settings.Categories.Cast<Category>() ;
+      foreach ( var category in categories ) {
+        Category? layer = category.SubCategories.Cast<Category>().FirstOrDefault( x => listLayer.Contains( x.Name ) ) ;
+        if ( layer != null ) {
+          _document.Delete( layer.Id ) ;
+        }
+      }
+    }
+  
+
 
     private static List<Layer> GetLayerNames( string filePath )
     {
