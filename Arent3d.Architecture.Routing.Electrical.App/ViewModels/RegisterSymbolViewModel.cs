@@ -95,6 +95,14 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
     }
 
+    private bool _isInsertConnector ;
+
+    public bool IsInsertConnector
+    {
+      get => _isInsertConnector ;
+      set { _isInsertConnector = value ; OnPropertyChanged(); }
+    }
+
     private PreviewModel? _previewSelected ;
     public ExternalEventHandler? ExternalEventHandler { get ; set ; }
 
@@ -388,8 +396,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       
       electricalFixtureTransaction.Start( "Import CAD" ) ;
       electricalFixtureDocument.Import( previewModel.Path, option, viewPlan, out var importInstanceElementId ) ;
-      if ( null == importInstanceElementId )
-        return null ;
       electricalFixtureTransaction.Commit() ;
       
       electricalFixtureTransaction.Start( "Create Solid" ) ;
@@ -407,11 +413,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       
       var importType = electricalFixtureDocument.GetElement( electricalFixtureDocument.GetElement( importInstanceElementId ).GetTypeId() ) ;
       var scaleFactorImportParameter = importType.get_Parameter( BuiltInParameter.IMPORT_SCALE ) ;
-      var scaleFactorFamilyParameter = electricalFixtureDocument.FamilyManager.AddParameter( ScaleParameterName, GroupTypeId.General, SpecTypeId.Number, false ) ;
+      var scaleFactorFamilyParameter = electricalFixtureDocument.FamilyManager.AddParameter( ScaleParameterName, GroupTypeId.Construction, SpecTypeId.Number, false ) ;
       if(electricalFixtureDocument.FamilyManager.CanElementParameterBeAssociated(scaleFactorImportParameter))
         electricalFixtureDocument.FamilyManager.AssociateElementParameterToFamilyParameter( scaleFactorImportParameter, scaleFactorFamilyParameter ) ;
       electricalFixtureTransaction.Commit() ;
-
+      
       electricalFixtureTransaction.Start( "Create Connector" ) ;
       var plannarFace = GetPlanarFaceTop( freeFormElement ) ;
       ConnectorElement.CreateElectricalConnector( electricalFixtureDocument, ElectricalSystemType.UndefinedSystemType, plannarFace.Reference ) ;
