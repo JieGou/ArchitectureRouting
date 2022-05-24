@@ -72,7 +72,7 @@ namespace Arent3d.Architecture.Routing
 
     [Family( "Cable Tray Elbow", BuiltInCategory.OST_CableTrayFitting )]
     CableTrayFitting,
-  
+
     [Family( "Arent Room", BuiltInCategory.OST_GenericModel )]
     Room,
 
@@ -87,6 +87,16 @@ namespace Arent3d.Architecture.Routing
 
     [Family( "信号取合い先", BuiltInCategory.OST_ElectricalEquipment )]
     ToPowerEquipment,
+    
+    [Family( "LeakageZoneCloth", BuiltInCategory.OST_DetailComponents )]
+    CircleRepeat,
+    
+    [Family( "LeakageZoneColoring", BuiltInCategory.OST_DetailComponents )]
+    SquareRepeat,
+    
+    [Family( "LeakageZonePvc", BuiltInCategory.OST_DetailComponents )]
+    VerticalRepeat,
+
         
     [Family( "Pressure End Point", BuiltInCategory.OST_ElectricalFixtures )]
     PressureConnector, 

@@ -124,7 +124,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       SetPickUpModels( pickUpModels, allConnector, ProductType.Connector, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null ) ;
       var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
-      GetFromConnectorsOfConduit( connectors, pickUpModels ) ;
+      GetToConnectorsOfConduit( connectors, pickUpModels ) ;
       GetToConnectorsOfCables( connectors, pickUpModels ) ;
       return pickUpModels ;
     }
@@ -261,7 +261,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':' ).ToList() : new List<string>() ;
     }
   
-    private void GetFromConnectorsOfConduit( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
+    private void GetToConnectorsOfConduit( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
     {
       _pickUpNumber = 1 ;
       _pickUpNumbers = new Dictionary<int, string>() ;
@@ -341,13 +341,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers, Dictionary<string, string> dictMaterialCode  )
     {
-      var fromConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
-      if ( fromConnector == null || fromConnector.GroupId == ElementId.InvalidElementId ) return false ;
+      var toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
+      if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
-      if ( ( (FamilyInstance) fromConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
-        fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfFromConnector ) ;
-        var registrationOfBoardDataModel = _registrationOfBoardDataModels.FirstOrDefault( x => x.AutoControlPanel == ceedCodeOfFromConnector ) ;
+      if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
+        toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
+        var registrationOfBoardDataModel = _registrationOfBoardDataModels.FirstOrDefault( x => x.SignalDestination == ceedCodeOfToConnector ) ;
         if ( registrationOfBoardDataModel == null )
           return false ;
 
@@ -358,7 +358,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           dictMaterialCode.Add( registrationOfBoardDataModel.MaterialCode2.Substring( 2 ), registrationOfBoardDataModel.Kind2 ) ;
       }
       
-      pickUpConnectors.Add( fromConnector ) ;
+      pickUpConnectors.Add( toConnector ) ;
       if ( ! _pickUpNumbers.ContainsValue( routeName ) ) {
         _pickUpNumbers.Add( _pickUpNumber, routeName ) ;
         pickUpNumbers.Add( _pickUpNumber ) ;

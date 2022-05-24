@@ -1,5 +1,6 @@
 using Arent3d.Revit.UI ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
+using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Revit ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
@@ -16,6 +17,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Initialization
     {
       // 電気ルートアシスト用のファミリを追加する必要があるため、追加のチェックを入れる
       return base.RoutingSettingsAreInitialized( document ) && document.AllFamiliesAreLoaded<ElectricalRoutingFamilyType>() && document.AllElectricalRoutingParametersAreRegistered() ;
+    }
+
+    protected override void BeforeInitialize( Document document )
+    {
+      FilterHelper.InitialFilters( document ) ;
     }
 
     protected override bool Setup( Document document )

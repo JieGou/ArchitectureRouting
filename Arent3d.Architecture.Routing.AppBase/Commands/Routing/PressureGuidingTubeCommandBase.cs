@@ -30,6 +30,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private double _height ;
     private string _annotationContent = string.Empty ; 
     private static readonly double MaxDistanceTolerance = ( 300.0 ).MillimetersToRevitUnits() ;
+    private const string ErrorMessageIsNotValidConnector = "Selected connector isn't valid." ;
 
     public record PressureGuidingTubePickState( ConnectorPicker.IPickResult FromPickResult, ConnectorPicker.IPickResult ToPickResult, List<XYZ> ListSelectedPoint, RouteProperties RouteProperties, MEPSystemClassificationInfo ClassificationInfo ) ;
 
@@ -49,76 +50,84 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var dialog = new PressureGuidingTubeSettingDialog( pressureSettingViewModel ) ;
 
       var result = dialog.ShowDialog() ;
-      if ( true == result ) {
-        try {
-          //Save pressure guiding tube setting
-          using Transaction t = new Transaction( document, "Create pressure guiding tubes" ) ;
-          t.Start() ;
-          pressureGuidingTubeStorable.PressureGuidingTubeModelData = pressureSettingViewModel.PressureGuidingTube ;
-          pressureGuidingTubeStorable.Save() ;
-          t.Commit() ;
+      if ( true != result ) return OperationResult<PressureGuidingTubePickState>.Cancelled ;
+      
+      try {
+        //Save pressure guiding tube setting
+        using Transaction t = new Transaction( document, "Create pressure guiding tubes" ) ;
+        t.Start() ;
+        pressureGuidingTubeStorable.PressureGuidingTubeModelData = pressureSettingViewModel.PressureGuidingTube ;
+        pressureGuidingTubeStorable.Save() ;
+        t.Commit() ;
 
-          //Generate segments
-          var routingExecutor = GetRoutingExecutor() ;
-          var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
-          var level = document.GetElementById<Level>( fromPickResult.GetLevelId() ) ;
-          _height = fromPickResult.GetOrigin().Z - level!.Elevation + pressureSettingViewModel.PressureGuidingTube.Height.MillimetersToRevitUnits() ;
-          _annotationContent = pressureSettingViewModel.SelectedTubeType.GetFieldName() ;
-          var selectedPointList = new List<XYZ>() ;
-          var numberOfPoint = 0 ;
+        //Generate segments
+        var routingExecutor = GetRoutingExecutor() ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
+        var fromConnector = fromPickResult.PickedElement ;
+        if ( fromConnector is not FamilyInstance || false == fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) || string.IsNullOrEmpty( ceedCode ) ) {
+          MessageBox.Show( ErrorMessageIsNotValidConnector, "Message" ) ;
+          return OperationResult<PressureGuidingTubePickState>.Cancelled ;
+        }
 
-          using ( uiDocument.SetTempColor( fromPickResult ) ) {
-            LineExternal lineExternal = new( uiApp ) ;
-            XYZ prevPoint = fromPickResult.GetOrigin() ;
-            lineExternal.PickedPoints.Add( prevPoint ) ;
-            var tmp = prevPoint ;
-            //Automatic: Select one point only
-            if ( pressureSettingViewModel.SelectedCreationMode == CreationModeEnum.自動モード ) {
-              lineExternal.DrawingServer.BasePoint = tmp ;
-              lineExternal.DrawExternal() ;
-              var xyz = uiDocument.Selection.PickPoint( "Click the end point" ) ;
+          
+        var level = document.GetElementById<Level>( fromPickResult.GetLevelId() ) ;
+        _height = fromPickResult.GetOrigin().Z - level!.Elevation + pressureSettingViewModel.PressureGuidingTube.Height.MillimetersToRevitUnits() ;
+        _annotationContent = pressureSettingViewModel.SelectedTubeType.GetFieldName() ;
+        var selectedPointList = new List<XYZ>() ;
+        var numberOfPoint = 0 ;
+
+        using ( uiDocument.SetTempColor( fromPickResult ) ) {
+          LineExternal lineExternal = new( uiApp ) ;
+          XYZ prevPoint = fromPickResult.GetOrigin() ;
+          lineExternal.PickedPoints.Add( prevPoint ) ;
+          var tmp = prevPoint ;
+          //Automatic: Select one point only
+          if ( pressureSettingViewModel.SelectedCreationMode == CreationModeEnum.自動モード ) {
+            lineExternal.DrawingServer.BasePoint = tmp ;
+            lineExternal.DrawExternal() ;
+            var xyz = uiDocument.Selection.PickPoint( "Click the end point" ) ;
               
-              selectedPointList.Add( new XYZ( xyz.X, xyz.Y, _height ) ) ;
+            selectedPointList.Add( new XYZ( xyz.X, xyz.Y, _height ) ) ;
+            lineExternal.Dispose();
+          }
+          //Manual: Select many point
+          else {
+            try {
+              while ( true ) {
+                numberOfPoint++ ;
+                lineExternal.DrawingServer.BasePoint = tmp ;
+                lineExternal.DrawExternal() ;
+                var xyz = uiDocument.Selection.PickPoint( "Click the end point number " + numberOfPoint + ". Press Esc to end command." ) ;
+                selectedPointList.Add( new XYZ( xyz.X, xyz.Y, _height ) ) ;
+                tmp = xyz ;
+              }
+            }
+            catch ( OperationCanceledException ) {
+              //end select point 
+            }
+            finally {
               lineExternal.Dispose();
             }
-            //Manual: Select many point
-            else {
-              try {
-                while ( true ) {
-                  numberOfPoint++ ;
-                  lineExternal.DrawingServer.BasePoint = tmp ;
-                  lineExternal.DrawExternal() ;
-                  var xyz = uiDocument.Selection.PickPoint( "Click the end point number " + numberOfPoint + ". Press Esc to end command." ) ;
-                  selectedPointList.Add( new XYZ( xyz.X, xyz.Y, _height ) ) ;
-                  tmp = xyz ;
-                }
-              }
-              catch ( OperationCanceledException ) {
-                //end select point 
-              }
-              finally {
-                lineExternal.Dispose();
-              }
-            }
           }
+        }
 
-          numberOfPoint = selectedPointList.Count ;
-          var endElement = GeneratePressureConnector( document, level, selectedPointList[ numberOfPoint - 1 ] ) ;
-          var toPickResult = ConnectorPicker.CreatePressureConnector( endElement, numberOfPoint > 1 ? selectedPointList[ numberOfPoint - 2 ] : fromPickResult.GetOrigin(), null ) ;
-          var properties = InitRoutProperties( document, level.Id ) ;
-          var classificationInfo = MEPSystemClassificationInfo.Undefined ;
-          if ( ( fromPickResult.PickedConnector ) is { } connector && MEPSystemClassificationInfo.From( connector ) is { } connectorClassificationInfo )
-            classificationInfo = connectorClassificationInfo ;
+        numberOfPoint = selectedPointList.Count ;
+        var endElement = GeneratePressureConnector( document, level, selectedPointList[ numberOfPoint - 1 ] ) ;
+        var toPickResult = ConnectorPicker.CreatePressureConnector( endElement, numberOfPoint > 1 ? selectedPointList[ numberOfPoint - 2 ] : fromPickResult.GetOrigin(), null ) ;
+        var properties = InitRoutProperties( document, level.Id ) ;
+        var classificationInfo = MEPSystemClassificationInfo.Undefined ;
+        if ( ( fromPickResult.PickedConnector ) is { } connector && MEPSystemClassificationInfo.From( connector ) is { } connectorClassificationInfo )
+          classificationInfo = connectorClassificationInfo ;
  
-          return new OperationResult<PressureGuidingTubePickState>( new PressureGuidingTubePickState( fromPickResult, toPickResult, selectedPointList, properties, classificationInfo ) ) ;
-        }
-        catch {
-          MessageBox.Show( "Generate pressure guiding tube failed.", "Error Message" ) ;
-          return OperationResult<PressureGuidingTubePickState>.Failed ;
-        }
+        return new OperationResult<PressureGuidingTubePickState>( new PressureGuidingTubePickState( fromPickResult, toPickResult, selectedPointList, properties, classificationInfo ) ) ;
       }
-
-      return OperationResult<PressureGuidingTubePickState>.Cancelled ;
+      catch ( OperationCanceledException ) {
+        return OperationResult<PressureGuidingTubePickState>.Cancelled ;
+      }
+      catch {
+        MessageBox.Show( "Generate pressure guiding tube failed.", "Error Message" ) ;
+        return OperationResult<PressureGuidingTubePickState>.Failed ;
+      }
     }
 
     /// <summary>
@@ -259,9 +268,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
        
       //Change conduit color to yellow RGB(255,255,0)
       Element? conduitUseToAddAnnotation = null ;
-      OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
+      OverrideGraphicSettings ogs = new () ;
       ogs.SetProjectionLineColor( new Color( 255, 255, 0 ) ) ;
-      foreach ( var route in executeResultValue ) {
+      foreach ( var route in executeResultValue ) { 
         var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
         conduitUseToAddAnnotation = conduits.Count > 0 ? conduits.Count > 1 ? conduits[ 1 ] : conduits[ 0 ] : null ;
         foreach ( var conduit in conduits ) {
