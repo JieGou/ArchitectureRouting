@@ -396,6 +396,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       
       electricalFixtureTransaction.Start( "Import CAD" ) ;
       electricalFixtureDocument.Import( previewModel.Path, option, viewPlan, out var importInstanceElementId ) ;
+      
       var importType = electricalFixtureDocument.GetElement( electricalFixtureDocument.GetElement( importInstanceElementId ).GetTypeId() ) ;
       var scaleFactorImportParameter = importType.get_Parameter( BuiltInParameter.IMPORT_SCALE ) ;
       var scaleFactorFamilyParameter = electricalFixtureDocument.FamilyManager.AddParameter( ScaleParameterName, GroupTypeId.Construction, SpecTypeId.Number, false ) ;
