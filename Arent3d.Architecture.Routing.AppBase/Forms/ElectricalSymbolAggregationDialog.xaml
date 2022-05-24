@@ -6,38 +6,53 @@
         xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
-        Title="内容表示" Height="300" Width="600" x:Name="WindowCeedDetailInformation" 
+        Title="内容表示" Height="300" Width="600" x:Name="ElectricalSymbolAggregationWindown"
         d:DataContext="{d:DesignInstance {x:Type forms:DesignElectricalSymbolAggregationViewModel}, IsDesignTimeCreatable=True}">
-     
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="50" /> 
-            </Grid.RowDefinitions>
-             
-            <DataGrid HorizontalAlignment="Stretch" Margin="10" ItemsSource="{Binding ElectricalSymbolAggregationList}"
-                      CanUserAddRows="False" AutoGenerateColumns="False">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="型番" Width="150" Binding="{Binding Path=ProductCode}" CanUserSort="False" IsReadOnly="True" />
-                    <DataGridTextColumn Header="仕様" Width="220" Binding="{Binding Path=ProductName}" CanUserSort="True" IsReadOnly="True" />
-                    <DataGridTextColumn Header="数量" Width="100" Binding="{Binding Path=Number}" CanUserSort="False" IsReadOnly="True" />
-                    <DataGridTextColumn Header="単位" Width="100" Binding="{Binding Path=Unit}" CanUserSort="False" IsReadOnly="True">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="HorizontalAlignment" Value="Right" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+    <Window.Resources>
+        <Style x:Key="CenterGridHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Width="100" Content="CSV出力" Margin="10"
-                        Command="{Binding ExportCsvCommand}" 
-                        CommandParameter="{Binding ElementName=DataGridCeedDetailInformation}"/> 
-                <Button Width="100" Content="キャンセル" Margin="10"
-                        Command="{Binding CancelCommand}" 
-                        CommandParameter="{Binding ElementName=WindowCeedDetailInformation}"/>
-            </StackPanel>
-        </Grid> 
+        <DataGrid HorizontalAlignment="Stretch" ItemsSource="{Binding ElectricalSymbolAggregationList}" CanUserAddRows="False" AutoGenerateColumns="False">
+            <DataGrid.Resources>
+                <Style x:Key="DataGridVerticalText" TargetType="TextBlock">
+                    <Setter Property="VerticalAlignment" Value="Center" />
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="型番" Width="150" Binding="{Binding Path=ProductCode}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" ElementStyle="{StaticResource DataGridVerticalText}"/>
+                <DataGridTextColumn Header="仕様" Width="220" Binding="{Binding Path=ProductName}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" />
+                <DataGridTextColumn Header="数量" Width="100" Binding="{Binding Path=Number}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="単位" Width="100" Binding="{Binding Path=Unit}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                            <Setter Property="VerticalAlignment" Value="Center" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Width="100" Content="CSV出力" Margin="10"
+                    Command="{Binding ExportCsvCommand}"
+                    CommandParameter="{Binding ElementName=ElectricalSymbolAggregationWindown}" />
+            <Button Width="100" Content="キャンセル" Margin="10"
+                    Command="{Binding CancelCommand}"
+                    CommandParameter="{Binding ElementName=ElectricalSymbolAggregationWindown}" />
+        </StackPanel>
+    </Grid>
 </Window>

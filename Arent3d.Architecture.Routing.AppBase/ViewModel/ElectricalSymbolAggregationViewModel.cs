@@ -32,10 +32,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void ExportCsv( Window window )
     {
-      const string fileName = "file_name.dat" ;
-      SaveFileDialog saveFileDialog = new SaveFileDialog { FileName = fileName, Filter = "CSV files (*.dat)|*.dat", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
+      const string fileName = "Electrical symbol aggregation.csv" ;
+      SaveFileDialog saveFileDialog = new SaveFileDialog { FileName = fileName, Filter = "CSV files (*.csv)|*.csv", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
 
-      if ( saveFileDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK ) return ;
+      if ( saveFileDialog.ShowDialog() != DialogResult.OK ) return ;
       try {
         using ( StreamWriter sw = new StreamWriter( saveFileDialog.FileName ) ) {
           foreach ( var p in ElectricalSymbolAggregationList ) {
