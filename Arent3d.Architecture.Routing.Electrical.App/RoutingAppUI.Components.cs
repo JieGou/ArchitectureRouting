@@ -112,6 +112,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( CircleAnnotationCommand ), OnlyInitialized = true )]
           private static class CircleAnnotationCommandButton { }
+          
+          [Button( typeof( ElectricalSymbolAggregationCommand ), OnlyInitialized = true )]
+          private static class ElectricalSymbolAggregationCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
