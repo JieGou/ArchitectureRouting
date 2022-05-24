@@ -14,13 +14,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
-      if ( RoutingSettingsAreInitialized(document) ) return Result.Succeeded ;
+      if ( RoutingSettingsAreInitialized( document ) ) return Result.Succeeded ;
 
       try {
-        var result = document.Transaction( "TransactionName.Commands.Initialization.Initialize".GetAppStringByKeyOrDefault( "Setup Routing" ), _ =>
-        {
-          return Setup( document ) ? Result.Succeeded : Result.Failed ;
-        } ) ;
+        BeforeInitialize( document ) ;
+        var result = document.Transaction( "TransactionName.Commands.Initialization.Initialize".GetAppStringByKeyOrDefault( "Setup Routing" ), _ => { return Setup( document ) ? Result.Succeeded : Result.Failed ; } ) ;
 
         if ( Result.Failed == result ) {
           TaskDialog.Show( "Dialog.Commands.Initialization.Dialog.Title.Error".GetAppStringByKeyOrDefault( null ), "Dialog.Commands.Initialization.Dialog.Body.Error.FailedToSetup".GetAppStringByKeyOrDefault( null ) ) ;
@@ -34,7 +32,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       }
     }
 
-    protected virtual bool RoutingSettingsAreInitialized(Document document)
+    protected virtual void BeforeInitialize( Document document )
+    {
+    }
+
+    protected virtual bool RoutingSettingsAreInitialized( Document document )
     {
       return document.RoutingSettingsAreInitialized() ;
     }

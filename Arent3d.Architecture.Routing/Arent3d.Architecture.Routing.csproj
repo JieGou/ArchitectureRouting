@@ -69,6 +69,14 @@
   <ItemGroup>
     <None Remove="Assets\CSVs\Csv File.zip" />
     <EmbeddedResource Include="Assets\CSVs\Csv File.zip" />
+    <None Remove="Assets\Families\2022\Electrical\Circle Annotation.rfa" />
+    <EmbeddedResource Include="Assets\Families\2022\Electrical\Circle Annotation.rfa" />
+    <None Remove="Assets\Families\2020\Electrical\Circle Annotation.rfa" />
+    <EmbeddedResource Include="Assets\Families\2020\Electrical\Circle Annotation.rfa" />
+    <None Remove="Assets\Families\2019\Electrical\Circle Annotation.rfa" />
+    <EmbeddedResource Include="Assets\Families\2019\Electrical\Circle Annotation.rfa" />
+    <None Remove="Assets\Families\2021\Electrical\Circle Annotation.rfa" />
+    <EmbeddedResource Include="Assets\Families\2021\Electrical\Circle Annotation.rfa" />
   </ItemGroup>
 
   <ItemGroup>

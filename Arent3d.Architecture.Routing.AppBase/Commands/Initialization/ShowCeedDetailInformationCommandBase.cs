@@ -41,7 +41,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) 
           return Result.Cancelled ;
         
-        var ceedSetCode = ceedSetCodeModel!.Split( '-' ).ToList() ;
+        var ceedSetCode = ceedSetCodeModel!.Split( ':' ).ToList() ;
         pickedText = ceedSetCode.FirstOrDefault() ?? string.Empty ;
       }
       catch {
