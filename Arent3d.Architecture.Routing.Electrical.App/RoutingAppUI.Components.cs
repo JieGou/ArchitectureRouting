@@ -91,6 +91,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( ShowElectricSymbolsCommand ), OnlyInitialized = true )]
           private static class ShowElectricSymbolsCommandButton { }
+          
+          [Button( typeof( ShowDialogCreateTableByFloorCommand ), OnlyInitialized = true )]
+          private static class ShowDialogCreateTableByFloorCommandButton { }
 
           [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
           private static class ShowPickUpInformationCommandButton { }
@@ -279,6 +282,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
         [Button( typeof( AdjustLeaderCommand ), OnlyInitialized = true )]
         private static class AdjustLeaderCommandButton { }
+        
+        [Button( typeof( ChangeWireSymbolUsingFilterCommand ), OnlyInitialized = true )]
+        private static class ChangeWireSymbolUsingFilterCommandButton { }
+        
+        [Button( typeof( ChangeWireSymbolUsingDetailItemCommand ), OnlyInitialized = true )]
+        private static class ChangeWireSymbolUsingDetailCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Shafts" )]

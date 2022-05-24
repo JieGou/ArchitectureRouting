@@ -22,56 +22,55 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
-      var viewModel = new RegistrationOfBoardDataViewModel( commandData.Application.ActiveUIDocument.Document ) ;
-      var dlgRegistrationOfBoardDataModel = new RegistrationOfBoardDataDialog( viewModel ) ;
-      
-      dlgRegistrationOfBoardDataModel.ShowDialog() ;
-      if ( ! ( dlgRegistrationOfBoardDataModel.DialogResult ?? false ) ) 
-        return Result.Cancelled ;
-      ICollection<ElementId> groupIds = new List<ElementId>() ;
-      if ( string.IsNullOrEmpty( viewModel.CellSelectedAutoControlPanel ) && string.IsNullOrEmpty( viewModel.CellSelectedSignalDestination ) ) 
-        return Result.Succeeded ;
-      
-      var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
-      {
-        var uiDoc = commandData.Application.ActiveUIDocument ;
-        var (originX, originY, _) = uiDoc.Selection.PickPoint( StatusPrompt) ;
-        var level = uiDoc.ActiveView.GenLevel ;
-        var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
-        var elementFromToPower = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, viewModel.IsFromPowerConnector ) ;
-        var elementConnectorPower = GeneratePowerConnector( uiDoc, originX, originY - 0.5, heightOfConnector + 100.0.MillimetersToRevitUnits(), level ) ;
+      try {
+        var viewModel = new RegistrationOfBoardDataViewModel( commandData.Application.ActiveUIDocument.Document ) ;
+        var dlgRegistrationOfBoardDataModel = new RegistrationOfBoardDataDialog( viewModel ) ;
 
-        var registrationCode = viewModel.IsFromPowerConnector
-          ? viewModel.CellSelectedAutoControlPanel!
-          : viewModel.CellSelectedSignalDestination! ;
+        dlgRegistrationOfBoardDataModel.ShowDialog() ;
+        if ( ! ( dlgRegistrationOfBoardDataModel.DialogResult ?? false ) )
+          return Result.Cancelled ;
+        ICollection<ElementId> groupIds = new List<ElementId>() ;
+        if ( string.IsNullOrEmpty( viewModel.CellSelectedAutoControlPanel ) && string.IsNullOrEmpty( viewModel.CellSelectedSignalDestination ) )
+          return Result.Succeeded ;
 
-        if ( elementFromToPower is FamilyInstance familyInstanceFromToPower ) {
-          familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
-          familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
-          familyInstanceFromToPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
-          var elevationParameter = elementFromToPower.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ) ;
-          elevationParameter?.Set( 0.0 ) ;
-        }
+        var result = doc.Transaction( "TransactionName.Commands.Routing.PlacementDeviceSymbol".GetAppStringByKeyOrDefault( "Placement Device Symbol" ), _ =>
+        {
+          var uiDoc = commandData.Application.ActiveUIDocument ;
+          var (originX, originY, _) = uiDoc.Selection.PickPoint( StatusPrompt ) ;
+          var level = uiDoc.ActiveView.GenLevel ;
+          var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
+          var elementFromToPower = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, viewModel.IsFromPowerConnector ) ;
+          var elementConnectorPower = GeneratePowerConnector( uiDoc, originX, originY - 0.5, heightOfConnector + 100.0.MillimetersToRevitUnits(), level ) ;
 
-        if ( elementConnectorPower is FamilyInstance familyInstanceConnectorPower ) {
-          familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
-          familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
-          familyInstanceConnectorPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
-        }
+          var registrationCode = viewModel.IsFromPowerConnector ? viewModel.CellSelectedAutoControlPanel! : viewModel.CellSelectedSignalDestination! ;
 
-        var defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
-        var noteWidth = .12 ;
-        // make sure note width works for the text type
-        var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
-        var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
-        if ( noteWidth < minWidth ) {
-          noteWidth = minWidth ;
-        }
-        else if ( noteWidth > maxWidth ) {
-          noteWidth = maxWidth ;
-        }
+          if ( elementFromToPower is FamilyInstance familyInstanceFromToPower ) {
+            familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
+            familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            familyInstanceFromToPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
+            var elevationParameter = elementFromToPower.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ) ;
+            elevationParameter?.Set( 0.0 ) ;
+          }
 
-        TextNoteOptions opts = new(defaultTextTypeId) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
+          if ( elementConnectorPower is FamilyInstance familyInstanceConnectorPower ) {
+            familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
+            familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            familyInstanceConnectorPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
+          }
+
+          var defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+          var noteWidth = .12 ;
+          // make sure note width works for the text type
+          var minWidth = TextElement.GetMinimumAllowedWidth( doc, defaultTextTypeId ) ;
+          var maxWidth = TextElement.GetMaximumAllowedWidth( doc, defaultTextTypeId ) ;
+          if ( noteWidth < minWidth ) {
+            noteWidth = minWidth ;
+          }
+          else if ( noteWidth > maxWidth ) {
+            noteWidth = maxWidth ;
+          }
+
+          TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
         var text = viewModel.IsFromPowerConnector 
           ? viewModel.CellSelectedAutoControlPanel 
@@ -88,21 +87,26 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         if ( textNoteType != null ) textNote.ChangeTypeId( textNoteType.Id ) ;
 
-        // create group of selected element and new text note
-        groupIds.Add( elementFromToPower.Id ) ;
-        groupIds.Add( elementConnectorPower.Id ) ;
-        groupIds.Add( textNote.Id ) ;
+          // create group of selected element and new text note
+          groupIds.Add( elementFromToPower.Id ) ;
+          groupIds.Add( elementConnectorPower.Id ) ;
+          groupIds.Add( textNote.Id ) ;
 
-        return Result.Succeeded ;
-      } ) ;
+          return Result.Succeeded ;
+        } ) ;
 
-      if ( ! groupIds.Any() ) return result ;
-      using Transaction t = new(doc, "Create connector group.") ;
-      t.Start() ;
-      doc.Create.NewGroup( groupIds ) ;
-      t.Commit() ;
+        if ( ! groupIds.Any() ) return result ;
+        using Transaction t = new( doc, "Create connector group." ) ;
+        t.Start() ;
+        doc.Create.NewGroup( groupIds ) ;
+        t.Commit() ;
 
-      return result ;
+        return result ;
+      }
+      catch ( Exception ex ) {
+        message = ex.Message ;
+        return Result.Cancelled ;
+      }
     }
 
     private static Element GenerateConnector( UIDocument uiDocument, double originX, double originY, double originZ, Level level, bool isFromPowerConnector )

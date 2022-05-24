@@ -121,6 +121,12 @@
         <key>Electrical.App.Commands.Routing.AdjustLeaderCommand</key>
         <string>Adjust Leader</string>
 
+        <key>Electrical.App.Commands.Routing.ChangeWireSymbolUsingFilterCommand</key>
+        <string>Location&#xA;By Filter</string>
+
+        <key>Electrical.App.Commands.Routing.ChangeWireSymbolUsingDetailItemCommand</key>
+        <string>Location&#xA;By Detail</string>
+
         <key>Electrical.App.Commands.Routing.ShowHeightSetting</key>
         <string>Height Setting</string>
 
@@ -219,6 +225,9 @@
 
         <key>Electrical.App.Commands.Annotation.DoubleBorderCommand</key>
         <string>Double Border&#xA;Text Box</string>
+        
+        <key>Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand</key>
+        <string>Create Table&#xA;By Floors</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -394,6 +403,9 @@
 
         <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.NormalMode</key>
         <string>Normal Mode</string>
+
+        <key>Revit.Electrical.CreateSchedule.Message</key>
+        <string>集計表 "{0}" を作成しました</string>
 
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
