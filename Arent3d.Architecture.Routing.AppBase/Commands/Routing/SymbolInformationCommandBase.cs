@@ -44,6 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         return document.Transaction( "Electrical.App.Commands.Routing.SymbolInformationCommand", _ =>
         {
+          
           var selectedItemIsSymbolInformation = false ;
           TextNote? textNote = null ;
           Group? oldParentGroup = null ;
@@ -82,7 +83,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             try {
               xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
               symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
-              model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
+              model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString(), Floor = level.Name} ;
               symbolInformations.Add( model ) ;
             }
             catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {

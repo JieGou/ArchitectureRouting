@@ -20,6 +20,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       CharacterHeight,
       IsShowText,
       IsEco,
+      Floor,
     }
 
     protected override SymbolInformationModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -33,11 +34,12 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var percent = deserializer.GetDouble( SerializeField.Percent ) ;
       var color = deserializer.GetString( SerializeField.Color ) ;
       var description = deserializer.GetString( SerializeField.Description ) ;
+      var floor = deserializer.GetString( SerializeField.Floor ) ;
       var characterHeight = deserializer.GetDouble( SerializeField.CharacterHeight ) ;
       var isShowText = deserializer.GetBool( SerializeField.IsShowText ) ; 
       var isEco = deserializer.GetBool( SerializeField.IsEco ) ; 
 
-      return new SymbolInformationModel(id, symbolKind, symbolCoordinate, height, percent, color, isShowText, description, characterHeight, isEco ) ;
+      return new SymbolInformationModel(id, symbolKind, symbolCoordinate, height, percent, color, isShowText, description, characterHeight, isEco, floor ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, SymbolInformationModel customTypeValue )
@@ -51,6 +53,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.Add( SerializeField.Percent, customTypeValue.Percent ) ;
       serializerObject.AddNonNull( SerializeField.Color, customTypeValue.Color ) ;
       serializerObject.AddNonNull( SerializeField.Description, customTypeValue.Description ) ;
+      serializerObject.AddNonNull( SerializeField.Floor, customTypeValue.Floor ) ;
       serializerObject.Add( SerializeField.CharacterHeight, customTypeValue.CharacterHeight ) ;
       serializerObject.Add( SerializeField.IsShowText, customTypeValue.IsShowText ) ;  
       serializerObject.Add( SerializeField.IsEco, customTypeValue.IsEco ) ;  

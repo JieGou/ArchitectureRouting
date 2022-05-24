@@ -12,7 +12,7 @@ namespace Arent3d.Architecture.Routing.Storable
   [StorableVisibility( AppInfo.VendorId )]
   public class CeedDetailStorable : StorableBase
   {
-    public const string StorableName = "Symbol Information Model" ;
+    public const string StorableName = "Ceed Detail Model" ;
     private const string AllCeedDetailModelField = "AllCeedDetailModel" ;
     public List<CeedDetailModel> AllCeedDetailModelData { get ; set ; }
 

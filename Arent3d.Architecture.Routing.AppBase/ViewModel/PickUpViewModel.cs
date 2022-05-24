@@ -1,5 +1,6 @@
 ﻿using System ;
 using System.Collections.Generic ;
+using System.Globalization ;
 using System.IO ;
 using System.Linq ;
 using System.Windows ;
@@ -21,10 +22,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   public class PickUpViewModel : NotifyPropertyChanged
   {
     #region Variants
+
     private const string DefaultConstructionItem = "未設定" ;
     private readonly Document _document ;
     private List<PickUpModel> _pickUpModels ;
     private PickUpStorable _pickUpStorable ;
+    private SymbolInformationStorable _symbolInformationStorable ;
+    private CeedDetailStorable _ceedDetailStorable ;
     private readonly List<CeedModel> _ceedModels ;
     private readonly List<RegistrationOfBoardDataModel> _registrationOfBoardDataModels ;
     private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModels ;
@@ -34,12 +38,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly List<HiroiSetCdMasterModel> _hiroiSetCdMasterEcoModels ;
     private Dictionary<int, string> _pickUpNumbers ;
     private int _pickUpNumber ;
- 
-    public RelayCommand<Window> ExportFileCommand => new ( ExportFile ) ;
-    public RelayCommand<Window> SaveCommand => new( Save ) ;
-    public RelayCommand<Window> DeleteCommand => new( Delete ) ;
+
+    public RelayCommand<Window> ExportFileCommand => new(ExportFile) ;
+    public RelayCommand<Window> SaveCommand => new(Save) ;
+    public RelayCommand<Window> DeleteCommand => new(Delete) ;
     public ICommand UpdateCommand => new RelayCommand( Update ) ;
-    public RelayCommand<Window> DisplaySwitchingCommand => new( DisplaySwitching ) ; 
+    public RelayCommand<Window> DisplaySwitchingCommand => new(DisplaySwitching) ;
     public RelayCommand<Window> CancelCommand => new(Cancel) ;
 
     public enum ProductType
@@ -89,6 +93,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _hiroiSetCdMasterEcoModels = csvStorable.HiroiSetCdMasterEcoModelData ;
       }
 
+      _symbolInformationStorable = _document.GetSymbolInformationStorable() ;
+      _ceedDetailStorable = _document.GetCeedDetailStorable() ;
       _pickUpModels = GetPickUpData() ;
       _pickUpStorable = _document.GetPickUpStorable() ;
       if ( ! _pickUpModels.Any() ) MessageBox.Show( "Don't have element.", "Result Message" ) ;
@@ -103,8 +109,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     }
 
     #endregion
-    
+
     #region Bussiness Function
+
     private List<PickUpModel> GetPickUpData()
     {
       List<PickUpModel> pickUpModels = new List<PickUpModel>() ;
@@ -126,6 +133,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       var connectors = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.PickUpElements ).ToList() ;
       GetToConnectorsOfConduit( connectors, pickUpModels ) ;
       GetToConnectorsOfCables( connectors, pickUpModels ) ;
+      GetDataFromSymbolInformation( pickUpModels ) ;
       return pickUpModels ;
     }
 
@@ -192,10 +200,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
                     classification, pickUpNumber, direction ) ;
                 }
               }
-            } 
+            }
           }
         }
-        
+
         //Set pickupModel in case productType is Conduit and connector is Power
         if ( productType == ProductType.Conduit && dictMaterialCode != null && dictMaterialCode.Any() && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
           modelNumber = "" ;
@@ -240,7 +248,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
     }
-    
+
     private Dictionary<string, string> GetMaterialCodes( HiroiSetMasterModel hiroiSetMasterNormalModel )
     {
       Dictionary<string, string> materialCodes = new Dictionary<string, string>() ;
@@ -258,9 +266,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<string> GetCeedSetCodeOfElement( Element element )
     {
       element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
-      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( '-' ).ToList() : new List<string>() ;
+      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':', '-' ).ToList() : new List<string>() ;
     }
-  
+
     private void GetToConnectorsOfConduit( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
     {
       _pickUpNumber = 1 ;
@@ -317,7 +325,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Cable, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, null ) ;
     }
 
-    private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems, string constructionItem, Dictionary<string, string> dictMaterialCode )
+    private void AddPickUpConduit( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, List<double> quantities, List<int> pickUpNumbers, List<string> directionZ, Element conduit, double quantity, ConduitType conduitType, List<string> constructionItems,
+      string constructionItem, Dictionary<string, string> dictMaterialCode )
     {
       var routeName = conduit.GetRouteName() ;
       if ( string.IsNullOrEmpty( routeName ) ) return ;
@@ -339,11 +348,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       constructionItems.Add( string.IsNullOrEmpty( constructionItem ) ? DefaultConstructionItem : constructionItem ) ;
     }
 
-    private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers, Dictionary<string, string> dictMaterialCode  )
+    private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers, Dictionary<string, string> dictMaterialCode )
     {
       var toConnector = GetToConnectorOfRoute( allConnectors, routeName ) ;
       if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
-      
+
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
       if ( ( (FamilyInstance) toConnector ).GetConnectorFamilyType() == ConnectorFamilyType.Power ) {
         toConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) ;
@@ -357,7 +366,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         if ( registrationOfBoardDataModel.MaterialCode2.Length > 2 && ! dictMaterialCode.ContainsKey( registrationOfBoardDataModel.MaterialCode2.Substring( 2 ) ) )
           dictMaterialCode.Add( registrationOfBoardDataModel.MaterialCode2.Substring( 2 ), registrationOfBoardDataModel.Kind2 ) ;
       }
-      
+
       pickUpConnectors.Add( toConnector ) ;
       if ( ! _pickUpNumbers.ContainsValue( routeName ) ) {
         _pickUpNumbers.Add( _pickUpNumber, routeName ) ;
@@ -420,7 +429,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           var sumQuantity = pickUpModelByProductCode.PickUpModels.Sum( p => Convert.ToDouble( p.Quantity ) ) ;
           var pickUpModel = pickUpModelByProductCode.PickUpModels.FirstOrDefault() ;
           if ( pickUpModel == null ) continue ;
-          PickUpModel newPickUpModel = new PickUpModel( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification, pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction, pickUpModel.ProductCode ) ;
+          PickUpModel newPickUpModel = new PickUpModel( pickUpModel.Item, pickUpModel.Floor, pickUpModel.ConstructionItems, pickUpModel.EquipmentType, pickUpModel.ProductName, pickUpModel.Use, pickUpModel.UsageName, pickUpModel.Construction, pickUpModel.ModelNumber, pickUpModel.Specification,
+            pickUpModel.Specification2, pickUpModel.Size, sumQuantity.ToString(), pickUpModel.Tani, pickUpModel.Supplement, pickUpModel.Supplement2, pickUpModel.Group, pickUpModel.Layer, pickUpModel.Classification, pickUpModel.Standard, pickUpModel.PickUpNumber, pickUpModel.Direction,
+            pickUpModel.ProductCode ) ;
           pickUpModels.Add( newPickUpModel ) ;
         }
       }
@@ -444,11 +455,38 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       return null ;
     }
+
+
+    /// <summary>
+    /// Get all coinduit data from SymbolInformation and add to list pickupModel
+    /// </summary>
+    /// <param name="pickUpModels"></param>
+    private void GetDataFromSymbolInformation( List<PickUpModel> pickUpModels )
+    {
+      var symbolInformations = _symbolInformationStorable.AllSymbolInformationModelData ;
+      var ceedDetails = _ceedDetailStorable.AllCeedDetailModelData ;
+
+      foreach ( var symbolInformation in symbolInformations ) {
+        var floor = symbolInformation.Floor ;
+        foreach ( var ceedDetail in ceedDetails.FindAll( x => x.ParentId == symbolInformation.Id ) ) {
+          PickUpModel newPickUpModel = new PickUpModel( null, floor, DefaultConstructionItem, ProductType.Conduit.GetFieldName(), ceedDetail.ProductName, null, null, ceedDetail.Classification, null, ceedDetail.Specification, null, ceedDetail.Size2, ceedDetail.Quantity.ToString( CultureInfo.InvariantCulture ), ceedDetail.Unit, null, null, null, null,
+            ceedDetail.Classification, ceedDetail.Standard, null, null, ceedDetail.ProductCode ) ;
+          var oldPickUpModel = pickUpModels.FirstOrDefault( x => x.Floor == newPickUpModel.Floor && x.ProductName == newPickUpModel.ProductName && x.ProductCode == newPickUpModel.ProductCode && x.Specification == newPickUpModel.Specification) ;
+          if ( null != oldPickUpModel ) {
+            oldPickUpModel.Quantity = ( double.Parse( oldPickUpModel.Quantity ) + double.Parse( newPickUpModel.Quantity ) ).ToString( CultureInfo.InvariantCulture ) ;
+          }
+          else {
+            pickUpModels.Add( newPickUpModel ) ;
+          }
+        }
+      }
+    }
+
     #endregion
 
     #region Command Method
 
-    private void ExportFile(Window window)
+    private void ExportFile( Window window )
     {
       const string fileName = "file_name.dat" ;
       SaveFileDialog saveFileDialog = new SaveFileDialog { FileName = fileName, Filter = "CSV files (*.dat)|*.dat", InitialDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments ) } ;
@@ -485,11 +523,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       catch ( Exception ex ) {
         MessageBox.Show( "Export data failed because " + ex, "Error Message" ) ;
       }
+
       window.DialogResult = true ;
-      window.Close();
+      window.Close() ;
     }
 
-    private void Save(Window window)
+    private void Save( Window window )
     {
       try {
         using Transaction t = new Transaction( _document, "Save data" ) ;
@@ -505,26 +544,26 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private void DisplaySwitching(Window window)
+    private void DisplaySwitching( Window window )
     {
       window.DialogResult = true ;
-      window.Close();
+      window.Close() ;
     }
 
     private void Update()
     {
     }
-    
-    private void Cancel(Window window)
+
+    private void Cancel( Window window )
     {
       window.DialogResult = false ;
-      window.Close();
+      window.Close() ;
     }
 
-    private void Delete(Window window)
+    private void Delete( Window window )
     {
       window.DialogResult = true ;
-      window.Close();
+      window.Close() ;
     }
 
     #endregion

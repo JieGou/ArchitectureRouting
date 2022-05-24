@@ -26,6 +26,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     public double Height { get ; set ; } = 3 ;
     public double Percent { get ; set ; } = 90 ;
     public string Color { get ; set ; } = "Green";
+    public string Floor { get ; set ; } = string.Empty ;
     public string Description { get ; set ; } = string.Empty ;
     public double CharacterHeight { get ; set ; } = 1 ;
     public bool IsShowText { get ; set ; } = true ;
@@ -35,7 +36,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
     {
     }
 
-    public SymbolInformationModel( string? id, string? symbolKind, string? symbolCoordinate, double? height, double? percent, string? color, bool? isShowText, string? description, double? characterHeight, bool? isEco )
+    public SymbolInformationModel( string? id, string? symbolKind, string? symbolCoordinate, double? height, double? percent, string? color, bool? isShowText, string? description, double? characterHeight, bool? isEco, string? floor )
     {
       Id = id ?? "-1" ;
       SymbolKind = symbolKind ?? SymbolKindEnum.Start.ToString() ;
@@ -47,6 +48,7 @@ namespace Arent3d.Architecture.Routing.Storable.Model
       Description = description ?? string.Empty ;
       CharacterHeight = characterHeight ?? 1 ;
       IsEco = isEco ?? false ;
+      Floor = floor ?? string.Empty ;
     }
   }
 

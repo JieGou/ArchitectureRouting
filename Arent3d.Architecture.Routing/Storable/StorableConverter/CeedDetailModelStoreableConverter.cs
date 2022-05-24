@@ -18,6 +18,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Unit,
       ParentId,
       Trajectory,
+      Size1,
+      Size2,
+      Specification,
     }
 
     protected override CeedDetailModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -32,8 +35,11 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var unit = deserializer.GetString( SerializeField.Unit ) ; 
       var parentId = deserializer.GetString( SerializeField.ParentId ) ; 
       var trajectory = deserializer.GetString( SerializeField.Trajectory ) ; 
+      var size1 = deserializer.GetString( SerializeField.Size1 ) ; 
+      var size2 = deserializer.GetString( SerializeField.Size2 ) ; 
+      var specification = deserializer.GetString( SerializeField.Specification ) ; 
 
-      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory) ;
+      return new CeedDetailModel(productCode, productName, standard, classification, quantity, unit, parentId, trajectory, size1, size2, specification) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedDetailModel customTypeValue )
@@ -48,6 +54,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Unit, customTypeValue.Unit ) ;
       serializerObject.AddNonNull( SerializeField.ParentId, customTypeValue.ParentId ) ;
       serializerObject.AddNonNull( SerializeField.Trajectory, customTypeValue.Trajectory ) ;
+      serializerObject.AddNonNull( SerializeField.Size1, customTypeValue.Size1 ) ;
+      serializerObject.AddNonNull( SerializeField.Size2, customTypeValue.Size2 ) ;
+      serializerObject.AddNonNull( SerializeField.Specification, customTypeValue.Specification ) ;
         
       return serializerObject ;
     }
