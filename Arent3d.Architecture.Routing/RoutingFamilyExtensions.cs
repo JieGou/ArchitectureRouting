@@ -1,4 +1,4 @@
-﻿using System ;
+﻿﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -87,7 +87,16 @@ namespace Arent3d.Architecture.Routing
 
     [Family( "信号取合い先", BuiltInCategory.OST_ElectricalEquipment )]
     ToPowerEquipment,
-     
+    
+    [Family( "LeakageZoneCloth", BuiltInCategory.OST_DetailComponents )]
+    CircleRepeat,
+    
+    [Family( "LeakageZoneColoring", BuiltInCategory.OST_DetailComponents )]
+    SquareRepeat,
+    
+    [Family( "LeakageZonePvc", BuiltInCategory.OST_DetailComponents )]
+    VerticalRepeat,
+    
     [Family( "Symbol Star", BuiltInCategory.OST_GenericModel )]
     SymbolStar,
   }
