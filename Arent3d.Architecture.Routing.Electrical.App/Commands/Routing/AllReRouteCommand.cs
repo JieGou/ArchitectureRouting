@@ -18,9 +18,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, object? objects )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
+      
+      
     }
   }
 }

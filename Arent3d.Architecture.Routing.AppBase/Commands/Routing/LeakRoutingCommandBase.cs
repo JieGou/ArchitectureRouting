@@ -28,7 +28,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private bool UseConnectorDiameter() => ( AddInType.Electrical != GetAddInType() ) ;
 
-    public record LeakState( ConnectorPicker.IPickResult fromConnectorResult, ConnectorPicker.IPickResult toConnectorResult, List<XYZ> PickPoints, double height, int routeMode, RouteProperties RouteProperty, MEPSystemClassificationInfo ClassificationInfo ) ;
+    public record LeakState( ConnectorPicker.IPickResult fromConnectorResult, ConnectorPicker.IPickResult toConnectorResult, List<XYZ> PickPoints, int ConduitType, RouteProperties RouteProperty, MEPSystemClassificationInfo ClassificationInfo ) ;
 
     protected record DialogInitValues( MEPSystemClassificationInfo ClassificationInfo, MEPSystemType? SystemType, MEPCurveType CurveType, double Diameter ) ;
 
@@ -118,7 +118,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         if ( GetMEPSystemClassificationInfo( fromPickResult, property.SystemType ) is not { } classificationInfo ) return OperationResult<LeakState>.Cancelled ;
 
-        return new OperationResult<LeakState>( new LeakState( fromPickResult, toPickResult, pickPoints, height, sv.CreateMode, property, classificationInfo ) ) ;
+        return new OperationResult<LeakState>( new LeakState( fromPickResult, toPickResult, pickPoints, sv.ConduitType, property, classificationInfo ) ) ;
       }
       catch {
         return OperationResult<LeakState>.Cancelled ;
@@ -139,7 +139,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     private IReadOnlyCollection<(string RouteName, RouteSegment Segment)> CreateNewSegmentList( Document document, LeakState leakStates )
     {
-      var (fromPickResult, toPickResult, toPickPoints, height, routeMode, routeProperty, classificationInfo) = leakStates ;
+      var (fromPickResult, toPickResult, toPickPoints, conduitType, routeProperty, classificationInfo) = leakStates ;
       var useConnectorDiameter = UseConnectorDiameter() ;
       var fromEndPoint = PickCommandUtil.GetEndPoint( fromPickResult, toPickResult, useConnectorDiameter ) ;
       var toEndPoint = PickCommandUtil.GetEndPoint( toPickResult, fromPickResult, useConnectorDiameter ) ;
@@ -293,26 +293,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return familyInstance ;
     }
     
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, LeakState leakState )
     {
-      using Transaction t = new( document, "Change conduit color" ) ;
-      t.Start() ;
-      OverrideGraphicSettings ogs = new() ;
-      ogs.SetProjectionLineColor( new Color( 255, 215, 0 ) ) ;
-      var arentFamilyType = document.GetFamilySymbols( ElectricalRoutingFamilyType.ArentConduitFittingType ).FirstOrDefault() ;
-
-      foreach ( var route in executeResultValue ) {
-        var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
-        foreach ( var conduit in conduits ) {
-          //Change conduit color to yellow RGB(255,215,0)
-          document.ActiveView.SetElementOverrides( conduit.Id, ogs ) ;
-          //Change conduit fitting bend radius = 1 mm
-          if ( conduit is not FamilyInstance conduitFitting || arentFamilyType == null ) continue ;
-          conduitFitting.Symbol = arentFamilyType ;
-        }
-      }
-
-      t.Commit() ;
+      var wireTypeName = ChangeWireTypeCommand.WireSymbolOptions.Values.ElementAt( leakState.ConduitType ) ;
+      if ( string.IsNullOrEmpty( wireTypeName ) ) return ;
+      var routeNames = executeResultValue.Select( r => r.RouteName ).Distinct().ToHashSet() ;
+      ChangeWireTypeCommand.ChangeWireType( document, routeNames, wireTypeName ) ;
     }
   }
 }
