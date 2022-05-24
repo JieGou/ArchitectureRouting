@@ -222,7 +222,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       foreach ( var (materialCode, name) in materialCodes ) {
         specification = name ;
-        var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode ) ) ;
+        var hiroiMasterModel = _hiroiMasterModels.FirstOrDefault( h => int.Parse( h.Buzaicd ) == int.Parse( materialCode.Split( '-' ).First() ) ) ;
         if ( hiroiMasterModel != null ) {
           productName = hiroiMasterModel.Hinmei ;
           size = hiroiMasterModel.Size2 ;
@@ -251,15 +251,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private Dictionary<string, string> GetMaterialCodes( HiroiSetMasterModel hiroiSetMasterNormalModel )
     {
-      Dictionary<string, string> materialCodes = new Dictionary<string, string>() ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode1 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode1, hiroiSetMasterNormalModel.Name1 ) ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode2 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode2, hiroiSetMasterNormalModel.Name2 ) ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode3 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode3, hiroiSetMasterNormalModel.Name3 ) ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode4 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode4, hiroiSetMasterNormalModel.Name4 ) ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode5 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode5, hiroiSetMasterNormalModel.Name5 ) ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode6 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode6, hiroiSetMasterNormalModel.Name6 ) ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode7 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode7, hiroiSetMasterNormalModel.Name7 ) ;
-      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode8 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode8, hiroiSetMasterNormalModel.Name8 ) ;
+      Dictionary<string, string> materialCodes = new() ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode1 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode1 + "-1", hiroiSetMasterNormalModel.Name1 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode2 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode2 + "-2", hiroiSetMasterNormalModel.Name2 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode3 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode3 + "-3", hiroiSetMasterNormalModel.Name3 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode4 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode4 + "-4", hiroiSetMasterNormalModel.Name4 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode5 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode5 + "-5", hiroiSetMasterNormalModel.Name5 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode6 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode6 + "-6", hiroiSetMasterNormalModel.Name6 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode7 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode7 + "-7", hiroiSetMasterNormalModel.Name7 ) ;
+      if ( ! string.IsNullOrEmpty( hiroiSetMasterNormalModel.MaterialCode8 ) ) materialCodes.Add( hiroiSetMasterNormalModel.MaterialCode8 + "-8", hiroiSetMasterNormalModel.Name8 ) ;
       return materialCodes ;
     }
 
