@@ -50,9 +50,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private string GetSettingPath()
     {
+      string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, "resources" )  ;
       var layerSettingsFileName = "Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile".GetDocumentStringByKeyOrDefault( _document, "Arent-export-layers.txt" ) ;
-      var directory = Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location ) ! ;
-      var resourcesPath = Path.Combine( directory.Substring( 0, directory.IndexOf( "bin", StringComparison.Ordinal ) ), "resources" ) ;
       var filePath = Path.Combine( resourcesPath, layerSettingsFileName ) ;
 
       return filePath ;
