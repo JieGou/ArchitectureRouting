@@ -18,12 +18,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = commandData.Application.ActiveUIDocument.Document ;
       var allConduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
         .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
-      var routeNames = allConduits.GroupBy( conduit => conduit.GetRouteName() ).Select( conduit => conduit.Key ).ToList() ;
-      var allConduitsByRoute = document.GetAllElements<Element>()
-        .OfCategory( BuiltInCategorySets.Conduits )
-        .Where( e => routeNames.Contains( e.GetRouteName() ! ) )
-        .GroupBy( e => e.GetRouteName() ! )
-        .ToDictionary( d => d.Key, d => d.Select( e => e.UniqueId ).ToHashSet() ) ;
+      var routeNames = allConduits.Where( conduit => ! string.IsNullOrEmpty( conduit.GetRouteName() ) )
+        .GroupBy( conduit => conduit.GetRouteName()  ).Select( conduit => conduit.Key ).ToList() ;
+      var allConduitsByRoute = 
+        routeNames.Any() ?
+        document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( e => routeNames.Contains( e.GetRouteName() ! ) ).GroupBy( e => e.GetRouteName() ! )
+          .ToDictionary( d => d.Key, d => d.Select( e => e.UniqueId ).ToHashSet() ) 
+        : new Dictionary<string, HashSet<string>>() ;
       return new OperationResult<Dictionary<string, HashSet<string>>>( allConduitsByRoute ) ;
     }
 

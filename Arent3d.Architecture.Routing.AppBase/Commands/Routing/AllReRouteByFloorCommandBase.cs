@@ -24,13 +24,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var allConduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
         .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
       // get route names belong to selected level
-      var routeNames = allConduits.Where( conduit => levelIds.Contains( conduit.ReferenceLevel.Id ) )
+      var routeNames = allConduits.Where( conduit => levelIds.Contains( conduit.ReferenceLevel.Id ) && ! string.IsNullOrEmpty( conduit.GetRouteName() ) )
         .GroupBy( conduit => conduit.GetRouteName() ).Select( conduit => conduit.Key ).ToList() ;
-      var allConduitsByRoute = document.GetAllElements<Element>()
-        .OfCategory( BuiltInCategorySets.Conduits )
-        .Where( e => routeNames.Contains( e.GetRouteName() ! ) )
-        .GroupBy( e => e.GetRouteName() ! )
-        .ToDictionary( d => d.Key, d => d.Select( e => e.UniqueId ).ToHashSet() ) ;
+      var allConduitsByRoute = 
+        routeNames.Any() ? 
+        document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( e => routeNames.Contains( e.GetRouteName() ! ) ).GroupBy( e => e.GetRouteName() ! )
+          .ToDictionary( d => d.Key, d => d.Select( e => e.UniqueId ).ToHashSet() )
+        : new Dictionary<string, HashSet<string>>() ;
       return new OperationResult<ReRouteByFloorState>( new ReRouteByFloorState( levelIds, allConduitsByRoute ) ) ;
     }
 
