@@ -50,6 +50,20 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
     }
     
+    
+    /// <summary>
+    /// Get location type settings data from snoop DB.
+    /// </summary>
+    public static LocationTypeStorable GetLocationTypeStorable( this Document document )
+    {
+      try {
+        return LocationTypeStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( LocationTypeStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new LocationTypeStorable( document ) ;
+      }
+    }
+    
     /// <summary>
     /// Get CNS Setting data from snoop DB.
     /// </summary>
@@ -180,6 +194,19 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new EcoSettingStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get setup print data from snoop DB.
+    /// </summary>
+    public static SetupPrintStorable GetSetupPrintStorable( this Document document )
+    {
+      try {
+        return SetupPrintStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( SetupPrintStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new SetupPrintStorable( document ) ;
       }
     }
   }
