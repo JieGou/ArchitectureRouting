@@ -203,7 +203,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           specification2 = ceedCodeOfToConnector ?? String.Empty ;
           PickUpModelBaseOnMaterialCode( dictMaterialCode!, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
             classification, pickUpNumber, direction ) ;
-        }
+        } 
 
         index++ ;
       }
@@ -341,7 +341,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers, Dictionary<string, string> dictMaterialCode  )
     {
-      var toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
+      var toConnector = GetConnectorOfRoute( allConnectors, routeName, false ) ;
+      bool isPressureEndPointConnector = toConnector != null && toConnector.Name.Contains( "Pressure" ) ;
+      if(isPressureEndPointConnector)
+        toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
+      
       if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;
       
       //Case connector is Power type, check from and to connector existed in _registrationOfBoardDataModels then get material 
