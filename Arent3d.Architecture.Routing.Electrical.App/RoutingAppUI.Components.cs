@@ -148,6 +148,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( RoomPickRoutingCommand ), OnlyInitialized = true )]
           private static class RoomPickRoutingCommandButton { }
+          
+          [Button( typeof( PullBoxRoutingCommand ), OnlyInitialized = true )]
+          private static class PullBoxRoutingCommandButton { }
         }
         
         [SplitButton( "arent3d.architecture.routing.routing.selection.range.routing", TitleKey = "Electrical.App.Panels.Routing.Routing.SelectionRangeRouting" )]

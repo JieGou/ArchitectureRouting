@@ -463,5 +463,8 @@
         
         <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
         <string>Registration Of&#xA;Board Data</string>
+
+        <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
+        <string>Pull Box</string>
     </dict>
 </plist>

@@ -453,6 +453,9 @@
 
         <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
         <string>盤登録</string>
+
+        <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
+        <string>仮プルボックスの配</string>
     </dict>
 </plist>
 
