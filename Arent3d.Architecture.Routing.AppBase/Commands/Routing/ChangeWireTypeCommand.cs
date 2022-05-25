@@ -15,7 +15,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public static class ChangeWireTypeCommand
   {
-    private const string ConduitIdParameter = "Conduit Id" ;
     public static readonly Dictionary<string, string> WireSymbolOptions = new()
     {
       { "漏水帯（布）", "LeakageZoneCloth" }, 
@@ -47,15 +46,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       ogs.SetProjectionLineColor( color ) ;
       ForEachExtension.ForEach( curves, x =>
       {
-        var detailCurve = document.Create.NewDetailCurve( document.ActiveView, x.Key ) ;
+        var detailCurve = document.Create.NewDetailCurve( view, x.Key ) ;
         detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, wireType ) ) ;
       } ) ;
       ForEachExtension.ForEach( lines, x =>
       {
-        var line = document.Create.NewFamilyInstance( x.Key, familySymbol, document.ActiveView ) ;
-        document.ActiveView.SetElementOverrides( line.Id, ogs ) ;
-        //if ( line.HasParameter( ConduitIdParameter ) ) line.ParametersMap.get_Item( ConduitIdParameter ).Set( x.Value ) ;
+        var line = document.Create.NewFamilyInstance( x.Key, familySymbol, view ) ;
         conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, wireType ) ) ;
       } ) ;
       
@@ -65,12 +62,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       using var trans = new Transaction( document ) ;
       trans.Start( "Hidden Element" ) ;
-      document.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+      view.HideElements( elements.Select( x => x.Id ).ToList() ) ;
 
       var dropCategory = Category.GetCategory( document, BuiltInCategory.OST_ConduitDrop ) ;
       if ( null != dropCategory ) {
         try {
-          document.ActiveView.SetCategoryHidden( dropCategory.Id, true ) ;
+          view.SetCategoryHidden( dropCategory.Id, true ) ;
         }
         catch {
           //
@@ -118,7 +115,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
 
-      var lines = ConnectLines( document, lineConduits ) ;
+      var lines = ConnectLines( view, lineConduits ) ;
       var curves = GetCurveHorizontalFittings( document, view, fittingHorizontals ) ;
       return ( lines, curves ) ;
     }
@@ -156,7 +153,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return lines ;
     }
 
-    private static Dictionary<Line, string> ConnectLines( Document document, Dictionary<Line, string> linesDic )
+    private static Dictionary<Line, string> ConnectLines( View view, Dictionary<Line, string> linesDic )
     {
       var lineConnects = new Dictionary<Line, string>() ;
       var lines = linesDic.Keys.ToList() ;
@@ -194,7 +191,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       var lineOnPlanes = new Dictionary<Line, string>() ;
-      var elevation = document.ActiveView.GenLevel.Elevation ;
+      var elevation = view.GenLevel.Elevation ;
       foreach ( var lineConnect in lineConnects ) {
         var firstPoint = lineConnect.Key.GetEndPoint( 0 ) ;
         var secondPoint = lineConnect.Key.GetEndPoint( 1 ) ;
@@ -215,7 +212,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( detailLevel != ViewDetailLevel.Coarse )
           view.DetailLevel = ViewDetailLevel.Coarse ;
         
-        var options = new Options { View = document.ActiveView } ;
+        var options = new Options { View = view } ;
 
         foreach ( var element in elements ) {
           if ( element.get_Geometry( options ) is { } geometryElement )
@@ -298,14 +295,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var arentFamilyType = document.GetFamilySymbols( ElectricalRoutingFamilyType.ArentConduitFittingType ).FirstOrDefault() ;
       OverrideGraphicSettings ogs = new() ;
       ogs.SetProjectionLineColor( new Color( 255, 215, 0 ) ) ;
+      
       var newConduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => reReRouteNames.Contains( c.GetRouteName() ! ) ).ToList() ;
-      foreach ( var conduit in newConduitsOfRoute ) {
-        //Change conduit color to yellow RGB(255,215,0)
-        document.ActiveView.SetElementOverrides( conduit.Id, ogs ) ;
-        //Change conduit fitting bend radius = 1 mm
-        if ( conduit is not FamilyInstance conduitFitting || arentFamilyType == null ) continue ;
-        conduitFitting.Symbol = arentFamilyType ;
-      }
       
       var conduitOfRoute = newConduitsOfRoute.OfType<Conduit>().FirstOrDefault() ;
       if ( conduitOfRoute != null ) {
@@ -313,6 +304,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( level != null ) {
           viewPlan = document.GetAllElements<ViewPlan>().FirstOrDefault( v => v.Name == level.Name ) ?? document.ActiveView ;
         }
+      }
+      
+      foreach ( var conduit in newConduitsOfRoute ) {
+        //Change conduit color to yellow RGB(255,215,0)
+        viewPlan.SetElementOverrides( conduit.Id, ogs ) ;
+        //Change conduit fitting bend radius = 1 mm
+        if ( conduit is not FamilyInstance conduitFitting || arentFamilyType == null ) continue ;
+        conduitFitting.Symbol = arentFamilyType ;
       }
 
       transaction.Commit() ;
