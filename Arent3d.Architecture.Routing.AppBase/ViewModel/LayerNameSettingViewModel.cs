@@ -87,11 +87,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void DeleteLayers( string stringListLayer )
     {
       var listLayer = stringListLayer.Split( ',' ).Select( p => p.Trim() ).ToList() ;
-      var categories = _document.Settings.Categories.Cast<Category>() ;
+      var categories = _document.Settings.Categories.Cast<Category>().ToList() ;
+      
       foreach ( var category in categories ) {
-        Category? layer = category.SubCategories.Cast<Category>().FirstOrDefault( x => listLayer.Contains( x.Name ) ) ;
-        if ( layer != null ) {
-          _document.Delete( layer.Id ) ;
+        List<Category> layers = category.SubCategories.Cast<Category>().Where( x=>listLayer.Contains( x.Name  )).ToList() ;
+        if ( layers.Any() ) {
+          foreach ( var layer in layers ) {
+            _document.Delete( layer.Id ) ;
+          }
         }
       }
     }
