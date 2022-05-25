@@ -6,9 +6,9 @@ using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Architecture.Routing.Utils ;
 using Arent3d.Revit ;
-using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
+using MoreLinq ;
 using MoreLinq.Extensions ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
@@ -53,6 +53,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       ForEachExtension.ForEach( lines, x =>
       {
         var line = document.Create.NewFamilyInstance( x.Key, familySymbol, view ) ;
+        view.SetElementOverrides( line.Id, ogs ) ;
         conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, wireType ) ) ;
       } ) ;
       
@@ -131,14 +132,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var comparer = new XyzComparer() ;
       fittingHorizontals = fittingHorizontals.Where( x => x.MEPModel.ConnectorManager.Connectors.Size == 2 ) ;
-      fittingHorizontals = fittingHorizontals.DistinctBy( x => GetCenterPoint( x ), comparer ) ;
+      fittingHorizontals = DistinctByExtension.DistinctBy( fittingHorizontals, x => GetCenterPoint( x ), comparer ) ;
       return GetCurveFromElements( document, view, fittingHorizontals ) ;
     }
 
     private static Dictionary<Line, string> GetLineVerticalFittings( IEnumerable<FamilyInstance> fittingVerticals )
     {
       var comparer = new XyzComparer() ;
-      var connectorsOfConduit = fittingVerticals.DistinctBy( x => ( (LocationPoint) x.Location ).Point, comparer ).ToDictionary( g => g.UniqueId, g => g.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ) ;
+      var connectorsOfConduit = DistinctByExtension.DistinctBy( fittingVerticals, x => ( (LocationPoint) x.Location ).Point, comparer ).ToDictionary( g => g.UniqueId, g => g.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ) ;
 
       var lines = new Dictionary<Line, string>() ;
       foreach ( var connectors in connectorsOfConduit ) {
@@ -317,6 +318,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       transaction.Commit() ;
       
       ChangeLocationType( document, viewPlan, newConduitsOfRoute, wireTypeName ) ;
+    }
+    
+    public static void RemoveDetailLinesByRoutes( Document document, HashSet<string> routeNames )
+    {
+      var allConduitIds = MoreEnumerable.ToHashSet( document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( e => routeNames.Contains( e.GetRouteName() ! ) ).Select( e => e.UniqueId ) ) ;
+      if ( allConduitIds.Any() ) RemoveDetailLines( document, allConduitIds ) ;
     }
   }
 }

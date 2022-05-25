@@ -17,6 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       var cache = RouteCache.Get( DocumentKey.Get( document ) ) ;
       var hashSet = commandData.Application.ActiveUIDocument.Document.CollectRoutes( GetAddInType() ).Select( route => route.RouteName ).ToHashSet() ;
+      if ( hashSet.Any() ) ChangeWireTypeCommand.RemoveDetailLinesByRoutes( document, hashSet ) ;
 
       try {
         return document.Transaction( "TransactionName.Commands.Routing.EraseAllRoutes".GetAppStringByKeyOrDefault( null ), _ =>

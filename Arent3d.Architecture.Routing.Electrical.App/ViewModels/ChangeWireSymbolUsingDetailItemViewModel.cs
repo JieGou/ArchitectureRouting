@@ -11,11 +11,10 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Utils ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using Autodesk.Revit.DB.Electrical ;
 using MoreLinq ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
@@ -120,9 +119,19 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if(!familySymbol.IsActive)
           familySymbol.Activate();
 
-        curves.ForEach( x => { _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ; } ) ;
-        lines.ForEach( x => { _uiDocument.Document.Create.NewFamilyInstance( x.Key, familySymbol, _uiDocument.ActiveView ) ; } ) ;
-
+        var conduitAndDetailCurveStorable = _uiDocument.Document.GetConduitAndDetailCurveStorable() ;
+        curves.ForEach( x =>
+        {
+          var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ; 
+          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, WireSymbolOptions[ TypeNameSelected ] ) ) ;
+        } ) ;
+        lines.ForEach( x =>
+        {
+          var line = _uiDocument.Document.Create.NewFamilyInstance( x.Key, familySymbol, _uiDocument.ActiveView ) ;
+          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, WireSymbolOptions[ TypeNameSelected ] ) ) ;
+        } ) ;
+        
+        conduitAndDetailCurveStorable.Save() ;
         transaction.Commit() ;
       }
       else {
