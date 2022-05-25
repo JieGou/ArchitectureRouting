@@ -106,6 +106,24 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private PreviewModel? _previewSelected ;
     public ExternalEventHandler? ExternalEventHandler { get ; set ; }
 
+    private OverrideGraphicSettings? _overrideGraphicSettings ;
+
+    public OverrideGraphicSettings OverrideGraphicSettings
+    {
+      get
+      {
+        if ( null != _overrideGraphicSettings )
+          return _overrideGraphicSettings ;
+
+        _overrideGraphicSettings = new OverrideGraphicSettings() ;
+        _overrideGraphicSettings.SetSurfaceTransparency( 100 ) ;
+        var whiteColor = new Color( 255, 255, 255 ) ;
+        _overrideGraphicSettings.SetCutLineColor( whiteColor ) ;
+        _overrideGraphicSettings.SetProjectionLineColor( whiteColor ) ;
+        return _overrideGraphicSettings ;
+      }
+    }
+
     public RegisterSymbolViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
@@ -365,6 +383,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           familySymbol.Activate() ;
         
         var connector = _uiDocument.Document.Create.NewFamilyInstance( pickPoint, familySymbol, _uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+        _uiDocument.ActiveView.SetElementOverrides(connector.Id, OverrideGraphicSettings);
         var heightOfConnector = _uiDocument.Document.GetHeightSettingStorable()[ _uiDocument.ActiveView.GenLevel ].HeightOfConnectors.MillimetersToRevitUnits() ;
         connector.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( heightOfConnector ) ;
         transaction.Commit() ;
@@ -445,7 +464,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       
       electricalFixtureTransaction.Start( "Create Connector" ) ;
       var plannarFace = GetPlanarFaceTop( freeFormElement ) ;
-      ConnectorElement.CreateElectricalConnector( electricalFixtureDocument, ElectricalSystemType.Communication, plannarFace.Reference ) ;
+      var connector = ConnectorElement.CreateConduitConnector( electricalFixtureDocument, plannarFace.Reference ) ;
+      if ( connector.IsSystemClassificationValid( MEPSystemClassification.CableTrayConduit ) )
+        connector.SystemClassification = MEPSystemClassification.CableTrayConduit ;
       electricalFixtureTransaction.Commit() ;
       
       var electricalFixtureFamilyPath = Path.Combine( Path.GetTempPath(), $"{ConnectorForSymbol}.rfa" ) ;
