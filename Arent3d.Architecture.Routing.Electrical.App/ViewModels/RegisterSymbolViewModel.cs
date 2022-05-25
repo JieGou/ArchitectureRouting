@@ -452,10 +452,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       var freeFormElement = FreeFormElement.Create( electricalFixtureDocument, solid ) ;
       var elementVisibility = new FamilyElementVisibility( FamilyElementVisibilityType.Model ) { IsShownInFrontBack = false, IsShownInLeftRight = false, IsShownInPlanRCPCut = false, IsShownInTopBottom = false } ;
       freeFormElement.SetVisibility( elementVisibility ) ;
-      var materialFreeFormParameter = freeFormElement.get_Parameter( BuiltInParameter.MATERIAL_ID_PARAM ) ;
-      var materialFamilyParameter = electricalFixtureDocument.FamilyManager.AddParameter( "Material", GroupTypeId.Materials, SpecTypeId.Reference.Material, false ) ;
-      if(electricalFixtureDocument.FamilyManager.CanElementParameterBeAssociated(materialFreeFormParameter))
-        electricalFixtureDocument.FamilyManager.AssociateElementParameterToFamilyParameter( materialFreeFormParameter, materialFamilyParameter ) ;
       electricalFixtureTransaction.Commit() ;
       
       electricalFixtureTransaction.Start( "Create Connector" ) ;
@@ -498,7 +494,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     
     private Solid CreateCubeSolid()
     {
-      var halfLength = UnitUtils.ConvertToInternalUnits(100, UnitTypeId.Millimeters) * 0.5;
+      var halfLength = 100d.MillimetersToRevitUnits() * 0.5;
       var lineOne = Line.CreateBound(XYZ.BasisX * halfLength + XYZ.BasisY.Negate() * halfLength, XYZ.BasisX * halfLength + XYZ.BasisY * halfLength);
       var lineTwo = Line.CreateBound(XYZ.BasisX * halfLength + XYZ.BasisY * halfLength, XYZ.BasisX.Negate() * halfLength + XYZ.BasisY * halfLength);
       var lineThree = Line.CreateBound(XYZ.BasisX.Negate() * halfLength + XYZ.BasisY * halfLength, XYZ.BasisX.Negate() * halfLength + XYZ.BasisY.Negate() * halfLength);
