@@ -24,7 +24,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
       var (_, allConduitsByRouteName) = reRouteByFloorState ;
-      foreach ( var ( routeName, oldConduitIds ) in allConduitsByRouteName ) {
+      foreach ( var (routeName, oldConduitIds) in allConduitsByRouteName ) {
         var wireTypeName = ChangeWireTypeCommand.RemoveDetailLines( document, oldConduitIds ) ;
         if ( string.IsNullOrEmpty( wireTypeName ) ) return ;
         var reRoute = new HashSet<string>() { routeName } ;

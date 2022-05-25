@@ -15,16 +15,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public record ReRouteByFloorState ( IReadOnlyCollection<ElementId> LevelIds, Dictionary<string, HashSet<string>> ConduitIdsOfRoute ) ;
     protected abstract AddInType GetAddInType() ;
 
-    protected override OperationResult<ReRouteByFloorState> OperateUI( ExternalCommandData commandData,
-      ElementSet elements )
+    protected override OperationResult<ReRouteByFloorState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
       var dialog = new GetLevel( document ) ;
       if ( false == dialog.ShowDialog() ) return OperationResult<ReRouteByFloorState>.Cancelled ;
       var levelIds = dialog.GetSelectedLevels().Select( item => item.Id ).ToList() ;
+      var allConduits = new FilteredElementCollector( document ).OfClass( typeof( Conduit ) )
+        .OfCategory( BuiltInCategory.OST_Conduit ).AsEnumerable().OfType<Conduit>() ;
+      // get route names belong to selected level
+      var routeNames = allConduits.Where( conduit => levelIds.Contains( conduit.ReferenceLevel.Id ) )
+        .GroupBy( conduit => conduit.GetRouteName() ).Select( conduit => conduit.Key ).ToList() ;
       var allConduitsByRoute = document.GetAllElements<Element>()
         .OfCategory( BuiltInCategorySets.Conduits )
-        .Where( e => levelIds.Contains( e.LevelId ) )
+        .Where( e => routeNames.Contains( e.GetRouteName() ! ) )
         .GroupBy( e => e.GetRouteName() ! )
         .ToDictionary( d => d.Key, d => d.Select( e => e.UniqueId ).ToHashSet() ) ;
       return new OperationResult<ReRouteByFloorState>( new ReRouteByFloorState( levelIds, allConduitsByRoute ) ) ;

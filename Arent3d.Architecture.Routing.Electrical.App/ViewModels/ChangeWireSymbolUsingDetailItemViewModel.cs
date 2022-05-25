@@ -107,7 +107,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       using var transactionGroup = new TransactionGroup( _uiDocument.Document ) ;
       transactionGroup.Start( "Change Type" ) ;
 
-      var (lines, curves) = ChangeWireTypeCommand.GetLocationConduits( _uiDocument.Document, elements ) ;
+      var (lines, curves) = ChangeWireTypeCommand.GetLocationConduits( _uiDocument.Document, _uiDocument.ActiveView, elements ) ;
       
       if ( WireSymbolOptions.Keys.Contains( TypeNameSelected ) ) {
         var familySymbol = _uiDocument.Document.GetAllTypes<FamilySymbol>( x => x.Name == WireSymbolOptions[ TypeNameSelected ] ).FirstOrDefault() ;
@@ -165,7 +165,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _settingStorable.Save();
       trans.Commit() ;
       
-      ChangeWireTypeCommand.RefreshView( _uiDocument.Document ) ;
+      ChangeWireTypeCommand.RefreshView( _uiDocument.Document, _uiDocument.ActiveView ) ;
 
       transactionGroup.Assimilate() ;
     }

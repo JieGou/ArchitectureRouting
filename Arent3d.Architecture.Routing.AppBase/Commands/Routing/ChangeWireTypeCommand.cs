@@ -23,12 +23,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       { "漏水帯（塩ビ）", "LeakageZonePvc" }
     } ;
 
-    private static void ChangeLocationType( Document document, List<Element> elements, string wireType )
+    private static void ChangeLocationType( Document document, View view, List<Element> elements, string wireType )
     {
       using var transactionGroup = new TransactionGroup( document ) ;
       transactionGroup.Start( "Change Type" ) ;
 
-      var (lines, curves) = GetLocationConduits( document, elements ) ;
+      var (lines, curves) = GetLocationConduits( document, view, elements ) ;
 
       var familySymbol = document.GetAllTypes<FamilySymbol>( x => x.Name == wireType ).FirstOrDefault() ;
       if ( null == familySymbol )
@@ -55,7 +55,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       {
         var line = document.Create.NewFamilyInstance( x.Key, familySymbol, document.ActiveView ) ;
         document.ActiveView.SetElementOverrides( line.Id, ogs ) ;
-        if ( line.HasParameter( ConduitIdParameter ) ) line.ParametersMap.get_Item( ConduitIdParameter ).Set( x.Value ) ;
+        //if ( line.HasParameter( ConduitIdParameter ) ) line.ParametersMap.get_Item( ConduitIdParameter ).Set( x.Value ) ;
+        conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, wireType ) ) ;
       } ) ;
       
       conduitAndDetailCurveStorable.Save() ;
@@ -67,12 +68,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       document.ActiveView.HideElements( elements.Select( x => x.Id ).ToList() ) ;
 
       var dropCategory = Category.GetCategory( document, BuiltInCategory.OST_ConduitDrop ) ;
-      if ( null != dropCategory )
-        document.ActiveView.SetCategoryHidden( dropCategory.Id, true ) ;
-
+      if ( null != dropCategory ) {
+        try {
+          document.ActiveView.SetCategoryHidden( dropCategory.Id, true ) ;
+        }
+        catch {
+          //
+        }
+      }
+      
       trans.Commit() ;
 
-      RefreshView( document ) ;
+      RefreshView( document, view ) ;
 
       transactionGroup.Assimilate() ;
     }
@@ -93,10 +100,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return subCategory ;
     }
 
-    public static (Dictionary<Line, string> lineConduits, Dictionary<Curve, string> curveHorizontal) GetLocationConduits( Document document, List<Element> elements )
+    public static (Dictionary<Line, string> lineConduits, Dictionary<Curve, string> curveHorizontal) GetLocationConduits( Document document, View view, List<Element> elements )
     {
       var conduits = elements.OfType<Conduit>().ToList() ;
-      var curveConduits = GetCurveFromElements( document, conduits ) ;
+      var curveConduits = GetCurveFromElements( document, view, conduits ) ;
 
       var conduitFittings = elements.OfType<FamilyInstance>().ToList() ;
       var fittingHorizontals = conduitFittings.Where( x => Math.Abs( x.GetTransform().OfVector( XYZ.BasisZ ).Z - 1 ) < GeometryUtil.Tolerance ).ToList() ;
@@ -112,7 +119,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       var lines = ConnectLines( document, lineConduits ) ;
-      var curves = GetCurveHorizontalFittings( document, fittingHorizontals ) ;
+      var curves = GetCurveHorizontalFittings( document, view, fittingHorizontals ) ;
       return ( lines, curves ) ;
     }
 
@@ -123,12 +130,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return 0.5 * ( connectors[ 0 ].Origin + connectors[ 1 ].Origin ) ;
       } ;
 
-    private static Dictionary<Curve, string> GetCurveHorizontalFittings( Document document, IEnumerable<FamilyInstance> fittingHorizontals )
+    private static Dictionary<Curve, string> GetCurveHorizontalFittings( Document document, View view, IEnumerable<FamilyInstance> fittingHorizontals )
     {
       var comparer = new XyzComparer() ;
       fittingHorizontals = fittingHorizontals.Where( x => x.MEPModel.ConnectorManager.Connectors.Size == 2 ) ;
       fittingHorizontals = fittingHorizontals.DistinctBy( x => GetCenterPoint( x ), comparer ) ;
-      return GetCurveFromElements( document, fittingHorizontals ) ;
+      return GetCurveFromElements( document, view, fittingHorizontals ) ;
     }
 
     private static Dictionary<Line, string> GetLineVerticalFittings( IEnumerable<FamilyInstance> fittingVerticals )
@@ -197,26 +204,33 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return lineOnPlanes ;
     }
 
-    private static Dictionary<Curve, string> GetCurveFromElements( Document document, IEnumerable<Element> elements )
+    private static Dictionary<Curve, string> GetCurveFromElements( Document document, View view, IEnumerable<Element> elements )
     {
-      using var transaction = new Transaction( document ) ;
-      transaction.Start( "Get Geometry" ) ;
-
-      var detailLevel = document.ActiveView.DetailLevel ;
-      document.ActiveView.DetailLevel = ViewDetailLevel.Coarse ;
-
       var curves = new Dictionary<Curve, string>() ;
-      var options = new Options { View = document.ActiveView } ;
+      try {
+        using var transaction = new Transaction( document ) ;
+        transaction.Start( "Get Geometry" ) ;
+        
+        var detailLevel = view.DetailLevel ;
+        if ( detailLevel != ViewDetailLevel.Coarse )
+          view.DetailLevel = ViewDetailLevel.Coarse ;
+        
+        var options = new Options { View = document.ActiveView } ;
 
-      foreach ( var element in elements ) {
-        if ( element.get_Geometry( options ) is { } geometryElement )
-          RecursiveCurves( geometryElement, element.UniqueId, ref curves ) ;
+        foreach ( var element in elements ) {
+          if ( element.get_Geometry( options ) is { } geometryElement )
+            RecursiveCurves( geometryElement, element.UniqueId, ref curves ) ;
+        }
+      
+        if ( detailLevel != ViewDetailLevel.Coarse )
+          view.DetailLevel = detailLevel ;
+        transaction.Commit() ;
+
+        return curves ;
       }
-
-      document.ActiveView.DetailLevel = detailLevel ;
-      transaction.Commit() ;
-
-      return curves ;
+      catch {
+        return curves ;
+      }
     }
 
     private static void RecursiveCurves( GeometryElement geometryElement, string elementId, ref Dictionary<Curve, string> curves )
@@ -236,19 +250,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
     }
 
-    public static void RefreshView( Document document )
+    public static void RefreshView( Document document, View view )
     {
-      if ( document.ActiveView.DetailLevel != ViewDetailLevel.Fine )
+      if ( view.DetailLevel != ViewDetailLevel.Fine )
         return ;
 
       using var transaction = new Transaction( document ) ;
 
       transaction.Start( "Detail Level Coarse" ) ;
-      document.ActiveView.DetailLevel = ViewDetailLevel.Coarse ;
+      view.DetailLevel = ViewDetailLevel.Coarse ;
       transaction.Commit() ;
 
       transaction.Start( "Detail Level Fine" ) ;
-      document.ActiveView.DetailLevel = ViewDetailLevel.Fine ;
+      view.DetailLevel = ViewDetailLevel.Fine ;
       transaction.Commit() ;
     }
 
@@ -256,33 +270,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var conduitAndDetailCurveStorable = document.GetConduitAndDetailCurveStorable() ;
       var conduitAndDetailCurves = conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Where( c => conduitIds.Contains( c.ConduitId ) ).ToList() ;
-      var oldLines = document.GetAllElements<Element>().OfCategory( BuiltInCategory.OST_DetailComponents ).Where( e => e is FamilyInstance f && f.HasParameter( ConduitIdParameter ) && conduitIds.Contains( f.ParametersMap.get_Item( ConduitIdParameter ).AsString() ) ).ToList() ;
-      if ( ! conduitAndDetailCurves.Any() && ! oldLines.Any() ) return string.Empty ;
+      if ( ! conduitAndDetailCurves.Any() ) return string.Empty ;
       var familyInstanceName = conduitAndDetailCurves.First().WireType ;
-      try {
-        using var transaction = new Transaction( document ) ;
-        transaction.Start( "Remove Detail Lines" ) ;
-        foreach ( var conduitAndDetailCurve in conduitAndDetailCurves ) {
-          var element = document.GetElement( conduitAndDetailCurve.DetailCurveId ) ;
-          if ( element != null ) document.Delete( element.UniqueId ) ;
+
+      using var transaction = new Transaction( document ) ;
+      transaction.Start( "Remove Detail Lines" ) ;
+      foreach ( var conduitAndDetailCurve in conduitAndDetailCurves ) {
+        try {
+          document.Delete( conduitAndDetailCurve.DetailCurveId ) ;
+          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Remove( conduitAndDetailCurve ) ;
         }
-        
-        foreach ( var oldLine in oldLines ) {
-          document.Delete( oldLine.UniqueId ) ;
+        catch {
+          //
         }
-        
-        conduitAndDetailCurveStorable.ConduitAndDetailCurveData = conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Where( c => ! conduitIds.Contains( c.ConduitId ) ).ToList() ;
-        conduitAndDetailCurveStorable.Save() ;
-        transaction.Commit() ;
-        return familyInstanceName ;
       }
-      catch {
-        return familyInstanceName ;
-      }
+      
+      conduitAndDetailCurveStorable.Save() ;
+      transaction.Commit() ;
+      return familyInstanceName ;
     }
 
     public static void ChangeWireType( Document document, HashSet<string> reReRouteNames, string wireTypeName )
     {
+      var viewPlan = document.ActiveView ;
       using var transaction = new Transaction( document ) ;
       transaction.Start( "Change color and bend radius of conduits." ) ;
       var arentFamilyType = document.GetFamilySymbols( ElectricalRoutingFamilyType.ArentConduitFittingType ).FirstOrDefault() ;
@@ -296,9 +306,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( conduit is not FamilyInstance conduitFitting || arentFamilyType == null ) continue ;
         conduitFitting.Symbol = arentFamilyType ;
       }
+      
+      var conduitOfRoute = newConduitsOfRoute.OfType<Conduit>().FirstOrDefault() ;
+      if ( conduitOfRoute != null ) {
+        var level = document.GetAllElements<Level>().FirstOrDefault( e => e.Id == conduitOfRoute.ReferenceLevel.Id ) ;
+        if ( level != null ) {
+          viewPlan = document.GetAllElements<ViewPlan>().FirstOrDefault( v => v.Name == level.Name ) ?? document.ActiveView ;
+        }
+      }
+
       transaction.Commit() ;
       
-      ChangeLocationType( document, newConduitsOfRoute, wireTypeName ) ;
+      ChangeLocationType( document, viewPlan, newConduitsOfRoute, wireTypeName ) ;
     }
   }
 }
