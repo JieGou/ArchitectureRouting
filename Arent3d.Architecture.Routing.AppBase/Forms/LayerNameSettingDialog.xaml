@@ -55,7 +55,12 @@
 
      
         <WrapPanel  Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
-            <Label>Layer name you want to remove, split by ","</Label>
+            <Label>
+                <TextBlock>
+                削除するレイヤー名：<LineBreak />
+                注意：不救うレイヤーを削除する場合、各レイヤー名を「,」で分割する
+                </TextBlock>
+            </Label>
             <TextBox
                 Text = "{Binding LayerNames}"
                 Name="LayerNames"
