@@ -1,12 +1,10 @@
-﻿using System.Collections.Generic ;
-using Arent3d.Architecture.Routing.AppBase ;
+﻿using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.UI ;
-using ImageType = Arent3d.Revit.UI.ImageType ;
+using System ;
+using Arent3d.Revit ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -23,5 +21,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     
     protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.ConnectorTwoSide ;
     protected override ConnectorFamilyType? ConnectorType => ConnectorFamilyType.Pass ;
+    
+    protected override string GetNameBase( MEPSystemType? systemType, MEPCurveType curveType ) => curveType.Category.Name ;
   }
 }
