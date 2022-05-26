@@ -31,23 +31,16 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       EcoMode,
       NormalMode
     }
-
-    public enum GradeModes
-    {
-      Grade1,
-      Grade2,
-      Grade3,
-    }
-
+    
     public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string> { [ EcoNormalMode.NormalMode ] = NormalModeKey.GetAppStringByKeyOrDefault( NormalModeDefaultString ), [ EcoNormalMode.EcoMode ] = EcoModeKey.GetAppStringByKeyOrDefault( EcoModeDefaultString ) } ;
 
-    public IReadOnlyDictionary<GradeModes, string> GradeModeTypes { get ; } = new Dictionary<GradeModes, string> { [ GradeModes.Grade1 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}1", [ GradeModes.Grade2 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}2",[ GradeModes.Grade3 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}3",  } ;
+    public IReadOnlyDictionary<string, string> GradeModeTypes { get ; } = new Dictionary<string, string> { [ "1" ] = "1", [ "2" ] = "2",[ "3" ] = "3", } ;
 
     public int SelectedEcoNormalModeIndex { get ; set ; }
     public EcoNormalMode SelectedEcoNormalMode => 0 == SelectedEcoNormalModeIndex ? EcoNormalMode.NormalMode : EcoNormalMode.EcoMode ;
-    public int SelectedGradeModeIndex { get ; set ; } = 0 ;
+    public int SelectedGradeModeIndex { get ; set ; } 
 
-    public GradeModes SelectedGradeMode => 0 <= SelectedGradeModeIndex ? (GradeModes) SelectedGradeModeIndex : 0 ;
+    public int SelectedGradeMode => SelectedGradeModeIndex + 1 ; 
 
     private ObservableCollection<ImportDwgMappingModel> _importDwgMappingModels ;
 
@@ -84,7 +77,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public DefaultSettingViewModel( DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName)
     {
       SelectedEcoNormalModeIndex = defaultSettingStorable.EcoSettingData.IsEcoMode ? 1 : 0 ;
-      SelectedGradeModeIndex = defaultSettingStorable.GradeSettingData.GradeMode ;
+      SelectedGradeModeIndex = defaultSettingStorable.GradeSettingData.GradeMode - 1;
       _importDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>() ;
       _fileItems = new List<FileComboboxItemType>() ;
       _oldImportDwgMappingModels = new List<ImportDwgMappingModel>() ;

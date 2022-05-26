@@ -104,14 +104,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return importDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ;
     }
     
-    private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, DefaultSettingViewModel.GradeModes gradeMode, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
+    private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, int gradeMode, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
     {
       try {
         Transaction transaction = new( document, SetDefaultEcoModeTransactionName ) ;
         transaction.Start() ;
         var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3 ) ).ToList() ;
         foreach ( var instance in instances ) {
-          instance.SetProperty( Grade3, gradeMode == DefaultSettingViewModel.GradeModes.Grade3 ) ;
+          instance.SetProperty( Grade3, gradeMode == 3 ) ;
         }
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
