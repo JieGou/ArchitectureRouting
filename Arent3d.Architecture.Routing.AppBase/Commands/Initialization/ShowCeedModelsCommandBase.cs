@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
 using Arent3d.Revit.I18n ;
@@ -103,7 +104,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var isHasParameterSymbolMagnification = element.HasParameter( symbolMagnification ) ;
         if ( isHasParameterSymbolMagnification ) element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
         var isHasParameterGrade = element.HasParameter( grade3 ) ;
-        if ( isHasParameterGrade ) element.SetProperty( grade3, doc.GetDefaultSettingStorable().GradeSettingData.IsInGrade3Mode ) ;
+        if ( isHasParameterGrade ) element.SetProperty( grade3, doc.GetDefaultSettingStorable().GradeSettingData.GradeMode == (int)DefaultSettingViewModel.GradeModes.Grade3 ) ;
       }
       doc.Create.NewGroup( groupIds ) ;
       t.Commit() ;

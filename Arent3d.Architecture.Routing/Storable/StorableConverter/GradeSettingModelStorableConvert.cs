@@ -10,23 +10,23 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
   {
     private enum SerializeField
     {
-      IsInGrade3Mode
+      GradeMode
     }
 
     protected override GradeSettingModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
     {
       var deserializer = deserializerObject.Of<SerializeField>() ;
 
-      var isInGrade3Mode = deserializer.GetBool( SerializeField.IsInGrade3Mode ) ;
+      var gradeMode = deserializer.GetInt( SerializeField.GradeMode ) ;
 
-      return new GradeSettingModel( isInGrade3Mode! ) ;
+      return new GradeSettingModel( gradeMode! ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, GradeSettingModel customTypeValue )
     {
       var serializerObject = new SerializerObject<SerializeField>() ;
 
-      serializerObject.Add( SerializeField.IsInGrade3Mode, customTypeValue.IsInGrade3Mode ) ;
+      serializerObject.Add( SerializeField.GradeMode, customTypeValue.GradeMode ) ;
 
       return serializerObject ;
     }

@@ -2,16 +2,16 @@
 {
   public class GradeSettingModel
   {
-    public bool IsInGrade3Mode { get ; set ; }
+    public int GradeMode { get ; set ; }
 
     public GradeSettingModel()
     {
-      IsInGrade3Mode = false ;
+      GradeMode = 0 ;
     }
 
-    public GradeSettingModel( bool? isInGrade3Mode )
+    public GradeSettingModel( int? gradeMode )
     {
-      IsInGrade3Mode = isInGrade3Mode ?? false ;
+      GradeMode = gradeMode ?? 0 ;
     }
   }
 }

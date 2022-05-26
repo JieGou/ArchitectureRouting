@@ -63,10 +63,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           viewModel = dialog.ViewModel ;
           var isEcoMode = viewModel.SelectedEcoNormalMode == DefaultSettingViewModel.EcoNormalMode.EcoMode ;
-          var isInGrade3Mode = viewModel.SelectedGradeMode == DefaultSettingViewModel.GradeModes.Grade3 ;
+          var gradeMode = viewModel.SelectedGradeMode ;
           var importDwgMappingModels = viewModel.ImportDwgMappingModels ;
           var deletedFloorName = viewModel.DeletedFloorName ;
-          SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, isInGrade3Mode, importDwgMappingModels, deletedFloorName ) ;
+          SetEcoModeAndGradeModeDefaultValue( document, defaultSettingStorable, isEcoMode, gradeMode, importDwgMappingModels, deletedFloorName ) ;
 
           if ( deletedFloorName.Any() ) {
             RemoveViews( document, deletedFloorName, uiDocument ) ;
@@ -104,18 +104,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return importDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ;
     }
     
-    private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, bool isInGrade3Mode, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
+    private void SetEcoModeAndGradeModeDefaultValue( Document document, DefaultSettingStorable defaultSettingStorable, bool isEcoModel, DefaultSettingViewModel.GradeModes gradeMode, ObservableCollection<ImportDwgMappingModel> importDwgMappingModels, List<string> deletedFloorName )
     {
       try {
         Transaction transaction = new( document, SetDefaultEcoModeTransactionName ) ;
         transaction.Start() ;
         var instances = new FilteredElementCollector( document ).OfClass( typeof( FamilyInstance ) ).Cast<FamilyInstance>().Where( a => a.HasParameter( Grade3 ) ).ToList() ;
         foreach ( var instance in instances ) {
-          instance.SetProperty( Grade3, isInGrade3Mode ) ;
+          instance.SetProperty( Grade3, gradeMode == DefaultSettingViewModel.GradeModes.Grade3 ) ;
         }
 
         defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
-        defaultSettingStorable.GradeSettingData.IsInGrade3Mode = isInGrade3Mode ;
+        defaultSettingStorable.GradeSettingData.GradeMode = (int)gradeMode ;
         if ( importDwgMappingModels.Any() ) {
           UpdateImportDwgMappingModels( defaultSettingStorable, importDwgMappingModels, deletedFloorName ) ;
         }
