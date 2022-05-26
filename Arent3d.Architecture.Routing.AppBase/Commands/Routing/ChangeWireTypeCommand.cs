@@ -307,9 +307,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
       }
       
+      var allView3d = document.GetAllElements<View>().Where( v => v is View3D ).ToList() ;
       foreach ( var conduit in newConduitsOfRoute ) {
         //Change conduit color to yellow RGB(255,215,0)
         viewPlan.SetElementOverrides( conduit.Id, ogs ) ;
+        foreach ( var view in allView3d ) {
+          try {
+            view.SetElementOverrides( conduit.Id, ogs ) ;
+          }
+          catch {
+            // Todo catch handle
+          }
+        }
         //Change conduit fitting bend radius = 1 mm
         if ( conduit is not FamilyInstance conduitFitting || arentFamilyType == null ) continue ;
         conduitFitting.Symbol = arentFamilyType ;
