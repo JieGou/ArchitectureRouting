@@ -34,18 +34,20 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public enum GradeModes
     {
+      Grade1,
+      Grade2,
       Grade3,
-      Grade1Grade2
     }
 
     public IReadOnlyDictionary<EcoNormalMode, string> EcoNormalModes { get ; } = new Dictionary<EcoNormalMode, string> { [ EcoNormalMode.NormalMode ] = NormalModeKey.GetAppStringByKeyOrDefault( NormalModeDefaultString ), [ EcoNormalMode.EcoMode ] = EcoModeKey.GetAppStringByKeyOrDefault( EcoModeDefaultString ) } ;
 
-    public IReadOnlyDictionary<GradeModes, string> GradeModeTypes { get ; } = new Dictionary<GradeModes, string> { [ GradeModes.Grade3 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}3", [ GradeModes.Grade1Grade2 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}1-2", } ;
+    public IReadOnlyDictionary<GradeModes, string> GradeModeTypes { get ; } = new Dictionary<GradeModes, string> { [ GradeModes.Grade1 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}1", [ GradeModes.Grade2 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}2",[ GradeModes.Grade3 ] = $"{GradeKey.GetAppStringByKeyOrDefault( GradeDefaultString )}3",  } ;
 
     public int SelectedEcoNormalModeIndex { get ; set ; }
     public EcoNormalMode SelectedEcoNormalMode => 0 == SelectedEcoNormalModeIndex ? EcoNormalMode.NormalMode : EcoNormalMode.EcoMode ;
-    public int SelectedGradeModeIndex { get ; set ; }
-    public GradeModes SelectedGradeMode => 0 == SelectedGradeModeIndex ? GradeModes.Grade3 : GradeModes.Grade1Grade2 ;
+    public int SelectedGradeModeIndex { get ; set ; } = 0 ;
+
+    public GradeModes SelectedGradeMode => 0 <= SelectedGradeModeIndex ? (GradeModes) SelectedGradeModeIndex : 0 ;
 
     private ObservableCollection<ImportDwgMappingModel> _importDwgMappingModels ;
 
@@ -82,7 +84,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public DefaultSettingViewModel( DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName)
     {
       SelectedEcoNormalModeIndex = defaultSettingStorable.EcoSettingData.IsEcoMode ? 1 : 0 ;
-      SelectedGradeModeIndex = defaultSettingStorable.GradeSettingData.IsInGrade3Mode ? 0 : 1 ;
+      SelectedGradeModeIndex = defaultSettingStorable.GradeSettingData.GradeMode ;
       _importDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>() ;
       _fileItems = new List<FileComboboxItemType>() ;
       _oldImportDwgMappingModels = new List<ImportDwgMappingModel>() ;
@@ -169,8 +171,30 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
+      ChangeNameIfDuplicate() ;
       UpdateDefaultFloorHeight() ;
     }
+
+    private void ChangeNameIfDuplicate()
+    {
+      var nameFloors = ImportDwgMappingModels.Select( x => x.FloorName ).ToList() ;
+      var newNameFloors = new List<string>() ;
+      for ( int i = 0 ; i < nameFloors.Count() ; i++ ) {
+        string name = nameFloors[ i ] ;
+        int count = 0 ;
+        while ( newNameFloors.Contains( name ) ) {
+          name = $"{nameFloors[ i ]}({++count})" ;
+        }
+
+        newNameFloors.Add( name ) ;
+      }
+
+      for ( int i = 0 ; i < ImportDwgMappingModels.Count() ; i++ ) {
+        ImportDwgMappingModels[ i ].FloorName = newNameFloors[ i ] ;
+      }
+    }
+    
+    
 
     private void UpdateDefaultFloorHeight()
     {
@@ -190,7 +214,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         { "10F", 44700 }
       } ;
       foreach ( var importDwgMappingModel in ImportDwgMappingModels ) {
-        var (key, value) = defaultHeights.FirstOrDefault( x => x.Key.Equals( importDwgMappingModel.FloorName ) ) ;
+        var (key, value) = defaultHeights.FirstOrDefault( x => importDwgMappingModel.FloorName.Contains( x.Key ) ) ;
         if ( key != null ) {
           importDwgMappingModel.FloorHeight = value ;
         }
@@ -202,7 +226,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       
       var maxFloorHeight = ImportDwgMappingModels.Max( x => x.FloorHeight ) ;
-      var pH1FFloor = ImportDwgMappingModels.FirstOrDefault( x => x.FloorName.Equals( "PH1F" ) ) ;
+      var pH1FFloor = ImportDwgMappingModels.FirstOrDefault( x => x.FloorName.Contains( "PH1F" ) ) ;
       if ( pH1FFloor is { IsEnabled: true }) pH1FFloor.FloorHeight = maxFloorHeight + 6500 ;
 
       ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ) ;
