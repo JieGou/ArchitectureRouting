@@ -25,9 +25,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private readonly UIDocument _uiDocument ;
     private readonly LocationTypeStorable _settingStorable ;
 
-    private Dictionary<string, string>? _wireSymbolOptions ;
+    private static Dictionary<string, string>? _wireSymbolOptions ;
 
-    public Dictionary<string, string> WireSymbolOptions => _wireSymbolOptions ??= new Dictionary<string, string>
+    public static Dictionary<string, string> WireSymbolOptions => _wireSymbolOptions ??= new Dictionary<string, string>
     {
       { "漏水帯（布）", "LeakageZoneCloth" }, 
       { "漏水帯（発色）", "LeakageZoneColoring" }, 
