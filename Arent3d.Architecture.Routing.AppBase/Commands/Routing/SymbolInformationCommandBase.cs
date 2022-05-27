@@ -14,18 +14,7 @@ using Autodesk.Revit.UI ;
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public class SymbolInformationCommandBase : IExternalCommand
-  {
-    /// <summary>
-    /// Get selected objects, check if the first is SymbolInformation or not.
-    /// 1. If that one is SymbolInformation => show dialog 
-    /// 2. If that one isn't SymbolInformation => show message
-    /// If there isn't selected => create new base on click location => show dialog 
-    /// </summary>
-    /// <param name="commandData"></param>
-    /// <param name="message"></param>
-    /// <param name="elements"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
+  { 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
@@ -131,15 +120,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return Result.Cancelled ;
       }
     }
-
-    /// <summary>
-    /// Get ElementId of SymbolInformation from selected group 
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="symbolInformations"></param>
-    /// <param name="group"></param>
-    /// <param name="textNote"></param>
-    /// <returns></returns>
+ 
     private ElementId? GetElementIdOfSymbolInformationFromGroup( Document document, List<SymbolInformationModel> symbolInformations, Group group, ref TextNote? textNote )
     {
       var memberIds = group.GetMemberIds() ;
@@ -160,29 +141,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return null ;
     }
-
-    /// <summary>
-    /// Create FamilySymbol type ElectricalRoutingFamilyType.SymbolStar
-    /// </summary>
-    /// <param name="uiDocument"></param>
-    /// <param name="level"></param>
-    /// <param name="xyz"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
+ 
     private static FamilyInstance GenerateSymbolInformation( UIDocument uiDocument, Level level, XYZ xyz )
     {
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       return symbol.Instantiate( xyz, level, StructuralType.NonStructural ) ;
     }
-
-    /// <summary>
-    /// Create group of symbol and text annotation
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="symbolInformationInstanceId"></param>
-    /// <param name="model"></param>
-    /// <param name="xyz"></param>
-    /// <param name="oldParentGroup"></param>
+ 
     private void CreateGroupSymbolInformation( Document document, ElementId symbolInformationInstanceId, SymbolInformationModel model, XYZ xyz, Group? oldParentGroup )
     {
       ICollection<ElementId> groupIds = new List<ElementId>() ;

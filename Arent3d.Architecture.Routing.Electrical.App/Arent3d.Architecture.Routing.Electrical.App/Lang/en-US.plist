@@ -229,6 +229,9 @@
         <key>Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand</key>
         <string>Create Table&#xA;By Floors</string>
 
+        <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
+        <string>Symbol Information</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
@@ -462,6 +465,6 @@
         <string>Grade </string>
         
         <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
-        <string>Registration Of&#xA;Board Data</string>
+        <string>Registration Of&#xA;Board Data</string> 
     </dict>
 </plist>
