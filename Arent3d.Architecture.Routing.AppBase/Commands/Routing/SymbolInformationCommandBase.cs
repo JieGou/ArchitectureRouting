@@ -1,7 +1,6 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
-using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
@@ -11,8 +10,6 @@ using Arent3d.Revit.UI ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
-using Color = Autodesk.Revit.DB.Color ;
-using FormattedText = Autodesk.Revit.DB.FormattedText ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
@@ -35,7 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var uiDocument = commandData.Application.ActiveUIDocument ;
         var document = uiDocument.Document ;
         var symbolInformationStorable = document.GetSymbolInformationStorable() ;
-        var symbolInformations = symbolInformationStorable.AllSymbolInformationModelData ;
+        var symbolInformationList = symbolInformationStorable.AllSymbolInformationModelData ;
         var level = uiDocument.ActiveView.GenLevel ;
         var heightOfSymbol = document.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         SymbolInformationModel? model = null ;
@@ -52,9 +49,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             var groupId = uiDocument.Selection.GetElementIds().First() ;
             if ( document.GetElement( groupId ) is Group parentGroup ) {
               oldParentGroup = parentGroup ;
-              var elementId = GetElementIdOfSymbolInformationFromGroup( document, symbolInformations, parentGroup, ref textNote ) ;
+              var elementId = GetElementIdOfSymbolInformationFromGroup( document, symbolInformationList, parentGroup, ref textNote ) ;
               if ( elementId != null ) {
-                var symbolInformation = symbolInformations.FirstOrDefault( x => x.Id == elementId.ToString() ) ;
+                var symbolInformation = symbolInformationList.FirstOrDefault( x => x.Id == elementId.ToString() ) ;
                 //pickedObject is SymbolInformationModel
                 if ( null != symbolInformation ) {
                   model = symbolInformation ;
@@ -72,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
                   symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
                   model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString() } ;
-                  symbolInformations.Add( model ) ;
+                  symbolInformationList.Add( model ) ;
                   selectedItemIsSymbolInformation = true ;
                 }
               }
@@ -84,7 +81,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               xyz = uiDocument.Selection.PickPoint( "SymbolInformationの配置場所を選択して下さい。" ) ;
               symbolInformationInstance = GenerateSymbolInformation( uiDocument, level, new XYZ( xyz.X, xyz.Y, heightOfSymbol ) ) ;
               model = new SymbolInformationModel { Id = symbolInformationInstance.Id.ToString(), Floor = level.Name} ;
-              symbolInformations.Add( model ) ;
+              symbolInformationList.Add( model ) ;
             }
             catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
               return Result.Cancelled ;
@@ -147,14 +144,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     {
       var memberIds = group.GetMemberIds() ;
       foreach ( var memberId in memberIds ) {
-        if ( symbolInformations.FirstOrDefault( x => x.Id == memberId.ToString() ) != null ) {
+        if ( symbolInformations.FirstOrDefault( x => x.Id == memberId.ToString() ) == null ) continue ;
+        {
           var txtGroup = document.GetAllElements<Group>().FirstOrDefault( x => x.AttachedParentId == group.Id ) ;
-          if ( txtGroup != null ) {
-            var txtId = txtGroup.GetMemberIds().FirstOrDefault() ;
-            var txtNode = document.GetElement( txtId ) ;
-            if ( txtNode != null ) {
-              textNote = (TextNote) txtNode ;
-            }
+          if ( txtGroup == null ) return memberId ;
+          var txtId = txtGroup.GetMemberIds().FirstOrDefault() ;
+          var txtNode = document.GetElement( txtId ) ;
+          if ( txtNode != null ) {
+            textNote = (TextNote) txtNode ;
           }
 
           return memberId ;
@@ -172,7 +169,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     /// <param name="xyz"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    private FamilyInstance GenerateSymbolInformation( UIDocument uiDocument, Level level, XYZ xyz )
+    private static FamilyInstance GenerateSymbolInformation( UIDocument uiDocument, Level level, XYZ xyz )
     {
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.SymbolStar ).FirstOrDefault() ?? throw new InvalidOperationException() ;
       return symbol.Instantiate( xyz, level, StructuralType.NonStructural ) ;
@@ -196,13 +193,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var anchor = (SymbolCoordinateEnum) Enum.Parse( typeof( SymbolCoordinateEnum ), model.SymbolCoordinate! ) ;
         XYZ txtPosition ;
         switch ( anchor ) {
-          case SymbolCoordinateEnum.Top :
+          case SymbolCoordinateEnum.上 :
             txtPosition = new XYZ( xyz.X - 1, xyz.Y + 1, xyz.Z ) ;
             break ;
-          case SymbolCoordinateEnum.Left :
+          case SymbolCoordinateEnum.左 :
             txtPosition = new XYZ( xyz.X - model.Height, xyz.Y + 0.1, xyz.Z ) ;
             break ;
-          case SymbolCoordinateEnum.Right :
+          case SymbolCoordinateEnum.右 :
             txtPosition = new XYZ( xyz.X + model.Height / 3, xyz.Y + 0.1, xyz.Z ) ;
             break ;
           default :
@@ -211,7 +208,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         }
 
 
-        ElementId defaultTextTypeId = document.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+        var defaultTextTypeId = document.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
 
         // make sure note width works for the text type
         var minWidth = TextElement.GetMinimumAllowedWidth( document, defaultTextTypeId ) ;

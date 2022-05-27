@@ -1,11 +1,8 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
-using System.ComponentModel ;
-using System.Globalization ;
 using System.Linq ;
 using System.Windows.Data ;
-using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
@@ -13,7 +10,6 @@ using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Revit ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 
@@ -25,12 +21,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string UnitDefault = "m" ;
     private const string TrajectoryDefault = "100" ;
      
-    private Document? _document ; 
+    private readonly Document? _document ; 
 
     public ICommand AddCeedDetailCommand => new RelayCommand( AddCeedDetail ) ;
     public ICommand DeleteCeedDetailCommand => new RelayCommand( DeleteCeedDetail ) ;
 
-    public SymbolInformationModel SymbolInformation { get ; set ; }
+    public SymbolInformationModel SymbolInformation { get ; }
 
     #region SymbolSetting
 
@@ -55,25 +51,25 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     #region CeedDetail Setting
 
     private CsvStorable? _csvStorable ;
-    public CsvStorable CsvStorable => _csvStorable ??= _document!.GetCsvStorable() ;
+    private CsvStorable CsvStorable => _csvStorable ??= _document!.GetCsvStorable() ;
 
     private List<HiroiMasterModel>? _hiroiMasterModels ;
-    public List<HiroiMasterModel> HiroiMasterModels => _hiroiMasterModels ??= CsvStorable.HiroiMasterModelData ;
+    private List<HiroiMasterModel> HiroiMasterModels => _hiroiMasterModels ??= CsvStorable.HiroiMasterModelData ;
 
-    private ObservableCollection<CeedDetailModel> _ceedDetailList = new() ;
+    private readonly ObservableCollection<CeedDetailModel> _ceedDetailList = new() ;
     public CeedDetailModel? CeedDetailSelected { get ; set ; }
 
     public ObservableCollection<CeedDetailModel> CeedDetailList
     {
       get => _ceedDetailList ;
-      set
+      private init
       {
         _ceedDetailList = value ;
-        OnPropertyChanged( "CeedDetailList" ) ;
+        OnPropertyChanged() ;
       }
     }
 
-    public ObservableCollection<string> ConstructionClassificationTypeList { get ; set ; }
+    public ObservableCollection<string> ConstructionClassificationTypeList { get ; }
 
     #endregion
  

@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterScreen"
         d:DataContext="{d:DesignInstance {x:Type local:DesignHiroiMasterViewModel}, IsDesignTimeCreatable=True}"
         x:Name="ThisWindow"
-        Title="セットコード登録" Height="600" Width="900">
+        Title="略名コード検索" Height="600" Width="900">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="40" />
@@ -18,16 +18,16 @@
         </Grid.RowDefinitions>
         
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <Label HorizontalAlignment="Right" Content="Search content" Margin="10, 5" />
+            <Label HorizontalAlignment="Right" Content="検索" Margin="10, 5" />
             <TextBox VerticalContentAlignment="Center" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"  Width="200" Height="27"/>
         </StackPanel>
-        <Label Grid.Row="1" HorizontalAlignment="Left" Content="Grid Result" Margin="5" />
-        <DataGrid Name="GridResult" Grid.Row="2" Margin="10 5 5 5" ItemsSource="{Binding HiroiMasterListDisplay, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding HiroiMasterSelected}"  CanUserAddRows="False" AutoGenerateColumns="False">
+        <Label Grid.Row="1" HorizontalAlignment="Left" Content="検索結果" Margin="5" />
+        <DataGrid Grid.Row="2" Margin="10 5 5 5" ItemsSource="{Binding HiroiMasterListDisplay, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding HiroiMasterSelected}"  CanUserAddRows="False" AutoGenerateColumns="False">
             <DataGrid.Columns> 
-                <DataGridTextColumn Header="品名コード" Width="150" Binding="{Binding Buzaicd, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/>
-                <DataGridTextColumn Header="品名" Width="250" Binding="{Binding Buzaisyu, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" /> 
-                <DataGridTextColumn Header="規格" Width="250" Binding="{Binding Hinmei, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/> 
-                <DataGridTextColumn Header="個数" Width="100"  Binding="{Binding Kikaku, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/>
+                <DataGridTextColumn Header="部材コード" Width="150" Binding="{Binding Buzaicd, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/>
+                <DataGridTextColumn Header="品名" Width="150" Binding="{Binding Hinmei, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/> 
+                <DataGridTextColumn Header="規格" Width="300"  Binding="{Binding Kikaku, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/>
+                <DataGridTextColumn Header="単位" Width="100" Binding="{Binding Tani, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" /> 
             </DataGrid.Columns>
             <DataGrid.InputBindings>
                 <MouseBinding
@@ -38,7 +38,7 @@
         </DataGrid>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10" >
             <Button Content="OK" Command="{Binding AddCeedDetailCommand}" CommandParameter="{Binding ElementName=ThisWindow}" Width="60"/>    
-            <Button Content="Cancel" Click="BtnCancel_Click" Margin="10 0" Width="60"/>    
+            <Button Content="キャンセル" Click="BtnCancel_Click" Margin="10 0" Width="60"/>    
         </StackPanel>
         
          

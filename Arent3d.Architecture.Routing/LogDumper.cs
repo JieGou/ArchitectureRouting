@@ -75,7 +75,7 @@ namespace Arent3d.Architecture.Routing
       using var _ = writer.WriteElement( elmName ) ;
 
       foreach ( var ep in constraints.Starts ) {
-        writer.WriteEndPoint( "Start", ep ) ;
+        writer.WriteEndPoint( "星", ep ) ;
       }
       foreach ( var ep in constraints.Destination ) {
         writer.WriteEndPoint( "Destination", ep ) ;
@@ -234,7 +234,7 @@ namespace Arent3d.Architecture.Routing
       var constraints = new DumpedAutoRoutingSpatialConstraints() ;
 
       while ( reader.IsStartElement() ) {
-        if ( "Start" == reader.Name ) {
+        if ( "星" == reader.Name ) {
           reader.ReadStartElement() ;
           constraints.Starts.Add( ReadEndPoint( reader ) ) ;
           reader.ReadEndElement() ;
