@@ -214,6 +214,12 @@
         <key>Electrical.App.Commands.Routing.RoomSelectionRangeRouteCommand</key>
         <string>Room Range Wiring</string>
 
+        <key>Electrical.App.Commands.Initialization.RegisterSymbolCommand</key>
+        <string>Register Symbol</string>
+
+        <key>Electrical.App.Commands.Initialization.SetupPrintCommand</key>
+        <string>Scale Setting</string>
+
         <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
         <string>Simple Border&#xA;Text Box</string>
 
@@ -222,6 +228,9 @@
         
         <key>Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand</key>
         <string>Create Table&#xA;By Floors</string>
+
+        <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
+        <string>Symbol Information</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

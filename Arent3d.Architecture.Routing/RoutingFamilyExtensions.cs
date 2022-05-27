@@ -97,6 +97,9 @@ namespace Arent3d.Architecture.Routing
     [Family( "LeakageZonePvc", BuiltInCategory.OST_DetailComponents )]
     VerticalRepeat,
     
+    [Family( "Symbol Star", BuiltInCategory.OST_GenericModel )]
+    SymbolStar,
+
     [Family( "Jbox To Connector", BuiltInCategory.OST_ElectricalFixtures )]
     ToJboxConnector,
     
