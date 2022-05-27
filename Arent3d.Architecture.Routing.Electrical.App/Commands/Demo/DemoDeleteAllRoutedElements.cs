@@ -3,6 +3,8 @@ using System.ComponentModel ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Extensions ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
@@ -30,6 +32,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         document.Delete( elementsToDelete ) ;
 
         DeleteBoundaryRack( document ) ;
+        DeleteNotation( document ) ;
         
         return Result.Succeeded ;
       } ) ;
@@ -42,6 +45,30 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         return;
 
       document.Delete( curveELements.Select( x => x.Id ).ToList() ) ;
+    }
+
+    private void DeleteNotation(Document document)
+    {
+      var rackNotationStorable = document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? document.GetRackNotationStorable() ;
+      foreach ( var notationModelData in rackNotationStorable.RackNotationModelData ) {
+        if ( document.GetElement( notationModelData.NotationId ) is { } textNote ) {
+          document.Delete( textNote.Id ) ;
+          notationModelData.NotationId = string.Empty ;
+        }
+
+        if ( document.GetElement( notationModelData.EndLineLeaderId ) is { } endLine ) {
+          document.Delete( endLine.Id ) ;
+          notationModelData.EndLineLeaderId = string.Empty ;
+        }
+
+        foreach ( var otherLineId in notationModelData.OrtherLineId ) {
+          if ( document.GetElement( otherLineId ) is { } otherLine )
+            document.Delete( otherLine.Id ) ;
+        }
+
+        notationModelData.OrtherLineId = new List<string>() ;
+      }
+      rackNotationStorable.Save();
     }
   }
 }
