@@ -212,7 +212,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       動力
     }
 
-    private enum ConstructionClassificationType
+    public enum ConstructionClassificationType
     {
       天井隠蔽,
       天井コロガシ,
