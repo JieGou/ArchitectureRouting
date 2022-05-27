@@ -148,7 +148,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         
         var graphicsStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         
-        curves.ForEach( x => { _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x ) ; } ) ;
+        curves.ForEach( x =>
+        {
+          var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x ) ;
+          detailCurve.LineStyle = graphicsStyle ;
+        } ) ;
         lines.ForEach( x =>
         {
           var detailCurve = _uiDocument.Document.Create.NewDetailCurve(_uiDocument.ActiveView, x) ;
