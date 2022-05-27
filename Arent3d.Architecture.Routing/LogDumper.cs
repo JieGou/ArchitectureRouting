@@ -77,7 +77,6 @@ namespace Arent3d.Architecture.Routing
       foreach ( var ep in constraints.Starts ) {
         writer.WriteEndPoint( "Start", ep ) ;
       }
-      }
       foreach ( var ep in constraints.Destination ) {
         writer.WriteEndPoint( "Destination", ep ) ;
       }
