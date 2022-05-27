@@ -6,9 +6,7 @@ using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
-using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
@@ -57,8 +55,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var signalTypes = new ObservableCollection<string>((from signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType )) select signalType.GetFieldName()).ToList()) ; 
          
         
-        var viewModel = new AddWiringInformationViewModel( document, detailTableModels, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes   ) ;
-        var dialog = new AddWiringInformationDialog( viewModel, document ) ;
+        var viewModel = new AddWiringInformationViewModel( document, detailTableModels.FirstOrDefault()!, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes   ) ;
+        var dialog = new AddWiringInformationDialog( viewModel ) ;
         dialog.ShowDialog() ;
         return Result.Succeeded ; 
       }

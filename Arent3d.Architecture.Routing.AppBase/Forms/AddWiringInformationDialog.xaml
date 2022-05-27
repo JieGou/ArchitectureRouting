@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         x:Name="ThisWindow"
         WindowStartupLocation="CenterScreen"
-        Title="Update property" Height="300" Width="1000"
+        Title="Update property" Height="800" Width="450"
         d:DataContext="{d:DesignInstance {x:Type local:DesignAddWiringInformationViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <CollectionViewSource x:Key="ConduitTypes" Source="{Binding ConduitTypes}" />
@@ -27,117 +27,103 @@
         <CollectionViewSource x:Key="WireSizes" Source="{Binding WireSizes}" />
 
     </Window.Resources>
-    <Grid>
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="250" />
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" />
+            <RowDefinition Height="35" /> 
+            <RowDefinition Height="35" /> 
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
-        <DataGrid x:Name="DtGrid" RowHeight="25" ItemsSource="{Binding DetailTableModels}"
-                  SelectedItem="{Binding SelectedDetailTableModel}"
-                  CanUserAddRows="False" AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="FullRow">
-            <DataGrid.Columns>
-                <!--Floor-->
-                <DataGridComboBoxColumn Header="フロア" Width="45"
-                                        ItemsSource="{Binding Source={StaticResource Levels}}"
-                                        SelectedItemBinding="{Binding Floor}" />
-                <!-- DetailSymbol -->
-                <DataGridTextColumn Header="明細記号" Width="50" Binding="{Binding DetailSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <!-- WireType -->
-                <DataGridComboBoxColumn Header="フロア" Width="100"
-                                        ItemsSource="{Binding Source={StaticResource WireTypes}}"
-                                        SelectedItemBinding="{Binding WireType}">
-                </DataGridComboBoxColumn>
-                <!-- <DataGridTemplateColumn Header="明細記号" Width="100"> -->
-                <!--     <DataGridTemplateColumn.CellTemplate> -->
-                <!--         <DataTemplate> -->
-                <!--             <Grid> -->
-                <!--                 <TextBlock Text="{Binding WireType}" /> -->
-                <!--             </Grid> -->
-                <!--         </DataTemplate> -->
-                <!--     </DataGridTemplateColumn.CellTemplate> -->
-                <!--     <DataGridTemplateColumn.CellEditingTemplate> -->
-                <!--         <DataTemplate> -->
-                <!--             <ComboBox BorderThickness="0" -->
-                <!--                       IsDropDownOpen="True" -->
-                <!--                       SelectionChanged="Selector_OnSelectionChanged" -->
-                <!--                       SelectedItem="{Binding WireType}" -->
-                <!--                       ItemsSource="{Binding Source={StaticResource WireTypes}}"  -->
-                <!--                       /> -->
-                <!--         </DataTemplate> -->
-                <!--     </DataGridTemplateColumn.CellEditingTemplate> -->
-                <!-- </DataGridTemplateColumn> -->
-                
-                <!-- WireSizes -->
-                <DataGridComboBoxColumn Header="電線サイズ" Width="50"
-                                        ItemsSource="{Binding Source={StaticResource WireSizes}}"
-                                        SelectedItemBinding="{Binding WireSize}" />
-                <!-- WireStrip -->
-                <DataGridComboBoxColumn Header="電線条数" Width="50"
-                                        ItemsSource="{Binding Source={StaticResource WireStrips}}"
-                                        SelectedItemBinding="{Binding WireStrip}"
-                                        CanUserSort="False" />
-                <!-- WireBook -->
-                <DataGridTemplateColumn Header="電線本数" Width="50" CanUserSort="False">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding WireBook, Mode=TwoWay}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                <!-- EarthType -->
-                <DataGridComboBoxColumn Header="アース種類" Width="50"
-                                        SelectedItemBinding="{Binding EarthType}"
-                                        ItemsSource="{Binding Source={StaticResource EarthTypes}}"
-                                        CanUserSort="False" />
-                <!-- EarthSize -->
-                <DataGridComboBoxColumn Header="アースサイズ" Width="50"
-                                        SelectedItemBinding="{Binding EarthSize}"
-                                        ItemsSource="{Binding Source={StaticResource EarthSizes}}"
-                                        CanUserSort="False" />
-                <!-- NumberOfGrounds -->
-                <DataGridComboBoxColumn Header="アース本数" Width="50"
-                                        SelectedValueBinding="{Binding NumberOfGrounds}"
-                                        ItemsSource="{Binding Source={StaticResource Numbers}}"
-                                        CanUserSort="False" />
-                <!-- PlumbingType -->
-                <DataGridComboBoxColumn Header="配管種類" Width="50"
-                                        SelectedItemBinding="{Binding PlumbingType}"
-                                        ItemsSource="{Binding Source={StaticResource ConduitTypes}}"
-                                        CanUserSort="False" />
-                <!-- PlumbingSize -->
-                <DataGridComboBoxColumn Header="配管サイズ" Width="50"
-                                        SelectedValueBinding="{Binding PlumbingSize}"
-                                        SelectedItemBinding="{Binding PlumbingSize}"
-                                        ItemsSource="{Binding Source={StaticResource PlumbingSizes}}"
-                                        CanUserSort="False" />
-                <!-- NumberOfPlumbing -->
-                <DataGridTextColumn Header="配管本数" Width="50" Binding="{Binding NumberOfPlumbing, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
-                <!-- ConstructionClassification -->
-                <DataGridComboBoxColumn Header="施工区分" Width="50"
-                                        SelectedValueBinding="{Binding ConstructionClassification}"
-                                        ItemsSource="{Binding Source={StaticResource ConstructionClassificationTypes}}"
-                                        CanUserSort="False" />
-                <!-- SignalType -->
-                <DataGridComboBoxColumn Header="信号種別" Width="50"
-                                        SelectedValueBinding="{Binding SignalType}"
-                                        ItemsSource="{Binding Source={StaticResource SignalTypes}}"
-                                        CanUserSort="False" />
-                <!-- ConstructionItems -->
-                <DataGridComboBoxColumn Header="工事項目" Width="90"
-                                        SelectedValueBinding="{Binding ConstructionItems}"
-                                        ItemsSource="{Binding Source={StaticResource ConstructionItems}}"
-                                        CanUserSort="False" />
-                <!-- PlumbingItems -->
-                <DataGridComboBoxColumn Header="配管工事項目" Width="90"
-                                        SelectedValueBinding="{Binding PlumbingItems}"
-                                        ItemsSource="{Binding Source={StaticResource PlumbingItemTypes}}"
-                                        CanUserSort="False" />
-                <!-- Remark -->
-                <DataGridTextColumn Header="備考" Width="110" Binding="{Binding Remark, ValidatesOnExceptions=True, Mode=TwoWay}" CanUserSort="False" />
-            </DataGrid.Columns>
-        </DataGrid>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+        <!-- Floor -->
+        <Label Grid.Row="0" Grid.Column="0" Content="フロア" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="0" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource Levels}}" SelectedItem="{Binding DetailTableModel.Floor}" />
+        <!-- DetailSymbol -->
+        <Label Grid.Row="1" Grid.Column="0" Content="明細記号" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DetailTableModel.DetailSymbol}" Width="230" Height="27" IsReadOnly="True"  VerticalContentAlignment="Center" />
+        <!-- WireType -->
+        <Label Grid.Row="2" Grid.Column="0" Content="フロア" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="2" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource WireTypes}}" SelectedItem="{Binding DetailTableModel.WireType}"> 
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectionChanged">
+                    <i:InvokeCommandAction Command="{Binding WireTypeChangedCommand}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </ComboBox>
+        <!-- WireSizes  -->
+        <Label Grid.Row="3" Grid.Column="0" Content="電線サイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="3" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource WireSizes}}" SelectedItem="{Binding DetailTableModel.WireSize}">
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectionChanged">
+                    <i:InvokeCommandAction Command="{Binding WireSizeChangedCommand}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </ComboBox>
+        <!-- WireStrip  -->
+        <Label Grid.Row="4" Grid.Column="0" Content="電線条数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="4" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource WireStrips}}" SelectedItem="{Binding DetailTableModel.WireStrip}" />
+        <!-- WireBook -->
+        <Label Grid.Row="5" Grid.Column="0" Content="電線本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="5" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource Numbers}}" SelectedItem="{Binding DetailTableModel.WireBook}" />
+        <!-- EarthType  -->
+        <Label Grid.Row="6" Grid.Column="0" Content="アース種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="6" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource EarthTypes}}" SelectedItem="{Binding DetailTableModel.EarthType}" >
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectionChanged">
+                    <i:InvokeCommandAction Command="{Binding EarthTypeChangedCommand}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </ComboBox>
+        <!-- EarthSize  -->
+        <Label Grid.Row="7" Grid.Column="0" Content="アースサイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="7" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource EarthSizes}}" SelectedItem="{Binding DetailTableModel.EarthSize}" />
+        <!-- NumberOfGrounds   -->
+        <Label Grid.Row="8" Grid.Column="0" Content="アース本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="8" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource Numbers}}" SelectedItem="{Binding DetailTableModel.NumberOfGrounds}" />
+        <!-- PlumbingType   -->
+        <Label Grid.Row="9" Grid.Column="0" Content="配管種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="9" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource ConduitTypes}}" SelectedItem="{Binding DetailTableModel.PlumbingType}" />
+        <!-- PlumbingSize   -->
+        <Label Grid.Row="10" Grid.Column="0" Content="配管サイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="10" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource PlumbingSizes}}" SelectedItem="{Binding DetailTableModel.PlumbingSize}" />
+        <!-- NumberOfPlumbing   -->
+        <Label Grid.Row="11" Grid.Column="0" Content="配管本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding DetailTableModel.NumberOfPlumbing}" Width="230" Height="27"  VerticalContentAlignment="Center" />
+        <!-- ConstructionClassification   -->
+        <Label Grid.Row="12" Grid.Column="0" Content="施工区分" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="12" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource ConstructionClassificationTypes}}" SelectedItem="{Binding DetailTableModel.ConstructionClassification}" />
+        <!-- SignalType   -->
+        <Label Grid.Row="13" Grid.Column="0" Content="信号種別" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="13" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource SignalTypes}}" SelectedItem="{Binding DetailTableModel.SignalType}" />
+        <!-- ConstructionItems   -->
+        <Label Grid.Row="14" Grid.Column="0" Content="工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="14" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource ConstructionItems}}" SelectedItem="{Binding DetailTableModel.ConstructionItems}" />
+        <!-- PlumbingItems   -->
+        <Label Grid.Row="15" Grid.Column="0" Content="配管工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <ComboBox Grid.Row="15" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource PlumbingItemTypes}}" SelectedItem="{Binding DetailTableModel.PlumbingItems}" />
+        <!-- Remark   -->
+        <Label Grid.Row="16" Grid.Column="0" Content="備考" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
+        <TextBox Grid.Row="16" Grid.Column="1" Text="{Binding DetailTableModel.Remark}" Width="230" Height="27" VerticalContentAlignment="Center" />
+
+        <StackPanel Grid.Row="17" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Save" Width="70" Height="25" Command="{Binding SaveCommand}" CommandParameter="{Binding ElementName=ThisWindow}" />
             <Button Content="Cancel" Width="70" Height="25" Margin="10 0 10 0" Command="{Binding CancelCommand}" CommandParameter="{Binding ElementName=ThisWindow}" />
         </StackPanel>

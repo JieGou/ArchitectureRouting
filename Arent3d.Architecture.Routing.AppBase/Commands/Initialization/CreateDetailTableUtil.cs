@@ -180,18 +180,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       foreach ( var detailSymbolModelByDetailSymbolId in detailSymbolModelsByDetailSymbolId ) {
         var firstDetailSymbolModelByDetailSymbolId = detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault() ;
         var routeNames = detailSymbolModelByDetailSymbolId.DetailSymbolModels.Select( d => d.RouteName ).Distinct().ToList() ;
-        var parentRouteName = firstDetailSymbolModelByDetailSymbolId!.CountCableSamePosition == 1 ? firstDetailSymbolModelByDetailSymbolId.RouteName : GetParentRouteName( doc, routeNames ) ;
-        if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
-          var parentDetailSymbolModel = detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == parentRouteName ) ;
-          if ( isReferenceDetailTableModels ) {
-            var conduitOfFirstRoute = doc.GetElement( parentDetailSymbolModel!.ConduitId ) ;
-            conduits = new List<Element>() { conduitOfFirstRoute } ;
-          }
-
-          AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, csvStorable.WiresAndCablesModelData, detailTableModelsData, detailTableModels, conduits,
-            parentDetailSymbolModel!, true, isMixConstructionItems ) ;
-          routeNames = routeNames.Where( n => n != parentRouteName ).OrderByDescending( n => n ).ToList() ;
-        }
+        // var parentRouteName = firstDetailSymbolModelByDetailSymbolId!.CountCableSamePosition == 1 ? firstDetailSymbolModelByDetailSymbolId.RouteName : GetParentRouteName( doc, routeNames ) ;
+        // if ( ! string.IsNullOrEmpty( parentRouteName ) ) {
+        //   var parentDetailSymbolModel = detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == parentRouteName ) ;
+        //   if ( isReferenceDetailTableModels ) {
+        //     var conduitOfFirstRoute = doc.GetElement( parentDetailSymbolModel!.ConduitId ) ;
+        //     conduits = new List<Element>() { conduitOfFirstRoute } ;
+        //   }
+        //
+        //   AddDetailTableModelRow( doc, ceedStorable!, hiroiSetCdMasterNormalModelData, hiroiSetMasterNormalModelData, hiroiSetCdMasterEcoModelData, hiroiSetMasterEcoModelData, hiroiMasterModelData, csvStorable.WiresAndCablesModelData, detailTableModelsData, detailTableModels, conduits,
+        //     parentDetailSymbolModel!, true, isMixConstructionItems ) ;
+        //   routeNames = routeNames.Where( n => n != parentRouteName ).OrderByDescending( n => n ).ToList() ;
+        // }
 
         foreach ( var childDetailSymbolModel in from routeName in routeNames select detailSymbolModelByDetailSymbolId.DetailSymbolModels.FirstOrDefault( d => d.RouteName == routeName ) ) {
           if ( isReferenceDetailTableModels ) {
