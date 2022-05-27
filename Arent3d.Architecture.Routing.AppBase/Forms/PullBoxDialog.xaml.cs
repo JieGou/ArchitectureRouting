@@ -3,10 +3,12 @@ using System.ComponentModel ;
 using System.Runtime.CompilerServices ;
 using System.Text.RegularExpressions ;
 using System.Windows ;
+using System.Windows.Forms ;
 using System.Windows.Input ;
 using Autodesk.Revit.DB ;
 using ControlLib ;
 using LengthConverter = Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters.LengthConverter ;
+using MessageBox = System.Windows.MessageBox ;
 
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -19,35 +21,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public PullBoxDialog()
     {
       InitializeComponent() ;
-      HeightConnector = 1000 ;
-      HeightWire = 0 ;
+      HeightConnector = 3000 ;
+      HeightWire = 1000 ;
       TopLevelContainer.DataContext = this;
     }
     
     private void Button_Ok( object sender, RoutedEventArgs e )
     {
-      var a = HeightConnector ;
-      var b = HeightWire ;
-      DialogResult = true ;
-      Close() ;
-    }
-    
-    private void FromFixedHeightNumericUpDown_OnValueChanged( object sender, ValueChangedEventArgs e )
-    {
-      // Manually update FixedHeight because Value binding is not called.
-      // FromFixedHeight = GetLengthConverter( DisplayUnitSystem ).ConvertBackUnit( FromFixedHeightNumericUpDown.Value ) ;
-      //
-      // OnValueChanged( EventArgs.Empty ) ;
-    }
-    
-    private static ValueConverters.LengthConverter GetLengthConverter( DisplayUnit displayUnitSystem )
-    {
-      return displayUnitSystem switch
-      {
-        DisplayUnit.METRIC => ValueConverters.LengthConverter.Millimeters,
-        DisplayUnit.IMPERIAL => ValueConverters.LengthConverter.Inches,
-        _ => LengthConverter.Default,
-      } ;
+      if ( ( HeightConnector - HeightWire ) < 250 ) {
+        HeightWire = HeightConnector - 250 ;
+        MessageBox.Show( "Height wire must be smaller than height wire at least 250mm ", "Alert Message" ) ;
+      }
+      else {
+        DialogResult = true ;
+        Close() ;
+      }
     }
 
     private void NumberValidationTextBox( object sender, TextCompositionEventArgs e )
