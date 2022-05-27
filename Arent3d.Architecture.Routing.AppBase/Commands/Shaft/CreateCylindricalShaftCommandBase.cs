@@ -14,6 +14,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
   public class CreateCylindricalShaftCommandBase : IExternalCommand
   {
     private const double RotateAngle = Math.PI / 3 ;
+    public const  string SubCategoryForSymbol = "SubCategoryForSymbol";
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
@@ -57,7 +58,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Shaft
 
         var subCategoryForBodyDirection = GetLineStyle( document, "SubCategoryForDirectionCylindricalShaft", new Color( 255, 0, 255 ), 1 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         var subCategoryForOuterShape = GetLineStyle( document, "SubCategoryForCylindricalShaft", new Color( 0, 250, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-        var subCategoryForSymbol = GetLineStyle( document, "SubCategoryForSymbol", new Color( 0, 0, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        var subCategoryForSymbol = GetLineStyle( document, SubCategoryForSymbol, new Color( 0, 0, 0 ), 2 ).GetGraphicsStyle( GraphicsStyleType.Projection ) ;
 
         var viewPlans = document.GetAllElements<ViewPlan>().Where( x => ! x.IsTemplate && x.ViewType == ViewType.FloorPlan && levels.Any( y => y.Id == x.GenLevel.Id ) ).OrderBy( x => x.GenLevel.Elevation ).EnumerateAll() ;
         foreach ( var viewPlan in viewPlans ) {

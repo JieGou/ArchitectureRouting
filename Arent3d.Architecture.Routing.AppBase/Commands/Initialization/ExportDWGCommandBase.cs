@@ -21,14 +21,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       var document = commandData.Application.ActiveUIDocument.Document ;
       try {
-        return document.Transaction( "Electrical.App.Commands.Initialization.ExportDWGCommandBase".GetAppStringByKeyOrDefault( "Export DWG" ), _ =>
-        {
-          var viewModel = new LayerNameSettingViewModel( document ) ;
-          var dlgLayerNameSettingDialog = new LayerNameSettingDialog( viewModel ) ;
-          dlgLayerNameSettingDialog.ShowDialog() ;
-          if ( ! ( dlgLayerNameSettingDialog.DialogResult ?? false ) ) return Result.Cancelled ;
-          return Result.Succeeded ;
-        } ) ;
+        var viewModel = new LayerNameSettingViewModel( document) ;
+        var dlgLayerNameSettingDialog = new LayerNameSettingDialog( viewModel ) ;
+        dlgLayerNameSettingDialog.ShowDialog() ;
+        if ( ! ( dlgLayerNameSettingDialog.DialogResult ?? false ) ) return Result.Cancelled ;
+        return Result.Succeeded ;
       }
       catch ( Exception e ) {
         CommandUtils.DebugAlertException( e ) ;

@@ -8,6 +8,8 @@ using System.Text ;
 using System.Windows ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Shaft ;
+using Arent3d.Architecture.Routing.AppBase.Extensions ;
 using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 using MessageBox = System.Windows.MessageBox ;
@@ -75,9 +77,22 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       
       // Delete layers
       DeleteLayers(LayerNames) ;
+
+      using var transaction = new Transaction( _document ) ;
+      transaction.Start( "Override Element Graphic" ) ;
+      var overrideGraphic = new OverrideGraphicSettings() ;
+      overrideGraphic.SetProjectionLineColor( new Color( 255, 255, 255 ) ) ;
+      var curveElements = _document.GetAllInstances<CurveElement>(_document.ActiveView).Where(x => x.LineStyle.Name == CreateCylindricalShaftCommandBase.SubCategoryForSymbol).ToList() ;
+      curveElements.ForEach(x => _document.ActiveView.SetElementOverrides(x.Id, overrideGraphic));
+      transaction.Commit() ;
       
       // export dwg
       _document.Export( filePath, fileName, viewIds, options ) ;
+      
+      transaction.Start( "Reset Element Graphic" ) ;
+      var defaultGraphic = new OverrideGraphicSettings() ;
+      curveElements.ForEach(x => _document.ActiveView.SetElementOverrides(x.Id, defaultGraphic));
+      transaction.Commit() ;
 
       // close window
       window.DialogResult = true ;
