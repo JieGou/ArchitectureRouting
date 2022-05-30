@@ -58,6 +58,32 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
 
+    public CreateConnector( FamilyInstance familyInstance, XYZ prevPoint )
+    {
+      string connectorType ;
+      var nextPoint = ( familyInstance.Location as LocationPoint )!.Point ;
+      var distanceX = Math.Abs( prevPoint.X - nextPoint.X ) ;
+      var distanceY = Math.Abs( prevPoint.Y - nextPoint.Y ) ;
+      if ( distanceX == 0 ) {
+        connectorType = prevPoint.Y < nextPoint.Y ? "Front" : "Back" ;
+      }
+      else if ( distanceY == 0 ) {
+        connectorType = prevPoint.X < nextPoint.X ? "Left" : "Right" ;
+      }
+      else {
+        if ( distanceX > distanceY ) {
+          connectorType = prevPoint.X < nextPoint.X ? "Left" : "Right" ;
+        }
+        else {
+          connectorType = prevPoint.Y < nextPoint.Y ? "Front" : "Back" ;
+        }
+      }
+      
+      _pickedConnector = ! string.IsNullOrEmpty( connectorType ) 
+        ? familyInstance.GetConnectors().FirstOrDefault( x => x.Description.Contains( connectorType ) ) 
+        : familyInstance.GetConnectors().FirstOrDefault() ;
+    }
+
     private static FamilyInstance? AddConnectorFamily( Connector conn, ConnectorElement connElm, FamilyInstance familyInstance, Connector? firstConnector )
     {
       if ( false == IsEnabledConnector( conn, firstConnector ) ) return null ;
