@@ -89,6 +89,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1000" />
     <PackageReference Include="MicrosoftOfficeCore" Version="15.0.0" />
+    <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="NPOI" Version="2.5.5" />
     <PackageReference Include="NumericUpDown" Version="3.0.2" />
   </ItemGroup>
