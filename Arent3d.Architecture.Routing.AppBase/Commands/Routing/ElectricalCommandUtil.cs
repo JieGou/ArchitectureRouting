@@ -22,6 +22,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var segment = subRoute.Segments.FirstOrDefault() ;
         if ( segment == null ) continue ;
 
+        var fromConstructionItem = DefaultConstructionItem ;
+        var fromIsEcoMode = defaultIsEcoModeValue ;
         var fromEndPointKey = segment.FromEndPoint.Key ;
         var fromEndPointId = fromEndPointKey.GetElementUniqueId() ;
         if ( ! string.IsNullOrEmpty( fromEndPointId ) ) {
@@ -36,6 +38,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( fromConnector != null ) {
             fromConnector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
             fromConnector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
+            if ( ! string.IsNullOrEmpty( constructionItem ) ) fromConstructionItem = constructionItem! ;
+            if ( ! string.IsNullOrEmpty( isEcoMode ) ) fromIsEcoMode = isEcoMode! ;
             if ( string.IsNullOrEmpty( constructionItem ) || string.IsNullOrEmpty( isEcoMode ) ) {
               UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
             }
@@ -72,12 +76,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           if ( string.IsNullOrEmpty( isEcoMode ) ) {
             toConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
+            isEcoMode = defaultIsEcoModeValue ;
           }
 
           var conduits = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => c.GetRouteName() == route.RouteName ).ToList() ;
           foreach ( var conduit in conduits ) {
-            conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem! ) ;
-            conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
+            conduit.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ? fromConstructionItem : constructionItem! ) ;
+            conduit.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ? fromIsEcoMode : isEcoMode! ) ;
           }
         }
       }

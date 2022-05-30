@@ -339,7 +339,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return curveType.Category.Name ;
     }
 
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, SelectState selectState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }

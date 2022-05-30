@@ -1,5 +1,6 @@
 using System ;
 using System.Collections.Generic ;
+using System.Linq ;
 using Arent3d.Revit.UI ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
@@ -19,9 +20,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private IReadOnlyCollection<Route> SelectRoutes( UIDocument uiDocument )
     {
       var list = PointOnRoutePicker.PickedRoutesFromSelections( uiDocument ).EnumerateAll() ;
+      var routeNames = list.Where( r => ! string.IsNullOrEmpty( r.Name ) ).Select( r => r.Name ).ToHashSet() ;
+      if ( routeNames.Any() ) ChangeWireTypeCommand.RemoveDetailLinesByRoutes( uiDocument.Document, routeNames ) ;
       if ( 0 < list.Count ) return list ;
 
       var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to delete.", GetAddInType() ) ;
+      var pickRouteNames = new HashSet<string>() { pickInfo.Route.Name } ;
+      if ( pickRouteNames.Any() ) ChangeWireTypeCommand.RemoveDetailLinesByRoutes( uiDocument.Document, pickRouteNames ) ;
       return new[] { pickInfo.Route } ;
     }
 

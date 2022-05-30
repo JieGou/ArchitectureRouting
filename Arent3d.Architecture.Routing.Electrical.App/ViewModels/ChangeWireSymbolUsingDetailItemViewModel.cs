@@ -11,11 +11,10 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Electrical.App.Helpers ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
-using Arent3d.Architecture.Routing.Utils ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
-using Autodesk.Revit.DB.Electrical ;
 using MoreLinq ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
@@ -107,7 +106,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       using var transactionGroup = new TransactionGroup( _uiDocument.Document ) ;
       transactionGroup.Start( "Change Type" ) ;
 
-      var (lines, curves) = GetLocationConduits( elements ) ;
+      var (lines, curves) = ChangeWireTypeCommand.GetLocationConduits( _uiDocument.Document, _uiDocument.ActiveView, elements ) ;
       
       if ( WireSymbolOptions.Keys.Contains( TypeNameSelected ) ) {
         var familySymbol = _uiDocument.Document.GetAllTypes<FamilySymbol>( x => x.Name == WireSymbolOptions[ TypeNameSelected ] ).FirstOrDefault() ;
@@ -121,12 +120,20 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           familySymbol.Activate();
 
         var lineStyle = GetLineStyle( _uiDocument.Document, "LeakageZone" ) ;
+        var conduitAndDetailCurveStorable = _uiDocument.Document.GetConduitAndDetailCurveStorable() ;
         curves.ForEach( x =>
         {
-          var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x ) ;
+          var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ;
           detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, WireSymbolOptions[ TypeNameSelected ], false ) ) ;
         } ) ;
-        lines.ForEach( x => { _uiDocument.Document.Create.NewFamilyInstance( x, familySymbol, _uiDocument.ActiveView ) ; } ) ;
+        lines.ForEach( x =>
+        {
+          var line = _uiDocument.Document.Create.NewFamilyInstance( x.Key, familySymbol, _uiDocument.ActiveView ) ;
+          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, WireSymbolOptions[ TypeNameSelected ], false ) ) ;
+        } ) ;
+        
+        conduitAndDetailCurveStorable.Save() ;
 
         transaction.Commit() ;
       }
@@ -150,12 +157,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         
         curves.ForEach( x =>
         {
-          var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x ) ;
+          var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ;
           detailCurve.LineStyle = graphicsStyle ;
         } ) ;
         lines.ForEach( x =>
         {
-          var detailCurve = _uiDocument.Document.Create.NewDetailCurve(_uiDocument.ActiveView, x) ;
+          var detailCurve = _uiDocument.Document.Create.NewDetailCurve(_uiDocument.ActiveView, x.Key) ;
           detailCurve.LineStyle = graphicsStyle ;
         } ) ;
         
@@ -174,7 +181,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _settingStorable.Save();
       trans.Commit() ;
       
-      RefreshView() ;
+      ChangeWireTypeCommand.RefreshView( _uiDocument.Document, _uiDocument.ActiveView ) ;
 
       transactionGroup.Assimilate() ;
     }
@@ -206,150 +213,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
 
       return elements ;
-    }
-
-    private (List<Line> lineConduits, List<Curve> curveHorizontal) GetLocationConduits( List<Element> elements )
-    {
-      var conduits = elements.OfType<Conduit>().ToList() ;
-      var curveConduits = GetCurveFromElements( _uiDocument.Document, conduits ) ;
-
-      var conduitFittings = elements.OfType<FamilyInstance>().ToList() ;
-      var fittingHorizontals = conduitFittings.Where( x => Math.Abs( x.GetTransform().OfVector( XYZ.BasisZ ).Z - 1 ) < GeometryUtil.Tolerance ).ToList() ;
-      var fittingVerticals = conduitFittings.Where( x => Math.Abs( x.GetTransform().OfVector( XYZ.BasisZ ).Z ) < GeometryUtil.Tolerance ).ToList() ;
-
-      var lineConduits = curveConduits.OfType<Line>().ToList() ;
-      var lineVerticalFittings = GetLineVerticalFittings( fittingVerticals ) ;
-
-      lineConduits.AddRange( lineVerticalFittings ) ;
-      var lines = ConnectLines( lineConduits ) ;
-      var curves = GetCurveHorizontalFittings( _uiDocument.Document, fittingHorizontals ) ;
-      return ( lines, curves ) ;
-    }
-
-    private List<Curve> GetCurveHorizontalFittings( Document document, IEnumerable<FamilyInstance> fittingHorizontals )
-    {
-      var comparer = new XyzComparer() ;
-      fittingHorizontals = fittingHorizontals.Where( x => x.MEPModel.ConnectorManager.Connectors.Size == 2 ) ;
-      fittingHorizontals = fittingHorizontals.DistinctBy( x => GetCenterPoint( x ), comparer ) ;
-      return GetCurveFromElements( document, fittingHorizontals ) ;
-    }
-
-    private List<Line> GetLineVerticalFittings( IEnumerable<FamilyInstance> fittingVerticals )
-    {
-      var comparer = new XyzComparer() ;
-      var connectors = fittingVerticals.DistinctBy( x => ( (LocationPoint) x.Location ).Point, comparer ).Select( x => x.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ) ;
-
-      var lines = new List<Line>() ;
-      foreach ( var connector in connectors ) {
-        if ( connector.Count != 2 )
-          continue ;
-
-        var maxZ = connector[ 0 ].Origin.Z > connector[ 1 ].Origin.Z ? connector[ 0 ].Origin.Z : connector[ 1 ].Origin.Z ;
-        lines.Add( Line.CreateBound( new XYZ( connector[ 0 ].Origin.X, connector[ 0 ].Origin.Y, maxZ ), new XYZ( connector[ 1 ].Origin.X, connector[ 1 ].Origin.Y, maxZ ) ) ) ;
-      }
-
-      return lines ;
-    }
-
-    private List<Line> ConnectLines( List<Line> lines )
-    {
-      var lineConnects = new List<Line>() ;
-      while ( lines.Any() ) {
-        var line = lines[ 0 ] ;
-        lines.RemoveAt( 0 ) ;
-
-        if ( lines.Count > 0 ) {
-          int count ;
-          do {
-            count = lines.Count ;
-
-            var middleFirst = line.Evaluate( 0.5, true ) ;
-            for ( var i = lines.Count - 1 ; i >= 0 ; i-- ) {
-              var middleSecond = lines[ i ].Evaluate( 0.5, true ) ;
-              if ( middleFirst.DistanceTo( middleSecond ) < GeometryHelper.Tolerance ) {
-                if ( lines[ i ].Length > line.Length )
-                  line = lines[ i ] ;
-                lines.RemoveAt( i ) ;
-              }
-              else {
-                var lineTemp = Line.CreateBound( middleFirst, middleSecond ) ;
-                if ( Math.Abs( Math.Abs( lineTemp.Direction.DotProduct( line.Direction ) ) - 1 ) < GeometryHelper.Tolerance && 0.5 * line.Length + 0.5 * lines[ i ].Length + GeometryHelper.Tolerance >= lineTemp.Length ) {
-                  if ( GeometryHelper.GetMaxLengthLine( line, lines[ i ] ) is { } ml )
-                    line = ml ;
-                  lines.RemoveAt( i ) ;
-                }
-              }
-            }
-          } while ( count != lines.Count ) ;
-        }
-
-        lineConnects.Add( line ) ;
-      }
-
-      var lineOnPlanes = new List<Line>() ;
-      var elevation = _uiDocument.ActiveView.GenLevel.Elevation ;
-      foreach ( var lineConnect in lineConnects ) {
-        var firstPoint = lineConnect.GetEndPoint(0) ;
-        var secondPoint = lineConnect.GetEndPoint( 1 ) ;
-        lineOnPlanes.Add(Line.CreateBound(new XYZ(firstPoint.X, firstPoint.Y, elevation), new XYZ(secondPoint.X, secondPoint.Y, elevation)));
-      }
-
-      return lineOnPlanes ;
-    }
-
-    private List<Curve> GetCurveFromElements( Document document, IEnumerable<Element> elements )
-    {
-      using var transaction = new Transaction( document ) ;
-      transaction.Start( "Get Geometry" ) ;
-
-      var detailLevel = document.ActiveView.DetailLevel ;
-      document.ActiveView.DetailLevel = ViewDetailLevel.Coarse ;
-
-      var curves = new List<Curve>() ;
-      var options = new Options { View = document.ActiveView } ;
-
-      foreach ( var element in elements ) {
-        if ( element.get_Geometry( options ) is { } geometryElement )
-          RecursiveCurves( geometryElement, ref curves ) ;
-      }
-
-      document.ActiveView.DetailLevel = detailLevel ;
-      transaction.Commit() ;
-
-      return curves ;
-    }
-
-    private void RecursiveCurves( GeometryElement geometryElement, ref List<Curve> curves )
-    {
-      foreach ( var geometry in geometryElement ) {
-        switch ( geometry ) {
-          case GeometryInstance geometryInstance :
-          {
-            if ( geometryInstance.GetInstanceGeometry() is { } subGeometryElement )
-              RecursiveCurves( subGeometryElement, ref curves ) ;
-            break ;
-          }
-          case Curve curve :
-            curves.Add( curve.Clone() ) ;
-            break ;
-        }
-      }
-    }
-
-    private void RefreshView()
-    {
-      if ( _uiDocument.ActiveView.DetailLevel != ViewDetailLevel.Fine ) 
-        return ;
-      
-      using var transaction = new Transaction( _uiDocument.Document ) ;
-      
-      transaction.Start( "Detail Level Coarse" ) ;
-      _uiDocument.ActiveView.DetailLevel = ViewDetailLevel.Coarse ;
-      transaction.Commit() ;
-      
-      transaction.Start( "Detail Level Fine" ) ;
-      _uiDocument.ActiveView.DetailLevel = ViewDetailLevel.Fine ;
-      transaction.Commit() ;
     }
 
     #endregion
