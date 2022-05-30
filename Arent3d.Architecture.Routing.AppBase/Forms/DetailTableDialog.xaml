@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         mc:Ignorable="d"
         x:Name="DetailTableWindow"
         WindowStartupLocation="CenterScreen"
@@ -29,11 +30,11 @@
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
             </Grid.RowDefinitions>
-            <Button Grid.Row="0"  Width="100" Content="行追加" Margin="5,25,5,5" Height="25" Click="BtnAdd_Click" />
-            <Button Grid.Row="1"  Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Click="BtnDeleteLine_Click" />
-            <Button Grid.Row="2"  Width="100" Content="コピー" Margin="5,5,5,5" Height="25" Click="BtnCopyLine_Click" />
-            <Button Grid.Row="3"  Width="100" Content="挿入貼付" Margin="5,5,5,5" Height="25" Click="BtnPasteLine_Click" />
-            <Button Grid.Row="4"  Width="100" Margin="5,5,5,5" Height="45" Click="BtnPlumbingSummary_Click">
+            <Button Grid.Row="0"  Width="100" Content="行追加" Margin="5,25,5,5" Height="25" Command="{Binding AddCommand}" />
+            <Button Grid.Row="1"  Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Command="{Binding DeleteLineCommand}" />
+            <Button Grid.Row="2"  Width="100" Content="コピー" Margin="5,5,5,5" Height="25" Command="{Binding CopyLineCommand}" />
+            <Button Grid.Row="3"  Width="100" Content="挿入貼付" Margin="5,5,5,5" Height="25" Command="{Binding PasteLineCommand}" />
+            <Button Grid.Row="4"  Width="100" Margin="5,5,5,5" Height="45" Command="{Binding PlumbingSummaryCommand}">
                 <Button.Content>
                     <StackPanel Orientation="Vertical">
                         <TextBlock TextAlignment="Center" Text="配管まとめ" />
@@ -41,7 +42,7 @@
                     </StackPanel>
                 </Button.Content>
             </Button>
-            <Button Grid.Row="5" Width="100" Margin="5,5,5,5" Height="45" Click="BtnPlumbingSummaryMixConstructionItems_Click">
+            <Button Grid.Row="5" Width="100" Margin="5,5,5,5" Height="45" Command="{Binding PlumbingSummaryMixConstructionItemsCommand}">
                 <Button.Content>
                     <StackPanel Orientation="Vertical">
                         <TextBlock TextAlignment="Center" Text="配管まとめ" />
@@ -49,18 +50,18 @@
                     </StackPanel>
                 </Button.Content>
             </Button>
-            <Button Grid.Row="6"  Width="100" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" Click="BtnSplitPlumbing_Click" />
-            <Button Grid.Row="7"  Width="100" Content="上へ" Margin="5,5,5,5" Height="25" Click="BtnMoveUp_Click" />
-            <Button Grid.Row="8"  Width="100" Content="下へ" Margin="5,5,5,5" Height="25" Click="BtnMoveDown_Click" />
-            <Button Grid.Row="9"  Width="100" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnSelectAll_Click" />
+            <Button Grid.Row="6"  Width="100" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" Command="{Binding SplitPlumingCommand}" CommandParameter="{Binding ElementName=DtGrid}"/>
+            <Button Grid.Row="7"  Width="100" Content="上へ" Margin="5,5,5,5" Height="25" Command="{Binding MoveUpCommand}" />
+            <Button Grid.Row="8"  Width="100" Content="下へ" Margin="5,5,5,5" Height="25" Command="{Binding MoveDownCommand}" />
+            <Button Grid.Row="9"  Width="100" Content="全選択" Margin="5,5,5,5" Height="25"  Command="{Binding SelectAllCommand}" CommandParameter="{Binding ElementName=DtGrid}"/>
             <Label Grid.Row="10" Content="参照情報" Margin="0,15,5,0"/>
             <Button Grid.Row="11"  Width="100" Content="▼" Margin="5,0,5,5" Height="25" Click="BtnHideReferenceDataGrid_Click"/>
-            <Button Grid.Row="12" x:Name="BtnReferenceSelectAll" Width="100" Content="全選択" Margin="5,5,5,5" Height="25" Click="BtnReferenceSelectAll_Click" />
-            <Button Grid.Row="13" x:Name="BtnDeleteReferenceLine" Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Click="BtnDeleteReferenceLine_Click" />
-            <Button Grid.Row="14" x:Name="BtnReadCtlFile" Width="100" Content="明細データ取込" Margin="5,5,5,5" Height="25" Click="BtnReadCtlFile_Click" />
-            <Button Grid.Row="15" x:Name="BtnSelectDetailTableRowWithSameDetailSymbolId" Width="100" Content="同一明細行を選択" Margin="5,5,5,5" Height="25" Click="BtnSelectDetailTableRowWithSameDetailSymbolId_Click"/>
-            <Button Grid.Row="16" x:Name="BtnAddReference" Width="100" Content="参照" Margin="5,5,5,5" Height="25" Click="BtnAddReference_Click" />
-            <Button Grid.Row="17" x:Name="BtnAddReferenceRows" Width="100" Content="明細追加" Margin="5,5,5,5" Height="25" Click="BtnAddReferenceRows_Click" />
+            <Button Grid.Row="12" x:Name="BtnReferenceSelectAll" Width="100" Content="全選択" Margin="5,5,5,5" Height="25" Command="{Binding ReferenceSelectAllCommand}"/>
+            <Button Grid.Row="13" x:Name="BtnDeleteReferenceLine" Width="100" Content="行削除" Margin="5,5,5,5" Height="25" Command="{Binding DeleteReferenceLineCommand}"/>
+            <Button Grid.Row="14" x:Name="BtnReadCtlFile" Width="100" Content="明細データ取込" Margin="5,5,5,5" Height="25"  Command="{Binding ReadCtlFileCommand}"/>
+            <Button Grid.Row="15" x:Name="BtnSelectDetailTableRowWithSameDetailSymbolId" Width="100" Content="同一明細行を選択" Margin="5,5,5,5" Height="25" Command="{Binding SelectDetailTableRowWithSameDetailSymbolIdCommand}"/>
+            <Button Grid.Row="16" x:Name="BtnAddReference" Width="100" Content="参照" Margin="5,5,5,5" Height="25" Command="{Binding AddReferenceCommand}" CommandParameter="{Binding ElementName=DetailTableWindow}"/> 
+            <Button Grid.Row="17" x:Name="BtnAddReferenceRows" Width="100" Content="明細追加" Margin="5,5,5,5" Height="25" Command="{Binding AddReferenceRowsCommand}"/>
         </Grid>
         <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Width="970" Height="30" Margin="20">
             <Grid.ColumnDefinitions>
@@ -72,7 +73,7 @@
         </Grid>
 
         <DataGrid x:Name="DtGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Width="1000" Height="410" RowHeight="25" Margin="20, 70" ItemsSource="{Binding DetailTableModels}" CanUserAddRows="False" AutoGenerateColumns="False"
-                  SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtGrid_SelectionChanged" >
+                  SelectionMode="Extended" SelectionUnit="FullRow">
             <DataGrid.Resources>
                 <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
                     <Setter Property="Padding" Value="-2" />
@@ -85,6 +86,19 @@
                     </Style.Triggers>
                 </Style>
             </DataGrid.Resources>
+            
+            <DataGrid.InputBindings>
+                <MouseBinding
+                    MouseAction="LeftDoubleClick"
+                    Command="{Binding DoubleClickCommand}"
+                    CommandParameter="{Binding ElementName=DtGrid}"/>
+            </DataGrid.InputBindings>
+            
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectionChanged">
+                    <i:InvokeCommandAction Command="{Binding SelectionChangedCommand}" CommandParameter="{Binding ElementName=DtGrid}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
             
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell">
@@ -105,6 +119,12 @@
                                         DisplayMemberPath="Type"
                                         SelectedValuePath="Name"
                                         CanUserSort="False">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="SelectionChanged">
+                            <i:InvokeCommandAction Command="{Binding FloorSelectionChangedCommand}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                    
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
@@ -128,7 +148,7 @@
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.Levels, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
-                            <EventSetter Event="SelectionChanged" Handler="FloorSelectionChanged" />
+                            <!-- <EventSetter Event="SelectionChanged" Handler="FloorSelectionChanged" /> -->
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -609,7 +629,13 @@
         <DataGrid x:Name="DtReferenceGrid" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="1000" Height="370" RowHeight="25" Margin="20, 70" 
                   ItemsSource="{Binding ReferenceDetailTableModels}" 
                   CanUserAddRows="False" AutoGenerateColumns="False"
-                  SelectionMode="Extended" SelectionUnit="FullRow" SelectionChanged="DtReferenceGrid_SelectionChanged" >
+                  SelectionMode="Extended" SelectionUnit="FullRow" >
+            
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectionChanged">
+                    <i:InvokeCommandAction Command="{Binding SelectionChangedReferenceCommand}"  />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
             
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell">
@@ -673,7 +699,7 @@
                         HorizontalAlignment="Right"
                         DockPanel.Dock="Right"
                         Command="{Binding SaveDetailTableCommand}"
-                        Click="BtnSave_OnClick"
+                        CommandParameter="{Binding ElementName=DetailTableWindow}"
                         Height="27"
                         Width="110" />
             <Button Grid.Column="1"
@@ -682,7 +708,7 @@
                     HorizontalAlignment="Right"
                     DockPanel.Dock="Right"
                     Command="{Binding CreateDetailTableCommand}"
-                    Click="BtnCreateDetailTable_OnClick"
+                    CommandParameter="{Binding ElementName=DetailTableWindow}"
                     Height="27"
                     Width="110" />
             <Button Grid.Column="2"
@@ -690,7 +716,8 @@
                     Margin="5,5,5,5"
                     HorizontalAlignment="Right"
                     DockPanel.Dock="Right"
-                    Click="BtnCompleted_OnClick"
+                    Command="{Binding CompletedCommand}"
+                    CommandParameter="{Binding ElementName=DetailTableWindow}"
                     Height="27"
                     Width="110" />
             </Grid>

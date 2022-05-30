@@ -68,11 +68,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) select new DetailTableModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
 
-        var viewModel = new DetailTableViewModel( detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes ) ;
-        var dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
+        var viewModel = new DetailTableViewModel2(doc, detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes,conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
+        var dialog = new DetailTableDialog( viewModel ) ;
         dialog.ShowDialog() ;
 
-        while ( dialog.DialogResult != null && ! dialog.DialogResult.Value && dialog.DetailTableViewModelSummary.IsAddReference ) {
+        while ( dialog.DialogResult != null && ! dialog.DialogResult.Value && viewModel.IsAddReference ) {
           DetailSymbolPickFilter detailSymbolFilter = new() ;
           List<string> detailSymbolIds = new() ;
           var pickedDetailSymbols = uiDoc.Selection.PickObjects( ObjectType.Element, detailSymbolFilter ) ;
@@ -88,13 +88,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             viewModel.ReferenceDetailTableModels.Add( referenceDetailTableModelRow ) ;
           }
           
-          dialog = new DetailTableDialog( doc, viewModel, conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
+          dialog = new DetailTableDialog( viewModel ) ;
           dialog.ShowDialog() ;
         }
 
         if ( isExistDetailTableModelRow || dialog.DialogResult == true ) {
-          if ( dialog.RoutesWithConstructionItemHasChanged.Any() ) {
-            var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, dialog.RoutesWithConstructionItemHasChanged ) ;
+          if ( viewModel.RoutesWithConstructionItemHasChanged.Any() ) {
+            var connectorGroups = UpdateConnectorAndConduitConstructionItem( doc, viewModel.RoutesWithConstructionItemHasChanged ) ;
             if ( connectorGroups.Any() ) {
               using Transaction transaction = new( doc, "Group connector" ) ;
               transaction.Start() ;
@@ -109,21 +109,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
             }
           }
           
-          if ( dialog.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
-            UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, dialog.DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
+          if ( viewModel.DetailSymbolIdsWithPlumbingTypeHasChanged.Any() ) {
+            UpdateDetailSymbolPlumbingType( doc, detailSymbolStorable, viewModel.DetailSymbolIdsWithPlumbingTypeHasChanged ) ;
           }
         }
 
         if ( dialog.DialogResult ?? false ) {
           return doc.Transaction( "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
           {
-            if ( ! viewModel.IsCreateDetailTableOnFloorPlanView && ! dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
+            if ( ! viewModel.IsCreateDetailTableOnFloorPlanView && ! viewModel.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
             var level = uiDoc.ActiveView.GenLevel ;
-            var detailTableData = viewModel.IsCreateDetailTableOnFloorPlanView ? viewModel.DetailTableModels : dialog.DetailTableViewModelSummary.DetailTableModels ;
+            var detailTableData = viewModel.IsCreateDetailTableOnFloorPlanView ? viewModel.DetailTableModelsOrigin : viewModel.DetailTableModels ;
             var scheduleName = CreateDetailTableSchedule( doc, detailTableData, level.Name ) ;
             MessageBox.Show( string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ), "Message" ) ;
             viewModel.IsCreateDetailTableOnFloorPlanView = false ;
-            dialog.DetailTableViewModelSummary.IsCreateDetailTableOnFloorPlanView = false ;
+            viewModel.IsCreateDetailTableOnFloorPlanView = false ;
 
             return Result.Succeeded ;
           } ) ;
@@ -380,8 +380,41 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private static void SortDetailTableModel( ref ObservableCollection<DetailTableModel> detailTableModels, bool isMixConstructionItems )
     {
       List<DetailTableModel> sortedDetailTableModelsList = detailTableModels.ToList() ;
-      DetailTableViewModel.SortDetailTableModel( ref sortedDetailTableModelsList, isMixConstructionItems ) ;
+      SortDetailModel( ref sortedDetailTableModelsList, isMixConstructionItems ) ;
       detailTableModels = new ObservableCollection<DetailTableModel>( sortedDetailTableModelsList ) ;
+    }
+    
+     private static void SortDetailModel( ref List<DetailTableModel> detailTableModels, bool isMixConstructionItems )
+     {
+        List<DetailTableModel> sortedDetailTableModelsList = new() ;
+        var detailTableModelsGroupByDetailSymbolId = detailTableModels.OrderBy( d => d.DetailSymbol ).GroupBy( d => d.DetailSymbolId ).Select( g => g.ToList() ) ;
+        foreach ( var detailTableRowsGroupByDetailSymbolId in detailTableModelsGroupByDetailSymbolId ) {
+          var signalTypes = (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType )) ;
+          foreach ( var signalType in signalTypes ) {
+            var detailTableRowsWithSameSignalType = detailTableRowsGroupByDetailSymbolId.Where( d => d.SignalType == signalType.GetFieldName() ).ToList() ;
+            SortDetailTableRows( sortedDetailTableModelsList, detailTableRowsWithSameSignalType, isMixConstructionItems ) ;
+          }
+
+          var signalTypeNames = signalTypes.Select( s => s.GetFieldName() ) ;
+          var detailTableRowsNotHaveSignalType = detailTableRowsGroupByDetailSymbolId.Where( d => ! signalTypeNames.Contains( d.SignalType ) ).ToList() ;
+          SortDetailTableRows( sortedDetailTableModelsList, detailTableRowsNotHaveSignalType, isMixConstructionItems ) ;
+        }
+
+        detailTableModels = sortedDetailTableModelsList ;
+     }
+    
+    private static void SortDetailTableRows( List<DetailTableModel> sortedDetailTableModelsList, List<DetailTableModel> detailTableRowsWithSameSignalType, bool isMixConstructionItems )
+    {
+      if ( ! isMixConstructionItems ) detailTableRowsWithSameSignalType = detailTableRowsWithSameSignalType.OrderBy( d => d.ConstructionItems ).ToList() ;
+      var detailTableRowsGroupByPlumbingIdentityInfo = detailTableRowsWithSameSignalType.GroupBy( d => d.PlumbingIdentityInfo ).Select( g => g.ToList() ) ;
+      foreach ( var detailTableRowsWithSamePlumbingIdentityInfo in detailTableRowsGroupByPlumbingIdentityInfo ) {
+        var sortedDetailTableModels = 
+            detailTableRowsWithSamePlumbingIdentityInfo
+              .OrderByDescending( x => x.IsParentRoute )
+              .ThenBy( x => x.GroupId ) ;
+
+        sortedDetailTableModelsList.AddRange( sortedDetailTableModels ) ;
+      }
     }
 
     protected internal static void SetNoPlumbingDataForOneSymbol( List<DetailTableModel> detailTableModels, bool isMixConstructionItems )
