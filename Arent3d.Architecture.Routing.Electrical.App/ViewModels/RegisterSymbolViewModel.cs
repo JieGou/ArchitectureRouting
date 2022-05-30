@@ -3,6 +3,7 @@ using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
+using System.Reflection ;
 using System.Windows ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
@@ -11,23 +12,30 @@ using System.Windows.Media.Imaging ;
 using Arent3d.Architecture.Routing.AppBase ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
+using Arent3d.Architecture.Routing.Electrical.App.Extensions ;
 using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
+using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
+using Autodesk.Revit.DB.Structure ;
 using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Microsoft.WindowsAPICodePack.Shell ;
+using ImageType = Autodesk.Revit.DB.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 {
   public class RegisterSymbolViewModel : NotifyPropertyChanged
   {
     private readonly UIDocument _uiDocument ;
-    private readonly RegisterSymbolStorable _settingStorable ;
+    private readonly RegisterSymbolStorable _registerSymbolStorable ;
+    private readonly SetupPrintStorable _setupPrintStorable ;
     private readonly bool _isExistBrowseFolderPath ;
     private readonly bool _isExistFolderSelectedPath ;
+
+    private const string Prefix = "Arent_Symbol-CAD" ;
 
     public const string DwgExtension = ".dwg" ;
     public const string PngExtension = ".png" ;
@@ -47,7 +55,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if ( null != _folders )
           return _folders ;
 
-        var folderModel = GetFolderModel( _settingStorable.BrowseFolderPath ) ;
+        var folderModel = GetFolderModel( _registerSymbolStorable.BrowseFolderPath ) ;
         var folderModelList = new List<FolderModel>() ;
         if ( null != folderModel ) folderModelList.Add( folderModel ) ;
         _folders = new ObservableCollection<FolderModel>( folderModelList ) ;
@@ -86,15 +94,24 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       }
     }
 
+    private bool _isInsertConnector = true;
+
+    public bool IsInsertConnector
+    {
+      get => _isInsertConnector ;
+      set { _isInsertConnector = value ; OnPropertyChanged(); }
+    }
+
     private PreviewModel? _previewSelected ;
     public ExternalEventHandler? ExternalEventHandler { get ; set ; }
 
     public RegisterSymbolViewModel( UIDocument uiDocument )
     {
       _uiDocument = uiDocument ;
-      _settingStorable = _uiDocument.Document.GetRegisterSymbolStorable() ;
-      _isExistBrowseFolderPath = Directory.Exists( _settingStorable.BrowseFolderPath ) ;
-      _isExistFolderSelectedPath = Directory.Exists( _settingStorable.FolderSelectedPath ) ;
+      _registerSymbolStorable = _uiDocument.Document.GetRegisterSymbolStorable() ;
+      _setupPrintStorable = _uiDocument.Document.GetSetupPrintStorable() ;
+      _isExistBrowseFolderPath = Directory.Exists( _registerSymbolStorable.BrowseFolderPath ) ;
+      _isExistFolderSelectedPath = Directory.Exists( _registerSymbolStorable.FolderSelectedPath ) ;
     }
 
     #region Commands
@@ -113,8 +130,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer ;
             folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", PatternSearchings )} file extension." ;
             if ( folderBrowserDialog.ShowDialog() == DialogResult.OK && ! string.IsNullOrWhiteSpace( folderBrowserDialog.SelectedPath ) ) {
-              _settingStorable.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
-              var folderModel = GetFolderModel( _settingStorable.BrowseFolderPath ) ;
+              _registerSymbolStorable.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
+              var folderModel = GetFolderModel( _registerSymbolStorable.BrowseFolderPath ) ;
               var folderModelList = new List<FolderModel>() ;
               if ( null != folderModel ) folderModelList.Add( folderModel ) ;
               Folders = new ObservableCollection<FolderModel>( folderModelList ) ;
@@ -138,7 +155,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
           _previewSelected = Previews.SingleOrDefault( x => x.IsSelected ) ;
           if ( null != _previewSelected ) {
             ExternalEventHandler?.AddAction( Import )?.Raise() ;
-            wd.Close();
+            wd.Close() ;
           }
           else {
             System.Windows.MessageBox.Show( "Please, select a file at the preview!", "Arent Notification" ) ;
@@ -231,10 +248,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       if ( ! _isExistFolderSelectedPath )
         return ( false, false ) ;
 
-      if ( directoryInfo.FullName.Length > _settingStorable.FolderSelectedPath.Length || ! _settingStorable.FolderSelectedPath.StartsWith( directoryInfo.FullName ) )
+      if ( directoryInfo.FullName.Length > _registerSymbolStorable.FolderSelectedPath.Length || ! _registerSymbolStorable.FolderSelectedPath.StartsWith( directoryInfo.FullName ) )
         return ( false, false ) ;
 
-      return directoryInfo.FullName.Length < _settingStorable.FolderSelectedPath.Length ? ( true, false ) : ( true, true ) ;
+      return directoryInfo.FullName.Length < _registerSymbolStorable.FolderSelectedPath.Length ? ( true, false ) : ( true, true ) ;
     }
 
     private FolderModel? FindSelectedFolder( IEnumerable<FolderModel> folders )
@@ -278,8 +295,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     {
       using var transaction = new Transaction( _uiDocument.Document ) ;
       transaction.Start( "Save Setting Data" ) ;
-      _settingStorable.FolderSelectedPath = FolderSelected?.Path ?? string.Empty ;
-      _settingStorable.Save() ;
+      _registerSymbolStorable.FolderSelectedPath = FolderSelected?.Path ?? string.Empty ;
+      _registerSymbolStorable.Save() ;
       transaction.Commit() ;
     }
 
@@ -290,7 +307,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         case DwgExtension :
           ImportDwgFile( _previewSelected ) ;
           break ;
-        case PngExtension or PdfExtension or TifExtension:
+        case PngExtension or PdfExtension or TifExtension :
           ImportImageFile( _previewSelected ) ;
           break ;
       }
@@ -298,29 +315,60 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     private void ImportDwgFile( PreviewModel previewFile )
     {
-      using var transaction = new Transaction( _uiDocument.Document ) ;
-      transaction.Start( "Import DWG File" ) ;
-
-      var filter = new FilteredElementCollector( _uiDocument.Document ) ;
-      var cadLinkType = filter.OfClass( typeof( CADLinkType ) ).OfType<CADLinkType>().SingleOrDefault( x => x.Name == previewFile.FileName ) ;
-
       var pickPoint = _uiDocument.Selection.PickPoint( ObjectSnapTypes.Points, "図形の配置位置を指定してください。" ) ;
-      if ( null != cadLinkType ) {
-        var importInstance = ImportInstance.Create( _uiDocument.Document, cadLinkType.Id, _uiDocument.ActiveView ) ;
-        if ( importInstance.Pinned ) importInstance.Pinned = false ;
-        var boundingBox = importInstance.get_BoundingBox( _uiDocument.ActiveView ) ;
-        var centerPoint = ( boundingBox.Min + boundingBox.Max ) * 0.5 ;
-        ElementTransformUtils.MoveElement( _uiDocument.Document, importInstance.Id, pickPoint - centerPoint ) ;
+      
+      var ratio =  _setupPrintStorable.Scale * _setupPrintStorable.Ratio;
+      var strRatio = $"{Math.Round( ratio )}" ;
+      var name = Path.GetFileNameWithoutExtension( previewFile.FileName ) ;
+      var extension = Path.GetExtension( previewFile.FileName ) ;
+
+      using var transactionGroup = new TransactionGroup( _uiDocument.Document ) ;
+      transactionGroup.Start( "Import CAD" ) ;
+      
+      if ( IsInsertConnector ) {
+        var familySymbol = FindOrCreateConnector(previewFile.Path, name, ratio, strRatio) ;
+        if ( null == familySymbol )
+          return ;
+
+        using var transaction = new Transaction( _uiDocument.Document ) ;
+        transaction.Start( "Create Instance" ) ;
+        if ( ! familySymbol.IsActive )
+          familySymbol.Activate() ;
+        
+        var familyInstance = _uiDocument.Document.Create.NewFamilyInstance( pickPoint, familySymbol, _uiDocument.ActiveView.GenLevel, StructuralType.NonStructural ) ;
+        var heightOfConnector = _uiDocument.Document.GetHeightSettingStorable()[ _uiDocument.ActiveView.GenLevel ].HeightOfConnectors.MillimetersToRevitUnits() ;
+        familyInstance.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ).Set( heightOfConnector ) ;
+        transaction.Commit() ;
       }
       else {
-        var options = new DWGImportOptions { ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default, CustomScale = _uiDocument.ActiveView.Scale } ;
-        var result = _uiDocument.Document.Import( previewFile.Path, options, _uiDocument.ActiveView, out _ ) ;
-        if ( ! result ) {
-          System.Windows.MessageBox.Show( "図面ファイルが無効です。", "Arent Notification" ) ;
+        var cadLinkType = new FilteredElementCollector( _uiDocument.Document ).OfClass( typeof( CADLinkType ) ).OfType<CADLinkType>().SingleOrDefault( x => x.Name == $"{name}_{strRatio}{extension}" ) ;
+      
+        using var transaction = new Transaction( _uiDocument.Document ) ;
+        transaction.Start( "Import DWG File" ) ;
+        if ( null != cadLinkType ) {
+          var importInstance = ImportInstance.Create( _uiDocument.Document, cadLinkType.Id, _uiDocument.ActiveView ) ;
+          if ( importInstance.Pinned )
+            importInstance.Pinned = false ;
+          var boundingBox = importInstance.get_BoundingBox( _uiDocument.ActiveView ) ;
+          var centerPoint = ( boundingBox.Min + boundingBox.Max ) * 0.5 ;
+          ElementTransformUtils.MoveElement( _uiDocument.Document, importInstance.Id, pickPoint - centerPoint ) ;
         }
+        else {
+          var options = new DWGImportOptions { ReferencePoint = pickPoint, ThisViewOnly = true, Placement = ImportPlacement.Centered, Unit = ImportUnit.Default, CustomScale = _uiDocument.ActiveView.Scale } ;
+          var result = _uiDocument.Document.Import( previewFile.Path, options, _uiDocument.ActiveView, out var elementId ) ;
+          if ( ! result ) {
+            System.Windows.MessageBox.Show( "図面ファイルが無効です。", "Arent Notification" ) ;
+          }
+          else {
+            cadLinkType = (CADLinkType) _uiDocument.Document.GetElement( _uiDocument.Document.GetElement(elementId).GetTypeId() ) ;
+            cadLinkType.Name = $"{name}_{strRatio}{extension}" ;
+            cadLinkType.get_Parameter( BuiltInParameter.IMPORT_SCALE ).Set( ratio.MillimetersToRevitUnits() ) ;
+          }
+        }
+        transaction.Commit() ;
       }
 
-      transaction.Commit() ;
+      transactionGroup.Assimilate() ;
     }
 
     private void ImportImageFile( PreviewModel previewFile )
@@ -357,6 +405,108 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 #endif
 
       transaction.Commit() ;
+    }
+
+    private FamilySymbol? FindOrCreateConnector(string filePath, string fileName, double ratio, string strRatio)
+    {
+      var familyName = $"{Prefix}_{fileName}-{strRatio}" ;
+      var electricalFixtureFamilySymbol = _uiDocument.Document.GetAllTypes<FamilySymbol>( x => x.Family.Name == familyName ).FirstOrDefault() ;
+      if ( null != electricalFixtureFamilySymbol )
+        return electricalFixtureFamilySymbol ;
+
+      var assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault( x => x.GetName().Name == "Arent3d.Architecture.Routing" ) ;
+      if ( null == assembly )
+        return null ;
+      
+      var electricalFixtureTemplateFamilyPath = GetFamilyPath( assembly, "Metric Electrical Fixture.rft" ) ;
+      if ( string.IsNullOrEmpty( electricalFixtureTemplateFamilyPath ) )
+        return null ;
+      
+      var electricalFixtureDocument = _uiDocument.Document.Application.NewFamilyDocument( electricalFixtureTemplateFamilyPath ) ;
+      File.Delete(electricalFixtureTemplateFamilyPath);
+      
+      var viewPlan = electricalFixtureDocument.GetAllElements<ViewPlan>().FirstOrDefault(x => x.Name == "Ref. Level") ;
+      if ( null == viewPlan )
+        return null ;
+
+      using var electricalFixtureTransaction = new Transaction( electricalFixtureDocument ) ;
+      
+      electricalFixtureTransaction.Start( "New Type" ) ;
+      var familyType = electricalFixtureDocument.FamilyManager.NewType( familyName ) ;
+      electricalFixtureDocument.FamilyManager.CurrentType = familyType ;
+      electricalFixtureTransaction.Commit() ;
+      
+      electricalFixtureTransaction.Start( "Import CAD" ) ;
+      var option = new DWGImportOptions { Placement = ImportPlacement.Origin, ThisViewOnly = true, ReferencePoint = XYZ.Zero, Unit = ImportUnit.Default } ;
+      var result = electricalFixtureDocument.Import( filePath, option, viewPlan, out var importInstanceElementId ) ;
+      if ( ! result ) {
+        electricalFixtureTransaction.RollBack() ;
+        return null ;
+      }
+      var cadLinkType = (CADLinkType) electricalFixtureDocument.GetElement( electricalFixtureDocument.GetElement( importInstanceElementId ).GetTypeId() ) ;
+      cadLinkType.get_Parameter( BuiltInParameter.IMPORT_SCALE ).Set( ratio ) ;
+      electricalFixtureTransaction.Commit() ;
+
+      electricalFixtureTransaction.Start( "Create Solid" ) ;
+      var solid = CreateCubeSolid() ;
+      var freeFormElement = FreeFormElement.Create( electricalFixtureDocument, solid ) ;
+      var elementVisibility = new FamilyElementVisibility( FamilyElementVisibilityType.Model ) { IsShownInFrontBack = false, IsShownInLeftRight = false, IsShownInPlanRCPCut = false, IsShownInTopBottom = false } ;
+      freeFormElement.SetVisibility( elementVisibility ) ;
+      electricalFixtureTransaction.Commit() ;
+      
+      electricalFixtureTransaction.Start( "Create Connector" ) ;
+      var plannarFace = GetPlanarFaceTop( freeFormElement ) ;
+      ConnectorElement.CreateConduitConnector( electricalFixtureDocument, plannarFace.Reference ) ;
+      electricalFixtureTransaction.Commit() ;
+      
+      var electricalFixtureFamilyPath = Path.Combine( Path.GetTempPath(), $"{familyName}.rfa" ) ;
+      electricalFixtureDocument.SaveAs( electricalFixtureFamilyPath, new SaveAsOptions { MaximumBackups = 1, OverwriteExistingFile = true } ) ;
+      electricalFixtureDocument.Close( true ) ;
+
+      using var transaction = new Transaction( _uiDocument.Document ) ;
+      transaction.Start( "Load Family" ) ;
+      _uiDocument.Document.LoadFamily( electricalFixtureFamilyPath, new FamilyLoadOptions(), out var electricalFamily ) ;
+      File.Delete(electricalFixtureFamilyPath);
+      transaction.Commit() ;
+      
+      electricalFixtureFamilySymbol =  new FilteredElementCollector( _uiDocument.Document ).WherePasses( new FamilySymbolFilter( electricalFamily.Id ) ).OfType<FamilySymbol>().FirstOrDefault() ;
+      return electricalFixtureFamilySymbol ;
+    }
+
+    private string? GetFamilyPath(Assembly assembly, string familyName )
+    {
+      var resourceFullName = assembly.GetManifestResourceNames().FirstOrDefault(element => element.EndsWith(familyName));
+      if ( string.IsNullOrEmpty( resourceFullName ) )
+        return null ;
+      
+      using var stream = assembly.GetManifestResourceStream(resourceFullName);
+      if ( null == stream )
+        return null ;
+      
+      var fileData = new byte[stream.Length];
+      stream.Read(fileData, 0, fileData.Length);
+      
+      var pathFamily = Path.Combine(Path.GetTempPath(), familyName);
+      File.WriteAllBytes(pathFamily, fileData);
+
+      return pathFamily ;
+    }
+    
+    private Solid CreateCubeSolid()
+    {
+      var halfLength = 100d.MillimetersToRevitUnits() * 0.5;
+      var lineOne = Line.CreateBound(XYZ.BasisX * halfLength + XYZ.BasisY.Negate() * halfLength, XYZ.BasisX * halfLength + XYZ.BasisY * halfLength);
+      var lineTwo = Line.CreateBound(XYZ.BasisX * halfLength + XYZ.BasisY * halfLength, XYZ.BasisX.Negate() * halfLength + XYZ.BasisY * halfLength);
+      var lineThree = Line.CreateBound(XYZ.BasisX.Negate() * halfLength + XYZ.BasisY * halfLength, XYZ.BasisX.Negate() * halfLength + XYZ.BasisY.Negate() * halfLength);
+      var lineFour = Line.CreateBound(XYZ.BasisX.Negate() * halfLength + XYZ.BasisY.Negate() * halfLength, XYZ.BasisX * halfLength + XYZ.BasisY.Negate() * halfLength);
+      var curveLoop = CurveLoop.Create(new List<Curve>() { lineOne, lineTwo, lineThree, lineFour });
+      return GeometryCreationUtilities.CreateExtrusionGeometry(new List<CurveLoop>() { curveLoop }, XYZ.BasisZ.Negate(), halfLength * 2);
+    }
+
+    private PlanarFace GetPlanarFaceTop(Element freeFormElement)
+    {
+      var option = new Options { ComputeReferences = true };
+      return freeFormElement.get_Geometry(option).OfType<Solid>().Select(x => x.Faces.OfType<PlanarFace>()).SelectMany(x => x).MaxBy(x => x.Origin.Z)!;
     }
 
     #endregion

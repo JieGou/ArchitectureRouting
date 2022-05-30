@@ -61,7 +61,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private ( TextNote, string) CreateDetailSymbol( Document doc, DetailSymbolSettingDialog detailSymbolSettingDialog, XYZ firstPoint, string angle, bool isParentSymbol )
     {
-      const double baseLengthOfLine = 0.2 ;
+      var data = doc.GetSetupPrintStorable() ;
+      var scale = data.Scale * data.Ratio;
+      var baseLengthOfLine = 1d.MillimetersToRevitUnits()*scale ;
+      
       var isLeft = true ;
       var size = detailSymbolSettingDialog.HeightCharacter ;
       // create color using Color.FromArgb with RGB inputs
@@ -112,7 +115,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         firstPoint = nextP ;
       }
 
-      ElementId defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+      var defaultTextTypeId = doc.GetDefaultElementTypeId( ElementTypeGroup.TextNoteType ) ;
+      doc.GetElement( defaultTextTypeId ).get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( 1d.MillimetersToRevitUnits() ) ;
       var noteWidth = ( size / 32.0 ) * ( 1.0 / 12.0 ) * detailSymbolSettingDialog.PercentWidth / 100 ;
 
       // make sure note width works for the text type
@@ -127,9 +131,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
       TextNoteOptions opts = new( defaultTextTypeId ) { HorizontalAlignment = HorizontalTextAlignment.Left } ;
 
-      var txtPosition = new XYZ( firstPoint.X + ( isLeft ? baseLengthOfLine : -baseLengthOfLine * 4 ), firstPoint.Y + baseLengthOfLine * ( 1 + size * 2 ), firstPoint.Z ) ;
+      var txtPosition = new XYZ( firstPoint.X + ( isLeft ? baseLengthOfLine : -baseLengthOfLine * 2 ), firstPoint.Y + baseLengthOfLine * 6, firstPoint.Z ) ;
       var textNote = TextNote.Create( doc, doc.ActiveView.Id, txtPosition, noteWidth, detailSymbolSettingDialog.DetailSymbol, opts ) ;
-      CreateNewTextNoteType( doc, textNote, size, detailSymbolSettingDialog.SymbolFont, detailSymbolSettingDialog.SymbolStyle, detailSymbolSettingDialog.Offset, detailSymbolSettingDialog.BackGround, detailSymbolSettingDialog.PercentWidth, txtColor ) ;
+      CreateNewTextNoteType( doc, textNote, size, detailSymbolSettingDialog.SymbolFont, detailSymbolSettingDialog.SymbolStyle, detailSymbolSettingDialog.BackGround, detailSymbolSettingDialog.PercentWidth, txtColor ) ;
       return ( textNote, string.Join( ",", lineIds ) ) ;
     }
 
@@ -327,7 +331,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCodeModel ) ;
       if ( string.IsNullOrEmpty( ceedSetCodeModel ) ) return ( string.Empty, string.Empty ) ;
-      var ceedSetCode = ceedSetCodeModel!.Split( '-' ).ToList() ;
+      var ceedSetCode = ceedSetCodeModel!.Split( ':' ).ToList() ;
       var ceedCode = ceedSetCode.FirstOrDefault() ;
       var deviceSymbol = ceedSetCode.ElementAt( 1 ) ;
       return ( ceedCode ?? string.Empty, deviceSymbol ?? string.Empty ) ;
@@ -452,13 +456,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       return detailSymbolModel == null ;
     }
 
-    private void CreateNewTextNoteType( Document doc, TextNote textNote, double size, string symbolFont, string symbolStyle, int offset, int background, int widthScale, int color )
+    private void CreateNewTextNoteType( Document doc, TextNote textNote, double size, string symbolFont, string symbolStyle, int background, int widthScale, int color )
     {
       //Create new text type
       var bold = 0 ;
       var italic = 0 ;
       var underline = 0 ;
-      string strStyleName = "TNT-" + symbolFont + "-" + color + "-" + size + "-" + background + "-" + offset + "-" + widthScale + "%" ;
+      string strStyleName = "TNT-" + symbolFont + "-" + color + "-" + size + "-" + background + "-" + widthScale + "%" ;
       if ( symbolStyle == FontStyle.Bold.GetFieldName() ) {
         strStyleName += "-Bold" ;
         bold = 1 ;
@@ -485,7 +489,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_BOLD ).Set( bold ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_ITALIC ).Set( italic ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_STYLE_UNDERLINE ).Set( underline ) ;
-        textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( ( offset / 32.0 ) * ( 1.0 / 12.0 ) ) ;
+        textNoteType.get_Parameter( BuiltInParameter.LEADER_OFFSET_SHEET ).Set( 1d.MillimetersToRevitUnits() ) ;
         textNoteType.get_Parameter( BuiltInParameter.TEXT_WIDTH_SCALE ).Set( (double) widthScale / 100 ) ;
       }
 

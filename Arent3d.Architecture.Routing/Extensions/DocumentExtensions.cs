@@ -50,6 +50,20 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
     }
     
+    
+    /// <summary>
+    /// Get location type settings data from snoop DB.
+    /// </summary>
+    public static LocationTypeStorable GetLocationTypeStorable( this Document document )
+    {
+      try {
+        return LocationTypeStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( LocationTypeStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new LocationTypeStorable( document ) ;
+      }
+    }
+    
     /// <summary>
     /// Get CNS Setting data from snoop DB.
     /// </summary>
@@ -180,6 +194,51 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new EcoSettingStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get setup print data from snoop DB.
+    /// </summary>
+    public static SetupPrintStorable GetSetupPrintStorable( this Document document )
+    {
+      try {
+        return SetupPrintStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( SetupPrintStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new SetupPrintStorable( document ) ;
+      }
+    }
+	
+	/// <summary>
+    /// Get all symbolInformation data
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    public static SymbolInformationStorable GetSymbolInformationStorable( this Document document )
+    {
+      try {
+        return SymbolInformationStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( SymbolInformationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new SymbolInformationStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get all CeedDetail data
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    public static CeedDetailStorable GetCeedDetailStorable( this Document document )
+    {
+      try {
+        return CeedDetailStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( CeedDetailStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new CeedDetailStorable( document ) ;
       }
     }
   }

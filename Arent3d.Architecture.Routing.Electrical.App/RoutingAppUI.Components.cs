@@ -69,6 +69,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( RegisterSymbolCommand ), OnlyInitialized = true )]
           private static class RegisterSymbolCommandButton { }
+          
+          [Button( typeof( SetupPrintCommand ), OnlyInitialized = true )]
+          private static class SetupPrintCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.pickup", TitleKey = "Electrical.App.Panels.Routing.Initialize.PickUp" )]
@@ -85,6 +88,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( ShowElectricSymbolsCommand ), OnlyInitialized = true )]
           private static class ShowElectricSymbolsCommandButton { }
+          
+          [Button( typeof( ShowDialogCreateTableByFloorCommand ), OnlyInitialized = true )]
+          private static class ShowDialogCreateTableByFloorCommandButton { }
 
           [Button( typeof( ShowPickUpInformationCommand ), OnlyInitialized = true )]
           private static class ShowPickUpInformationCommandButton { }
@@ -103,6 +109,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
           [Button( typeof( DoubleBorderCommand ), OnlyInitialized = true )]
           private static class DoubleBorderCommandButton { }
+          
+          [Button( typeof( CircleAnnotationCommand ), OnlyInitialized = true )]
+          private static class CircleAnnotationCommandButton { }
+           
+		      [Button( typeof( SymbolInformationCommand ), OnlyInitialized = true )]
+          private static class SymbolInformationCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
@@ -270,6 +282,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         
         [Button( typeof( AdjustLeaderCommand ), OnlyInitialized = true )]
         private static class AdjustLeaderCommandButton { }
+        
+        [Button( typeof( ChangeWireSymbolUsingFilterCommand ), OnlyInitialized = true )]
+        private static class ChangeWireSymbolUsingFilterCommandButton { }
+        
+        [Button( typeof( ChangeWireSymbolUsingDetailItemCommand ), OnlyInitialized = true )]
+        private static class ChangeWireSymbolUsingDetailCommandButton { }
       }
 
       [Panel( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Shafts" )]
