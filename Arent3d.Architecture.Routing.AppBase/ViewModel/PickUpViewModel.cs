@@ -121,7 +121,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       List<string> constructionItems = new List<string>() ;
       List<string?> isEcoModes = new List<string?>() ;
 
-      List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
+      List<Element> allConnector = _document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId || ( e is FamilyInstance f && f.GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ).ToList() ;
       foreach ( var connector in allConnector ) {
         connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
         connector.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
@@ -168,7 +168,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var pickUpNumber = productType == ProductType.Connector ? string.Empty : pickUpNumbers[ index ].ToString() ;
         var direction = productType == ProductType.Conduit ? directionZ[ index ] : string.Empty ;
         var ceedCodeModel = GetCeedSetCodeOfElement( element ) ;
-        if ( _ceedModels.Any() && ceedCodeModel.Any() ) {
+        if ( _ceedModels.Any() && ceedCodeModel.Any() && ! ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) ) {
           var ceedSetCode = ceedCodeModel.First() ;
           var symbol = ceedCodeModel.Count > 1 ? ceedCodeModel.ElementAt( 1 ) : string.Empty ;
           modelNumber = ceedCodeModel.Count > 2 ? ceedCodeModel.ElementAt( 2 ) : string.Empty ;
@@ -211,6 +211,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           specification2 = ceedCodeOfToConnector ?? String.Empty ;
           PickUpModelBaseOnMaterialCode( dictMaterialCode!, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
             classification, pickUpNumber, direction ) ;
+        }
+
+        if ( productType == ProductType.Connector && ( (FamilyInstance) element ).GetConnectorFamilyType() == ConnectorFamilyType.PullBox ) {
+          const string pullBoxName = "プルボックス一式" ;
+          var hiroiSetMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? _hiroiSetMasterEcoModels : _hiroiSetMasterNormalModels ;
+          if ( hiroiSetMasterModels.Any() ) {
+            var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartName == pullBoxName ) ;
+            if ( hiroiSetMasterModel != null ) {
+              var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
+              if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
+                PickUpModelBaseOnMaterialCode( materialCodes, specification, productName, size, tani, standard, productType, pickUpModels, floor, constructionItems, construction, modelNumber, specification2, item, equipmentType, use, usageName, quantity, supplement, supplement2, group, layer,
+                  classification, pickUpNumber, direction ) ;
+              }
+            }
+          }
         }
 
         index++ ;
@@ -266,7 +281,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<string> GetCeedSetCodeOfElement( Element element )
     {
       element.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedSetCode ) ;
-      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':', '-' ).ToList() : new List<string>() ;
+      return ! string.IsNullOrEmpty( ceedSetCode ) ? ceedSetCode!.Split( ':' ).ToList() : new List<string>() ;
     }
 
     private void GetToConnectorsOfConduit( IReadOnlyCollection<Element> allConnectors, List<PickUpModel> pickUpModels )
