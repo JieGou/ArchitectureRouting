@@ -12,7 +12,8 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
     {
       ConduitId,
       DetailCurveId,
-      WireType
+      WireType,
+      IsLeakRoute
     }
     
     protected override ConduitAndDetailCurveModel Deserialize( Element storedElement, IDeserializerObject deserializerObject )
@@ -22,8 +23,9 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var conduitId = deserializer.GetString( SerializeField.ConduitId ) ;
       var detailCurveId = deserializer.GetString( SerializeField.DetailCurveId ) ;
       var wireType = deserializer.GetString( SerializeField.WireType ) ;
+      var isLeakRoute = deserializer.GetBool( SerializeField.IsLeakRoute ) ;
   
-      return new ConduitAndDetailCurveModel( conduitId, detailCurveId, wireType ) ;
+      return new ConduitAndDetailCurveModel( conduitId, detailCurveId, wireType, isLeakRoute ) ;
     }
 
     protected override ISerializerObject Serialize( Element storedElement, ConduitAndDetailCurveModel customTypeValue )
@@ -33,6 +35,7 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.ConduitId, customTypeValue.ConduitId ) ;
       serializerObject.AddNonNull( SerializeField.DetailCurveId, customTypeValue.DetailCurveId ) ;
       serializerObject.AddNonNull( SerializeField.WireType, customTypeValue.WireType ) ;
+      serializerObject.Add( SerializeField.IsLeakRoute, customTypeValue.IsLeakRoute ) ;
   
       return serializerObject ;
     }

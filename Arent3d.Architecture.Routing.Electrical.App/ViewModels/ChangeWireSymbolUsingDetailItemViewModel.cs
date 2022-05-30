@@ -125,12 +125,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         {
           var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ;
           detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, WireSymbolOptions[ TypeNameSelected ] ) ) ;
+          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, WireSymbolOptions[ TypeNameSelected ], false ) ) ;
         } ) ;
         lines.ForEach( x =>
         {
           var line = _uiDocument.Document.Create.NewFamilyInstance( x.Key, familySymbol, _uiDocument.ActiveView ) ;
-          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, WireSymbolOptions[ TypeNameSelected ] ) ) ;
+          conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, WireSymbolOptions[ TypeNameSelected ], false ) ) ;
         } ) ;
         
         conduitAndDetailCurveStorable.Save() ;

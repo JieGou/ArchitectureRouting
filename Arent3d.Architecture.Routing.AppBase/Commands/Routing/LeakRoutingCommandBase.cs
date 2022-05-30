@@ -299,7 +299,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var wireTypeName = ChangeWireTypeCommand.WireSymbolOptions.Values.ElementAt( leakState.ConduitType ) ;
       if ( string.IsNullOrEmpty( wireTypeName ) ) return ;
       var routeNames = executeResultValue.Select( r => r.RouteName ).Distinct().ToHashSet() ;
-      ChangeWireTypeCommand.ChangeWireType( document, routeNames, wireTypeName ) ;
+      ChangeWireTypeCommand.ChangeWireType( document, routeNames, wireTypeName, true ) ;
     }
   }
 }

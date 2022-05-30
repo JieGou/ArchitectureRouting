@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       { "漏水帯（塩ビ）", "LeakageZonePvc" }
     } ;
 
-    private static void ChangeLocationType( Document document, View view, List<Element> elements, string wireType )
+    private static void ChangeLocationType( Document document, View view, List<Element> elements, string wireType, bool isLeakRoute )
     {
       using var transactionGroup = new TransactionGroup( document ) ;
       transactionGroup.Start( "Change Type" ) ;
@@ -41,20 +41,20 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var conduitAndDetailCurveStorable = document.GetConduitAndDetailCurveStorable() ;
       var color = new Color( 255, 215, 0 ) ;
-      var lineStyle = GetLineStyle( document, color ) ;
+      var lineStyle = isLeakRoute ? GetLineStyle( document, color ) : GetLineStyle( document, "LeakageZone" ) ; ;
       OverrideGraphicSettings ogs = new() ;
       ogs.SetProjectionLineColor( color ) ;
       ForEachExtension.ForEach( curves, x =>
       {
         var detailCurve = document.Create.NewDetailCurve( view, x.Key ) ;
         detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
-        conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, wireType ) ) ;
+        conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, wireType, isLeakRoute ) ) ;
       } ) ;
       ForEachExtension.ForEach( lines, x =>
       {
         var line = document.Create.NewFamilyInstance( x.Key, familySymbol, view ) ;
-        view.SetElementOverrides( line.Id, ogs ) ;
-        conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, wireType ) ) ;
+        if ( isLeakRoute ) view.SetElementOverrides( line.Id, ogs ) ;
+        conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, wireType, isLeakRoute ) ) ;
       } ) ;
       
       conduitAndDetailCurveStorable.Save() ;
@@ -97,6 +97,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return subCategory ;
     }
+    
+    private static Category GetLineStyle( Document document, string subCategoryName)
+    {
+      var categories = document.Settings.Categories ;
+      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) ;
+      Category subCategory ;
+      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
+        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
+      }
+      else {
+        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+      }
+
+      return subCategory ;
+    }
 
     public static (Dictionary<Line, string> lineConduits, Dictionary<Curve, string> curveHorizontal) GetLocationConduits( Document document, View view, List<Element> elements )
     {
@@ -122,9 +137,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     }
 
     private static Func<FamilyInstance, XYZ> GetCenterPoint =>
-      familyInsatance =>
+      familyInstance =>
       {
-        var connectors = familyInsatance.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ;
+        var connectors = familyInstance.MEPModel.ConnectorManager.Connectors.OfType<Connector>().ToList() ;
         return 0.5 * ( connectors[ 0 ].Origin + connectors[ 1 ].Origin ) ;
       } ;
 
@@ -264,12 +279,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       transaction.Commit() ;
     }
 
-    public static string RemoveDetailLines( Document document, HashSet<string> conduitIds )
+    public static ( string, bool ) RemoveDetailLines( Document document, HashSet<string> conduitIds )
     {
       var conduitAndDetailCurveStorable = document.GetConduitAndDetailCurveStorable() ;
       var conduitAndDetailCurves = conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Where( c => conduitIds.Contains( c.ConduitId ) ).ToList() ;
-      if ( ! conduitAndDetailCurves.Any() ) return string.Empty ;
+      if ( ! conduitAndDetailCurves.Any() ) return ( string.Empty, false ) ;
       var familyInstanceName = conduitAndDetailCurves.First().WireType ;
+      var isLeakRoute = conduitAndDetailCurves.First().IsLeakRoute ;
 
       using var transaction = new Transaction( document ) ;
       transaction.Start( "Remove Detail Lines" ) ;
@@ -285,10 +301,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       conduitAndDetailCurveStorable.Save() ;
       transaction.Commit() ;
-      return familyInstanceName ;
+      return ( familyInstanceName, isLeakRoute ) ;
     }
 
-    public static void ChangeWireType( Document document, HashSet<string> reReRouteNames, string wireTypeName )
+    public static void ChangeWireType( Document document, HashSet<string> reReRouteNames, string wireTypeName, bool isLeakRoute )
     {
       var viewPlan = document.ActiveView ;
       using var transaction = new Transaction( document ) ;
@@ -326,7 +342,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       transaction.Commit() ;
       
-      ChangeLocationType( document, viewPlan, newConduitsOfRoute, wireTypeName ) ;
+      ChangeLocationType( document, viewPlan, newConduitsOfRoute, wireTypeName, isLeakRoute ) ;
     }
     
     public static void RemoveDetailLinesByRoutes( Document document, HashSet<string> routeNames )
