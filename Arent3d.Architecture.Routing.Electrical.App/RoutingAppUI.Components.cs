@@ -30,6 +30,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( Show3DViewsCommand ), OnlyInitialized = true )]
           private static class Show3DViewsCommandButton { }
+          
+          [Button( typeof( ExportDwgCommand ), OnlyInitialized = true )]
+          private static class ExportDWGCommandButton { }
 
           [Button(typeof(CnsSettingCommand), OnlyInitialized = true)]
           private static class CnsSettingCommandButton { }
@@ -45,6 +48,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
           private static class ShowHeightSettingCommandButton { }
+          
+          [Button( typeof( DefaultSettingCommand ), OnlyInitialized = true )]
+          private static class DefaultSettingCommandButton { }
           
           [Button( typeof( ConfirmUnsetCommand ), OnlyInitialized = true )]
           private static class ConfirmUnsetCommandButton { }
@@ -154,6 +160,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( RoomPickRoutingCommand ), OnlyInitialized = true )]
           private static class RoomPickRoutingCommandButton { }
+          
+          [Button( typeof( LeakRoutingCommand ), OnlyInitialized = true )]
+          private static class LeakRoutingCommandCommandButton { }
         }
         
         [SplitButton( "arent3d.architecture.routing.routing.selection.range.routing", TitleKey = "Electrical.App.Panels.Routing.Routing.SelectionRangeRouting" )]

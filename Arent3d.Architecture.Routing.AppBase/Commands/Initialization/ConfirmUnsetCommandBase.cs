@@ -32,8 +32,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     public static void ChangeElementColor( Document document, IEnumerable<Element> elements, Color color )
     {
-      OverrideGraphicSettings ogs = new OverrideGraphicSettings() ;
+      OverrideGraphicSettings ogs = new() ;
       ogs.SetProjectionLineColor( color ) ;
+      foreach ( var element in elements ) {
+        document.ActiveView.SetElementOverrides( element.Id, ogs ) ;
+      }
+    }
+    
+    public static void ResetElementColor( Document document, IEnumerable<Element> elements )
+    {
+      OverrideGraphicSettings ogs = new() ;
       foreach ( var element in elements ) {
         document.ActiveView.SetElementOverrides( element.Id, ogs ) ;
       }

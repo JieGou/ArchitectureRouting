@@ -171,12 +171,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var document = commandData.Application.ActiveUIDocument.Document ;
 
         // Get data of eco setting from snoop DB
-        EcoSettingStorable ecoSettingStorable = document.GetEcoSettingStorable() ;
+        DefaultSettingStorable defaultSettingStorable = document.GetDefaultSettingStorable() ;
 
         Transaction transaction = new Transaction( document, SetDefaultEcoModeTransactionName ) ;
         transaction.Start() ;
-        ecoSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
-        ecoSettingStorable.Save() ;
+        defaultSettingStorable.EcoSettingData.IsEcoMode = isEcoModel ;
+        defaultSettingStorable.Save() ;
         transaction.Commit() ;
 
         ShowResult( message ) ;
