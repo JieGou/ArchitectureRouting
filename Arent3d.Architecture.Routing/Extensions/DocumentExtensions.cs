@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new OffsetSettingStorable( document ) ;
       }
     }
-
+    
     /// <summary>
     /// Get register symbol settings data from snoop DB.
     /// </summary>
@@ -49,8 +49,8 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new RegisterSymbolStorable( document ) ;
       }
     }
-
-
+    
+    
     /// <summary>
     /// Get location type settings data from snoop DB.
     /// </summary>
@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new LocationTypeStorable( document ) ;
       }
     }
-
+    
     /// <summary>
     /// Get CNS Setting data from snoop DB.
     /// </summary>
@@ -115,7 +115,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new PickUpStorable( document ) ;
       }
     }
-
+    
     /// <summary>
     /// Get detail symbol data from snoop DB.
     /// </summary>
@@ -141,7 +141,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new RackNotationStorable( document ) ;
       }
     }
-
+    
     /// <summary>
     /// Get detail table data from snoop DB.
     /// </summary>
@@ -154,7 +154,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new DetailTableStorable( document ) ;
       }
     }
-
+    
     /// <summary>
     /// Get text note data from snoop DB.
     /// </summary>
@@ -171,29 +171,32 @@ namespace Arent3d.Architecture.Routing.Extensions
     /// <summary>
     /// Get text note data from snoop DB.
     /// </summary>
-    public static RegistrationOfBoardDataStorable GetRegistrationOfBoardDataStorable( this Document document )
+    public static RegistrationOfBoardDataStorable GetRegistrationOfBoardDataStorable(
+      this Document document )
     {
       try {
-        return RegistrationOfBoardDataStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( RegistrationOfBoardDataStorable.StorableName ) ;
+        return RegistrationOfBoardDataStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( RegistrationOfBoardDataStorable.StorableName ) ;
       }
       catch ( InvalidOperationException ) {
         return new RegistrationOfBoardDataStorable( document ) ;
       }
     }
-
+    
     /// <summary>
     /// Get eco default setting from DB
     /// </summary>
     public static EcoSettingStorable GetEcoSettingStorable( this Document document )
     {
       try {
-        return EcoSettingStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( EcoSettingStorable.StorableName ) ;
+        return EcoSettingStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( EcoSettingStorable.StorableName ) ;
       }
       catch ( InvalidOperationException ) {
         return new EcoSettingStorable( document ) ;
       }
     }
-
+    
     /// <summary>
     /// Get setup print data from snoop DB.
     /// </summary>
@@ -206,7 +209,39 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new SetupPrintStorable( document ) ;
       }
     }
-
+	
+	/// <summary>
+    /// Get all symbolInformation data
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    public static SymbolInformationStorable GetSymbolInformationStorable( this Document document )
+    {
+      try {
+        return SymbolInformationStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( SymbolInformationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new SymbolInformationStorable( document ) ;
+      }
+    }
+    
+    /// <summary>
+    /// Get all CeedDetail data
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    public static CeedDetailStorable GetCeedDetailStorable( this Document document )
+    {
+      try {
+        return CeedDetailStorableCache.Get( DocumentKey.Get( document ) )
+          .FindOrCreate( CeedDetailStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new CeedDetailStorable( document ) ;
+      }
+    }
+    
     public static WiringInformationChangedStorable GetWiringInformationChangedStorable( this Document document )
     {
       try {

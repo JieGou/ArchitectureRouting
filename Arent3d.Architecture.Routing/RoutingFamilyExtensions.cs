@@ -1,4 +1,4 @@
-﻿using System ;
+﻿﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -95,7 +95,10 @@ namespace Arent3d.Architecture.Routing
     SquareRepeat,
     
     [Family( "LeakageZonePvc", BuiltInCategory.OST_DetailComponents )]
-    VerticalRepeat
+    VerticalRepeat,
+    
+    [Family( "Symbol Star", BuiltInCategory.OST_GenericModel )]
+    SymbolStar,
   }
 
   public enum MechanicalRoutingFamilyType

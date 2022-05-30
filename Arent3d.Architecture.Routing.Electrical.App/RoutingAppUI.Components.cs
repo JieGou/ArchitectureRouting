@@ -112,7 +112,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( CircleAnnotationCommand ), OnlyInitialized = true )]
           private static class CircleAnnotationCommandButton { }
-          
+           
+		      [Button( typeof( SymbolInformationCommand ), OnlyInitialized = true )]
+          private static class SymbolInformationCommandButton { }
           
           [Button( typeof( AddWiringInformationCommand ), OnlyInitialized = true )]
           private static class AddWiringInformationCommandButton { }
