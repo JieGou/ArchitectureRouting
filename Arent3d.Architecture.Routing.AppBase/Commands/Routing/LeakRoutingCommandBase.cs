@@ -295,6 +295,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     
     protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, LeakState leakState )
     {
+      ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
       var wireTypeName = ChangeWireTypeCommand.WireSymbolOptions.Values.ElementAt( leakState.ConduitType ) ;
       if ( string.IsNullOrEmpty( wireTypeName ) ) return ;
       var routeNames = executeResultValue.Select( r => r.RouteName ).Distinct().ToHashSet() ;
