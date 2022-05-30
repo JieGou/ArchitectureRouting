@@ -36,14 +36,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
         var pickInfo = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick a point on a route to get info.", AddInType.Electrical ) ;
         var pickedObjectIds = new List<string>() { pickInfo.Element.UniqueId } ;
-        //var ( detailTableModels, isMixConstructionItems, isExistDetailTableModelRow ) = CreateDetailTableUtil.CreateDetailTable( document, csvStorable, detailSymbolStorable, pickInfo.Element, pickedObjectIds, false ) ;
         var (detailTableModels, isMixConstructionItems, isExistDetailTableModelRow) = CreateDetailTableCommandBase.CreateDetailTable( document, csvStorable, detailSymbolStorable, new List<Element>() { pickInfo.Element }, pickedObjectIds, false ) ;
         var detailTableModel = detailTableModels.FirstOrDefault( x => x.RouteName == pickInfo.Route.RouteName ) ;
         if ( null == detailTableModel ) {
           MessageBox.Show("Item info can't be found!","Info") ;
           return Result.Cancelled ;
         }
-        detailTableModels = new ObservableCollection<DetailTableModel>() { detailTableModel } ;
+        //detailTableModels = new ObservableCollection<DetailTableModel>() { detailTableModel } ;
 
         var conduitTypeNames = conduitsModelData.Select( c => c.PipingType ).Distinct().ToList() ;
         var conduitTypes = new ObservableCollection<string>( conduitTypeNames ) { NoPlumping } ;
@@ -81,7 +80,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var signalTypes = new ObservableCollection<string>( ( from signalType in (CreateDetailTableCommandBase.SignalType[]) Enum.GetValues( typeof( CreateDetailTableCommandBase.SignalType ) ) select signalType.GetFieldName() ).ToList() ) ;
 
 
-        var viewModel = new AddWiringInformationViewModel( document, detailTableModels.FirstOrDefault()!, conduitsModelData, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, isMixConstructionItems ) ;
+        var viewModel = new AddWiringInformationViewModel( document, detailTableModel!, conduitsModelData, conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes, isMixConstructionItems ) ;
         var dialog = new AddWiringInformationDialog( viewModel ) ;
         dialog.ShowDialog() ;
         return Result.Succeeded ;

@@ -16,6 +16,7 @@
         <CollectionViewSource x:Key="Levels" Source="{Binding Levels}" />
         <CollectionViewSource x:Key="WireTypes" Source="{Binding WireTypes}" />
         <CollectionViewSource x:Key="Numbers" Source="{Binding Numbers}" />
+        <CollectionViewSource x:Key="NumberOfGrounds" Source="{Binding Numbers}" />
         <CollectionViewSource x:Key="ConstructionClassificationTypes" Source="{Binding ConstructionClassificationTypes}" />
         <CollectionViewSource x:Key="SignalTypes" Source="{Binding SignalTypes}" />
         <CollectionViewSource x:Key="EarthTypes" Source="{Binding EarthTypes}" />
@@ -97,7 +98,7 @@
         <ComboBox Grid.Row="7" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource EarthSizes}}" SelectedItem="{Binding DetailTableModel.EarthSize}" />
         <!-- NumberOfGrounds   -->
         <Label Grid.Row="8" Grid.Column="0" Content="アース本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" />
-        <ComboBox Grid.Row="8" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource Numbers}}" SelectedItem="{Binding DetailTableModel.NumberOfGrounds}" />
+        <ComboBox Grid.Row="8" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource NumberOfGrounds}}" SelectedItem="{Binding DetailTableModel.NumberOfGrounds}" />
         <!-- PlumbingType   -->
         <!-- <Label Grid.Row="9" Grid.Column="0" Content="配管種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="150" /> -->
         <!-- <ComboBox Grid.Row="9" Grid.Column="1" IsEditable="False" Width="230" Height="27" ItemsSource="{Binding Source={StaticResource ConduitTypes}}" SelectedItem="{Binding DetailTableModel.PlumbingType}" > -->

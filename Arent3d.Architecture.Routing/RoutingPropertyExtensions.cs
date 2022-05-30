@@ -126,7 +126,7 @@ namespace Arent3d.Architecture.Routing
     [Parameter( "302a0b15-ee8b-44a2-98b2-c5eb105a3579", "IsEcoMode", DataType.Text, ParameterVisibility.ReadOnlyOnHasValue )]
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.PG_IDENTITY_DATA, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.ConnectorsAndConduits ) )]
     IsEcoMode,
-
+     
     #region Schedules
 
     [Parameter( "ff5d3b79-2b6c-48cf-9627-e09c4d64a91d", "Schedule Header Row Count", DataType.Integer, ParameterVisibility.Editable )]

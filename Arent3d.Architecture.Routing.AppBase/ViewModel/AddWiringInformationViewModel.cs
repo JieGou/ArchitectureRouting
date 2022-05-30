@@ -105,14 +105,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SignalTypes = signalTypes ;
       _isMixConstructionItems = isMixConstructionItems ;
       _conduitsModelData = conduitsModelData ;
-      
-      var toConnector = ConduitUtil.GetConnectorOfRoute( _document, DetailTableModel.RouteName, false ) ;
-      if ( null != toConnector ) {
-        toConnector.TryGetProperty(ElectricalRoutingElementParameter.CeedCode, out string? ceedCode) ;
-      }
- 
-      //WireStrips = new ObservableCollection<string>(DetailTableModel.WireStrips.Select( x=>x.Name ).ToList() ) ;
-      //WireSizes = new ObservableCollection<string>( DetailTableModel.WireSizes.Select( x=>x.Name ).ToList() ) ;
+       
       WireTypeChanged() ;
       EarthSizes = new ObservableCollection<string>(DetailTableModel.EarthSizes.Select( x=>x.Name ).ToList()) ;
       PlumbingSizes = new ObservableCollection<string>(DetailTableModel.PlumbingSizes.Select( x=>x.Name ).ToList()) ;
@@ -123,20 +116,40 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private void Save(Window window)
     {
       try {
-        //Get connector of route
-        // var toConnector = ConduitUtil.GetConnectorOfRoute( _document, DetailTableModel.RouteName, false ) ;
-        // if ( null != toConnector ) {
-        //   toConnector.TrySetProperty(ElectricalRoutingElementParameter.CeedCode, "" ) ;
-        // }
+        using ( Transaction t = new Transaction( _document, "Save wiring information changed transaction" ) ) {
+          t.Start() ;
+          //Get connector of route
+          var wiringInfoChangedStoreable = _document.GetWiringInformationChangedStorable() ;
+          var hiroiMasterModelData = _document.GetCsvStorable().HiroiMasterModelData ;
+          string kikaku = DetailTableModel.WireType +  DetailTableModel.WireSize + "x" + DetailTableModel.WireStrip ;
+          var hiroiMasterModel = hiroiMasterModelData.FirstOrDefault( x => String.Equals( x.Kikaku.Replace( " ","" ), kikaku, StringComparison.CurrentCultureIgnoreCase ) ) ;
+          if ( null != hiroiMasterModel ) {
+            //Save wiring info changed in store
+            var toConnector = ConduitUtil.GetConnectorOfRoute( _document, DetailTableModel.RouteName, false ) ;
+            if ( null != toConnector ) {
+              var wiringInfoChangedModel = wiringInfoChangedStoreable.WiringInformationChangedData.FirstOrDefault( x => x.ConnectorUniqueId == toConnector.UniqueId ) ;
+              if ( wiringInfoChangedModel != null ) {
+                wiringInfoChangedModel.MaterialCode = hiroiMasterModel.Kikaku ; 
+              }
+              else {
+                wiringInfoChangedStoreable.WiringInformationChangedData.Add( new WiringInformationChangedModel( toConnector.UniqueId, hiroiMasterModel.Kikaku ) );
+              }
+              wiringInfoChangedStoreable.Save();
+            }
+          
+            //Update DetailTableStore
+            DetailTableStorable detailTableStorable = _document.GetDetailTableStorable() ; 
+            detailTableStorable.Save();
+          } 
+          t.Commit() ;
+        }
         
-        //Update DetailTableStore
-        DetailTableViewModel.SaveData( _document, new ObservableCollection<DetailTableModel>(){DetailTableModel} ) ;
         window.DialogResult = true ; 
         window.Close();
       }
-      catch ( Exception e ) {
-        Console.WriteLine( e ) ;
-        throw ;
+      catch ( Exception ) {
+        MessageBox.Show( "Save wiring information changed failed.", "Error Message" ) ;
+        window.DialogResult = false ;
       }
     }
     
@@ -172,6 +185,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     { 
       var earthSizes = _wiresAndCablesData.Where( c => c.WireType == DetailTableModel.EarthType.ToString() ).Select( c => c.DiameterOrNominal ).ToList() ;
       EarthSizes = new ObservableCollection<string>(earthSizes) ;
+      DetailTableModel.EarthSizes = EarthSizes.Count > 0 ? ( from earthSize in EarthSizes select new DetailTableModel.ComboboxItemType( earthSize, earthSize ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() ;
       CollectionViewSource.GetDefaultView( EarthSizes ).Refresh() ;  
     }
     private void PlumbingTypeChanged()

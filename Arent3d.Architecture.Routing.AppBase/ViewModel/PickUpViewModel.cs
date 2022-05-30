@@ -25,6 +25,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private readonly Document _document ;
     private List<PickUpModel> _pickUpModels ;
     private PickUpStorable _pickUpStorable ;
+    private WiringInformationChangedStorable _wiringInformationChangedStorable ;
     private readonly List<CeedModel> _ceedModels ;
     private readonly List<RegistrationOfBoardDataModel> _registrationOfBoardDataModels ;
     private readonly List<HiroiSetMasterModel> _hiroiSetMasterNormalModels ;
@@ -73,6 +74,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _hiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
       _pickUpNumbers = new Dictionary<int, string>() ;
       _pickUpNumber = 1 ;
+
+      _wiringInformationChangedStorable = _document.GetWiringInformationChangedStorable() ;
 
       var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
       if ( ceedStorable != null ) _ceedModels = ceedStorable.CeedModelData ;
@@ -185,6 +188,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             var hiroiSetMasterModels = ! string.IsNullOrEmpty( isEcoMode ) && bool.Parse( isEcoMode ) ? _hiroiSetMasterEcoModels : _hiroiSetMasterNormalModels ;
             if ( hiroiSetMasterModels.Any() && ! string.IsNullOrEmpty( ceedModelNumber ) ) {
               var hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => h.ParentPartModelNumber == ceedModelNumber ) ;
+ 
+              //In case conduit info has been changed, we get hiroiSetMasterModel base on wiringInformationStorable
+               if ( _wiringInformationChangedStorable.WiringInformationChangedData.Any() && productType == ProductType.Conduit) {
+                 var wiringInformationChanged = _wiringInformationChangedStorable.WiringInformationChangedData.FirstOrDefault( x => x.ConnectorUniqueId == element.UniqueId ) ;
+                 if(null != wiringInformationChanged)
+                   hiroiSetMasterModel = hiroiSetMasterModels.FirstOrDefault( h => CompareMaterialCodeAndProducParentNumber(h.ParentPartModelNumber, wiringInformationChanged.MaterialCode) ) ;
+                    
+               }
+              
               if ( hiroiSetMasterModel != null ) {
                 var materialCodes = GetMaterialCodes( hiroiSetMasterModel ) ;
                 if ( _hiroiMasterModels.Any() && materialCodes.Any() ) {
@@ -207,6 +219,13 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
         index++ ;
       }
+    }
+
+    private bool CompareMaterialCodeAndProducParentNumber(string materialCode, string productParentNumber)
+    {
+      materialCode = materialCode.Replace( " ", "" ).Replace( "-", "" ).Replace( "x", "" ) ;
+      productParentNumber = productParentNumber.Replace( " ", "" ).Replace( "-", "" ).Replace( "x", "" ) ;
+      return String.Equals( materialCode, productParentNumber, StringComparison.CurrentCultureIgnoreCase ) ;
     }
 
     private void PickUpModelBaseOnMaterialCode( Dictionary<string, string> materialCodes, string specification, string productName, string size, string tani, string standard, ProductType productType, List<PickUpModel> pickUpModels, string? floor, string constructionItems, string construction,
