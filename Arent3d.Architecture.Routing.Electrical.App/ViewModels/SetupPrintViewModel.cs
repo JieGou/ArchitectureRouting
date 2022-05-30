@@ -134,19 +134,18 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         _setupPrintStorable.Save() ;
 
         var textNoteType = TextNoteHelper.FindOrCreateTextNoteType( _uiDocument.Document ) ;
-        var viewPlanFilter = new FilteredElementCollector( _uiDocument.Document ) ;
-        var viewPlans = viewPlanFilter.OfClass( typeof( ViewPlan ) ).OfType<ViewPlan>().Where( x => ! x.IsTemplate ) ;
-        foreach ( var viewPlan in viewPlans ) {
+        if ( _uiDocument.Document.ActiveView is ViewPlan viewPlan ) {
           if ( null != viewPlan.ViewTemplateId && _uiDocument.Document.GetElement( viewPlan.ViewTemplateId ) is View viewTemplate && viewTemplate.Scale != _setupPrintStorable.Scale ) {
             viewTemplate.Scale = _setupPrintStorable.Scale ;
           }
-          else if (viewPlan.Scale != _setupPrintStorable.Scale) {
+          else if ( viewPlan.Scale != _setupPrintStorable.Scale ) {
             viewPlan.Scale = _setupPrintStorable.Scale ;
           }
 
-          if ( null == textNoteType ) continue ;
-          var textNoteFilter = new FilteredElementCollector( _uiDocument.Document, viewPlan.Id ) ;
-          textNoteFilter.OfClass( typeof( TextNote ) ).OfType<TextNote>().ForEach(x => x.TextNoteType = textNoteType);
+          if ( null != textNoteType ) {
+            var textNoteFilter = new FilteredElementCollector( _uiDocument.Document, viewPlan.Id ) ;
+            textNoteFilter.OfClass( typeof( TextNote ) ).OfType<TextNote>().ForEach( x => x.TextNoteType = textNoteType ) ;
+          }
         }
 
         transaction.Commit() ;
@@ -155,6 +154,5 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         TaskDialog.Show( "Arent Inc", exception.Message ) ;
       }
     }
-    
   }
 }

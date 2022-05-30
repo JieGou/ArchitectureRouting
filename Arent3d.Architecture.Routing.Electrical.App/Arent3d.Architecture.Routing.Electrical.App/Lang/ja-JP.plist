@@ -444,6 +444,10 @@
         <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
         <string>選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。</string>
 
+        <!-- File Names -->
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
+        <string>Arent-export-layers-jp.txt</string>
+        
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>グレード</string>

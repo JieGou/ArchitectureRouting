@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var connectorGroups = new Dictionary<ElementId, List<ElementId>>() ;
       using Transaction t = new Transaction( document, "Set Construction item." ) ;
       t.Start() ;
-      var defaultIsEcoModeValue = document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
+      var defaultIsEcoModeValue = document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
       foreach ( var route in routes ) {
         var subRoute = route.SubRoutes.Last() ;
         var segment = subRoute.Segments.FirstOrDefault() ;

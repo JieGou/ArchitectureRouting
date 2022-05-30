@@ -69,7 +69,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 using var transaction = new Transaction( document ) ;
                 transaction.Start( "Set conduits property" ) ;
                 SetConstructionItemForElements( listApplyConduit.ToList(), categoryName ) ;
-                ConfirmUnsetCommandBase.ChangeElementColor( document, conduitList.ToList(), color ) ;
+                ConfirmUnsetCommandBase.ResetElementColor( document, conduitList.ToList() ) ;
                 transaction.Commit() ;
 
                 break ;
@@ -110,7 +110,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   }
                 }
                 SetConstructionItemForElements( connectorList.ToList(), categoryName ) ;
-                ConfirmUnsetCommandBase.ChangeElementColor( document, connectorList.ToList(), color ) ;
+                ConfirmUnsetCommandBase.ResetElementColor( document, connectorList.ToList() ) ;
                 transaction.Commit() ;
 
                 break ;

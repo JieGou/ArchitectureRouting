@@ -2,6 +2,7 @@
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Commands ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
@@ -66,10 +67,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
         using var transaction = new Transaction( document ) ;
         transaction.Start( "Electrical.App.Commands.Shaft.AddHSymbolCommand".GetAppStringByKeyOrDefault( "Create Sign Cylindrical Shaft" ) ) ;
 
-        var data = document.GetSetupPrintStorable() ;
-        var scaleSetup = data.Scale * data.Ratio;
-        var ratio = scaleSetup / 100d ;
         foreach ( var viewPlan in viewPlans ) {
+          var ratio = viewPlan.Scale / 100d ;
           CreateSymbolCenter( viewPlan, centerPoint, ratio ) ;
         }
 
@@ -106,7 +105,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
     private static Category GetLineStyle( Document document, string subCategoryName, Color color, int lineWeight )
     {
       var categories = document.Settings.Categories ;
-      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
+      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) ;
       Category subCategory ;
       if ( ! category.SubCategories.Contains( subCategoryName ) ) {
         subCategory = categories.NewSubcategory( category, subCategoryName ) ;

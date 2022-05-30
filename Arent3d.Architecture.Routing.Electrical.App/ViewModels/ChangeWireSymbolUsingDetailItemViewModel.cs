@@ -119,10 +119,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if(!familySymbol.IsActive)
           familySymbol.Activate();
 
+        var lineStyle = GetLineStyle( _uiDocument.Document, "LeakageZone" ) ;
         var conduitAndDetailCurveStorable = _uiDocument.Document.GetConduitAndDetailCurveStorable() ;
         curves.ForEach( x =>
         {
-          var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ; 
+          var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ;
+          detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
           conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, WireSymbolOptions[ TypeNameSelected ] ) ) ;
         } ) ;
         lines.ForEach( x =>
@@ -132,6 +134,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         } ) ;
         
         conduitAndDetailCurveStorable.Save() ;
+
         transaction.Commit() ;
       }
       else {
@@ -152,7 +155,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         
         var graphicsStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
         
-        curves.ForEach( x => { _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ; } ) ;
+        curves.ForEach( x =>
+        {
+          var detailCurve = _uiDocument.Document.Create.NewDetailCurve( _uiDocument.ActiveView, x.Key ) ;
+          detailCurve.LineStyle = graphicsStyle ;
+        } ) ;
         lines.ForEach( x =>
         {
           var detailCurve = _uiDocument.Document.Create.NewDetailCurve(_uiDocument.ActiveView, x.Key) ;
@@ -177,6 +184,21 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       ChangeWireTypeCommand.RefreshView( _uiDocument.Document, _uiDocument.ActiveView ) ;
 
       transactionGroup.Assimilate() ;
+    }
+    
+    private static Category GetLineStyle( Document document, string subCategoryName)
+    {
+      var categories = document.Settings.Categories ;
+      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) ;
+      Category subCategory ;
+      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
+        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
+      }
+      else {
+        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+      }
+
+      return subCategory ;
     }
 
     private List<Element> SelectElements()
