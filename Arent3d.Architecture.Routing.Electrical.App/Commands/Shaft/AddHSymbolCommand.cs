@@ -105,7 +105,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Shaft
     private static Category GetLineStyle( Document document, string subCategoryName, Color color, int lineWeight )
     {
       var categories = document.Settings.Categories ;
-      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
+      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) ;
       Category subCategory ;
       if ( ! category.SubCategories.Contains( subCategoryName ) ) {
         subCategory = categories.NewSubcategory( category, subCategoryName ) ;
