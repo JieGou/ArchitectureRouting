@@ -132,10 +132,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         : DefaultConstructionItem ;
       var isEcoMode = toConnectorOfRoute != null && toConnectorOfRoute.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoModeOfToConnector ) && ! string.IsNullOrEmpty( isEcoModeOfToConnector ) 
         ? isEcoModeOfToConnector !
-        : document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
+        : document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
       var ceedCode = toConnectorOfRoute != null && toConnectorOfRoute.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) && ! string.IsNullOrEmpty( ceedCodeOfToConnector ) 
         ? ceedCodeOfToConnector !
-        : document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
+        : document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
       
       if ( instance.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) )
         instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem ) ;
