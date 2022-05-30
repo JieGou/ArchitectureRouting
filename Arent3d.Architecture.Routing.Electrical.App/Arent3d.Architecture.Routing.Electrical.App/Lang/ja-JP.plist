@@ -228,6 +228,9 @@
 
         <key>Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand</key>
         <string>階毎の表作成</string>
+        
+        <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
+        <string>部材情報付きシンボル</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
