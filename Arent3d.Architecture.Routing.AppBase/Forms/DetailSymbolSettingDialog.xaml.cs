@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public string SymbolFont ;
     public string SymbolStyle ;
     public int Offset ;
-    public int BackGround ;
+    public int BackGround { get ; set ; }
 
     public DetailSymbolSettingDialog( List<string> symbols, List<int> angle, string defaultSymbol )
     {
@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SymbolFont = CmbFont.SelectedValue.ToString() ;
       SymbolStyle = CmbStyle.SelectedValue.ToString() ;
       Offset = Convert.ToInt32( CmbOffset.SelectedValue.ToString() ) ;
-      BackGround = CmbHideTextBackground.SelectedValue.ToString() == "On" ? 0 : 1 ;
+      BackGround = CmbHideTextBackground.SelectedValue.ToString() == "ON" ? 0 : 1 ;
       DialogResult = true ;
       Close() ;
     }
@@ -86,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbStyle.ItemsSource = fontStyle ;
       CmbStyle.SelectedItem = fontStyle.FirstOrDefault() ;
 
-      List<string> hideTextBackground = new List<string>() { "On", "Off" } ;
+      List<string> hideTextBackground = new List<string>() { "ON", "OFF" } ;
       CmbHideTextBackground.ItemsSource = hideTextBackground ;
       CmbHideTextBackground.SelectedItem = hideTextBackground[ 1 ] ;
     }
