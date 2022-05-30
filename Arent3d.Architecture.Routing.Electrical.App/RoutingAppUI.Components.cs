@@ -46,6 +46,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( ShowHeightSettingCommand ), OnlyInitialized = true )]
           private static class ShowHeightSettingCommandButton { }
           
+          [Button( typeof( DefaultSettingCommand ), OnlyInitialized = true )]
+          private static class DefaultSettingCommandButton { }
+          
           [Button( typeof( ConfirmUnsetCommand ), OnlyInitialized = true )]
           private static class ConfirmUnsetCommandButton { }
           

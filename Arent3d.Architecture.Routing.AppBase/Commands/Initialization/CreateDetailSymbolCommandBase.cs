@@ -3,6 +3,7 @@ using System.Drawing ;
 using System.Linq ;
 using System.Windows.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.Selection ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
@@ -17,6 +18,7 @@ using Autodesk.Revit.UI ;
 using Autodesk.Revit.UI.Selection ;
 using Application = Autodesk.Revit.ApplicationServices.Application ;
 using Color = Autodesk.Revit.DB.Color ;
+using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
@@ -61,9 +63,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private ( TextNote, string) CreateDetailSymbol( Document doc, DetailSymbolSettingDialog detailSymbolSettingDialog, XYZ firstPoint, string angle, bool isParentSymbol )
     {
-      var data = doc.GetSetupPrintStorable() ;
-      var scale = data.Scale * data.Ratio;
-      var baseLengthOfLine = 1d.MillimetersToRevitUnits()*scale ;
+      var scale = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
+      var baseLengthOfLine = 1d.MillimetersToRevitUnits() * scale ;
       
       var isLeft = true ;
       var size = detailSymbolSettingDialog.HeightCharacter ;
