@@ -82,28 +82,29 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       startLine.LineStyle = subCategory.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
       lineIds.Add( startLine.UniqueId ) ;
 
+      var bg = detailSymbolSettingDialog.BackGround ;
       List<XYZ> points = new List<XYZ>() ;
       switch ( angle ) {
         case "0" :
           points.Add( new XYZ( firstPoint.X - baseLengthOfLine * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
-          firstPoint = new XYZ( firstPoint.X + baseLengthOfLine, firstPoint.Y, firstPoint.Z ) ;
+          firstPoint = new XYZ( firstPoint.X + (bg == 0 ? baseLengthOfLine : 0), firstPoint.Y, firstPoint.Z ) ;
           isLeft = true ;
           break ;
         case "90" :
           points.Add( new XYZ( firstPoint.X, firstPoint.Y + baseLengthOfLine * 10, firstPoint.Z ) ) ;
           points.Add( new XYZ( firstPoint.X - baseLengthOfLine * ( 3 + size ), firstPoint.Y + baseLengthOfLine * 10, firstPoint.Z ) ) ;
-          firstPoint = new XYZ( firstPoint.X, firstPoint.Y - baseLengthOfLine, firstPoint.Z ) ;
+          firstPoint = new XYZ( firstPoint.X, firstPoint.Y - (bg == 0 ? baseLengthOfLine : 0), firstPoint.Z ) ;
           isLeft = true ;
           break ;
         case "180" :
           points.Add( new XYZ( firstPoint.X + baseLengthOfLine * ( 7 + size ), firstPoint.Y, firstPoint.Z ) ) ;
-          firstPoint = new XYZ( firstPoint.X - baseLengthOfLine, firstPoint.Y, firstPoint.Z ) ;
+          firstPoint = new XYZ( firstPoint.X - (bg == 0 ? baseLengthOfLine : 0), firstPoint.Y, firstPoint.Z ) ;
           isLeft = false ;
           break ;
         case "-90" :
           points.Add( new XYZ( firstPoint.X, firstPoint.Y - baseLengthOfLine * ( 8 + size ), firstPoint.Z ) ) ;
           points.Add( new XYZ( firstPoint.X + baseLengthOfLine * ( 5 + size ), firstPoint.Y - baseLengthOfLine * ( 8 + size ), firstPoint.Z ) ) ;
-          firstPoint = new XYZ( firstPoint.X, firstPoint.Y + baseLengthOfLine, firstPoint.Z ) ;
+          firstPoint = new XYZ( firstPoint.X, firstPoint.Y + (bg == 0 ? baseLengthOfLine : 0), firstPoint.Z ) ;
           isLeft = false ;
           break ;
       }
