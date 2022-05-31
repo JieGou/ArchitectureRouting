@@ -6,7 +6,7 @@
         xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
-        Title="内容表示" Height="300" Width="600" x:Name="ElectricalSymbolAggregationWindown"
+        Title="内容表示" Height="400" Width="620" x:Name="ElectricalSymbolAggregationWindown"
         d:DataContext="{d:DesignInstance {x:Type forms:DesignElectricalSymbolAggregationViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <Style x:Key="CenterGridHeaderStyle" TargetType="DataGridColumnHeader">
@@ -28,10 +28,11 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="型番" Width="150" Binding="{Binding Path=ProductCode}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" ElementStyle="{StaticResource DataGridVerticalText}"/>
                 <DataGridTextColumn Header="仕様" Width="220" Binding="{Binding Path=ProductName}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" />
-                <DataGridTextColumn Header="数量" Width="100" Binding="{Binding Path=Number}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True">
+                <DataGridTextColumn Header="数量" Width="100" Binding="{Binding Path=Number}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" >
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Center" />
+                            <Setter Property="VerticalAlignment" Value="Center" />
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -47,9 +48,9 @@
         </DataGrid>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Width="100" Content="CSV出力" Margin="10"
-                    Command="{Binding ExportCsvCommand}"
-                    CommandParameter="{Binding ElementName=ElectricalSymbolAggregationWindown}" />
+            <!-- <Button Width="100" Content="CSV出力" Margin="10" -->
+            <!--         Command="{Binding ExportCsvCommand}" -->
+            <!--         CommandParameter="{Binding ElementName=ElectricalSymbolAggregationWindown}" /> -->
             <Button Width="100" Content="キャンセル" Margin="10"
                     Command="{Binding CancelCommand}"
                     CommandParameter="{Binding ElementName=ElectricalSymbolAggregationWindown}" />

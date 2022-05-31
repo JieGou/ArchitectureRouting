@@ -26,7 +26,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         foreach ( var connector in selectedConnectors ) {
           if ( false == connector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) || string.IsNullOrEmpty( ceedCode ) )
             continue ;
-          var detailCode = ceedCode!.Split( '-', ':' ).ToList() ;
+          var detailCode = ceedCode!.Split( ':' ).ToList() ;
           var ceedSetCode = detailCode.First() ;
           var symbol = detailCode.Count > 1 ? detailCode.ElementAt( 1 ) : string.Empty ;
           var modelNumber = detailCode.Count > 2 ? detailCode.ElementAt( 2 ) : string.Empty ;
@@ -35,12 +35,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           if ( null == ceedModel ) continue ;
 
-          var exitedModel = listElectricalSymbolAggregation.FirstOrDefault( x => x.ProductCode == ceedModel.ModelNumber ) ;
+          var exitedModel = listElectricalSymbolAggregation.FirstOrDefault( x => x.ProductCode == ceedModel.CeedModelNumber ) ;
           if ( null != exitedModel ) {
             exitedModel.Number += 1 ;
           }
           else {
-            listElectricalSymbolAggregation.Add( new ElectricalSymbolAggregationModel( ceedModel.ModelNumber, ceedModel.Name, 1, "個" ) ) ;
+            listElectricalSymbolAggregation.Add( new ElectricalSymbolAggregationModel( ceedModel.CeedModelNumber, ceedModel.GeneralDisplayDeviceSymbol + " \n" + ceedModel.Name, 1, "個" ) ) ;
           }
         }
 
