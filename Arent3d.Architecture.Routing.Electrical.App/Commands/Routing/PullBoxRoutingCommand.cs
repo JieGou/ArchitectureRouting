@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
     protected override RoutingExecutor CreateRoutingExecutor( Document document, View view ) => AppCommandSettings.CreateRoutingExecutor( document, view ) ;
 
-    protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.ConnectorTwoSide ;
+    protected override ElectricalRoutingFamilyType ElectricalRoutingFamilyType => ElectricalRoutingFamilyType.PullBox ;
 
     protected override ConnectorFamilyType? ConnectorType => ConnectorFamilyType.PullBox ;
 

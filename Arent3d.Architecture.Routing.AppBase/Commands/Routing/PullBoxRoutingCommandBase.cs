@@ -22,7 +22,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   {
     private readonly double _defaultDistanceHeight = ( 200.0 ).MillimetersToRevitUnits() ;
 
-    public record PickState( Route Route, IEndPoint FromEndPoint, IEndPoint ToEndPoint, FamilyInstance PullBox, double HeightConnector, double HeightWire ) ;
+    public record PickState( Route Route, IEndPoint FromEndPoint, IEndPoint ToEndPoint, FamilyInstance PullBox, double HeightConnector, double HeightWire, XYZ RouteDirection, bool IsCreatePullBoxWithoutSettingHeight ) ;
 
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
 
@@ -35,6 +35,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
     protected override OperationResult<PickState> OperateUI( ExternalCommandData commandData, ElementSet elements )
     {
+      var connectorHeight = ( 15.0 ).MillimetersToRevitUnits() ;
       var uiDocument = commandData.Application.ActiveUIDocument ;
       var document = uiDocument.Document ;
       var route = PointOnRoutePicker.PickRoute( uiDocument, false, "Pick point on Route", GetAddInType() ) ;
@@ -44,21 +45,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       if ( true != sv.DialogResult ) return OperationResult<PickState>.Cancelled ;
       var (originX, originY, originZ) = route.Position ;
       var level = uiDocument.ActiveView.GenLevel ;
-      var heightConnector = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation - _defaultDistanceHeight : pullBoxViewModel.HeightConnector.MillimetersToRevitUnits() ;
+      var heightConnector = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightConnector.MillimetersToRevitUnits() ;
       var heightWire = pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ? originZ - level.Elevation : pullBoxViewModel.HeightWire.MillimetersToRevitUnits() ;
 
       using Transaction t = new Transaction( document, "Create connector" ) ;
       t.Start() ;
-      var connector = GenerateConnector( document, originX, originY, heightConnector, level, route.Route.Name ) ;
+      var connector = GenerateConnector( document, originX, originY, heightConnector - connectorHeight, level, route.Route.Name ) ;
       t.Commit() ;
       var (fromEndPoint, toEndPoint) = GetChangingEndPoint( uiDocument, route.Route ) ;
 
-      return new OperationResult<PickState>( new PickState( route.Route, fromEndPoint, toEndPoint, connector, heightConnector, heightWire ) ) ;
+      return new OperationResult<PickState>( new PickState( route.Route, fromEndPoint, toEndPoint, connector, heightConnector, heightWire, route.RouteDirection, pullBoxViewModel.IsCreatePullBoxWithoutSettingHeight ) ) ;
     }
 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PickState pickState )
     {
-      var (route, fromEndPoint, toEndPoint, pullBox, heightConnector, heightWire) = pickState ;
+      var (route, fromEndPoint, toEndPoint, pullBox, heightConnector, heightWire, routeDirection, isCreatePullBoxWithoutSettingHeight ) = pickState ;
 
       List<string> listNameRoute = new() { route.Name } ;
       RouteGenerator.EraseRoutes( document, listNameRoute, true ) ;
@@ -72,7 +73,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var toFixedHeight = route.UniqueToFixedHeight ;
       var avoidType = route.UniqueAvoidType ?? AvoidType.Whichever ;
       var shaftElementUniqueId = route.UniqueShaftElementUniqueId ;
-      var fromFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightConnector + _defaultDistanceHeight ) ;
+      var fromFixedHeightFirst = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, isCreatePullBoxWithoutSettingHeight ? heightConnector : heightConnector + _defaultDistanceHeight ) ;
       var fromFixedHeightSecond = FixedHeight.CreateOrNull( FixedHeightType.Ceiling, heightWire ) ;
 
       var routes = RouteCache.Get( DocumentKey.Get( document ) ) ;
@@ -81,15 +82,37 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var name = nameBase + "_" + nextIndex ;
       routes.FindOrCreate( name ) ;
 
-      var pullBoxEndPointTop = new ConnectorEndPoint( pullBox.GetTopConnectorOfConnectorFamily(), radius ) ;
-      var pullBoxEndPointBottom = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily(), radius ) ;
+      ConnectorEndPoint pullBoxFromEndPoint ;
+      ConnectorEndPoint pullBoxToEndPoint ;
+      if ( isCreatePullBoxWithoutSettingHeight ) {
+        if ( Math.Abs( routeDirection.X - 1 ) == 0 ) {
+          pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Left ), radius ) ;
+          pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Right ), radius ) ;
+        }
+        else if ( Math.Abs( routeDirection.X + 1 ) == 0 ) {
+          pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Right ), radius ) ;
+          pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Left ), radius ) ;
+        }
+        else if ( Math.Abs( routeDirection.Y - 1 ) == 0 ) {
+          pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Front ), radius ) ;
+          pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Back ), radius ) ;
+        }
+        else {
+          pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Back ), radius ) ;
+          pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily( RoutingElementExtensions.ConnectorPosition.Front ), radius ) ;
+        }
+      }
+      else {
+        pullBoxFromEndPoint = new ConnectorEndPoint( pullBox.GetTopConnectorOfConnectorFamily(), radius ) ;
+        pullBoxToEndPoint = new ConnectorEndPoint( pullBox.GetBottomConnectorOfConnectorFamily(), radius ) ;
+      }
 
       var result = new List<(string RouteName, RouteSegment Segment)>() ;
 
-      var segment = new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, pullBoxEndPointTop, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+      var segment = new RouteSegment( classificationInfo, systemType, curveType, fromEndPoint, pullBoxFromEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightFirst, toFixedHeight, avoidType, shaftElementUniqueId ) ;
       result.Add( ( name, segment ) ) ;
 
-      var segment2 = new RouteSegment( classificationInfo, systemType, curveType, pullBoxEndPointBottom, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ;
+      var segment2 = new RouteSegment( classificationInfo, systemType, curveType, pullBoxToEndPoint, toEndPoint, diameter, isRoutingOnPipeSpace, fromFixedHeightSecond, toFixedHeight, avoidType, shaftElementUniqueId ) ;
       result.Add( ( nameBase + "_" + ( nextIndex + 1 ), segment2 ) ) ;
 
       return result ;
