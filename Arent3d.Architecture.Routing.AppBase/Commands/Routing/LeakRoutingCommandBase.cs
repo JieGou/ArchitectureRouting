@@ -270,7 +270,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static RouteProperties CreateRouteProperties( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, addInType, fromLevelId, toLevelId ) ;
-      var routeProperty = new RouteProperties( document, routeChoiceSpec ) ;
+      var routeProperty = new RouteProperties( document, routeChoiceSpec, addInType ) ;
 
       return routeProperty ;
     }
