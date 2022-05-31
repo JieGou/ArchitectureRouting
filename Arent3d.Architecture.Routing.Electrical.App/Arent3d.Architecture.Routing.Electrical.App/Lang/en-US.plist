@@ -229,6 +229,9 @@
         <key>Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand</key>
         <string>Create Table&#xA;By Floors</string>
 
+        <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
+        <string>Symbol Information</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>Setup Auto Routing</string>
@@ -457,11 +460,18 @@
         <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
         <string>Since it is impossible to avoid the interference of the envelope in the selection range, adjust the position of the envelope or the position of the connector.</string>
 
+        <!-- File Names -->
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
+        <string>Arent-export-layers.txt</string>
+      
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>Grade </string>
         
         <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
         <string>Registration Of&#xA;Board Data</string>
+
+        <key>Electrical.App.Commands.Routing.LeakRoutingCommand</key>
+        <string>Leak Routing</string>
     </dict>
 </plist>

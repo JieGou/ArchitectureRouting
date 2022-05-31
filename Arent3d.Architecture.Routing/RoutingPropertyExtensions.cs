@@ -176,8 +176,7 @@ namespace Arent3d.Architecture.Routing
     [BuiltInCategories( ExternalParameterType.Instance, BuiltInParameterGroup.INVALID, typeof( BuiltInCategorySets ), nameof( BuiltInCategorySets.AHUNumberElements ) )]
     AHUNumber
   }
-
-
+  
   public static class RoutingPropertyExtensions
   {
     public static bool AllRoutingParametersAreRegistered( this Document document )

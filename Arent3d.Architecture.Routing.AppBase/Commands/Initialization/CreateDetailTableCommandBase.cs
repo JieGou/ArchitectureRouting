@@ -212,7 +212,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       動力
     }
 
-    private enum ConstructionClassificationType
+    public enum ConstructionClassificationType
     {
       天井隠蔽,
       天井コロガシ,
@@ -810,7 +810,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
     private class DetailSymbolPickFilter : ISelectionFilter
     {
-      private const string DetailSymbolType = "TNT" ;
+      private const string DetailSymbolType = "DetailSymbol-TNT" ;
       public bool AllowElement( Element e )
       {
         return ( e.GetBuiltInCategory() == BuiltInCategory.OST_TextNotes && e.GroupId == ElementId.InvalidElementId && e.Name.Contains( DetailSymbolType ) ) ;
