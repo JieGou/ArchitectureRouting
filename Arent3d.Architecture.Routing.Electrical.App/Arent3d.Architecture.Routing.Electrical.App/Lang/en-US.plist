@@ -233,7 +233,7 @@
         <string>Symbol Information</string>
 
         <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
-        <string>Electrical Symbol Aggregation</string>
+        <string>Electrical Symbol&#xA;Aggregation</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>

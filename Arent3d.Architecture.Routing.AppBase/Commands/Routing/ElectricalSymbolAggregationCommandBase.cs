@@ -40,7 +40,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             exitedModel.Number += 1 ;
           }
           else {
-            listElectricalSymbolAggregation.Add( new ElectricalSymbolAggregationModel( ceedModel.CeedModelNumber, ceedModel.GeneralDisplayDeviceSymbol + " \n" + ceedModel.Name, 1, "個" ) ) ;
+            var detail = ceedModel.GeneralDisplayDeviceSymbol ;
+            if ( ! string.IsNullOrEmpty( ceedModel.Condition ) )
+              detail += " (" + ceedModel.Condition + ")" ;
+            
+            listElectricalSymbolAggregation.Add( new ElectricalSymbolAggregationModel( ceedModel.CeedModelNumber, detail, 1, "個" ) ) ;
           }
         }
 
