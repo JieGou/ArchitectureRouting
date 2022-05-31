@@ -1,0 +1,62 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.Electrical.App.Forms.ChangePlumbingInformationDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
+        mc:Ignorable="d"
+        x:Name="WdChangePlumbingInformation"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Title="ChangePlumbingInformationDialog" Height="230" Width="350">
+    <Grid>
+        <StackPanel Margin="10" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" >
+            <StackPanel Orientation="Horizontal" Margin="10, 5">
+                <Label Content="配管種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <ComboBox Width="200" 
+                          SelectedValue="{Binding PlumbingType, Mode=TwoWay}" 
+                          DisplayMemberPath="Type"
+                          SelectedValuePath="Name"
+                          ItemsSource="{Binding PlumbingTypes}"
+                          SelectionChanged="{Binding SetPlumbingSizesCommand}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="10, 5">
+                <Label Content="配管サイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <ComboBox Width="200" 
+                          SelectedValue="{Binding PlumbingSize, Mode=TwoWay}" 
+                          DisplayMemberPath="Type"
+                          SelectedValuePath="Name"
+                          ItemsSource="{Binding PlumbingSizes}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="10, 5">
+                <Label Content="配管本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <ComboBox Width="200" 
+                          SelectedValue="{Binding NumberOfPlumbing, Mode=TwoWay}" 
+                          DisplayMemberPath="Type"
+                          SelectedValuePath="Name"
+                          ItemsSource="{Binding NumbersOfPlumbing}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="10, 5">
+                <Label Content="施工区分" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <ComboBox Width="200" 
+                          SelectedValue="{Binding ConstructionClassification, Mode=TwoWay}" 
+                          DisplayMemberPath="Type"
+                          SelectedValuePath="Name"
+                          ItemsSource="{Binding ConstructionClassifications}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="10, 5">
+                <Label Content="工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <ComboBox Width="200" 
+                          SelectedValue="{Binding ConstructionItem, Mode=TwoWay}" 
+                          DisplayMemberPath="Type"
+                          SelectedValuePath="Name"
+                          ItemsSource="{Binding ConstructionItems}" />
+            </StackPanel>
+            <StackPanel Margin="10" HorizontalAlignment="Right">
+                <Button Content="Apply" Width="70" 
+                        Command="{Binding Path=ApplyCommand}" 
+                        CommandParameter="{Binding ElementName=WdChangePlumbingInformation}" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>
