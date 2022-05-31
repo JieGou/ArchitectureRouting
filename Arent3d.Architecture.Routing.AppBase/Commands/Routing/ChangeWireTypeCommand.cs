@@ -119,7 +119,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public static (Dictionary<Line, string> lineConduits, Dictionary<Curve, string> curveHorizontal) GetLocationConduits( Document document, View view, List<Element> elements )
     {
       var conduits = elements.OfType<Conduit>().ToList() ;
-      var curveConduits = GetCurveFromElements( document, view, conduits ) ;
+      var curveConduits = GeometryHelper.GetCurveFromElements( document, view, conduits ) ;
 
       var conduitFittings = elements.OfType<FamilyInstance>().ToList() ;
       var fittingHorizontals = conduitFittings.Where( x => Math.Abs( x.GetTransform().OfVector( XYZ.BasisZ ).Z - 1 ) < GeometryUtil.Tolerance ).ToList() ;
@@ -151,7 +151,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var comparer = new XyzComparer() ;
       fittingHorizontals = fittingHorizontals.Where( x => x.MEPModel.ConnectorManager.Connectors.Size == 2 ) ;
       fittingHorizontals = DistinctByExtension.DistinctBy( fittingHorizontals, x => GetCenterPoint( x ), comparer ) ;
-      return GetCurveFromElements( document, view, fittingHorizontals ) ;
+      return GeometryHelper.GetCurveFromElements( document, view, fittingHorizontals ) ;
     }
 
     private static Dictionary<Line, string> GetLineVerticalFittings( IEnumerable<FamilyInstance> fittingVerticals )
@@ -218,52 +218,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
 
       return lineOnPlanes ;
-    }
-
-    private static Dictionary<Curve, string> GetCurveFromElements( Document document, View view, IEnumerable<Element> elements )
-    {
-      var curves = new Dictionary<Curve, string>() ;
-      try {
-        using var transaction = new Transaction( document ) ;
-        transaction.Start( "Get Geometry" ) ;
-        
-        var detailLevel = view.DetailLevel ;
-        if ( detailLevel != ViewDetailLevel.Coarse )
-          view.DetailLevel = ViewDetailLevel.Coarse ;
-        
-        var options = new Options { View = view } ;
-
-        foreach ( var element in elements ) {
-          if ( element.get_Geometry( options ) is { } geometryElement )
-            RecursiveCurves( geometryElement, element.UniqueId, ref curves ) ;
-        }
-      
-        if ( detailLevel != ViewDetailLevel.Coarse )
-          view.DetailLevel = detailLevel ;
-        transaction.Commit() ;
-
-        return curves ;
-      }
-      catch {
-        return curves ;
-      }
-    }
-
-    private static void RecursiveCurves( GeometryElement geometryElement, string elementId, ref Dictionary<Curve, string> curves )
-    {
-      foreach ( var geometry in geometryElement ) {
-        switch ( geometry ) {
-          case GeometryInstance geometryInstance :
-          {
-            if ( geometryInstance.GetInstanceGeometry() is { } subGeometryElement )
-              RecursiveCurves( subGeometryElement, elementId, ref curves ) ;
-            break ;
-          }
-          case Curve curve :
-            curves.Add( curve.Clone(), elementId ) ;
-            break ;
-        }
-      }
     }
 
     public static void RefreshView( Document document, View view )

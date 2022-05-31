@@ -285,6 +285,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
         [Button( typeof( NewLimitRackCommand ), OnlyInitialized = true )]
         private static class NewLimitRackCommandButton { }
+        
+        [Button( typeof( NewLimitRackCircleCommand ), OnlyInitialized = true )]
+        private static class NewLimitRackCircleCommandButton { }
 
         [Button( typeof( EraseAllLimitRackCommand ), OnlyInitialized = true )]
         private static class EraseAllLimitRackCommandButton { }
