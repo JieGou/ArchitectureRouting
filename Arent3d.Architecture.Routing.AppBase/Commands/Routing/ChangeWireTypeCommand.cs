@@ -15,6 +15,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public static class ChangeWireTypeCommand
   {
+    public static string SubcategoryName => "LeakageZone" ;
+    
     public static readonly Dictionary<string, string> WireSymbolOptions = new()
     {
       { "漏水帯（布）", "LeakageZoneCloth" }, 
@@ -41,13 +43,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       var conduitAndDetailCurveStorable = document.GetConduitAndDetailCurveStorable() ;
       var color = new Color( 255, 215, 0 ) ;
-      var lineStyle = isLeakRoute ? GetLineStyle( document, color ) : GetLineStyle( document, "LeakageZone" ) ; ;
+      // var lineStyle = isLeakRoute ? GetLineStyle( document, color ) : GetLineStyle( document, SubcategoryName ) ; ;
+      var lineStyle = GetLineStyle( document, color ) ;
       OverrideGraphicSettings ogs = new() ;
       ogs.SetProjectionLineColor( color ) ;
       ForEachExtension.ForEach( curves, x =>
       {
         var detailCurve = document.Create.NewDetailCurve( view, x.Key ) ;
         detailCurve.LineStyle = lineStyle.GetGraphicsStyle( GraphicsStyleType.Projection ) ;
+        if ( isLeakRoute ) view.SetElementOverrides( detailCurve.Id, ogs ) ;
         conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, detailCurve.UniqueId, wireType, isLeakRoute ) ) ;
       } ) ;
       ForEachExtension.ForEach( lines, x =>
@@ -85,33 +89,32 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static Category GetLineStyle( Document doc, Color color )
     {
       var categories = doc.Settings.Categories ;
-      var subCategoryName = "JBoxWireLineStyle" ;
-      Category category = doc.Settings.Categories.get_Item( BuiltInCategory.OST_GenericAnnotation ) ;
+      Category category = doc.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) ;
       Category subCategory ;
-      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
-        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
+      if ( ! category.SubCategories.Contains( SubcategoryName ) ) {
+        subCategory = categories.NewSubcategory( category, SubcategoryName ) ;
         subCategory.LineColor = color ;
       }
       else
-        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+        subCategory = category.SubCategories.get_Item( SubcategoryName ) ;
 
       return subCategory ;
     }
     
-    private static Category GetLineStyle( Document document, string subCategoryName)
-    {
-      var categories = document.Settings.Categories ;
-      var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) ;
-      Category subCategory ;
-      if ( ! category.SubCategories.Contains( subCategoryName ) ) {
-        subCategory = categories.NewSubcategory( category, subCategoryName ) ;
-      }
-      else {
-        subCategory = category.SubCategories.get_Item( subCategoryName ) ;
-      }
-
-      return subCategory ;
-    }
+    // private static Category GetLineStyle( Document document, string subCategoryName)
+    // {
+    //   var categories = document.Settings.Categories ;
+    //   var category = document.Settings.Categories.get_Item( BuiltInCategory.OST_Lines ) ;
+    //   Category subCategory ;
+    //   if ( ! category.SubCategories.Contains( subCategoryName ) ) {
+    //     subCategory = categories.NewSubcategory( category, subCategoryName ) ;
+    //   }
+    //   else {
+    //     subCategory = category.SubCategories.get_Item( subCategoryName ) ;
+    //   }
+    //
+    //   return subCategory ;
+    // }
 
     public static (Dictionary<Line, string> lineConduits, Dictionary<Curve, string> curveHorizontal) GetLocationConduits( Document document, View view, List<Element> elements )
     {
