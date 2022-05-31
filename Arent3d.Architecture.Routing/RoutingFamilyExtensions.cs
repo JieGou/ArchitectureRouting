@@ -96,10 +96,18 @@ namespace Arent3d.Architecture.Routing
     
     [Family( "LeakageZonePvc", BuiltInCategory.OST_DetailComponents )]
     VerticalRepeat,
+    
+    [Family( "Symbol Star", BuiltInCategory.OST_GenericModel )]
+    SymbolStar,
 
-        
+    [Family( "Jbox To Connector", BuiltInCategory.OST_ElectricalFixtures )]
+    ToJboxConnector,
+    
+    [Family( "M_電線管エルボ - 鉄鋼 - Arent", BuiltInCategory.OST_ConduitFitting )]
+    ArentConduitFittingType,
+    
     [Family( "Pressure End Point", BuiltInCategory.OST_ElectricalFixtures )]
-    PressureConnector, 
+    PressureConnector,
   }
 
   public enum MechanicalRoutingFamilyType

@@ -52,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing.Connectors
        
       //Set value for isEcoMode property from default value in DB
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
-      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
+      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
  
       if ( ConnectorType == null ) return ;
       instance.SetConnectorFamilyType( ConnectorType ?? ConnectorFamilyType.Sensor ) ;

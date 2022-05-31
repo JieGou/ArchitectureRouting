@@ -301,7 +301,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return lastIndex + 1 ;
     }
 
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, PickState state )
     {
       if ( GetAddInType() == AddInType.Electrical )
         ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
@@ -319,8 +319,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         connectors.Add( toConnector ) ;
 
       if ( ! connectors.Any() ) return ;
-      var color = new Color( 0, 0, 0 ) ;
-      ConfirmUnsetCommandBase.ChangeElementColor( document, connectors, color ) ;
+      ConfirmUnsetCommandBase.ResetElementColor( document, connectors ) ;
     }
   }
 }

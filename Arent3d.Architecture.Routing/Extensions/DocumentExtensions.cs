@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
     }
 
-    
+
     /// <summary>
     /// Get location type settings data from snoop DB.
     /// </summary>
@@ -63,7 +63,7 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new LocationTypeStorable( document ) ;
       }
     }
-    
+
     /// <summary>
     /// Get CNS Setting data from snoop DB.
     /// </summary>
@@ -182,15 +182,15 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
-    /// Get eco default setting from DB
+    /// Get default default setting from DB
     /// </summary>
-    public static EcoSettingStorable GetEcoSettingStorable( this Document document )
+    public static DefaultSettingStorable GetDefaultSettingStorable( this Document document )
     {
       try {
-        return EcoSettingStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( EcoSettingStorable.StorableName ) ;
+        return DefaultSettingStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( DefaultSettingStorable.StorableName ) ;
       }
       catch ( InvalidOperationException ) {
-        return new EcoSettingStorable( document ) ;
+        return new DefaultSettingStorable( document ) ;
       }
     }
 
@@ -208,6 +208,49 @@ namespace Arent3d.Architecture.Routing.Extensions
     }
 
     /// <summary>
+    /// Get all symbolInformation data
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    public static SymbolInformationStorable GetSymbolInformationStorable( this Document document )
+    {
+      try {
+        return SymbolInformationStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( SymbolInformationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new SymbolInformationStorable( document ) ;
+      }
+    }
+
+    /// <summary>
+    /// Get all CeedDetail data
+    /// </summary>
+    /// <param name="document"></param>
+    /// <returns></returns>
+    public static CeedDetailStorable GetCeedDetailStorable( this Document document )
+    {
+      try {
+        return CeedDetailStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( CeedDetailStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new CeedDetailStorable( document ) ;
+      }
+    }
+
+    /// <summary>
+    /// Get ConduitAndDetailCurve data from snoop DB.
+    /// </summary>
+    public static ConduitAndDetailCurveStorable GetConduitAndDetailCurveStorable( this Document document )
+    {
+      try {
+        return ConduitAndDetailCurveStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( ConduitAndDetailCurveStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new ConduitAndDetailCurveStorable( document ) ;
+      }
+    }
+
+    /// <summary>
     /// Get PressureGuidingTubeStorable data from DB
     /// </summary>
     /// <param name="document"></param>
@@ -221,5 +264,6 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new PressureGuidingTubeStorable( document ) ;
       }
     }
+    
   }
 }

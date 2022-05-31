@@ -39,6 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Assets" />
     <None Update="Assets\SharedParameterFile\*.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -76,6 +77,22 @@
     <EmbeddedResource Include="Assets\Families\2019\Electrical\Circle Annotation.rfa" />
     <None Remove="Assets\Families\2021\Electrical\Circle Annotation.rfa" />
     <EmbeddedResource Include="Assets\Families\2021\Electrical\Circle Annotation.rfa" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Families\2022\Electrical\Metric Generic Annotation.rft" />
+    <None Remove="Assets\Families\2022\Electrical\Metric Electrical Equipment.rft" />
+    <None Remove="Assets\Families\2022\Electrical\Metric Electrical Fixture.rft" />
+    <EmbeddedResource Include="Assets\Families\2022\Electrical\Metric Electrical Fixture.rft" />
+    <None Remove="Assets\Families\2021\Electrical\Metric Electrical Fixture.rft" />
+    <EmbeddedResource Include="Assets\Families\2021\Electrical\Metric Electrical Fixture.rft" />
+    <None Remove="Assets\Families\2021\Electrical\Metric Generic Annotation.rft" />
+    <None Remove="Assets\Families\2020\Electrical\Metric Electrical Fixture.rft" />
+    <EmbeddedResource Include="Assets\Families\2020\Electrical\Metric Electrical Fixture.rft" />
+    <None Remove="Assets\Families\2020\Electrical\Metric Generic Annotation.rft" />
+    <None Remove="Assets\Families\2019\Electrical\Metric Electrical Fixture.rft" />
+    <EmbeddedResource Include="Assets\Families\2019\Electrical\Metric Electrical Fixture.rft" />
+    <None Remove="Assets\Families\2019\Electrical\Metric Generic Annotation.rft" />
   </ItemGroup>
 
 </Project>

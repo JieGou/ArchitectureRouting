@@ -129,13 +129,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         return OperationResult<PressureGuidingTubePickState>.Failed ;
       }
     }
-
-    /// <summary>
-    /// Create route segments
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="state"></param>
-    /// <returns></returns>
+ 
     protected override IReadOnlyCollection<(string RouteName, RouteSegment Segment)> GetRouteSegments( Document document, PressureGuidingTubePickState state )
     {
       var (fromPickResult, toPickResult, selectedPointList, routeProperty, classificationInfo) = state ;
@@ -241,16 +235,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       return lastIndex + 1 ;
     }
-
-    /// <summary>
-    /// Create connector type pressure (X symbol)
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="level"></param>
-    /// <param name="xyz"></param>
-    /// <param name="isTemp"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
+ 
     private FamilyInstance GeneratePressureConnector( Document document, Level level, XYZ xyz, bool isTemp = false )
     {
       var symbol = document.GetFamilySymbols( ElectricalRoutingFamilyType.PressureConnector ).FirstOrDefault() ?? throw new Exception() ;
@@ -261,7 +246,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return result ;
     }
 
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, PressureGuidingTubePickState result )
     {
       using Transaction t = new Transaction( document, "Change conduit color" ) ;
       t.Start() ;
@@ -285,23 +270,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           document.Delete( passpoint.Id ) ; 
         }
       }
-
+    
       //Create annotation 
       if ( conduitUseToAddAnnotation != null ) {
         var data = document.GetSetupPrintStorable() ;
         var defaultSymbolMagnification = data.Scale * data.Ratio ;
         CreateNotation( document, conduitUseToAddAnnotation, _annotationContent, true, defaultSymbolMagnification ) ;
       }
-
+    
       t.Commit() ;
     }
 
-    /// <summary>
-    /// Initial all property of rout
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="elementId"></param>
-    /// <returns></returns>
+     
     private RouteProperties InitRoutProperties( Document document, ElementId elementId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, GetAddInType(), elementId, elementId ) ;

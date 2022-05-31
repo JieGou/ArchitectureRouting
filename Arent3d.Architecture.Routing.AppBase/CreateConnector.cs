@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
 
       _pickedConnector = ConnectorPicker.GetInOutConnector( uiDocument, element, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, addInType ) ;
-       
+
       using ( var tr = new Transaction( element.Document ) ) {
         tr.Start( "Delete connector points and origin for pick" ) ;
 
@@ -58,6 +58,32 @@ namespace Arent3d.Architecture.Routing.AppBase
       }
     }
 
+    public CreateConnector( FamilyInstance familyInstance, XYZ prevPoint )
+    {
+      string connectorType ;
+      var nextPoint = ( familyInstance.Location as LocationPoint )!.Point ;
+      var distanceX = Math.Abs( prevPoint.X - nextPoint.X ) ;
+      var distanceY = Math.Abs( prevPoint.Y - nextPoint.Y ) ;
+      if ( distanceX == 0 ) {
+        connectorType = prevPoint.Y < nextPoint.Y ? "Front" : "Back" ;
+      }
+      else if ( distanceY == 0 ) {
+        connectorType = prevPoint.X < nextPoint.X ? "Left" : "Right" ;
+      }
+      else {
+        if ( distanceX > distanceY ) {
+          connectorType = prevPoint.X < nextPoint.X ? "Left" : "Right" ;
+        }
+        else {
+          connectorType = prevPoint.Y < nextPoint.Y ? "Front" : "Back" ;
+        }
+      }
+      
+      _pickedConnector = ! string.IsNullOrEmpty( connectorType ) 
+        ? familyInstance.GetConnectors().FirstOrDefault( x => x.Description.Contains( connectorType ) ) 
+        : familyInstance.GetConnectors().FirstOrDefault() ;
+    }
+    
     public CreateConnector( Element element, XYZ? previousXyz, XYZ? nextXyz, double tolerance )
     { 
       var xyzElement = ( element.Location as LocationPoint )!.Point ;
