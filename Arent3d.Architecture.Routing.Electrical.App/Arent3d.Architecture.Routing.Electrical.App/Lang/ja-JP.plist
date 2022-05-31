@@ -214,12 +214,6 @@
         <key>Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand</key>
         <string>エコモード切替</string>
 
-        <key>Electrical.App.Commands.Initialization.RegisterSymbolCommand</key>
-        <string>シンボル登録</string>
-
-        <key>Electrical.App.Commands.Initialization.SetupPrintCommand</key>
-        <string>尺度設定</string>
-
         <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
         <string>一重テキストボックス</string>
 
@@ -228,6 +222,12 @@
 
         <key>Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand</key>
         <string>階毎の表作成</string>
+        
+        <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
+        <string>部材情報付きシンボル</string>
+
+        <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
+        <string>電気シンボル集計</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -447,12 +447,19 @@
         <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
         <string>選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。</string>
 
+        <!-- File Names -->
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
+        <string>Arent-export-layers-jp.txt</string>
+        
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>グレード</string>
 
         <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
         <string>盤登録</string>
+
+        <key>Electrical.App.Commands.Routing.LeakRoutingCommand</key>
+        <string>漏水帯</string>
     </dict>
 </plist>
 

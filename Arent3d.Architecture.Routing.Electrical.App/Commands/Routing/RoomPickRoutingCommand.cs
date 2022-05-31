@@ -5,7 +5,6 @@ using Arent3d.Architecture.Routing.EndPoints ;
 using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
-using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -39,7 +38,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return MEPSystemClassificationInfo.CableTrayConduit ;
     }
 
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, RoomPickState roomPickState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }

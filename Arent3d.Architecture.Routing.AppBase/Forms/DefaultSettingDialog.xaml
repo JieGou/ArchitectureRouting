@@ -1,0 +1,160 @@
+﻿<Window x:Class="Arent3d.Architecture.Routing.AppBase.Forms.DefaultSettingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d" x:Name="WdDefaultSettingDialog"
+        WindowStartupLocation="CenterScreen"
+        Title="DefaultSettingDialog" Height="400" Width="1000" ResizeMode="NoResize">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" Margin="10,5,10,5">
+            <Label Content="Eco/Normal Mode" HorizontalAlignment="Left" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding EcoNormalModes}"
+                      SelectedIndex="{Binding SelectedEcoNormalModeIndex}"
+                      DisplayMemberPath="Value"
+                      Margin="10,0,0,0"
+                      Width="150">
+                <ComboBox.Style>
+                    <Style TargetType="{x:Type ComboBox}">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="FontSize" Value="12" />
+                    </Style>
+                </ComboBox.Style>
+            </ComboBox>
+            <Label Content="Grade" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
+            <ComboBox ItemsSource="{Binding GradeModeTypes}"
+                      SelectedIndex="{Binding SelectedGradeModeIndex}"
+                      HorizontalAlignment="Left"
+                      DisplayMemberPath="Value"
+                      Width="170"
+                      Margin="10,0,0,0">
+                <ComboBox.Style>
+                    <Style TargetType="{x:Type ComboBox}">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Setter Property="Height" Value="20" />
+                        <Setter Property="FontSize" Value="12" />
+                    </Style>
+                </ComboBox.Style>
+            </ComboBox>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Margin="10,0,10,10" VerticalAlignment="Top">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Top" Orientation="Vertical" Margin="0, 0,10,0">
+                    <Button Content="Load DWG"
+                            Command="{Binding LoadDwgFilesCommand}"
+                            Margin="0, 0,0,10"
+                            Width="90" />
+                    <Button Content="階追加"
+                            Command="{Binding AddImportDwgMappingModelCommand}"
+                            Width="90" />
+                </StackPanel>
+
+                <DataGrid Grid.Column="1"
+                          Height="260"
+                          Background="White"
+                          ItemsSource="{Binding ImportDwgMappingModels}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="" Width="50" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Click="DeleteImportDwgMappingItem">Delete</Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsDeleted}" />
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        
+                        <DataGridTextColumn Header="階" Width="100" CanUserSort="False" >
+                            <DataGridTextColumn.Binding>
+                                <Binding Path="FloorName" NotifyOnTargetUpdated="True"
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
+                            </DataGridTextColumn.Binding>
+                            <DataGridTextColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsEnabled}" />
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTextColumn Header="階の高" Width="100" CanUserSort="False">
+                            <DataGridTextColumn.Binding>
+                                <Binding Path="FloorHeight" NotifyOnTargetUpdated="True"
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" />
+                            </DataGridTextColumn.Binding>
+                        </DataGridTextColumn>
+                        
+                        <DataGridComboBoxColumn Header="DWGファイル" Width="350"
+                                                SelectedValueBinding="{Binding FileName}"
+                                                DisplayMemberPath="FileName"
+                                                SelectedValuePath="FileName"
+                                                CanUserSort="False">
+                            <DataGridComboBoxColumn.ElementStyle>
+                                <Style TargetType="{x:Type ComboBox}">
+                                    <Setter Property="ItemsSource" Value="{Binding Path=DataContext.FileItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                </Style>
+                            </DataGridComboBoxColumn.ElementStyle>
+                            <DataGridComboBoxColumn.EditingElementStyle>
+                                <Style TargetType="{x:Type ComboBox}">
+                                    <Setter Property="ItemsSource" Value="{Binding Path=DataContext.FileItems, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                </Style>
+                            </DataGridComboBoxColumn.EditingElementStyle>
+                            <DataGridComboBoxColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsEnabled}" />
+                                </Style>
+                            </DataGridComboBoxColumn.CellStyle>
+                        </DataGridComboBoxColumn>
+
+                        <DataGridTextColumn Header="図面スケール" Width="100" CanUserSort="False" >
+                            <DataGridTextColumn.Binding>
+                                <Binding Path="Scale" NotifyOnTargetUpdated="True"
+                                         UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True">
+                                </Binding>
+                            </DataGridTextColumn.Binding>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTemplateColumn Header="" Width="130" CanUserSort="False" >
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Click="SelectDwgFile">Select DWG File</Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style>
+                                    <Setter Property="UIElement.IsEnabled" Value="{Binding IsEnabled}" />
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Grid>
+
+        <Button Grid.Row="2"
+                Content="Apply"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Command="{ Binding ApplyCommand}"
+                CommandParameter="{Binding ElementName=WdDefaultSettingDialog}"
+                Margin="10,0,10,10"
+                Width="100" />
+    </Grid>
+</Window>

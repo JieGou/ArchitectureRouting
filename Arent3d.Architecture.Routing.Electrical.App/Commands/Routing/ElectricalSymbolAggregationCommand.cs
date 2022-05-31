@@ -6,7 +6,7 @@ using Autodesk.Revit.Attributes ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.ElectricalSymbol", DefaultString = "Electrical \nSymbol Aggregation" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.ElectricalSymbolAggregation", DefaultString = "Electrical \nSymbol Aggregation" )]
   [Image( "resources/Initialize-32.bmp", ImageType = ImageType.Large )]
   public class ElectricalSymbolAggregationCommand : ElectricalSymbolAggregationCommandBase
   {
