@@ -50,7 +50,7 @@
                     </StackPanel>
                 </Button.Content>
             </Button>
-            <Button Grid.Row="6"  Width="100" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" Command="{Binding SplitPlumingCommand}" CommandParameter="{Binding ElementName=DtGrid}"/>
+            <Button Grid.Row="6"  Width="100" Content="配管サイズ＊計算" Margin="5,5,5,5" Height="25" Command="{Binding SplitPlumbingCommand}" CommandParameter="{Binding ElementName=DtGrid}"/>
             <Button Grid.Row="7"  Width="100" Content="上へ" Margin="5,5,5,5" Height="25" Command="{Binding MoveUpCommand}" />
             <Button Grid.Row="8"  Width="100" Content="下へ" Margin="5,5,5,5" Height="25" Command="{Binding MoveDownCommand}" />
             <Button Grid.Row="9"  Width="100" Content="全選択" Margin="5,5,5,5" Height="25"  Command="{Binding SelectAllCommand}" CommandParameter="{Binding ElementName=DtGrid}"/>
@@ -148,7 +148,7 @@
                         <Style TargetType="{x:Type ComboBox}">
                             <Setter Property="IsReadOnly" Value="{Binding IsReadOnlyParameters}" />
                             <Setter Property="ItemsSource" Value="{Binding Path=DataContext.Levels, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
-                            <!-- <EventSetter Event="SelectionChanged" Handler="FloorSelectionChanged" /> -->
+                            <EventSetter Event="SelectionChanged" Handler="FloorSelectionChanged" />
                             <Style.Triggers>
                                 <Trigger Property="IsReadOnly" Value="True">
                                     <Setter Property="IsEnabled" Value="False" />

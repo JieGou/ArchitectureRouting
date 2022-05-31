@@ -68,7 +68,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
         var signalTypes = ( from signalType in (SignalType[]) Enum.GetValues( typeof( SignalType ) ) select new DetailTableModel.ComboboxItemType( signalType.GetFieldName(), signalType.GetFieldName() ) ).ToList() ;
 
-        var viewModel = new DetailTableViewModel2(doc, detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes,conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
+        var viewModel = new DetailTableViewModel(doc, detailTableModels, new ObservableCollection<DetailTableModel>(), conduitTypes, constructionItems, levels, wireTypes, earthTypes, numbers, constructionClassificationTypes, signalTypes,conduitsModelData, wiresAndCablesModelData, isMixConstructionItems ) ;
         var dialog = new DetailTableDialog( viewModel ) ;
         dialog.ShowDialog() ;
 
@@ -85,7 +85,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           var ( referenceDetailTableModels, _, _) = CreateDetailTable( doc, csvStorable, detailSymbolStorable, new List<Element>(), detailSymbolIds, true ) ;
           foreach ( var referenceDetailTableModelRow in referenceDetailTableModels ) {
-            viewModel.ReferenceDetailTableModels.Add( referenceDetailTableModelRow ) ;
+            viewModel.ReferenceDetailTableModelsOrigin.Add( referenceDetailTableModelRow ) ;
           }
           
           dialog = new DetailTableDialog( viewModel ) ;
@@ -117,12 +117,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( dialog.DialogResult ?? false ) {
           return doc.Transaction( "TransactionName.Commands.Routing.CreateDetailTable".GetAppStringByKeyOrDefault( "Set detail table" ), _ =>
           {
-            if ( ! viewModel.IsCreateDetailTableOnFloorPlanView && ! viewModel.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
+            if ( ! viewModel.IsCreateDetailTableOnFloorPlanView ) return Result.Succeeded ;
             var level = uiDoc.ActiveView.GenLevel ;
-            var detailTableData = viewModel.IsCreateDetailTableOnFloorPlanView ? viewModel.DetailTableModelsOrigin : viewModel.DetailTableModels ;
+            var detailTableData = viewModel.DetailTableModels ;
             var scheduleName = CreateDetailTableSchedule( doc, detailTableData, level.Name ) ;
             MessageBox.Show( string.Format( "Revit.Electrical.CreateSchedule.Message".GetAppStringByKeyOrDefault( CreateScheduleSuccessfullyMessage ), scheduleName ), "Message" ) ;
-            viewModel.IsCreateDetailTableOnFloorPlanView = false ;
             viewModel.IsCreateDetailTableOnFloorPlanView = false ;
 
             return Result.Succeeded ;
