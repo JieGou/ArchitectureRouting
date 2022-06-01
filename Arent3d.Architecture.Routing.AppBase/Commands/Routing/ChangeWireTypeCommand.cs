@@ -16,13 +16,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
   public static class ChangeWireTypeCommand
   {
     public static string SubcategoryName => "LeakageZone" ;
-    
-    public static readonly Dictionary<string, string> WireSymbolOptions = new()
-    {
-      { "漏水帯（布）", "LeakageZoneCloth" }, 
-      { "漏水帯（発色）", "LeakageZoneColoring" }, 
-      { "漏水帯（塩ビ）", "LeakageZonePvc" }
-    } ;
+
+    public static readonly Dictionary<string, string> WireSymbolOptions = new() { { "漏水帯（布）", "LeakageZoneCloth" }, { "漏水帯（発色）", "LeakageZoneColoring" }, { "漏水帯（塩ビ）", "LeakageZonePvc" } } ;
 
     private static void ChangeLocationType( Document document, View view, List<Element> elements, string wireType, bool isLeakRoute )
     {
@@ -60,11 +55,11 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         if ( isLeakRoute ) view.SetElementOverrides( line.Id, ogs ) ;
         conduitAndDetailCurveStorable.ConduitAndDetailCurveData.Add( new ConduitAndDetailCurveModel( x.Value, line.UniqueId, wireType, isLeakRoute ) ) ;
       } ) ;
-      
+
       conduitAndDetailCurveStorable.Save() ;
 
       transaction.Commit() ;
-      
+
       using var trans = new Transaction( document ) ;
       trans.Start( "Hidden Element" ) ;
       view.HideElements( elements.Select( x => x.Id ).ToList() ) ;
@@ -78,7 +73,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           //
         }
       }
-      
+
       trans.Commit() ;
 
       RefreshView( document, view ) ;
@@ -213,7 +208,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       transaction.Commit() ;
 
       transaction.Start( "Disable Reveal Hidden" ) ;
-      document.ActiveView.DisableTemporaryViewMode(TemporaryViewMode.RevealHiddenElements);
+      document.ActiveView.DisableTemporaryViewMode( TemporaryViewMode.RevealHiddenElements ) ;
       transaction.Commit() ;
     }
 
@@ -236,7 +231,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           //
         }
       }
-      
+
       conduitAndDetailCurveStorable.Save() ;
       transaction.Commit() ;
       return ( familyInstanceName, isLeakRoute ) ;
@@ -250,9 +245,9 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var arentFamilyType = document.GetFamilySymbols( ElectricalRoutingFamilyType.ArentConduitFittingType ).FirstOrDefault() ;
       OverrideGraphicSettings ogs = new() ;
       ogs.SetProjectionLineColor( new Color( 255, 215, 0 ) ) ;
-      
+
       var newConduitsOfRoute = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( c => reReRouteNames.Contains( c.GetRouteName() ! ) ).ToList() ;
-      
+
       var conduitOfRoute = newConduitsOfRoute.OfType<Conduit>().FirstOrDefault() ;
       if ( conduitOfRoute != null ) {
         var level = document.GetAllElements<Level>().FirstOrDefault( e => e.Id == conduitOfRoute.ReferenceLevel.Id ) ;
@@ -260,7 +255,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           viewPlan = document.GetAllElements<ViewPlan>().FirstOrDefault( v => v.Name == level.Name ) ?? document.ActiveView ;
         }
       }
-      
+
       var allView3d = document.GetAllElements<View>().Where( v => v is View3D ).ToList() ;
       foreach ( var conduit in newConduitsOfRoute ) {
         //Change conduit color to yellow RGB(255,215,0)
@@ -273,16 +268,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             // Todo catch handle
           }
         }
+
         //Change conduit fitting bend radius = 1 mm
         if ( conduit is not FamilyInstance conduitFitting || arentFamilyType == null ) continue ;
         conduitFitting.Symbol = arentFamilyType ;
       }
 
       transaction.Commit() ;
-      
+
       ChangeLocationType( document, viewPlan, newConduitsOfRoute, wireTypeName, isLeakRoute ) ;
     }
-    
+
     public static void RemoveDetailLinesByRoutes( Document document, HashSet<string> routeNames )
     {
       var allConduitIds = MoreEnumerable.ToHashSet( document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.Conduits ).Where( e => routeNames.Contains( e.GetRouteName() ! ) ).Select( e => e.UniqueId ) ) ;
