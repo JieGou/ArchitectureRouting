@@ -18,7 +18,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       return _pickedConnector ;
     }
 
-    public CreateConnector( UIDocument uiDocument, Element element, Connector? firstConnector, AddInType addInType )
+    public CreateConnector( UIDocument uiDocument, Element element, Connector? firstConnector, AddInType addInType, bool isLeakRoute = false )
     {
       var tempInstanceIds = new List<ElementId>() ;
 
@@ -36,7 +36,7 @@ namespace Arent3d.Architecture.Routing.AppBase
           }
         }
 
-        if ( ( familyInstance?.GetTotalTransform().Origin ?? ( element.Location as LocationPoint )?.Point ) is { } point ) {
+        if ( ( familyInstance?.GetTotalTransform().Origin ?? ( element.Location as LocationPoint )?.Point ) is { } point && ! isLeakRoute ) {
           var instanceOrg = element.Document.AddTerminatePoint( element.GetRouteName()!, point, XYZ.BasisX, null, element.GetLevelId() ) ;
           tempInstanceIds.Add( instanceOrg.Id ) ;
         }
