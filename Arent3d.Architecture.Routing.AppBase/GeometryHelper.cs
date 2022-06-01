@@ -284,33 +284,24 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       return lines.MaxBy( x => x.Length ) ;
     }
-    public static Dictionary<Curve, string> GetCurveFromElements( Document document, View view, IEnumerable<Element> elements )
+    public static Dictionary<Curve, string> GetCurveFromElements( View view, IEnumerable<Element> elements )
     {
       var curves = new Dictionary<Curve, string>() ;
-      try {
-        using var transaction = new Transaction( document ) ;
-        transaction.Start( "Get Geometry" ) ;
-        
-        var detailLevel = view.DetailLevel ;
-        if ( detailLevel != ViewDetailLevel.Coarse )
-          view.DetailLevel = ViewDetailLevel.Coarse ;
-        
-        var options = new Options { View = view } ;
 
-        foreach ( var element in elements ) {
+      foreach ( var element in elements ) {
+        if ( element is FamilyInstance familyInstance ) {
+          var options = new Options { DetailLevel = ViewDetailLevel.Coarse } ;
+          if ( familyInstance.get_Geometry( options ) is { } geometryElement )
+            RecursiveCurves( geometryElement, element.UniqueId, ref curves ) ;
+        }
+        else {
+          var options = new Options { View = view } ;
           if ( element.get_Geometry( options ) is { } geometryElement )
             RecursiveCurves( geometryElement, element.UniqueId, ref curves ) ;
         }
-      
-        if ( detailLevel != ViewDetailLevel.Coarse )
-          view.DetailLevel = detailLevel ;
-        transaction.Commit() ;
+      }
 
-        return curves ;
-      }
-      catch {
-        return curves ;
-      }
+      return curves ;
     }
 
     private static void RecursiveCurves( GeometryElement geometryElement, string elementId, ref Dictionary<Curve, string> curves )
@@ -324,7 +315,7 @@ namespace Arent3d.Architecture.Routing.AppBase
             break ;
           }
           case Curve curve :
-            curves.Add( curve.Clone(), elementId ) ;
+            curves.Add( curve, elementId ) ;
             break ;
         }
       }
