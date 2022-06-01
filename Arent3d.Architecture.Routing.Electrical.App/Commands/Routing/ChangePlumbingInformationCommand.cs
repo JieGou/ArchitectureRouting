@@ -42,13 +42,31 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 
         return doc.Transaction( "TransactionName.Commands.Routing.AddSymbol".GetAppStringByKeyOrDefault( "Create Detail Symbol" ), _ =>
         {
-          var element = selection.PickObject( ObjectType.Element, ConduitSelectionFilter.Instance, "Select conduit." ) ;
+          var element = selection.PickObject( ObjectType.Element, StraightConduitSelectionFilter.Instance, "Select conduit." ) ;
           var conduit = doc.GetElement( element.ElementId ) ;
           if ( conduit == null ) return Result.Cancelled ;
 
           var viewModel = CreateChangePlumbingInformationViewModel( doc, conduit ) ;
-          var view = new ChangeWireSymbolUsingDetailItemView { DataContext = viewModel } ;
-          view.Show() ;
+          var view = new ChangePlumbingInformationDialog { DataContext = viewModel } ;
+          view.ShowDialog() ;
+          if ( ! ( view.DialogResult ?? false ) ) return Result.Cancelled ;
+
+          var changePlumbingInformationStorable = doc.GetChangePlumbingInformationStorable() ;
+          var oldChangePlumbingInformationModel = changePlumbingInformationStorable.ChangePlumbingInformationModelData.SingleOrDefault( c => c.ConduitId == conduit.UniqueId ) ;
+          if ( oldChangePlumbingInformationModel == null ) {
+            var changePlumbingInformationModel = new ChangePlumbingInformationModel( conduit.UniqueId, viewModel.PlumbingType, viewModel.PlumbingSize, viewModel.NumberOfPlumbing, viewModel.ConstructionClassification, viewModel.ConstructionItem ) ;
+            changePlumbingInformationStorable.ChangePlumbingInformationModelData.Add( changePlumbingInformationModel ) ;
+          }
+          else {
+            oldChangePlumbingInformationModel.PlumbingType = viewModel.PlumbingType ;
+            oldChangePlumbingInformationModel.PlumbingSize = viewModel.PlumbingSize ;
+            oldChangePlumbingInformationModel.NumberOfPlumbing = viewModel.NumberOfPlumbing ;
+            oldChangePlumbingInformationModel.ConstructionClassification = viewModel.ConstructionClassification ;
+            oldChangePlumbingInformationModel.ConstructionItems = viewModel.ConstructionItem ;
+          }
+          
+          changePlumbingInformationStorable.Save() ;
+          
           return Result.Succeeded ;
         } ) ;
       }
@@ -117,7 +135,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       var constructionItemNames = cnsStorable.CnsSettingData.Select( d => d.CategoryName ).ToList() ;
       var constructionItems = constructionItemNames.Any() ? ( from constructionItemName in constructionItemNames select new DetailTableModel.ComboboxItemType( constructionItemName, constructionItemName ) ).ToList() : new List<DetailTableModel.ComboboxItemType>() { new( DefaultConstructionItems, DefaultConstructionItems ) } ;
       
-      var viewModel = new ChangePlumbingInformationViewModel( doc, conduitsModelData, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem, plumbingTypes, plumbingSizes, numbersOfPlumbing, constructionClassifications, constructionItems ) ;
+      var viewModel = new ChangePlumbingInformationViewModel( conduitsModelData, plumbingType, plumbingSize, numberOfPlumbing, constructionClassification, constructionItem, plumbingTypes, plumbingSizes, numbersOfPlumbing, constructionClassifications, constructionItems ) ;
       return viewModel ;
     }
   }

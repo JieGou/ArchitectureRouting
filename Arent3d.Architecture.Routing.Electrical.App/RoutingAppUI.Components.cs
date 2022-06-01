@@ -121,6 +121,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
            
 		      [Button( typeof( SymbolInformationCommand ), OnlyInitialized = true )]
           private static class SymbolInformationCommandButton { }
+          
+          [Button( typeof( ChangePlumbingInformationCommand ), OnlyInitialized = true )]
+          private static class ChangePlumbingInformationCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
