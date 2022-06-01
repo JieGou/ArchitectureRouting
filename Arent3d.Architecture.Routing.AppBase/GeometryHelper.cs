@@ -284,5 +284,42 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       return lines.MaxBy( x => x.Length ) ;
     }
+    
+    public static Dictionary<Curve, string> GetCurveFromElements( Document document, View view, IEnumerable<Element> elements )
+    {
+      var curves = new Dictionary<Curve, string>() ;
+      
+      foreach ( var element in elements ) {
+        if ( element is FamilyInstance familyInstance ) {
+          var options = new Options { DetailLevel = ViewDetailLevel.Coarse } ;
+          if ( familyInstance.get_Geometry( options ) is { } geometryElement )
+            RecursiveCurves( geometryElement, element.UniqueId, ref curves ) ;
+        }
+        else {
+          var options = new Options { View = view } ;
+          if ( element.get_Geometry( options ) is { } geometryElement )
+            RecursiveCurves( geometryElement, element.UniqueId, ref curves ) ;
+        }
+      }
+
+      return curves ;
+    }
+
+    private static void RecursiveCurves( GeometryElement geometryElement, string elementId, ref Dictionary<Curve, string> curves )
+    {
+      foreach ( var geometry in geometryElement ) {
+        switch ( geometry ) {
+          case GeometryInstance geometryInstance :
+          {
+            if ( geometryInstance.GetInstanceGeometry() is { } subGeometryElement )
+              RecursiveCurves( subGeometryElement, elementId, ref curves ) ;
+            break ;
+          }
+          case Curve curve :
+            curves.Add( curve, elementId ) ;
+            break ;
+        }
+      }
+    }
   }
 }
