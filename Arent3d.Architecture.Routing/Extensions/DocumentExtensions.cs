@@ -254,5 +254,15 @@ namespace Arent3d.Architecture.Routing.Extensions
         return new ConduitAndDetailCurveStorable( document ) ;
       }
     }
+    
+    public static ChangePlumbingInformationStorable GetChangePlumbingInformationStorable( this Document document )
+    {
+      try {
+        return ChangePlumbingInformationStorableCache.Get( DocumentKey.Get( document ) ).FindOrCreate( ChangePlumbingInformationStorable.StorableName ) ;
+      }
+      catch ( InvalidOperationException ) {
+        return new ChangePlumbingInformationStorable( document ) ;
+      }
+    }
   }
 }
