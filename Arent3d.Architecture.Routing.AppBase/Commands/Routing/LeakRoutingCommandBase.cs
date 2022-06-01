@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         sv.ShowDialog() ;
         if ( true != sv.DialogResult ) return OperationResult<LeakState>.Cancelled ;
 
-        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType(), true ) ;
         var fromConnector = fromPickResult.PickedElement ;
         if ( fromConnector is not FamilyInstance || false == fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) 
                                                  || string.IsNullOrEmpty( ceedCode ) || ! ceedCode!.Contains( JBoxConnectorType ) ) {

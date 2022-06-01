@@ -32,7 +32,7 @@ namespace Arent3d.Architecture.Routing.AppBase
       bool IsCompatibleTo( Element element ) ;
     }
 
-    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, bool pickingFromSide, string message, IPickResult? compatiblePickResult, AddInType addInType )
+    public static IPickResult GetConnector( UIDocument uiDocument, RoutingExecutor routingExecutor, bool pickingFromSide, string message, IPickResult? compatiblePickResult, AddInType addInType, bool isLeakRoute = false )
     {
       var document = uiDocument.Document ;
 
@@ -57,7 +57,7 @@ namespace Arent3d.Architecture.Routing.AppBase
 
         var conn = compatiblePickResult?.SubRoute?.GetReferenceConnector() ?? compatiblePickResult?.PickedConnector ;
 
-        var (result, connector) = FindConnector( uiDocument, element, message, conn, addInType ) ;
+        var (result, connector) = FindConnector( uiDocument, element, message, conn, addInType, isLeakRoute ) ;
         if ( false == result ) continue ;
 
         if ( null != connector ) {
@@ -416,13 +416,13 @@ namespace Arent3d.Architecture.Routing.AppBase
 
     #endregion
 
-    private static (bool Result, Connector? Connector) FindConnector( UIDocument uiDocument, Element element, string message, Connector? firstConnector, AddInType addInType )
+    private static (bool Result, Connector? Connector) FindConnector( UIDocument uiDocument, Element element, string message, Connector? firstConnector, AddInType addInType, bool isLeakRoute = false )
     {
       if ( element.IsAutoRoutingGeneratedElement() ) {
         return GetEndOfRouting( element, ( null == firstConnector ) ) ;
       }
       else {
-        return CreateConnectorInOutFamily( uiDocument, element, message, firstConnector, addInType ) ;
+        return CreateConnectorInOutFamily( uiDocument, element, message, firstConnector, addInType, isLeakRoute ) ;
       }
     }
 
@@ -435,14 +435,14 @@ namespace Arent3d.Architecture.Routing.AppBase
       return ( ( null != connector ), connector ) ;
     }
 
-    private static (bool Result, Connector? Connector) CreateConnectorInOutFamily( UIDocument uiDocument, Element element, string message, Connector? firstConnector, AddInType addInType )
+    private static (bool Result, Connector? Connector) CreateConnectorInOutFamily( UIDocument uiDocument, Element element, string message, Connector? firstConnector, AddInType addInType, bool isLeakRoute = false )
     {
       using var fitter = new TempZoomToFit( uiDocument ) ;
 
       uiDocument.SetSelection( element ) ;
       fitter.ZoomToFit() ;
 
-      var sv = new CreateConnector( uiDocument, element, firstConnector, addInType ) ;
+      var sv = new CreateConnector( uiDocument, element, firstConnector, addInType, isLeakRoute ) ;
 
       uiDocument.ClearSelection() ;
       return ( true, sv.GetPickedConnector() ) ;
