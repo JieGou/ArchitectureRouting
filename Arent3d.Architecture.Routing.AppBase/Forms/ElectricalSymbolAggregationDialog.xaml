@@ -6,7 +6,7 @@
         xmlns:forms="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
-        Title="内容表示" Height="400" Width="620" x:Name="ElectricalSymbolAggregationWindown"
+        Title="内容表示" Height="400" Width="820" x:Name="ElectricalSymbolAggregationWindown"
         d:DataContext="{d:DesignInstance {x:Type forms:DesignElectricalSymbolAggregationViewModel}, IsDesignTimeCreatable=True}">
     <Window.Resources>
         <Style x:Key="CenterGridHeaderStyle" TargetType="DataGridColumnHeader">
@@ -26,7 +26,10 @@
                 </Style>
             </DataGrid.Resources>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="型番" Width="150" Binding="{Binding Path=ProductCode}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" ElementStyle="{StaticResource DataGridVerticalText}"/>
+                <DataGridTextColumn Header="フロア" Width="80" Binding="{Binding Path=Floor}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" ElementStyle="{StaticResource DataGridVerticalText}"/>
+                <DataGridTextColumn Header="型番" Width="100" Binding="{Binding Path=SetCode}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" ElementStyle="{StaticResource DataGridVerticalText}"/>
+                <DataGridTextColumn Header="工事項目" Width="150" Binding="{Binding Path=ConstructionItem}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" ElementStyle="{StaticResource DataGridVerticalText}"/>
+                <!-- <DataGridTextColumn Header="型番" Width="150" Binding="{Binding Path=ProductCode}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" ElementStyle="{StaticResource DataGridVerticalText}"/> -->
                 <DataGridTextColumn Header="仕様" Width="220" Binding="{Binding Path=ProductName}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" />
                 <DataGridTextColumn Header="数量" Width="100" Binding="{Binding Path=Number}" HeaderStyle="{StaticResource CenterGridHeaderStyle}" CanUserSort="False" IsReadOnly="True" >
                     <DataGridTextColumn.ElementStyle>

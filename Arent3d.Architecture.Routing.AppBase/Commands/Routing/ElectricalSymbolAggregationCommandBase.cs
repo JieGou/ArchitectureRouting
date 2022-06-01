@@ -19,6 +19,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       try {
         var uiDocument = commandData.Application.ActiveUIDocument ;
         Document document = uiDocument.Document ;
+        var level = uiDocument.ActiveView.GenLevel ;
+        
         var ceedStoreable = document.GetCeedStorable() ;
         var listCeedModel = ceedStoreable.CeedModelData ;
         var selectedConnectors = uiDocument.Selection.PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コネクタを選択して下さい。" ).OfType<FamilyInstance>() ;
@@ -35,6 +37,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
           if ( null == ceedModel ) continue ;
 
+          connector.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
           var exitedModel = listElectricalSymbolAggregation.FirstOrDefault( x => x.ProductCode == ceedModel.CeedModelNumber ) ;
           if ( null != exitedModel ) {
             exitedModel.Number += 1 ;
@@ -44,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
             if ( ! string.IsNullOrEmpty( ceedModel.Condition ) )
               detail += " (" + ceedModel.Condition + ")" ;
             
-            listElectricalSymbolAggregation.Add( new ElectricalSymbolAggregationModel( ceedModel.CeedModelNumber, detail, 1, "個" ) ) ;
+            listElectricalSymbolAggregation.Add( new ElectricalSymbolAggregationModel(level.Name, ceedSetCode, constructionItem ?? string.Empty, ceedModel.CeedModelNumber, detail, 1, "個" ) ) ;
           }
         }
 
