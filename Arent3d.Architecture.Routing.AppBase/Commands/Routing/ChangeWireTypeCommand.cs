@@ -67,7 +67,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       using var trans = new Transaction( document ) ;
       trans.Start( "Hidden Element" ) ;
-      view.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+      if ( elements.Any() ) {
+        try {
+          view.HideElements( elements.Select( x => x.Id ).ToList() ) ;
+        }
+        catch {
+          //
+        }
+      }
 
       var dropCategory = Category.GetCategory( document, BuiltInCategory.OST_ConduitDrop ) ;
       if ( null != dropCategory ) {
