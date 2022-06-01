@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -78,14 +79,17 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       Shaft = document.GetElementById<Opening>( firstSubRoute.ShaftElementUniqueId ?? string.Empty ) ;
     }
 
-    public RouteProperties( Document document, RoutePropertyTypeList spec )
+    public RouteProperties( Document document, RoutePropertyTypeList spec, AddInType addInType )
     {
       Document = document ;
 
       SystemType = spec.SystemTypes?.FirstOrDefault() ;
       Shaft = spec.Shafts?.FirstOrDefault() ;
-      CurveType = spec.CurveTypes.FirstOrDefault() ;
       Diameter = null ;
+
+      var arentConduitTypeName = "Routing.Revit.DummyConduit.ConduitTypeName".GetDocumentStringByKeyOrDefault( document, "Arent電線" ) ;
+      var arentConduitType = spec.CurveTypes.FirstOrDefault( c => c.Name == arentConduitTypeName ) ;
+      CurveType = addInType == AddInType.Electrical && arentConduitType != null ? arentConduitType : spec.CurveTypes.FirstOrDefault() ;
 
       IsRouteOnPipeSpace = false ;
       UseFromFixedHeight = true ;

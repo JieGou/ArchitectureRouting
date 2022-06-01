@@ -16,7 +16,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public string SymbolFont ;
     public string SymbolStyle ;
     public int Offset ;
-    public int BackGround ;
+    public int BackGround { get ; set ; }
 
     public DetailSymbolSettingDialog( List<string> symbols, List<int> angle, string defaultSymbol )
     {
@@ -43,8 +43,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       PercentWidth = Convert.ToInt32( CmbWidth.SelectedValue.ToString() ) ;
       SymbolFont = CmbFont.SelectedValue.ToString() ;
       SymbolStyle = CmbStyle.SelectedValue.ToString() ;
-      // Offset = Convert.ToInt32( CmbOffset.SelectedValue.ToString() ) ;
-      BackGround = CmbHideTextBackground.SelectedValue.ToString() == "On" ? 0 : 1 ;
+      Offset = Convert.ToInt32( CmbOffset.SelectedValue.ToString() ) ;
+      BackGround = CmbHideTextBackground.SelectedValue.ToString() == "ON" ? 0 : 1 ;
       DialogResult = true ;
       Close() ;
     }
@@ -56,7 +56,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       List<double> spacing = new List<double>() ;
       List<int> offset = new List<int>() ;
       for ( var i = 1 ; i <= 10 ; i++ ) {
-        width.Add( i * 10 - 5) ;
         width.Add( i * 10 ) ;
         spacing.Add( Convert.ToDouble( i ) / 10 ) ;
         if ( i > 5 ) continue ;
@@ -64,8 +63,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         height.Add( i ) ;
         offset.Add( i ) ;
       }
-      height.Add(2.7);
-      height = height.OrderBy( x => x ).ToList() ;
 
       CmbHeight.ItemsSource = height ;
       CmbHeight.SelectedItem = height[ 7 ] ;
@@ -75,8 +72,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbSpacing.SelectedItem = spacing[ 2 ] ;
       CmbLineSpacing.ItemsSource = spacing ;
       CmbLineSpacing.SelectedItem = spacing[ 5 ] ;
-      // CmbOffset.ItemsSource = offset ;
-      // CmbOffset.SelectedItem = offset.Last() ;
+      CmbOffset.ItemsSource = offset ;
+      CmbOffset.SelectedItem = offset.Last() ;
       CmbRedStampSize.ItemsSource = offset ;
       CmbRedStampSize.SelectedItem = offset.First() ;
 
@@ -89,7 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbStyle.ItemsSource = fontStyle ;
       CmbStyle.SelectedItem = fontStyle.FirstOrDefault() ;
 
-      List<string> hideTextBackground = new List<string>() { "On", "Off" } ;
+      List<string> hideTextBackground = new List<string>() { "ON", "OFF" } ;
       CmbHideTextBackground.ItemsSource = hideTextBackground ;
       CmbHideTextBackground.SelectedItem = hideTextBackground[ 1 ] ;
     }
