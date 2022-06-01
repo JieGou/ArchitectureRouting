@@ -3,25 +3,30 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:local="clr-namespace:Arent3d.Architecture.Routing.Electrical.App.Forms"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         mc:Ignorable="d"
         x:Name="WdChangePlumbingInformation"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Title="ChangePlumbingInformationDialog" Height="230" Width="350">
+        Title="ChangePlumbingInformationDialog" Height="280" Width="350">
     <Grid>
         <StackPanel Margin="10" Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Left" >
             <StackPanel Orientation="Horizontal" Margin="10, 5">
-                <Label Content="配管種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <Label Content="配管種類" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
                 <ComboBox Width="200" 
                           SelectedValue="{Binding PlumbingType, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
                           SelectedValuePath="Name"
-                          ItemsSource="{Binding PlumbingTypes}"
-                          SelectionChanged="{Binding SetPlumbingSizesCommand}" />
+                          ItemsSource="{Binding PlumbingTypes}" >
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="SelectionChanged">
+                            <i:InvokeCommandAction Command="{Binding SelectionChangedPlumbingTypeCommand}"/>
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </ComboBox>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
-                <Label Content="配管サイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <Label Content="配管サイズ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
                 <ComboBox Width="200" 
                           SelectedValue="{Binding PlumbingSize, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
@@ -29,7 +34,7 @@
                           ItemsSource="{Binding PlumbingSizes}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
-                <Label Content="配管本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <Label Content="配管本数" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
                 <ComboBox Width="200" 
                           SelectedValue="{Binding NumberOfPlumbing, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
@@ -37,7 +42,7 @@
                           ItemsSource="{Binding NumbersOfPlumbing}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
-                <Label Content="施工区分" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <Label Content="施工区分" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
                 <ComboBox Width="200" 
                           SelectedValue="{Binding ConstructionClassification, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
@@ -45,7 +50,7 @@
                           ItemsSource="{Binding ConstructionClassifications}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
-                <Label Content="工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" />
+                <Label Content="工事項目" HorizontalAlignment="Left" VerticalAlignment="Center" Width="80" />
                 <ComboBox Width="200" 
                           SelectedValue="{Binding ConstructionItem, Mode=TwoWay}" 
                           DisplayMemberPath="Type"

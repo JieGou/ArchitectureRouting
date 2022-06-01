@@ -1,23 +1,18 @@
-﻿using System ;
-using System.Collections.Generic ;
-using System.Collections.ObjectModel ;
+﻿using System.Collections.Generic ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Architecture.Routing.Electrical.App.ViewModels.Models ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Autodesk.Revit.DB ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 {
   public class ChangePlumbingInformationViewModel : NotifyPropertyChanged
   {
     private const string NoPlumping = "配管なし" ;
-    private const string NoPlumbingSize = "（なし）" ;
-    private Document _document ;
-    private List<ConduitsModel> _conduitsModelData ;
+    private const string NoPlumbingSize = "なし" ;
+    private readonly List<ConduitsModel> _conduitsModelData ;
     
     private string _plumbingType ;
 
@@ -81,7 +76,16 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     
     public List<DetailTableModel.ComboboxItemType> PlumbingTypes { get ; }
 
-    public List<DetailTableModel.ComboboxItemType> PlumbingSizes { get ; set ; }
+    private List<DetailTableModel.ComboboxItemType> _plumbingSizes ;
+    public List<DetailTableModel.ComboboxItemType> PlumbingSizes
+    {
+      get => _plumbingSizes ;
+      set
+      {
+        _plumbingSizes = value ;
+        OnPropertyChanged() ;
+      }
+    }
     
     public List<DetailTableModel.ComboboxItemType> NumbersOfPlumbing { get ; }
 
@@ -89,12 +93,11 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
 
     public List<DetailTableModel.ComboboxItemType> ConstructionItems { get ; }
     
-    public ICommand SetPlumbingSizesCommand => new RelayCommand( SetPlumbingSizes ) ;
+    public ICommand SelectionChangedPlumbingTypeCommand => new RelayCommand( SetPlumbingSizes ) ;
     public RelayCommand<Window> ApplyCommand => new(Apply) ;
     
-    public ChangePlumbingInformationViewModel( Document document, List<ConduitsModel> conduitsModelData, string plumbingType, string plumbingSize, int numberOfPlumbing, string constructionClassification, string constructionItem, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> plumbingSizes, List<DetailTableModel.ComboboxItemType> numbersOfPlumbing, List<DetailTableModel.ComboboxItemType> constructionClassifications, List<DetailTableModel.ComboboxItemType> constructionItems )
+    public ChangePlumbingInformationViewModel( List<ConduitsModel> conduitsModelData, string plumbingType, string plumbingSize, int numberOfPlumbing, string constructionClassification, string constructionItem, List<DetailTableModel.ComboboxItemType> plumbingTypes, List<DetailTableModel.ComboboxItemType> plumbingSizes, List<DetailTableModel.ComboboxItemType> numbersOfPlumbing, List<DetailTableModel.ComboboxItemType> constructionClassifications, List<DetailTableModel.ComboboxItemType> constructionItems )
     {
-      _document = document ;
       _conduitsModelData = conduitsModelData ;
       _plumbingType = plumbingType ;
       _plumbingSize = plumbingSize ;
@@ -102,7 +105,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _constructionClassification = constructionClassification ;
       _constructionItem = constructionItem ;
       PlumbingTypes = plumbingTypes ;
-      PlumbingSizes = plumbingSizes ;
+      _plumbingSizes = plumbingSizes ;
       NumbersOfPlumbing = numbersOfPlumbing ;
       ConstructionClassifications = constructionClassifications ;
       ConstructionItems = constructionItems ;
@@ -111,12 +114,15 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
     private void SetPlumbingSizes()
     {
       if ( _plumbingType != NoPlumping ) {
-        var plumbingSizesOfPlumbingType = _conduitsModelData.Where( c => c.PipingType == _plumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).Distinct().ToList() ;
+        var plumbingSizesOfPlumbingType = _conduitsModelData.Where( c => c.PipingType == _plumbingType ).Select( c => c.Size.Replace( "mm", "" ) ).ToList() ;
         PlumbingSizes = ( from plumbingSizeName in plumbingSizesOfPlumbingType select new DetailTableModel.ComboboxItemType( plumbingSizeName, plumbingSizeName ) ).ToList() ;
       }
       else {
         PlumbingSizes = new List<DetailTableModel.ComboboxItemType>() { new( NoPlumbingSize, NoPlumbingSize ) } ;
+        PlumbingSize = NoPlumbingSize ;
       }
+
+      PlumbingSize = PlumbingSizes.First().Name ;
     }
     
     private void Apply( Window window )
