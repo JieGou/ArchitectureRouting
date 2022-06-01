@@ -19,7 +19,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
   {
     public const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
     private const string ConditionTextNoteTypeName = "1.5mm_ConditionText" ;
-    private const string DefaultConstructionItem = "未設定" ;
+    private string _defaultConstructionItem = "未設定" ;
+    
 
     protected abstract ElectricalRoutingFamilyType ElectricalRoutingFamilyType { get ; }
 
@@ -30,6 +31,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       const string grade3 = "グレード3" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
       var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
+
+      _defaultConstructionItem = doc.GetDefaultConstructionItem() ;
       
       var dlgCeedModel = new CeedModelDialog( commandData.Application ) ;
 
@@ -49,7 +52,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var ceedCode = string.Join( ":", dlgCeedModel.SelectedCeedCode, dlgCeedModel.SelectedDeviceSymbol, dlgCeedModel.SelectedModelNumber ) ;
         if ( element is FamilyInstance familyInstance ) {
           element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
-          element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+          element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, _defaultConstructionItem ) ;
           familyInstance.SetConnectorFamilyType( ConnectorFamilyType.Sensor ) ;
         }
 

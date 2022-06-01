@@ -6,6 +6,18 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 {
   public class CnsSettingModel : INotifyPropertyChanged, ICloneable
   {
+    private bool _isChecked ;
+
+    public bool IsChecked
+    {
+      get => _isChecked ;
+      set
+      {
+        _isChecked = value ;
+        OnPropertyChanged() ;
+      }
+    }
+    
     private int _sequence ;
 
     public int Sequence
@@ -32,16 +44,17 @@ namespace Arent3d.Architecture.Routing.Storable.Model
 
     public string CategoryName { get ; set ; }
 
-    public CnsSettingModel( int sequence, string categoryName )
+    public CnsSettingModel( int sequence, string categoryName, bool isChecked = false )
     {
       _sequence = sequence ;
       CategoryName = categoryName ;
       _position = sequence ;
+      _isChecked = isChecked ;
     }
 
     public bool Equals( CnsSettingModel other )
     {
-      return other != null && Sequence == other.Sequence && CategoryName == other.CategoryName ;
+      return Sequence == other.Sequence && CategoryName == other.CategoryName ;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged ;

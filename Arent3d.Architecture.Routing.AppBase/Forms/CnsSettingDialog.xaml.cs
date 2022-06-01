@@ -66,7 +66,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         }
       }
       _editingRowIndex = -1 ;
-      grdCategories.IsReadOnly = true ;
+      //grdCategories.IsReadOnly = true ;
     }
 
     private void AddNewRow_Click( object sender, RoutedEventArgs e )
@@ -275,6 +275,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     public static ObservableCollection<T> CopyCnsSetting<T>( IEnumerable<T>? listCnsSettingData ) where T : ICloneable
     {
       return listCnsSettingData != null ? new ObservableCollection<T>( listCnsSettingData.Select( x => x.Clone() ).Cast<T>() ) : null! ;
+    }
+
+    private void ApplyRangSelection_Click( object sender, RoutedEventArgs e )
+    {
+      if ( CheckDuplicateName( e ) ) return ;
+      Close_Dialog() ;
+      if ( _cnsSettingViewModel.ApplyRangSelectionCommand.CanExecute( grdCategories.SelectedIndex ) )
+        _cnsSettingViewModel.ApplyRangSelectionCommand.Execute( grdCategories.SelectedIndex ) ;
     }
   }
 }

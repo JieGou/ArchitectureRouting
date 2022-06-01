@@ -16,12 +16,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ShowRegistrationOfBoardDataCommandBase : IExternalCommand
   {
-    private const string DefaultConstructionItem = "未設定" ;
+    private string _defaultConstructionItem = "未設定" ;
     private const string StatusPrompt = "配置場所を選択して下さい。" ;
 
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       var doc = commandData.Application.ActiveUIDocument.Document ;
+      _defaultConstructionItem = doc.GetDefaultConstructionItem() ;
       try {
         var viewModel = new RegistrationOfBoardDataViewModel( commandData.Application.ActiveUIDocument.Document ) ;
         var dlgRegistrationOfBoardDataModel = new RegistrationOfBoardDataDialog( viewModel ) ;
@@ -46,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           if ( elementFromToPower is FamilyInstance familyInstanceFromToPower ) {
             familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
-            familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            familyInstanceFromToPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, _defaultConstructionItem ) ;
             familyInstanceFromToPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
             var elevationParameter = elementFromToPower.get_Parameter( BuiltInParameter.INSTANCE_ELEVATION_PARAM ) ;
             elevationParameter?.Set( 0.0 ) ;
@@ -54,7 +55,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 
           if ( elementConnectorPower is FamilyInstance familyInstanceConnectorPower ) {
             familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.CeedCode, registrationCode ) ;
-            familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            familyInstanceConnectorPower.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, _defaultConstructionItem ) ;
             familyInstanceConnectorPower.SetConnectorFamilyType( ConnectorFamilyType.Power ) ;
           }
 

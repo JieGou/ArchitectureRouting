@@ -1,8 +1,10 @@
-﻿using Arent3d.Architecture.Routing.Storable ;
+﻿using System ;
+using System.Linq ;
+using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.StorableConverter ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
-using Autodesk.Revit.Exceptions ;
+using InvalidOperationException = Autodesk.Revit.Exceptions.InvalidOperationException ;
 
 namespace Arent3d.Architecture.Routing.Extensions
 {
@@ -252,6 +254,18 @@ namespace Arent3d.Architecture.Routing.Extensions
       }
       catch ( InvalidOperationException ) {
         return new ConduitAndDetailCurveStorable( document ) ;
+      }
+    }
+
+    public static string GetDefaultConstructionItem( this Document document )
+    {
+      try {
+        var cnsSettingStorable = GetCnsSettingStorable( document ) ;
+        var defaultCnsSettingModel = cnsSettingStorable.CnsSettingData.FirstOrDefault(x=>x.IsChecked) ;
+        return defaultCnsSettingModel != null ? defaultCnsSettingModel.CategoryName : String.Empty ;
+      }
+      catch ( Exception ) {
+        return String.Empty;
       }
     }
   }

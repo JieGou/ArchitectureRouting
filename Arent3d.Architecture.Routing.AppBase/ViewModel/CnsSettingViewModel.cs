@@ -6,12 +6,13 @@ using System.IO ;
 using System.Linq ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.Utils ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class CnsSettingViewModel : ViewModelBase
   {
-    public ObservableCollection<CnsSettingModel> CnsSettingModels { get ; set ; }
+    public ObservableCollectionEx<CnsSettingModel> CnsSettingModels { get ; set ; }
 
     public CnsSettingStorable CnsSettingStorable { get ; }
 
@@ -21,7 +22,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       CnsSettingStorable = cnsStorables ;
       ApplyToSymbolsText = string.Empty ;
-      CnsSettingModels = new ObservableCollection<CnsSettingModel>( cnsStorables.CnsSettingData ) ;
+      CnsSettingModels = new ObservableCollectionEx<CnsSettingModel>( cnsStorables.CnsSettingData ) ;
+      CnsSettingModels.ItemPropertyChanged += CnsSettingModelsOnItemPropertyChanged;
       AddDefaultValue() ;
       ReadFileCommand = new RelayCommand<object>( ( p ) => true, // CanExecute()
         ( p ) => { ReadFile() ; } // Execute()
@@ -56,6 +58,21 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       SetConstructionItemForAllCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
         ( seletectedIndex ) => { SetConstructionItemForSymbol( cnsStorables, seletectedIndex, CnsSettingStorable.UpdateItemType.All ) ; } // Execute()
       ) ;
+      ApplyRangSelectionCommand = new RelayCommand<int>( ( p ) => true, // CanExecute()
+        ( seletectedIndex ) => { SetConstructionItemForRange( cnsStorables, seletectedIndex ) ; } // Execute()
+      ) ;
+    }
+
+    private void CnsSettingModelsOnItemPropertyChanged( object sender, ItemPropertyChangedEventArgs e )
+    {
+      var itemChanged = CnsSettingModels[ e.CollectionIndex ] ;
+      if ( itemChanged is not { IsChecked: true } ) return ;
+
+      ApplyToSymbolsText = itemChanged.CategoryName ;
+      var restCnsSettingModels = CnsSettingModels.Where( x => x.CategoryName != itemChanged.CategoryName ) ;
+      foreach ( var item in restCnsSettingModels ) {
+        item.IsChecked = false ;
+      }
     }
 
     public ICommand ReadFileCommand { get ; set ; }
@@ -67,6 +84,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public ICommand SetConstructionItemForConduitsCommand { get ; set ; }
     public ICommand SetConstructionItemForRacksCommand { get ; set ; }
     public ICommand SetConstructionItemForAllCommand { get ; set ; }
+    public ICommand ApplyRangSelectionCommand { get ; set ; }
 
     private void ReadFile()
     {
@@ -167,6 +185,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       if ( seletectedIndex != -1 ) cnsStorables.SelectedIndex = seletectedIndex ;
       cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Conduit ;
+      cnsStorables.CnsSettingData = CnsSettingModels ;
+    }
+    
+    private void SetConstructionItemForRange( CnsSettingStorable cnsStorables, int seletectedIndex )
+    {
+      var item = CnsSettingModels.FirstOrDefault( x => x.IsChecked ) ;
+      ApplyToSymbolsText = item != null ? item.CategoryName : string.Empty ;
+      cnsStorables.ElementType = CnsSettingStorable.UpdateItemType.Range ;
       cnsStorables.CnsSettingData = CnsSettingModels ;
     }
   }

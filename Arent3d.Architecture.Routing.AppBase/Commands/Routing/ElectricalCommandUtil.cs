@@ -9,7 +9,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
   public static class ElectricalCommandUtil
   {
-    private const string DefaultConstructionItem = "未設定" ;
+    //private const string DefaultConstructionItem = "未設定" ;
 
     public static void SetPropertyForCable( Document document, IReadOnlyCollection<Route> routes )
     {
@@ -22,7 +22,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var segment = subRoute.Segments.FirstOrDefault() ;
         if ( segment == null ) continue ;
 
-        var fromConstructionItem = DefaultConstructionItem ;
+        var defaultConstructionItem = document.GetDefaultConstructionItem() ;
+        var fromConstructionItem = defaultConstructionItem ;
         var fromIsEcoMode = defaultIsEcoModeValue ;
         var fromEndPointKey = segment.FromEndPoint.Key ;
         var fromEndPointId = fromEndPointKey.GetElementUniqueId() ;
@@ -44,7 +45,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
               UnGroupConnector( document, fromConnector, ref connectorGroups ) ;
             }
 
-            if ( string.IsNullOrEmpty( constructionItem ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
+            if ( string.IsNullOrEmpty( constructionItem ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
             if ( string.IsNullOrEmpty( isEcoMode ) ) fromConnector.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, defaultIsEcoModeValue ) ;
           }
         }
@@ -70,8 +71,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           }
 
           if ( string.IsNullOrEmpty( constructionItem ) ) {
-            toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
-            constructionItem = DefaultConstructionItem ;
+            toConnector.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, defaultConstructionItem ) ;
+            constructionItem = defaultConstructionItem ;
           }
 
           if ( string.IsNullOrEmpty( isEcoMode ) ) {
