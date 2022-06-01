@@ -119,7 +119,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
         if(!familySymbol.IsActive)
           familySymbol.Activate();
 
-        var lineStyle = GetLineStyle( _uiDocument.Document, "LeakageZone" ) ;
+        var lineStyle = GetLineStyle( _uiDocument.Document, ChangeWireTypeCommand.SubcategoryName ) ;
         var conduitAndDetailCurveStorable = _uiDocument.Document.GetConduitAndDetailCurveStorable() ;
         curves.ForEach( x =>
         {
@@ -181,8 +181,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _settingStorable.Save();
       trans.Commit() ;
       
-      ChangeWireTypeCommand.RefreshView( _uiDocument.Document, _uiDocument.ActiveView ) ;
-
       transactionGroup.Assimilate() ;
     }
     
