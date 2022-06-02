@@ -226,6 +226,9 @@
         <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
         <string>部材情報付きシンボル</string>
 
+        <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
+        <string>プルボックス作成</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>

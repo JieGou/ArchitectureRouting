@@ -9,7 +9,7 @@ using Arent3d.Revit ;
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
   [Transaction( TransactionMode.Manual )]
-  [DisplayNameKey( "Electrical.App.Commands.Routing.PullBoxRoutingCommand", DefaultString = "Pull Box" )]
+  [DisplayNameKey( "Electrical.App.Commands.Routing.PullBoxRoutingCommand", DefaultString = "Create Pullbox" )]
   [Image( "resources/PickFrom-To.png" )]
   public class PullBoxRoutingCommand : PullBoxRoutingCommandBase
   {

@@ -10,17 +10,17 @@
     <Grid>
         <Border Padding="10">
             <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center" >
-                <CheckBox IsChecked="{Binding IsCreatePullBoxWithoutSettingHeight}" Content="Create Pull Box Without Setting Height" HorizontalAlignment="Left" Width="250" Margin="0, 10" 
+                <CheckBox IsChecked="{Binding IsCreatePullBoxWithoutSettingHeight}" Content="高さ変更なしのプルボックスを作成する" HorizontalAlignment="Left" Width="250" Margin="0, 10" 
                           Checked="CreatePullBoxWithoutSettingHeight_Checked" 
                           Unchecked="CreatePullBoxWithoutSettingHeight_UnChecked" />
                 <StackPanel x:Name="SettingHeightPanel" Height="90">
                     <StackPanel Orientation="Horizontal" Margin="0, 10">
-                        <Label Content="Height" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" Margin="0 0 5 0" />
+                        <Label Content="プルボックスの高さ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" Margin="0 0 5 0" />
                         <TextBox HorizontalAlignment="Left" Width="200" PreviewTextInput="NumberValidationTextBox" Padding="5" Text="{Binding HeightConnector}"/>
                     </StackPanel>
                 
                     <StackPanel Orientation="Horizontal" Margin="0 0  0 10">
-                        <Label Content="Height Wire" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" Margin="0 0 5 0" />
+                        <Label Content="配線の高さ" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" Margin="0 0 5 0" />
                         <TextBox HorizontalAlignment="Left" Width="200" PreviewTextInput="NumberNegativeValidationTextBox" Padding="5" Text="{Binding HeightWire}"/>
                     </StackPanel>
                 </StackPanel>
