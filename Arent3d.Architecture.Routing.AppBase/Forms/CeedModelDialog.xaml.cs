@@ -29,6 +29,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     private CeedViewModel? _usingCeedModel ;
     private string _ceedModelNumberSearch ;
     private string _modelNumberSearch ;
+    private string _deviceSymbolSearch ;
     private bool _isShowCeedModelNumber ;
     private bool _isShowOnlyUsingCode ;
     private CeedModel? _selectedCeedModel ;
@@ -47,6 +48,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _selectedCeedModel = null ;
       _ceedModelNumberSearch = string.Empty ;
       _modelNumberSearch = string.Empty ;
+      _deviceSymbolSearch = string.Empty ;
       SelectedDeviceSymbol = string.Empty ;
       SelectedCondition = string.Empty ;
       SelectedCeedCode = string.Empty ;
@@ -111,9 +113,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       CmbCeedModelNumbers.Text = "" ;
       CmbModelNumbers.SelectedIndex = -1 ;
       CmbModelNumbers.Text = "" ;
+      CmbDeviceSymbols.SelectedIndex = -1 ;
+      CmbDeviceSymbols.Text = "" ;
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels != null )
         LoadData( ceedViewModels ) ;
+    }
+    
+    private void CmbDeviceSymbols_TextChanged( object sender, TextChangedEventArgs e )
+    {
+      _deviceSymbolSearch = ! string.IsNullOrEmpty( CmbDeviceSymbols.Text ) ? CmbDeviceSymbols.Text : string.Empty ;
     }
 
     private void CmbCeedModelNumbers_TextChanged( object sender, TextChangedEventArgs e )
@@ -142,18 +151,13 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels == null ) return ;
-      if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) ) {
+      if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) && string.IsNullOrEmpty( _deviceSymbolSearch ) ) {
         DtGrid.ItemsSource = ceedViewModels.CeedModels ;
       }
       else {
-        var ceedModels = new List<CeedModel>() ;
-        if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) && ! string.IsNullOrEmpty( _modelNumberSearch ) )
-          ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) && c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
-        else if ( ! string.IsNullOrEmpty( _ceedModelNumberSearch ) && string.IsNullOrEmpty( _modelNumberSearch ) )
-          ceedModels = ceedViewModels.CeedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) ).ToList() ;
-        else if ( string.IsNullOrEmpty( _ceedModelNumberSearch ) && ! string.IsNullOrEmpty( _modelNumberSearch ) )
-          ceedModels = ceedViewModels.CeedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
-
+        var ceedModels = string.IsNullOrEmpty( _deviceSymbolSearch ) ? ceedViewModels.CeedModels : ceedViewModels.CeedModels.Where( c => c.GeneralDisplayDeviceSymbol.Contains( _deviceSymbolSearch ) ).ToList() ;
+        ceedModels = string.IsNullOrEmpty( _ceedModelNumberSearch ) ? ceedModels : ceedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) ).ToList() ;
+        ceedModels = string.IsNullOrEmpty( _modelNumberSearch ) ? ceedModels : ceedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
         DtGrid.ItemsSource = ceedModels ;
       }
     }
@@ -295,6 +299,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DtGrid.ItemsSource = viewModel.CeedModels ;
       CmbCeedModelNumbers.ItemsSource = viewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = viewModel.ModelNumbers ;
+      CmbDeviceSymbols.ItemsSource = viewModel.DeviceSymbols ;
       if ( ! ceedStorable.CeedModelUsedData.Any() ) return ;
       _usingCeedModel = new CeedViewModel( ceedStorable, ceedStorable.CeedModelUsedData ) ;
       CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
@@ -343,6 +348,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       DtGrid.ItemsSource = ceedViewModel.CeedModels ;
       CmbCeedModelNumbers.ItemsSource = ceedViewModel.CeedModelNumbers ;
       CmbModelNumbers.ItemsSource = ceedViewModel.ModelNumbers ;
+      CmbDeviceSymbols.ItemsSource = ceedViewModel.DeviceSymbols ;
     }
 
     private void SaveCeedModelNumberDisplayAndOnlyUsingCodeState()

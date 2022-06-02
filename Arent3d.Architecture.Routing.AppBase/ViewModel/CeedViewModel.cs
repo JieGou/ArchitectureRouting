@@ -1,12 +1,16 @@
 ﻿using System ;
 using System.Collections.Generic ;
+using System.Collections.ObjectModel ;
 using System.IO ;
 using System.Linq ;
 using System.Text ;
 using System.Windows ;
 using System.Windows.Controls ;
 using System.Windows.Forms ;
+using System.Windows.Input ;
+using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
@@ -18,13 +22,57 @@ using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
-  public class CeedViewModel : ViewModelBase
+  public class CeedViewModel : NotifyPropertyChanged
   {
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
     public List<CeedModel> CeedModels { get ; }
     public CeedStorable CeedStorable { get ; }
     public readonly List<string> CeedModelNumbers = new() ;
     public readonly List<string> ModelNumbers = new() ;
+    public List<string> DeviceSymbols = new() ;
+    
+    private ObservableCollection<FolderModel>? _folders ;
+    
+    public ObservableCollection<FolderModel> Folders
+    {
+      get
+      {
+        if ( null != _folders )
+          return _folders ;
+    
+        var folderModels = GetFolderModels( ) ;
+        _folders = new ObservableCollection<FolderModel>( folderModels ) ;
+    
+        FolderSelected = FindSelectedFolder( _folders ) ;
+
+        return _folders ;
+      }
+      set
+      {
+        _folders = value ;
+        FolderSelected = FindSelectedFolder( _folders ) ;
+        OnPropertyChanged() ;
+      }
+    }
+    
+    private FolderModel? _folderSelected ;
+    
+    private FolderModel? FolderSelected
+    {
+      get { return _folderSelected ??= FindSelectedFolder( Folders ) ; }
+      set => _folderSelected = value ;
+    }
+    
+    public ICommand SelectedItemCommand
+    {
+      get
+      {
+        return new RelayCommand<System.Windows.Controls.TreeView>( tv => null != tv, _ =>
+        {
+          FolderSelected = FindSelectedFolder( Folders ) ;
+        } ) ;
+      }
+    }
 
     public CeedViewModel( CeedStorable ceedStorable )
     {
@@ -52,6 +100,46 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if ( ! ModelNumbers.Contains( modelNumber ) ) ModelNumbers.Add( modelNumber ) ;
         }
       }
+
+      DeviceSymbols = ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ).Select( c => c.GeneralDisplayDeviceSymbol ).Distinct().ToList() ;
+    }
+    
+    private List<FolderModel> GetFolderModels()
+    {
+      List<FolderModel> folderModels = new() ;
+      
+      var parentFolderModel1 = new FolderModel { Name = "Parent Category 1", ParentName = string.Empty, IsExpanded = false, IsSelected = true } ;
+      var childFolderModel11 = new FolderModel { Name = "Category 1", ParentName = parentFolderModel1.Name, IsExpanded = false, IsSelected = true } ;
+      var childFolderModel12 = new FolderModel { Name = "Category 2", ParentName = parentFolderModel1.Name, IsExpanded = false, IsSelected = false } ;
+      parentFolderModel1.Folders.Add( childFolderModel11 ) ;
+      parentFolderModel1.Folders.Add( childFolderModel12 ) ;
+      folderModels.Add( parentFolderModel1 ) ;
+      
+      var parentFolderModel2 = new FolderModel { Name = "Parent Category 2", ParentName = string.Empty, IsExpanded = false, IsSelected = false } ;
+      var childFolderModel21 = new FolderModel { Name = "Category 1", ParentName = parentFolderModel2.Name, IsExpanded = false, IsSelected = false } ;
+      var childFolderModel22 = new FolderModel { Name = "Category 2", ParentName = parentFolderModel2.Name, IsExpanded = false, IsSelected = false } ;
+      parentFolderModel2.Folders.Add( childFolderModel21 ) ;
+      parentFolderModel2.Folders.Add( childFolderModel22 ) ;
+      folderModels.Add( parentFolderModel2 ) ;
+      
+      return folderModels ;
+    }
+    
+    private FolderModel? FindSelectedFolder( IEnumerable<FolderModel> folders )
+    {
+      foreach ( var folder in folders ) {
+        if ( folder.IsSelected )
+          return folder ;
+
+        if ( ! folder.Folders.Any() )
+          continue ;
+
+        var subFolder = FindSelectedFolder( folder.Folders ) ;
+        if ( null != subFolder )
+          return subFolder ;
+      }
+
+      return null ;
     }
 
     private static List<string> LoadConnectorFamily( Document document, List<string> connectorFamilyPaths )
