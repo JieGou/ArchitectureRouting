@@ -457,6 +457,17 @@
 
         <key>Electrical.App.Commands.Routing.LeakRoutingCommand</key>
         <string>漏水帯</string>
+
+        <key>Electrical.App.Panels.Routing.MenuOrganization</key>
+        <string>メニュー整理</string>
+        <key>Electrical.App.Panels.Routing.MenuOrganization.Setting</key>
+        <string>設定</string>
+        <key>Electrical.App.Panels.Routing.MenuOrganization.Confirmation</key>
+        <string>確認</string>
+        <key>Electrical.App.Panels.Routing.MenuOrganization.MakingThePlan</key>
+        <string>図面作成</string>
+        <key>Electrical.App.Panels.Routing.MenuOrganization.CreateTable</key>
+        <string>表作成</string>
     </dict>
 </plist>
 

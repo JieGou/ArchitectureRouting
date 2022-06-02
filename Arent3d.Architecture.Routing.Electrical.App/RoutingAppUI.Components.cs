@@ -34,9 +34,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           [Button( typeof( ExportDwgCommand ), OnlyInitialized = true )]
           private static class ExportDWGCommandButton { }
 
-          [Button(typeof(CnsSettingCommand), OnlyInitialized = true)]
-          private static class CnsSettingCommandButton { }
-
           [Button( typeof( ShowCeedModelsCommand ), OnlyInitialized = true )]
           private static class ShowCeedModelsCommandButton { }
           
@@ -186,6 +183,32 @@ namespace Arent3d.Architecture.Routing.Electrical.App
 
           [Button( typeof( EraseAllRoutesCommand ), OnlyInitialized = true )]
           private static class EraseAllRoutesCommandButton { }
+        }
+      }
+      
+      [Panel( "arent3d.architecture.routing.menu.organization", TitleKey = "Electrical.App.Panels.Routing.MenuOrganization" )]
+      private static class MenuOrganizationPanel
+      {
+        [SplitButton( "arent3d.architecture.routing.menu.organization.setting", TitleKey = "Electrical.App.Panels.Routing.MenuOrganization.Setting" )]
+        private static class SettingButton
+        {
+          [Button(typeof(CnsSettingCommand), OnlyInitialized = true)]
+          private static class CnsSettingCommandButton { }
+        }
+
+        [SplitButton( "arent3d.architecture.routing.menu.organization.confirmation", TitleKey = "Electrical.App.Panels.Routing.MenuOrganization.Confirmation" )]
+        private static class ConfirmationButton
+        {
+        }
+
+        [SplitButton( "arent3d.architecture.routing.menu.organization.making.the.plan", TitleKey = "Electrical.App.Panels.Routing.MenuOrganization.MakingThePlan" )]
+        private static class MakingThePlanButton
+        {
+        }
+        
+        [SplitButton( "arent3d.architecture.routing.menu.organization.create.table", TitleKey = "Electrical.App.Panels.Routing.MenuOrganization.CreateTable" )]
+        private static class CreateTableButton
+        {
         }
       }
 
