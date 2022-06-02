@@ -12,23 +12,24 @@ using Autodesk.Revit.UI ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 {
-  public abstract class ElectricalSymbolAggregationCommandBase : IExternalCommand
+  public abstract class ElectricalSymbolAggregationAllCommandBase : IExternalCommand
   {
     public Result Execute( ExternalCommandData commandData, ref string message, ElementSet elements )
     {
       try {
         var uiDocument = commandData.Application.ActiveUIDocument ;
         Document document = uiDocument.Document ;
-        var level = uiDocument.ActiveView.GenLevel ;
         
+        var selectedConnectors = document.GetAllElements<Element>().OfCategory( BuiltInCategorySets.OtherElectricalElements ).Where( e => e.GroupId != ElementId.InvalidElementId ).ToList() ;
+         
         var ceedStoreable = document.GetCeedStorable() ;
         var listCeedModel = ceedStoreable.CeedModelData ;
-        var selectedConnectors = uiDocument.Selection.PickElementsByRectangle( ConnectorFamilySelectionFilter.Instance, "ドラックで複数コネクタを選択して下さい。" ).OfType<FamilyInstance>() ;
         List<ElectricalSymbolAggregationModel> listElectricalSymbolAggregation = new() ;
         foreach ( var connector in selectedConnectors ) {
           if ( false == connector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) || string.IsNullOrEmpty( ceedCode ) )
             continue ;
           
+          var floor = document.GetAllElements<Level>().FirstOrDefault( l => l.Id == connector.LevelId )?.Name ?? string.Empty ; 
           var detailCode = ceedCode!.Split( ':' ).ToList() ;
           var ceedSetCode = detailCode.First() ;
           var symbol = detailCode.Count > 1 ? detailCode.ElementAt( 1 ) : string.Empty ;
@@ -44,12 +45,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
           if ( ! string.IsNullOrEmpty( ceedModel.Condition ) )
             detail += " (" + ceedModel.Condition + ")" ;
           
-          var exitedModel = listElectricalSymbolAggregation.FirstOrDefault( x => x.Floor == level.Name && x.SetCode == ceedSetCode && x.ConstructionItem == sConstructionItem &&  x.ProductCode == ceedModel.CeedModelNumber && x.ProductName == detail ) ;
+          var exitedModel = listElectricalSymbolAggregation.FirstOrDefault( x => x.Floor == floor && x.SetCode == ceedSetCode && x.ConstructionItem == sConstructionItem &&  x.ProductCode == ceedModel.CeedModelNumber && x.ProductName == detail ) ;
           if ( null != exitedModel ) {
             exitedModel.Number += 1 ;
           }
           else { 
-            listElectricalSymbolAggregation.Add( new ElectricalSymbolAggregationModel(level.Name, ceedSetCode, sConstructionItem, ceedModel.CeedModelNumber, detail, 1, "個" ) ) ;
+            listElectricalSymbolAggregation.Add( new ElectricalSymbolAggregationModel(floor, ceedSetCode, sConstructionItem, ceedModel.CeedModelNumber, detail, 1, "個" ) ) ;
           }
         }
 
