@@ -44,7 +44,11 @@
       </StackPanel>
 
       <CheckBox Grid.Row="1" Name="CbShowOnlyUsingCode" IsChecked="False" Content="使用するものだけ表示" Width="130" HorizontalAlignment="Left" Margin="230, 10, 0, 0" Checked="ShowOnlyUsingCode_Checked" Unchecked="ShowOnlyUsingCode_UnChecked" Visibility="Hidden" />
-      <CheckBox Grid.Row="1" Name="CbShowCeedModelNumber" IsChecked="False" Content="CeeD型番の表示" Width="120" HorizontalAlignment="Right" Margin="0, 10, 0, 0" Checked="ShowCeedModelNumberColumn_Checked" Unchecked="ShowCeedModelNumberColumn_UnChecked" />
+      
+      <StackPanel Grid.Row="1" HorizontalAlignment="Right" Orientation="Horizontal">
+        <CheckBox Name="CbShowCeedCondition" IsChecked="False" Content="Show Condition" Margin="10 10 10 0" Checked="CbShowCeedCondition_OnChecked" Unchecked="CbShowCeedCondition_OnUnchecked"/>
+        <CheckBox Name="CbShowCeedModelNumber" IsChecked="False" Content="CeeD型番の表示" Width="120" HorizontalAlignment="Right" Margin="0, 10, 0, 0" Checked="ShowCeedModelNumberColumn_Checked" Unchecked="ShowCeedModelNumberColumn_UnChecked" />
+      </StackPanel>
       
       <Button Grid.Row="1" x:Name="BtnReplaceSymbol"
               Content="モデル置き換え"
@@ -143,7 +147,7 @@
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
           
-          <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" Width="160" >
+          <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" Width="160" Visibility="Hidden">
             <DataGridTextColumn.ElementStyle>
               <Style>                            
                 <Setter Property="TextBlock.TextWrapping" Value="Wrap" />

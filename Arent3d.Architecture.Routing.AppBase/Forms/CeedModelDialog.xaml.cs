@@ -1,4 +1,5 @@
 using System.Collections.Generic ;
+using System.IO ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
@@ -23,13 +24,16 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
   public partial class CeedModelDialog
   {
     private const string HeaderCeedModelNumberColumn = "CeeD型番" ;
+    private const string HeaderConditionColumn = "条件" ;
     private readonly DataGridColumn? _ceedModelNumberColumn ;
+    private readonly DataGridColumn? _conditionColumn ;
     private readonly Document _document ;
     private CeedViewModel? _allCeedModels ;
     private CeedViewModel? _usingCeedModel ;
     private string _ceedModelNumberSearch ;
     private string _modelNumberSearch ;
     private bool _isShowCeedModelNumber ;
+    private bool _isShowCondition ;
     private bool _isShowOnlyUsingCode ;
     private CeedModel? _selectedCeedModel ;
     public string SelectedDeviceSymbol { get ; private set ; }
@@ -53,17 +57,21 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       SelectedModelNumber = string.Empty ;
       SelectedFloorPlanType = string.Empty ;
       _isShowCeedModelNumber = false ;
+      _isShowCondition = false ;
       _isShowOnlyUsingCode = false ;
 
-      var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
-      if ( oldCeedStorable != null ) {
-        LoadData( oldCeedStorable ) ;
-        _isShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
-        _isShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
-      }
+      var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ?? _document.GetCeedStorable() ;
+      LoadData( oldCeedStorable ) ;
+      _isShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
+      _isShowCondition = oldCeedStorable.IsShowCondition ;
+      _isShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
       
       _ceedModelNumberColumn = DtGrid.Columns.SingleOrDefault( c => c.Header.ToString() == HeaderCeedModelNumberColumn ) ;
+      _conditionColumn = DtGrid.Columns.SingleOrDefault( c => c.Header.ToString() == HeaderConditionColumn ) ;
       CbShowCeedModelNumber.IsChecked = _isShowCeedModelNumber ;
+      CbShowCeedCondition.IsChecked = _isShowCondition ;
+      if ( (CbShowCeedCondition.IsChecked ?? false) && null != _conditionColumn )
+        _conditionColumn.Visibility = Visibility.Visible ;
 
       BtnReplaceSymbol.IsEnabled = false ;
 
@@ -326,6 +334,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       _isShowCeedModelNumber = true ;
     }
 
+    private void CbShowCeedCondition_OnChecked( object sender, RoutedEventArgs e )
+    {
+      if ( _conditionColumn != null ) {
+        _conditionColumn.Visibility = Visibility.Visible ;
+      }
+
+      _isShowCondition = true ;
+    }
+    
     private void ShowCeedModelNumberColumn_UnChecked( object sender, RoutedEventArgs e )
     {
       if ( _ceedModelNumberColumn != null ) {
@@ -335,6 +352,15 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       LbCeedModelNumbers.Visibility = Visibility.Hidden ;
       CmbCeedModelNumbers.Visibility = Visibility.Hidden ;
       _isShowCeedModelNumber = false ;
+    }
+    
+    private void CbShowCeedCondition_OnUnchecked( object sender, RoutedEventArgs e )
+    {
+      if ( _conditionColumn != null ) {
+        _conditionColumn.Visibility = Visibility.Hidden ;
+      }
+
+      _isShowCondition = false ;
     }
 
     private void LoadData( CeedViewModel ceedViewModel )
@@ -352,6 +378,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         using Transaction t = new( _document, "Save data" ) ;
         t.Start() ;
         ceedStorable.IsShowCeedModelNumber = _isShowCeedModelNumber ;
+        ceedStorable.IsShowCondition = _isShowCondition ;
         ceedStorable.IsShowOnlyUsingCode = _isShowOnlyUsingCode ;
         ceedStorable.Save() ;
         t.Commit() ;
@@ -402,5 +429,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       ceedModel.FloorPlanType = floorPlanType ;
       DtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
     }
+
   }
 }
