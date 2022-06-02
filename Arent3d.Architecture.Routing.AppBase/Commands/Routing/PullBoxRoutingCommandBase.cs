@@ -158,7 +158,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         : document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
       var ceedCode = toConnectorOfRoute != null && toConnectorOfRoute.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCodeOfToConnector ) && ! string.IsNullOrEmpty( ceedCodeOfToConnector ) 
         ? ceedCodeOfToConnector !
-        : document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ;
+        : string.Empty ;
       
       if ( instance.HasParameter( ElectricalRoutingElementParameter.ConstructionItem ) )
         instance.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, constructionItem ) ;

@@ -302,8 +302,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         conduit.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
         isEcoModes.Add( isEcoMode ) ;
         var quantity = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.Length".GetDocumentStringByKeyOrDefault( _document, "Length" ) ).AsDouble() ;
-        var constructionItem = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.ConstructionItem".GetDocumentStringByKeyOrDefault( _document, "Construction Item" ) ).AsString() ;
-        AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem, dictMaterialCode ) ;
+        conduit.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
+        if ( string.IsNullOrEmpty( constructionItem ) ) constructionItem = DefaultConstructionItem ;
+        AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduit, quantity, ConduitType.Conduit, constructionItems, constructionItem!, dictMaterialCode ) ;
       }
 
       var conduitFittings = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.Conduits ).Distinct().ToList() ;
@@ -311,8 +312,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? isEcoMode ) ;
         isEcoModes.Add( isEcoMode ) ;
         var quantity = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( _document, "電線管長さ" ) ).AsDouble() ;
-        var constructionItem = conduitFitting.ParametersMap.get_Item( "Revit.Property.Builtin.Conduit.ConstructionItem".GetDocumentStringByKeyOrDefault( _document, "Construction Item" ) ).AsString() ;
-        AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem, dictMaterialCode ) ;
+        conduitFitting.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? constructionItem ) ;
+        if ( string.IsNullOrEmpty( constructionItem ) ) constructionItem = DefaultConstructionItem ;
+        AddPickUpConduit( allConnectors, pickUpConnectors, quantities, pickUpNumbers, directionZ, conduitFitting, quantity, ConduitType.ConduitFitting, constructionItems, constructionItem!, dictMaterialCode ) ;
       }
 
       SetPickUpModels( pickUpModels, pickUpConnectors, ProductType.Conduit, quantities, pickUpNumbers, directionZ, constructionItems, isEcoModes, dictMaterialCode ) ;
@@ -329,10 +331,10 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       var cables = _document.GetAllElements<FamilyInstance>().OfCategory( BuiltInCategorySets.CableTrays ).Distinct().ToList() ;
       foreach ( var cable in cables ) {
-        var elementId = cable.ParametersMap.get_Item( "Revit.Property.Builtin.ToSideConnectorId".GetDocumentStringByKeyOrDefault( _document, "To-Side Connector Id" ) ).AsString() ;
-        var fromElementId = cable.ParametersMap.get_Item( "Revit.Property.Builtin.FromSideConnectorId".GetDocumentStringByKeyOrDefault( _document, "From-Side Connector Id" ) ).AsString() ;
-        if ( string.IsNullOrEmpty( elementId ) ) continue ;
-        var checkPickUp = AddPickUpConnectors( allConnectors, pickUpConnectors, elementId, fromElementId, pickUpNumbers ) ;
+        cable.TryGetProperty( ElectricalRoutingElementParameter.ToSideConnectorId, out string? toElementId ) ;
+        cable.TryGetProperty( ElectricalRoutingElementParameter.FromSideConnectorId, out string? fromElementId ) ;
+        if ( string.IsNullOrEmpty( toElementId ) ) continue ;
+        var checkPickUp = AddPickUpConnectors( allConnectors, pickUpConnectors, toElementId!, fromElementId!, pickUpNumbers ) ;
         if ( ! checkPickUp ) continue ;
         var quantity = cable.ParametersMap.get_Item( "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( _document, "トレイ長さ" ) ).AsDouble() ;
         quantities.Add( Math.Round( quantity, 2 ) ) ;
