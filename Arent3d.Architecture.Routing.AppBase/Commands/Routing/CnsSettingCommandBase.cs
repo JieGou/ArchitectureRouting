@@ -198,20 +198,36 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   return Result.Cancelled ;
                 }
 
+                var constructionItemList = new ObservableCollection<string>(cnsStorables.CnsSettingData.Select( x=>x.CategoryName ).ToList()) ;
                 var categoryName = viewModel.ApplyToSymbolsText ;
-                var oldConstructionItemList = new List<CnsSettingApplyConstructionItem>() ;
-                int itemIndex = 0 ;
+                var oldConstructionItemSelectedList = new List<CnsSettingApplyConstructionItem>() ;
+                var itemIndex = 0 ;
                 foreach ( var element in elementList ) {
                   itemIndex++ ;
                   element.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? oldConstructionItem ) ;
-                  oldConstructionItemList.Add( new CnsSettingApplyConstructionItem( itemIndex, oldConstructionItem ?? string.Empty, categoryName ) );
+                  oldConstructionItemSelectedList.Add( new CnsSettingApplyConstructionItem( element.UniqueId, itemIndex, oldConstructionItem ?? string.Empty, string.Empty, constructionItemList ) );
                 }
 
-                var cnsSettingApplyForRangeDialog = new CnsSettingApplyForRangeDialog( oldConstructionItemList ) ;
+                var cnsSettingApplyForRangeViewModel = new CnsSettingApplyForRangeViewModel( oldConstructionItemSelectedList, constructionItemList ) ;
+                var cnsSettingApplyForRangeDialog = new CnsSettingApplyForRangeDialog( cnsSettingApplyForRangeViewModel ) ;
                 var result = cnsSettingApplyForRangeDialog.ShowDialog() ;
                 if ( result is null or false ) return Result.Cancelled;
 
-                ApplyConstructionItem( document, viewModel, elementList, connectorGroups ) ; 
+                using Transaction transaction = new Transaction( document ) ;
+                transaction.Start( "Set element property" ) ;
+                foreach ( var element in elementList ) {
+                  var item = cnsSettingApplyForRangeViewModel.CnsSettingApplyConstructionItems.FirstOrDefault( x => x.UniqueId == element.UniqueId );
+                  if ( null != item && !string.IsNullOrEmpty( item.NewConstructionItem ) && item.NewConstructionItem != item.OldConstructionItem ) {
+                    element.TrySetProperty(ElectricalRoutingElementParameter.ConstructionItem, item.NewConstructionItem ) ; 
+                    //Add to CnsSetting Store if have new
+                    if(!constructionItemList.Contains( item.NewConstructionItem))
+                      cnsStorables.CnsSettingData.Add( new CnsSettingModel( cnsStorables.CnsSettingData.Count + 1, item.NewConstructionItem ) );
+                      constructionItemList.Add( item.NewConstructionItem );
+                  } 
+                }
+                cnsStorables.Save();
+                
+                transaction.Commit() ; 
                 break;
                  
               }

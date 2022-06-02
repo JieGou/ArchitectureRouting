@@ -17,6 +17,9 @@
     <EmbeddedResource Remove="Forms\UserControls\**" />
     <None Remove="Forms\UserControls\**" />
     <Page Remove="Forms\UserControls\**" />
+    <Compile Update="Forms\Behaviour.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

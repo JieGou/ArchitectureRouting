@@ -5,17 +5,29 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:Arent3d.Architecture.Routing.AppBase.Forms"
         mc:Ignorable="d"
-        Title="工事項目名称変更" Height="450" Width="500">
+        Title="工事項目名称変更" Height="500" Width="450"
+        d:DataContext="{d:DesignInstance {x:Type local:DesignCnsSettingApplyForRangeViewModel}, IsDesignTimeCreatable=True}">
+    <Window.Resources>
+        <CollectionViewSource x:Key="ConstructionItemList" Source="{Binding ConstructionItemList}" />
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
-        <DataGrid x:Name="DataGridConstructionItem" AutoGenerateColumns="False" CanUserAddRows="False">
+        <DataGrid ItemsSource="{Binding CnsSettingApplyConstructionItems}" AutoGenerateColumns="False" CanUserAddRows="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Width="20" Binding="{Binding ItemIndex}"/>
+                <DataGridTextColumn Width="30" Binding="{Binding ItemIndex}"/>
                 <DataGridTextColumn Header="工事項目名称(変更前)" Width="180" Binding="{Binding OldConstructionItem}"/>
-                <DataGridTextColumn Header="工事項目名称(変更後)" Width="180" Binding="{Binding NewConstructionItem}"/>    
+                <DataGridTemplateColumn MinWidth="180" Width="Auto" Header="工事項目名称(変更後)">  
+                    <DataGridTemplateColumn.CellTemplate>  
+                        <DataTemplate>  
+                            <ComboBox IsEditable="True" ItemsSource="{Binding AvailiableConstructionItem}"    
+                                      Text="{Binding NewConstructionItem, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"   
+                                      StaysOpenOnEdit="False"  IsTextSearchCaseSensitive="False"   />  
+                        </DataTemplate>  
+                    </DataGridTemplateColumn.CellTemplate>  
+                </DataGridTemplateColumn>  
             </DataGrid.Columns> 
         </DataGrid>
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
