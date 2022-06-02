@@ -51,7 +51,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         sv.ShowDialog() ;
         if ( true != sv.DialogResult ) return OperationResult<LeakState>.Cancelled ;
 
-        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType() ) ;
+        var fromPickResult = ConnectorPicker.GetConnector( uiDocument, routingExecutor, true, "Dialog.Commands.Routing.PickRouting.PickFirst".GetAppStringByKeyOrDefault( null ), null, GetAddInType(), true ) ;
         var fromConnector = fromPickResult.PickedElement ;
         if ( fromConnector is not FamilyInstance || false == fromConnector.TryGetProperty( ElectricalRoutingElementParameter.CeedCode, out string? ceedCode ) 
                                                  || string.IsNullOrEmpty( ceedCode ) || ! ceedCode!.Contains( JBoxConnectorType ) ) {
@@ -270,7 +270,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private static RouteProperties CreateRouteProperties( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, addInType, fromLevelId, toLevelId ) ;
-      var routeProperty = new RouteProperties( document, routeChoiceSpec ) ;
+      var routeProperty = new RouteProperties( document, routeChoiceSpec, addInType ) ;
 
       return routeProperty ;
     }

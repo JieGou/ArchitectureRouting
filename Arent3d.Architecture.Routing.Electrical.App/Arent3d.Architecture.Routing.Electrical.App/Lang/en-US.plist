@@ -234,6 +234,12 @@
 
         <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
         <string>Create Pullbox</string>
+      
+        <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
+        <string>Electrical Symbol&#xA;Aggregation</string>
+
+        <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregationAll</key>
+        <string>Electrical Symbol&#xA;Aggregation All</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
