@@ -39,6 +39,8 @@
                           SelectedValue="{Binding NumberOfPlumbing, Mode=TwoWay}" 
                           DisplayMemberPath="Type"
                           SelectedValuePath="Name"
+                          IsEditable="True"
+                          Text="{Binding NumberOfPlumbing, Mode=TwoWay}"
                           ItemsSource="{Binding NumbersOfPlumbing}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="10, 5">
