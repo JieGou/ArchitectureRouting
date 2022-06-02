@@ -25,7 +25,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       
       foreach ( var ( routeName, oldConduitIds ) in allConduitsByRoute ) {
         var ( wireTypeName, isLeakRoute ) = ChangeWireTypeCommand.RemoveDetailLines( document, oldConduitIds ) ;
-        if ( string.IsNullOrEmpty( wireTypeName ) ) return ;
+        if ( string.IsNullOrEmpty( wireTypeName ) ) continue ;
         var reRoute = new HashSet<string>() { routeName } ;
         ChangeWireTypeCommand.ChangeWireType( document, reRoute, wireTypeName, isLeakRoute ) ;
       }
