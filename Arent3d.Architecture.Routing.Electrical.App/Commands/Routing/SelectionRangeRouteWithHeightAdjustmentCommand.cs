@@ -124,7 +124,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private static RangeRangeRouteWithHeightAdjustmentPropertyDialog ShowDialog( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, addInType, fromLevelId, toLevelId ) ;
-      var sv = new RangeRangeRouteWithHeightAdjustmentPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ) ) ;
+      var sv = new RangeRangeRouteWithHeightAdjustmentPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec, addInType ) ) ;
       sv.ShowDialog() ;
 
       return sv ;

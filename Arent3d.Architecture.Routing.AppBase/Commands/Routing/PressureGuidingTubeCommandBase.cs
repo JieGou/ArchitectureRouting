@@ -285,7 +285,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     private RouteProperties InitRoutProperties( Document document, ElementId elementId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, GetAddInType(), elementId, elementId ) ;
-      var routeProperty = new RouteProperties( document, routeChoiceSpec ) ;
+      var routeProperty = new RouteProperties( document, routeChoiceSpec, AddInType.Electrical ) ;
 
       return routeProperty ;
     }
