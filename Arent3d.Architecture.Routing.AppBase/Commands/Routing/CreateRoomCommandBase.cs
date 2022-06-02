@@ -1,7 +1,9 @@
 ﻿using System ;
 using System.Collections.Generic ;
 using System.Linq ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.UI.ExternalGraphics ;
+using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Revit ;
@@ -19,6 +21,31 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       UIDocument uiDocument = uiApp.ActiveUIDocument ;
       Document document = uiDocument.Document ;
       var selection = uiDocument.Selection ;
+
+      if ( !IsExistParameter( document, ElectricalRoutingElementParameter.RoomCondition ) ) {
+        message = "Please initial the plugin!" ;
+        return Result.Cancelled ;
+      }
+
+      if ( !TryGetConditions( document, out var conditions ) ) {
+        message = "Please load CSV data!" ;
+        return Result.Cancelled ;
+      }
+
+      if ( ! conditions.Any() ) {
+        message = "Not found the condition!" ;
+        return Result.Cancelled ;
+      }
+
+      var viewModel = new ArentRoomViewModel()
+      {
+        Conditions = conditions
+      } ;
+      var view = new ArentRoomView { DataContext = viewModel } ;
+      view.ShowDialog() ;
+      if ( ! viewModel.IsCreate )
+        return Result.Cancelled ;
+      
       bool checkEx = false ;
       const double minDistance = 0.2 ;
       try {
@@ -89,6 +116,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         instance.LookupParameter( "Width" ).Set( width ) ;
         instance.LookupParameter( "Height" ).Set( heightOfLevel ) ;
         instance.LookupParameter( "Thickness" ).Set( thickness ) ;
+        instance.SetProperty( ElectricalRoutingElementParameter.RoomCondition, viewModel.SelectedCondition! ) ;
 
         ChangeWallTransparency( document, new List<Element>() { instance } ) ;
         trans.Commit() ;
@@ -102,6 +130,24 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         message = e.Message ;
         return Result.Failed ;
       }
+    }
+
+    private bool IsExistParameter(Document document, ElectricalRoutingElementParameter roomCondition)
+    {
+      var guiId = roomCondition.GetParameterGuid() ;
+      var shareParameter = SharedParameterElement.Lookup(document, guiId ) ;
+      return null != shareParameter ;
+    }
+
+    private bool TryGetConditions( Document document, out List<string> conditions )
+    {
+      conditions = new List<string>() ;
+      var store = document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      if ( null == store )
+        return false ;
+
+      conditions = store.CeedModelData.Select( x => x.Condition ).Distinct().Where(x => !string.IsNullOrEmpty(x)).OrderBy( x => x ).ToList() ;
+      return true ;
     }
 
     private void ChangeWallTransparency( Document document, IReadOnlyCollection<Element> walls )
