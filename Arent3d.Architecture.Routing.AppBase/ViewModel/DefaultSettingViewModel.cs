@@ -1,19 +1,28 @@
 ﻿using System.Collections.Generic ;
 using System.Collections.ObjectModel ;
 using System.IO ;
+using System.IO.Compression ;
 using System.Linq ;
+using System.Text ;
 using System.Text.RegularExpressions ;
 using System.Windows ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Initialization ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
-using Arent3d.Architecture.Routing.AppBase.Model ;
+using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.Storable ;
+using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.UI ;
+using System ;
+using Arent3d.Architecture.Routing.Extensions ;
+using Autodesk.Revit.DB ;
+using ImportDwgMappingModel = Arent3d.Architecture.Routing.AppBase.Model.ImportDwgMappingModel ;
 using MessageBox = System.Windows.MessageBox ;
+using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
+
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
@@ -25,6 +34,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string NormalModeDefaultString = "Normal Mode" ;
     private const string GradeKey = "Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade" ;
     private const string GradeDefaultString = "Grade " ;
+    
+    private readonly UIDocument _uiDocument ;
+    private const string CompressionFileName = "Csv File.zip" ;
+    private List<WiresAndCablesModel> _allWiresAndCablesModels ;
+    private List<ConduitsModel> _allConduitModels ;
+    private List<HiroiSetMasterModel> _allHiroiSetMasterNormalModels ;
+    private List<HiroiSetMasterModel> _allHiroiSetMasterEcoModels ;
+    private List<HiroiSetCdMasterModel> _allHiroiSetCdMasterNormalModels ;
+    private List<HiroiSetCdMasterModel> _allHiroiSetCdMasterEcoModels ;
+    private List<HiroiMasterModel> _allHiroiMasterModels ;
+    private List<CeedModel> _ceedModelData ;
 
     public enum EcoNormalMode
     {
@@ -41,6 +61,18 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public int SelectedGradeModeIndex { get ; set ; } 
 
     public int SelectedGradeMode => SelectedGradeModeIndex + 1 ; 
+    
+    private ObservableCollection<CsvFileModel> _csvFileModels ;
+
+    public ObservableCollection<CsvFileModel> CsvFileModels
+    {
+      get => _csvFileModels ;
+      set
+      {
+        _csvFileModels = value ;
+        OnPropertyChanged() ;
+      }
+    }
 
     private ObservableCollection<ImportDwgMappingModel> _importDwgMappingModels ;
 
@@ -74,7 +106,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
     public ICommand AddImportDwgMappingModelCommand => new RelayCommand( AddImportDwgMappingModel ) ;
-    public DefaultSettingViewModel( DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName)
+    public DefaultSettingViewModel( UIDocument uiDocument, DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName)
     {
       SelectedEcoNormalModeIndex = defaultSettingStorable.EcoSettingData.IsEcoMode ? 1 : 0 ;
       SelectedGradeModeIndex = defaultSettingStorable.GradeSettingData.GradeMode - 1;
@@ -85,6 +117,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       DeletedFloorName = new List<string>() ;
       Scale = scale ;
       GetImportDwgMappingModelsAndFileItems( defaultSettingStorable, activeViewName  ) ;
+      
+      _uiDocument = uiDocument ;
+      _csvFileModels = new ObservableCollection<CsvFileModel>() ;
+      _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
+      _allConduitModels = new List<ConduitsModel>() ;
+      _allHiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
+      _allHiroiSetMasterEcoModels = new List<HiroiSetMasterModel>() ;
+      _allHiroiSetCdMasterNormalModels = new List<HiroiSetCdMasterModel>() ;
+      _allHiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
+      _allHiroiMasterModels = new List<HiroiMasterModel>() ;
+      _ceedModelData = new List<CeedModel>() ;
     }
 
     private void GetImportDwgMappingModelsAndFileItems( DefaultSettingStorable defaultSettingStorable, string activeViewName )
@@ -187,8 +230,6 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
     
-    
-
     private void UpdateDefaultFloorHeight()
     {
       const int floorHeightDistance = 3000 ;
@@ -224,5 +265,501 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
       ImportDwgMappingModels = new ObservableCollection<ImportDwgMappingModel>( ImportDwgMappingModels.OrderBy( x => x.FloorHeight ).ToList() ) ;
     }
+
+    // Button load default db
+    public void LoadDefaultDb()
+    {
+      var folderPath = GetFolderCsvPath() ;
+      if(null == folderPath)
+        return;
+      LoadData( folderPath ) ;
+      Directory.Delete(folderPath, true);
+      SaveData() ;
+    }
+    
+     private void SaveData()
+     {
+       var document = _uiDocument.Document ;
+       using var progress = ProgressBar.ShowWithNewThread( _uiDocument.Application ) ;
+       progress.Message = "Saving data..." ;
+       using ( var progressData = progress?.Reserve( 0.5 ) ) {
+         CsvStorable csvStorable = document.GetCsvStorable() ;
+         {
+           if ( _allWiresAndCablesModels.Any() )
+             csvStorable.WiresAndCablesModelData = _allWiresAndCablesModels ;
+           if ( _allConduitModels.Any() )
+             csvStorable.ConduitsModelData = _allConduitModels ;
+           if ( _allHiroiSetMasterNormalModels.Any() )
+             csvStorable.HiroiSetMasterNormalModelData = _allHiroiSetMasterNormalModels ;
+           if ( _allHiroiSetMasterEcoModels.Any() )
+             csvStorable.HiroiSetMasterEcoModelData = _allHiroiSetMasterEcoModels ;
+           if ( _allHiroiSetCdMasterNormalModels.Any() )
+             csvStorable.HiroiSetCdMasterNormalModelData = _allHiroiSetCdMasterNormalModels ;
+           if ( _allHiroiSetCdMasterEcoModels.Any() )
+             csvStorable.HiroiSetCdMasterEcoModelData = _allHiroiSetCdMasterEcoModels ;
+           if ( _allHiroiMasterModels.Any() )
+             csvStorable.HiroiMasterModelData = _allHiroiMasterModels ;
+
+           try {
+             using Transaction t = new Transaction( document, "Save data" ) ;
+             t.Start() ;
+             csvStorable.Save() ;
+             t.Commit() ;
+           }
+           catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+             MessageBox.Show( "Save CSV Files Failed.", "Error Message" ) ;
+             //DialogResult = false ;
+           }
+         }
+         progressData?.ThrowIfCanceled() ;
+       }
+
+      using ( var progressData = progress?.Reserve( 0.9 ) ) {
+        CeedStorable ceedStorable = document.GetCeedStorable() ;
+        {
+          if ( _ceedModelData.Any() ) {
+            ceedStorable.CeedModelData = _ceedModelData ;
+            ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
+            try {
+              using Transaction t = new Transaction( document, "Save CeeD data" ) ;
+              t.Start() ;
+              ceedStorable.Save() ;
+              document.MakeCertainAllConnectorFamilies() ;
+              t.Commit() ;
+            }
+            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+            }
+          }
+        }
+        progressData?.ThrowIfCanceled() ;
+      }
+    }
+    
+    private string? GetFolderCsvPath()
+    {
+      var fileData = AssetManager.ReadFileEmbededSource( CompressionFileName ) ;
+      if ( null == fileData )
+        return null ;
+
+      var directoryPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(CompressionFileName));
+      ExtractFilesToFolder( directoryPath, fileData ) ;
+
+      return directoryPath ;
+    }
+    
+    private void ExtractFilesToFolder(string directoryPath, byte[] zippedBuffer)
+    {
+      if (Directory.Exists(directoryPath))
+      {
+        string[] filePaths = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly);
+        if (filePaths.Length > 0)
+        {
+          foreach (var filePath in filePaths)
+          {
+            File.SetAttributes(filePath, FileAttributes.Normal);
+            File.Delete(filePath);
+          }
+        }
+      }
+      else {
+        Directory.CreateDirectory( directoryPath ) ;
+      }
+      using var zippedStream = new MemoryStream(zippedBuffer);
+      using var zipArchive = new ZipArchive(zippedStream);
+      foreach (var zipArchiveEntry in zipArchive.Entries) {
+        if ( string.IsNullOrEmpty( zipArchiveEntry.Name ) ) continue ;
+        var pathFileName = Path.Combine(directoryPath, zipArchiveEntry.Name);
+        if (!File.Exists(pathFileName)) {
+          zipArchiveEntry.ExtractToFile(pathFileName);
+        }
+        else if (File.GetLastAccessTime(pathFileName) <= zipArchiveEntry.LastWriteTime)
+        {
+          File.SetAttributes(pathFileName, FileAttributes.Normal);
+          zipArchiveEntry.ExtractToFile(pathFileName, true);
+        }
+      }
+    }
+    
+    private void LoadData(string folderPath)
+    {
+      var listCsvFileModel =  new ObservableCollection<CsvFileModel>() ;
+      string[] fileNames = new[]
+      {
+        "hiroimaster.csv", 
+        "hiroisetcdmaster_normal.csv", 
+        "hiroisetcdmaster_eco.csv",
+        "hiroisetmaster_eco.csv", 
+        "hiroisetmaster_normal.csv", 
+        "電線管一覧.csv",
+        "電線・ケーブル一覧.csv"
+      } ;
+      bool isLoadedCeedFile = false ;
+      var ceedCodeFile = "【CeeD】セットコード一覧表" ;
+      string equipmentSymbolsFile = "機器記号一覧表" ;
+      StringBuilder correctMessage = new StringBuilder() ;
+      StringBuilder errorMessage = new StringBuilder() ;
+      string defaultCorrectMessage = "指定されたフォルダから以下のデータを正常にロードできました。" ;
+      string defaultErrorMessage = "以下のファイルの読み込みが失敗しました。" ;
+      correctMessage.AppendLine( defaultCorrectMessage ) ;
+      errorMessage.AppendLine( defaultErrorMessage ) ;
+      foreach ( var fileName in fileNames ) {
+        var path = Path.Combine( folderPath, fileName ) ;
+        if ( File.Exists( path ) ) {
+          bool isGetDataWithoutError ;
+          switch ( fileName ) {
+            case "hiroimaster.csv" :
+              _allHiroiMasterModels = new List<HiroiMasterModel>() ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiMaster, false ) ;
+              if ( isGetDataWithoutError ) {
+                var csvName = " Hiroi Master" ;
+                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
+
+              break ;
+            case "hiroisetcdmaster_normal.csv" :
+              _allHiroiSetCdMasterNormalModels = new List<HiroiSetCdMasterModel>() ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterNormal, false ) ;
+              if ( isGetDataWithoutError ) {
+                var csvName = " Hiroi Set CD Master Normal" ;
+                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
+
+              break ;
+            case "hiroisetcdmaster_eco.csv" :
+              _allHiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetCdMasterEco, false ) ;
+              if ( isGetDataWithoutError ) {
+                var csvName = " Hiroi Set CD Master ECO" ;
+                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
+
+              break ;
+            case "hiroisetmaster_eco.csv" :
+              _allHiroiSetMasterEcoModels = new List<HiroiSetMasterModel>() ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterEco, false ) ;
+              if ( isGetDataWithoutError ) {
+                var csvName = " Hiroi Set Master ECO" ;
+                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
+
+              break ;
+            case "hiroisetmaster_normal.csv" :
+              _allHiroiSetMasterNormalModels = new List<HiroiSetMasterModel>() ;
+              isGetDataWithoutError = GetData( path, 0, ModelName.HiroiSetMasterNormal, false ) ;
+              if ( isGetDataWithoutError ) {
+                var csvName = " Hiroi Set Master Normal" ;
+                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
+
+              break ;
+            case "電線管一覧.csv" :
+              _allConduitModels = new List<ConduitsModel>() ;
+              isGetDataWithoutError = GetData( path, 2, ModelName.Conduits, false ) ;
+              if ( isGetDataWithoutError ) {
+                var csvName = " 電線管一覧" ;
+                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
+
+              break ;
+            case "電線・ケーブル一覧.csv" :
+              _allWiresAndCablesModels = new List<WiresAndCablesModel>() ;
+              isGetDataWithoutError = GetData( path, 2, ModelName.WiresAndCables, false ) ;
+              if ( isGetDataWithoutError ) {
+                var csvName = " 電線・ケーブル一覧" ;
+                correctMessage.AppendLine( $"\u2022 {csvName}" ) ;
+                listCsvFileModel.Add( new CsvFileModel( csvName, renamePathToRelative( path ), fileName ) );
+              }
+              else {
+                errorMessage.AppendLine( $"\u2022 {fileName}" ) ;
+              }
+
+              break ;
+          }
+        }
+      }
+
+      // load 【CeeD】セットコード一覧表 and 機器記号一覧表 files
+      var ceedCodeXlsxFilePath = Path.Combine( folderPath, ceedCodeFile + ".xlsx" ) ;
+      var ceedCodeXlsFilePath = Path.Combine( folderPath, ceedCodeFile + ".xls" ) ;
+      var equipmentSymbolsXlsxFilePath = Path.Combine( folderPath, equipmentSymbolsFile + ".xlsx" ) ;
+      var equipmentSymbolsXlsFilePath = Path.Combine( folderPath, equipmentSymbolsFile + ".xls" ) ;
+      if ( File.Exists( ceedCodeXlsxFilePath ) ) {
+        isLoadedCeedFile = LoadCeedCodeFile( correctMessage, errorMessage, ceedCodeFile, equipmentSymbolsFile, ceedCodeXlsxFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel) ;
+        listCsvFileModel.Add( new CsvFileModel(ceedCodeFile, renamePathToRelative( ceedCodeXlsxFilePath ), ceedCodeFile + ".xlsx") );
+      }
+
+      if ( File.Exists( ceedCodeXlsFilePath ) && ! isLoadedCeedFile ) {
+        isLoadedCeedFile = LoadCeedCodeFile( correctMessage, errorMessage, ceedCodeFile, equipmentSymbolsFile, ceedCodeXlsFilePath, equipmentSymbolsXlsxFilePath, equipmentSymbolsXlsFilePath, listCsvFileModel ) ;
+        listCsvFileModel.Add( new CsvFileModel(ceedCodeFile, renamePathToRelative(ceedCodeXlsFilePath), ceedCodeFile + ".xls") );
+      }
+
+      string resultMessage = string.Empty ;
+      if ( !correctMessage.ToString().Trim().Equals( defaultCorrectMessage ) ) {
+        resultMessage += correctMessage +"\r";
+      }
+      if ( !errorMessage.ToString().Trim().Equals( defaultErrorMessage ) ) {
+        resultMessage += errorMessage ;
+      }
+      if ( string.IsNullOrEmpty( resultMessage.Trim() ) ) {
+        resultMessage = "指定されたフォルダに条件に一致するファイルが存在しません。" ;
+      }
+      MessageBox.Show( resultMessage,"Result Message" ) ;
+
+      CsvFileModels = listCsvFileModel ;
+    }
+    
+    private bool LoadCeedCodeFile( StringBuilder correctMessage, StringBuilder errorMessage, string ceedCodeFile, string equipmentSymbolsFile, string ceedCodeFilePath, string equipmentSymbolsXlsxFilePath, string equipmentSymbolsXlsFilePath, ObservableCollection<CsvFileModel> listCsvFile )
+    {
+      if ( File.Exists( equipmentSymbolsXlsxFilePath ) ) {
+        _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsxFilePath ) ;
+        if ( _ceedModelData.Any() ) {
+          correctMessage.AppendLine( "\u2022 " + ceedCodeFile ) ;
+          correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
+          
+          listCsvFile.Add( new CsvFileModel(equipmentSymbolsFile, renamePathToRelative(equipmentSymbolsXlsxFilePath), equipmentSymbolsFile + ".xlsx") );
+          return true ;
+        }
+      }
+
+      if ( File.Exists( equipmentSymbolsXlsFilePath ) ) {
+        _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, equipmentSymbolsXlsFilePath) ;
+        if ( _ceedModelData.Any() ) {
+          correctMessage.AppendLine( "\u2022 " + ceedCodeFile ) ;
+          correctMessage.AppendLine( "\u2022 " + equipmentSymbolsFile ) ;
+          
+          listCsvFile.Add( new CsvFileModel(equipmentSymbolsFile, renamePathToRelative(equipmentSymbolsXlsxFilePath), equipmentSymbolsFile + ".xls") );
+          return true ;
+        }
+      }
+
+      _ceedModelData = ExcelToModelConverter.GetAllCeedModelNumber( ceedCodeFilePath, string.Empty ) ;
+      if ( _ceedModelData.Any() ) {
+        correctMessage.AppendLine( "\u2022 " + ceedCodeFile ) ;
+        return true ;
+      }
+
+      errorMessage.AppendLine( $"\u2022 {Path.GetFileName( ceedCodeFilePath )}" ) ;
+
+      if ( File.Exists( equipmentSymbolsXlsxFilePath ) )
+        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsXlsxFilePath )}" ) ;
+      if ( File.Exists( equipmentSymbolsXlsFilePath ) )
+        errorMessage.AppendLine( $"\u2022 {Path.GetFileName( equipmentSymbolsXlsFilePath )}" ) ;
+      return false ;
+    }
+    
+    private bool GetData( string path, int startLine, ModelName modelName, bool showMessageFlag )
+    {
+      var checkFile = true ;
+      const int wacColCount = 10 ;
+      const int conduitColCount = 5 ;
+      const int hsmColCount = 27 ;
+      const int hsCdmColCount = 4 ;
+      const int hmColCount = 12 ;
+      try {
+        using StreamReader reader = new StreamReader( path, Encoding.GetEncoding( "shift-jis" ), true ) ;
+        List<string> lines = new List<string>() ;
+        var startRow = 0 ;
+        while ( ! reader.EndOfStream ) {
+          var line = reader.ReadLine() ;
+          if ( startRow > startLine ) {
+            var values = line!.Split( ',' ) ;
+
+            switch ( modelName ) {
+              case ModelName.WiresAndCables :
+                if ( values.Length < wacColCount ) checkFile = false ;
+                else {
+                  WiresAndCablesModel wiresAndCablesModel = new WiresAndCablesModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ] ) ;
+                  _allWiresAndCablesModels.Add( wiresAndCablesModel ) ;
+                }
+
+                break ;
+              case ModelName.Conduits :
+                if ( values.Length < conduitColCount ) checkFile = false ;
+                else {
+                  ConduitsModel conduitsModel = new ConduitsModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ] ) ;
+                  _allConduitModels.Add( conduitsModel ) ;
+                }
+
+                break ;
+              case ModelName.HiroiSetMasterNormal :
+                if ( values.Length < hsmColCount ) checkFile = false ;
+                else {
+                  HiroiSetMasterModel hiroiSetMasterNormalModel = new HiroiSetMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ], values[ 12 ], values[ 13 ], values[ 14 ], values[ 15 ], values[ 16 ], values[ 17 ], values[ 18 ], values[ 19 ], values[ 20 ], values[ 21 ], values[ 22 ], values[ 23 ], values[ 24 ], values[ 25 ], values[ 26 ] ) ;
+                  _allHiroiSetMasterNormalModels.Add( hiroiSetMasterNormalModel ) ;
+                }
+
+                break ;
+              case ModelName.HiroiSetMasterEco :
+                if ( values.Length < hsmColCount ) checkFile = false ;
+                else {
+                  HiroiSetMasterModel hiroiSetMasterEcoModel = new HiroiSetMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ], values[ 12 ], values[ 13 ], values[ 14 ], values[ 15 ], values[ 16 ], values[ 17 ], values[ 18 ], values[ 19 ], values[ 20 ], values[ 21 ], values[ 22 ], values[ 23 ], values[ 24 ], values[ 25 ], values[ 26 ] ) ;
+                  _allHiroiSetMasterEcoModels.Add( hiroiSetMasterEcoModel ) ;
+                }
+
+                break ;
+              case ModelName.HiroiSetCdMasterNormal :
+                if ( values.Length < hsCdmColCount ) checkFile = false ;
+                else {
+                  var constructionClassification = GetConstructionClassification( values[ 3 ] ) ;
+                  HiroiSetCdMasterModel hiroiSetCdMasterNormalModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], constructionClassification ) ;
+                  _allHiroiSetCdMasterNormalModels.Add( hiroiSetCdMasterNormalModel ) ;
+                }
+
+                break ;
+              case ModelName.HiroiSetCdMasterEco :
+                if ( values.Length < hsCdmColCount ) checkFile = false ;
+                else {
+                  var constructionClassification = GetConstructionClassification( values[ 3 ] ) ;
+                  HiroiSetCdMasterModel hiroiSetCdMasterEcoModel = new HiroiSetCdMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], constructionClassification ) ;
+                  _allHiroiSetCdMasterEcoModels.Add( hiroiSetCdMasterEcoModel ) ;
+                }
+
+                break ;
+              case ModelName.HiroiMaster :
+                if ( values.Length < hmColCount ) checkFile = false ;
+                else {
+                  HiroiMasterModel hiroiMasterModel = new HiroiMasterModel( values[ 0 ], values[ 1 ], values[ 2 ], values[ 3 ], values[ 4 ], values[ 5 ], values[ 6 ], values[ 7 ], values[ 8 ], values[ 9 ], values[ 10 ], values[ 11 ] ) ;
+                  _allHiroiMasterModels.Add( hiroiMasterModel ) ;
+                }
+
+                break ;
+              default :
+                throw new ArgumentOutOfRangeException( nameof( modelName ), modelName, null ) ;
+            }
+          }
+
+          if ( ! checkFile ) {
+            break ;
+          }
+
+          startRow++ ;
+        }
+
+        reader.Close() ;
+        reader.Dispose() ;
+        if ( ! checkFile ) {
+          if (showMessageFlag ) {
+            MessageBox.Show( "Incorrect file format.", "Error Message" ) ;
+          }
+
+          return false ;
+        }
+        else {
+          if (showMessageFlag ) {
+            MessageBox.Show( "Load file successful.", "Result Message" ) ;
+          }
+
+          return true ;
+        }
+      }
+      catch ( Exception ) {
+        if (showMessageFlag ) {
+          MessageBox.Show( "Load file failed.", "Error Message" ) ;
+        }
+
+        return false ;
+      }
+    }
+    
+    private string GetConstructionClassification( string oldConstructionClassification )
+    {
+      string newConstructionClassification ;
+      if ( oldConstructionClassification == OldConstructionClassificationType.天井ふところ.GetFieldName() ) {
+        newConstructionClassification = NewConstructionClassificationType.天井コロガシ.GetFieldName() ;
+      }
+      else if ( oldConstructionClassification == OldConstructionClassificationType.床隠蔽.GetFieldName() ) {
+        newConstructionClassification = NewConstructionClassificationType.打ち込み.GetFieldName() ;
+      }
+      else if ( oldConstructionClassification == OldConstructionClassificationType.二重床.GetFieldName() ) {
+        newConstructionClassification = NewConstructionClassificationType.フリーアクセス.GetFieldName() ;
+      }
+      else {
+        newConstructionClassification = oldConstructionClassification ;
+      }
+
+      return newConstructionClassification ;
+    }
+
+    private string renamePathToRelative(string path)
+    {
+      var filePath = path.Split( '\\' ) ;
+      var length = filePath.Length ;
+      StringBuilder stringPath = new StringBuilder() ;
+      stringPath.Append( filePath[ 0 ] + @"\" ) ;
+      var check = length - 2 ;
+      for ( int i = 1 ; i < length - 2 ; i++ ) {
+        stringPath.Append( @"..\" ) ;
+      }
+
+      stringPath.Append( filePath[ length - 2 ] + @"\" ) ;
+      stringPath.Append( filePath[ length - 1 ]) ;
+      return stringPath.ToString() ;
+    }
+    
+    private enum NewConstructionClassificationType
+    {
+      天井コロガシ,
+      打ち込み,
+      フリーアクセス
+    }
+    
+    private enum OldConstructionClassificationType
+    {
+      天井ふところ,
+      床隠蔽,
+      二重床
+    }
+    
+    private enum ModelName
+    {
+      WiresAndCables,
+      Conduits,
+      HiroiSetMasterNormal,
+      HiroiSetMasterEco,
+      HiroiSetCdMasterNormal,
+      HiroiSetCdMasterEco,
+      HiroiMaster
+    }
+  }
+
+  public class CsvFileModel
+  {
+    public string CsvName { get ; set ; } 
+    
+    public string CsvFilePath { get ; set ; }
+    
+    public string CsvFileName { get ; set ; } 
+
+    public CsvFileModel( string csvName, string csvFilePath, string csvFileName )
+    {
+      CsvName = csvName ;
+      CsvFilePath = csvFilePath ;
+      CsvFileName = csvFileName ;
+    }
+    
   }
 }
