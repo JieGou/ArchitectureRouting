@@ -468,7 +468,7 @@
         <string>漏水帯</string>
 
         <key>Electrical.App.Panels.Routing.MenuOrganization</key>
-        <string>メニュー整理</string>
+        <string>Menu</string>
         
         <key>Electrical.App.Panels.Routing.MenuOrganization.Setting</key>
         <string>設定</string>
