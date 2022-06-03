@@ -39,6 +39,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private List<CeedModel> _ceedModels ;
     private List<CeedModel> _usingCeedModel ;
     private List<CeedModel> _usedCeedModels ;
+    private List<CeedModel> _previousCeedModels ;
 
     public DataGrid DtGrid  ;
     
@@ -85,6 +86,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _ceedModels = new() ;
         _usingCeedModel = new List<CeedModel>() ;
         _usedCeedModels = new List<CeedModel>() ;
+        _previousCeedModels = new List<CeedModel>() ;
         CeedModels = new() ;
       }
       else {
@@ -92,12 +94,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         _ceedModels = oldCeedStorable.CeedModelData ;
         _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
         _usedCeedModels = oldCeedStorable.CeedModelData ;
+        _previousCeedModels = new List<CeedModel>( _usedCeedModels ) ;
         CeedModels = new( _ceedModels ) ;
         IsShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
         IsShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
         AddModelNumber( CeedModels ) ;
         if ( _usingCeedModel.Any() )
           IsExistUsingCode = true ;
+        if ( ! _ceedModels.Any() ) IsShowDiff = true ;
+        else IsShowDiff = oldCeedStorable.IsDiff ;
       }
     }
 
@@ -176,6 +181,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var ceedModelData =
           ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
         if ( ! ceedModelData.Any() ) return ;
+        _previousCeedModels = new List<CeedModel>( CeedModels ) ;
         CheckChangeColor( ceedModelData );
         ceedStorable.CeedModelData = ceedModelData ;
         ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
@@ -184,7 +190,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         checkBox.Visibility = Visibility.Hidden ;
         checkBox.IsChecked = false ;
         IsShowOnlyUsingCode = false ;
-        IsShowDiff = true ;
+        //IsShowDiff = true ;
 
         try {
           using Transaction t = new( _document, "Save data" ) ;
@@ -214,6 +220,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         t.Start() ;
         ceedStorable.IsShowCeedModelNumber = IsShowCeedModelNumber ;
         ceedStorable.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
+        ceedStorable.IsDiff = IsShowDiff ;
         ceedStorable.Save() ;
         t.Commit() ;
       }
@@ -637,7 +644,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       for ( int i = 0 ; i < ceedModels.Count() ; i++ ) {
         CeedModel item = ceedModels[ i ] ;
-        var existCeedModels =  _usedCeedModels ;
+        var existCeedModels =  _previousCeedModels ;
         var itemExistCeedModel = existCeedModels.Find( x =>
           x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber &&
           x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol &&

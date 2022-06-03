@@ -40,15 +40,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       if ( ViewModel.IsExistUsingCode ) {
         CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
       }
-      Loaded += OnLoaded ;
     }
-
-    private void OnLoaded( object sender, EventArgs args )
-    {
-      CbShowDiff.IsChecked = true ;
-      Loaded -= OnLoaded ;
-    }
-
+    
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
       ViewModel.Load(CbShowOnlyUsingCode);
