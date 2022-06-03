@@ -147,20 +147,11 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
-            
-            <Button 
-                    Content="Apply"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Command="{ Binding ApplyCommand}"
-                    CommandParameter="{Binding ElementName=WdDefaultSettingDialog}"
-                    Margin="10,0,10,-30"
-                    Width="100" />
         </Grid>
-
-       
         
-         <Grid Grid.Row="3" Margin="5,0,5,10" VerticalAlignment="Top">
+        
+        
+         <Grid Grid.Row="3" Margin="5,0,5,0" VerticalAlignment="Top">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="110" />
@@ -168,9 +159,9 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Top" Orientation="Vertical" Margin="0, 0,10,0">
-                    <Button Grid.Column="0" x:Name="BtnLoadDefaultDb"
+                    <Button 
                             Content="デフォルト読込"
-                            Click="BtnLoadDefaultDb_OnClick"
+                            Command="{ Binding LoadDefaultDbCommand}"
                             HorizontalAlignment="Stretch" />
                 </StackPanel>
 
@@ -191,6 +182,14 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
+             <Button 
+                 Content="Apply"
+                 HorizontalAlignment="Right"
+                 VerticalAlignment="Bottom"
+                 Command="{ Binding ApplyCommand}"
+                 CommandParameter="{Binding ElementName=WdDefaultSettingDialog}"
+                 Margin="10,0,10,-30"
+                 Width="100" />
         </Grid>
         
     </Grid>

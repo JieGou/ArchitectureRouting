@@ -106,6 +106,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     public ICommand LoadDwgFilesCommand => new RelayCommand( LoadDwgFiles ) ;
     public ICommand AddImportDwgMappingModelCommand => new RelayCommand( AddImportDwgMappingModel ) ;
+    
+    public ICommand LoadDefaultDbCommand => new RelayCommand( LoadDefaultDb ) ;
+    
     public DefaultSettingViewModel( UIDocument uiDocument, DefaultSettingStorable defaultSettingStorable, int scale, string activeViewName)
     {
       SelectedEcoNormalModeIndex = defaultSettingStorable.EcoSettingData.IsEcoMode ? 1 : 0 ;
@@ -128,6 +131,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       _allHiroiSetCdMasterEcoModels = new List<HiroiSetCdMasterModel>() ;
       _allHiroiMasterModels = new List<HiroiMasterModel>() ;
       _ceedModelData = new List<CeedModel>() ;
+      GetCsvFiles( defaultSettingStorable ) ;
+    }
+    
+    private void GetCsvFiles( DefaultSettingStorable defaultSettingStorable)
+    {
+      if ( defaultSettingStorable.CsvFileData.Any() ) {
+        CsvFileModels = new ObservableCollection<CsvFileModel>( defaultSettingStorable.CsvFileData ) ;
+      }
     }
 
     private void GetImportDwgMappingModelsAndFileItems( DefaultSettingStorable defaultSettingStorable, string activeViewName )
@@ -325,6 +336,24 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
               t.Start() ;
               ceedStorable.Save() ;
               document.MakeCertainAllConnectorFamilies() ;
+              t.Commit() ;
+            }
+            catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+            }
+          }
+        }
+        progressData?.ThrowIfCanceled() ;
+      }
+      
+      using ( var progressData = progress?.Reserve( 0.9 ) ) {
+        DefaultSettingStorable defaultSettingStorable = document.GetDefaultSettingStorable() ;
+        {
+          if ( _csvFileModels.Any() ) {
+            defaultSettingStorable.CsvFileData = new List<CsvFileModel>(_csvFileModels)  ;
+            try {
+              using Transaction t = new Transaction( document, "Save Csv File data" ) ;
+              t.Start() ;
+              defaultSettingStorable.Save() ;
               t.Commit() ;
             }
             catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
@@ -744,22 +773,5 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       HiroiSetCdMasterEco,
       HiroiMaster
     }
-  }
-
-  public class CsvFileModel
-  {
-    public string CsvName { get ; set ; } 
-    
-    public string CsvFilePath { get ; set ; }
-    
-    public string CsvFileName { get ; set ; } 
-
-    public CsvFileModel( string csvName, string csvFilePath, string csvFileName )
-    {
-      CsvName = csvName ;
-      CsvFilePath = csvFilePath ;
-      CsvFileName = csvFileName ;
-    }
-    
   }
 }
