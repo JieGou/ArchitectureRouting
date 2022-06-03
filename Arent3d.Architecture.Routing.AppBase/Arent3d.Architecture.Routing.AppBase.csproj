@@ -17,6 +17,9 @@
     <EmbeddedResource Remove="Forms\UserControls\**" />
     <None Remove="Forms\UserControls\**" />
     <Page Remove="Forms\UserControls\**" />
+    <None Update="resources\ElectricalCategory.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

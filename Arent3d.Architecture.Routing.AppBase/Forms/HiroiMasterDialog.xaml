@@ -27,7 +27,7 @@
                 <DataGridTextColumn Header="部材コード" Width="150" Binding="{Binding Buzaicd, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/>
                 <DataGridTextColumn Header="品名" Width="150" Binding="{Binding Hinmei, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/> 
                 <DataGridTextColumn Header="規格" Width="300"  Binding="{Binding Kikaku, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True"/>
-                <DataGridTextColumn Header="単位" Width="100" Binding="{Binding Tani, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" /> 
+                <DataGridTextColumn Header="単位" Width="100" Binding="{Binding Tani, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" /> 
             </DataGrid.Columns>
             <DataGrid.InputBindings>
                 <MouseBinding
