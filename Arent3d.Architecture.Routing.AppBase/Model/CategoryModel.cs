@@ -3,7 +3,7 @@ using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Model
 {
-  public class FolderModel : NotifyPropertyChanged
+  public class CategoryModel : NotifyPropertyChanged
   {
     private string? _name ;
 
@@ -53,6 +53,6 @@ namespace Arent3d.Architecture.Routing.AppBase.Model
       }
     }
     
-    public List<FolderModel> Folders { get ; set ; } = new() ;
+    public List<CategoryModel> SubCategories { get ; set ; } = new() ;
   }
 }

@@ -40,11 +40,20 @@
 
         <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Right">
             <Label Content="表示機器記号" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-            <ComboBox Name="CmbDeviceSymbols" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbDeviceSymbols_TextChanged" KeyDown="CmbModelNumbers_KeyDown" />
+            <ComboBox Name="CmbDeviceSymbols" IsEditable="True" Width="200" Height="27" 
+                      TextBoxBase.TextChanged="CmbDeviceSymbols_TextChanged" 
+                      KeyDown="CmbModelNumbers_KeyDown" 
+                      IsTextSearchEnabled="False" />
             <Label Content="形番" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,5,5,5" />
-            <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" KeyDown="CmbModelNumbers_KeyDown" />
+            <ComboBox Name="CmbModelNumbers" IsEditable="True" Width="200" Height="27" 
+                      TextBoxBase.TextChanged="CmbModelNumbers_TextChanged" 
+                      KeyDown="CmbModelNumbers_KeyDown" 
+                      IsTextSearchEnabled="False" />
             <Label Content="セットコード" Name="LbCeedModelNumbers" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,5,10,5" Visibility="Hidden" />
-            <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" KeyDown="CmbModelNumbers_KeyDown" Visibility="Hidden" />
+            <ComboBox Name="CmbCeedModelNumbers" IsEditable="True" Width="200" Height="27" 
+                      TextBoxBase.TextChanged="CmbCeedModelNumbers_TextChanged" 
+                      KeyDown="CmbModelNumbers_KeyDown" Visibility="Hidden" 
+                      IsTextSearchEnabled="False" />
             <Button Content="Search"
                     Click="Button_Search"
                     Margin="20,5,5,5"
@@ -73,15 +82,15 @@
 
 
         <DockPanel Grid.Column="0" Grid.Row="2" LastChildFill="True" Margin="10, 0" Height="300" VerticalAlignment="Top">
-            <Label DockPanel.Dock="Top" Content="Folder" FontWeight="Bold" Padding="0 0 0 5" />
-            <TreeView x:Name="FolderTreeView" VerticalAlignment="Stretch" VerticalContentAlignment="Top" Padding="0 5 5 5"
+            <Label DockPanel.Dock="Top" Content="形番orセットコードの選択でプレビュー可能" FontWeight="Bold" Padding="0 0 0 5" />
+            <TreeView x:Name="CategoryTreeView" VerticalAlignment="Stretch" VerticalContentAlignment="Top" Padding="0 5 5 5"
                       ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      BorderBrush="LightGray" BorderThickness="1" ItemsSource="{Binding Path=Folders}">
+                      BorderBrush="LightGray" BorderThickness="1" ItemsSource="{Binding Path=Categories}">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="MouseLeftButtonUp">
                         <i:InvokeCommandAction
                             Command="{Binding SelectedItemCommand}"
-                            CommandParameter="{Binding ElementName = FolderTreeView}" />
+                            CommandParameter="{Binding ElementName = CategoryTreeView}" />
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
                 <TreeView.ItemContainerStyle>
@@ -101,7 +110,47 @@
                 <TreeView.Resources>
                     <SolidColorBrush Color="Transparent" x:Key="{x:Static SystemColors.HighlightBrushKey}" />
                     <SolidColorBrush Color="Black" x:Key="{x:Static SystemColors.HighlightTextBrushKey}" />
-                    <HierarchicalDataTemplate DataType="{x:Type local:FolderModel}" ItemsSource="{Binding Folders}">
+                    <HierarchicalDataTemplate DataType="{x:Type local:CategoryModel}" ItemsSource="{Binding Categories}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Width="16" Height="16" Margin="0 0 2.5 0" RenderOptions.BitmapScalingMode="HighQuality"
+                                   Source="../resources/icon_folder_16x16.png" />
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                </TreeView.Resources>
+            </TreeView>
+        </DockPanel>
+        
+        <DockPanel Grid.Column="0" Grid.Row="2" LastChildFill="True" Margin="10, 0" Height="300" VerticalAlignment="Bottom">
+            <Label DockPanel.Dock="Top" Content="機器記号のみでプレビュー可能" FontWeight="Bold" Padding="0 0 0 5" />
+            <TreeView x:Name="CategoryPreviewTreeView" VerticalAlignment="Stretch" VerticalContentAlignment="Top" Padding="0 5 5 5"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      BorderBrush="LightGray" BorderThickness="1" ItemsSource="{Binding Path=CategoriesPreview}">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseLeftButtonUp">
+                        <i:InvokeCommandAction
+                            Command="{Binding SelectedCategoryPreviewCommand}"
+                            CommandParameter="{Binding ElementName = CategoryPreviewTreeView}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="{x:Type TreeViewItem}">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="FontWeight" Value="Bold" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter Property="FontWeight" Value="Normal" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                <TreeView.Resources>
+                    <SolidColorBrush Color="Transparent" x:Key="{x:Static SystemColors.HighlightBrushKey}" />
+                    <SolidColorBrush Color="Black" x:Key="{x:Static SystemColors.HighlightTextBrushKey}" />
+                    <HierarchicalDataTemplate DataType="{x:Type local:CategoryModel}" ItemsSource="{Binding CategoriesPreview}">
                         <StackPanel Orientation="Horizontal">
                             <Image Width="16" Height="16" Margin="0 0 2.5 0" RenderOptions.BitmapScalingMode="HighQuality"
                                    Source="../resources/icon_folder_16x16.png" />
@@ -112,40 +161,59 @@
             </TreeView>
         </DockPanel>
 
-        <DataGrid x:Name="DtGrid" Grid.Column="1" Grid.Row="2" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False">
-            <DataGrid.Resources>
-                <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
-                    <Setter Property="Padding" Value="-2" />
-                    <Style.Triggers>
-                        <Trigger Property="Validation.HasError" Value="True">
-                            <Setter Property="ToolTip"
-                                    Value="{Binding RelativeSource={RelativeSource Self},
-                    Path=(Validation.Errors)[0].ErrorContent}" />
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </DataGrid.Resources>
+        <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Horizontal" Margin="10, 0">
+            <DataGrid x:Name="DtGrid" ItemsSource="{Binding CeedModels}" CanUserAddRows="False" AutoGenerateColumns="False" Width="750">
+                <DataGrid.Resources>
+                    <Style x:Key="ErrorStyle" TargetType="{x:Type TextBox}">
+                        <Setter Property="Padding" Value="-2" />
+                        <Style.Triggers>
+                            <Trigger Property="Validation.HasError" Value="True">
+                                <Setter Property="ToolTip"
+                                        Value="{Binding RelativeSource={RelativeSource Self},
+                                        Path=(Validation.Errors)[0].ErrorContent}" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.Resources>
 
-            <DataGrid.Columns>
+                <DataGrid.Columns>
 
-                <DataGridTextColumn Header="セットコード" Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
+                    <DataGridTextColumn Header="セットコード" Binding="{Binding CeedSetCode, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="100" />
 
-                <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="150" Visibility="Hidden" />
+                    <DataGridTextColumn Header="CeeD型番" Binding="{Binding CeedModelNumber, ValidatesOnExceptions=True}" CanUserSort="True" IsReadOnly="True" MinWidth="150" Visibility="Hidden" />
 
-                <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="140" />
-                
-                <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" Width="160">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style>
-                            <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                
-                <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
+                    <DataGridTextColumn Header="形番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="140" />
 
-            </DataGrid.Columns>
-        </DataGrid>
+                    <DataGridTextColumn Header="条件" Binding="{Binding Condition, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" Width="160">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style>
+                                <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="一般表示用機器記号" Binding="{Binding GeneralDisplayDeviceSymbol, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="150" />
+
+                </DataGrid.Columns>
+            </DataGrid>
+            <GroupBox Header="プレビュー" DockPanel.Dock="Left" Margin="20, 0" Width="160">
+                <ListView x:Name="MyListPreview" ItemsSource="{Binding PreviewList}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Image  Source="{Binding FloorPlanImages}" Stretch="None" />
+                                <TextBlock Text="{Binding FloorPlanSymbol}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.RenderTransform>
+                                        <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
+                                    </TextBlock.RenderTransform>
+                                </TextBlock>
+                                <TextBlock  Text="{Binding GeneralDisplayDeviceSymbol }" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </GroupBox>
+        </StackPanel>
 
         <Button Grid.Row="3" Grid.Column="1"
                 Content="Reset"
