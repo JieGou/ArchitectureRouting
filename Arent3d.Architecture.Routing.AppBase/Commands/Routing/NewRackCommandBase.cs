@@ -331,7 +331,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       else {
         // move cable rack to under conduit
-        instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
+        instance.Location.Move( new XYZ( 0, 0, -30d.MillimetersToRevitUnits() ) ) ; // TODO may be must change when FamilyType change
       }
 
       return instance ;
@@ -379,7 +379,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       
       // move cable rack to under conduit
-      instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
+      instance.Location.Move( new XYZ( 0, 0, -30d.MillimetersToRevitUnits() ) ) ; // TODO may be must change when FamilyType change
 
       return instance ;
     }
