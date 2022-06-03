@@ -369,7 +369,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private bool AddPickUpConnectors( IReadOnlyCollection<Element> allConnectors, List<Element> pickUpConnectors, string routeName, List<int> pickUpNumbers, Dictionary<string, string> dictMaterialCode )
     {
       var toConnector = GetConnectorOfRoute( allConnectors, routeName, false ) ;
-      var isPickUpByFromConnector = toConnector != null && ( toConnector.Name.Contains( "Pressure" ) || toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ) ;
+      var isPickUpByFromConnector = toConnector != null && ( toConnector.Name == ElectricalRoutingFamilyType.PressureConnector.GetFamilyName() || toConnector.Name == ElectricalRoutingFamilyType.ToJboxConnector.GetFamilyName() ) ;
       if( isPickUpByFromConnector )
         toConnector = GetConnectorOfRoute( allConnectors, routeName, true ) ;
       if ( toConnector == null || toConnector.GroupId == ElementId.InvalidElementId ) return false ;

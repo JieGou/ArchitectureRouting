@@ -367,6 +367,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class PullBoxRoutingCommandButton
           {
           }
+          
+          [Button( typeof( PressureGuidingTubeCommand ), OnlyInitialized = true )]
+          private static class PressureGuidingTubeButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.routing.selection.range.routing", TitleKey = "Electrical.App.Panels.Routing.Routing.SelectionRangeRouting" )]
@@ -535,10 +538,8 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       [Panel( "arent3d.architecture.routing.demo", TitleKey = "Electrical.App.Panels.Routing.Demo" )]
       private static class DemoPanel
       {
-        [Button( typeof( Demo_DeleteAllRoutedElements ) )]
-        private static class Demo_DeleteAllRoutedElementsCommandButton
-        {
-        }
+        [Button( typeof( DemoDeleteAllRoutedElements ) )]
+        private static class DemoDeleteAllRoutedElementsCommandButton { }
       }
 
       [Panel( "arent3d.architecture.rc.debug", TitleKey = "App.Panels.Rc.Debug" )]
