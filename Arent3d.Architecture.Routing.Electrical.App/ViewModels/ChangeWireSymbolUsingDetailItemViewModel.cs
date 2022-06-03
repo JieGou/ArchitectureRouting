@@ -181,8 +181,6 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
       _settingStorable.Save();
       trans.Commit() ;
       
-      ChangeWireTypeCommand.RefreshView( _uiDocument.Document, _uiDocument.ActiveView ) ;
-
       transactionGroup.Assimilate() ;
     }
     

@@ -2,6 +2,7 @@ using System ;
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Revit ;
+using Arent3d.Revit.I18n ;
 using Arent3d.Utility ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.DB.Electrical ;
@@ -118,9 +119,15 @@ namespace Arent3d.Architecture.Routing
 
     private static MEPCurveType? GetBestForAllMEPCurveType( Document document, IEnumerable<Connector> connectors, MEPSystemType? systemType )
     {
+      var connectorList = connectors.Where( c => GetSystemClassificationInfo( c ).IsCompatibleTo( systemType ) ).ToList() ;
+      if ( connectorList.Any() && GetSystemClassificationInfo( connectorList.First() ).AddInType == AddInType.Electrical ) {
+        var arentConduitTypeName = "Routing.Revit.DummyConduit.ConduitTypeName".GetDocumentStringByKeyOrDefault( document, "Arent電線" ) ;
+        var arentConduitType = document.GetAllElements<MEPCurveType>().FirstOrDefault( c => c.Name == arentConduitTypeName ) ;
+        if ( arentConduitType != null ) return arentConduitType ;
+      }
       var diameterTolerance = document.Application.VertexTolerance ;
       Dictionary<int, CompatibilityPriority>? available = null ;
-      foreach ( var connector in connectors.Where( c => GetSystemClassificationInfo( c ).IsCompatibleTo( systemType ) ) ) {
+      foreach ( var connector in connectorList ) {
         var (concreteType, getCompatibilityPriority) = GetCompatibilityPriorityFunc( connector, diameterTolerance ) ;
         var curveTypes = document.GetAllElements<MEPCurveType>( concreteType ) ;
         if ( null == available ) {
