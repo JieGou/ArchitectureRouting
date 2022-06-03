@@ -44,7 +44,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return MEPSystemClassificationInfo.CableTrayConduit ;
     }
 
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, RoomSelectState roomSelectState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }

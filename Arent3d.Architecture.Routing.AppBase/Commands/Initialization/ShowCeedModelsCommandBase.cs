@@ -2,6 +2,7 @@
 using System.Collections.Generic ;
 using System.Linq ;
 using Arent3d.Architecture.Routing.AppBase.Forms ;
+using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
 using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Revit ;
@@ -16,7 +17,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
 {
   public abstract class ShowCeedModelsCommandBase : IExternalCommand
   {
-    private const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
+    public const string DeviceSymbolTextNoteTypeName = "Left_2.5mm_DeviceSymbolText" ;
     private const string ConditionTextNoteTypeName = "1.5mm_ConditionText" ;
     private const string DefaultConstructionItem = "未設定" ;
 
@@ -26,13 +27,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     {
       const string switch2DSymbol = "2Dシンボル切り替え" ;
       const string symbolMagnification = "シンボル倍率" ;
+      const string grade3 = "グレード3" ;
       var doc = commandData.Application.ActiveUIDocument.Document ;
+      var defaultSymbolMagnification = ImportDwgMappingModel.GetDefaultSymbolMagnification( doc ) ;
       
       var viewModel = new CeedViewModel( commandData ) ;
       var dlgCeedModel = new CeedModelDialog( viewModel ) ;
-      
-      var data = doc.GetSetupPrintStorable() ;
-      var defaultSymbolMagnification = data.Scale * data.Ratio;
       
       dlgCeedModel.ShowDialog() ;
       if ( ! ( dlgCeedModel.DialogResult ?? false ) ) return Result.Cancelled ;
@@ -47,7 +47,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         var level = uiDoc.ActiveView.GenLevel ;
         var heightOfConnector = doc.GetHeightSettingStorable()[ level ].HeightOfConnectors.MillimetersToRevitUnits() ;
         element = GenerateConnector( uiDoc, originX, originY, heightOfConnector, level, viewModel.SelectedFloorPlanType??string.Empty ) ;
-        var ceedCode = viewModel.SelectedCeedCode + "-" + viewModel.SelectedDeviceSymbol + "-" + viewModel.SelectedModelNum ;
+        var ceedCode = string.Join( ":", viewModel.SelectedCeedCode, viewModel.SelectedDeviceSymbol, viewModel.SelectedModelNumber ) ;
         if ( element is FamilyInstance familyInstance ) {
           element.SetProperty( ElectricalRoutingElementParameter.CeedCode, ceedCode ) ;
           element.SetProperty( ElectricalRoutingElementParameter.ConstructionItem, DefaultConstructionItem ) ;
@@ -104,6 +104,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
         if ( isHasParameterSwitch2DSymbol ) element.SetProperty( switch2DSymbol, true ) ;
         var isHasParameterSymbolMagnification = element.HasParameter( symbolMagnification ) ;
         if ( isHasParameterSymbolMagnification ) element.SetProperty( symbolMagnification, defaultSymbolMagnification ) ;
+        var isHasParameterGrade = element.HasParameter( grade3 ) ;
+        if ( isHasParameterGrade ) element.SetProperty( grade3, doc.GetDefaultSettingStorable().GradeSettingData.GradeMode == 3 );
       }
       doc.Create.NewGroup( groupIds ) ;
       t.Commit() ;
@@ -155,7 +157,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
     private void SetIsEcoMode(UIDocument uiDocument, FamilyInstance instance)
     { 
       if ( false == instance.TryGetProperty( ElectricalRoutingElementParameter.IsEcoMode, out string? _ ) ) return ;
-      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetEcoSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
+      instance.SetProperty( ElectricalRoutingElementParameter.IsEcoMode, uiDocument.Document.GetDefaultSettingStorable().EcoSettingData.IsEcoMode.ToString() ) ;
     }
   }
 }

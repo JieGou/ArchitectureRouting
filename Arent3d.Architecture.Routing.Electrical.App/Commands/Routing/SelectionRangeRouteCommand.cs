@@ -50,7 +50,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return PickCommandUtil.CreateBranchingRouteEndPoint( newPickResult, anotherPickResult, routeProperty, classificationInfo, AppCommandSettings.FittingSizeCalculator, newPickIsFrom ) ;
     }
 
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, SelectState selectState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }

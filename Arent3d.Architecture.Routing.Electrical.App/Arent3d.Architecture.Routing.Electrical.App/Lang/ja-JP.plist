@@ -67,6 +67,12 @@
         <key>Electrical.App.Commands.Routing.AdjustLeaderCommand</key>
         <string>Adjust Leader</string>
 
+        <key>Electrical.App.Commands.Routing.ChangeWireSymbolUsingFilterCommand</key>
+        <string>Location&#xA;By Filter</string>
+
+        <key>Electrical.App.Commands.Routing.ChangeWireSymbolUsingDetailItemCommand</key>
+        <string>Location&#xA;By Detail</string>
+
         <key>Electrical.App.Commands.Rack.ExportRacksCommand</key>
         <string>Export&#xA;PS</string>
 
@@ -208,17 +214,26 @@
         <key>Electrical.App.Commands.Initialization.SwitchEcoNormalModeCommand</key>
         <string>エコモード切替</string>
 
-        <key>Electrical.App.Commands.Initialization.RegisterSymbolCommand</key>
-        <string>シンボル登録</string>
-
-        <key>Electrical.App.Commands.Initialization.SetupPrintCommand</key>
-        <string>尺度設定</string>
-
         <key>Electrical.App.Commands.Annotation.SingleBorderCommand</key>
         <string>一重テキストボックス</string>
 
         <key>Electrical.App.Commands.Annotation.DoubleBorderCommand</key>
         <string>二重テキストボックス</string>
+
+        <key>Electrical.App.Commands.Initialization.ShowDialogCreateTableByFloorCommand</key>
+        <string>階毎の表作成</string>
+        
+        <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
+        <string>部材情報付きシンボル</string>
+
+        <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
+        <string>プルボックス作成</string>
+
+        <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
+        <string>電気シンボル集計</string>
+
+        <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregationAll</key>
+        <string>電気シンボル集計(ALL)</string>
 
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
@@ -383,6 +398,9 @@
 
         <key>Dialog.Electrical.SwitchEcoNormalModeDialog.EcoNormalMode.NormalMode</key>
         <string>ノーマルモード</string>
+
+        <key>Revit.Electrical.CreateSchedule.Message</key>
+        <string>集計表 "{0}" を作成しました</string>
         
         <!-- Element Names -->
         <key>Routing.Revit.DummyConduit.ElbowTypeName</key>
@@ -435,12 +453,37 @@
         <key>Message.AppBase.Commands.Routing.SelectionRangeRouteCommandBase.ErrorMessageUnableToRouteDueToEnvelope</key>
         <string>選択範囲はenvelopeの干渉回避が不可能なため、envelopeの位置又はコネクタの位置を再調整してください。</string>
 
+        <!-- File Names -->
+        <key>Electrical.App.Commands.Initialization.ExportDWGCommand.ArentExportLayersFile</key>
+        <string>Arent-export-layers-jp.txt</string>
+        
         <!-- Change Grade -->
         <key>Dialog.Electrical.ChangeFamilyGradeDialog.GradeMode.Grade</key>
         <string>グレード</string>
 
         <key>Electrical.App.Commands.Initialization.RegistrationOfBoardDataCommand</key>
         <string>盤登録</string>
+
+        <key>Electrical.App.Commands.Routing.LeakRoutingCommand</key>
+        <string>漏水帯</string>
+
+        <key>Electrical.App.Panels.Routing.MenuOrganization</key>
+        <string>Menu</string>
+        
+        <key>Electrical.App.Panels.Routing.MenuOrganization.Setting</key>
+        <string>設定</string>
+        
+        <key>Electrical.App.Panels.Routing.MenuOrganization.Confirmation</key>
+        <string>確認</string>
+        
+        <key>Electrical.App.Panels.Routing.MenuOrganization.MakingThePlan</key>
+        <string>図面作成</string>
+        
+        <key>Electrical.App.Panels.Routing.MenuOrganization.CreateTable</key>
+        <string>表作成</string>
+        
+        <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
+        <string>仮プルボックスの配</string>
     </dict>
 </plist>
 

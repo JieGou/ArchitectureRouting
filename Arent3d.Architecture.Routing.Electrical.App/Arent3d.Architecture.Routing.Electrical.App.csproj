@@ -68,6 +68,12 @@
         <None Update="Arent3d.Architecture.Routing.Electrical.App\Lang\ja-JP.plist">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="resources\Arent-export-layers.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="resources\Arent-export-layers-jp.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -106,6 +112,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="morelinq" Version="3.3.2" />
       <PackageReference Include="System.Windows.Interactivity.WPF" Version="2.0.20525" />
       <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
     </ItemGroup>

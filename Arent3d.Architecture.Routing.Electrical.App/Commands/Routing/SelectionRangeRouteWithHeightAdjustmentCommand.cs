@@ -17,7 +17,6 @@ using Arent3d.Revit.UI ;
 using Autodesk.Revit.Attributes ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
-using ImageType = Arent3d.Revit.UI.ImageType ;
 
 namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
 {
@@ -125,7 +124,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
     private static RangeRangeRouteWithHeightAdjustmentPropertyDialog ShowDialog( Document document, AddInType addInType, ElementId fromLevelId, ElementId toLevelId )
     {
       var routeChoiceSpec = new RoutePropertyTypeList( document, addInType, fromLevelId, toLevelId ) ;
-      var sv = new RangeRangeRouteWithHeightAdjustmentPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec ) ) ;
+      var sv = new RangeRangeRouteWithHeightAdjustmentPropertyDialog( document, routeChoiceSpec, new RouteProperties( document, routeChoiceSpec, addInType ) ) ;
       sv.ShowDialog() ;
 
       return sv ;
@@ -285,8 +284,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       // change color connectors
       var allConnectors = new List<FamilyInstance> { powerConnector } ;
       allConnectors.AddRange( sensorConnectors ) ;
-      var color = new Color( 0, 0, 0 ) ;
-      ConfirmUnsetCommandBase.ChangeElementColor( document, allConnectors, color ) ;
+      ConfirmUnsetCommandBase.ResetElementColor( document, allConnectors ) ;
       return result ;
 
       static IEnumerable<FamilyInstance> EliminateSamePassPoints( FamilyInstance? firstPassPoint, IEnumerable<FamilyInstance> passPoints )
@@ -341,7 +339,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Routing
       return curveType.Category.Name ;
     }
 
-    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue )
+    protected override void AfterRouteGenerated( Document document, IReadOnlyCollection<Route> executeResultValue, SelectState selectState )
     {
       ElectricalCommandUtil.SetPropertyForCable( document, executeResultValue ) ;
     }
