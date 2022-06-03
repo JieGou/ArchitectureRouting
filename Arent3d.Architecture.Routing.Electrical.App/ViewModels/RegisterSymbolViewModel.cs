@@ -129,6 +129,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.ViewModels
             folderBrowserDialog.Reset() ;
             folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer ;
             folderBrowserDialog.Description = $"Select folder contains the {string.Join( ",", PatternSearchings )} file extension." ;
+            folderBrowserDialog.SelectedPath = _registerSymbolStorable.BrowseFolderPath ;
             if ( folderBrowserDialog.ShowDialog() == DialogResult.OK && ! string.IsNullOrWhiteSpace( folderBrowserDialog.SelectedPath ) ) {
               _registerSymbolStorable.BrowseFolderPath = folderBrowserDialog.SelectedPath ;
               var folderModel = GetFolderModel( _registerSymbolStorable.BrowseFolderPath ) ;
