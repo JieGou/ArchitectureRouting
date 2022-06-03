@@ -88,6 +88,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       
       trans.Commit() ;
 
+      RefreshView( document, view ) ;
+
       transactionGroup.Assimilate() ;
     }
 
@@ -109,7 +111,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
     public static (Dictionary<Line, string> lineConduits, Dictionary<Curve, string> curveHorizontal) GetLocationConduits( Document document, View view, List<Element> elements )
     {
       var conduits = elements.OfType<Conduit>().ToList() ;
-      var curveConduits = GeometryHelper.GetCurveFromElements( document, view, conduits ) ;
+      var curveConduits = GeometryHelper.GetCurveFromElements( view, conduits ) ;
 
       var conduitFittings = elements.OfType<FamilyInstance>().ToList() ;
       var fittingHorizontals = conduitFittings.Where( x => Math.Abs( x.GetTransform().OfVector( XYZ.BasisZ ).Z - 1 ) < GeometryUtil.Tolerance ).ToList() ;
@@ -141,7 +143,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var comparer = new XyzComparer() ;
       fittingHorizontals = fittingHorizontals.Where( x => x.MEPModel.ConnectorManager.Connectors.Size == 2 ) ;
       fittingHorizontals = DistinctByExtension.DistinctBy( fittingHorizontals, x => GetCenterPoint( x ), comparer ) ;
-      return GeometryHelper.GetCurveFromElements( document, view, fittingHorizontals ) ;
+      return GeometryHelper.GetCurveFromElements( view, fittingHorizontals ) ;
     }
 
     private static Dictionary<Line, string> GetLineVerticalFittings( IEnumerable<FamilyInstance> fittingVerticals )
@@ -210,7 +212,18 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return lineOnPlanes ;
     }
 
-    
+    public static void RefreshView( Document document, View view )
+    {
+      using var transaction = new Transaction( document ) ;
+      transaction.Start( "Enable Reveal Hidden" ) ;
+      document.ActiveView.EnableRevealHiddenMode() ;
+      transaction.Commit() ;
+
+      transaction.Start( "Disable Reveal Hidden" ) ;
+      document.ActiveView.DisableTemporaryViewMode( TemporaryViewMode.RevealHiddenElements ) ;
+      transaction.Commit() ;
+    }
+
     public static ( string, bool ) RemoveDetailLines( Document document, HashSet<string> conduitIds )
     {
       var conduitAndDetailCurveStorable = document.GetConduitAndDetailCurveStorable() ;
