@@ -16,10 +16,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App
     [Tab( "Electrical.App.Routing.TabName", VisibilityMode = TabVisibilityMode.NormalDocument )]
     private static class RoutingTab
     {
-      [Panel( "arent3d.architecture.routing.init", TitleKey = "Electrical.App.Panels.Routing.Initialize" )]
+      [Panel( "arent3d.architecture.routing.initialize", TitleKey = "Electrical.App.Panels.Routing.Initialize" )]
       private static class InitPanel
       {
-        [SplitButton( "arent3d.architecture.routing.init.init", TitleKey = "Electrical.App.Panels.Routing.Initialize.Initialize" )]
+        [SplitButton( "arent3d.architecture.routing.initialize.initialize", TitleKey = "Electrical.App.Panels.Routing.Initialize.Initialize" )]
         private static class InitSplitButton
         {
           [Button( typeof( InitializeCommand ), InitializeButton = true )]
@@ -33,7 +33,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           }
         }
 
-        [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
+        [SplitButton( "arent3d.architecture.routing.initialize.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
         private static class PanelsSplitButton
         {
           [Button( typeof( ShowFrom_ToWindowCommand ), OnlyInitialized = true )]
@@ -48,10 +48,10 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         }
       }
 
-      [Panel( "arent3d.architecture.routing.menu.settings", TitleKey = "Electrical.App.Panels.Routing.Settings" )]
+      [Panel( "arent3d.architecture.routing.settings", TitleKey = "Electrical.App.Panels.Routing.Settings" )]
       private static class Settings
       {
-        [SplitButton( "arent3d.architecture.routing.confirmation.all", TitleKey = "Electrical.App.Panels.Routing.Confirmation.All" )]
+        [SplitButton( "arent3d.architecture.routing.settings.all", TitleKey = "Electrical.App.Panels.Routing.Settings.All" )]
         private static class AllSettings
         {
           [Button( typeof( LoadCsvFilesCommand ), OnlyInitialized = true )]
@@ -230,7 +230,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           }
         }
 
-        [SplitButton( "arent3d.architecture.routing.shaft", TitleKey = "Electrical.App.Panels.Routing.Drawing.Shafts" )]
+        [SplitButton( "arent3d.architecture.routing.drawing.shafts", TitleKey = "Electrical.App.Panels.Routing.Drawing.Shafts" )]
         private static class ShaftPanel
         {
           [Button( typeof( CreateShaftCommand ), OnlyInitialized = true )]
@@ -254,7 +254,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           }
         }
 
-        [SplitButton( "arent3d.architecture.routing.envelope", TitleKey = "Electrical.App.Panels.Routing.Drawing.Envelope" )]
+        [SplitButton( "arent3d.architecture.routing.drawing.envelope", TitleKey = "Electrical.App.Panels.Routing.Drawing.Envelope" )]
         private static class EnvelopPanel
         {
           [Button( typeof( NewEnvelopeCommand ), OnlyInitialized = true )]
@@ -372,7 +372,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           private static class PressureGuidingTubeButton { }
         }
 
-        [SplitButton( "arent3d.architecture.routing.routing.selection.range.routing", TitleKey = "Electrical.App.Panels.Routing.Routing.SelectionRangeRouting" )]
+        [SplitButton( "arent3d.architecture.routing.routing.selectionRangeRouting", TitleKey = "Electrical.App.Panels.Routing.Routing.SelectionRangeRouting" )]
         private static class SelectionRangeRoutingSplitButton
         {
           [Button( typeof( SelectionRangeRouteCommand ), OnlyInitialized = true )]
@@ -414,7 +414,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
       [Panel( "arent3d.architecture.routing.connectors", TitleKey = "Electrical.App.Panels.Routing.Connectors" )]
       private static class ConnectorsPanel
       {
-        [SplitButton( "arent3d.architecture.routing.connectors.one.side", TitleKey = "Electrical.App.Commands.Routing.NewConnectorCommand" )]
+        [SplitButton( "arent3d.architecture.routing.connectorsOneSide", TitleKey = "Electrical.App.Panels.Routing.Connectors.ConnectorsOneSide" )]
         private static class NewOneSideConnectorButton
         {
           [Button( typeof( NewConnectorCommand ), OnlyInitialized = true )]
@@ -433,7 +433,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           }
         }
 
-        [SplitButton( "arent3d.architecture.routing.connectors.two.side", TitleKey = "Electrical.App.Commands.Routing.Connectors.NewConnectorTwoSideCommand" )]
+        [SplitButton( "arent3d.architecture.routing.connectorsTwoSide", TitleKey = "Electrical.App.Panels.Routing.Connectors.ConnectorsTwoSide" )]
         private static class NewTwoSideConnectorButton
         {
           [Button( typeof( NewTwoSideConnectorCommand ), OnlyInitialized = true )]
@@ -492,7 +492,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App
         }
       }
 
-      [Panel( "arent3d.architecture.routing.rack", TitleKey = "Electrical.App.Panels.Routing.Racks" )]
+      [Panel( "arent3d.architecture.routing.racks", TitleKey = "Electrical.App.Panels.Routing.Racks" )]
       private static class RackPanel
       {
         [Button( typeof( ImportRacksCommand ), OnlyInitialized = true )]
