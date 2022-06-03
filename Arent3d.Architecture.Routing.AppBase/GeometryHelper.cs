@@ -284,11 +284,10 @@ namespace Arent3d.Architecture.Routing.AppBase
 
       return lines.MaxBy( x => x.Length ) ;
     }
-    
-    public static Dictionary<Curve, string> GetCurveFromElements( Document document, View view, IEnumerable<Element> elements )
+    public static Dictionary<Curve, string> GetCurveFromElements( View view, IEnumerable<Element> elements )
     {
       var curves = new Dictionary<Curve, string>() ;
-      
+
       foreach ( var element in elements ) {
         if ( element is FamilyInstance familyInstance ) {
           var options = new Options { DetailLevel = ViewDetailLevel.Coarse } ;
