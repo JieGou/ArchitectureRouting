@@ -232,6 +232,9 @@
         <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
         <string>Symbol Information</string>
 
+        <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
+        <string>Create Pullbox</string>
+      
         <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
         <string>Electrical Symbol&#xA;Aggregation</string>
 
@@ -479,5 +482,23 @@
 
         <key>Electrical.App.Commands.Routing.LeakRoutingCommand</key>
         <string>Leak Routing</string>
+        
+        <key>Electrical.App.Panels.Routing.MenuOrganization</key>
+        <string>Menu Organization</string>     
+      
+        <key>Electrical.App.Panels.Routing.MenuOrganization.Setting</key>
+        <string>Setting</string>
+      
+        <key>Electrical.App.Panels.Routing.MenuOrganization.Confirmation</key>
+        <string>Confirmation</string>
+      
+        <key>Electrical.App.Panels.Routing.MenuOrganization.MakingThePlan</key>
+        <string>Making The Plan</string>
+      
+        <key>Electrical.App.Panels.Routing.MenuOrganization.CreateTable</key>
+        <string>Create Table</string>
+  
+        <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
+        <string>Pull Box</string>
     </dict>
 </plist>
