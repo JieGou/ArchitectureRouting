@@ -5,12 +5,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d" x:Name="WdDefaultSettingDialog"
         WindowStartupLocation="CenterScreen"
-        Title="DefaultSettingDialog" Height="400" Width="1000" ResizeMode="NoResize">
+        Title="DefaultSettingDialog" Height="700" Width="1000" ResizeMode="NoResize">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" Margin="10,5,10,5">
@@ -45,7 +46,7 @@
             </ComboBox>
         </StackPanel>
 
-        <Grid Grid.Row="1" Margin="10,0,10,10" VerticalAlignment="Top">
+        <Grid Grid.Row="1" Margin="5,0,5,0" VerticalAlignment="Top">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="110" />
@@ -131,7 +132,7 @@
                             </DataGridTextColumn.Binding>
                         </DataGridTextColumn>
                         
-                        <DataGridTemplateColumn Header="" Width="130" CanUserSort="False" >
+                        <DataGridTemplateColumn Header="" Width="*" CanUserSort="False" >
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Click="SelectDwgFile">Select DWG File</Button>
@@ -147,14 +148,49 @@
                 </DataGrid>
             </Grid>
         </Grid>
+        
+        
+        
+         <Grid Grid.Row="3" Margin="5,0,5,0" VerticalAlignment="Top">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-        <Button Grid.Row="2"
-                Content="Apply"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                Command="{ Binding ApplyCommand}"
-                CommandParameter="{Binding ElementName=WdDefaultSettingDialog}"
-                Margin="10,0,10,10"
-                Width="100" />
+                <StackPanel Grid.Column="0" VerticalAlignment="Top" Orientation="Vertical" Margin="0, 0,10,0">
+                    <Button 
+                            Content="デフォルト読込"
+                            Command="{ Binding LoadDefaultDbCommand}"
+                            HorizontalAlignment="Stretch" />
+                </StackPanel>
+
+                <DataGrid Grid.Column="1"
+                          Height="260"
+                          Background="White"
+                          ItemsSource="{Binding CsvFileModels}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False">
+                    <DataGrid.Columns>
+                     
+                        <DataGridTextColumn Header="Name" Width="200" Binding="{Binding CsvName, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                        
+                        <DataGridTextColumn Header="File Name"  Binding="{Binding CsvFileName, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" MinWidth="250" />
+                        
+                        <DataGridTextColumn Header="Path" Width="*" Binding="{Binding CsvFilePath, ValidatesOnExceptions=True}" CanUserSort="False" IsReadOnly="True" />
+                       
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+             <Button 
+                 Content="Apply"
+                 HorizontalAlignment="Right"
+                 VerticalAlignment="Bottom"
+                 Command="{ Binding ApplyCommand}"
+                 CommandParameter="{Binding ElementName=WdDefaultSettingDialog}"
+                 Margin="10,0,10,-30"
+                 Width="100" />
+        </Grid>
+        
     </Grid>
 </Window>
