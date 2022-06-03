@@ -118,6 +118,12 @@ namespace Arent3d.Architecture.Routing.Electrical.App
            
 		      [Button( typeof( SymbolInformationCommand ), OnlyInitialized = true )]
           private static class SymbolInformationCommandButton { }
+          
+          [Button( typeof( ElectricalSymbolAggregationCommand ), OnlyInitialized = true )]
+          private static class ElectricalSymbolAggregationCommandButton { }
+          
+          [Button( typeof( ElectricalSymbolAggregationAllCommand ), OnlyInitialized = true )]
+          private static class ElectricalSymbolAggregationAllCommandButton { }
         }
 
         [SplitButton( "arent3d.architecture.routing.init.panels", TitleKey = "Electrical.App.Panels.Routing.Initialize.Panels" )]
@@ -157,6 +163,9 @@ namespace Arent3d.Architecture.Routing.Electrical.App
           
           [Button( typeof( LeakRoutingCommand ), OnlyInitialized = true )]
           private static class LeakRoutingCommandCommandButton { }
+          
+          [Button( typeof( PullBoxRoutingCommand ), OnlyInitialized = true )]
+          private static class PullBoxRoutingCommandButton { }
         }
         
         [SplitButton( "arent3d.architecture.routing.routing.selection.range.routing", TitleKey = "Electrical.App.Panels.Routing.Routing.SelectionRangeRouting" )]
