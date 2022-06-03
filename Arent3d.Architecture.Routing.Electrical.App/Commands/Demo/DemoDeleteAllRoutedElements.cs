@@ -29,7 +29,7 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
         document.Delete( elementsToDelete ) ;
 
         DeleteBoundaryRack( document ) ;
-        DeleteNotation( document ) ;
+        DeleteNotationAndRack( document ) ;
         DeleteLocationConduit( document ) ;
 
         return Result.Succeeded ;
@@ -45,10 +45,19 @@ namespace Arent3d.Architecture.Routing.Electrical.App.Commands.Demo
       document.Delete( curveELements.Select( x => x.Id ).ToList() ) ;
     }
 
-    private void DeleteNotation( Document document )
+    private void DeleteNotationAndRack( Document document )
     {
       var rackNotationStorable = document.GetAllStorables<RackNotationStorable>().FirstOrDefault() ?? document.GetRackNotationStorable() ;
       foreach ( var notationModelData in rackNotationStorable.RackNotationModelData ) {
+        if ( document.GetElement( notationModelData.RackId ) is { } rack ) {
+          document.Delete( rack.Id ) ;
+          notationModelData.RackId = string.Empty ;
+
+          var cableTrayFittings = document.GetAllInstances<FamilyInstance>().Where( x => x.Category.Id.IntegerValue == (int) BuiltInCategory.OST_CableTrayFitting ).ToList() ;
+          if ( cableTrayFittings.Any() )
+            document.Delete( cableTrayFittings.Select( x => x.Id ).ToList() ) ;
+        }
+        
         if ( document.GetElement( notationModelData.NotationId ) is { } textNote ) {
           document.Delete( textNote.Id ) ;
           notationModelData.NotationId = string.Empty ;
