@@ -106,6 +106,9 @@ namespace Arent3d.Architecture.Routing
     [Family( "M_電線管エルボ - 鉄鋼 - Arent", BuiltInCategory.OST_ConduitFitting )]
     ArentConduitFittingType,
     
+    [Family( "Pressure End Point", BuiltInCategory.OST_ElectricalFixtures )]
+    PressureConnector,
+    
     [Family( "Pull Box", BuiltInCategory.OST_ElectricalFixtures )]
     PullBox
   }
