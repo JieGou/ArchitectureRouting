@@ -108,6 +108,9 @@ namespace Arent3d.Architecture.Routing
     
     [Family( "Pressure End Point", BuiltInCategory.OST_ElectricalFixtures )]
     PressureConnector,
+    
+    [Family( "Pull Box", BuiltInCategory.OST_ElectricalFixtures )]
+    PullBox
   }
 
   public enum MechanicalRoutingFamilyType

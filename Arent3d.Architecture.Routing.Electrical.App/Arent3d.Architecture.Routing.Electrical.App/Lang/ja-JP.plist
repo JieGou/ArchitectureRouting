@@ -226,6 +226,15 @@
         <key>Electrical.App.Commands.Initialization.SymbolInformationCommand</key>
         <string>部材情報付きシンボル</string>
 
+        <key> Electrical.App.Commands.Routing.PullBoxRoutingCommand</key>
+        <string>プルボックス作成</string>
+
+        <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregation</key>
+        <string>電気シンボル集計</string>
+
+        <key>Electrical.App.Commands.Routing.ElectricalSymbolAggregationAll</key>
+        <string>電気シンボル集計(ALL)</string>
+
         <!-- Transaction Names -->
         <key>TransactionName.Commands.Initialization.Initialize</key>
         <string>自動ルーティングをセットアップ</string>
@@ -457,6 +466,9 @@
 
         <key>Electrical.App.Commands.Routing.LeakRoutingCommand</key>
         <string>漏水帯</string>
+
+        <key>Electrical.App.Commands.Initialization.PullBoxRoutingCommand</key>
+        <string>仮プルボックスの配</string>
     </dict>
 </plist>
 
