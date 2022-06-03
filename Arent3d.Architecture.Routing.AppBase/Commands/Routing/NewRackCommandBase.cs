@@ -289,7 +289,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
 
       // Create cable tray
       if (false == symbol.IsActive) symbol.Activate();
-      var instance = document.Create.NewFamilyInstance(firstConnector.Origin, symbol, null, StructuralType.NonStructural);
+      var instance = document.Create.NewFamilyInstance(new XYZ(firstConnector.Origin.X, firstConnector.Origin.Y, line.Origin.Z), symbol, null, StructuralType.NonStructural);
 
       // set cable rack length
       SetParameter( instance, "Revit.Property.Builtin.TrayLength".GetDocumentStringByKeyOrDefault( document, "トレイ長さ" ), length ) ; // TODO may be must change when FamilyType change
@@ -331,7 +331,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       else {
         // move cable rack to under conduit
-        instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
+        instance.Location.Move( new XYZ( 0, 0, -30d.MillimetersToRevitUnits() ) ) ; // TODO may be must change when FamilyType change
       }
 
       return instance ;
@@ -342,7 +342,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var document = uiDocument.Document ;
       
       var length = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.ConduitFitting.Length".GetDocumentStringByKeyOrDefault( document, "電線管長さ" ) ).AsDouble() ;
-      var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document, "呼び径" ) ).AsDouble() ;
+      var diameter = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.NominalDiameter".GetDocumentStringByKeyOrDefault( document, "継手外径" ) ).AsDouble() ;
       var bendRadius = conduit.ParametersMap.get_Item( "Revit.Property.Builtin.BendRadius".GetDocumentStringByKeyOrDefault( document, "Bend Radius" ) ).AsDouble() ;
 
       var symbol = uiDocument.Document.GetFamilySymbols( ElectricalRoutingFamilyType.CableTrayFitting ).FirstOrDefault() ?? throw new InvalidOperationException() ; // TODO may change in the future
@@ -379,7 +379,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       }
       
       // move cable rack to under conduit
-      instance.Location.Move( new XYZ( 0, 0, -diameter ) ) ; // TODO may be must change when FamilyType change
+      instance.Location.Move( new XYZ( 0, 0, -30d.MillimetersToRevitUnits() ) ) ; // TODO may be must change when FamilyType change
 
       return instance ;
     }
