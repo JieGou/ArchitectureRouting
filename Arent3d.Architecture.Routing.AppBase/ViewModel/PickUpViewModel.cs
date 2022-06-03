@@ -59,7 +59,40 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       ConduitFitting
     }
 
-    public List<PickUpModel> PickUpModels { get ; set ; } = new() ;
+    private List<PickUpModel>? _originPickUpModels ;
+    public List<PickUpModel> OriginPickUpModels
+    {
+      get => _originPickUpModels ??= new List<PickUpModel>() ;
+      set
+      {
+        _originPickUpModels = value ;
+        FilterPickUpModels = new List<PickUpModel>( _originPickUpModels ) ;
+        OnPropertyChanged();
+      }
+    }
+    
+    private List<PickUpModel>? _filterPickUpModels ;
+    public List<PickUpModel> FilterPickUpModels
+    {
+      get => _filterPickUpModels ??= new List<PickUpModel>() ;
+      set
+      {
+        _filterPickUpModels = value ;
+        OnPropertyChanged();
+      }
+    }
+
+    private Dictionary<string, List<Func<PickUpModel, bool>>>? _conditionFilter ;
+    public Dictionary<string, List<Func<PickUpModel, bool>>> ConditionFilter
+    {
+      get => _conditionFilter ??= new Dictionary<string, List<Func<PickUpModel, bool>>>() ;
+      set
+      {
+        _conditionFilter = value ;
+        OnPropertyChanged();
+      }
+    }
+
 
     #endregion
 
@@ -104,7 +137,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         var pickUpModels = _pickUpModels.Where( p => p.EquipmentType == ProductType.Connector.GetFieldName() ).ToList() ;
         if ( pickUpConduitByNumbers.Any() ) pickUpModels.AddRange( pickUpConduitByNumbers ) ;
         if ( pickUpRackByNumbers.Any() ) pickUpModels.AddRange( pickUpRackByNumbers ) ;
-        PickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor ascending select pickUpModel ).ToList() ;
+        OriginPickUpModels = ( from pickUpModel in pickUpModels orderby pickUpModel.Floor ascending select pickUpModel ).ToList() ;
       }
     }
 

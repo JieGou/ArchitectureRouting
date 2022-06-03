@@ -19,7 +19,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Initialization
       
       PickUpViewModel pickUpViewModel = new PickUpViewModel( document ) ;
       var pickUpDialog = new PickupDialog( pickUpViewModel ) ;
-      if(!pickUpViewModel.PickUpModels.Any())
+      if(!pickUpViewModel.OriginPickUpModels.Any())
         return Result.Cancelled ;
       
       pickUpDialog.ShowDialog() ;

@@ -99,6 +99,8 @@
     <Resource Include="resources\InsertPassPoint.png" />
     <Resource Include="resources\MEP.ico" />
     <Resource Include="resources\PickFrom-To.png" />
+    <None Remove="resources\Filter_32x32.png" />
+    <Resource Include="resources\Filter_32x32.png" />
   </ItemGroup>
 
 </Project>

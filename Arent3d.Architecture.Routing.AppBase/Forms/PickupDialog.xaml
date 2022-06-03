@@ -22,33 +22,169 @@
             <RowDefinition Height="50" />
         </Grid.RowDefinitions>
 
-        <DataGrid ItemsSource="{Binding PickUpModels}" CanUserAddRows="False"
-                  AutoGenerateColumns="False" LoadingRow="DataGrid_LoadingRow" RowHeaderWidth="30"> 
+        <DataGrid ItemsSource="{Binding FilterPickUpModels}" CanUserAddRows="False"
+                  AutoGenerateColumns="False" LoadingRow="DataGrid_LoadingRow" RowHeaderWidth="30">
+            <DataGrid.Resources>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                </Style>
+            </DataGrid.Resources> 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="フロア" Binding="{Binding Floor, ValidatesOnExceptions=True}"
-                                    CanUserSort="True" IsReadOnly="True" MinWidth="100" />
-                <DataGridTextColumn Header="工事項目" Binding="{Binding ConstructionItems, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="200" />
-                <DataGridTextColumn Header="品名" Binding="{Binding ProductName, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="150" />
-                <DataGridTextColumn Header="施工区分" Binding="{Binding Construction, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-                <DataGridTextColumn Header="型番" Binding="{Binding ModelNumber, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-                <DataGridTextColumn Header="仕様" Binding="{Binding Specification, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="200" />
-                <DataGridTextColumn Header="仕様2" Binding="{Binding Specification2, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-                <DataGridTextColumn Header="サイズ" Binding="{Binding Size, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-                <DataGridTextColumn Header="数量" Binding="{Binding Quantity, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-                <DataGridTextColumn Header="単位" Binding="{Binding Tani, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" />
-                <DataGridTextColumn Header="補足説明" Binding="{Binding Supplement, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="150" />
-                <DataGridTextColumn Header="レイヤ" Binding="{Binding Layer, ValidatesOnExceptions=True}"
-                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" />
+                <DataGridTextColumn Binding="{Binding Floor, ValidatesOnExceptions=True}"
+                                    CanUserSort="True" IsReadOnly="True" MinWidth="100">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="フロア" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding ConstructionItems, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="200" >
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="工事項目" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding ProductName, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="150">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="品名" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding Construction, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="施工区分" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding ModelNumber, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="型番" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding Specification, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="200">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="仕様" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding Specification2, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" >
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="仕様2" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding Size, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100" >
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="サイズ" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding Quantity, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="数量" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding Tani, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="単位" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding Supplement, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="150">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="補足説明" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                
+                <DataGridTextColumn Binding="{Binding Layer, ValidatesOnExceptions=True}"
+                                    CanUserSort="False" IsReadOnly="True" MinWidth="100">
+                    <DataGridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="レイヤ" HorizontalAlignment="Left"/>
+                                <Image Height="16" Width="16" Margin="5 0 0 0"
+                                       Source="../resources/Filter_32x32.png" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
 
