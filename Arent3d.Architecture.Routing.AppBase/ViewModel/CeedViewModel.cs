@@ -31,36 +31,48 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     public readonly List<string> ModelNumbers = new() ;
     public List<string> DeviceSymbols = new() ;
     
-    private ObservableCollection<FolderModel>? _folders ;
+    private ObservableCollection<CeedModel> _previewList ;
     
-    public ObservableCollection<FolderModel> Folders
+    public ObservableCollection<CeedModel> PreviewList
     {
-      get
-      {
-        if ( null != _folders )
-          return _folders ;
-    
-        var folderModels = GetFolderModels( ) ;
-        _folders = new ObservableCollection<FolderModel>( folderModels ) ;
-    
-        FolderSelected = FindSelectedFolder( _folders ) ;
-
-        return _folders ;
-      }
+      get => _previewList ;
       set
       {
-        _folders = value ;
-        FolderSelected = FindSelectedFolder( _folders ) ;
+        _previewList = value ;
         OnPropertyChanged() ;
       }
     }
     
-    private FolderModel? _folderSelected ;
+    private ObservableCollection<CategoryModel>? _categories ;
     
-    private FolderModel? FolderSelected
+    public ObservableCollection<CategoryModel> Categories
     {
-      get { return _folderSelected ??= FindSelectedFolder( Folders ) ; }
-      set => _folderSelected = value ;
+      get
+      {
+        if ( null != _categories )
+          return _categories ;
+    
+        var categoryModels = GetCategoryModels( ) ;
+        _categories = new ObservableCollection<CategoryModel>( categoryModels ) ;
+    
+        CategorySelected = FindSelectedCategory( _categories ) ;
+
+        return _categories ;
+      }
+      set
+      {
+        _categories = value ;
+        CategorySelected = FindSelectedCategory( _categories ) ;
+        OnPropertyChanged() ;
+      }
+    }
+    
+    private CategoryModel? _categorySelected ;
+    
+    public CategoryModel? CategorySelected
+    {
+      get { return _categorySelected ??= FindSelectedCategory( Categories ) ; }
+      set => _categorySelected = value ;
     }
     
     public ICommand SelectedItemCommand
@@ -69,7 +81,50 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       {
         return new RelayCommand<System.Windows.Controls.TreeView>( tv => null != tv, _ =>
         {
-          FolderSelected = FindSelectedFolder( Folders ) ;
+          CategorySelected = FindSelectedCategory( Categories ) ;
+        } ) ;
+      }
+    }
+    
+    private ObservableCollection<CategoryModel>? _categoriesPreview ;
+    
+    public ObservableCollection<CategoryModel> CategoriesPreview
+    {
+      get
+      {
+        if ( null != _categoriesPreview )
+          return _categoriesPreview ;
+    
+        var categoryModels = GetCategoryModels( ) ;
+        _categoriesPreview = new ObservableCollection<CategoryModel>( categoryModels ) ;
+    
+        CategoryPreviewSelected = FindSelectedCategory( _categoriesPreview ) ;
+
+        return _categoriesPreview ;
+      }
+      set
+      {
+        _categoriesPreview = value ;
+        CategoryPreviewSelected = FindSelectedCategory( _categoriesPreview ) ;
+        OnPropertyChanged() ;
+      }
+    }
+    
+    private CategoryModel? _categoryPreviewSelected ;
+    
+    public CategoryModel? CategoryPreviewSelected
+    {
+      get { return _categoryPreviewSelected ??= FindSelectedCategory( CategoriesPreview ) ; }
+      set => _categoryPreviewSelected = value ;
+    }
+    
+    public ICommand SelectedCategoryPreviewCommand
+    {
+      get
+      {
+        return new RelayCommand<System.Windows.Controls.TreeView>( tv => null != tv, _ =>
+        {
+          CategoryPreviewSelected = FindSelectedCategory( CategoriesPreview ) ;
         } ) ;
       }
     }
@@ -78,6 +133,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       CeedStorable = ceedStorable ;
       CeedModels = ceedStorable.CeedModelData ;
+      _previewList = new ObservableCollection<CeedModel>() ;
       AddModelNumber( CeedModels ) ;
     }
 
@@ -85,13 +141,14 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     {
       CeedStorable = ceedStorable ;
       CeedModels = ceedModels ;
+      _previewList = new ObservableCollection<CeedModel>() ;
       AddModelNumber( ceedModels ) ;
     }
 
     private void AddModelNumber( IReadOnlyCollection<CeedModel> ceedModels )
     {
-      foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeedModelNumber ) ) ) {
-        if ( ! CeedModelNumbers.Contains( ceedModel.CeedModelNumber ) ) CeedModelNumbers.Add( ceedModel.CeedModelNumber ) ;
+      foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeedSetCode ) ) ) {
+        if ( ! CeedModelNumbers.Contains( ceedModel.CeedSetCode ) ) CeedModelNumbers.Add( ceedModel.CeedSetCode ) ;
       }
 
       foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.ModelNumber ) ) ) {
@@ -104,39 +161,39 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       DeviceSymbols = ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ).Select( c => c.GeneralDisplayDeviceSymbol ).Distinct().ToList() ;
     }
     
-    private List<FolderModel> GetFolderModels()
+    private List<CategoryModel> GetCategoryModels()
     {
-      List<FolderModel> folderModels = new() ;
+      List<CategoryModel> categoryModels = new() ;
       
-      var parentFolderModel1 = new FolderModel { Name = "Parent Category 1", ParentName = string.Empty, IsExpanded = false, IsSelected = true } ;
-      var childFolderModel11 = new FolderModel { Name = "Category 1", ParentName = parentFolderModel1.Name, IsExpanded = false, IsSelected = true } ;
-      var childFolderModel12 = new FolderModel { Name = "Category 2", ParentName = parentFolderModel1.Name, IsExpanded = false, IsSelected = false } ;
-      parentFolderModel1.Folders.Add( childFolderModel11 ) ;
-      parentFolderModel1.Folders.Add( childFolderModel12 ) ;
-      folderModels.Add( parentFolderModel1 ) ;
+      var categoryModel1 = new CategoryModel { Name = "Category 1", ParentName = string.Empty, IsExpanded = false, IsSelected = true } ;
+      categoryModels.Add( categoryModel1 ) ;
       
-      var parentFolderModel2 = new FolderModel { Name = "Parent Category 2", ParentName = string.Empty, IsExpanded = false, IsSelected = false } ;
-      var childFolderModel21 = new FolderModel { Name = "Category 1", ParentName = parentFolderModel2.Name, IsExpanded = false, IsSelected = false } ;
-      var childFolderModel22 = new FolderModel { Name = "Category 2", ParentName = parentFolderModel2.Name, IsExpanded = false, IsSelected = false } ;
-      parentFolderModel2.Folders.Add( childFolderModel21 ) ;
-      parentFolderModel2.Folders.Add( childFolderModel22 ) ;
-      folderModels.Add( parentFolderModel2 ) ;
-      
-      return folderModels ;
+      var categoryModel2 = new CategoryModel { Name = "Category 2", ParentName = string.Empty, IsExpanded = false, IsSelected = false } ;
+      categoryModels.Add( categoryModel2 ) ;
+
+      return categoryModels ;
     }
     
-    private FolderModel? FindSelectedFolder( IEnumerable<FolderModel> folders )
+    private enum CategoryType
     {
-      foreach ( var folder in folders ) {
-        if ( folder.IsSelected )
-          return folder ;
+      ModelNumberOrSetCodePreview,
+      DeviceSymbolPreview
+    }
+    
+    private CategoryModel? FindSelectedCategory( IEnumerable<CategoryModel> categories )
+    {
+      foreach ( var category in categories ) {
+        if ( category.IsSelected )
+          //find ceed model by category
+          return category ;
 
-        if ( ! folder.Folders.Any() )
+        if ( ! category.SubCategories.Any() )
           continue ;
 
-        var subFolder = FindSelectedFolder( folder.Folders ) ;
-        if ( null != subFolder )
-          return subFolder ;
+        var subCategory = FindSelectedCategory( category.SubCategories ) ;
+        if ( null != subCategory )
+          //find ceed model by category
+          return subCategory ;
       }
 
       return null ;

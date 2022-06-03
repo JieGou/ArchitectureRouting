@@ -1,4 +1,5 @@
 using System.Collections.Generic ;
+using System.Collections.ObjectModel ;
 using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
@@ -118,6 +119,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       var ceedViewModels = CbShowOnlyUsingCode.IsChecked == true ? _usingCeedModel : _allCeedModels ;
       if ( ceedViewModels != null )
         LoadData( ceedViewModels ) ;
+      MyListPreview.ItemsSource = new ObservableCollection<CeedModel>() ;
     }
     
     private void CmbDeviceSymbols_TextChanged( object sender, TextChangedEventArgs e )
@@ -156,9 +158,10 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
       }
       else {
         var ceedModels = string.IsNullOrEmpty( _deviceSymbolSearch ) ? ceedViewModels.CeedModels : ceedViewModels.CeedModels.Where( c => c.GeneralDisplayDeviceSymbol.Contains( _deviceSymbolSearch ) ).ToList() ;
-        ceedModels = string.IsNullOrEmpty( _ceedModelNumberSearch ) ? ceedModels : ceedModels.Where( c => c.CeedModelNumber.Contains( _ceedModelNumberSearch ) ).ToList() ;
+        ceedModels = string.IsNullOrEmpty( _ceedModelNumberSearch ) ? ceedModels : ceedModels.Where( c => c.CeedSetCode.Contains( _ceedModelNumberSearch ) ).ToList() ;
         ceedModels = string.IsNullOrEmpty( _modelNumberSearch ) ? ceedModels : ceedModels.Where( c => c.ModelNumber.Contains( _modelNumberSearch ) ).ToList() ;
         DtGrid.ItemsSource = ceedModels ;
+        MyListPreview.ItemsSource = ceedModels ;
       }
     }
 
