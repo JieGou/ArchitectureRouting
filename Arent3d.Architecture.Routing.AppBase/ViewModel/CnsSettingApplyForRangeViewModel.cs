@@ -20,11 +20,17 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
   {
     public ObservableCollection<string> ConstructionItemList { get ; set ; }
     public List<CnsSettingApplyConstructionItem> CnsSettingApplyConstructionItems { get ; set ; }
+    public List<CnsSettingApplyConstructionItem> MappingConstructionItems { get ; set ; }
     
     public CnsSettingApplyForRangeViewModel( List<CnsSettingApplyConstructionItem> cnsSettingApplyConstructionItems, ObservableCollection<string> constructionItemList )
     {
       ConstructionItemList = constructionItemList ;
       CnsSettingApplyConstructionItems = cnsSettingApplyConstructionItems ;
+
+      MappingConstructionItems = new() ;
+      foreach ( var item in cnsSettingApplyConstructionItems.Where( item => MappingConstructionItems.FirstOrDefault( x => x.OldConstructionItem == item.OldConstructionItem ) == null ) ) {
+        MappingConstructionItems.Add( new CnsSettingApplyConstructionItem(string.Empty, MappingConstructionItems.Count+1, item.OldConstructionItem, string.Empty, constructionItemList ));
+      }
     }
   }
 }

@@ -15,7 +15,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
-        <DataGrid ItemsSource="{Binding CnsSettingApplyConstructionItems}" AutoGenerateColumns="False" CanUserAddRows="False">
+        <DataGrid ItemsSource="{Binding MappingConstructionItems}" AutoGenerateColumns="False" CanUserAddRows="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Width="30" Binding="{Binding ItemIndex}"/>
                 <DataGridTextColumn Header="工事項目名称(変更前)" Width="180" Binding="{Binding OldConstructionItem}"/>

@@ -151,39 +151,38 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                   return Result.Cancelled ;
                 }
 
-                // // set value to "Construction Item" property
-                // var categoryName = viewModel.ApplyToSymbolsText ;
-                // using Transaction transaction = new Transaction( document ) ;
-                // transaction.Start( "Set element property" ) ;
-                //
-                // foreach ( var connector in elementList ) {
-                //   var parentGroup = document.GetElement( connector.GroupId ) as Group ;
-                //   if ( parentGroup != null ) {
-                //     // ungroup before set property
-                //     var attachedGroup = document.GetAllElements<Group>()
-                //       .Where( x => x.AttachedParentId == parentGroup.Id ) ;
-                //     List<ElementId> listTextNoteIds = new List<ElementId>() ;
-                //     // ungroup textNote before ungroup connector
-                //     foreach ( var group in attachedGroup ) {
-                //       var ids = @group.GetMemberIds() ;
-                //       listTextNoteIds.AddRange( ids ) ;
-                //       @group.UngroupMembers() ;
-                //     }
-                //
-                //     connectorGroups.Add( connector.Id, listTextNoteIds ) ;
-                //     parentGroup.UngroupMembers() ;
-                //   }
-                // }
-                //
-                // var listConduits = elementList.Where( x => x is Conduit ).ToList() ;
-                // var listApplyElement = new List<Element>() ;
-                // listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
-                // listApplyElement.AddRange(  ConduitUtil.GetConduitRelated(document, elementList) );
-                // SetConstructionItemForElements( listApplyElement.ToList(), categoryName ) ;
-                //
-                // transaction.Commit() ;
-
-                ApplyConstructionItem( document, viewModel, elementList, connectorGroups ) ;
+                // set value to "Construction Item" property
+                var categoryName = viewModel.ApplyToSymbolsText ;
+                using Transaction transaction = new Transaction( document ) ;
+                transaction.Start( "Set element property" ) ;
+                
+                foreach ( var connector in elementList ) {
+                  var parentGroup = document.GetElement( connector.GroupId ) as Group ;
+                  if ( parentGroup != null ) {
+                    // ungroup before set property
+                    var attachedGroup = document.GetAllElements<Group>()
+                      .Where( x => x.AttachedParentId == parentGroup.Id ) ;
+                    List<ElementId> listTextNoteIds = new List<ElementId>() ;
+                    // ungroup textNote before ungroup connector
+                    foreach ( var group in attachedGroup ) {
+                      var ids = @group.GetMemberIds() ;
+                      listTextNoteIds.AddRange( ids ) ;
+                      @group.UngroupMembers() ;
+                    }
+                
+                    connectorGroups.Add( connector.Id, listTextNoteIds ) ;
+                    parentGroup.UngroupMembers() ;
+                  }
+                }
+                
+                var listConduits = elementList.Where( x => x is Conduit ).ToList() ;
+                var listApplyElement = new List<Element>() ;
+                listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
+                listApplyElement.AddRange(  ConduitUtil.GetConduitRelated(document, elementList) );
+                SetConstructionItemForElements( listApplyElement.ToList(), categoryName ) ;
+                
+                transaction.Commit() ;
+ 
                 break;
               }
               case CnsSettingStorable.UpdateItemType.Range :
@@ -204,7 +203,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var itemIndex = 0 ;
                 foreach ( var element in elementList ) {
                   itemIndex++ ;
-                  element.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? oldConstructionItem ) ;
+                  element.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? oldConstructionItem ) ; 
                   oldConstructionItemSelectedList.Add( new CnsSettingApplyConstructionItem( element.UniqueId, itemIndex, oldConstructionItem ?? string.Empty, string.Empty, constructionItemList ) );
                 }
 
@@ -212,24 +211,19 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
                 var cnsSettingApplyForRangeDialog = new CnsSettingApplyForRangeDialog( cnsSettingApplyForRangeViewModel ) ;
                 var result = cnsSettingApplyForRangeDialog.ShowDialog() ;
                 if ( result is null or false ) return Result.Cancelled;
-
-                using Transaction transaction = new Transaction( document ) ;
-                transaction.Start( "Set element property" ) ;
-                foreach ( var element in elementList ) {
-                  var item = cnsSettingApplyForRangeViewModel.CnsSettingApplyConstructionItems.FirstOrDefault( x => x.UniqueId == element.UniqueId );
-                  if ( null != item && !string.IsNullOrEmpty( item.NewConstructionItem ) && item.NewConstructionItem != item.OldConstructionItem ) {
-                    element.TrySetProperty(ElectricalRoutingElementParameter.ConstructionItem, item.NewConstructionItem ) ; 
-                    //Add to CnsSetting Store if have new
-                    if(!constructionItemList.Contains( item.NewConstructionItem))
-                      cnsStorables.CnsSettingData.Add( new CnsSettingModel( cnsStorables.CnsSettingData.Count + 1, item.NewConstructionItem ) );
-                      constructionItemList.Add( item.NewConstructionItem );
-                  } 
-                }
-                cnsStorables.Save();
                 
-                transaction.Commit() ; 
-                break;
-                 
+                //Create dict mapping between old & new construction item 
+                var dictMapping = cnsSettingApplyForRangeViewModel.MappingConstructionItems.Where( x => ! string.IsNullOrEmpty( x.NewConstructionItem ) ).ToDictionary( x => x.OldConstructionItem, x => x.NewConstructionItem ) ;
+                if ( ! dictMapping.Any() ) break ;
+  
+                ApplyConstructionItem( document, viewModel, elementList, connectorGroups, dictMapping ) ;
+ 
+                //Add to CnsSetting Store if have new
+                foreach ( var newValue in dictMapping.Values.Where( newValue => ! constructionItemList.Contains( newValue ) ) ) {
+                  cnsStorables.CnsSettingData.Add( new CnsSettingModel( cnsStorables.CnsSettingData.Count + 1, newValue) );
+                  constructionItemList.Add( newValue );
+                } 
+                break; 
               }
             }
 
@@ -280,7 +274,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       return Result.Succeeded ;
     }
 
-    private void ApplyConstructionItem(Document document, CnsSettingViewModel viewModel, List<Element> elementList, Dictionary<ElementId, List<ElementId>> connectorGroups)
+    private void ApplyConstructionItem(Document document, CnsSettingViewModel viewModel, List<Element> elementList, Dictionary<ElementId, List<ElementId>> connectorGroups, Dictionary<string, string> dictMapping)
     {
       // set value to "Construction Item" property
       var categoryName = viewModel.ApplyToSymbolsText ;
@@ -291,8 +285,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
         var parentGroup = document.GetElement( connector.GroupId ) as Group ;
         if ( parentGroup != null ) {
           // ungroup before set property
-          var attachedGroup = document.GetAllElements<Group>()
-            .Where( x => x.AttachedParentId == parentGroup.Id ) ;
+          var attachedGroup = document.GetAllElements<Group>().Where( x => x.AttachedParentId == parentGroup.Id ) ;
           List<ElementId> listTextNoteIds = new List<ElementId>() ;
           // ungroup textNote before ungroup connector
           foreach ( var group in attachedGroup ) {
@@ -310,7 +303,12 @@ namespace Arent3d.Architecture.Routing.AppBase.Commands.Routing
       var listApplyElement = new List<Element>() ;
       listApplyElement.AddRange( elementList.Where( x=>x is not Conduit) );
       listApplyElement.AddRange(  ConduitUtil.GetConduitRelated(document, elementList) );
-      SetConstructionItemForElements( listApplyElement.ToList(), categoryName ) ;
+      foreach ( var element in listApplyElement ) {
+        element.TryGetProperty( ElectricalRoutingElementParameter.ConstructionItem, out string? oldConstructionItem ) ;
+        oldConstructionItem ??= string.Empty ;
+        if(dictMapping.ContainsKey(oldConstructionItem))
+          element.TrySetProperty( ElectricalRoutingElementParameter.ConstructionItem, dictMapping[oldConstructionItem] ) ; 
+      } 
 
       transaction.Commit() ;
     }
