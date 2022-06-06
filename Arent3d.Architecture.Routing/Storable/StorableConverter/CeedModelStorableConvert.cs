@@ -21,7 +21,11 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       Condition,
       Base64InstrumentationImageString,
       Base64FloorPlanImages,
-      FloorPlanType
+      FloorPlanType,
+      IsAdded,
+      IsEditFloorPlan,
+      IsEditInstrumentation,
+      IsEditCondition,
     }
 
     protected override ISerializerObject Serialize( Element storedElement, CeedModel customTypeValue )
@@ -39,6 +43,10 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       serializerObject.AddNonNull( SerializeField.Base64InstrumentationImageString, customTypeValue.Base64InstrumentationImageString ) ;
       serializerObject.AddNonNull( SerializeField.Base64FloorPlanImages, customTypeValue.Base64FloorPlanImages ) ;
       serializerObject.AddNullable( SerializeField.FloorPlanType, customTypeValue.FloorPlanType ) ;
+      serializerObject.Add( SerializeField.IsAdded, customTypeValue.IsAdded ) ;
+      serializerObject.Add( SerializeField.IsEditFloorPlan, customTypeValue.IsEditFloorPlan ) ;
+      serializerObject.Add( SerializeField.IsEditInstrumentation, customTypeValue.IsEditInstrumentation ) ;
+      serializerObject.Add( SerializeField.IsEditCondition, customTypeValue.IsEditCondition ) ;
 
       return serializerObject ;
     }
@@ -58,8 +66,12 @@ namespace Arent3d.Architecture.Routing.Storable.StorableConverter
       var base64InstrumentationImageString = deserializer.GetString( SerializeField.Base64InstrumentationImageString ) ;
       var base64FloorPlanImages = deserializer.GetString( SerializeField.Base64FloorPlanImages ) ;
       var floorPlanType = deserializer.GetString( SerializeField.FloorPlanType ) ;
+      var isAdded = deserializer.GetBool( SerializeField.IsAdded ) ;
+      var isEditFloorPlan = deserializer.GetBool( SerializeField.IsEditFloorPlan ) ;
+      var isEditInstrumentation = deserializer.GetBool( SerializeField.IsEditInstrumentation ) ;
+      var isEditCondition = deserializer.GetBool( SerializeField.IsEditCondition ) ;
 
-      return new CeedModel( ceedModelNumber!, ceedSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition!, base64InstrumentationImageString!, base64FloorPlanImages!, floorPlanType! ) ;
+      return new CeedModel( ceedModelNumber!, ceedSetCode!, generalDisplayDeviceSymbol!, modelNumber!, floorPlanSymbol!, instrumentationSymbol!, name!, condition!, base64InstrumentationImageString!, base64FloorPlanImages!, floorPlanType!, isAdded!, isEditFloorPlan!, isEditInstrumentation!, isEditCondition! ) ;
     }
   }
 }
