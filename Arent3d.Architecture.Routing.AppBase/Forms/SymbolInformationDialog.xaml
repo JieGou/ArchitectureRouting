@@ -28,7 +28,8 @@
         <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10 0">
             <Button Content="セットコード選択" Height="22" Width="100" Margin="5, 2 10, 2" />
             <Button Content="スピードメニュー" Height="22" Width="100" Margin="20, 2" Command="{Binding ShowElectricalCategoryCommand}" /> 
-            <ComboBox IsEditable="True" ItemsSource="{Binding BuzaiCDList}" PreviewKeyDown="OnComboboxBuzaiCDEnter" VerticalContentAlignment="Center"  Height="22" Width="150" Margin="10,2" />
+            <ComboBox IsEditable="True" ItemsSource="{Binding BuzaiCDListDisplay}" PreviewKeyUp="OnComboboxBuzaiCDEnter" VerticalContentAlignment="Center" 
+                       Height="22" Width="150" Margin="10,2" />
         </StackPanel>
         <!--Data Grid Result-->
         <DataGrid Grid.Row="1" Grid.Column="0" Margin="10 10" ItemsSource="{Binding CeedDetailList}"

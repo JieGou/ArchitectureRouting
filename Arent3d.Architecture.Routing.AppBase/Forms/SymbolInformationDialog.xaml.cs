@@ -1,4 +1,7 @@
-﻿using System.Windows ;
+﻿using System.Collections.ObjectModel ;
+using System.Linq ;
+using System.Windows ;
+using System.Windows.Data ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
@@ -33,9 +36,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
 
     private void OnComboboxBuzaiCDEnter( object sender, KeyEventArgs e )
     {
-      if ( e.Key != Key.Enter ) return ;
       var comboBox = (System.Windows.Controls.ComboBox) sender ;
-      ( (SymbolInformationViewModel) DataContext ).AddCeedDetail(comboBox.Text) ;
+      var viewModel = ( (SymbolInformationViewModel) DataContext ) ;
+      if ( e.Key == Key.Enter )  
+        viewModel.AddCeedDetail(comboBox.Text) ;
+      else {
+        comboBox.IsDropDownOpen = true ;
+        viewModel.BuzaiCDSearchText = comboBox.Text ;
+      }
     }
   }
 

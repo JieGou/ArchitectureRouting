@@ -23,13 +23,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters
   {
     private const string DefaultSymbol = "Dummy" ;
 
-    public static List<ElectricalCategoryModel> GetElectricalCategories( string path )
+    public static List<ElectricalCategoryModel> GetElectricalCategories( string path, string sheetName = "Eco" )
     {
       List<ElectricalCategoryModel> electricalCategoryList = new() ;
       using var fs = new FileStream( path, FileMode.Open, FileAccess.Read ) ;
       try {
         XSSFWorkbook wb = new ( fs ) ;
-        ISheet workSheet  = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
+        //ISheet workSheet  = wb.NumberOfSheets < 2 ? wb.GetSheetAt( wb.ActiveSheetIndex ) : wb.GetSheetAt( 1 ) ;
+        ISheet workSheet  = wb.GetSheet( sheetName ) ; 
         const int startRow = 0 ;
         var endRow = workSheet.LastRowNum ; 
  

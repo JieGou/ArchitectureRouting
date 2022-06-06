@@ -23,13 +23,15 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private string? _unitDefault ;
     private string? _trajectoryDefault ;
     private string? _symbolInformationId ; 
-    public List<ElectricalCategoryModel> ElectricalCategories { get ; set ; }
+    public List<ElectricalCategoryModel> ElectricalCategoriesEco { get ; set ; }
+    public List<ElectricalCategoryModel> ElectricalCategoriesNormal { get ; set ; }
     public CeedDetailModel? CeedDetailSelected { get ; set ; }
     
-    public ElectricalCategoryViewModel( Document? document, List<ElectricalCategoryModel> electricalCategories, List<HiroiMasterModel> hiroiMasterModels, List<HiroiSetMasterModel>? hiroiSetMasterNormalModels, List<HiroiSetMasterModel>? hiroiSetMasterEcoModels, double? quantityDefault, string? unitDefault, string? trajectoryDefault, string? symbolInformationId)
+    public ElectricalCategoryViewModel( Document? document, List<ElectricalCategoryModel> electricalCategoriesEco, List<ElectricalCategoryModel> electricalCategoriesNormal,List<HiroiMasterModel> hiroiMasterModels, List<HiroiSetMasterModel>? hiroiSetMasterNormalModels, List<HiroiSetMasterModel>? hiroiSetMasterEcoModels, double? quantityDefault, string? unitDefault, string? trajectoryDefault, string? symbolInformationId)
     {
       _document = document ; 
-      ElectricalCategories = electricalCategories ;
+      ElectricalCategoriesEco = electricalCategoriesEco ;
+      ElectricalCategoriesNormal = electricalCategoriesNormal ;
       
       HiroiMasterModels = hiroiMasterModels ;
       HiroiSetMasterEcoModels = hiroiSetMasterEcoModels ;
@@ -46,7 +48,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       //Load ElectricalCategory from excel file resource
       string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, ResourceFolderName )  ;
       var filePath = Path.Combine( resourcesPath, ElectricalCategoryFileName ) ;
-      ElectricalCategories = ExcelToModelConverter.GetElectricalCategories( filePath ) ;
+      ElectricalCategoriesEco = ExcelToModelConverter.GetElectricalCategories( filePath ) ;
+      ElectricalCategoriesNormal = ExcelToModelConverter.GetElectricalCategories( filePath, "Normal" ) ;
       HiroiMasterModels = hiroiMasterModels ;
       _quantityDefault = quantityDefault ;
       _trajectoryDefault = trajectoryDefault ;

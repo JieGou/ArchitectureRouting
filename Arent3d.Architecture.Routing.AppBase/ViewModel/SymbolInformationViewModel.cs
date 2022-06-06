@@ -27,6 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private const string TrajectoryDefault = "100" ;
     private const string ElectricalCategoryFileName = "ElectricalCategory.xlsx";
     private const string ResourceFolderName = "resources";
+    private const int DefaultDisplayItem = 100 ;
     
     private readonly Document? _document ; 
 
@@ -38,7 +39,8 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
  
     public SymbolInformationModel SymbolInformation { get ; }
 
-    private List<ElectricalCategoryModel> _electricalCategories ;
+    private List<ElectricalCategoryModel> _electricalCategoriesEco ;
+    private List<ElectricalCategoryModel> _electricalCategoriesNormal ;
 
     #region SymbolSetting
 
@@ -77,6 +79,23 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
     private ObservableCollection<CeedDetailModel> _ceedDetailList = new() ;
     public CeedDetailModel? CeedDetailSelected { get ; set ; }
     public List<string> BuzaiCDList { get ; set ; }
+     
+    public ObservableCollection<string> BuzaiCDListDisplay { get ; set ; }
+    private string _buzaiCDSearchText = string.Empty ;
+
+    public string BuzaiCDSearchText
+    {
+      get => _buzaiCDSearchText ;
+      set
+      {
+        _buzaiCDSearchText = value ;
+        var newSource = BuzaiCDList.Where( x => x.Contains( value ) ).ToList() ;
+        BuzaiCDListDisplay = new ObservableCollection<string>( newSource.Take( DefaultDisplayItem ).ToList() ) ;  
+        CollectionViewSource.GetDefaultView( BuzaiCDListDisplay ).Refresh();
+        OnPropertyChanged( nameof(BuzaiCDListDisplay) );
+        OnPropertyChanged( nameof(BuzaiCDSearchText) );
+      }
+    }
 
     public ObservableCollection<CeedDetailModel> CeedDetailList
     {
@@ -88,12 +107,12 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private List<ElectricalCategoryModel> LoadElectricalCategories()
+    private List<ElectricalCategoryModel> LoadElectricalCategories(string sheetName)
     {
       //Load ElectricalCategory from excel file resource
       string resourcesPath = Path.Combine( Path.GetDirectoryName( Assembly.GetExecutingAssembly().Location )!, ResourceFolderName )  ;
       var filePath = Path.Combine( resourcesPath, ElectricalCategoryFileName ) ;
-      return ExcelToModelConverter.GetElectricalCategories( filePath ) ;  
+      return ExcelToModelConverter.GetElectricalCategories( filePath, sheetName) ;  
     }
     
 
@@ -105,11 +124,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 
     private void ShowElectricalCategory()
     {
-      if ( ! _electricalCategories.Any() ) {
+      if ( ! _electricalCategoriesEco.Any() ) {
         MessageBox.Show( "Can't load categories", "Message" ) ;
         return ;
       }
-      ElectricalCategoryViewModel electricalCategoryViewModel = new(_document, _electricalCategories, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, QuantityDefault, UnitDefault, TrajectoryDefault, SymbolInformation.Id) ;
+      ElectricalCategoryViewModel electricalCategoryViewModel = new(_document, _electricalCategoriesEco, _electricalCategoriesNormal, HiroiMasterModels, HiroiSetMasterNormalModels, HiroiSetMasterEcoModels, QuantityDefault, UnitDefault, TrajectoryDefault, SymbolInformation.Id) ;
       ElectricalCategoryDialog dialog = new ( electricalCategoryViewModel ) ;
       if ( true != dialog.ShowDialog() ) return ;
       if ( null == electricalCategoryViewModel.CeedDetailSelected ) return ;
@@ -187,9 +206,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         CeedDetailList = new ObservableCollection<CeedDetailModel>() ;
       }
 
-      BuzaiCDList = HiroiMasterModels.Select( x => x.Buzaicd ).ToList() ;
+      BuzaiCDList = HiroiMasterModels.Select( x => x.Buzaicd ).ToList()  ; 
+      BuzaiCDListDisplay = new ObservableCollection<string>(BuzaiCDList.Take( DefaultDisplayItem ).ToList()) ;
       ConstructionClassificationTypeList = new ObservableCollection<string>( Enum.GetNames( typeof( CreateDetailTableCommandBase.ConstructionClassificationType ) ).ToList() ) ;
-      _electricalCategories = LoadElectricalCategories() ;
+      _electricalCategoriesEco = LoadElectricalCategories("Eco") ;
+      _electricalCategoriesNormal = LoadElectricalCategories("Normal") ;
     }
   }
 }
