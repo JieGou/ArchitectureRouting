@@ -6,30 +6,81 @@ using System.Linq ;
 using System.Text ;
 using System.Windows ;
 using System.Windows.Controls ;
+using System.Windows.Controls.Primitives ;
 using System.Windows.Forms ;
 using System.Windows.Input ;
+using System.Windows.Media ;
 using Arent3d.Architecture.Routing.AppBase.Commands.Routing ;
+using Arent3d.Architecture.Routing.AppBase.Forms ;
 using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
+using Arent3d.Architecture.Routing.Extensions ;
 using Arent3d.Architecture.Routing.AppBase.Model ;
 using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
 using Arent3d.Revit ;
 using Autodesk.Revit.DB ;
 using Autodesk.Revit.UI ;
+using Button = System.Windows.Controls.Button ;
+using CheckBox = System.Windows.Controls.CheckBox ;
+using ComboBox = System.Windows.Controls.ComboBox ;
 using DataGrid = System.Windows.Controls.DataGrid ;
-using MessageBox = System.Windows.MessageBox ;
+using Label = System.Windows.Controls.Label ;
 using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
+using MessageBox = System.Windows.MessageBox ;
+using Visibility = System.Windows.Visibility ;
+using DataGridCell = System.Windows.Controls.DataGridCell ;
 
 namespace Arent3d.Architecture.Routing.AppBase.ViewModel
 {
   public class CeedViewModel : NotifyPropertyChanged
   {
     private const string NotExistConnectorFamilyInFolderModelWarningMessage = "excelで指定したモデルはmodelフォルダーに存在していないため、既存のモデルを使用します。" ;
-    public List<CeedModel> CeedModels { get ; }
-    public CeedStorable CeedStorable { get ; }
-    public readonly List<string> CeedModelNumbers = new() ;
-    public readonly List<string> ModelNumbers = new() ;
-    public List<string> DeviceSymbols = new() ;
+    private readonly Document _document ;
+    private readonly ExternalCommandData _commandData ;
+    private List<CeedModel> _ceedModels ;
+    private List<CeedModel> _usingCeedModel ;
+    private List<CeedModel> _usedCeedModels ;
+    private List<CeedModel> _previousCeedModels ;
+
+    public DataGrid DtGrid  ;
+    
+    public ObservableCollection<CeedModel> CeedModels { get ; }
+    private CeedStorable? CeedStorable { get ; set ; }
+
+    public ObservableCollection<string> CeedModelNumber { get ; } = new() ;
+
+    public int SelectedCeedModelNumberIndex { get ; set ; } = -1 ;
+
+    public string? SelectedCeedModelNumber  =>
+      0 <= SelectedCeedModelNumberIndex ? CeedModelNumber[ SelectedCeedModelNumberIndex ] : null ;
+
+    public ObservableCollection<string> ModelNumber { get ; } = new() ;
+    public int SelectedModelNumberIndex { get ; set ; } = -1 ;
+
+    public string? SelectedModelNumber =>
+      0 <= SelectedModelNumberIndex ? ModelNumber[ SelectedModelNumberIndex ] : null ;
+
+    public ObservableCollection<string> DeviceSymbols { get ; private set ; } = new() ;
+    
+    public int SelectedDeviceSymbolIndex { get ; set ; } = -1 ;
+
+    public string? SelectedDeviceSymbolValue  =>
+      0 <= SelectedDeviceSymbolIndex ? DeviceSymbols[ SelectedDeviceSymbolIndex ] : null ;
+    
+    public bool IsShowCeedModelNumber { get ; set ; }
+    
+    public bool IsShowOnlyUsingCode { get ; set ; }
+
+    public bool IsShowDiff { get ; set ; } 
+    
+    public bool IsExistUsingCode { get ; set ; }
+
+    public CeedModel? SelectedCeedModel { get ; set ; }
+    public string? SelectedDeviceSymbol { get ; set ; }
+    public string? SelectedCondition { get ; set ; }
+    public string? SelectedCeedCode { get ; set ; }
+    public string? SelectedModelNum { get ; set ; }
+    public string? SelectedFloorPlanType { get ; set ; }
     
     private ObservableCollection<CeedModel> _previewList ;
     
@@ -129,36 +180,86 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    public CeedViewModel( CeedStorable ceedStorable )
+    public ICommand ResetCommand => new RelayCommand( Reset ) ;
+
+    public CeedViewModel( ExternalCommandData commandData )
     {
-      CeedStorable = ceedStorable ;
-      CeedModels = ceedStorable.CeedModelData ;
-      _previewList = new ObservableCollection<CeedModel>() ;
-      AddModelNumber( CeedModels ) ;
+      _commandData = commandData ;
+      _document = commandData.Application.ActiveUIDocument.Document ;
+      DtGrid = new DataGrid() ;
+      var oldCeedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      if ( oldCeedStorable is null ) {
+        _ceedModels = new() ;
+        _usingCeedModel = new List<CeedModel>() ;
+        _usedCeedModels = new List<CeedModel>() ;
+        _previousCeedModels = new List<CeedModel>() ;
+        CeedModels = new() ;
+        _previewList = new ObservableCollection<CeedModel>() ;
+      }
+      else {
+        CeedStorable = oldCeedStorable ;
+        _ceedModels = oldCeedStorable.CeedModelData ;
+        _usingCeedModel = oldCeedStorable.CeedModelUsedData ;
+        _usedCeedModels = oldCeedStorable.CeedModelData ;
+        _previousCeedModels = new List<CeedModel>( _usedCeedModels ) ;
+        CeedModels = new( _ceedModels ) ;
+        IsShowCeedModelNumber = oldCeedStorable.IsShowCeedModelNumber ;
+        IsShowOnlyUsingCode = oldCeedStorable.IsShowOnlyUsingCode ;
+        AddModelNumber( CeedModels ) ;
+        if ( _usingCeedModel.Any() )
+          IsExistUsingCode = true ;
+        if ( ! _ceedModels.Any() ) IsShowDiff = true ;
+        else IsShowDiff = oldCeedStorable.IsDiff ;
+        _previewList = new ObservableCollection<CeedModel>() ;
+      }
     }
 
-    public CeedViewModel( CeedStorable ceedStorable, List<CeedModel> ceedModels )
+    private void LoadData( CeedStorable ceedStorable )
     {
       CeedStorable = ceedStorable ;
-      CeedModels = ceedModels ;
-      _previewList = new ObservableCollection<CeedModel>() ;
-      AddModelNumber( ceedModels ) ;
+      _ceedModels = ceedStorable.CeedModelData ;
+      CeedModels.Clear() ;
+      foreach ( var dataModel in _ceedModels ) {
+        CeedModels.Add( dataModel ) ;
+      }
+
+      AddModelNumber( CeedModels ) ;
+      if ( ceedStorable.CeedModelUsedData.Any() ) 
+        _usingCeedModel = ceedStorable.CeedModelUsedData ;
+    }
+
+    private void LoadData( List<CeedModel> ceedModels, CeedStorable? ceedStorable = null )
+    {
+      if(ceedStorable !=null)
+        CeedStorable = ceedStorable ;
+      CeedModels.Clear() ;
+      foreach ( var dataModel in ceedModels ) {
+        CeedModels.Add( dataModel ) ;
+      }
+
+      AddModelNumber( CeedModels ) ;
     }
 
     private void AddModelNumber( IReadOnlyCollection<CeedModel> ceedModels )
     {
-      foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.CeedSetCode ) ) ) {
-        if ( ! CeedModelNumbers.Contains( ceedModel.CeedSetCode ) ) CeedModelNumbers.Add( ceedModel.CeedSetCode ) ;
+      CeedModelNumber.Clear();
+      foreach ( var ceedModel in ceedModels.Where( ceedModel =>
+                 ! string.IsNullOrEmpty( ceedModel.CeedModelNumber ) ) ) {
+        if ( ! CeedModelNumber.Contains( ceedModel.CeedModelNumber ) )
+          CeedModelNumber.Add( ceedModel.CeedModelNumber ) ;
       }
-
-      foreach ( var ceedModel in ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.ModelNumber ) ) ) {
+      
+      ModelNumber.Clear();
+      foreach ( var ceedModel in ceedModels.Where( ceedModel =>
+                 ! string.IsNullOrEmpty( ceedModel.ModelNumber ) ) ) {
         var modelNumbers = ceedModel.ModelNumber.Split( '\n' ) ;
         foreach ( var modelNumber in modelNumbers ) {
-          if ( ! ModelNumbers.Contains( modelNumber ) ) ModelNumbers.Add( modelNumber ) ;
+          if ( ! ModelNumber.Contains( modelNumber ) ) ModelNumber.Add( modelNumber ) ;
         }
       }
 
-      DeviceSymbols = ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ).Select( c => c.GeneralDisplayDeviceSymbol ).Distinct().ToList() ;
+      var deviceSymbolsList = ceedModels.Where( ceedModel => ! string.IsNullOrEmpty( ceedModel.GeneralDisplayDeviceSymbol ) ).Select( c => c.GeneralDisplayDeviceSymbol ).Distinct().ToList() ;
+      DeviceSymbols = new ObservableCollection<string>( deviceSymbolsList ) ;
     }
     
     private List<CategoryModel> GetCategoryModels()
@@ -199,7 +300,341 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return null ;
     }
 
-    private static List<string> LoadConnectorFamily( Document document, List<string> connectorFamilyPaths )
+    public void Load(CheckBox checkBox)
+    {
+      MessageBox.Show( "Please select 【CeeD】セットコード一覧表 file.", "Message" ) ;
+      OpenFileDialog openFileDialog = new()
+      {
+        Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false
+      } ;
+      string filePath = string.Empty ;
+      string fileEquipmentSymbolsPath = string.Empty ;
+      if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+        filePath = openFileDialog.FileName ;
+        MessageBox.Show( "Please select 機器記号一覧表 file.", "Message" ) ;
+        OpenFileDialog openFileEquipmentSymbolsDialog = new()
+        {
+          Filter = "Csv files (*.xlsx; *.xls)|*.xlsx;*.xls", Multiselect = false
+        } ;
+        if ( openFileEquipmentSymbolsDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+          fileEquipmentSymbolsPath = openFileEquipmentSymbolsDialog.FileName ;
+        }
+      }
+
+      if ( string.IsNullOrEmpty( filePath ) ||
+           string.IsNullOrEmpty( fileEquipmentSymbolsPath ) ) return ;
+      using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
+      progress.Message = "Loading data..." ;
+      var ceedStorable = _document.GetCeedStorable() ;
+      {
+        var ceedModelData =
+          ExcelToModelConverter.GetAllCeedModelNumber( filePath, fileEquipmentSymbolsPath ) ;
+        if ( ! ceedModelData.Any() ) return ;
+        _previousCeedModels = new List<CeedModel>( CeedModels ) ;
+        CheckChangeColor( ceedModelData );
+        ceedStorable.CeedModelData = ceedModelData ;
+        ceedStorable.CeedModelUsedData = new List<CeedModel>() ;
+        ceedStorable.IsShowOnlyUsingCode = false ;
+        LoadData( ceedStorable ) ;
+        checkBox.Visibility = Visibility.Hidden ;
+        checkBox.IsChecked = false ;
+        IsShowOnlyUsingCode = false ;
+        //IsShowDiff = true ;
+
+        try {
+          using Transaction t = new( _document, "Save data" ) ;
+          t.Start() ;
+          using ( var progressData = progress?.Reserve( 0.5 ) ) {
+            ceedStorable.Save() ;
+            progressData?.ThrowIfCanceled() ;
+          }
+
+          using ( var progressData = progress?.Reserve( 0.9 ) ) {
+            _document.MakeCertainAllConnectorFamilies() ;
+            progressData?.ThrowIfCanceled() ;
+          }
+
+          t.Commit() ;
+        }
+        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        }
+      }
+    }
+
+    public void Save()
+    {
+      var ceedStorable = _document.GetCeedStorable() ;
+      try {
+        using Transaction t = new( _document, "Save data" ) ;
+        t.Start() ;
+        ceedStorable.IsShowCeedModelNumber = IsShowCeedModelNumber ;
+        ceedStorable.IsShowOnlyUsingCode = IsShowOnlyUsingCode ;
+        ceedStorable.IsDiff = IsShowDiff ;
+        ceedStorable.Save() ;
+        t.Commit() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+      }
+    }
+    
+    public void Search()
+    {
+      var data = IsShowOnlyUsingCode ? _usingCeedModel : _ceedModels ;
+      CeedModels.Clear() ;
+      var dataModels = data
+        .Where( x => SelectedCeedModelNumber is null || x.CeedModelNumber.Contains( SelectedCeedModelNumber ) )
+        .Where( x => SelectedModelNumber is null || x.ModelNumber.Contains( SelectedModelNumber ) )
+        .Where( x => SelectedDeviceSymbolValue is null || x.GeneralDisplayDeviceSymbol.Contains( SelectedDeviceSymbolValue ) ) ;
+      foreach ( var dataModel in dataModels ) {
+        CeedModels.Add( dataModel ) ;
+      }
+    }
+    
+    private void Reset()
+    {
+      SelectedCeedModelNumberIndex = -1 ;
+      SelectedModelNumberIndex = -1 ;
+      SelectedDeviceSymbolIndex = -1 ;
+      Search();
+    }
+
+    public void LoadUsingCeedModel(CheckBox checkBox)
+    {
+      var ceedStorable = _document.GetAllStorables<CeedStorable>().FirstOrDefault() ;
+      if ( ceedStorable != null && ceedStorable.CeedModelData.Any() ) {
+        OpenFileDialog openFileDialog = new()
+        {
+          Filter = "Csv files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx", Multiselect = false
+        } ;
+        string filePath = string.Empty ;
+        if ( openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ) {
+          filePath = openFileDialog.FileName ;
+        }
+
+        if ( string.IsNullOrEmpty( filePath ) ) return ;
+        var modelNumberToUse = ExcelToModelConverter.GetModelNumberToUse( filePath ) ;
+        if ( ! modelNumberToUse.Any() ) return ;
+        List<CeedModel> usingCeedModel = new() ;
+        foreach ( var modelNumber in modelNumberToUse ) {
+          var ceedModels = ceedStorable.CeedModelData
+            .Where( c => c.ModelNumber.Contains( modelNumber ) ).Distinct().ToList() ;
+          usingCeedModel.AddRange( ceedModels ) ;
+        }
+
+        usingCeedModel = usingCeedModel.Distinct().ToList() ;
+        _usingCeedModel = usingCeedModel ;
+        LoadData(_usingCeedModel, ceedStorable  ) ;
+        checkBox.Visibility = Visibility.Visible ;
+        checkBox.IsChecked = true ;
+
+        if ( _usingCeedModel == null || ! _usingCeedModel.Any() ) return ;
+        try {
+          using Transaction t = new( _document, "Save data" ) ;
+          t.Start() ;
+          ceedStorable.CeedModelUsedData = _usingCeedModel ;
+          ceedStorable.IsShowOnlyUsingCode = true ;
+          ceedStorable.Save() ;
+          t.Commit() ;
+        }
+        catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        }
+      }
+      else {
+        MessageBox.Show( "Please read csv.", "Message" ) ;
+      }
+    }
+
+    public void ShowCeedModelNumberColumn(Label label, ComboBox comboBox )
+    {
+      DtGrid.Columns[ 1 ].Visibility = Visibility.Visible ;
+      label.Visibility = Visibility.Visible ;
+      comboBox.Visibility = Visibility.Visible ;
+    }
+    
+    public void UnShowCeedModelNumberColumn(Label label, ComboBox comboBox)
+    {
+      DtGrid.Columns[ 1 ].Visibility = Visibility.Hidden ;
+      label.Visibility = Visibility.Hidden ;
+      comboBox.Visibility = Visibility.Hidden ;
+    }
+    
+    public void ShowOnlyUsingCode()
+    {
+      if ( !_usingCeedModel.Any() ) return ;
+      LoadData( _usingCeedModel ) ;
+    }
+    
+    public void UnShowOnlyUsingCode()
+    {
+      if ( !_ceedModels.Any() ) return ;
+      LoadData( _ceedModels ) ;
+    }
+    
+    private void UpdateCeedStorableAfterReplaceFloorPlanSymbol( string connectorFamilyName )
+    {
+      var ceedStorable = _document.GetAllStorables<CeedStorable>().First() ;
+      if ( ceedStorable == null ) return ;
+      if ( _ceedModels.Any() ) {
+        var ceedModel = _ceedModels.First( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == SelectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == SelectedCeedModel.ModelNumber ) ;
+        if ( ceedModel != null ) {
+          ceedModel.FloorPlanType = connectorFamilyName ;
+          ceedStorable.CeedModelData = _ceedModels ;
+        }
+      }
+    
+      if ( _usingCeedModel != null ) {
+        var ceedModel = _usingCeedModel.FirstOrDefault( c => c.CeedSetCode == SelectedCeedModel!.CeedSetCode && c.GeneralDisplayDeviceSymbol == SelectedCeedModel.GeneralDisplayDeviceSymbol && c.ModelNumber == SelectedCeedModel.ModelNumber ) ;
+        if ( ceedModel != null ) {
+          ceedModel.FloorPlanType = connectorFamilyName ;
+          ceedStorable.CeedModelUsedData = _usingCeedModel ;
+        }
+      }
+    
+      try {
+        using Transaction t = new( _document, "Save CeeD data" ) ;
+        t.Start() ;
+        ceedStorable.Save() ;
+        t.Commit() ;
+      }
+      catch ( Autodesk.Revit.Exceptions.OperationCanceledException ) {
+        MessageBox.Show( "Save CeeD data failed.", "Error" ) ;
+      }
+    }
+    
+    private void UpdateDataGridAfterReplaceFloorPlanSymbol(DataGrid dataGrid, string floorPlanType)
+     {
+       if ( dataGrid.ItemsSource is not ObservableCollection<CeedModel> newCeedModels ) {
+         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
+         return ;
+       }
+       
+       var ceedModel = newCeedModels.FirstOrDefault( c => c == SelectedCeedModel ) ;
+       if ( ceedModel == null ) return ;
+       ceedModel.FloorPlanType = floorPlanType ;
+       dataGrid.ItemsSource = new ObservableCollection<CeedModel> ( newCeedModels );
+     }
+     
+    public void ReplaceSymbol(DataGrid dataGrid, Button button )
+    {
+      var selectConnectorFamilyDialog = new SelectConnectorFamily( _document ) ;
+      selectConnectorFamilyDialog.ShowDialog() ;
+      if ( ! ( selectConnectorFamilyDialog.DialogResult ?? false ) ) return ;
+      var selectedConnectorFamily = selectConnectorFamilyDialog.ConnectorFamilyList.SingleOrDefault( f => f.IsSelected ) ;
+      if ( selectedConnectorFamily == null ) {
+        System.Windows.MessageBox.Show( "No connector family selected.", "Error" ) ;
+        return ;
+      }
+    
+      var connectorFamilyFileName = selectedConnectorFamily.ToString() ;
+      var connectorFamilyName = connectorFamilyFileName.Replace( ".rfa", "" ) ;
+      if ( SelectedCeedModel == null || string.IsNullOrEmpty( connectorFamilyFileName ) ) return ;
+    
+      using var progress = ProgressBar.ShowWithNewThread( _commandData.Application  ) ;
+      progress.Message = "Processing......." ;
+    
+      using ( var progressData = progress.Reserve( 0.5 ) ) {
+        UpdateCeedStorableAfterReplaceFloorPlanSymbol( connectorFamilyName ) ;
+        progressData?.ThrowIfCanceled() ;
+      }
+    
+      using ( var progressData = progress.Reserve( 0.9 ) ) {
+        UpdateDataGridAfterReplaceFloorPlanSymbol(dataGrid, connectorFamilyName ) ;
+        button.IsEnabled = false ;
+        progressData?.ThrowIfCanceled() ;
+      }
+    
+      progress.Finish() ;
+      System.Windows.MessageBox.Show( "正常にモデルを置き換えました。", "Message" ) ;
+    }
+
+    public void ReplaceMultipleSymbols(DataGrid dtGrid )
+    {
+      const string successfullyMess = "モデルを正常に置き換えました。" ;
+      const string failedMess = "モデルの置き換えが失敗しました。" ;
+      List<string> connectorFamilyPaths ;
+      MessageBox.Show( "モデルフォルダーを選択してください。", "Message" ) ;
+      FolderBrowserDialog folderBrowserDialog = new() ;
+      if ( folderBrowserDialog.ShowDialog() != DialogResult.OK ) return ;
+      string folderPath = folderBrowserDialog.SelectedPath ;
+      string infoPath =
+        Directory.GetFiles( folderPath )
+          .FirstOrDefault( f => Path.GetExtension( f ) is ".xls" or ".xlsx" ) ?? string.Empty ;
+      if ( string.IsNullOrEmpty( infoPath ) ) {
+        MessageBox.Show( "指定したフォルダーにはモデル指定情報のエクセルファイルが存在していません。", "Error" ) ;
+        return ;
+      }
+
+      DirectoryInfo dirInfo = new( folderPath ) ;
+      var familyFolder = dirInfo.GetDirectories().FirstOrDefault() ;
+      if ( familyFolder != null ) {
+        connectorFamilyPaths = Directory.GetFiles( familyFolder.FullName ).ToList() ;
+      }
+      else {
+        MessageBox.Show( "指定したフォルダーにはモデルデータが存在していません。モデルデータをmodelフォルダに入れてください。", "Error" ) ;
+        return ;
+      }
+
+      if ( connectorFamilyPaths.Any() ) {
+        try {
+          List<string> connectorFamilyFiles ;
+          List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
+          using var progress = ProgressBar.ShowWithNewThread( _commandData.Application ) ;
+          progress.Message = "Processing......." ;
+          using ( var progressData = progress.Reserve( 0.3 ) ) {
+            connectorFamilyReplacements =
+              ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;
+            connectorFamilyFiles = LoadConnectorFamily( _document, connectorFamilyPaths ) ;
+            progressData.ThrowIfCanceled() ;
+          }
+
+          if ( connectorFamilyFiles.Any() && connectorFamilyReplacements.Any() ) {
+            bool result ;
+            using ( var progressData = progress.Reserve( 0.6 ) ) {
+              result = IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( _document,
+                _ceedModels,  _usingCeedModel, connectorFamilyReplacements,
+                connectorFamilyFiles ) ;
+              progressData.ThrowIfCanceled() ;
+            }
+
+            if ( result ) {
+              using var progressData = progress.Reserve( 0.9 ) ;
+              result = IsUpdateUpdateDataGridAfterReplaceMultipleSymbolsSuccessfully(
+                connectorFamilyReplacements, connectorFamilyFiles, dtGrid ) ;
+              progressData.ThrowIfCanceled() ;
+            }
+
+            progress.Finish() ;
+            MessageBox.Show( result ? successfullyMess : failedMess, "Message" ) ;
+          }
+          else {
+            progress.Finish() ;
+            MessageBox.Show( failedMess, "Message" ) ;
+          }
+        }
+        catch ( Exception exception ) {
+          MessageBox.Show( exception.Message, "Error" ) ;
+        }
+      }
+      else {
+        MessageBox.Show( NotExistConnectorFamilyInFolderModelWarningMessage, "Message" ) ;
+      }
+    }
+    
+    private Dictionary<string, string> GetExistedConnectorFamilies( Document document, IEnumerable<string> connectorFamilyPaths )
+    {
+      Dictionary<string, string> existsConnectorFamilies = new() ;
+      foreach ( var connectorFamilyPath in connectorFamilyPaths ) {
+        var connectorFamilyFile = Path.GetFileName( connectorFamilyPath ) ;
+        var connectorFamilyName = connectorFamilyFile.Replace( ".rfa", "" ) ;
+        if ( new FilteredElementCollector( document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == connectorFamilyName ) is Family ) {
+          existsConnectorFamilies.Add( connectorFamilyFile, connectorFamilyPath ) ;
+        }
+      }
+
+      return existsConnectorFamilies ;
+    }
+    
+    private List<string> LoadConnectorFamily( Document document, List<string> connectorFamilyPaths )
     {
       List<string> connectorFamilyFiles = new() ;
 
@@ -225,11 +660,11 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       loadTransaction.Commit() ;
       return connectorFamilyFiles ;
     }
-
-    private static Family? LoadFamily( Document document, string filePath, ref bool isLoadFamilySuccessfully )
+    
+    private Family? LoadFamily( Document document, string filePath, ref bool isLoadFamilySuccessfully )
     {
       try {
-        document.LoadFamily( filePath, new FamilyOption( true ), out var family ) ;
+        document.LoadFamily( filePath, new CeedViewModel.FamilyOption( true ), out var family ) ;
         if ( family == null ) return family ;
         foreach ( ElementId familySymbolId in family.GetFamilySymbolIds() ) {
           document.GetElementById<FamilySymbol>( familySymbolId ) ;
@@ -243,88 +678,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       }
     }
 
-    private static Dictionary<string, string> GetExistedConnectorFamilies( Document document, IEnumerable<string> connectorFamilyPaths )
-    {
-      Dictionary<string, string> existsConnectorFamilies = new() ;
-      foreach ( var connectorFamilyPath in connectorFamilyPaths ) {
-        var connectorFamilyFile = Path.GetFileName( connectorFamilyPath ) ;
-        var connectorFamilyName = connectorFamilyFile.Replace( ".rfa", "" ) ;
-        if ( new FilteredElementCollector( document ).OfClass( typeof( Family ) ).FirstOrDefault( f => f.Name == connectorFamilyName ) is Family ) {
-          existsConnectorFamilies.Add( connectorFamilyFile, connectorFamilyPath ) ;
-        }
-      }
-
-      return existsConnectorFamilies ;
-    }
-
-    public static void ReplaceMultipleSymbols( Document document, UIApplication uiApplication, ref CeedViewModel? allCeedModels, ref CeedViewModel? usingCeedModel, ref DataGrid dtGrid )
-    {
-      const string successfullyMess = "モデルを正常に置き換えました。" ;
-      const string failedMess = "モデルの置き換えが失敗しました。" ;
-      List<string> connectorFamilyPaths ;
-      MessageBox.Show( "モデルフォルダーを選択してください。", "Message" ) ;
-      FolderBrowserDialog folderBrowserDialog = new() ;
-      if ( folderBrowserDialog.ShowDialog() != DialogResult.OK ) return ;
-      string folderPath = folderBrowserDialog.SelectedPath ;
-      string infoPath = Directory.GetFiles( folderPath ).FirstOrDefault( f => Path.GetExtension( f ) is ".xls" or ".xlsx" ) ?? string.Empty ;
-      if ( string.IsNullOrEmpty( infoPath ) ) {
-        MessageBox.Show( "指定したフォルダーにはモデル指定情報のエクセルファイルが存在していません。", "Error" ) ;
-        return ;
-      }
-
-      DirectoryInfo dirInfo = new(folderPath) ;
-      var familyFolder = dirInfo.GetDirectories().FirstOrDefault() ;
-      if ( familyFolder != null ) {
-        connectorFamilyPaths = Directory.GetFiles( familyFolder.FullName ).ToList() ;
-      }
-      else {
-        MessageBox.Show( "指定したフォルダーにはモデルデータが存在していません。モデルデータをmodelフォルダに入れてください。", "Error" ) ;
-        return ;
-      }
-        
-      if ( connectorFamilyPaths.Any() ) {
-        try {
-          List<string> connectorFamilyFiles ;
-          List<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements ;
-          using var progress = ProgressBar.ShowWithNewThread( uiApplication ) ;
-          progress.Message = "Processing......." ;
-          using ( var progressData = progress.Reserve( 0.3 ) ) {
-            connectorFamilyReplacements = ExcelToModelConverter.GetConnectorFamilyReplacements( infoPath ) ;
-            connectorFamilyFiles = LoadConnectorFamily( document, connectorFamilyPaths ) ;
-            progressData.ThrowIfCanceled() ;
-          }
-
-          if ( connectorFamilyFiles.Any() && connectorFamilyReplacements.Any() ) {
-            bool result ;
-            using ( var progressData = progress.Reserve( 0.6 ) ) {
-              result = IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( document, ref allCeedModels, ref usingCeedModel, connectorFamilyReplacements, connectorFamilyFiles ) ;
-              progressData.ThrowIfCanceled() ;
-            }
-
-            if ( result ) {
-              using var progressData = progress.Reserve( 0.9 ) ;
-              result = IsUpdateUpdateDataGridAfterReplaceMultipleSymbolsSuccessfully( connectorFamilyReplacements, connectorFamilyFiles, dtGrid ) ;
-              progressData.ThrowIfCanceled() ;
-            }
-
-            progress.Finish() ;
-            MessageBox.Show( result ? successfullyMess : failedMess, "Message" ) ;
-          }
-          else {
-            progress.Finish() ;
-            MessageBox.Show( failedMess, "Message" ) ;
-          }
-        }
-        catch ( Exception exception ) {
-          MessageBox.Show( exception.Message, "Error" ) ;
-        }
-      }
-      else {
-        MessageBox.Show( NotExistConnectorFamilyInFolderModelWarningMessage, "Message" ) ;
-      }
-    }
-
-    private static bool IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( Document document, ref CeedViewModel? allCeedModels, ref CeedViewModel? usingCeedModel, IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
+    private bool IsUpdateCeedStorableAfterReplaceMultipleSymbolsSuccessfully( Document document, List<CeedModel>? allCeedModels, List<CeedModel>? usingCeedModel, IReadOnlyCollection<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName )
     {
       List<string> deviceSymbolsNotHaveConnectorFamily = new() ;
       var ceedStorable = document.GetAllStorables<CeedStorable>().First() ;
@@ -335,7 +689,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
             var deviceSymbols = connectorFamilyReplacement.DeviceSymbols.Split( '\n' ) ;
             foreach ( var deviceSymbol in deviceSymbols ) {
               var generalDisplayDeviceSymbol = deviceSymbol.Normalize( NormalizationForm.FormKC ) ;
-              var ceedModels = allCeedModels.CeedModels.Where( c => c.GeneralDisplayDeviceSymbol == generalDisplayDeviceSymbol ).ToList() ;
+              var ceedModels = allCeedModels.Where( c => c.GeneralDisplayDeviceSymbol == generalDisplayDeviceSymbol ).ToList() ;
               if ( ! ceedModels.Any() ) continue ;
               var connectorFamilyName = connectorFamilyReplacement.ConnectorFamilyFile.Replace( ".rfa", "" ) ;
               foreach ( var ceedModel in ceedModels ) {
@@ -348,7 +702,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
         }
 
-        ceedStorable.CeedModelData = allCeedModels.CeedModels ;
+        ceedStorable.CeedModelData = allCeedModels ;
       }
 
       if ( usingCeedModel != null ) {
@@ -356,7 +710,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           if ( ! connectorFamilyFileName.Contains( connectorFamilyReplacement.ConnectorFamilyFile ) ) continue ;
           var deviceSymbols = connectorFamilyReplacement.DeviceSymbols.Split( '\n' ) ;
           foreach ( var deviceSymbol in deviceSymbols ) {
-            var ceedModels = usingCeedModel.CeedModels.Where( c => c.GeneralDisplayDeviceSymbol == deviceSymbol ).ToList() ;
+            var ceedModels = usingCeedModel.Where( c => c.GeneralDisplayDeviceSymbol == deviceSymbol ).ToList() ;
             if ( ! ceedModels.Any() ) continue ;
             var connectorFamilyName = connectorFamilyReplacement.ConnectorFamilyFile.Replace( ".rfa", "" ) ;
             foreach ( var ceedModel in ceedModels ) {
@@ -365,7 +719,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
           }
         }
 
-        ceedStorable.CeedModelData = usingCeedModel.CeedModels ;
+        ceedStorable.CeedModelUsedData = usingCeedModel ;
       }
 
       var newConnectorFamilyUploadFiles = connectorFamilyFileName.Where( f => ! ceedStorable.ConnectorFamilyUploadData.Contains( f ) ).ToList() ;
@@ -389,9 +743,9 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
       return true ;
     }
 
-    private static bool IsUpdateUpdateDataGridAfterReplaceMultipleSymbolsSuccessfully( IEnumerable<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName, ItemsControl dtGrid )
+    private bool IsUpdateUpdateDataGridAfterReplaceMultipleSymbolsSuccessfully( IEnumerable<ExcelToModelConverter.ConnectorFamilyReplacement> connectorFamilyReplacements, ICollection<string> connectorFamilyFileName, ItemsControl dtGrid )
     {
-      if ( dtGrid.ItemsSource is not List<CeedModel> newCeedModels ) {
+      if ( dtGrid.ItemsSource is not ObservableCollection<CeedModel> newCeedModels ) {
         MessageBox.Show( "CeeD model data is incorrect.", "Error" ) ;
         return false ;
       }
@@ -409,7 +763,7 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         }
       }
 
-      dtGrid.ItemsSource = new List<CeedModel>( newCeedModels ) ;
+      dtGrid.ItemsSource =  newCeedModels  ;
       return true ;
     }
 
@@ -435,6 +789,44 @@ namespace Arent3d.Architecture.Routing.AppBase.ViewModel
         source = FamilySource.Project ;
         return OnFamilyFound( familyInUse, out overwriteParameterValues ) ;
       }
+    }
+    
+    public void CheckChangeColor(List<CeedModel> ceedModels)
+    {
+      for ( int i = 0 ; i < ceedModels.Count() ; i++ ) {
+        CeedModel item = ceedModels[ i ] ;
+        var existCeedModels =  _previousCeedModels ;
+        var itemExistCeedModel = existCeedModels.Find( x =>
+          x.CeedSetCode == item.CeedSetCode && x.CeedModelNumber == item.CeedModelNumber &&
+          x.GeneralDisplayDeviceSymbol == item.GeneralDisplayDeviceSymbol &&
+          x.ModelNumber == item.ModelNumber ) ;
+        if ( itemExistCeedModel != null ) {
+          item.IsEditFloorPlan = IsChange(
+            string.IsNullOrEmpty( itemExistCeedModel.FloorPlanSymbol )
+              ? itemExistCeedModel.Base64FloorPlanImages
+              : itemExistCeedModel.FloorPlanSymbol,
+            string.IsNullOrEmpty( item.FloorPlanSymbol )
+              ? item.Base64FloorPlanImages
+              : item.FloorPlanSymbol ) ;
+          item.IsEditInstrumentation = IsChange(
+            string.IsNullOrEmpty( itemExistCeedModel.InstrumentationSymbol )
+              ? itemExistCeedModel.Base64InstrumentationImageString
+              : itemExistCeedModel.InstrumentationSymbol,
+            string.IsNullOrEmpty( item.InstrumentationSymbol )
+              ? item.Base64InstrumentationImageString
+              : item.InstrumentationSymbol ) ;
+          item.IsEditCondition = IsChange( itemExistCeedModel.Condition, item.Condition ) ;
+        }
+        else {
+          // row.Background = Brushes.Orange ;
+          item.IsAdded = true ;
+        }
+      }
+    }
+
+    private bool IsChange(string oldItem, string newItem)
+    {
+      return oldItem != newItem ;
     }
   }
 }
