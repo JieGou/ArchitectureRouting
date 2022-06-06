@@ -1,25 +1,11 @@
-using System ;
-using System.Collections.Generic ;
-using System.Linq ;
 using System.Windows ;
 using System.Windows.Controls ;
-using System.Windows.Forms ;
 using System.Windows.Input ;
-using System.Windows.Media ;
-using Arent3d.Architecture.Routing.AppBase.Forms.ValueConverters ;
 using Arent3d.Architecture.Routing.AppBase.ViewModel ;
-using Arent3d.Architecture.Routing.Extensions ;
-using Arent3d.Architecture.Routing.Storable ;
 using Arent3d.Architecture.Routing.Storable.Model ;
-using Arent3d.Revit ;
-using Autodesk.Revit.DB ;
-using Autodesk.Revit.UI ;
-using DataGridCell = System.Windows.Controls.DataGridCell ;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs ;
 using MessageBox = System.Windows.MessageBox ;
-using ProgressBar = Arent3d.Revit.UI.Forms.ProgressBar ;
 using Style = System.Windows.Style ;
-using View = Autodesk.Revit.DB.View ;
 using Visibility = System.Windows.Visibility ;
 
 namespace Arent3d.Architecture.Routing.AppBase.Forms
@@ -41,7 +27,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
         CbShowOnlyUsingCode.Visibility = Visibility.Visible ;
       }
     }
-    
+
     private void Button_LoadData( object sender, RoutedEventArgs e )
     {
       ViewModel.Load(CbShowOnlyUsingCode);
@@ -62,20 +48,14 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       ViewModel.Search() ;
     }
-    
-    private void Button_Reset( object sender, RoutedEventArgs e )
-    {
-      CmbCeedModelNumbers.Text = "" ;
-      CmbModelNumbers.Text = "" ;
-    }
-    
+
     private void CmbModelNumbers_KeyDown( object sender, KeyEventArgs e )
     {
       if ( e.Key == Key.Enter ) {
         ViewModel.Search() ;
       }
     }
-    
+
     private void SaveCeedModelNumberDisplayAndOnlyUsingCodeState()
     {
       ViewModel.Save() ;
@@ -100,7 +80,7 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     {
       ViewModel.ShowOnlyUsingCode() ;
     }
-    
+
     private void ShowOnlyUsingCode_UnChecked( object sender, RoutedEventArgs e )
     {
       ViewModel.UnShowOnlyUsingCode() ;
@@ -116,6 +96,8 @@ namespace Arent3d.Architecture.Routing.AppBase.Forms
     
       ViewModel.SelectedCeedModel = ( (DataGridRow) sender ).DataContext as CeedModel ;
       BtnReplaceSymbol.IsEnabled = true ;
+      ViewModel.PreviewList.Clear() ;
+      ViewModel.PreviewList.Add( ViewModel.SelectedCeedModel! ) ;
     }
     
     private void Row_DoubleClick( object sender, MouseButtonEventArgs e )
